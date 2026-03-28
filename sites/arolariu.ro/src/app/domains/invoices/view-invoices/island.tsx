@@ -6,6 +6,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider} from "../_contexts/DialogContext";
+import BulkActionsToolbar from "./_components/BulkActionsToolbar";
 import InvoicesHeader from "./_components/InvoicesHeader";
 import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
@@ -103,6 +104,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
         </motion.article>
       </motion.section>
       <DialogContainer />
+      <BulkActionsToolbar />
     </DialogProvider>
   );
 }

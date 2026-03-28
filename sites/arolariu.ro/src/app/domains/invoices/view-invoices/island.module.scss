@@ -34,6 +34,11 @@
 // ===========================================
 .tabsContent {
   margin-top: space(6);
+
+  // Adjust spacing on mobile
+  @include respond-below('md') {
+    margin-top: space(4);
+  }
 }
 
 .skeletonHeader {
@@ -64,8 +69,66 @@
   @media print {
     display: none;
   }
+
+  // Full width on mobile for better touch targets
+  @include respond-below('md') {
+    max-width: 100%;
+    gap: space(2);
+  }
 }
 
 .tabTrigger {
   cursor: pointer;
+
+  // Larger touch target on mobile
+  @include respond-below('md') {
+    min-height: space(11);
+    padding: space(3);
+  }
+}
+
+// ===========================================
+// PRINT STYLES
+// ===========================================
+@media print {
+  .loadingSection {
+    display: none !important;
+  }
+
+  .loadingTabsRow {
+    display: none !important;
+  }
+
+  .loadingGrid {
+    display: none !important;
+  }
+
+  .tabsContent {
+    margin-top: 0 !important;
+  }
+
+  .skeletonHeader,
+  .skeletonTab,
+  .skeletonCard {
+    display: none !important;
+  }
+
+  .fullWidth {
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .tabsList {
+    display: none !important;
+  }
+
+  .tabTrigger {
+    display: none !important;
+  }
+
+  // Force clean print layout - scoped to container
+  .printClean {
+    box-shadow: none !important;
+  }
 }

@@ -2,117 +2,121 @@
 
 import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
-import {
-  Button,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  useWindowSize,
-} from "@arolariu/components";
-import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
-import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";
+import {useWindowSize} from "@arolariu/components";
+import {useCallback, useMemo, useState} from "react";
+import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
+import FilterBar, {type FilterState} from "../filters/FilterBar";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
 import styles from "./InvoicesView.module.scss";
-
-type FiltersType = {category: string; time: string};
 
 type Props = {
   invoices: ReadonlyArray<Invoice>;
 };
 
 /**
- * The RenderInvoicesView component displays a list of invoices with search and filter functionality.
+ * The RenderInvoicesView component displays a list of invoices with advanced filtering and sorting.
  * It allows users to switch between table and grid views.
- * @param invoices The list of invoices to display.
+ *
+ * @remarks
+ * This component integrates the new FilterBar component with comprehensive filtering:
+ * - Text search with debouncing
+ * - Date range filtering
+ * - Amount range filtering
+ * - Multi-select category filtering
+ * - Multi-select payment type filtering
+ * - Sort by multiple fields
+ *
+ * Defaults to grid view on mobile devices for better touch interaction.
+ *
+ * @param props - Component props
  * @returns The RenderInvoicesView component, CSR'ed.
  */
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.invoicesView");
   const {isMobile} = useWindowSize();
-  const [view, setView] = useState<"table" | "grid">("table");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filters, setFilters] = useState<FiltersType>({category: "all", time: "all"});
-  const {paginatedItems, resetPagination, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} =
-    usePaginationWithSearch<Invoice>({
-      items: invoices,
-      initialPageSize: 10,
-      searchQuery,
-    });
+  const [viewMode, setViewMode] = useState<"table" | "grid">(isMobile ? "grid" : "table");
+  const [filters, setFilters] = useState<FilterState>({
+    searchQuery: "",
+    dateFrom: null,
+    dateTo: null,
+    amountMin: null,
+    amountMax: null,
+    categories: [],
+    paymentTypes: [],
+    sortBy: "date-desc",
+  });
 
-  const handleSearch = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const query = e.target.value;
-      setSearchQuery(query);
-      resetPagination();
+  // Apply filters and sorting
+  const filteredInvoices = useFilteredInvoices(invoices, filters);
+
+  // Pagination for filtered results
+  const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
+    items: filteredInvoices,
+    initialPageSize: 10,
+    searchQuery: "", // Search is handled by FilterBar
+  });
+
+  /**
+   * Calculate active filter count for badge.
+   */
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.searchQuery.trim()) count++;
+    if (filters.dateFrom) count++;
+    if (filters.dateTo) count++;
+    if (filters.amountMin !== null) count++;
+    if (filters.amountMax !== null) count++;
+    if (filters.categories.length > 0) count++;
+    if (filters.paymentTypes.length > 0) count++;
+    return count;
+  }, [filters]);
+
+  /**
+   * Handle filter changes.
+   */
+  const handleFiltersChange = useCallback(
+    (newFilters: FilterState) => {
+      setFilters(newFilters);
+      setCurrentPage(1); // Reset to first page when filters change
     },
-    [resetPagination],
+    [setCurrentPage],
   );
 
-  const handleFilters = useCallback(
-    (value: string) => {
-      if (
-        value === "all"
-        || value === "groceries"
-        || value === "dining"
-        || value === "utilities"
-        || value === "entertainment"
-        || value === "travel"
-        || value === "other"
-      ) {
-        setFilters((prev) => ({...prev, category: value}));
-      } else if (value === "day" || value === "night") {
-        setFilters((prev) => ({...prev, time: value}));
-      }
-      resetPagination();
-    },
-    [resetPagination],
-  );
+  /**
+   * Handle view mode change.
+   */
+  const handleViewModeChange = useCallback((mode: "table" | "grid") => {
+    setViewMode(mode);
+  }, []);
 
-  const handleNextPage = useCallback(
-    () => {
-      if (currentPage < totalPages) {
-        setCurrentPage(currentPage + 1);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [currentPage, totalPages],
-  );
+  /**
+   * Handle pagination.
+   */
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages, setCurrentPage]);
 
-  const handlePrevPage = useCallback(
-    () => {
-      if (currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [currentPage],
-  );
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  }, [currentPage, setCurrentPage]);
 
   const handlePageSizeChange = useCallback(
     (size: number) => {
       setPageSize(size);
       setCurrentPage(1);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [],
+    [setPageSize, setCurrentPage],
   );
 
+  /**
+   * Render view content based on view mode.
+   */
   const viewContent =
-    view === "table" ? (
+    viewMode === "table" ? (
       <TableView
         invoices={paginatedItems}
         pageSize={pageSize}
@@ -128,161 +132,13 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
 
   return (
     <div className={styles["container"]}>
-      <div className={styles["toolbar"]}>
-        <div className={styles["searchWrapper"]}>
-          <TbSearch className={styles["searchIcon"]} />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            className={styles["searchInput"]}
-            value={searchQuery}
-            onChange={handleSearch}
-          />
-        </div>
-        <div className={styles["filtersRow"]}>
-          <Select
-            value={filters.category}
-            onValueChange={handleFilters}>
-            <SelectTrigger className={styles["selectTrigger"]}>
-              <div className={styles["filterTriggerContent"]}>
-                <TbCategory className={styles["filterIcon"]} />
-                <span>{t("filters.category")}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='all'>
-                {t("categories.all")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='groceries'>
-                {t("categories.groceries")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='dining'>
-                {t("categories.dining")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='utilities'>
-                {t("categories.utilities")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='entertainment'>
-                {t("categories.entertainment")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='travel'>
-                {t("categories.travel")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='other'>
-                {t("categories.other")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.time}
-            onValueChange={handleFilters}>
-            <SelectTrigger className={styles["selectTrigger"]}>
-              <div className={styles["filterTriggerContent"]}>
-                <TbClock className={styles["filterIcon"]} />
-                <span>{t("filters.timeOfDay")}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='all'>
-                {t("times.all")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='day'>
-                <div className={styles["filterTriggerContent"]}>
-                  <TbSun className={styles["sunIcon"]} />
-                  <span>{t("times.day")}</span>
-                </div>
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='night'>
-                <div className={styles["filterTriggerContent"]}>
-                  <TbMoon className={styles["moonIcon"]} />
-                  <span>{t("times.night")}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {isMobile ? (
-            <Sheet>
-              <SheetTrigger render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["filterButton"]}>
-                  <TbFilter className={styles["filterIcon"]} />
-                </Button>
-              } />
-              <SheetContent>{t("placeholderPanel")}</SheetContent>
-            </Sheet>
-          ) : (
-            <Popover>
-              <PopoverTrigger render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["filterButton"]}>
-                  <TbFilter className={styles["filterIcon"]} />
-                </Button>
-              } />
-              <PopoverContent>{t("placeholderPanel")}</PopoverContent>
-            </Popover>
-          )}
-
-          <div className={styles["viewToggle"]}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  className={styles["tooltipTrigger"]}
-                  render={
-                    <Button
-                      variant={view === "table" ? "default" : "ghost"}
-                      size='sm'
-                      className={styles["viewButtonLeft"]}
-                      // eslint-disable-next-line react/jsx-no-bind -- small fn
-                      onClick={() => setView("table")}>
-                      <TbTable className={styles["filterIcon"]} />
-                    </Button>
-                  } />
-                <TooltipContent>{t("viewModes.table")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  className={styles["tooltipTrigger"]}
-                  render={
-                    <Button
-                      variant={view === "grid" ? "default" : "ghost"}
-                      size='sm'
-                      className={styles["viewButtonRight"]}
-                      // eslint-disable-next-line react/jsx-no-bind -- small fn
-                      onClick={() => setView("grid")}>
-                      <TbCards className={styles["filterIcon"]} />
-                    </Button>
-                  } />
-                <TooltipContent>{t("viewModes.grid")}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
+      <FilterBar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        activeFilterCount={activeFilterCount}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+      />
       {viewContent}
     </div>
   );
