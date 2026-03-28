@@ -53,7 +53,7 @@ const gradientClassMap = {
   amber: "gradientAmber",
 } as const;
 
-function getCardClassName(isHovered: boolean, isFirst: boolean): string | undefined {
+function getCardClassName(isHovered: boolean, isFirst: boolean): string {
   if (isHovered) return styles["cardActive"];
   if (isFirst) return styles["cardHero"];
   return styles["card"];
