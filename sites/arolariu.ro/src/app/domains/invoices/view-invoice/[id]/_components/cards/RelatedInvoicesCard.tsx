@@ -124,13 +124,13 @@ function isSimilarAmount(amount1: number, amount2: number): boolean {
  */
 export function RelatedInvoicesCard(): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoice.relatedInvoices");
-  const {invoice: currentInvoice, merchant} = useInvoiceContext();
+  const {invoice: currentInvoice} = useInvoiceContext();
   const invoices = useInvoicesStore(useShallow((state) => state.invoices));
 
   // Extract values for memoization dependencies
-  const currentAmount = currentInvoice.paymentInformation.totalAmount;
+  const currentAmount = currentInvoice.paymentInformation.totalCostAmount;
   const currentCategory = currentInvoice.category;
-  const currentMerchantId = merchant.merchantIdentifier;
+  const currentMerchantId = currentInvoice.merchantReference;
 
   /**
    * Memoized computation of related invoices with relationship metadata.
@@ -152,10 +152,10 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
   const relatedInvoices = useMemo<RelatedInvoiceWithMeta[]>(() => {
     // Filter and map invoices to their relationship type
     const related = invoices
-      .filter((inv) => inv.invoiceIdentifier !== currentInvoice.invoiceIdentifier)
+      .filter((inv) => inv.id !== currentInvoice.id)
       .map((inv): RelatedInvoiceWithMeta | null => {
         // Same merchant (highest priority)
-        if (inv.merchantIdentifier === currentMerchantId) {
+        if (inv.merchantReference === currentMerchantId) {
           return {invoice: inv, relationType: "sameMerchant"};
         }
 
@@ -165,7 +165,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         }
 
         // Similar amount
-        if (isSimilarAmount(inv.paymentInformation.totalAmount, currentAmount)) {
+        if (isSimilarAmount(inv.paymentInformation.totalCostAmount, currentAmount)) {
           return {invoice: inv, relationType: "similarAmount"};
         }
 
@@ -187,7 +187,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         if (priorityDiff !== 0) return priorityDiff;
 
         // Then by date (newest first)
-        return new Date(b.invoice.issuedDate).getTime() - new Date(a.invoice.issuedDate).getTime();
+        return new Date(b.invoice.createdAt).getTime() - new Date(a.invoice.createdAt).getTime();
       })
       .slice(0, 6); // Max 6 related invoices
   }, [invoices, currentInvoice, currentCategory, currentAmount, currentMerchantId]);
@@ -217,7 +217,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
             <div className={styles["carousel"]}>
               {relatedInvoices.map(({invoice, relationType}) => (
                 <RelatedInvoiceMiniCard
-                  key={invoice.invoiceIdentifier}
+                  key={invoice.id}
                   invoice={invoice}
                   relationType={relationType}
                 />
@@ -263,19 +263,19 @@ interface RelatedInvoiceMiniCardProps {
 function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoiceMiniCardProps>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.relatedInvoices");
 
-  const formattedDate = new Date(invoice.issuedDate).toLocaleDateString("en-US", {
+  const formattedDate = new Date(invoice.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 
-  const amount = `${invoice.paymentInformation.currency.symbol}${invoice.paymentInformation.totalAmount.toFixed(2)}`;
+  const amount = `${invoice.paymentInformation.currency.symbol}${invoice.paymentInformation.totalCostAmount.toFixed(2)}`;
 
   const relationTypeBadge = t(relationType);
 
   return (
     <Link
-      href={`/domains/invoices/view-invoice/${invoice.invoiceIdentifier}`}
+      href={`/domains/invoices/view-invoice/${invoice.id}`}
       className={styles["miniCard"]}>
       <div className={styles["miniCardContent"]}>
         {/* Relationship Badge */}

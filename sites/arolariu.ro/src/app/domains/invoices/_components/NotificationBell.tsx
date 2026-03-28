@@ -90,17 +90,17 @@ const NotificationIcon = {
  * @param t - Translation function for i18n
  * @returns A string representing relative time (e.g., "2 minutes ago")
  */
-function getRelativeTime(timestamp: Date, t: (key: string, values?: Record<string, number>) => string): string {
+function getRelativeTime(timestamp: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - new Date(timestamp).getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMinutes < 1) return t("timeAgo.now");
-  if (diffMinutes < 60) return t("timeAgo.minutes", {count: diffMinutes});
-  if (diffHours < 24) return t("timeAgo.hours", {count: diffHours});
-  return t("timeAgo.days", {count: diffDays});
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
 }
 
 /**
@@ -231,7 +231,7 @@ export default function NotificationBell({className}: Readonly<Props>): React.JS
                             {!notification.read && <span className={styles["unreadDot"]} />}
                           </div>
                           <p className={styles["description"]}>{notification.description}</p>
-                          <span className={styles["timestamp"]}>{getRelativeTime(notification.timestamp, t)}</span>
+                          <span className={styles["timestamp"]}>{getRelativeTime(notification.timestamp)}</span>
                         </div>
                       </motion.div>
                     );

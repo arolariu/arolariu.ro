@@ -1388,6 +1388,13 @@
         },
         "removeTooltip": "Supprimer ce fichier",
         "retryAttempt": "Nouvelle tentative {attempt}"
+      },
+      "postUpload": {
+        "title": "Upload Complete!",
+        "subtitle": "Do these scans represent a single purchase?",
+        "createInvoice": "Yes, create invoice",
+        "viewScans": "No, I'll combine later",
+        "dismiss": "Dismiss"
       }
     },
     "ViewScans": {
@@ -1581,7 +1588,28 @@
         "searchPlaceholder": "Rechercher des factures...",
         "filters": {
           "category": "Catégorie",
-          "timeOfDay": "Moment de la journée"
+          "timeOfDay": "Moment de la journée",
+          "categories": "Categories",
+          "paymentTypes": "Payment Types",
+          "dateRange": "Date Range",
+          "dateFrom": "From date",
+          "dateTo": "To date",
+          "amountRange": "Amount Range",
+          "amountMin": "Min amount",
+          "amountMax": "Max amount",
+          "sortBy": "Sort By",
+          "sortOptions": {
+            "dateNewest": "Date (newest first)",
+            "dateOldest": "Date (oldest first)",
+            "amountHighToLow": "Amount (high to low)",
+            "amountLowToHigh": "Amount (low to high)",
+            "nameAZ": "Name (A-Z)",
+            "nameZA": "Name (Z-A)"
+          },
+          "title": "Filters",
+          "button": "Filters",
+          "clear": "Clear all",
+          "activeCount": "{count} active"
         },
         "categories": {
           "all": "Toutes les catégories",
@@ -1645,7 +1673,72 @@
             },
             "title": "",
             "description": ""
+          },
+          "categoryBreakdown": {
+            "title": "Spending by Category",
+            "description": "Distribution across categories",
+            "totalLabel": "Total Spending",
+            "tooltip": {
+              "invoiceCount": "{count} invoices"
+            }
+          },
+          "merchantLeaderboard": {
+            "title": "Top Merchants",
+            "description": "Where you spend most",
+            "labels": {
+              "totalSpent": "Total Spent"
+            },
+            "tooltip": {
+              "invoiceCount": "{count} invoices"
+            }
+          },
+          "priceDistribution": {
+            "title": "Price Distribution",
+            "description": "Item price distribution",
+            "labels": {
+              "itemCount": "Item Count"
+            },
+            "tooltip": {
+              "itemCount": "{count} items"
+            }
+          },
+          "timeOfDay": {
+            "title": "Shopping Patterns",
+            "description": "When you shop",
+            "labels": {
+              "invoiceCount": "Invoice Count"
+            },
+            "tooltip": {
+              "invoiceCount": "{count} invoices"
+            }
           }
+        },
+        "kpi": {
+          "totalSpending": "Total Spending",
+          "invoiceCount": "Invoice Count",
+          "topMerchant": "Top Merchant",
+          "averageItems": "Avg. Items",
+          "vsLastMonth": "{delta}% vs last month",
+          "avgPerInvoice": "avg {amount} per invoice",
+          "visits": "{count} visits",
+          "acrossInvoices": "across {count} invoices",
+          "noneYet": "No data yet"
+        },
+        "comparison": {
+          "title": "Month-over-Month",
+          "description": "Comparison with previous month",
+          "spendingDelta": "Spending Change",
+          "invoiceCount": "Invoice Count",
+          "newMerchants": "New Merchants",
+          "discovered": "discovered",
+          "none": "none",
+          "increase": "increase",
+          "decrease": "decrease"
+        },
+        "empty": {
+          "title": "No Statistics Yet",
+          "subtitle": "Upload receipts to see analytics",
+          "cta": "Upload Receipt"
         }
       },
       "generativeView": {
@@ -2392,6 +2485,55 @@
           "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
           "today": "today"
         }
+      },
+      "healthScore": {
+        "title": "Invoice Completeness",
+        "subtitle": "How complete is your invoice data",
+        "points": "points",
+        "showDetails": "Show details",
+        "hideDetails": "Hide details",
+        "factors": {
+          "name": "Name provided",
+          "items": "Items extracted",
+          "payment": "Payment information",
+          "recipes": "Recipes generated",
+          "category": "Category set",
+          "description": "Description added",
+          "date": "Transaction date",
+          "merchant": "Merchant information"
+        },
+        "cta": {
+          "analyze": "Run AI Analysis",
+          "edit": "Edit Invoice"
+        },
+        "status": {
+          "complete": "Complete",
+          "needsWork": "Needs Work",
+          "incomplete": "Incomplete"
+        }
+      },
+      "itemAnalytics": {
+        "title": "Items",
+        "searchPlaceholder": "Search items...",
+        "columns": {
+          "name": "Name",
+          "category": "Category",
+          "price": "Price",
+          "quantity": "Qty",
+          "total": "Total"
+        },
+        "summary": {
+          "title": "Summary",
+          "mostExpensive": "Most expensive",
+          "cheapest": "Cheapest",
+          "categories": "{count} categories",
+          "allergens": "{count} allergens detected"
+        },
+        "empty": {
+          "title": "No items",
+          "subtitle": "Run AI analysis to extract items from your receipt"
+        },
+        "totalLabel": "TOTAL"
       }
     },
     "EditInvoice": {
@@ -3341,6 +3483,123 @@
         "home": "Home",
         "scan": "Scan",
         "invoices": "Invoices"
+      }
+    },
+    "CreateInvoice": {
+      "metadata": {
+        "title": "Invoice Management System - Create Invoice",
+        "description": "Create a new invoice from your uploaded scans."
+      },
+      "navigation": {
+        "back": "Back",
+        "next": "Next"
+      },
+      "emptyState": {
+        "title": "No Scans Available",
+        "description": "Upload some receipt scans first to create an invoice.",
+        "uploadButton": "Upload Scans",
+        "viewScansButton": "View Scans"
+      },
+      "header": {
+        "backToInvoices": "Back to Invoices",
+        "title": "Create Invoice",
+        "subtitle": "Follow the steps below to create a new invoice from your scans"
+      },
+      "steps": {
+        "selectScans": "Select Scans",
+        "details": "Invoice Details",
+        "review": "Review & Create"
+      },
+      "scanSelector": {
+        "title": "Select Scans",
+        "subtitle": "Choose the scans that belong to this invoice",
+        "selectedCount": "{count} selected",
+        "clearAll": "Clear",
+        "selectAll": "Select All",
+        "noScans": "No scans available"
+      },
+      "detailsForm": {
+        "title": "Invoice Details",
+        "subtitle": "Provide the details for your new invoice",
+        "fields": {
+          "name": {
+            "label": "Invoice Name",
+            "placeholder": "e.g., Weekly Groceries",
+            "hint": "Give your invoice a descriptive name"
+          },
+          "category": {
+            "label": "Category",
+            "placeholder": "Select a category",
+            "options": {
+              "notDefined": "Uncategorized",
+              "grocery": "Grocery",
+              "fastFood": "Dining",
+              "homeCleaning": "Home & Cleaning",
+              "carAuto": "Auto & Vehicle",
+              "other": "Other"
+            }
+          },
+          "paymentType": {
+            "label": "Payment Method",
+            "placeholder": "Select payment method",
+            "options": {
+              "unknown": "Unknown",
+              "cash": "Cash",
+              "card": "Card",
+              "transfer": "Bank Transfer",
+              "mobilePayment": "Mobile Payment",
+              "voucher": "Voucher",
+              "other": "Other"
+            }
+          },
+          "transactionDate": {
+            "label": "Transaction Date"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Add any notes about this invoice (optional)",
+            "hint": "Optional notes about this purchase"
+          }
+        }
+      },
+      "reviewStep": {
+        "title": "Review & Create",
+        "subtitle": "Review your invoice details before creating",
+        "categories": {
+          "notDefined": "Uncategorized",
+          "grocery": "Grocery",
+          "fastFood": "Dining",
+          "homeCleaning": "Home & Cleaning",
+          "carAuto": "Auto & Vehicle",
+          "other": "Other"
+        },
+        "paymentTypes": {
+          "unknown": "Unknown",
+          "cash": "Cash",
+          "card": "Card",
+          "transfer": "Bank Transfer",
+          "mobilePayment": "Mobile Payment",
+          "voucher": "Voucher",
+          "other": "Other"
+        },
+        "sections": {
+          "scans": {
+            "title": "Scans"
+          },
+          "details": {
+            "title": "Invoice Details",
+            "name": "Name",
+            "category": "Category",
+            "paymentType": "Payment Method",
+            "transactionDate": "Transaction Date",
+            "description": "Description"
+          }
+        },
+        "actions": {
+          "creating": "Creating invoice...",
+          "create": "Create Invoice",
+          "hint": "This will create the invoice and upload the selected scans."
+        }
       }
     }
   },

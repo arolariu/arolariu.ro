@@ -22,7 +22,7 @@ import styles from "./StepIndicator.module.scss";
  */
 interface StepConfig {
   id: "select-scans" | "details" | "review";
-  labelKey: string;
+  labelKey: "selectScans" | "details" | "review";
   icon: React.ReactNode;
 }
 
@@ -37,12 +37,10 @@ const STEPS: StepConfig[] = [
  */
 function StepItem({
   step,
-  index,
   isActive,
   isCompleted,
 }: Readonly<{
   step: StepConfig;
-  index: number;
   isActive: boolean;
   isCompleted: boolean;
 }>): React.JSX.Element {
@@ -84,7 +82,6 @@ export default function StepIndicator(): React.JSX.Element {
             className={styles["stepWrapper"]}>
             <StepItem
               step={step}
-              index={index}
               isActive={isActive}
               isCompleted={isCompleted}
             />

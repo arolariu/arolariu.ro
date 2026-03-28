@@ -229,13 +229,14 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     setLocalItems((prev) => {
       const newItems = [...prev];
-      const itemIndex = sortedItems.findIndex((_, idx) => idx === rowIndex);
       const actualItem = sortedItems[rowIndex];
       const actualIndex = prev.findIndex((item) => item.rawName === actualItem?.rawName);
 
       if (actualIndex === -1) return prev;
 
-      const item = {...newItems[actualIndex]};
+      const existingItem = newItems[actualIndex];
+      if (!existingItem) return prev;
+      const item = {...existingItem};
 
       // Update field based on type
       if (field === "genericName" || field === "quantityUnit") {
@@ -245,7 +246,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         if (!isNaN(numValue) && numValue >= 0) {
           item[field] = numValue;
           // Recalculate totalPrice
-          item.totalPrice = item.price * item.quantity;
+          item.totalPrice = (item.price ?? 0) * (item.quantity ?? 0);
         }
       }
 
@@ -306,7 +307,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     const itemsToDelete = Array.from(selectedIndices)
       .map((idx) => sortedItems[idx])
-      .filter(Boolean);
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
     setLocalItems((prev) => prev.filter((item) => !itemsToDelete.some((delItem) => delItem.rawName === item.rawName)));
 

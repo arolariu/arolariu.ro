@@ -32,14 +32,14 @@ export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Elemen
     minute: "2-digit",
   });
 
-  const invoiceDate = formatter.dateTime(new Date(invoice.dateOfPurchaseUtc), {
+  const invoiceDate = formatter.dateTime(new Date(invoice.paymentInformation?.transactionDate ?? invoice.createdAt), {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
-  const formattedTotal = formatCurrency(invoice.totalAmount, {
-    currencyCode: invoice.currencySymbol,
+  const formattedTotal = formatCurrency(invoice.paymentInformation?.totalCostAmount ?? 0, {
+    currencyCode: invoice.paymentInformation?.currency?.code ?? "RON",
     locale,
   });
 

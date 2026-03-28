@@ -42,7 +42,7 @@
 
 "use client";
 
-import {formatCurrency} from "@/lib/utils.generic";
+
 import {ProductCategory} from "@/types/invoices";
 import {
   Badge,
@@ -422,11 +422,11 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                         <TableCell>
                           <Badge variant={categoryColors[item.category]}>{getCategoryName(item.category)}</Badge>
                         </TableCell>
-                        <TableCell>{formatCurrency(item.price, locale)}</TableCell>
+                        <TableCell>{item.price.toFixed(2)}</TableCell>
                         <TableCell>
                           {item.quantity} {item.quantityUnit}
                         </TableCell>
-                        <TableCell>{formatCurrency(item.totalPrice, locale)}</TableCell>
+                        <TableCell>{item.totalPrice.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -439,7 +439,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
               <div className={styles["totalLabel"]}>{t("totalLabel")}</div>
               <div className={styles["totalValues"]}>
                 <div className={styles["totalQuantity"]}>{totals.quantity}</div>
-                <div className={styles["totalPrice"]}>{formatCurrency(totals.price, locale)}</div>
+                <div className={styles["totalPrice"]}>{totals.price.toFixed(2)}</div>
               </div>
             </div>
 
@@ -450,20 +450,20 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                 {summary.mostExpensive ? (
                   <li className={styles["summaryItem"]}>
                     • {t("summary.mostExpensive")}: <strong>{summary.mostExpensive.genericName}</strong> (
-                    {formatCurrency(summary.mostExpensive.totalPrice, locale)})
+                    {summary.mostExpensive.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 {summary.cheapest ? (
                   <li className={styles["summaryItem"]}>
                     • {t("summary.cheapest")}: <strong>{summary.cheapest.genericName}</strong> (
-                    {formatCurrency(summary.cheapest.totalPrice, locale)})
+                    {summary.cheapest.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 <li className={styles["summaryItem"]}>
-                  • {summary.categoryCount} {t("summary.categories")}
+                  • {summary.categoryCount} {t("summary.categories", {count: String(summary.categoryCount)})}
                 </li>
                 <li className={styles["summaryItem"]}>
-                  • {summary.allergenCount} {t("summary.allergens")}
+                  • {summary.allergenCount} {t("summary.allergens", {count: String(summary.allergenCount)})}
                 </li>
               </ul>
             </div>

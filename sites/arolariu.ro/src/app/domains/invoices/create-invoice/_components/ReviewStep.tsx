@@ -22,46 +22,29 @@ import styles from "./ReviewStep.module.scss";
 const dateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "long"});
 
 /**
- * Get display name for invoice category.
+ * Category label map.
  */
-function getCategoryLabel(category: InvoiceCategory, t: (key: string) => string): string {
-  switch (category) {
-    case InvoiceCategory.GROCERY:
-      return t("categories.grocery");
-    case InvoiceCategory.FAST_FOOD:
-      return t("categories.fastFood");
-    case InvoiceCategory.HOME_CLEANING:
-      return t("categories.homeCleaning");
-    case InvoiceCategory.CAR_AUTO:
-      return t("categories.carAuto");
-    case InvoiceCategory.OTHER:
-      return t("categories.other");
-    default:
-      return t("categories.notDefined");
-  }
-}
+const CATEGORY_LABELS: Record<number, string> = {
+  [InvoiceCategory.NOT_DEFINED]: "Uncategorized",
+  [InvoiceCategory.GROCERY]: "Grocery",
+  [InvoiceCategory.FAST_FOOD]: "Dining",
+  [InvoiceCategory.HOME_CLEANING]: "Home & Cleaning",
+  [InvoiceCategory.CAR_AUTO]: "Auto & Vehicle",
+  [InvoiceCategory.OTHER]: "Other",
+};
 
 /**
- * Get display name for payment type.
+ * Payment type label map.
  */
-function getPaymentTypeLabel(paymentType: PaymentType, t: (key: string) => string): string {
-  switch (paymentType) {
-    case PaymentType.Cash:
-      return t("paymentTypes.cash");
-    case PaymentType.Card:
-      return t("paymentTypes.card");
-    case PaymentType.Transfer:
-      return t("paymentTypes.transfer");
-    case PaymentType.MobilePayment:
-      return t("paymentTypes.mobilePayment");
-    case PaymentType.Voucher:
-      return t("paymentTypes.voucher");
-    case PaymentType.Other:
-      return t("paymentTypes.other");
-    default:
-      return t("paymentTypes.unknown");
-  }
-}
+const PAYMENT_TYPE_LABELS: Record<number, string> = {
+  [PaymentType.Unknown]: "Unknown",
+  [PaymentType.Cash]: "Cash",
+  [PaymentType.Card]: "Card",
+  [PaymentType.Transfer]: "Bank Transfer",
+  [PaymentType.MobilePayment]: "Mobile Payment",
+  [PaymentType.Voucher]: "Voucher",
+  [PaymentType.Other]: "Other",
+};
 
 /**
  * Review step component.
@@ -69,7 +52,7 @@ function getPaymentTypeLabel(paymentType: PaymentType, t: (key: string) => strin
  * @returns JSX element with review UI
  */
 export default function ReviewStep(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.review");
+  const t = useTranslations("Invoices.CreateInvoice.reviewStep");
   const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
 
   return (
@@ -132,7 +115,7 @@ export default function ReviewStep(): React.JSX.Element {
               {t("sections.details.category")}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{getCategoryLabel(invoiceDetails.category, t)}</Badge>
+              <Badge variant='outline'>{CATEGORY_LABELS[invoiceDetails.category] ?? "Uncategorized"}</Badge>
             </div>
           </div>
 
@@ -142,7 +125,7 @@ export default function ReviewStep(): React.JSX.Element {
               {t("sections.details.paymentType")}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{getPaymentTypeLabel(invoiceDetails.paymentType, t)}</Badge>
+              <Badge variant='outline'>{PAYMENT_TYPE_LABELS[invoiceDetails.paymentType] ?? "Unknown"}</Badge>
             </div>
           </div>
 

@@ -23,7 +23,7 @@ import styles from "./MobileBottomNav.module.scss";
  */
 interface NavItem {
   /** Translation key for the label */
-  labelKey: string;
+  labelKey: "home" | "scan" | "invoices" | "profile";
   /** Navigation href */
   href: string;
   /** Icon component from react-icons */

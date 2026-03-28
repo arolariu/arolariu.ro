@@ -117,8 +117,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       setCurrentStep("details");
       // Auto-suggest name from first scan
       if (selectedScans.length > 0 && !invoiceDetails.name) {
-        const firstName = selectedScans[0].name.replace(/\.[^/.]+$/, ""); // Remove extension
-        setInvoiceDetails((prev) => ({...prev, name: firstName}));
+        const firstScan = selectedScans[0];
+        if (firstScan) {
+          const firstName = firstScan.name.replace(/\.[^/.]+$/, "");
+          setInvoiceDetails((prev) => ({...prev, name: firstName}));
+        }
       }
     } else if (currentStep === "details") {
       setCurrentStep("review");

@@ -536,7 +536,7 @@ export default function FilterBar({
       {/* Active filter count indicator */}
       {activeFilterCount > 0 && (
         <div className={styles["activeFiltersBar"]}>
-          <span className={styles["activeFiltersText"]}>{t("filters.activeCount", {count: activeFilterCount})}</span>
+          <span className={styles["activeFiltersText"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
         </div>
       )}
     </div>

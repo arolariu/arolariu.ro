@@ -41,7 +41,7 @@ type ShortcutItem = {
   /** The keys to display (e.g., ["Ctrl", "K"]). */
   keys: string[];
   /** Translation key for the shortcut description. */
-  descriptionKey: string;
+  descriptionKey: "openSearch" | "newInvoice" | "uploadScan" | "showHelp" | "closeDialog";
 };
 
 /**

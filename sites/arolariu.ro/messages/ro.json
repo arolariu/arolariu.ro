@@ -434,15 +434,6 @@
           "position": "Software Engineer II",
           "quote": "Apreciez cu adevărat abordarea dvs. proactivă și spiritul de colaborare, iar sprijinul dvs. și stilul dvs. prietenos de comunicare au fost foarte pozitive pentru experiența mea de integrare și pentru învățarea intrărilor și ieșirilor proiectului nostru. Capacitatea dvs. de a comunica eficient și de a ține pe toată lumea la curent este un lucru pe care îl admir, aveți experiență în relaționarea cu echipele interfuncționale, în special cu echipele noastre partenere, în cunoașterea nevoilor lor și în rezolvarea problemelor lor. Aptitudinile dvs. tehnice sunt impresionante, iar atenția dvs. la detalii este lăudabilă."
         },
-        "perspectiveFromZ": {
-          "author": "Anonim",
-          "avatar": " ",
-          "company": "Microsoft",
-          "position": "Inginer software senior",
-          "quote": "Întotdeauna sunteți gata să ajutați, împărțindu-vă timpul cu generozitate, chiar și atunci când aveți propriile dvs. sarcini urgente. Răspunsurile tale rapide și utile la orice întrebare sunt foarte apreciate. Aveți o abordare prioritară și meticuloasă, oferind soluții instantanee care nu numai că ne deblochează pe termen scurt, ci și schițează soluții pe termen lung și termenele lor de implementare. Mentalitatea dvs. orientată spre soluții este un adevărat avantaj pentru echipa noastră. Expertiza ta, dorința de a ajuta și personalitatea ta plăcută fac din tine un coleg excelent. Continuați munca excelentă!"
-        },
-        "subtitle": "Perspective de la colegii care au lucrat cu sau alături de Alexandru.",
-        "title": "Perspective",
         "perspectiveFromYX": {
           "author": "",
           "avatar": "",
@@ -463,7 +454,16 @@
           "company": "",
           "position": "",
           "quote": ""
-        }
+        },
+        "perspectiveFromZ": {
+          "author": "Anonim",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Inginer software senior",
+          "quote": "Întotdeauna sunteți gata să ajutați, împărțindu-vă timpul cu generozitate, chiar și atunci când aveți propriile dvs. sarcini urgente. Răspunsurile tale rapide și utile la orice întrebare sunt foarte apreciate. Aveți o abordare prioritară și meticuloasă, oferind soluții instantanee care nu numai că ne deblochează pe termen scurt, ci și schițează soluții pe termen lung și termenele lor de implementare. Mentalitatea dvs. orientată spre soluții este un adevărat avantaj pentru echipa noastră. Expertiza ta, dorința de a ajuta și personalitatea ta plăcută fac din tine un coleg excelent. Continuați munca excelentă!"
+        },
+        "subtitle": "Perspective de la colegii care au lucrat cu sau alături de Alexandru.",
+        "title": "Perspective"
       },
       "subtitle": "Alexandru-Razvan Olariu este autorul platformei pe care o navigați în prezent.",
       "title": "Faceți cunoștință cu autorul."
@@ -570,21 +570,21 @@
         "platform": {
           "title": "Platforma",
           "subtitle": "Descoperă arhitectura, stack-ul tehnologic și funcționalitățile care alimentează arolariu.ro.",
-          "features": [
-            "Frontend Next.js 16",
-            "Backend .NET 10",
-            "Infrastructură Azure Cloud"
-          ],
+          "features": {
+            "0": "Frontend Next.js 16",
+            "1": "Backend .NET 10",
+            "2": "Infrastructură Azure Cloud"
+          },
           "cta": "Explorează platforma"
         },
         "author": {
           "title": "Autorul",
           "subtitle": "Cunoaște-l pe Alexandru-Răzvan Olariu, inginerul software din spatele acestei platforme.",
-          "features": [
-            "Inginer Microsoft",
-            "Arhitect de soluții",
-            "Entuziast tehnologie"
-          ],
+          "features": {
+            "0": "Inginer Microsoft",
+            "1": "Arhitect de soluții",
+            "2": "Entuziast tehnologie"
+          },
           "cta": "Cunoaște-l pe Alexandru"
         }
       },
@@ -1388,6 +1388,13 @@
         },
         "removeTooltip": "Elimină acest fișier",
         "retryAttempt": "Reîncercarea {attempt}"
+      },
+      "postUpload": {
+        "title": "Upload Complete!",
+        "subtitle": "Do these scans represent a single purchase?",
+        "createInvoice": "Yes, create invoice",
+        "viewScans": "No, I'll combine later",
+        "dismiss": "Dismiss"
       }
     },
     "ViewScans": {
@@ -1539,9 +1546,9 @@
         "description": "Creează facturi din toate cele {count} scanări deodată"
       },
       "groupBanner": {
-        "dismiss": "Închide",
+        "combine": "Creează Factură →",
         "title": "{count} scanări încărcate împreună — combinați?",
-        "combine": "Creează Factură →"
+        "dismiss": "Închide"
       }
     },
     "ViewInvoices": {
@@ -1581,7 +1588,28 @@
         "searchPlaceholder": "Caută facturi...",
         "filters": {
           "category": "Categorie",
-          "timeOfDay": "Momentul zilei"
+          "timeOfDay": "Momentul zilei",
+          "categories": "Categories",
+          "paymentTypes": "Payment Types",
+          "dateRange": "Date Range",
+          "dateFrom": "From date",
+          "dateTo": "To date",
+          "amountRange": "Amount Range",
+          "amountMin": "Min amount",
+          "amountMax": "Max amount",
+          "sortBy": "Sort By",
+          "sortOptions": {
+            "dateNewest": "Date (newest first)",
+            "dateOldest": "Date (oldest first)",
+            "amountHighToLow": "Amount (high to low)",
+            "amountLowToHigh": "Amount (low to high)",
+            "nameAZ": "Name (A-Z)",
+            "nameZA": "Name (Z-A)"
+          },
+          "title": "Filters",
+          "button": "Filters",
+          "clear": "Clear all",
+          "activeCount": "{count} active"
         },
         "categories": {
           "all": "Toate categoriile",
@@ -1607,45 +1635,110 @@
         "title": "Statistici facturi",
         "subtitle": "Gestionează bonurile și urmărește obiceiurile tale de cheltuieli",
         "charts": {
+          "calendarHeatmap": {
+            "days": {
+              "wed": "Mie",
+              "thu": "Joi",
+              "fri": "Vin",
+              "sun": "Dum",
+              "mon": "Lun",
+              "sat": "Sâm",
+              "tue": "Mar"
+            },
+            "tooltip": {
+              "noSpending": "Fără cheltuieli",
+              "amount": "Cheltuit",
+              "invoices": "{count} facturi"
+            },
+            "legend": {
+              "less": "Mai puțin",
+              "more": "Mai mult"
+            },
+            "title": "Calendar Cheltuieli",
+            "description": "Intensitatea cheltuielilor zilnice în timp",
+            "navigation": {
+              "previous": "Luna anterioară",
+              "next": "Luna următoare"
+            },
+            "aria": {
+              "calendarGrid": "Calendar cheltuieli zilnice"
+            }
+          },
           "spendingOverTime": {
-            "title": "Cheltuieli în Timp",
             "labels": {
               "amount": "Sumă"
             },
             "tooltip": {
               "invoiceCount": "{count} facturi"
             },
+            "title": "Cheltuieli în Timp",
             "description": "Urmăriți tendințele cheltuielilor"
           },
-          "calendarHeatmap": {
-            "days": {
-              "fri": "Vin",
-              "sun": "Dum",
-              "thu": "Joi",
-              "wed": "Mie",
-              "tue": "Mar",
-              "sat": "Sâm",
-              "mon": "Lun"
-            },
-            "title": "Calendar Cheltuieli",
+          "categoryBreakdown": {
+            "title": "Spending by Category",
+            "description": "Distribution across categories",
+            "totalLabel": "Total Spending",
             "tooltip": {
-              "noSpending": "Fără cheltuieli",
-              "invoices": "{count} facturi",
-              "amount": "Cheltuit"
+              "invoiceCount": "{count} invoices"
+            }
+          },
+          "merchantLeaderboard": {
+            "title": "Top Merchants",
+            "description": "Where you spend most",
+            "labels": {
+              "totalSpent": "Total Spent"
             },
-            "aria": {
-              "calendarGrid": "Calendar cheltuieli zilnice"
+            "tooltip": {
+              "invoiceCount": "{count} invoices"
+            }
+          },
+          "priceDistribution": {
+            "title": "Price Distribution",
+            "description": "Item price distribution",
+            "labels": {
+              "itemCount": "Item Count"
             },
-            "legend": {
-              "more": "Mai mult",
-              "less": "Mai puțin"
+            "tooltip": {
+              "itemCount": "{count} items"
+            }
+          },
+          "timeOfDay": {
+            "title": "Shopping Patterns",
+            "description": "When you shop",
+            "labels": {
+              "invoiceCount": "Invoice Count"
             },
-            "description": "Intensitatea cheltuielilor zilnice în timp",
-            "navigation": {
-              "next": "Luna următoare",
-              "previous": "Luna anterioară"
+            "tooltip": {
+              "invoiceCount": "{count} invoices"
             }
           }
+        },
+        "kpi": {
+          "totalSpending": "Total Spending",
+          "invoiceCount": "Invoice Count",
+          "topMerchant": "Top Merchant",
+          "averageItems": "Avg. Items",
+          "vsLastMonth": "{delta}% vs last month",
+          "avgPerInvoice": "avg {amount} per invoice",
+          "visits": "{count} visits",
+          "acrossInvoices": "across {count} invoices",
+          "noneYet": "No data yet"
+        },
+        "comparison": {
+          "title": "Month-over-Month",
+          "description": "Comparison with previous month",
+          "spendingDelta": "Spending Change",
+          "invoiceCount": "Invoice Count",
+          "newMerchants": "New Merchants",
+          "discovered": "discovered",
+          "none": "none",
+          "increase": "increase",
+          "decrease": "decrease"
+        },
+        "empty": {
+          "title": "No Statistics Yet",
+          "subtitle": "Upload receipts to see analytics",
+          "cta": "Upload Receipt"
         }
       },
       "generativeView": {
@@ -2367,13 +2460,13 @@
         }
       },
       "relatedInvoices": {
-        "sameMerchant": "Același Comerciant",
         "noRelated": "Nu s-au găsit facturi conexe",
-        "title": "Facturi Conexe",
-        "viewInvoice": "Vizualizare",
-        "sameCategory": "Aceeași Categorie",
         "subtitle": "Facturi similare bazate pe comerciant, categorie sau sumă",
-        "similarAmount": "Sumă Similară"
+        "sameCategory": "Aceeași Categorie",
+        "viewInvoice": "Vizualizare",
+        "similarAmount": "Sumă Similară",
+        "sameMerchant": "Același Comerciant",
+        "title": "Facturi Conexe"
       },
       "shareCollaborate": {
         "title": "Partajare & Colaborare",
@@ -2392,6 +2485,55 @@
           "daysAgo": "{count, plural, one {acum # zi} other {acum # zile}}",
           "today": "astăzi"
         }
+      },
+      "healthScore": {
+        "title": "Invoice Completeness",
+        "subtitle": "How complete is your invoice data",
+        "points": "points",
+        "showDetails": "Show details",
+        "hideDetails": "Hide details",
+        "factors": {
+          "name": "Name provided",
+          "items": "Items extracted",
+          "payment": "Payment information",
+          "recipes": "Recipes generated",
+          "category": "Category set",
+          "description": "Description added",
+          "date": "Transaction date",
+          "merchant": "Merchant information"
+        },
+        "cta": {
+          "analyze": "Run AI Analysis",
+          "edit": "Edit Invoice"
+        },
+        "status": {
+          "complete": "Complete",
+          "needsWork": "Needs Work",
+          "incomplete": "Incomplete"
+        }
+      },
+      "itemAnalytics": {
+        "title": "Items",
+        "searchPlaceholder": "Search items...",
+        "columns": {
+          "name": "Name",
+          "category": "Category",
+          "price": "Price",
+          "quantity": "Qty",
+          "total": "Total"
+        },
+        "summary": {
+          "title": "Summary",
+          "mostExpensive": "Most expensive",
+          "cheapest": "Cheapest",
+          "categories": "{count} categories",
+          "allergens": "{count} allergens detected"
+        },
+        "empty": {
+          "title": "No items",
+          "subtitle": "Run AI analysis to extract items from your receipt"
+        },
+        "totalLabel": "TOTAL"
       }
     },
     "EditInvoice": {
@@ -3071,27 +3213,27 @@
         }
       },
       "changeHistory": {
-        "created": "Factură creată",
-        "pending": "În așteptare",
-        "title": "Istoric Modificări",
-        "modified": "Ultima modificare",
-        "time": {
-          "hoursAgo": "acum {hours} ore",
-          "justNow": "Acum",
-          "daysAgo": "acum {days} zile",
-          "minutesAgo": "acum {minutes} minute",
-          "secondsAgo": "acum {seconds} secunde"
-        },
         "unsavedChanges": "Modificări nesalvate",
+        "pending": "În așteptare",
+        "created": "Factură creată",
+        "title": "Istoric Modificări",
+        "time": {
+          "justNow": "Acum",
+          "secondsAgo": "acum {seconds} secunde",
+          "hoursAgo": "acum {hours} ore",
+          "daysAgo": "acum {days} zile",
+          "minutesAgo": "acum {minutes} minute"
+        },
+        "modified": "Ultima modificare",
         "changes": {
-          "unmarkedImportant": "Demarcat ca important",
-          "importanceChanged": "Importanță modificată",
           "paymentTypeChanged": "Tip plată modificat",
+          "unmarkedImportant": "Demarcat ca important",
           "categoryUpdated": "Categorie actualizată",
           "transactionDateChanged": "Data tranzacției modificată",
-          "markedImportant": "Marcat ca important",
           "nameChanged": "Nume modificat",
-          "descriptionChanged": "Descriere modificată"
+          "descriptionChanged": "Descriere modificată",
+          "markedImportant": "Marcat ca important",
+          "importanceChanged": "Importanță modificată"
         }
       }
     },
@@ -3278,41 +3420,41 @@
         }
       },
       "onboarding": {
-        "getStarted": "Începe",
-        "next": "Următorul",
-        "back": "Înapoi",
-        "skip": "Sari peste",
         "steps": {
           "upload": {
-            "title": "Încarcă Chitanțele Tale",
-            "description": "Fă o fotografie sau încarcă un PDF al chitanței tale. Sistemul nostru acceptă multiple formate și poate procesa loturi de chitanțe deodată."
+            "description": "Fă o fotografie sau încarcă un PDF al chitanței tale. Sistemul nostru acceptă multiple formate și poate procesa loturi de chitanțe deodată.",
+            "title": "Încarcă Chitanțele Tale"
           },
           "analyze": {
-            "title": "AI Extrage Detaliile",
-            "description": "Sistemul nostru bazat pe AI extrage automat numele comercianților, datele, sumele și articolele din chitanțele tale cu acuratețe ridicată."
+            "description": "Sistemul nostru bazat pe AI extrage automat numele comercianților, datele, sumele și articolele din chitanțele tale cu acuratețe ridicată.",
+            "title": "AI Extrage Detaliile"
           },
           "track": {
-            "title": "Urmărește Cheltuielile Tale",
-            "description": "Vizualizează analize detaliate și perspective asupra tiparelor tale de cheltuieli. Înțelege unde se duc banii tăi cu diagrame și rapoarte interactive."
+            "description": "Vizualizează analize detaliate și perspective asupra tiparelor tale de cheltuieli. Înțelege unde se duc banii tăi cu diagrame și rapoarte interactive.",
+            "title": "Urmărește Cheltuielile Tale"
           }
         },
-        "stepOf": "Pasul {current} din {total}"
+        "getStarted": "Începe",
+        "stepOf": "Pasul {current} din {total}",
+        "next": "Următorul",
+        "skip": "Sari peste",
+        "back": "Înapoi"
       },
       "notifications": {
-        "title": "Notificări",
-        "markAllRead": "Marchează toate ca citite",
-        "noNotifications": "Nu există notificări încă",
         "timeAgo": {
-          "days": "{count, plural, one {acum # zi} other {acum # zile}}",
-          "now": "Chiar acum",
+          "hours": "{count, plural, one {acum # oră} other {acum # ore}}",
           "minutes": "{count, plural, one {acum # minut} other {acum # minute}}",
-          "hours": "{count, plural, one {acum # oră} other {acum # ore}}"
+          "days": "{count, plural, one {acum # zi} other {acum # zile}}",
+          "now": "Chiar acum"
         },
         "types": {
-          "monthlyReport": "Raportul lunar este gata",
           "invoiceCreated": "Factură creată",
-          "analysisComplete": "Analiza AI finalizată"
-        }
+          "analysisComplete": "Analiza AI finalizată",
+          "monthlyReport": "Raportul lunar este gata"
+        },
+        "title": "Notificări",
+        "noNotifications": "Nu există notificări încă",
+        "markAllRead": "Marchează toate ca citite"
       },
       "preferences": {
         "title": "Preferințe Facturi",
@@ -3336,11 +3478,128 @@
         }
       },
       "mobileNav": {
-        "home": "Acasă",
+        "profile": "Profil",
         "ariaLabel": "Navigare mobilă",
+        "home": "Acasă",
         "scan": "Scanare",
-        "invoices": "Facturi",
-        "profile": "Profil"
+        "invoices": "Facturi"
+      }
+    },
+    "CreateInvoice": {
+      "metadata": {
+        "title": "Invoice Management System - Create Invoice",
+        "description": "Create a new invoice from your uploaded scans."
+      },
+      "navigation": {
+        "back": "Back",
+        "next": "Next"
+      },
+      "emptyState": {
+        "title": "No Scans Available",
+        "description": "Upload some receipt scans first to create an invoice.",
+        "uploadButton": "Upload Scans",
+        "viewScansButton": "View Scans"
+      },
+      "header": {
+        "backToInvoices": "Back to Invoices",
+        "title": "Create Invoice",
+        "subtitle": "Follow the steps below to create a new invoice from your scans"
+      },
+      "steps": {
+        "selectScans": "Select Scans",
+        "details": "Invoice Details",
+        "review": "Review & Create"
+      },
+      "scanSelector": {
+        "title": "Select Scans",
+        "subtitle": "Choose the scans that belong to this invoice",
+        "selectedCount": "{count} selected",
+        "clearAll": "Clear",
+        "selectAll": "Select All",
+        "noScans": "No scans available"
+      },
+      "detailsForm": {
+        "title": "Invoice Details",
+        "subtitle": "Provide the details for your new invoice",
+        "fields": {
+          "name": {
+            "label": "Invoice Name",
+            "placeholder": "e.g., Weekly Groceries",
+            "hint": "Give your invoice a descriptive name"
+          },
+          "category": {
+            "label": "Category",
+            "placeholder": "Select a category",
+            "options": {
+              "notDefined": "Uncategorized",
+              "grocery": "Grocery",
+              "fastFood": "Dining",
+              "homeCleaning": "Home & Cleaning",
+              "carAuto": "Auto & Vehicle",
+              "other": "Other"
+            }
+          },
+          "paymentType": {
+            "label": "Payment Method",
+            "placeholder": "Select payment method",
+            "options": {
+              "unknown": "Unknown",
+              "cash": "Cash",
+              "card": "Card",
+              "transfer": "Bank Transfer",
+              "mobilePayment": "Mobile Payment",
+              "voucher": "Voucher",
+              "other": "Other"
+            }
+          },
+          "transactionDate": {
+            "label": "Transaction Date"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Add any notes about this invoice (optional)",
+            "hint": "Optional notes about this purchase"
+          }
+        }
+      },
+      "reviewStep": {
+        "title": "Review & Create",
+        "subtitle": "Review your invoice details before creating",
+        "categories": {
+          "notDefined": "Uncategorized",
+          "grocery": "Grocery",
+          "fastFood": "Dining",
+          "homeCleaning": "Home & Cleaning",
+          "carAuto": "Auto & Vehicle",
+          "other": "Other"
+        },
+        "paymentTypes": {
+          "unknown": "Unknown",
+          "cash": "Cash",
+          "card": "Card",
+          "transfer": "Bank Transfer",
+          "mobilePayment": "Mobile Payment",
+          "voucher": "Voucher",
+          "other": "Other"
+        },
+        "sections": {
+          "scans": {
+            "title": "Scans"
+          },
+          "details": {
+            "title": "Invoice Details",
+            "name": "Name",
+            "category": "Category",
+            "paymentType": "Payment Method",
+            "transactionDate": "Transaction Date",
+            "description": "Description"
+          }
+        },
+        "actions": {
+          "creating": "Creating invoice...",
+          "create": "Create Invoice",
+          "hint": "This will create the invoice and upload the selected scans."
+        }
       }
     }
   },

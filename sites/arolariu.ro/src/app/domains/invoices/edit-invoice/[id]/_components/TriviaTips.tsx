@@ -36,13 +36,16 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 /**
  * Represents a context-aware tip suggestion.
  */
+type ContextTipMessageKey = "contextTips.noItems" | "contextTips.noDescription" | "contextTips.noCategory" | "contextTips.noRecipes";
+type ContextTipActionKey = "contextActions.analyze" | "contextActions.addDescription" | "contextActions.setCategory";
+
 type ContextTip = {
   /** Unique identifier for the tip */
   readonly id: string;
   /** i18n key for the tip message */
-  readonly messageKey: string;
+  readonly messageKey: ContextTipMessageKey;
   /** i18n key for the action button */
-  readonly actionKey: string;
+  readonly actionKey: ContextTipActionKey;
   /** Action handler function */
   readonly action: () => void;
   /** Icon component */
@@ -201,12 +204,12 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
 
     // No category or default category → Set category
     if (
-      (invoice.category === InvoiceCategory.NOT_DEFINED || invoice.category === InvoiceCategory.UNCATEGORIZED)
+      invoice.category === InvoiceCategory.NOT_DEFINED
       && !dismissedTips.includes("noCategory")
     ) {
       tips.push({
         id: "noCategory",
-        messageKey: invoice.category === InvoiceCategory.UNCATEGORIZED ? "contextTips.defaultCategory" : "contextTips.noCategory",
+        messageKey: "contextTips.noCategory",
         actionKey: "contextActions.setCategory",
         action: () => {
           // Focus category select
@@ -285,7 +288,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         {/* Completeness Progress Bar */}
         <div className={styles["completenessSection"]}>
           <div className={styles["completenessHeader"]}>
-            <p className={styles["completenessLabel"]}>{t("completeness", {percentage})}</p>
+            <p className={styles["completenessLabel"]}>{t("completeness", {percentage: String(percentage)})}</p>
             <p className={styles["completenessScore"]}>
               {completenessScore} / {maxScore}
             </p>

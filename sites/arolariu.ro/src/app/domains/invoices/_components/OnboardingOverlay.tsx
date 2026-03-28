@@ -144,17 +144,17 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 opacity: {duration: 0.2},
               }}
               className={styles["stepContent"]}>
-              <div className={styles["iconWrapper"]}>{steps[currentStep].icon}</div>
+              <div className={styles["iconWrapper"]}>{steps.at(currentStep)?.icon}</div>
 
               <p className={styles["stepIndicator"]}>
                 {t("stepOf", {
-                  current: currentStep + 1,
-                  total: steps.length,
+                  current: String(currentStep + 1),
+                  total: String(steps.length),
                 })}
               </p>
 
-              <h2 className={styles["stepTitle"]}>{steps[currentStep].title}</h2>
-              <p className={styles["stepDescription"]}>{steps[currentStep].description}</p>
+              <h2 className={styles["stepTitle"]}>{steps.at(currentStep)?.title}</h2>
+              <p className={styles["stepDescription"]}>{steps.at(currentStep)?.description}</p>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -171,8 +171,8 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                   setCurrentStep(index);
                 }}
                 aria-label={`${t("stepOf", {
-                  current: index + 1,
-                  total: steps.length,
+                  current: String(index + 1),
+                  total: String(steps.length),
                 })}`}
                 aria-current={index === currentStep}
               />

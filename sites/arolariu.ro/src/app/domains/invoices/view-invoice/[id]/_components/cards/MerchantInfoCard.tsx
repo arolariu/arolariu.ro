@@ -111,7 +111,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     const monthlyTotals = new Map<string, number>();
     merchantInvoices.forEach((inv: Invoice) => {
-      const date = new Date(inv.paymentInformation.paidAtDateAndTime);
+      const date = new Date(inv.paymentInformation.transactionDate);
       const monthKey = date.toLocaleString("en-US", {month: "short", year: "numeric"});
       const currentTotal = monthlyTotals.get(monthKey) ?? 0;
       monthlyTotals.set(monthKey, currentTotal + inv.paymentInformation.totalCostAmount);
@@ -136,7 +136,7 @@ export function MerchantInfoCard(): React.JSX.Element {
     const avgSpend = count > 0 ? totalSpent / count : 0;
 
     const sortedDates = merchantInvoices
-      .map((inv: Invoice) => new Date(inv.paymentInformation.paidAtDateAndTime))
+      .map((inv: Invoice) => new Date(inv.paymentInformation.transactionDate))
       .sort((a, b) => b.getTime() - a.getTime());
 
     const lastVisitDate = sortedDates[0];
@@ -153,7 +153,7 @@ export function MerchantInfoCard(): React.JSX.Element {
     if (merchantInvoices.length === 0) return [];
 
     const categoryCounts = new Map<MerchantCategory, number>();
-    merchantInvoices.forEach((inv: Invoice) => {
+    merchantInvoices.forEach(() => {
       const category = merchant.category;
       const currentCount = categoryCounts.get(category) ?? 0;
       categoryCounts.set(category, currentCount + 1);

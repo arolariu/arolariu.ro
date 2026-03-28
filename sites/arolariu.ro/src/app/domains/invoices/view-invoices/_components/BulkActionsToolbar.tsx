@@ -79,7 +79,7 @@ import styles from "./BulkActionsToolbar.module.scss";
  */
 export default function BulkActionsToolbar(): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.bulkActions");
-  const {openDialog} = useDialog();
+  const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 
   // Use shallow selector to optimize re-renders
   const {selectedInvoices, clearSelectedInvoices, removeInvoice, updateInvoice} = useInvoicesStore(
@@ -98,8 +98,8 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
    * Opens the export dialog with selected invoices.
    */
   const handleExport = useCallback(() => {
-    openDialog("VIEW_INVOICES__EXPORT", "view", {invoices: selectedInvoices});
-  }, [openDialog, selectedInvoices]);
+    openExportDialog();
+  }, [openExportDialog, selectedInvoices]);
 
   /**
    * Handles bulk deletion of selected invoices.
@@ -130,7 +130,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
       } else if (successCount === 0) {
         toast.error(t("deleteError"));
       } else {
-        toast.success(t("deletePartialSuccess", {success: successCount, failed: failureCount}));
+        toast.success(t("deletePartialSuccess", {success: String(successCount), failed: String(failureCount)}));
       }
 
       clearSelectedInvoices();
@@ -182,7 +182,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
         } else if (successCount === 0) {
           toast.error(t("categoryChangeError"));
         } else {
-          toast.success(t("categoryPartialSuccess", {success: successCount, failed: failureCount}));
+          toast.success(t("categoryPartialSuccess", {success: String(successCount), failed: String(failureCount)}));
         }
 
         clearSelectedInvoices();

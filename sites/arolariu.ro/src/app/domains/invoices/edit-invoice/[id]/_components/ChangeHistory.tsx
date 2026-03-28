@@ -50,7 +50,7 @@ interface ChangeHistoryItem {
 /**
  * Formats a timestamp as relative time (e.g., "Just now", "2 minutes ago").
  */
-function formatRelativeTime(date: Date, t: ReturnType<typeof useTranslations>): string {
+function formatRelativeTime(date: Date): string {
   const now = Date.now();
   const diff = now - date.getTime();
   const seconds = Math.floor(diff / 1000);
@@ -58,42 +58,24 @@ function formatRelativeTime(date: Date, t: ReturnType<typeof useTranslations>): 
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 10) {
-    return t("Invoices.EditInvoice.changeHistory.time.justNow");
-  }
-  if (seconds < 60) {
-    return t("Invoices.EditInvoice.changeHistory.time.secondsAgo", {seconds: String(seconds)});
-  }
-  if (minutes < 60) {
-    return t("Invoices.EditInvoice.changeHistory.time.minutesAgo", {minutes: String(minutes)});
-  }
-  if (hours < 24) {
-    return t("Invoices.EditInvoice.changeHistory.time.hoursAgo", {hours: String(hours)});
-  }
-  if (days < 7) {
-    return t("Invoices.EditInvoice.changeHistory.time.daysAgo", {days: String(days)});
-  }
-
-  // Fallback to formatted date
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  if (seconds < 10) return "Just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
 }
 
 /**
  * Gets the display name for an invoice category.
  */
 function getCategoryName(category: InvoiceCategory): string {
-  const categoryNames: Record<InvoiceCategory, string> = {
-    [InvoiceCategory.Uncategorized]: "Uncategorized",
-    [InvoiceCategory.Groceries]: "Groceries",
-    [InvoiceCategory.Dining]: "Dining",
-    [InvoiceCategory.Utilities]: "Utilities",
-    [InvoiceCategory.Entertainment]: "Entertainment",
-    [InvoiceCategory.Travel]: "Travel",
-    [InvoiceCategory.Other]: "Other",
+  const categoryNames: Partial<Record<InvoiceCategory, string>> = {
+    [InvoiceCategory.NOT_DEFINED]: "Uncategorized",
+    [InvoiceCategory.GROCERY]: "Grocery",
+    [InvoiceCategory.FAST_FOOD]: "Dining",
+    [InvoiceCategory.HOME_CLEANING]: "Home",
+    [InvoiceCategory.CAR_AUTO]: "Auto",
+    [InvoiceCategory.OTHER]: "Other",
   };
   return categoryNames[category] ?? "Unknown";
 }
@@ -191,12 +173,12 @@ export default function ChangeHistory(): React.JSX.Element {
     }
 
     // Add last modified (if different from created)
-    if (invoice.updatedAt && invoice.updatedAt.getTime() !== invoice.createdAt.getTime()) {
+    if (invoice.lastUpdatedAt && invoice.lastUpdatedAt.getTime() !== invoice.createdAt.getTime()) {
       items.push({
         id: "modified",
         type: "modified",
         title: t("Invoices.EditInvoice.changeHistory.modified"),
-        timestamp: invoice.updatedAt,
+        timestamp: invoice.lastUpdatedAt,
         icon: <TbClock className={styles["timelineIcon"]} />,
       });
     }
@@ -243,7 +225,7 @@ export default function ChangeHistory(): React.JSX.Element {
                 )}
               </div>
               {item.description && <p className={styles["changeDescription"]}>{item.description}</p>}
-              <p className={styles["changeTimestamp"]}>{formatRelativeTime(item.timestamp, t)}</p>
+              <p className={styles["changeTimestamp"]}>{formatRelativeTime(item.timestamp)}</p>
             </div>
           </div>
         ))}

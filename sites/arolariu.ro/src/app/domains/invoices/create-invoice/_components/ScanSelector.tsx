@@ -34,8 +34,6 @@ function ScanCard({
   isSelected: boolean;
   onToggle: () => void;
 }>): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.scanSelector");
-
   const cardClassName = [styles["scanCard"], isSelected && styles["scanCardSelected"]].filter(Boolean).join(" ");
 
   const formatSize = (bytes: number): string => {
@@ -130,7 +128,7 @@ export default function ScanSelector(): React.JSX.Element {
             <Badge
               variant='secondary'
               className={styles["selectedBadge"]}>
-              {t("selectedCount", {count: selectedScans.length})}
+              {t("selectedCount", {count: String(selectedScans.length)})}
             </Badge>
           )}
 

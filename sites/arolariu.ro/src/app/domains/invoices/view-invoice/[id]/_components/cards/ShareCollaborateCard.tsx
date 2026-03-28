@@ -86,7 +86,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.shareCollaborate");
   const {invoice} = useInvoiceContext();
-  const {openDialog} = useDialog();
+  const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
 
   /**
    * Computes the current sharing status based on invoice.sharedWith array.
@@ -222,8 +222,8 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * **Performance:** Memoized with useCallback.
    */
   const handleShareEmail = useCallback((): void => {
-    openDialog("shareInvoice");
-  }, [openDialog]);
+    openShareDialog();
+  }, [openShareDialog]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.
@@ -235,8 +235,8 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * **Performance:** Memoized with useCallback.
    */
   const handleManageSharing = useCallback((): void => {
-    openDialog("shareInvoice");
-  }, [openDialog]);
+    openShareDialog();
+  }, [openShareDialog]);
 
   return (
     <Card>

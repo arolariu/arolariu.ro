@@ -56,7 +56,7 @@ import styles from "./InvoiceHealthScore.module.scss";
  */
 type ScoreFactor = {
   /** i18n key for the factor label */
-  readonly key: string;
+  readonly key: "name" | "merchant" | "items" | "payment" | "date" | "category" | "description" | "recipes";
   /** Points awarded if achieved */
   readonly points: number;
   /** Whether this factor is satisfied */
@@ -170,7 +170,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
   /**
    * Determine status color and label based on percentage.
    */
-  const status = useMemo(() => {
+  const status = useMemo((): {key: "complete" | "needsWork" | "incomplete"; color: string} => {
     if (percentage >= 80) {
       return {key: "complete", color: "success"};
     }

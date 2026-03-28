@@ -184,6 +184,7 @@ function UploadContent(): React.JSX.Element {
         }));
       setCompletedScans(completed);
     }
+    return undefined;
   }, [pendingUploads, sessionStats.totalCompleted, showPrompt]);
 
   /**
