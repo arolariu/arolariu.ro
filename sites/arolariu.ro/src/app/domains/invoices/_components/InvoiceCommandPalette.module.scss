@@ -1,0 +1,72 @@
+/**
+ * Invoice Command Palette Styles
+ * 
+ * Styles for the invoice-specific command palette that provides quick actions
+ * and search functionality for invoices. Extends the base Command component
+ * with domain-specific styling for invoice items and metadata display.
+ */
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// COMMAND ITEM CONTENT
+// ===========================================
+
+.commandItemContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: space(3);
+  width: 100%;
+}
+
+// ===========================================
+// COMMAND ICON
+// ===========================================
+
+.commandIcon {
+  flex-shrink: 0;
+  width: space(5);
+  height: space(5);
+  color: color('muted-foreground');
+  @include transition(color);
+
+  [data-selected='true'] & {
+    color: color('foreground');
+  }
+}
+
+// ===========================================
+// INVOICE DETAILS
+// ===========================================
+
+.invoiceDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: space(0.5);
+  flex: 1;
+  min-width: 0;
+}
+
+.invoiceName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+  @include line-clamp(1);
+  width: 100%;
+
+  [data-selected='true'] & {
+    color: color('accent-foreground');
+  }
+}
+
+.invoiceMeta {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  @include line-clamp(1);
+  width: 100%;
+
+  [data-selected='true'] & {
+    color: color-alpha('accent-foreground', 0.8);
+  }
+}

@@ -1,0 +1,95 @@
+/**
+ * Mobile Bottom Navigation Styles
+ * 
+ * Fixed bottom navigation bar with glass morphism effect, visible only on mobile devices.
+ * Features safe area insets for notched devices and active state highlighting.
+ */
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// NAVIGATION CONTAINER
+// ===========================================
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: z('sticky');
+  @include flex(row, space-around, center, nowrap);
+  padding: space(2) 0;
+  padding-bottom: calc(space(2) + env(safe-area-inset-bottom, 0px));
+  background-color: color-alpha('background', 0.9);
+  @include backdrop-blur(blur-size('lg'));
+  border-top: 1px solid color('border');
+
+  // Hide on desktop (md and above)
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+// ===========================================
+// NAVIGATION ITEMS
+// ===========================================
+
+.navItem {
+  @include flex-column;
+  align-items: center;
+  gap: space(0.5);
+  text-decoration: none;
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  @include transition((color, transform));
+  cursor: pointer;
+
+  // Hover state (on devices that support hover)
+  @media (hover: hover) {
+    &:hover {
+      color: color('foreground');
+    }
+  }
+
+  // Active state
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.navItemActive {
+  color: color('primary');
+  font-weight: font-weight('medium');
+
+  // Add subtle bottom indicator for active state
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: space(1);
+    height: space(1);
+    background-color: color('primary');
+    border-radius: radius('full');
+  }
+}
+
+// ===========================================
+// ICON STYLING
+// ===========================================
+
+.navIcon {
+  @include icon-size(space(6));
+  flex-shrink: 0;
+}
+
+// ===========================================
+// LABEL STYLING
+// ===========================================
+
+.navLabel {
+  font-size: font-size('xs');
+  line-height: line-height('tight');
+  text-align: center;
+  @include line-clamp(1);
+}
