@@ -38,10 +38,10 @@ type ShortcutsHelpDialogProps = {
  * Keyboard shortcut display item.
  */
 type ShortcutItem = {
-  /** The keys to display (e.g., ["Ctrl", "K"]). */
+  /** The keys to display (e.g., ["Ctrl", "N"]). */
   keys: string[];
   /** Translation key for the shortcut description. */
-  descriptionKey: "openSearch" | "newInvoice" | "uploadScan" | "showHelp" | "closeDialog";
+  descriptionKey: "newInvoice" | "uploadScan" | "showHelp" | "closeDialog";
 };
 
 /**
@@ -57,7 +57,6 @@ type ShortcutItem = {
  * - Fully internationalized with translations from `Invoices.Shared.shortcuts`
  *
  * **Shortcuts Displayed**:
- * - Ctrl+K: Open search/command palette
  * - Ctrl+N: Create new invoice
  * - Ctrl+U: Upload scans
  * - ?: Show this help dialog
@@ -93,7 +92,6 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
    * List of keyboard shortcuts to display in the dialog.
    */
   const shortcuts: ShortcutItem[] = [
-    {keys: [modifierKey, "K"], descriptionKey: "openSearch"},
     {keys: [modifierKey, "N"], descriptionKey: "newInvoice"},
     {keys: [modifierKey, "U"], descriptionKey: "uploadScan"},
     {keys: ["?"], descriptionKey: "showHelp"},

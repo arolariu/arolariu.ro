@@ -3,9 +3,10 @@
 import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {useWindowSize} from "@arolariu/components";
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useEffect} from "react";
 import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
-import FilterBar, {type FilterState} from "../filters/FilterBar";
+import {useInvoiceFilters} from "../../_hooks/useInvoiceFilters";
+import FilterBar from "../filters/FilterBar";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
 import styles from "./InvoicesView.module.scss";
@@ -19,32 +20,46 @@ type Props = {
  * It allows users to switch between table and grid views.
  *
  * @remarks
- * This component integrates the new FilterBar component with comprehensive filtering:
- * - Text search with debouncing
- * - Date range filtering
- * - Amount range filtering
+ * This component integrates URL-based filter management using the `useInvoiceFilters` hook.
+ * All filter state is synchronized with URL search parameters, enabling:
+ * - **Bookmarkable filters**: Users can save filtered views as bookmarks
+ * - **Shareable URLs**: Users can share filtered views with colleagues
+ * - **Browser history**: Back/forward navigation respects filter changes
+ * - **No prop drilling**: Filter state is managed via URL, not React state
+ *
+ * **Filter Capabilities**:
+ * - Text search with debouncing (300ms)
+ * - Date range filtering (from/to dates)
+ * - Amount range filtering (min/max amounts)
  * - Multi-select category filtering
  * - Multi-select payment type filtering
- * - Sort by multiple fields
+ * - Sort by multiple fields (date, amount, name)
+ * - View mode toggle (table/grid)
  *
- * Defaults to grid view on mobile devices for better touch interaction.
+ * **Responsive Design**:
+ * - Defaults to grid view on mobile devices for better touch interaction
+ * - Uses window size detection to set initial view mode
+ * - View mode is stored in URL and persists across sessions
+ *
+ * **Performance**:
+ * - Filtered results are memoized via `useFilteredInvoices` hook
+ * - Pagination reduces DOM nodes for large invoice lists
+ * - Debounced search input prevents excessive filtering
  *
  * @param props - Component props
  * @returns The RenderInvoicesView component, CSR'ed.
  */
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
   const {isMobile} = useWindowSize();
-  const [viewMode, setViewMode] = useState<"table" | "grid">(isMobile ? "grid" : "table");
-  const [filters, setFilters] = useState<FilterState>({
-    searchQuery: "",
-    dateFrom: null,
-    dateTo: null,
-    amountMin: null,
-    amountMax: null,
-    categories: [],
-    paymentTypes: [],
-    sortBy: "date-desc",
-  });
+  const {filters, setFilters, activeFilterCount} = useInvoiceFilters();
+
+  // Set initial view mode based on device type (only on first render if not in URL)
+  useEffect(() => {
+    if (!filters.view) {
+      setFilters({view: isMobile ? "grid" : "table"});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   // Apply filters and sorting
   const filteredInvoices = useFilteredInvoices(invoices, filters);
@@ -53,41 +68,31 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
     items: filteredInvoices,
     initialPageSize: 10,
-    searchQuery: "", // Search is handled by FilterBar
+    searchQuery: "", // Search is handled by URL filters
   });
 
   /**
-   * Calculate active filter count for badge.
-   */
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.searchQuery.trim()) count++;
-    if (filters.dateFrom) count++;
-    if (filters.dateTo) count++;
-    if (filters.amountMin !== null) count++;
-    if (filters.amountMax !== null) count++;
-    if (filters.categories.length > 0) count++;
-    if (filters.paymentTypes.length > 0) count++;
-    return count;
-  }, [filters]);
-
-  /**
-   * Handle filter changes.
+   * Handle filter changes from FilterBar.
+   * Updates URL search params via the useInvoiceFilters hook.
    */
   const handleFiltersChange = useCallback(
-    (newFilters: FilterState) => {
+    (newFilters: Partial<typeof filters>) => {
       setFilters(newFilters);
       setCurrentPage(1); // Reset to first page when filters change
     },
-    [setCurrentPage],
+    [setFilters, setCurrentPage],
   );
 
   /**
    * Handle view mode change.
+   * Updates URL search params to persist view mode.
    */
-  const handleViewModeChange = useCallback((mode: "table" | "grid") => {
-    setViewMode(mode);
-  }, []);
+  const handleViewModeChange = useCallback(
+    (mode: "table" | "grid") => {
+      setFilters({view: mode});
+    },
+    [setFilters],
+  );
 
   /**
    * Handle pagination.
@@ -113,10 +118,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   );
 
   /**
-   * Render view content based on view mode.
+   * Render view content based on view mode from URL.
    */
   const viewContent =
-    viewMode === "table" ? (
+    filters.view === "table" ? (
       <TableView
         invoices={paginatedItems}
         pageSize={pageSize}
@@ -136,7 +141,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
         filters={filters}
         onFiltersChange={handleFiltersChange}
         activeFilterCount={activeFilterCount}
-        viewMode={viewMode}
+        viewMode={filters.view}
         onViewModeChange={handleViewModeChange}
       />
       {viewContent}

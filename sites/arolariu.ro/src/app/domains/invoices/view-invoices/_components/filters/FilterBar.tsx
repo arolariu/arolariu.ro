@@ -27,61 +27,57 @@ import {
   useWindowSize,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
+import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./FilterBar.module.scss";
-
-/**
- * Filter state type containing all filter parameters.
- */
-export type FilterState = {
-  /** Search query for invoice name/description */
-  searchQuery: string;
-  /** Start date for date range filter */
-  dateFrom: Date | null;
-  /** End date for date range filter */
-  dateTo: Date | null;
-  /** Minimum amount for amount range filter */
-  amountMin: number | null;
-  /** Maximum amount for amount range filter */
-  amountMax: number | null;
-  /** Selected invoice categories (enum values) */
-  categories: number[];
-  /** Selected payment types (enum values) */
-  paymentTypes: number[];
-  /** Sort field and direction */
-  sortBy: "date-desc" | "date-asc" | "amount-desc" | "amount-asc" | "name-asc" | "name-desc";
-};
 
 /**
  * Props for the FilterBar component.
  */
 type Props = {
-  /** Current filter state */
+  /** Current filter state from URL search params */
   filters: FilterState;
-  /** Callback when filters change */
-  onFiltersChange: (filters: FilterState) => void;
+  /** Callback when filters change (updates URL) */
+  onFiltersChange: (filters: Partial<FilterState>) => void;
   /** Number of active filters */
   activeFilterCount: number;
-  /** Current view mode */
+  /** Current view mode from URL */
   viewMode: "table" | "grid";
-  /** Callback when view mode changes */
+  /** Callback when view mode changes (updates URL) */
   onViewModeChange: (mode: "table" | "grid") => void;
 };
 
 /**
- * Advanced filter bar component for invoice list.
+ * Advanced filter bar component for invoice list with URL-based state management.
  *
  * @remarks
- * Provides comprehensive filtering and sorting capabilities including:
- * - Debounced search input
- * - Date range filtering
- * - Amount range filtering
- * - Multi-select category and payment type filters
- * - Sort options
- * - View mode toggle (table/grid)
+ * Provides comprehensive filtering and sorting capabilities with all state synchronized
+ * to URL search parameters via the parent component's `useInvoiceFilters` hook.
  *
- * Uses responsive design with Popover on desktop and Sheet on mobile.
+ * **Filter Capabilities**:
+ * - Debounced search input (300ms delay before updating URL)
+ * - Date range filtering (from/to dates stored as ISO strings in URL)
+ * - Amount range filtering (min/max amounts)
+ * - Multi-select category and payment type filters
+ * - Sort options (date, amount, name - ascending/descending)
+ * - View mode toggle (table/grid) stored in URL
+ *
+ * **URL Integration**:
+ * - All filter changes update URL search params via `onFiltersChange` callback
+ * - Date values are converted between Date objects (for Calendar) and ISO strings (for URL)
+ * - Search input is debounced to avoid excessive URL updates
+ * - Filter state is bookmarkable and shareable
+ *
+ * **Responsive Design**:
+ * - Uses Popover on desktop for compact filter panel
+ * - Uses Sheet (side panel) on mobile for better touch interaction
+ * - Automatically adjusts filter UI based on screen size
+ *
+ * **Performance**:
+ * - Debounced search prevents excessive re-renders and URL updates
+ * - Uses `useCallback` for all event handlers to avoid unnecessary re-renders
+ * - Filter panel only renders when open (via Popover/Sheet)
  *
  * @param props - Component props
  * @returns FilterBar component
@@ -89,8 +85,8 @@ type Props = {
  * @example
  * ```tsx
  * <FilterBar
- *   filters={filterState}
- *   onFiltersChange={handleFilterChange}
+ *   filters={urlFilters}
+ *   onFiltersChange={updateUrlFilters}
  *   activeFilterCount={3}
  *   viewMode="table"
  *   onViewModeChange={setViewMode}
@@ -106,16 +102,18 @@ export default function FilterBar({
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.invoicesView");
   const {isMobile} = useWindowSize();
-  const [searchInput, setSearchInput] = useState<string>(filters.searchQuery);
+  const [searchInput, setSearchInput] = useState<string>(filters.search);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
   // Debounce search input (300ms)
   const debouncedSearch = useDebounce(searchInput, 300);
 
   // Update filters when debounced search changes
-  if (debouncedSearch !== filters.searchQuery) {
-    onFiltersChange({...filters, searchQuery: debouncedSearch});
-  }
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      onFiltersChange({search: debouncedSearch});
+    }
+  }, [debouncedSearch, filters.search, onFiltersChange]);
 
   /**
    * Handle search input change.
@@ -125,12 +123,13 @@ export default function FilterBar({
   }, []);
 
   /**
-   * Clear all active filters.
+   * Clear all active filters by resetting to defaults.
+   * This updates the URL to remove all filter parameters.
    */
   const handleClearFilters = useCallback(() => {
     setSearchInput("");
     onFiltersChange({
-      searchQuery: "",
+      search: "",
       dateFrom: null,
       dateTo: null,
       amountMin: null,
@@ -143,19 +142,20 @@ export default function FilterBar({
 
   /**
    * Handle date range change.
+   * Converts Date objects to ISO strings for URL storage.
    */
   const handleDateFromChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({...filters, dateFrom: date ?? null});
+      onFiltersChange({dateFrom: date ? date.toISOString().split("T")[0] : null});
     },
-    [filters, onFiltersChange],
+    [onFiltersChange],
   );
 
   const handleDateToChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({...filters, dateTo: date ?? null});
+      onFiltersChange({dateTo: date ? date.toISOString().split("T")[0] : null});
     },
-    [filters, onFiltersChange],
+    [onFiltersChange],
   );
 
   /**
@@ -164,17 +164,17 @@ export default function FilterBar({
   const handleAmountMinChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value ? Number.parseFloat(e.target.value) : null;
-      onFiltersChange({...filters, amountMin: value});
+      onFiltersChange({amountMin: value});
     },
-    [filters, onFiltersChange],
+    [onFiltersChange],
   );
 
   const handleAmountMaxChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value ? Number.parseFloat(e.target.value) : null;
-      onFiltersChange({...filters, amountMax: value});
+      onFiltersChange({amountMax: value});
     },
-    [filters, onFiltersChange],
+    [onFiltersChange],
   );
 
   /**
@@ -185,9 +185,9 @@ export default function FilterBar({
       const newCategories = filters.categories.includes(category)
         ? filters.categories.filter((c) => c !== category)
         : [...filters.categories, category];
-      onFiltersChange({...filters, categories: newCategories});
+      onFiltersChange({categories: newCategories});
     },
-    [filters, onFiltersChange],
+    [filters.categories, onFiltersChange],
   );
 
   /**
@@ -198,9 +198,9 @@ export default function FilterBar({
       const newPaymentTypes = filters.paymentTypes.includes(paymentType)
         ? filters.paymentTypes.filter((p) => p !== paymentType)
         : [...filters.paymentTypes, paymentType];
-      onFiltersChange({...filters, paymentTypes: newPaymentTypes});
+      onFiltersChange({paymentTypes: newPaymentTypes});
     },
-    [filters, onFiltersChange],
+    [filters.paymentTypes, onFiltersChange],
   );
 
   /**
@@ -209,11 +209,10 @@ export default function FilterBar({
   const handleSortChange = useCallback(
     (value: string) => {
       onFiltersChange({
-        ...filters,
         sortBy: value as FilterState["sortBy"],
       });
     },
-    [filters, onFiltersChange],
+    [onFiltersChange],
   );
 
   /**
@@ -300,14 +299,14 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateFrom ? filters.dateFrom.toLocaleDateString() : t("filters.dateFrom")}
+                  {filters.dateFrom ? new Date(filters.dateFrom).toLocaleDateString() : t("filters.dateFrom")}
                 </Button>
               }
             />
             <PopoverContent className={styles["calendarPopover"]}>
               <Calendar
                 mode='single'
-                selected={filters.dateFrom ?? undefined}
+                selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
                 onSelect={handleDateFromChange}
               />
             </PopoverContent>
@@ -319,14 +318,14 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateTo ? filters.dateTo.toLocaleDateString() : t("filters.dateTo")}
+                  {filters.dateTo ? new Date(filters.dateTo).toLocaleDateString() : t("filters.dateTo")}
                 </Button>
               }
             />
             <PopoverContent className={styles["calendarPopover"]}>
               <Calendar
                 mode='single'
-                selected={filters.dateTo ?? undefined}
+                selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
                 onSelect={handleDateToChange}
               />
             </PopoverContent>

@@ -2,7 +2,7 @@
 
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
-import type {FilterState} from "../_components/filters/FilterBar";
+import type {FilterState} from "./useInvoiceFilters";
 
 /**
  * Custom hook for filtering and sorting invoices based on filter criteria.
@@ -28,14 +28,15 @@ import type {FilterState} from "../_components/filters/FilterBar";
  * @example
  * ```tsx
  * const filteredInvoices = useFilteredInvoices(allInvoices, {
- *   searchQuery: "grocery",
- *   dateFrom: new Date("2024-01-01"),
- *   dateTo: new Date("2024-12-31"),
+ *   search: "grocery",
+ *   dateFrom: "2024-01-01", // ISO date string
+ *   dateTo: "2024-12-31", // ISO date string
  *   amountMin: 10,
  *   amountMax: 100,
  *   categories: [InvoiceCategory.GROCERY],
  *   paymentTypes: [PaymentType.Card],
- *   sortBy: "date-desc"
+ *   sortBy: "date-desc",
+ *   view: "table"
  * });
  * ```
  */
@@ -44,8 +45,8 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     let filtered = [...invoices];
 
     // Apply text search filter
-    if (filters.searchQuery.trim()) {
-      const query = filters.searchQuery.toLowerCase().trim();
+    if (filters.search.trim()) {
+      const query = filters.search.toLowerCase().trim();
       filtered = filtered.filter((invoice) => {
         const nameMatch = invoice.name.toLowerCase().includes(query);
         const descriptionMatch = invoice.description.toLowerCase().includes(query);
@@ -53,7 +54,7 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       });
     }
 
-    // Apply date range filter
+    // Apply date range filter (dates come as ISO strings from URL)
     if (filters.dateFrom) {
       const fromDate = new Date(filters.dateFrom);
       fromDate.setHours(0, 0, 0, 0);

@@ -4,6 +4,7 @@ import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
+import {Suspense} from "react";
 import RenderViewInvoicesScreen from "./island";
 import styles from "./page.module.scss";
 
@@ -146,7 +147,9 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
         </article>
       </section>
       <section>
-        <RenderViewInvoicesScreen />
+        <Suspense fallback={<div>Loading filters...</div>}>
+          <RenderViewInvoicesScreen />
+        </Suspense>
       </section>
     </div>
   );

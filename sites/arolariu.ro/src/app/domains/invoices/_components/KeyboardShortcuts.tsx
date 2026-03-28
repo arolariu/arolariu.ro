@@ -6,7 +6,6 @@
  *
  * @remarks
  * Registers keyboard shortcuts for common invoice management actions:
- * - Ctrl/Cmd+K: Open search/command palette
  * - Ctrl/Cmd+N: Navigate to create invoice
  * - Ctrl/Cmd+U: Navigate to upload scans
  * - ?: Show keyboard shortcuts help dialog
@@ -56,20 +55,7 @@ function shouldBlockShortcuts(element: Element | null): boolean {
   return isInput || isContentEditable;
 }
 
-/**
- * Dispatches a custom event to open the invoice command palette.
- *
- * @remarks
- * Dispatches an `open-invoice-command-palette` event that the InvoiceCommandPalette
- * component listens for. This allows keyboard shortcuts to trigger the palette.
- */
-function openCommandPalette(): void {
-  const event = new CustomEvent("open-invoice-command-palette", {
-    bubbles: true,
-    cancelable: true,
-  });
-  window.dispatchEvent(event);
-}
+
 
 /**
  * Registers global keyboard shortcuts for the invoice management system.
@@ -78,7 +64,6 @@ function openCommandPalette(): void {
  * **Rendering Context**: Client Component (`"use client"` directive).
  *
  * **Registered Shortcuts**:
- * - `Ctrl+K` / `Cmd+K`: Focus the Commander/search
  * - `Ctrl+N` / `Cmd+N`: Navigate to create invoice page
  * - `Ctrl+U` / `Cmd+U`: Navigate to upload scans page
  * - `?`: Show keyboard shortcuts help overlay
@@ -140,12 +125,6 @@ export default function KeyboardShortcuts({onShowHelp}: Readonly<KeyboardShortcu
    * Shortcut definitions with their handlers.
    */
   const shortcuts: ShortcutDef[] = [
-    {
-      key: "k",
-      ctrl: true,
-      handler: openCommandPalette,
-      description: "Open search/command palette",
-    },
     {
       key: "n",
       ctrl: true,
