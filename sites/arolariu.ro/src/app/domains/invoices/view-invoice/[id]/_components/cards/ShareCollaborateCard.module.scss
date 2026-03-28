@@ -1,0 +1,132 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+/* Card Title */
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+}
+
+.titleIcon {
+  @include icon-size(space(5));
+  color: color('primary');
+}
+
+/* Card Content */
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+/* Status Section */
+.statusSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding-bottom: space(3);
+  border-bottom: 1px solid color('border');
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.statusLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1.5);
+}
+
+.badgeIcon {
+  @include icon-size(space(3.5));
+}
+
+.sharedWithRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('sm');
+}
+
+.sharedWithLabel {
+  color: color('muted-foreground');
+}
+
+.sharedWithCount {
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+/* Actions Section */
+.actionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.actionButton {
+  width: 100%;
+  justify-content: flex-start;
+  gap: space(2);
+  transition: all duration('normal') ease-out;
+
+  &:hover {
+    background: color-alpha('primary', 0.1);
+    border-color: color('primary');
+  }
+}
+
+.buttonIcon {
+  @include icon-size(space(4));
+}
+
+/* Activity Section */
+.activitySection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+}
+
+.activityTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activityItem {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+/* Manage Sharing Button */
+.manageButton {
+  width: 100%;
+  margin-top: space(2);
+  transition: all duration('normal') ease-out;
+
+  &:hover {
+    transform: translateX(4px);
+  }
+}

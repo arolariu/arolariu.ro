@@ -138,80 +138,80 @@ export function HomeInventoryCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Supply Stock Levels */}
-        <div>
-          <h4 className={styles["sectionTitle"]}>{t("stockLevels.title")}</h4>
-          <div className={styles["suppliesList"]}>
-            {supplies.map((supply) => {
-              const pct = (supply.daysRemaining / supply.maxDays) * 100;
-              const color = getSupplyProgressColor(pct, styles);
-              return (
-                <div
-                  key={supply.id}
-                  className={styles["supplyItem"]}>
-                  <div className={styles["supplyRow"]}>
-                    <div className={styles["supplyName"]}>
-                      {supply.icon}
-                      <span>{supply.name}</span>
-                    </div>
-                    <span className={styles["supplyDays"]}>{t("stockLevels.daysRemaining", {count: String(supply.daysRemaining)})}</span>
-                  </div>
-                  <div className={styles["progressTrack"]}>
-                    <div
-                      className={`${styles["progressBar"]} ${color}`}
-                      style={{width: `${pct}%`}}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Eco-Friendliness Score */}
-        <div className={styles["ecoSection"]}>
-          <div className={styles["ecoHeader"]}>
-            <div className={styles["ecoLabel"]}>
-              <TbLeaf className={styles["leafIcon"]} />
-              <span className={styles["ecoLabelText"]}>{t("eco.title")}</span>
-            </div>
-            <div className={styles["ecoStars"]}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TbStar
-                  key={star}
-                  className={star <= ecoScore ? styles["starActive"] : styles["starInactive"]}
-                />
-              ))}
-            </div>
-          </div>
-          <ul className={styles["ecoList"]}>
-            <li className={styles["ecoItem"]}>
-              <span className={styles["ecoBullet"]}>•</span>
-              {t("eco.productsWithEcoLabels", {count: String(ecoProducts)})}
-            </li>
-            <li className={styles["ecoItem"]}>
-              <span className={styles["ecoBullet"]}>•</span>
-              {t("eco.recyclablePackaging", {count: String(recyclablePackaging)})}
-            </li>
-            <li className={styles["ecoItem"]}>
-              <span className={styles["ecoTipBullet"]}>•</span>
-              <span className={styles["ecoTipText"]}>{t("eco.tip")}</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Bulk Buying Savings */}
-        <div className={styles["bulkBox"]}>
-          <TbPackage className={styles["packageIcon"]} />
+          {/* Supply Stock Levels */}
           <div>
-            <p className={styles["bulkTitle"]}>{t("bulk.title")}</p>
-            <p className={styles["bulkDescription"]}>
-              {t("bulk.description", {
-                amount: formatCurrency(potentialSavings, {currencyCode: currency.code, locale}),
+            <h4 className={styles["sectionTitle"]}>{t("stockLevels.title")}</h4>
+            <div className={styles["suppliesList"]}>
+              {supplies.map((supply) => {
+                const pct = (supply.daysRemaining / supply.maxDays) * 100;
+                const color = getSupplyProgressColor(pct, styles);
+                return (
+                  <div
+                    key={supply.id}
+                    className={styles["supplyItem"]}>
+                    <div className={styles["supplyRow"]}>
+                      <div className={styles["supplyName"]}>
+                        {supply.icon}
+                        <span>{supply.name}</span>
+                      </div>
+                      <span className={styles["supplyDays"]}>{t("stockLevels.daysRemaining", {count: String(supply.daysRemaining)})}</span>
+                    </div>
+                    <div className={styles["progressTrack"]}>
+                      <div
+                        className={`${styles["progressBar"]} ${color}`}
+                        style={{width: `${pct}%`}}
+                      />
+                    </div>
+                  </div>
+                );
               })}
-            </p>
+            </div>
           </div>
-        </div>
+
+          {/* Eco-Friendliness Score */}
+          <div className={styles["ecoSection"]}>
+            <div className={styles["ecoHeader"]}>
+              <div className={styles["ecoLabel"]}>
+                <TbLeaf className={styles["leafIcon"]} />
+                <span className={styles["ecoLabelText"]}>{t("eco.title")}</span>
+              </div>
+              <div className={styles["ecoStars"]}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TbStar
+                    key={star}
+                    className={star <= ecoScore ? styles["starActive"] : styles["starInactive"]}
+                  />
+                ))}
+              </div>
+            </div>
+            <ul className={styles["ecoList"]}>
+              <li className={styles["ecoItem"]}>
+                <span className={styles["ecoBullet"]}>•</span>
+                {t("eco.productsWithEcoLabels", {count: String(ecoProducts)})}
+              </li>
+              <li className={styles["ecoItem"]}>
+                <span className={styles["ecoBullet"]}>•</span>
+                {t("eco.recyclablePackaging", {count: String(recyclablePackaging)})}
+              </li>
+              <li className={styles["ecoItem"]}>
+                <span className={styles["ecoTipBullet"]}>•</span>
+                <span className={styles["ecoTipText"]}>{t("eco.tip")}</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Bulk Buying Savings */}
+          <div className={styles["bulkBox"]}>
+            <TbPackage className={styles["packageIcon"]} />
+            <div>
+              <p className={styles["bulkTitle"]}>{t("bulk.title")}</p>
+              <p className={styles["bulkDescription"]}>
+                {t("bulk.description", {
+                  amount: formatCurrency(potentialSavings, {currencyCode: currency.code, locale}),
+                })}
+              </p>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

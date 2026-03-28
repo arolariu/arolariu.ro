@@ -1,0 +1,385 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================
+// Card Layout
+// ===========================
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.iconTitle {
+  @include icon-size(space(5));
+  color: color('primary');
+}
+
+.contentSpaced {
+  @include spaced-children(space(6));
+}
+
+// ===========================
+// Search Row
+// ===========================
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.searchInputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  @include icon-size(space(4));
+  position: absolute;
+  left: space(3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: color('muted-foreground');
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: space(10) !important;
+}
+
+// ===========================
+// Table Container
+// ===========================
+
+.tableContainer {
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  overflow-x: auto;
+
+  th:first-child {
+    width: 35%;
+  }
+
+  th:nth-child(2) {
+    width: 15%;
+  }
+
+  th:nth-child(3),
+  th:nth-child(4),
+  th:nth-child(5) {
+    text-align: right;
+    width: 15%;
+  }
+
+  td:nth-child(3),
+  td:nth-child(4),
+  td:nth-child(5) {
+    text-align: right;
+  }
+
+  tbody td:last-child {
+    font-weight: font-weight('medium');
+  }
+}
+
+// ===========================
+// Sort Button
+// ===========================
+
+.sortButton {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  cursor: pointer;
+  font-weight: font-weight('medium');
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: color('primary');
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+    border-radius: radius('sm');
+  }
+}
+
+.sortIcon {
+  @include icon-size(space(4));
+}
+
+// ===========================
+// Item Cell
+// ===========================
+
+.itemCell {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.itemName {
+  font-weight: font-weight('medium');
+}
+
+.allergenList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(1);
+}
+
+.allergenBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+}
+
+.allergenIcon {
+  @include icon-size(space(3));
+}
+
+.allergenDescription {
+  margin-bottom: space(2);
+  max-width: 250px;
+}
+
+.allergenLink {
+  color: color('primary');
+  text-decoration: underline;
+  font-size: font-size('sm');
+
+  &:hover {
+    color: color('primary-foreground');
+  }
+}
+
+// ===========================
+// Total Row
+// ===========================
+
+.totalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: space(4);
+  border-top: 2px solid color('border');
+  background-color: color('muted');
+  border-radius: radius('md');
+}
+
+.totalLabel {
+  font-weight: font-weight('bold');
+  font-size: font-size('lg');
+}
+
+.totalValues {
+  display: flex;
+  align-items: center;
+  gap: space(8);
+  font-weight: font-weight('bold');
+  font-size: font-size('lg');
+}
+
+.totalQuantity {
+  color: color('muted-foreground');
+}
+
+.totalPrice {
+  color: color('primary');
+}
+
+// ===========================
+// Summary Section
+// ===========================
+
+.summarySection {
+  margin-top: space(4);
+  padding-top: space(4);
+  border-top: 1px solid color('border');
+}
+
+.summaryTitle {
+  font-weight: font-weight('semibold');
+  font-size: font-size('base');
+  margin-bottom: space(3);
+  color: color('foreground');
+}
+
+.summaryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summaryItem {
+  padding: space(1) 0;
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  line-height: 1.6;
+
+  strong {
+    color: color('foreground');
+    font-weight: font-weight('medium');
+  }
+}
+
+// ===========================
+// Empty State
+// ===========================
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(12) space(4);
+  text-align: center;
+}
+
+.emptyIcon {
+  @include icon-size(space(16));
+  color: color('muted-foreground');
+  margin-bottom: space(4);
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin-bottom: space(2);
+}
+
+.emptySubtitle {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  max-width: 400px;
+}
+
+// ===========================================
+// PRINT STYLES
+// ===========================================
+@media print {
+  .titleRow {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: space(3) !important;
+  }
+
+  .iconTitle {
+    display: none !important;
+  }
+
+  .contentSpaced {
+    break-inside: auto;
+  }
+
+  .searchRow {
+    display: none !important;
+  }
+
+  .searchInputWrapper {
+    display: none !important;
+  }
+
+  .searchIcon {
+    display: none !important;
+  }
+
+  .tableContainer {
+    border: 1px solid #333 !important;
+    box-shadow: none !important;
+    overflow-x: visible !important;
+
+    th,
+    td {
+      border: 1px solid #ddd !important;
+      padding: space(2) !important;
+      color: black !important;
+    }
+
+    th {
+      background-color: #f5f5f5 !important;
+      font-weight: 700 !important;
+    }
+
+    tbody tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+
+  .sortButton {
+    pointer-events: none !important;
+    color: black !important;
+  }
+
+  .sortIcon {
+    display: none !important;
+  }
+
+  .allergenList {
+    break-inside: avoid;
+  }
+
+  .allergenIcon {
+    color: black !important;
+  }
+
+  .totalRow {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background-color: #f5f5f5 !important;
+    border-top: 2px solid #333 !important;
+  }
+
+  .totalLabel {
+    color: black !important;
+  }
+
+  .totalValues {
+    color: black !important;
+  }
+
+  .totalQuantity {
+    color: #555 !important;
+  }
+
+  .totalPrice {
+    color: black !important;
+  }
+
+  .summarySection {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: space(6) !important;
+  }
+
+  .summaryTitle {
+    color: black !important;
+  }
+
+  .summaryItem {
+    color: #555 !important;
+
+    strong {
+      color: black !important;
+    }
+  }
+
+  .emptyState {
+    display: none !important;
+  }
+
+  .emptyIcon {
+    display: none !important;
+  }
+}

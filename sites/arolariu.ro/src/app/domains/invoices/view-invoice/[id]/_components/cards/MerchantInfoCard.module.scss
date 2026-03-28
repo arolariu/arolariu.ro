@@ -41,3 +41,138 @@
   margin-top: space(0.5);
   color: color('muted-foreground');
 }
+
+/* Section Headers */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.sectionTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+/* Sparkline Chart Container */
+.sparklineContainer {
+  width: 100%;
+  height: 100px;
+  margin-top: space(2);
+  border-radius: border-radius('md');
+  background: color-alpha('muted', 0.2);
+  padding: space(2);
+}
+
+/* Visit Statistics Row */
+.statsRow {
+  display: flex;
+  gap: space(2);
+  flex-wrap: wrap;
+}
+
+.statBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(1);
+  flex: 1 1 0;
+  min-width: 80px;
+  padding: space(2);
+  border-radius: border-radius('md');
+  background: color-alpha('muted', 0.3);
+  border: 1px solid color('border');
+  transition: all duration('normal') ease-out;
+
+  &:hover {
+    background: color-alpha('muted', 0.5);
+    transform: translateY(-2px);
+  }
+}
+
+.statIcon {
+  @include icon-size(space(5));
+  color: color('primary');
+}
+
+.statValue {
+  font-size: font-size('lg');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+.statLabel {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+}
+
+/* Category Distribution */
+.categoryBar {
+  display: flex;
+  width: 100%;
+  height: space(6);
+  border-radius: border-radius('md');
+  overflow: hidden;
+  background: color-alpha('muted', 0.2);
+}
+
+.categorySegment {
+  height: 100%;
+  background: linear-gradient(135deg, hsl(var(--chart-1)) 0%, hsl(var(--chart-2)) 100%);
+  border-right: 1px solid color('background');
+  transition: all duration('normal') ease-out;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.categoryLabels {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  margin-top: space(2);
+}
+
+.categoryLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.categoryLabelText {
+  font-weight: font-weight('medium');
+}
+
+.categoryLabelCount {
+  color: color('foreground');
+}
+
+/* Buttons */
+.mapButton {
+  width: 100%;
+}
+
+.buttonIcon {
+  @include icon-size(space(4));
+  margin-right: space(1.5);
+}
+
+.fullWidth {
+  width: 100%;
+}
+

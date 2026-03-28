@@ -1,0 +1,146 @@
+// ===========================================
+// PRINT-OPTIMIZED STYLES
+// ===========================================
+// This module provides comprehensive print styles for clean, professional invoice printing.
+// Hides interactive elements, optimizes layout, and ensures readability.
+
+@use '../../../../../../styles/abstracts' as *;
+
+@media print {
+  // ===========================================
+  // GLOBAL PRINT SETTINGS
+  // ===========================================
+
+  // Hide interactive elements from print
+  .hideOnPrint {
+    display: none !important;
+  }
+
+  // Force clean white background for printing
+  .printContainer {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  // ===========================================
+  // LAYOUT ADJUSTMENTS
+  // ===========================================
+
+  // Single column layout for print
+  .printGrid {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  // Clean card styling without shadows
+  .printCard {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: space(4);
+    page-break-inside: avoid;
+    background: white !important;
+  }
+
+  // ===========================================
+  // TABLE FORMATTING
+  // ===========================================
+
+  // Table formatting for items
+  .printTable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    break-inside: auto;
+  }
+
+  .printTableCell {
+    border: 1px solid #ddd !important;
+    padding: space(1) space(2) !important;
+    break-inside: avoid;
+  }
+
+  .printTableHeader {
+    font-weight: 600 !important;
+    background-color: #f5f5f5 !important;
+    border-bottom: 2px solid #333 !important;
+  }
+
+  .printTableRow {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  // ===========================================
+  // TYPOGRAPHY
+  // ===========================================
+
+  .printTitle {
+    font-size: 24pt !important;
+    font-weight: 700 !important;
+    margin-bottom: space(2) !important;
+    color: black !important;
+  }
+
+  .printSubtitle {
+    font-size: 14pt !important;
+    font-weight: 600 !important;
+    margin-bottom: space(1) !important;
+    color: #333 !important;
+  }
+
+  .printText {
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: black !important;
+  }
+
+  // ===========================================
+  // SECTION BREAKS
+  // ===========================================
+
+  .printSection {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: space(6);
+  }
+
+  .printPageBreak {
+    page-break-before: always;
+  }
+
+  .printAvoidBreak {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  // ===========================================
+  // VISIBILITY CONTROLS
+  // ===========================================
+
+  // Show print-only elements
+  .printOnly {
+    display: block !important;
+  }
+
+  // Hide screen-only elements
+  .screenOnly {
+    display: none !important;
+  }
+
+  // ===========================================
+  // COLOR ADJUSTMENTS
+  // ===========================================
+
+  // Remove background colors (save ink)
+  .printNoBg {
+    background-color: transparent !important;
+  }
+
+  // Ensure text is legible
+  .printEnsureContrast {
+    color: black !important;
+    background-color: white !important;
+  }
+}

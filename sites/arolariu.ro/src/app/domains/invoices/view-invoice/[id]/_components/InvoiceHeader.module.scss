@@ -55,3 +55,44 @@
   @include icon-size(space(4));
   margin-right: space(2);
 }
+
+// ===========================================
+// PRINT STYLES
+// ===========================================
+@media print {
+  .header {
+    display: none !important;
+  }
+
+  .titleArea {
+    margin-bottom: space(2) !important;
+  }
+
+  .titleRow {
+    gap: space(1) !important;
+  }
+
+  .title {
+    color: black !important;
+  }
+
+  .invoiceId {
+    display: none !important;
+  }
+
+  .actions {
+    display: none !important;
+  }
+
+  .editLink {
+    display: none !important;
+  }
+
+  .heartIcon {
+    display: none !important;
+  }
+
+  .buttonIcon {
+    display: none !important;
+  }
+}

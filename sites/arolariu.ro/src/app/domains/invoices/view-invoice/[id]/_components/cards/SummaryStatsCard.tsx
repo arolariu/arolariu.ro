@@ -42,56 +42,56 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
 
   return (
     <div className={styles["card"]}>
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className={styles["statsGrid"]}>
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className={styles["statItem"]}>
-              <div className={styles["statLabel"]}>
-                <stat.icon className={styles["iconSm"]} />
-                <span className={styles["statLabelText"]}>{stat.label}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className={styles["statsGrid"]}>
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className={styles["statItem"]}>
+                <div className={styles["statLabel"]}>
+                  <stat.icon className={styles["iconSm"]} />
+                  <span className={styles["statLabelText"]}>{stat.label}</span>
+                </div>
+                <p className={styles["statValue"]}>{stat.value}</p>
+                <p className={styles["statDescription"]}>{stat.description}</p>
               </div>
-              <p className={styles["statValue"]}>{stat.value}</p>
-              <p className={styles["statDescription"]}>{stat.description}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className={styles["extremesSection"]}>
-          <div className={styles["extremeRow"]}>
-            <div className={styles["extremeLabel"]}>
-              <TbTrendingUp className={styles["iconEmerald"]} />
-              <span className={styles["extremeLabelText"]}>{t("extremes.highest")}</span>
-            </div>
-            <div className={styles["extremeRight"]}>
-              <p className={styles["extremePrice"]}>
-                {summary.highestItem.price.toFixed(2)} {currency}
-              </p>
-              <p className={styles["extremeName"]}>{summary.highestItem.name}</p>
-            </div>
+            ))}
           </div>
 
-          <div className={styles["extremeRow"]}>
-            <div className={styles["extremeLabel"]}>
-              <TbTrendingDown className={styles["iconBlue"]} />
-              <span className={styles["extremeLabelText"]}>{t("extremes.lowest")}</span>
+          <div className={styles["extremesSection"]}>
+            <div className={styles["extremeRow"]}>
+              <div className={styles["extremeLabel"]}>
+                <TbTrendingUp className={styles["iconEmerald"]} />
+                <span className={styles["extremeLabelText"]}>{t("extremes.highest")}</span>
+              </div>
+              <div className={styles["extremeRight"]}>
+                <p className={styles["extremePrice"]}>
+                  {summary.highestItem.price.toFixed(2)} {currency}
+                </p>
+                <p className={styles["extremeName"]}>{summary.highestItem.name}</p>
+              </div>
             </div>
-            <div className={styles["extremeRight"]}>
-              <p className={styles["extremePrice"]}>
-                {summary.lowestItem.price.toFixed(2)} {currency}
-              </p>
-              <p className={styles["extremeName"]}>{summary.lowestItem.name}</p>
+
+            <div className={styles["extremeRow"]}>
+              <div className={styles["extremeLabel"]}>
+                <TbTrendingDown className={styles["iconBlue"]} />
+                <span className={styles["extremeLabelText"]}>{t("extremes.lowest")}</span>
+              </div>
+              <div className={styles["extremeRight"]}>
+                <p className={styles["extremePrice"]}>
+                  {summary.lowestItem.price.toFixed(2)} {currency}
+                </p>
+                <p className={styles["extremeName"]}>{summary.lowestItem.name}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
     </div>
   );
 }

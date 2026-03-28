@@ -69,111 +69,111 @@ export function DiningCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Estimated Nutrition */}
-        <div>
-          <h4 className={styles["sectionTitle"]}>{t("estimatedNutrition.title")}</h4>
-          <div className={styles["nutritionGrid"]}>
-            <div className={styles["nutritionItem"]}>
-              <TbFlame className={styles["iconOrange"]} />
-              <div>
-                <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.calories")}</p>
-                <p className={styles["nutritionValue"]}>{t("estimatedNutrition.caloriesValue", {value: String(estimatedCalories)})}</p>
+          {/* Estimated Nutrition */}
+          <div>
+            <h4 className={styles["sectionTitle"]}>{t("estimatedNutrition.title")}</h4>
+            <div className={styles["nutritionGrid"]}>
+              <div className={styles["nutritionItem"]}>
+                <TbFlame className={styles["iconOrange"]} />
+                <div>
+                  <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.calories")}</p>
+                  <p className={styles["nutritionValue"]}>{t("estimatedNutrition.caloriesValue", {value: String(estimatedCalories)})}</p>
+                </div>
+              </div>
+              <div className={styles["nutritionItem"]}>
+                <TbMeat className={styles["iconRed"]} />
+                <div>
+                  <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.protein")}</p>
+                  <p className={styles["nutritionValue"]}>{t("estimatedNutrition.proteinValue", {value: String(estimatedProtein)})}</p>
+                </div>
+              </div>
+              <div className={styles["nutritionItem"]}>
+                <TbAlertTriangle className={sodiumLevel === t("sodium.high") ? styles["iconRed"] : styles["iconAmber"]} />
+                <div>
+                  <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.sodium")}</p>
+                  <p className={styles["nutritionValue"]}>
+                    {sodiumLevel}
+                    {sodiumLevel === t("sodium.high") && <span className={styles["sodiumWarning"]}>!</span>}
+                  </p>
+                </div>
+              </div>
+              <div className={styles["nutritionItem"]}>
+                <TbCookie className={styles["iconAmber"]} />
+                <div>
+                  <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.carbs")}</p>
+                  <p className={styles["nutritionValue"]}>{t("estimatedNutrition.carbsValue", {value: String(estimatedCarbs)})}</p>
+                </div>
               </div>
             </div>
-            <div className={styles["nutritionItem"]}>
-              <TbMeat className={styles["iconRed"]} />
-              <div>
-                <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.protein")}</p>
-                <p className={styles["nutritionValue"]}>{t("estimatedNutrition.proteinValue", {value: String(estimatedProtein)})}</p>
+          </div>
+
+          {/* Fast Food Habits */}
+          <div>
+            <h4 className={styles["sectionTitle"]}>{t("habits.title")}</h4>
+            <div className={styles["habitsGrid"]}>
+              <div className={styles["habitCard"]}>
+                <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
+                <p className={styles["habitLabel"]}>{t("habits.frequency")}</p>
+                <p className={styles["habitValue"]}>{t("habits.frequencyValue", {count: String(fastFoodFrequency)})}</p>
+                <p className={styles["habitSub"]}>{t("habits.frequencyDiff")}</p>
               </div>
-            </div>
-            <div className={styles["nutritionItem"]}>
-              <TbAlertTriangle className={sodiumLevel === t("sodium.high") ? styles["iconRed"] : styles["iconAmber"]} />
-              <div>
-                <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.sodium")}</p>
-                <p className={styles["nutritionValue"]}>
-                  {sodiumLevel}
-                  {sodiumLevel === t("sodium.high") && <span className={styles["sodiumWarning"]}>!</span>}
+              <div className={styles["habitCard"]}>
+                <TbUserDollar className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
+                <p className={styles["habitLabel"]}>{t("habits.avgSpend")}</p>
+                <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
+                <p className={`${styles["habitSub"]} ${spendDiff > 0 ? styles["spendDiffRed"] : styles["spendDiffGreen"]}`}>
+                  {spendDiff > 0 ? "+" : ""}
+                  {spendDiff.toFixed(0)}%
                 </p>
               </div>
-            </div>
-            <div className={styles["nutritionItem"]}>
-              <TbCookie className={styles["iconAmber"]} />
-              <div>
-                <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.carbs")}</p>
-                <p className={styles["nutritionValue"]}>{t("estimatedNutrition.carbsValue", {value: String(estimatedCarbs)})}</p>
+              <div className={styles["habitCard"]}>
+                <TbMapPin className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
+                <p className={styles["habitLabel"]}>{t("habits.favorite")}</p>
+                <p className={styles["habitValue"]}>{favoritePlace}</p>
+                <p className={styles["habitSub"]}>{t("habits.visits", {count: String(visits)})}</p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Fast Food Habits */}
-        <div>
-          <h4 className={styles["sectionTitle"]}>{t("habits.title")}</h4>
-          <div className={styles["habitsGrid"]}>
-            <div className={styles["habitCard"]}>
-              <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
-              <p className={styles["habitLabel"]}>{t("habits.frequency")}</p>
-              <p className={styles["habitValue"]}>{t("habits.frequencyValue", {count: String(fastFoodFrequency)})}</p>
-              <p className={styles["habitSub"]}>{t("habits.frequencyDiff")}</p>
+          {/* Healthier Swaps */}
+          <div>
+            <div className={styles["swapsHeader"]}>
+              <TbBulb className={styles["iconAmber"]} />
+              <h4 className={styles["swapsTitle"]}>{t("swaps.title")}</h4>
             </div>
-            <div className={styles["habitCard"]}>
-              <TbUserDollar className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
-              <p className={styles["habitLabel"]}>{t("habits.avgSpend")}</p>
-              <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
-              <p className={`${styles["habitSub"]} ${spendDiff > 0 ? styles["spendDiffRed"] : styles["spendDiffGreen"]}`}>
-                {spendDiff > 0 ? "+" : ""}
-                {spendDiff.toFixed(0)}%
+            <ul className={styles["swapsList"]}>
+              {swaps.map((s) => (
+                <li
+                  key={s.id}
+                  className={styles["swapItem"]}>
+                  <span className={styles["swapBullet"]}>•</span>
+                  <span>
+                    {s.swap}: <span className={styles["swapSaving"]}>{t("swaps.caloriesSaved", {count: String(s.calSaved)})}</span>
+                    {s.moneySaved ? (
+                      <span className={styles["swapSaving"]}>
+                        {t("swaps.moneySaved", {amount: formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})})}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Challenge */}
+          <div className={styles["challengeBox"]}>
+            <TbTarget className={styles["challengeIcon"]} />
+            <div>
+              <p className={styles["challengeTitle"]}>{t("challenge.title")}</p>
+              <p className={styles["challengeDescription"]}>
+                {t("challenge.descriptionPrefix")}{" "}
+                <span className={styles["challengeHighlight"]}>
+                  {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
+                </span>
+                {t("challenge.descriptionSuffix")}
               </p>
             </div>
-            <div className={styles["habitCard"]}>
-              <TbMapPin className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
-              <p className={styles["habitLabel"]}>{t("habits.favorite")}</p>
-              <p className={styles["habitValue"]}>{favoritePlace}</p>
-              <p className={styles["habitSub"]}>{t("habits.visits", {count: String(visits)})}</p>
-            </div>
           </div>
-        </div>
-
-        {/* Healthier Swaps */}
-        <div>
-          <div className={styles["swapsHeader"]}>
-            <TbBulb className={styles["iconAmber"]} />
-            <h4 className={styles["swapsTitle"]}>{t("swaps.title")}</h4>
-          </div>
-          <ul className={styles["swapsList"]}>
-            {swaps.map((s) => (
-              <li
-                key={s.id}
-                className={styles["swapItem"]}>
-                <span className={styles["swapBullet"]}>•</span>
-                <span>
-                  {s.swap}: <span className={styles["swapSaving"]}>{t("swaps.caloriesSaved", {count: String(s.calSaved)})}</span>
-                  {s.moneySaved ? (
-                    <span className={styles["swapSaving"]}>
-                      {t("swaps.moneySaved", {amount: formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})})}
-                    </span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Challenge */}
-        <div className={styles["challengeBox"]}>
-          <TbTarget className={styles["challengeIcon"]} />
-          <div>
-            <p className={styles["challengeTitle"]}>{t("challenge.title")}</p>
-            <p className={styles["challengeDescription"]}>
-              {t("challenge.descriptionPrefix")}{" "}
-              <span className={styles["challengeHighlight"]}>
-                {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
-              </span>
-              {t("challenge.descriptionSuffix")}
-            </p>
-          </div>
-        </div>
         </div>
       </CardContent>
     </Card>

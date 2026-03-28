@@ -9,12 +9,17 @@ import {InvoiceGuestBanner} from "./_components/banners/InvoiceGuestBanner";
 import {BudgetImpactCard} from "./_components/cards/BudgetImpactCard";
 import {CategoryInsightsCardContainer} from "./_components/cards/insights/CategoryInsightsCardContainer";
 import {InvoiceDetailsCard} from "./_components/cards/InvoiceDetailsCard";
+import {InvoiceHealthScore} from "./_components/cards/InvoiceHealthScore";
+import {ItemAnalyticsCard} from "./_components/cards/ItemAnalyticsCard";
 import {MerchantInfoCard} from "./_components/cards/MerchantInfoCard";
 import {ReceiptScanCard} from "./_components/cards/ReceiptScanCard";
+import {RelatedInvoicesCard} from "./_components/cards/RelatedInvoicesCard";
 import {SeasonalInsightsCard} from "./_components/cards/SeasonalInsightsCard";
+import {ShareCollaborateCard} from "./_components/cards/ShareCollaborateCard";
 import {ShoppingCalendarCard} from "./_components/cards/ShoppingCalendarCard";
 import {InvoiceAnalytics} from "./_components/InvoiceAnalytics";
 import {InvoiceHeader} from "./_components/InvoiceHeader";
+import {PrintHeader} from "./_components/PrintHeader";
 import {InvoiceTabs} from "./_components/tabs/InvoiceTabs";
 import {InvoiceTimeline} from "./_components/timeline/InvoiceTimeline";
 import {InvoiceContextProvider} from "./_context/InvoiceContext";
@@ -46,6 +51,12 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
       invoice={invoice}
       merchant={merchant}>
       <DialogProvider>
+        {/* Print Header - only visible when printing */}
+        <PrintHeader
+          invoice={invoice}
+          merchant={merchant}
+        />
+
         <div className={styles["container"]}>
           {/* Header */}
           <div className={styles["headerSection"]}>
@@ -68,6 +79,10 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               </div>
 
               <div className={styles["centerItem"]}>
+                <ItemAnalyticsCard />
+              </div>
+
+              <div className={styles["centerItem"]}>
                 <CategoryInsightsCardContainer />
               </div>
 
@@ -84,6 +99,9 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
             {/* Sidebar - Right Column */}
             <div className={styles["rightColumn"]}>
               <div className={styles["rightItem"]}>
+                <InvoiceHealthScore />
+              </div>
+              <div className={styles["rightItem"]}>
                 <ReceiptScanCard />
               </div>
               <div className={styles["rightItem"]}>{Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}</div>
@@ -92,6 +110,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               <div className={styles["rightItem"]}>
                 <MerchantInfoCard />
               </div>
+              <div className={styles["rightItem"]}>{Boolean(isOwner && !isLoadingUserInformation) && <ShareCollaborateCard />}</div>
             </div>
           </div>
 
@@ -99,6 +118,13 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
           <div className={styles["analyticsSection"]}>
             <InvoiceAnalytics />
           </div>
+
+          {/* Related Invoices Section */}
+          {Boolean(isOwner && !isLoadingUserInformation) && (
+            <div className={styles["analyticsSection"]}>
+              <RelatedInvoicesCard />
+            </div>
+          )}
         </div>
         <DialogContainer />
       </DialogProvider>

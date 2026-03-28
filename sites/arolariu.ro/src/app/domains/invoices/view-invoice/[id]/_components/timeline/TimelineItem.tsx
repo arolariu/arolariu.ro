@@ -157,14 +157,16 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
               {/* Info icon with tooltip */}
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
-                  <TooltipTrigger render={
-                    <Button
-                      type='button'
-                      className={styles["infoButton"]}
-                      aria-label={t("aria.moreInfo", {title: eventTitle})}>
-                      <TbInfoCircle className={styles["infoIcon"]} />
-                    </Button>
-                  } />
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type='button'
+                        className={styles["infoButton"]}
+                        aria-label={t("aria.moreInfo", {title: eventTitle})}>
+                        <TbInfoCircle className={styles["infoIcon"]} />
+                      </Button>
+                    }
+                  />
                   <TooltipContent
                     side='right'
                     className={styles["tooltipContent"]}

@@ -8,16 +8,46 @@
   @include respond-to('sm') {
     padding-block: space(12);
   }
+
+  // Bottom padding for mobile nav
+  @include respond-below('md') {
+    padding-inline: space(3);
+    padding-bottom: space(20);
+  }
 }
 
 .headerSection {
   margin-bottom: space(8);
+
+  // Reduce margin on mobile and add sticky positioning
+  @include respond-below('md') {
+    margin-bottom: space(4);
+  }
+}
+
+.stickyHeader {
+  // Sticky header on mobile: Invoice name stays visible while scrolling
+  @include respond-below('md') {
+    position: sticky;
+    top: 0;
+    z-index: z('sticky');
+    background-color: color('background');
+    padding-block: space(2);
+    margin-inline: calc(-1 * space(3));
+    padding-inline: space(3);
+    box-shadow: 0 2px 4px color-alpha('foreground', 0.05);
+  }
 }
 
 .mainGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: space(6);
+
+  // Single column stack below lg
+  @include respond-below('lg') {
+    grid-template-columns: 1fr;
+  }
 
   @include respond-to('lg') {
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -27,13 +57,18 @@
 .leftColumn {
   display: none;
 
-  & > * + * {
+  > * + * {
     margin-top: space(6);
   }
 
   @include respond-to('lg') {
     display: block;
     grid-column: span 3;
+  }
+
+  // Narrower left column on xl screens to balance wider center
+  @include respond-to('xl') {
+    grid-column: span 2;
   }
 }
 
@@ -43,12 +78,17 @@
 }
 
 .centerColumn {
-  & > * + * {
+  > * + * {
     margin-top: space(6);
   }
 
   @include respond-to('lg') {
     grid-column: span 6;
+  }
+
+  // Wider center column on xl screens
+  @include respond-to('xl') {
+    grid-column: span 7;
   }
 }
 
@@ -63,17 +103,59 @@
 }
 
 .rightColumn {
-  & > * + * {
+  > * + * {
     margin-top: space(6);
   }
 
   @include respond-to('lg') {
     grid-column: span 3;
   }
+
+  // Right column also narrower on xl
+  @include respond-to('xl') {
+    grid-column: span 3;
+  }
+
+  // Collapsible-ready sections: Add visual separators on mobile
+  @include respond-below('md') {
+    > * {
+      border-bottom: 1px solid color('border');
+      padding-bottom: space(4);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
 }
 
 .rightItem {
   // Placeholder for animation
+}
+
+// Swipeable receipt image area on mobile
+.receiptArea {
+  @include respond-below('md') {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    
+    // Hide scrollbar for cleaner look
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    // Items inside should snap
+    > * {
+      scroll-snap-align: start;
+    }
+  }
+
+  // Webkit scrollbar hiding (separate from the respond-below block)
+  &::-webkit-scrollbar {
+    @include respond-below('md') {
+      display: none;
+    }
+  }
 }
 
 .analyticsSection {
@@ -84,5 +166,69 @@
   @include respond-to('sm') {
     margin-top: space(12);
     padding-top: space(12);
+  }
+}
+
+// ===========================================
+// PRINT STYLES
+// ===========================================
+@media print {
+  .container {
+    padding-inline: 0 !important;
+    padding-block: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .headerSection {
+    margin-bottom: space(6) !important;
+  }
+
+  .mainGrid {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  // Hide left column (timeline) in print
+  .leftColumn {
+    display: none !important;
+  }
+
+  .leftColumnSticky {
+    position: static !important;
+  }
+
+  // Make center column full width
+  .centerColumn {
+    width: 100% !important;
+    grid-column: 1 !important;
+
+    > * + * {
+      margin-top: space(4) !important;
+    }
+  }
+
+  .centerItem {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  // Hide mobile timeline
+  .mobileTimeline {
+    display: none !important;
+  }
+
+  // Hide right column in print
+  .rightColumn {
+    display: none !important;
+  }
+
+  .rightItem {
+    display: none !important;
+  }
+
+  // Hide analytics section or simplify it
+  .analyticsSection {
+    display: none !important;
   }
 }

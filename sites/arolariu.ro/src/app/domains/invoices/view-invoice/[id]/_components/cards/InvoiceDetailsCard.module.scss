@@ -131,3 +131,87 @@
   display: flex;
   gap: space(2);
 }
+
+// ===========================================
+// PRINT STYLES
+// ===========================================
+@media print {
+  .headerRow {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .headerInfo {
+    margin-bottom: space(2) !important;
+  }
+
+  .infoGrid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: space(4) !important;
+  }
+
+  .infoLabel {
+    color: #555 !important;
+  }
+
+  .infoValue {
+    color: black !important;
+  }
+
+  .totalAmount {
+    color: black !important;
+    font-weight: 700 !important;
+  }
+
+  .itemsSection {
+    break-inside: auto;
+  }
+
+  .itemsTitle {
+    color: black !important;
+    margin-bottom: space(2) !important;
+  }
+
+  .tableContainer {
+    border: 1px solid #333 !important;
+    box-shadow: none !important;
+
+    th,
+    td {
+      border: 1px solid #ddd !important;
+      padding: space(2) !important;
+      color: black !important;
+    }
+
+    th {
+      background-color: #f5f5f5 !important;
+      font-weight: 700 !important;
+    }
+
+    tbody tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+
+  .heartIcon {
+    display: none !important;
+  }
+
+  .navIcon {
+    display: none !important;
+  }
+
+  .pagination {
+    display: none !important;
+  }
+
+  .paginationText {
+    display: none !important;
+  }
+
+  .paginationButtons {
+    display: none !important;
+  }
+}

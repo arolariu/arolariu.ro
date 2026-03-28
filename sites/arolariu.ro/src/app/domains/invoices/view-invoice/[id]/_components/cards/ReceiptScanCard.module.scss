@@ -5,10 +5,23 @@
   overflow: hidden;
   border-radius: radius('lg');
   border: 1px solid color('border');
+  position: relative;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  &:hover img {
+  &:hover .imageWrapper {
     transform: scale(1.05);
   }
+}
+
+.imageWrapper {
+  @include transition(transform, 'normal');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
 }
 
 .scanImage {
@@ -26,13 +39,74 @@
   position: relative;
   display: flex;
   justify-content: center;
-  max-height: 80vh;
+  align-items: center;
+  max-height: 60vh;
   overflow: auto;
+  border-radius: radius('md');
+  background-color: color('muted');
+}
+
+.dialogImageWrapper {
+  @include transition(transform, 'normal');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
 }
 
 .dialogImage {
   width: 100%;
   object-fit: contain;
+  max-height: 60vh;
+}
+
+.cardControls {
+  margin-top: space(3);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+}
+
+.dialogControls {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+  margin-top: space(3);
+}
+
+.controlGroup {
+  display: flex;
+  gap: space(2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.dialogNavigation {
+  display: flex;
+  gap: space(2);
+  align-items: center;
+  justify-content: center;
+}
+
+.scanCounter {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+  min-width: 4rem;
+  text-align: center;
+}
+
+.controlIcon {
+  @include icon-size(space(4));
+}
+
+.controlLabelDesktop {
+  margin-left: space(1);
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 }
 
 .scanNavigation {
@@ -52,6 +126,18 @@
   margin-right: space(2);
 }
 
+.navIcon {
+  @include icon-size(space(4));
+
+  &:first-child {
+    margin-right: space(1);
+  }
+
+  &:last-child {
+    margin-left: space(1);
+  }
+}
+
 .card {
   @include transition(box-shadow);
 
@@ -65,7 +151,9 @@
 }
 
 .dialogContent {
-  max-width: 48rem;
+  max-width: 56rem;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .cardFooter {
@@ -81,4 +169,8 @@
 
 .navButton {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(1);
 }
