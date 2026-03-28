@@ -7,9 +7,13 @@
 // LAYOUT
 // ===========================================
 .container {
-  & > * + * {
-    margin-top: space(4);
-  }
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-top: space(6);
 }
 
 .header {
@@ -17,6 +21,7 @@
   flex-direction: column;
   justify-content: space-between;
   gap: space(4);
+  margin-bottom: space(6);
 
   @include respond-to('sm') {
     flex-direction: row;
@@ -32,9 +37,77 @@
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
   letter-spacing: -0.025em;
+  color: color('foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
 }
 
 .subtitle {
   color: color('muted-foreground');
-  margin-top: space(1);
+  margin-top: space(2);
+  font-size: font-size('base');
+
+  @include respond-to('md') {
+    font-size: font-size('lg');
+  }
+}
+
+// ===========================================
+// GRID LAYOUTS
+// ===========================================
+.twoColumnGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(6);
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(12) space(6);
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color('muted');
+  color: color('muted-foreground');
+  border-radius: 50%;
+  margin-bottom: space(6);
+}
+
+.emptyTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  margin-bottom: space(2);
+
+  @include respond-to('md') {
+    font-size: font-size('3xl');
+  }
+}
+
+.emptySubtitle {
+  font-size: font-size('base');
+  color: color('muted-foreground');
+  max-width: 500px;
+
+  @include respond-to('md') {
+    font-size: font-size('lg');
+  }
 }

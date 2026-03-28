@@ -1,0 +1,100 @@
+// ===========================================
+// KPI SUMMARY ROW STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: color('primary');
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding: space(4);
+  padding-bottom: space(2);
+}
+
+.iconWrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color('primary');
+  color: color('primary-foreground');
+  border-radius: 50%;
+}
+
+.cardTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardContent {
+  padding: 0 space(4) space(4);
+}
+
+.valueSection {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  margin-bottom: space(1);
+}
+
+.value {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  line-height: 1;
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  padding: space(1) space(2);
+  border-radius: space(1);
+}
+
+.trendUp {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.trendDown {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+.subtitle {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
