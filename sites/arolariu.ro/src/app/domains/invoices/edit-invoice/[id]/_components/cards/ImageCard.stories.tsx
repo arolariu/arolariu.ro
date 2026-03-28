@@ -19,12 +19,35 @@ type Story = StoryObj<typeof meta>;
 /** Static preview of the image card with a placeholder receipt image. */
 export const Preview: Story = {
   render: () => (
-    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
-      <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
+    <div
+      style={{
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "white",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "1rem",
+        }}>
         <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Scan</h3>
       </div>
       <div style={{display: "flex", justifyContent: "center", padding: "1rem"}}>
-        <div style={{position: "relative", height: "300px", width: "200px", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6"}}>
+        <div
+          style={{
+            position: "relative",
+            height: "300px",
+            width: "200px",
+            overflow: "hidden",
+            borderRadius: "0.375rem",
+            border: "1px solid #e5e7eb",
+            backgroundColor: "#f3f4f6",
+          }}>
           <img
             src='https://picsum.photos/seed/imagecard/400/600'
             alt='Receipt scan'
@@ -46,7 +69,14 @@ export const Preview: Story = {
           </button>
           <button
             type='button'
-            style={{flex: 1, borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "#ef4444"}}>
+            style={{
+              flex: 1,
+              borderRadius: "0.375rem",
+              border: "1px solid #d1d5db",
+              padding: "0.5rem 0.75rem",
+              fontSize: "0.875rem",
+              color: "#ef4444",
+            }}>
             🗑 Remove
           </button>
         </div>
@@ -58,12 +88,35 @@ export const Preview: Story = {
 /** Multiple scans with navigation indicators. */
 export const MultipleScans: Story = {
   render: () => (
-    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
-      <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
+    <div
+      style={{
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "white",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "1rem",
+        }}>
         <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Scan (2/3)</h3>
       </div>
       <div style={{display: "flex", justifyContent: "center", padding: "1rem"}}>
-        <div style={{position: "relative", height: "300px", width: "200px", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6"}}>
+        <div
+          style={{
+            position: "relative",
+            height: "300px",
+            width: "200px",
+            overflow: "hidden",
+            borderRadius: "0.375rem",
+            border: "1px solid #e5e7eb",
+            backgroundColor: "#f3f4f6",
+          }}>
           <img
             src='https://picsum.photos/seed/imagecard2/400/600'
             alt='Receipt scan 2 of 3'

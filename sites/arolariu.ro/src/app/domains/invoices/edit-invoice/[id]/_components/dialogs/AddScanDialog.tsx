@@ -27,7 +27,12 @@ import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./AddScanDialog.module.scss";
 
-function getDropzoneClassName(isUploading: boolean, isDragReject: boolean, isDragAccept: boolean, isDragActive: boolean): string | undefined {
+function getDropzoneClassName(
+  isUploading: boolean,
+  isDragReject: boolean,
+  isDragAccept: boolean,
+  isDragActive: boolean,
+): string | undefined {
   if (isUploading) return styles["dropzoneDisabled"];
   if (isDragReject) return styles["dropzoneDragReject"];
   if (isDragAccept) return styles["dropzoneDragAccept"];

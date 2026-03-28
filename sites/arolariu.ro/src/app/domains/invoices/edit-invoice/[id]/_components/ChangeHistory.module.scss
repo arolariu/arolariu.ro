@@ -1,0 +1,161 @@
+// ===========================================
+// CHANGE HISTORY COMPONENT STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// CONTAINER
+// ===========================================
+.container {
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  background-color: color('card');
+  padding: space(4);
+  @include transition(all);
+
+  &:hover {
+    border-color: color-alpha('primary', 0.3);
+  }
+
+  @include dark {
+    background-color: color-alpha('card', 0.5);
+  }
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(4);
+  padding-bottom: space(3);
+  border-bottom: 1px solid color('border');
+}
+
+.title {
+  color: color('foreground');
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  line-height: 1.2;
+}
+
+.pendingBadge {
+  background-color: color-alpha('primary', 0.15);
+  color: color('primary');
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+
+  @include dark {
+    background-color: color-alpha('primary', 0.3);
+  }
+}
+
+// ===========================================
+// TIMELINE
+// ===========================================
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.timelineItem {
+  display: flex;
+  gap: space(3);
+  position: relative;
+}
+
+.timelineDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.timelineIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: space(5);
+  height: space(5);
+  border-radius: radius('full');
+  background-color: color('primary');
+  color: white;
+  padding: space(1);
+  z-index: 1;
+  @include transition(all);
+
+  .timelineItem:hover & {
+    transform: scale(1.1);
+  }
+}
+
+.timelineLine {
+  position: absolute;
+  top: space(6);
+  left: 50%;
+  width: 2px;
+  height: calc(100% + space(3));
+  background: linear-gradient(
+    to bottom,
+    color-alpha('primary', 0.3),
+    color-alpha('border', 0.5)
+  );
+  transform: translateX(-50%);
+
+  @include dark {
+    background: linear-gradient(
+      to bottom,
+      color-alpha('primary', 0.5),
+      color-alpha('border', 0.7)
+    );
+  }
+}
+
+// ===========================================
+// CONTENT
+// ===========================================
+.timelineContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: space(1);
+  padding-top: space(0.5);
+}
+
+.changeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.changeTitle {
+  color: color('foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  line-height: 1.4;
+}
+
+.pendingIndicator {
+  color: color('primary');
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+}
+
+.changeDescription {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.changeTimestamp {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  line-height: 1.2;
+}

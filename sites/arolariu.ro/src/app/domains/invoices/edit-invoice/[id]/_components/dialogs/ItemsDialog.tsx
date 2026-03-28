@@ -231,9 +231,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         className={styles["smallInputRight"]}
                       />
                     </TableCell>
-                    <TableCell className={styles["cellRightBold"]}>
-                      {item.price * item.quantity}
-                    </TableCell>
+                    <TableCell className={styles["cellRightBold"]}>{item.price * item.quantity}</TableCell>
                     <TableCell className={styles["cellCenter"]}>
                       <Button
                         variant='ghost'

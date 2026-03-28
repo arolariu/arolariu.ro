@@ -19,12 +19,29 @@ type Story = StoryObj<typeof meta>;
 /** Preview of an easy recipe card. */
 export const EasyRecipe: Story = {
   render: () => (
-    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+    <div
+      style={{
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "white",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}>
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
         <div style={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}>
           <div>
             <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Salmon Pasta</h3>
-            <span style={{marginTop: "0.25rem", display: "inline-block", borderRadius: "9999px", backgroundColor: "#dbeafe", padding: "0.125rem 0.5rem", fontSize: "0.75rem", fontWeight: 500, color: "#1e40af"}}>
+            <span
+              style={{
+                marginTop: "0.25rem",
+                display: "inline-block",
+                borderRadius: "9999px",
+                backgroundColor: "#dbeafe",
+                padding: "0.125rem 0.5rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "#1e40af",
+              }}>
               Easy
             </span>
           </div>
@@ -51,7 +68,16 @@ export const EasyRecipe: Story = {
           <span>🍳 Cook: 20 min</span>
         </div>
       </div>
-      <div style={{display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", borderTop: "1px solid #e5e7eb", backgroundColor: "#f9fafb", padding: "0.5rem 1rem"}}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.5rem",
+          borderTop: "1px solid #e5e7eb",
+          backgroundColor: "#f9fafb",
+          padding: "0.5rem 1rem",
+        }}>
         <button
           type='button'
           style={{fontSize: "0.875rem", color: "#4b5563"}}>
@@ -70,11 +96,28 @@ export const EasyRecipe: Story = {
 /** Preview of a hard recipe card. */
 export const HardRecipe: Story = {
   render: () => (
-    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+    <div
+      style={{
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "white",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}>
       <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
         <div>
           <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Beef Wellington</h3>
-          <span style={{marginTop: "0.25rem", display: "inline-block", borderRadius: "9999px", backgroundColor: "#fee2e2", padding: "0.125rem 0.5rem", fontSize: "0.75rem", fontWeight: 500, color: "#991b1b"}}>
+          <span
+            style={{
+              marginTop: "0.25rem",
+              display: "inline-block",
+              borderRadius: "9999px",
+              backgroundColor: "#fee2e2",
+              padding: "0.125rem 0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              color: "#991b1b",
+            }}>
             Hard
           </span>
         </div>

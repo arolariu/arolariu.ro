@@ -1,5 +1,116 @@
 @use '../../../../../../styles/abstracts' as *;
 
+.completenessSection {
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  background-color: color-alpha('muted', 0.3);
+  padding: space(3);
+}
+
+.completenessHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(2);
+}
+
+.completenessLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+}
+
+.completenessScore {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('muted-foreground');
+}
+
+.completenessProgress {
+  height: space(2);
+  margin-bottom: space(2);
+}
+
+.completeLabel {
+  display: flex;
+  align-items: center;
+  gap: space(1.5);
+  color: color('success');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.completeIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.contextTipsList {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.contextTipCard {
+  border-radius: radius('md');
+  border: 1px solid color-alpha('primary', 0.3);
+  background-color: color-alpha('primary', 0.05);
+  padding: space(3);
+  display: flex;
+  align-items: center;
+  gap: space(3);
+
+  &:hover {
+    background-color: color-alpha('primary', 0.1);
+  }
+}
+
+.contextTipIcon {
+  color: color('primary');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contextIcon {
+  width: space(5);
+  height: space(5);
+}
+
+.contextTipContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.contextTipMessage {
+  font-size: font-size('sm');
+  color: color('foreground');
+  font-weight: font-weight('medium');
+}
+
+.contextTipAction {
+  font-size: font-size('xs');
+  color: color('primary');
+  font-weight: font-weight('medium');
+}
+
+.dismissButton {
+  color: color('muted-foreground');
+  padding: space(1);
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.dismissIcon {
+  width: space(4);
+  height: space(4);
+}
+
 .savingsBanner {
   border-radius: radius('md');
   border: 1px solid color-alpha('primary', 0.2);
