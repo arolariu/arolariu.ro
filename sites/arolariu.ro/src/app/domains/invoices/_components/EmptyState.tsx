@@ -51,7 +51,12 @@ export default function EmptyState({icon, title, description, primaryAction, sec
       animate={{opacity: 1, y: 0, scale: 1}}
       transition={{duration: 0.3, ease: "easeOut"}}
       className={styles["container"]}>
-      <div className={styles["iconWrapper"]}>{icon}</div>
+      <motion.div
+        className={styles["iconWrapper"]}
+        animate={{y: [0, -8, 0]}}
+        transition={{duration: 3, repeat: Infinity, ease: "easeInOut"}}>
+        {icon}
+      </motion.div>
 
       <h3 className={styles["title"]}>{title}</h3>
       <p className={styles["description"]}>{description}</p>

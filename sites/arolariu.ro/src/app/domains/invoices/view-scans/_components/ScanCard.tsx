@@ -75,6 +75,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(scan.name);
   const [showPreview, setShowPreview] = useState(false);
+  const [justRenamed, setJustRenamed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const removeScan = useScansStore((state) => state.removeScan);
   const updateScanName = useScansStore((state) => state.updateScanName);
@@ -122,6 +123,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     if (trimmedName && trimmedName !== scan.name) {
       updateScanName(scan.id, trimmedName);
       toast.success(t("rename"));
+      setJustRenamed(true);
+      setTimeout(() => setJustRenamed(false), 300);
     }
     setIsRenaming(false);
   }, [newName, scan.id, scan.name, updateScanName, t]);
@@ -274,11 +277,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               <div
                 className={styles["fileNameContainer"]}
                 onDoubleClick={handleStartRename}>
-                <p
+                <motion.p
                   className={styles["fileName"]}
-                  title={scan.name}>
+                  title={scan.name}
+                  animate={justRenamed ? {scale: [1, 1.05, 1]} : {}}
+                  transition={{duration: 0.3}}>
                   {scan.name}
-                </p>
+                </motion.p>
                 <Button
                   size='sm'
                   variant='ghost'

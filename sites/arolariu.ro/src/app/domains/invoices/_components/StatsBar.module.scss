@@ -1,0 +1,70 @@
+// ===========================================
+// UNIFIED STATS BAR COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(6);
+  padding: space(3) space(4);
+  border-radius: radius('lg');
+  background-color: color-alpha('muted', 0.3);
+  flex-wrap: wrap;
+}
+
+.statsGroup {
+  display: flex;
+  gap: space(6);
+  flex-wrap: wrap;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(0.5);
+}
+
+.statValue {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+}
+
+.statLabel {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.actions {
+  display: flex;
+  gap: space(2);
+}
+
+// ===========================================
+// COLOR VARIANTS
+// ===========================================
+.default {
+  color: color('foreground');
+}
+
+.green {
+  color: color('success');
+}
+
+.amber {
+  color: color('warning');
+}
+
+.blue {
+  color: color('info');
+}
+
+.red {
+  color: color('destructive');
+}
+
+.purple {
+  color: color('primary');
+}

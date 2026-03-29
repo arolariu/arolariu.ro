@@ -6,6 +6,7 @@
  */
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {TbFileInvoice, TbInfoCircle, TbRefresh, TbUpload} from "react-icons/tb";
@@ -41,7 +42,14 @@ export default function ScansHeader(): React.JSX.Element {
         <div>
           <h1 className={styles["headerTitle"]}>{t("titleWithCount", {count: String(scans.length)})}</h1>
           {lastSyncTimestamp ? (
-            <p className={styles["lastSynced"]}>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
+            <motion.p
+              key={lastSyncTimestamp.getTime()}
+              initial={{backgroundColor: "hsl(var(--primary) / 0.2)"}}
+              animate={{backgroundColor: "transparent"}}
+              transition={{duration: 1}}
+              className={styles["lastSynced"]}>
+              {t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}
+            </motion.p>
           ) : null}
         </div>
         <TooltipProvider>

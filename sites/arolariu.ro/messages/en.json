@@ -3484,6 +3484,11 @@
         "home": "Home",
         "scan": "Scan",
         "invoices": "Invoices"
+      },
+      "workflowProgress": {
+        "upload": "Upload",
+        "review": "Review",
+        "create": "Create"
       }
     },
     "CreateInvoice": {

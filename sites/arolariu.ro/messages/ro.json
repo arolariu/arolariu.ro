@@ -3484,6 +3484,11 @@
         "home": "Acasă",
         "scan": "Scanare",
         "invoices": "Facturi"
+      },
+      "workflowProgress": {
+        "upload": "Încărcare",
+        "review": "Revizuire",
+        "create": "Creare"
       }
     },
     "CreateInvoice": {

@@ -6,10 +6,13 @@
  */
 
 import type {CachedScan} from "@/types/scans";
+import {Skeleton} from "@arolariu/components";
+import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbCamera} from "react-icons/tb";
 import EmptyState from "../../_components/EmptyState";
+import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
 import styles from "./ScansGrid.module.scss";
@@ -50,12 +53,17 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <div className={styles["skeletonGrid"]}>
+      <div className={styles["scansGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
           <div
             key={skeletonKey}
-            className={styles["skeletonItem"]}
-          />
+            className={styles["skeletonCard"]}>
+            <Skeleton className={styles["skeletonImage"]} />
+            <div className={styles["skeletonInfo"]}>
+              <Skeleton className={styles["skeletonName"]} />
+              <Skeleton className={styles["skeletonMeta"]} />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -81,15 +89,28 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <div className={styles["scansGrid"]}>
-      {scans.map((scan) => (
-        <ScanCardWrapper
-          key={scan.id}
-          scan={scan}
-          isSelected={selectedScans.some((s) => s.id === scan.id)}
-          onToggleSelection={toggleSelection}
-        />
-      ))}
-    </div>
+    <StaggerContainer
+      className={styles["scansGrid"]}
+      staggerDelay={0.05}>
+      <AnimatePresence mode='popLayout'>
+        {scans.map((scan) => (
+          <motion.div
+            key={scan.id}
+            layout
+            initial={{opacity: 0, scale: 0.9}}
+            animate={{opacity: 1, scale: 1}}
+            exit={{opacity: 0, scale: 0.9, x: -20}}
+            transition={{duration: 0.2}}>
+            <StaggerItem>
+              <ScanCardWrapper
+                scan={scan}
+                isSelected={selectedScans.some((s) => s.id === scan.id)}
+                onToggleSelection={toggleSelection}
+              />
+            </StaggerItem>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </StaggerContainer>
   );
 }

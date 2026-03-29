@@ -10,7 +10,7 @@
  * Uses native HTML5 drag-and-drop APIs instead of react-dropzone to avoid ESLint issues.
  */
 
-import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
@@ -79,6 +79,7 @@ export default function UploadArea(): React.JSX.Element {
   const t = useTranslations("Invoices.UploadScans");
   const {pendingUploads, isUploading, addFiles, clearAll, uploadAll} = useScanUpload();
   const [isDragActive, setIsDragActive] = useState(false);
+  const [dragCount, setDragCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
@@ -116,6 +117,7 @@ export default function UploadArea(): React.JSX.Element {
       dragCounterRef.current += 1;
       if (event.dataTransfer.items.length > 0 && !isUploading) {
         setIsDragActive(true);
+        setDragCount(event.dataTransfer.items.length);
       }
     },
     [isUploading],
@@ -130,6 +132,7 @@ export default function UploadArea(): React.JSX.Element {
     dragCounterRef.current -= 1;
     if (dragCounterRef.current === 0) {
       setIsDragActive(false);
+      setDragCount(0);
     }
   }, []);
 
@@ -150,6 +153,7 @@ export default function UploadArea(): React.JSX.Element {
       event.stopPropagation();
       dragCounterRef.current = 0;
       setIsDragActive(false);
+      setDragCount(0);
 
       if (isUploading) return;
 
@@ -200,6 +204,33 @@ export default function UploadArea(): React.JSX.Element {
             <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.note")}</p>
             <span className={styles["chooseFilesButton"]}>{t("uploadArea.empty.chooseFiles")}</span>
           </motion.div>
+          {isDragActive && dragCount > 0 && (
+            <Badge
+              variant='secondary'
+              className={styles["dragCountBadge"]}>
+              {dragCount} file(s)
+            </Badge>
+          )}
+          {isDragActive && (
+            <div className={styles["cornerMarkers"]}>
+              <div
+                className={styles["corner"]}
+                data-position='top-left'
+              />
+              <div
+                className={styles["corner"]}
+                data-position='top-right'
+              />
+              <div
+                className={styles["corner"]}
+                data-position='bottom-left'
+              />
+              <div
+                className={styles["corner"]}
+                data-position='bottom-right'
+              />
+            </div>
+          )}
         </button>
       </>
     );

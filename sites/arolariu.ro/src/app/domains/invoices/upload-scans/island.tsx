@@ -22,7 +22,10 @@ import {
   TbPhoto,
   TbShieldCheck,
 } from "react-icons/tb";
+import {AnimatedCounter} from "../_components/AnimatedCounter";
+import {FadeIn} from "../_components/FadeIn";
 import OnboardingOverlay from "../_components/OnboardingOverlay";
+import WorkflowProgress from "../_components/WorkflowProgress";
 import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
@@ -94,34 +97,44 @@ function UploadStats(): React.JSX.Element | null {
         <div className={styles["statsGroup"]}>
           {/* Session total */}
           <div className={styles["statItem"]}>
-            <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>{totalAdded}</p>
+            <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>
+              <AnimatedCounter value={totalAdded} />
+            </p>
             <p className={styles["statLabel"]}>{t("stats.added")}</p>
           </div>
           {/* Pending in current batch */}
           {pending > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>{pending}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>
+                <AnimatedCounter value={pending} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.pending")}</p>
             </div>
           )}
           {/* Currently uploading */}
           {uploading > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>{uploading}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>
+                <AnimatedCounter value={uploading} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.uploading")}</p>
             </div>
           )}
           {/* Session completed (persistent) */}
           {totalCompleted > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>{totalCompleted}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>
+                <AnimatedCounter value={totalCompleted} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.completed")}</p>
             </div>
           )}
           {/* Session failed (persistent) + current queue failures */}
           {(totalFailed > 0 || failedInQueue > 0) && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>{totalFailed + failedInQueue}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>
+                <AnimatedCounter value={totalFailed + failedInQueue} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.failed")}</p>
             </div>
           )}
@@ -227,78 +240,83 @@ function UploadContent(): React.JSX.Element {
         </Link>
       </div>
 
+      {/* Workflow Progress */}
+      <WorkflowProgress currentStep='upload' />
+
       {/* Header */}
-      <div className={styles["header"]}>
-        <div className={styles["headerLeft"]}>
-          <div>
-            <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
-            <p className={styles["headerDescription"]}>{t("header.description")}</p>
+      <FadeIn>
+        <div className={styles["header"]}>
+          <div className={styles["headerLeft"]}>
+            <div>
+              <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
+              <p className={styles["headerDescription"]}>{t("header.description")}</p>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className={styles["infoButton"]}>
+                      <TbInfoCircle className={styles["infoIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent
+                  side='right'
+                  className={styles["tooltipContent"]}>
+                  <p>{t("header.tooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={styles["infoButton"]}>
-                    <TbInfoCircle className={styles["infoIcon"]} />
-                  </Button>
-                }
-              />
-              <TooltipContent
-                side='right'
-                className={styles["tooltipContent"]}>
-                <p>{t("header.tooltip")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
 
-        <div className={styles["headerActions"]}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant='outline'
-                    className={styles["outlineButton"]}
-                    render={
-                      <Link href='/domains/invoices/view-scans'>
-                        <TbEye className={styles["actionIcon"]} />
-                        <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
-                        <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
-                      </Link>
-                    }
-                  />
-                }
-              />
-              <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className={styles["headerActions"]}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      className={styles["outlineButton"]}
+                      render={
+                        <Link href='/domains/invoices/view-scans'>
+                          <TbEye className={styles["actionIcon"]} />
+                          <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
+                          <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
+                        </Link>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant='outline'
-                    className={styles["outlineButton"]}
-                    render={
-                      <Link href='/domains/invoices/view-invoices'>
-                        <TbFileInvoice className={styles["actionIcon"]} />
-                        <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
-                        <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
-                      </Link>
-                    }
-                  />
-                }
-              />
-              <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      className={styles["outlineButton"]}
+                      render={
+                        <Link href='/domains/invoices/view-invoices'>
+                          <TbFileInvoice className={styles["actionIcon"]} />
+                          <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
+                          <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
+                        </Link>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Upload Stats (when there are pending uploads) */}
       <UploadStats />

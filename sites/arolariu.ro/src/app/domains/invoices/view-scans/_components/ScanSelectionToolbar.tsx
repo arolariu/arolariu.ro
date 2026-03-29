@@ -6,6 +6,7 @@
  */
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbFileInvoice, TbX} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
@@ -32,7 +33,14 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
       <div className={styles["toolbarContent"]}>
         <div className={styles["toolbarLeft"]}>
           <span className={styles["selectedCount"]}>
-            {selectedScans.length} {t("selected")}
+            <motion.span
+              key={selectedScans.length}
+              initial={{scale: 1.2}}
+              animate={{scale: 1}}
+              transition={{type: "spring", stiffness: 300, damping: 20}}>
+              {selectedScans.length}
+            </motion.span>{" "}
+            {t("selected")}
           </span>
           <TooltipProvider>
             <Tooltip>

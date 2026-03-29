@@ -5,12 +5,15 @@
  * @module app/domains/invoices/view-scans/island
  */
 
-import {Button, Card, CardContent} from "@arolariu/components";
+import {Button, Card, CardContent, Sheet, SheetContent, SheetTrigger, useIsMobile} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useCallback} from "react";
-import {TbArrowLeft, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
+import {TbArrowLeft, TbBulb, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
+import {AnimatedCounter} from "../_components/AnimatedCounter";
+import {FadeIn} from "../_components/FadeIn";
+import WorkflowProgress from "../_components/WorkflowProgress";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider, useDialogs} from "../_contexts/DialogContext";
 import ScanSelectionToolbar from "./_components/ScanSelectionToolbar";
@@ -40,7 +43,9 @@ function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; t
 function StatsCard({value, label, colorClass}: Readonly<{value: number; label: string; colorClass: string}>): React.JSX.Element {
   return (
     <div className={styles["statsCardItem"]}>
-      <p className={`${styles["statsCardValue"]} ${styles[colorClass]}`}>{value}</p>
+      <p className={`${styles["statsCardValue"]} ${styles[colorClass]}`}>
+        <AnimatedCounter value={value} />
+      </p>
       <p className={styles["statsCardLabel"]}>{label}</p>
     </div>
   );
@@ -138,17 +143,14 @@ function CreateFromAllButton(): React.JSX.Element | null {
 }
 
 /**
- * Sidebar with tips and guidance.
+ * Sidebar content component (reused in both desktop sidebar and mobile Sheet).
  */
-function Sidebar(): React.JSX.Element | null {
+function SidebarContent(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans");
-  const {scans, selectedScans} = useScans();
-
-  // Don't show sidebar if no scans
-  if (scans.length === 0) return null;
+  const {selectedScans} = useScans();
 
   return (
-    <div className={styles["sidebar"]}>
+    <>
       {/* How to Use */}
       <Card>
         <CardContent className={styles["sidebarCardContent"]}>
@@ -219,7 +221,58 @@ function Sidebar(): React.JSX.Element | null {
           </div>
         </CardContent>
       </Card>
+    </>
+  );
+}
+
+/**
+ * Sidebar with tips and guidance (desktop only).
+ */
+function Sidebar(): React.JSX.Element | null {
+  const {scans} = useScans();
+
+  // Don't show sidebar if no scans
+  if (scans.length === 0) return null;
+
+  return (
+    <div className={styles["sidebar"]}>
+      <SidebarContent />
     </div>
+  );
+}
+
+/**
+ * Mobile tips button that opens a Sheet with sidebar content.
+ */
+function MobileTipsButton(): React.JSX.Element | null {
+  const t = useTranslations("Invoices.ViewScans");
+  const {scans} = useScans();
+  const isMobile = useIsMobile();
+
+  // Only show on mobile and when there are scans
+  if (!isMobile || scans.length === 0) return null;
+
+  return (
+    <Sheet>
+      <SheetTrigger
+        render={
+          <Button
+            variant='outline'
+            size='sm'
+            className={styles["mobileTipsButton"]}>
+            <TbBulb className={styles["tipsIcon"]} />
+            Tips
+          </Button>
+        }
+      />
+      <SheetContent
+        side='bottom'
+        className={styles["mobileTipsSheet"]}>
+        <div className={styles["mobileTipsContent"]}>
+          <SidebarContent />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -247,10 +300,18 @@ function ViewScansContent(): React.JSX.Element {
         </Link>
       </div>
 
-      <ScansHeader />
+      {/* Workflow Progress */}
+      <WorkflowProgress currentStep='review' />
+
+      <FadeIn>
+        <ScansHeader />
+      </FadeIn>
 
       {/* Stats */}
       <ScanStats />
+
+      {/* Mobile Tips Button */}
+      <MobileTipsButton />
 
       {/* Create from all button */}
       <CreateFromAllButton />

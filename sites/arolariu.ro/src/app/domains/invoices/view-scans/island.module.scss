@@ -217,6 +217,36 @@
   }
 }
 
+// ===========================================
+// MOBILE TIPS BUTTON
+// ===========================================
+.mobileTipsButton {
+  margin-bottom: abstracts.space(4);
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(2);
+
+  // Only show on mobile
+  @include abstracts.respond-to('md') {
+    display: none;
+  }
+}
+
+.tipsIcon {
+  height: abstracts.space(4);
+  width: abstracts.space(4);
+}
+
+.mobileTipsSheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.mobileTipsContent {
+  @include abstracts.spaced-children(abstracts.space(6));
+  padding: abstracts.space(4);
+}
+
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
   font-weight: abstracts.font-weight('semibold');

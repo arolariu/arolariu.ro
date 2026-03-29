@@ -6,6 +6,38 @@
 // ===========================================
 // LOADING SKELETON GRID
 // ===========================================
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.skeletonImage {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  border-radius: radius('md');
+}
+
+.skeletonInfo {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding-inline: space(2);
+}
+
+.skeletonName {
+  height: space(4);
+  width: 70%;
+  border-radius: radius('sm');
+}
+
+.skeletonMeta {
+  height: space(3);
+  width: 50%;
+  border-radius: radius('sm');
+}
+
+// Legacy skeleton grid (deprecated, keeping for backwards compatibility)
 .skeletonGrid {
   @include grid(1, space(4));
 

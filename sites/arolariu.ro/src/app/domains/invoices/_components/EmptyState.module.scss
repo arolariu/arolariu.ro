@@ -20,10 +20,12 @@
   align-items: center;
   justify-content: center;
   margin-bottom: space(6);
-  background: linear-gradient(135deg, color-alpha('primary', 0.1), color-alpha('primary', 0.05));
+  background: radial-gradient(circle, color-alpha('primary', 0.08) 0%, transparent 70%),
+    linear-gradient(135deg, color-alpha('primary', 0.1), color-alpha('primary', 0.05));
 
   @include dark {
-    background: linear-gradient(135deg, color-alpha('primary', 0.2), color-alpha('primary', 0.1));
+    background: radial-gradient(circle, color-alpha('primary', 0.08) 0%, transparent 70%),
+      linear-gradient(135deg, color-alpha('primary', 0.2), color-alpha('primary', 0.1));
   }
 }
 

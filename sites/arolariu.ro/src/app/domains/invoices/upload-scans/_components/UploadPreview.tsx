@@ -13,6 +13,7 @@ import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCheck, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
+import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
 import styles from "./UploadPreview.module.scss";
 
@@ -207,23 +208,26 @@ export default function UploadPreview(): React.JSX.Element | null {
         <h2 className={styles["title"]}>{t("preview.title", {count: String(pendingUploads.length)})}</h2>
       </div>
 
-      <div className={styles["grid"]}>
+      <StaggerContainer
+        className={styles["grid"]}
+        staggerDelay={0.05}>
         {pendingUploads.map((upload) => (
-          <UploadCard
-            key={upload.id}
-            id={upload.id}
-            name={upload.name}
-            mimeType={upload.mimeType}
-            size={upload.size}
-            preview={upload.preview}
-            status={upload.status}
-            progress={upload.progress}
-            attempts={upload.attempts}
-            error={upload.error}
-            onRemove={removeFiles}
-          />
+          <StaggerItem key={upload.id}>
+            <UploadCard
+              id={upload.id}
+              name={upload.name}
+              mimeType={upload.mimeType}
+              size={upload.size}
+              preview={upload.preview}
+              status={upload.status}
+              progress={upload.progress}
+              attempts={upload.attempts}
+              error={upload.error}
+              onRemove={removeFiles}
+            />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

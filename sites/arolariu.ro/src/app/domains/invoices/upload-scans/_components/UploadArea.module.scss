@@ -7,6 +7,7 @@
 // EMPTY DROPZONE (no pending uploads)
 // ===========================================
 .dropzoneEmpty {
+  position: relative;
   margin-bottom: abstracts.space(16);
   border-radius: abstracts.radius('lg');
   border: 2px dashed abstracts.color('border');
@@ -196,10 +197,21 @@
     @include abstracts.shadow('xl');
     opacity: 0.9;
   }
+
+  // Ensure 44px minimum height on mobile
+  @include abstracts.respond-below('md') {
+    min-height: abstracts.space(11); // 44px
+    padding: abstracts.space(3) abstracts.space(6);
+  }
 }
 
 .clearButton {
   cursor: pointer;
+
+  // Ensure 44px minimum height on mobile
+  @include abstracts.respond-below('md') {
+    min-height: abstracts.space(11); // 44px
+  }
 }
 
 .uploadButton {
@@ -209,5 +221,77 @@
 
   &:hover {
     opacity: 0.9;
+  }
+
+  // Ensure 44px minimum height on mobile
+  @include abstracts.respond-below('md') {
+    min-height: abstracts.space(11); // 44px
+  }
+}
+
+// ===========================================
+// DRAG FEEDBACK
+// ===========================================
+.dragCountBadge {
+  position: absolute;
+  top: abstracts.space(4);
+  right: abstracts.space(4);
+  z-index: 10;
+}
+
+.cornerMarkers {
+  position: absolute;
+  inset: abstracts.space(3);
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: abstracts.space(6);
+  height: abstracts.space(6);
+  border-color: abstracts.color('primary');
+  border-style: solid;
+  border-width: 0;
+  animation: cornerPulse 1s ease-in-out infinite alternate;
+}
+
+.corner[data-position='top-left'] {
+  top: 0;
+  left: 0;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-radius: abstracts.radius('md') 0 0 0;
+}
+
+.corner[data-position='top-right'] {
+  top: 0;
+  right: 0;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-radius: 0 abstracts.radius('md') 0 0;
+}
+
+.corner[data-position='bottom-left'] {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-radius: 0 0 0 abstracts.radius('md');
+}
+
+.corner[data-position='bottom-right'] {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-radius: 0 0 abstracts.radius('md') 0;
+}
+
+@keyframes cornerPulse {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
   }
 }
