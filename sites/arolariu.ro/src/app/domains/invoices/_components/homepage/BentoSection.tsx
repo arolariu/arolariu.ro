@@ -152,29 +152,25 @@ export default function BentoSection(): React.JSX.Element {
 
               if (item.href) {
                 return (
-                  <div
-                    key={item.key}
-                    className={styles[item.spanKey]}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          className={styles["bentoLink"]}>
-                          <motion.div
-                            className={`${styles["bentoItem"]} ${styles[item.gradientKey]} ${styles["bentoItemClickable"]}`}
-                            initial={{opacity: 0, y: 30, scale: 0.95}}
-                            animate={isInView ? {opacity: 1, y: 0, scale: 1} : {}}
-                            transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
-                            whileHover={{scale: 1.02}}>
-                            {cardContent}
-                          </motion.div>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{item.tooltip}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+                  <Tooltip key={item.key}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={item.href}
+                        className={`${styles["bentoLink"]} ${styles[item.spanKey]}`}>
+                        <motion.div
+                          className={`${styles["bentoItem"]} ${styles[item.gradientKey]} ${styles["bentoItemClickable"]}`}
+                          initial={{opacity: 0, y: 30, scale: 0.95}}
+                          animate={isInView ? {opacity: 1, y: 0, scale: 1} : {}}
+                          transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
+                          whileHover={{scale: 1.02}}>
+                          {cardContent}
+                        </motion.div>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{item.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               }
 
