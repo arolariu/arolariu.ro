@@ -64,3 +64,5 @@ sites/exp.arolariu.ro/config.json
 sites/exp.arolariu.ro/config.docker.json
 sites/arolariu.ro/next-env.d.ts
 **/e2e-storage-state.json
+
+temp/
