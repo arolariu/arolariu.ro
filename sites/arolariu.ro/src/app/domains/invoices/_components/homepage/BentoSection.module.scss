@@ -64,6 +64,7 @@
   overflow: hidden;
   border-radius: abstracts.radius('2xl');
   cursor: default;
+  height: 100%;
 }
 
 .bentoItemClickable {
@@ -74,6 +75,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  height: 100%;
 }
 
 .gradientPurple {
