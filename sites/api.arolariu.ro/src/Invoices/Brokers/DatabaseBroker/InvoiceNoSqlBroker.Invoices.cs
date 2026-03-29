@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -61,7 +62,17 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      ItemResponse<Invoice> response;
+      try
+      {
+        response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      }
+      catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+      {
+        activity?.SetTag("result.found", false);
+        activity?.RecordSuccess();
+        return null;
+      }
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
 
@@ -216,8 +227,18 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
-      totalRequestCharge += response.RequestCharge;
+      ItemResponse<Invoice> response;
+      try
+      {
+        response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+        totalRequestCharge += response.RequestCharge;
+      }
+      catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+      {
+        activity?.SetTag("result.found", false);
+        activity?.RecordSuccess();
+        return;
+      }
 
       var invoice = response.Resource;
       if (invoice is not null)

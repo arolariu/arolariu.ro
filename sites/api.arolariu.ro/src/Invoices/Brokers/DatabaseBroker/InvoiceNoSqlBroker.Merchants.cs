@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +41,15 @@ public partial class InvoiceNoSqlBroker
     {
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      ItemResponse<Merchant> response;
+      try
+      {
+        response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      }
+      catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+      {
+        return null;
+      }
 
       var merchant = response.Resource;
       return merchant is not null && merchant.IsSoftDeleted
@@ -132,7 +141,16 @@ public partial class InvoiceNoSqlBroker
     {
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      ItemResponse<Merchant> response;
+      try
+      {
+        response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      }
+      catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+      {
+        return;
+      }
+
       var merchant = response.Resource;
       if (merchant is not null)
       {

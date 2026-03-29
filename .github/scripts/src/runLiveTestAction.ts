@@ -970,3 +970,72 @@ export default async function runLiveTestAction(): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Closes all open E2E test failure issues when tests have passed successfully.
+ *
+ * @remarks
+ * This function is called from the `close-issues-on-success` workflow job when
+ * E2E tests pass. It searches for all open issues labeled with the E2E failure
+ * labels and closes them with a "completed" state reason and a resolution comment.
+ */
+export async function closeOpenFailureIssues(): Promise<void> {
+  const github = await import("@actions/github");
+  const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
+  const context = github.context;
+  const core = await import("@actions/core");
+
+  try {
+    core.info("🔍 Searching for open E2E failure issues to close...");
+
+    const searchQuery = `is:issue repo:${context.repo.owner}/${context.repo.repo} is:open label:${AUTOMATED_TEST_FAILURE_LABELS[1] ?? AUTOMATED_TEST_FAILURE_LABELS[0]}`;
+    const searchResults = await octokit.rest.search.issuesAndPullRequests({
+      order: "desc",
+      per_page: 100,
+      q: searchQuery,
+      sort: "created",
+    });
+
+    const openIssues = searchResults.data.items.filter((issue) => issue.state === "open");
+
+    if (openIssues.length === 0) {
+      core.notice("✓ No open E2E failure issues found. Nothing to close.");
+      return;
+    }
+
+    core.info(`📋 Found ${openIssues.length} open E2E failure issue(s) to close.`);
+
+    const runId = process.env["RUN_ID"] ?? "unknown";
+    const serverUrl = process.env["SERVER_URL"] ?? DEFAULT_GITHUB_SERVER_URL;
+    const runUrl = `${serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
+
+    for (const issue of openIssues) {
+      core.info(`  ↳ Closing issue #${issue.number}: ${issue.title}`);
+
+      await octokit.rest.issues.createComment({
+        body: `## ✅ E2E Tests Passing\n\nThis issue is being automatically closed because the E2E tests are now **passing** in the latest workflow run.\n\n**Resolution Run:** [#${runId}](${runUrl})\n\nIf tests fail again in the future, a new issue will be opened automatically.`,
+        issue_number: issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+      });
+
+      await octokit.rest.issues.update({
+        issue_number: issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        state: "closed",
+        state_reason: "completed",
+      });
+
+      core.info(`  ✓ Closed issue #${issue.number}`);
+    }
+
+    core.notice(`✅ Closed ${openIssues.length} E2E failure issue(s) - tests are passing.`);
+  } catch (error) {
+    const err = error as Error;
+    core.error(`❌ Failed to close E2E failure issues: ${err.message}`);
+    core.error(`Stack trace: ${err.stack ?? "No stack trace available"}`);
+    // Do not fail the workflow if issue closing fails - it's a best-effort operation
+    core.warning("⚠️ Issue closing failed but this does not affect the test result.");
+  }
+}

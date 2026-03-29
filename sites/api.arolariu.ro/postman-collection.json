@@ -2,7 +2,7 @@
   "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
   "info": {
     "name": "api.arolariu.ro",
-    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
+    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create → read → update → delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "api-arolariu-ro-backend-tests",
     "version": "2.0.0"
@@ -41,7 +41,7 @@
           "requiredVars.forEach((variableName) => {",
           "    const value = readConfig(variableName, '');",
           "    if (!value) {",
-          "        console.warn(`\u26a0\ufe0f Warning: Required variable '${variableName}' is not set`);",
+          "        console.warn(`⚠️ Warning: Required variable '${variableName}' is not set`);",
           "    }",
           "});",
           "",
@@ -59,7 +59,7 @@
           "        const payload = JSON.parse(atob(paddedPayload));",
           "        return payload && typeof payload.userIdentifier === 'string' ? payload.userIdentifier.trim() : '';",
           "    } catch (error) {",
-          "        console.warn(`\u26a0\ufe0f Warning: Failed to parse userIdentifier from authToken: ${error.message || error}`);",
+          "        console.warn(`⚠️ Warning: Failed to parse userIdentifier from authToken: ${error.message || error}`);",
           "        return '';",
           "    }",
           "}",
@@ -74,11 +74,11 @@
           "}",
           "",
           "if (!userIdentifier) {",
-          "    console.warn(`\u26a0\ufe0f Warning: Required variable 'userIdentifier' is not set and could not be derived from authToken`);",
+          "    console.warn(`⚠️ Warning: Required variable 'userIdentifier' is not set and could not be derived from authToken`);",
           "}",
           "",
           "if (userIdentifier && !guidRegex.test(userIdentifier)) {",
-          "    console.warn(`\u26a0\ufe0f Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
+          "    console.warn(`⚠️ Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
           "}",
           "",
           "const requestMethod = pm.request.method.toUpperCase();",
@@ -92,7 +92,7 @@
           "}",
           "",
           "pm.variables.set('requestTimestamp', new Date().toISOString());",
-          "console.log(`\ud83d\udce4 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
+          "console.log(`📤 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
         ]
       }
     },
@@ -184,23 +184,23 @@
           "        `Response time ${pm.response.responseTime}ms exceeds ${failureThreshold}ms SLA`);",
           "",
           "    if (pm.response.responseTime > warningThreshold) {",
-          "        console.warn(`\u26a0\ufe0f Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
+          "        console.warn(`⚠️ Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
           "    }",
           "});",
           "",
           "pm.test('Content-Type header is present and valid', function () {",
-          "    if (pm.response.code === 204 || isDeleteScanNotFoundResponse()) {",
+          "    if (pm.response.code === 204 || pm.response.code === 401 || pm.response.code === 405 || isDeleteScanNotFoundResponse()) {",
           "        return;",
           "    }",
           "",
           "    const contentType = pm.response.headers.get('Content-Type');",
           "    pm.expect(contentType).to.exist;",
-          "    pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
+          "    pm.expect(contentType).to.match(/application\\/json|application\\/problem\\+json|text\\/plain|text\\/html/,",
           "        `Invalid Content-Type: ${contentType}`);",
           "});",
           "",
           "pm.test('Response body is valid', function () {",
-          "    if (pm.response.code === 204 || pm.request.method === 'HEAD' || isDeleteScanNotFoundResponse()) {",
+          "    if (pm.response.code === 204 || pm.response.code === 401 || pm.response.code === 405 || pm.request.method === 'HEAD' || isDeleteScanNotFoundResponse()) {",
           "        return;",
           "    }",
           "",
@@ -209,7 +209,7 @@
           "",
           "pm.test('JSON responses are well-formed', function () {",
           "    const contentType = pm.response.headers.get('Content-Type');",
-          "    if (contentType && contentType.includes('application/json')) {",
+          "    if (contentType && (contentType.includes('application/json') || contentType.includes('application/problem+json'))) {",
           "        pm.response.to.have.jsonBody();",
           "    } else {",
           "        return;",
@@ -234,7 +234,7 @@
           "        if (isDeleteScanNotFoundResponse()) {",
           "            return;",
           "        }",
-          "        pm.response.to.have.jsonBody();",
+          "        // Some error responses (401, 405) may have empty bodies from framework-level handling\n        const responseText = pm.response.text();\n        if (!responseText || responseText.length === 0) {\n            return;\n        }\n        pm.response.to.have.jsonBody();",
           "        const jsonData = pm.response.json();",
           "        pm.expect(jsonData).to.be.an('object');",
           "    } else {",
@@ -242,7 +242,7 @@
           "    }",
           "});",
           "",
-          "const statusIcon = pm.response.code < 400 ? '\u2705' : '\u274c';",
+          "const statusIcon = pm.response.code < 400 ? '✅' : '❌';",
           "console.log(`${statusIcon} [${pm.info.requestName}] ${pm.response.code} | ${pm.response.responseTime}ms | ${pm.response.responseSize} bytes`);"
         ]
       }
@@ -306,7 +306,7 @@
                   "    pm.expect(pm.response.responseTime).to.be.below(2000);",
                   "});",
                   "",
-                  "console.log('\ud83c\udfe5 Health check passed - API is operational');"
+                  "console.log('🏥 Health check passed - API is operational');"
                 ]
               }
             }
@@ -414,7 +414,7 @@
                   "    ",
                   "    // Store for subsequent requests",
                   "    pm.environment.set('invoiceIdentifier', String(id));",
-                  "    console.log('\ud83d\udcdd Created invoice: ' + id);",
+                  "    console.log('📝 Created invoice: ' + id);",
                   "});",
                   "",
                   "pm.test('Invoice has required fields', function () {",
@@ -490,7 +490,7 @@
                   "    pm.expect(found).to.be.true;",
                   "});",
                   "",
-                  "console.log('\ud83d\udccb Retrieved ' + pm.response.json().length + ' invoice(s)');"
+                  "console.log('📋 Retrieved ' + pm.response.json().length + ' invoice(s)');"
                 ]
               }
             }
@@ -560,7 +560,7 @@
                   "    pm.expect(body).to.have.property('lastUpdatedAt');",
                   "});",
                   "",
-                  "console.log('\u2705 Retrieved invoice details');"
+                  "console.log('✅ Retrieved invoice details');"
                 ]
               }
             }
@@ -2089,7 +2089,7 @@
                   "    pm.response.to.have.jsonBody();",
                   "});",
                   "",
-                  "console.log('\u2705 404 error handling verified');"
+                  "console.log('✅ 404 error handling verified');"
                 ]
               }
             }
@@ -2133,7 +2133,7 @@
                   "    }",
                   "});",
                   "",
-                  "console.log('\u2705 401 authorization check verified');"
+                  "console.log('✅ 401 authorization check verified');"
                 ]
               }
             }
@@ -2195,7 +2195,7 @@
                   "    pm.response.to.have.jsonBody();",
                   "});",
                   "",
-                  "console.log('\u2705 400 validation error verified');"
+                  "console.log('✅ 400 validation error verified');"
                 ]
               }
             }

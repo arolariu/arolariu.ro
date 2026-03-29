@@ -904,7 +904,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
+    [SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/products

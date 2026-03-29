@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 using static arolariu.Backend.Common.GuidConstants;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -49,8 +50,8 @@ public static partial class InvoiceEndpoints
       Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service validation error.");
+        statusCode: StatusCodes.Status400BadRequest,
+        title: "The request contains invalid invoice data.");
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
@@ -2245,7 +2246,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    MerchantInvoicesRequestDto invoiceIdentifiers)
+    [FromBody] MerchantInvoicesRequestDto invoiceIdentifiers)
   {
     try
     {

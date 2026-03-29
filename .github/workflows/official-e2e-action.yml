@@ -272,3 +272,42 @@ jobs:
             execSync('cd .github/scripts && npm ci', {stdio: 'inherit'});
             const {default: runLiveTestAction} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
             await runLiveTestAction();
+
+  close-issues-on-success:
+    name: ✅ Close resolved issues on success
+    needs: [prepare, e2e-live]
+    if: ${{ always() && needs.e2e-live.result == 'success' }}
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+
+      - name: 🚀 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          cache-key-prefix: "e2e"
+          dotnet-version: ""
+          install-node-dependencies: "false"
+          node-version: "24"
+
+      - name: ✅ Close open E2E failure issues
+        uses: actions/github-script@v8
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SERVER_URL: ${{ github.server_url }}
+          TARGETS: ${{ needs.prepare.outputs.targets }}
+          WORKFLOW: ${{ github.workflow }}
+        with:
+          script: |
+            const {execSync} = require('node:child_process');
+            execSync('cd .github/scripts && npm ci', {stdio: 'inherit'});
+            const {closeOpenFailureIssues} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
+            await closeOpenFailureIssues();
