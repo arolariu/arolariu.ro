@@ -2,7 +2,7 @@
 /* eslint react/no-unstable-nested-components: 0 */
 
 import {useTranslations} from "next-intl";
-import React from "react";
+import type React from "react";
 import styles from "./RichText.module.scss";
 
 type Props = {
@@ -14,22 +14,23 @@ type Props = {
 /**
  * A rich text component that renders internationalized text with formatting support.
  *
- * This component uses next-intl translation hooks to retrieve and format text content
- * based on the provided section and text keys. It supports various HTML formatting tags
- * including strong, em, br, code, ul, li, and span elements.
+ * Uses `useTranslations()` without a namespace and constructs the full key path
+ * from `sectionKey` + `textKey` to support dynamic namespace resolution.
+ *
  * @param props The props object containing the sectionKey and textKey
  * @returns The formatted internationalized text content
  * @example
  * ```tsx
- * <RichText sectionKey="about" textKey="description" />
+ * <RichText sectionKey="Footer" textKey="subtitle" />
  * ```
  */
 export function RichText({className, sectionKey, textKey}: Readonly<Props>): React.JSX.Element {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sectionKey is dynamic, can't be statically typed
-  const t = useTranslations(sectionKey as any);
+  const t = useTranslations();
+  const fullKey = `${sectionKey}.${textKey}`;
 
   try {
-    const text = t.rich(textKey as never, {
+    // @ts-expect-error -- fullKey is a dynamic string; next-intl expects literal keys but this is intentional for dynamic usage
+    const text = t.rich(fullKey, {
       strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
       em: (chunks: React.ReactNode) => <em>{chunks}</em>,
       br: (chunks: React.ReactNode) => (
@@ -45,8 +46,8 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
     });
 
     return <span className={className}>{text}</span>;
-  } catch (error) {
-    console.warn(`[RichText] Failed to render key "${textKey}" in namespace "${sectionKey}":`, error);
+  } catch (error: unknown) {
+    console.warn(`[RichText] Failed to render "${fullKey}":`, error);
     return <span className={className} />;
   }
 }
