@@ -14,36 +14,30 @@
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useFormatter, useTranslations} from "next-intl";
 import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
-
-/**
- * Category label map.
- */
-const CATEGORY_LABELS: Record<number, string> = {
-  [InvoiceCategory.NOT_DEFINED]: "Uncategorized",
-  [InvoiceCategory.GROCERY]: "Grocery",
-  [InvoiceCategory.FAST_FOOD]: "Dining",
-  [InvoiceCategory.HOME_CLEANING]: "Home & Cleaning",
-  [InvoiceCategory.CAR_AUTO]: "Auto & Vehicle",
-  [InvoiceCategory.OTHER]: "Other",
+/** Maps InvoiceCategory enum to i18n key suffix. */
+const CATEGORY_KEYS: Record<number, "notDefined" | "grocery" | "fastFood" | "homeCleaning" | "carAuto" | "other"> = {
+  [InvoiceCategory.NOT_DEFINED]: "notDefined",
+  [InvoiceCategory.GROCERY]: "grocery",
+  [InvoiceCategory.FAST_FOOD]: "fastFood",
+  [InvoiceCategory.HOME_CLEANING]: "homeCleaning",
+  [InvoiceCategory.CAR_AUTO]: "carAuto",
+  [InvoiceCategory.OTHER]: "other",
 };
 
-/**
- * Payment type label map.
- */
-const PAYMENT_TYPE_LABELS: Record<number, string> = {
-  [PaymentType.Unknown]: "Unknown",
-  [PaymentType.Cash]: "Cash",
-  [PaymentType.Card]: "Card",
-  [PaymentType.Transfer]: "Bank Transfer",
-  [PaymentType.MobilePayment]: "Mobile Payment",
-  [PaymentType.Voucher]: "Voucher",
-  [PaymentType.Other]: "Other",
+/** Maps PaymentType enum to i18n key suffix. */
+const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer" | "mobilePayment" | "voucher" | "other"> = {
+  [PaymentType.Unknown]: "unknown",
+  [PaymentType.Cash]: "cash",
+  [PaymentType.Card]: "card",
+  [PaymentType.Transfer]: "transfer",
+  [PaymentType.MobilePayment]: "mobilePayment",
+  [PaymentType.Voucher]: "voucher",
+  [PaymentType.Other]: "other",
 };
 
 /**
@@ -54,6 +48,7 @@ const PAYMENT_TYPE_LABELS: Record<number, string> = {
 export default function ReviewStep(): React.JSX.Element {
   const t = useTranslations("Invoices.CreateInvoice.reviewStep");
   const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
+  const format = useFormatter();
 
   return (
     <div className={styles["container"]}>
@@ -115,7 +110,7 @@ export default function ReviewStep(): React.JSX.Element {
               {t("sections.details.category")}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{CATEGORY_LABELS[invoiceDetails.category] ?? "Uncategorized"}</Badge>
+              <Badge variant='outline'>{t(`categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`)}</Badge>
             </div>
           </div>
 
@@ -125,7 +120,7 @@ export default function ReviewStep(): React.JSX.Element {
               {t("sections.details.paymentType")}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{PAYMENT_TYPE_LABELS[invoiceDetails.paymentType] ?? "Unknown"}</Badge>
+              <Badge variant='outline'>{t(`paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`)}</Badge>
             </div>
           </div>
 
@@ -134,7 +129,7 @@ export default function ReviewStep(): React.JSX.Element {
               <TbCalendar />
               {t("sections.details.transactionDate")}
             </div>
-            <div className={styles["detailValue"]}>{dateFormatter.format(invoiceDetails.transactionDate)}</div>
+            <div className={styles["detailValue"]}>{format.dateTime(invoiceDetails.transactionDate, {dateStyle: "long"})}</div>
           </div>
 
           {invoiceDetails.description && (

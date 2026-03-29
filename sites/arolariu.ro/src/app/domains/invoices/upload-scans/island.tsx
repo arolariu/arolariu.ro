@@ -166,44 +166,38 @@ function UploadContent(): React.JSX.Element {
   const [showPrompt, setShowPrompt] = useState(false);
   const [completedScans, setCompletedScans] = useState<Array<{id: string; preview: string; name: string}>>([]);
   const completedScansRef = useRef<Array<{id: string; preview: string; name: string}>>([]);
+  const hasPromptedRef = useRef(false);
 
   /**
    * Effect to collect completed scans before they're removed from the queue.
-   *
-   * @remarks
-   * Stores completed uploads in a ref so they're available for the prompt
-   * even after they're cleared from the pendingUploads array.
    */
   useEffect(() => {
     const completed = pendingUploads.filter((u) => u.status === "completed").map((u) => ({id: u.id, preview: u.preview, name: u.name}));
     if (completed.length > 0) {
       completedScansRef.current = completed;
     }
+    // Reset the prompted flag when a new upload batch starts
+    if (pendingUploads.length > 0) {
+      hasPromptedRef.current = false;
+    }
   }, [pendingUploads]);
 
   /**
-   * Effect to detect when all uploads complete and show the prompt.
-   *
-   * @remarks
-   * Triggers when:
-   * - All pending uploads are cleared (completed or failed)
-   * - At least one upload completed successfully
-   * - Prompt hasn't been shown yet for this batch
+   * Effect to detect when all uploads complete and show the prompt once per batch.
    */
   useEffect(() => {
     const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0;
 
-    if (allDone && !showPrompt) {
-      // Use the ref to populate completedScans
+    if (allDone && !hasPromptedRef.current) {
+      hasPromptedRef.current = true;
       setCompletedScans(completedScansRef.current);
-      // Show prompt after a short delay for better UX
       const timer = setTimeout(() => {
         setShowPrompt(true);
       }, 500);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [pendingUploads, sessionStats.totalCompleted, showPrompt]);
+  }, [pendingUploads, sessionStats.totalCompleted]);
 
   /**
    * Navigate to create invoice page.
