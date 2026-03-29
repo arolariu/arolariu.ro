@@ -48,7 +48,7 @@
   margin-bottom: abstracts.space(4);
   font-size: abstracts.font-size('3xl');
   font-weight: abstracts.font-weight('bold');
-  color: white;
+  color: abstracts.color('foreground');
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('4xl');
@@ -62,7 +62,7 @@
 .ctaDescription {
   margin-bottom: abstracts.space(8);
   font-size: abstracts.font-size('lg');
-  color: abstracts.color-alpha('primary-foreground', 0.85);
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('xl');
@@ -157,23 +157,23 @@
 // CTA BUTTON OVERRIDES
 // ===========================================
 .ctaPrimaryBtn {
-  background-color: white;
+  background-color: abstracts.color('primary');
   padding-inline: abstracts.space(8);
-  color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
 
   &:hover {
-    background-color: abstracts.color('muted');
+    opacity: 0.9;
   }
 }
 
 .ctaSecondaryBtn {
-  border-color: hsl(0 0% 100% / 0.3);
-  background-color: hsl(0 0% 100% / 0.1);
+  border-color: abstracts.color-alpha('border', 0.5);
+  background-color: abstracts.color-alpha('muted', 0.2);
   padding-inline: abstracts.space(8);
-  color: white;
+  color: abstracts.color('foreground');
   @include abstracts.backdrop-blur(4px);
 
   &:hover {
-    background-color: hsl(0 0% 100% / 0.2);
+    background-color: abstracts.color-alpha('muted', 0.4);
   }
 }

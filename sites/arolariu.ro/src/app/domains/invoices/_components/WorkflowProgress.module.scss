@@ -1,0 +1,73 @@
+@use '../../../../styles/abstracts' as *;
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+  padding: space(3) 0;
+  margin-bottom: space(2);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.stepCircle {
+  width: space(8);
+  height: space(8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: font-size('sm');
+  transition: all 0.3s ease;
+}
+
+.stepActive {
+  background-color: color('primary');
+  color: color('primary-foreground');
+}
+
+.stepCompleted {
+  background-color: color('primary');
+  color: color('primary-foreground');
+}
+
+.stepFuture {
+  background-color: color('muted');
+  color: color('muted-foreground');
+}
+
+.stepLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  transition: opacity 0.3s ease;
+}
+
+.connector {
+  width: space(12);
+  height: 2px;
+  background-color: color('border');
+  transition: background-color 0.3s ease;
+}
+
+.connectorCompleted {
+  background-color: color('primary');
+}
+
+@include respond-below('sm') {
+  .stepLabel {
+    display: none;
+  }
+
+  .stepLabelActive {
+    display: inline;
+  }
+
+  .connector {
+    width: space(6);
+  }
+}

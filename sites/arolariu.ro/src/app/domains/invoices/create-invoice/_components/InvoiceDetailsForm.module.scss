@@ -1,0 +1,69 @@
+// ===========================================
+// INVOICE DETAILS FORM STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+.container {
+  @include flex-column;
+  gap: space(6);
+}
+
+.header {
+  @include flex-column;
+  gap: space(1);
+}
+
+.title {
+  font-size: font-size('2xl');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin: 0;
+}
+
+.subtitle {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin: 0;
+}
+
+.formCard {
+  max-width: 600px;
+}
+
+.formContent {
+  @include flex-column;
+  gap: space(5);
+  padding: space(6);
+}
+
+.formField {
+  @include flex-column;
+  gap: space(2);
+}
+
+.fieldHint {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  margin: 0;
+}
+
+.dateButton {
+  display: flex;
+  justify-content: flex-start;
+  gap: space(2);
+  width: 100%;
+}
+
+.calendarIcon {
+  font-size: font-size('lg');
+}
+
+.calendarPopover {
+  width: auto;
+  padding: space(3);
+}
+
+.descriptionTextarea {
+  resize: vertical;
+  min-height: 100px;
+}

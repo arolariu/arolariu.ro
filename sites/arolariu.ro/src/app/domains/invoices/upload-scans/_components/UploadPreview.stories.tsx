@@ -33,16 +33,36 @@ export const MixedStates: Story = {
               style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
             <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span style={{borderRadius: "9999px", backgroundColor: "rgba(107,114,128,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Pending</span>
+              <span
+                style={{
+                  borderRadius: "9999px",
+                  backgroundColor: "rgba(107,114,128,0.8)",
+                  paddingInline: "0.5rem",
+                  paddingBlock: "0.125rem",
+                  fontSize: "0.75rem",
+                  color: "white",
+                }}>
+                Pending
+              </span>
             </div>
             <button
               type='button'
-              style={{position: "absolute", top: "0.5rem", left: "0.5rem", borderRadius: "9999px", backgroundColor: "rgba(0,0,0,0.5)", padding: "0.25rem", color: "white"}}>
+              style={{
+                position: "absolute",
+                top: "0.5rem",
+                left: "0.5rem",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(0,0,0,0.5)",
+                padding: "0.25rem",
+                color: "white",
+              }}>
               🗑
             </button>
           </div>
           <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-01.jpg</p>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
+              receipt-01.jpg
+            </p>
             <p style={{fontSize: "0.75rem", color: "#6b7280"}}>1.2 MB</p>
           </div>
         </div>
@@ -55,20 +75,46 @@ export const MixedStates: Story = {
               alt='Uploading scan'
               style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(59,130,246,0.3)"}}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(59,130,246,0.3)",
+              }}>
               <span style={{fontSize: "1.5rem"}}>⏳</span>
             </div>
             <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span style={{borderRadius: "9999px", backgroundColor: "rgba(59,130,246,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Uploading</span>
+              <span
+                style={{
+                  borderRadius: "9999px",
+                  backgroundColor: "rgba(59,130,246,0.8)",
+                  paddingInline: "0.5rem",
+                  paddingBlock: "0.125rem",
+                  fontSize: "0.75rem",
+                  color: "white",
+                }}>
+                Uploading
+              </span>
             </div>
           </div>
           <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-02.png</p>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
+              receipt-02.png
+            </p>
             <p style={{fontSize: "0.75rem", color: "#6b7280"}}>2.5 MB</p>
-            <div style={{marginTop: "0.25rem", height: "0.375rem", width: "100%", overflow: "hidden", borderRadius: "0.25rem", backgroundColor: "#e5e7eb"}}>
-              <div
-                style={{height: "100%", backgroundColor: "#3b82f6", width: "65%"}}
-              />
+            <div
+              style={{
+                marginTop: "0.25rem",
+                height: "0.375rem",
+                width: "100%",
+                overflow: "hidden",
+                borderRadius: "0.25rem",
+                backgroundColor: "#e5e7eb",
+              }}>
+              <div style={{height: "100%", backgroundColor: "#3b82f6", width: "65%"}} />
             </div>
             <p style={{fontSize: "0.75rem", color: "#6b7280"}}>65%</p>
           </div>
@@ -82,15 +128,35 @@ export const MixedStates: Story = {
               alt='Completed upload'
               style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(34,197,94,0.3)"}}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(34,197,94,0.3)",
+              }}>
               <span style={{fontSize: "1.5rem"}}>✅</span>
             </div>
             <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span style={{borderRadius: "9999px", backgroundColor: "rgba(34,197,94,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Completed</span>
+              <span
+                style={{
+                  borderRadius: "9999px",
+                  backgroundColor: "rgba(34,197,94,0.8)",
+                  paddingInline: "0.5rem",
+                  paddingBlock: "0.125rem",
+                  fontSize: "0.75rem",
+                  color: "white",
+                }}>
+                Completed
+              </span>
             </div>
           </div>
           <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-03.jpg</p>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
+              receipt-03.jpg
+            </p>
             <p style={{fontSize: "0.75rem", color: "#6b7280"}}>800 KB</p>
           </div>
         </div>
@@ -103,20 +169,48 @@ export const MixedStates: Story = {
               alt='Failed upload'
               style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(239,68,68,0.3)"}}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(239,68,68,0.3)",
+              }}>
               <span style={{fontSize: "1.5rem"}}>❌</span>
             </div>
             <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
-              <span style={{borderRadius: "9999px", backgroundColor: "rgba(239,68,68,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Failed</span>
+              <span
+                style={{
+                  borderRadius: "9999px",
+                  backgroundColor: "rgba(239,68,68,0.8)",
+                  paddingInline: "0.5rem",
+                  paddingBlock: "0.125rem",
+                  fontSize: "0.75rem",
+                  color: "white",
+                }}>
+                Failed
+              </span>
             </div>
             <button
               type='button'
-              style={{position: "absolute", top: "0.5rem", left: "0.5rem", borderRadius: "9999px", backgroundColor: "rgba(0,0,0,0.5)", padding: "0.25rem", color: "white"}}>
+              style={{
+                position: "absolute",
+                top: "0.5rem",
+                left: "0.5rem",
+                borderRadius: "9999px",
+                backgroundColor: "rgba(0,0,0,0.5)",
+                padding: "0.25rem",
+                color: "white",
+              }}>
               🗑
             </button>
           </div>
           <div style={{padding: "0.5rem"}}>
-            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>invoice.pdf</p>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>
+              invoice.pdf
+            </p>
             <p style={{fontSize: "0.75rem", color: "#6b7280"}}>5.1 MB</p>
             <p style={{fontSize: "0.75rem", color: "#ef4444"}}>Upload failed. Please try again.</p>
           </div>

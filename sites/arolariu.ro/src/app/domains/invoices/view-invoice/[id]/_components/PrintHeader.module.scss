@@ -1,0 +1,86 @@
+// ===========================================
+// PRINT HEADER STYLES
+// ===========================================
+// This header is hidden on screen but shown when printing.
+
+@use '../../../../../../styles/abstracts' as *;
+
+.printHeader {
+  display: none;
+
+  @media print {
+    display: block !important;
+    margin-bottom: space(8);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+.printHeaderContent {
+  @media print {
+    padding: space(4) 0;
+  }
+}
+
+.invoiceName {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: space(2);
+
+  @media print {
+    font-size: 24pt !important;
+    font-weight: 700 !important;
+    margin-bottom: space(4) !important;
+    color: black !important;
+  }
+}
+
+.detailsGrid {
+  display: grid;
+  gap: space(2);
+
+  @media print {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: space(3) space(6) !important;
+    margin-bottom: space(4) !important;
+  }
+}
+
+.detailItem {
+  @media print {
+    display: flex !important;
+    gap: space(2) !important;
+  }
+}
+
+.detailLabel {
+  @media print {
+    font-weight: 600 !important;
+    color: #555 !important;
+    font-size: 11pt !important;
+  }
+}
+
+.detailValue {
+  @media print {
+    color: black !important;
+    font-size: 11pt !important;
+  }
+}
+
+.generatedOn {
+  @media print {
+    margin-top: space(4) !important;
+    font-size: 10pt !important;
+    color: #666 !important;
+    font-style: italic !important;
+  }
+}
+
+.headerBorder {
+  @media print {
+    margin-top: space(4) !important;
+    border-bottom: 2px solid #333 !important;
+  }
+}

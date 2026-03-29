@@ -175,9 +175,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
-                    render={
-                      <li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>
-                    }
+                    render={<li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>}
                   />
                   <TooltipContent className={styles["tooltipContent"]}>
                     <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>

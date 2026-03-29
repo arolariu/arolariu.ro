@@ -30,29 +30,29 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div
-            key={dateKey}
-            className={styles["dateGroup"]}>
-            <p className={styles["dateLabel"]}>{dateKey}</p>
-            <div className={styles["eventsColumn"]}>
-              {dateEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className={styles["eventItem"]}>
-                  <div className={styles["eventDot"]}>{event.icon ?? getEventIcon(event)}</div>
-                  <div className={styles["eventContent"]}>
-                    <div className={styles["eventDetails"]}>
-                      <p className={styles["eventTitle"]}>{event.title}</p>
-                      <p className={styles["eventDescription"]}>{event.description}</p>
+          {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
+            <div
+              key={dateKey}
+              className={styles["dateGroup"]}>
+              <p className={styles["dateLabel"]}>{dateKey}</p>
+              <div className={styles["eventsColumn"]}>
+                {dateEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className={styles["eventItem"]}>
+                    <div className={styles["eventDot"]}>{event.icon ?? getEventIcon(event)}</div>
+                    <div className={styles["eventContent"]}>
+                      <div className={styles["eventDetails"]}>
+                        <p className={styles["eventTitle"]}>{event.title}</p>
+                        <p className={styles["eventDescription"]}>{event.description}</p>
+                      </div>
+                      <span className={styles["eventDate"]}>{formatDate(event.date, {locale})}</span>
                     </div>
-                    <span className={styles["eventDate"]}>{formatDate(event.date, {locale})}</span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
         </div>
       </CardContent>
     </Card>

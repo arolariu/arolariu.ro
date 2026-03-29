@@ -8,6 +8,7 @@
 import {fetchScans} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
+import {toast} from "@arolariu/components";
 import {useCallback, useEffect} from "react";
 import {useShallow} from "zustand/react/shallow";
 
@@ -103,8 +104,10 @@ export function useScans(): UseScansOutput {
 
       setScans(cachedScans);
       setLastSyncTimestamp(new Date());
+      toast.success("Scans synced successfully");
     } catch (error) {
       console.error("Failed to sync scans:", error);
+      toast.error("Failed to sync scans");
     } finally {
       setIsSyncing(false);
     }

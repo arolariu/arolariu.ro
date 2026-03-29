@@ -190,38 +190,38 @@ export function SeasonalInsightsCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Month comparison */}
-        <div className={styles["monthSection"]}>
-          <div className={styles["monthRow"]}>
-            <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
-            <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
-          </div>
-          <Progress value={percentOfAverage} />
-          <div className={styles["monthMeta"]}>
-            <span>
-              {t("month.vsAverage", {
-                month: monthName,
-                amount: formatCurrency(decemberAverage, {currencyCode: currency.code, locale}),
-              })}
-            </span>
-            <span>{percentOfAverage.toFixed(0)}%</span>
-          </div>
-        </div>
-
-        {/* Insights list */}
-        <div className={styles["insightsList"]}>
-          {insights.map((insight) => (
-            <div
-              key={insight.id}
-              className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
-              <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
-              <div className={styles["insightContent"]}>
-                <p className={styles["insightTitle"]}>{insight.title}</p>
-                <p className={styles["insightDescription"]}>{insight.description}</p>
-              </div>
+          {/* Month comparison */}
+          <div className={styles["monthSection"]}>
+            <div className={styles["monthRow"]}>
+              <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
+              <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
             </div>
-          ))}
-        </div>
+            <Progress value={percentOfAverage} />
+            <div className={styles["monthMeta"]}>
+              <span>
+                {t("month.vsAverage", {
+                  month: monthName,
+                  amount: formatCurrency(decemberAverage, {currencyCode: currency.code, locale}),
+                })}
+              </span>
+              <span>{percentOfAverage.toFixed(0)}%</span>
+            </div>
+          </div>
+
+          {/* Insights list */}
+          <div className={styles["insightsList"]}>
+            {insights.map((insight) => (
+              <div
+                key={insight.id}
+                className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
+                <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
+                <div className={styles["insightContent"]}>
+                  <p className={styles["insightTitle"]}>{insight.title}</p>
+                  <p className={styles["insightDescription"]}>{insight.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

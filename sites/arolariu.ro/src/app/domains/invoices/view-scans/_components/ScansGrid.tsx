@@ -6,12 +6,13 @@
  */
 
 import type {CachedScan} from "@/types/scans";
-import {Button, Card, CardContent} from "@arolariu/components";
-import {motion} from "motion/react";
+import {Skeleton} from "@arolariu/components";
+import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import Link from "next/link";
 import {useCallback} from "react";
-import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
+import {TbCamera} from "react-icons/tb";
+import EmptyState from "../../_components/EmptyState";
+import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
 import styles from "./ScansGrid.module.scss";
@@ -43,29 +44,6 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
 }
 
 /**
- * Empty state step component.
- */
-function EmptyStateStep({
-  step,
-  icon,
-  title,
-  description,
-}: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
-  return (
-    <div className={styles["emptyStep"]}>
-      <div className={styles["emptyStepNumber"]}>{step}</div>
-      <div className={styles["emptyStepContent"]}>
-        <div className={styles["emptyStepTitleRow"]}>
-          {icon}
-          <h4 className={styles["emptyStepTitle"]}>{title}</h4>
-        </div>
-        <p className={styles["emptyStepDescription"]}>{description}</p>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Grid display for scans with selection support.
  */
 export default function ScansGrid(): React.JSX.Element {
@@ -75,12 +53,17 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <div className={styles["skeletonGrid"]}>
+      <div className={styles["scansGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
           <div
             key={skeletonKey}
-            className={styles["skeletonItem"]}
-          />
+            className={styles["skeletonCard"]}>
+            <Skeleton className={styles["skeletonImage"]} />
+            <div className={styles["skeletonInfo"]}>
+              <Skeleton className={styles["skeletonName"]} />
+              <Skeleton className={styles["skeletonMeta"]} />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -89,77 +72,45 @@ export default function ScansGrid(): React.JSX.Element {
   // Show empty state
   if (scans.length === 0) {
     return (
-      <motion.div
-        initial={{opacity: 0, y: 20}}
-        animate={{opacity: 1, y: 0}}
-        className={styles["emptyWrapper"]}>
-        <Card className={styles["emptyCard"]}>
-          <CardContent className={styles["emptyCardContent"]}>
-            <div className={styles["emptyCenter"]}>
-              <div className={styles["emptyIconCircle"]}>
-                <TbPhoto className={styles["emptyIcon"]} />
-              </div>
-              <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
-              <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
-            </div>
-
-            <div className={styles["emptyStepsList"]}>
-              <EmptyStateStep
-                step={1}
-                icon={<TbUpload className={styles["iconAccent"]} />}
-                title={t("emptyState.step1Title")}
-                description={t("emptyState.step1Description")}
-              />
-              <EmptyStateStep
-                step={2}
-                icon={<TbPhoto className={styles["iconPurple"]} />}
-                title={t("emptyState.step2Title")}
-                description={t("emptyState.step2Description")}
-              />
-              <EmptyStateStep
-                step={3}
-                icon={<TbFileInvoice className={styles["iconGreen"]} />}
-                title={t("emptyState.step3Title")}
-                description={t("emptyState.step3Description")}
-              />
-            </div>
-
-            <div className={styles["emptyActions"]}>
-              <Button
-                asChild
-                size='lg'
-                className={styles["uploadButton"]}>
-                <Link href='/domains/invoices/upload-scans'>
-                  <TbUpload className={styles["iconUploadLg"]} />
-                  {t("emptyState.uploadButton")}
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant='outline'
-                size='lg'>
-                <Link href='/domains/invoices'>
-                  {t("emptyState.learnMoreButton")}
-                  <TbArrowRight className={styles["iconArrowRight"]} />
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <EmptyState
+        icon={<TbCamera className={styles["emptyIcon"]} />}
+        title={t("emptyState.title")}
+        description={t("emptyState.description")}
+        primaryAction={{
+          label: t("emptyState.uploadButton"),
+          href: "/domains/invoices/upload-scans",
+        }}
+        secondaryAction={{
+          label: t("emptyState.learnMoreButton"),
+          href: "/domains/invoices",
+        }}
+      />
     );
   }
 
   return (
-    <div className={styles["scansGrid"]}>
-      {scans.map((scan) => (
-        <ScanCardWrapper
-          key={scan.id}
-          scan={scan}
-          isSelected={selectedScans.some((s) => s.id === scan.id)}
-          onToggleSelection={toggleSelection}
-        />
-      ))}
-    </div>
+    <StaggerContainer
+      className={styles["scansGrid"]}
+      staggerDelay={0.05}>
+      <AnimatePresence mode='popLayout'>
+        {scans.map((scan) => (
+          <motion.div
+            key={scan.id}
+            layout
+            initial={{opacity: 0, scale: 0.9}}
+            animate={{opacity: 1, scale: 1}}
+            exit={{opacity: 0, scale: 0.9, x: -20}}
+            transition={{duration: 0.2}}>
+            <StaggerItem>
+              <ScanCardWrapper
+                scan={scan}
+                isSelected={selectedScans.some((s) => s.id === scan.id)}
+                onToggleSelection={toggleSelection}
+              />
+            </StaggerItem>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </StaggerContainer>
   );
 }

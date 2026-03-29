@@ -15,17 +15,8 @@ export function BudgetImpactCard(): React.JSX.Element {
   const {paymentInformation} = invoice;
   const {currency} = paymentInformation;
 
-  const {
-    monthlyBudget,
-    totalSpent,
-    remaining,
-    percentUsed,
-    thisInvoicePercent,
-    daysRemaining,
-    dailyAllowance,
-    isOverBudget,
-    monthName,
-  } = computeBudgetImpact(paymentInformation);
+  const {monthlyBudget, totalSpent, remaining, percentUsed, thisInvoicePercent, daysRemaining, dailyAllowance, isOverBudget, monthName} =
+    computeBudgetImpact(paymentInformation);
 
   // Determine daily allowance trend icon
   const getDailyAllowanceIcon = (): React.JSX.Element => {
@@ -46,54 +37,54 @@ export function BudgetImpactCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Budget progress */}
-        <div className={styles["budgetSection"]}>
-          <div className={styles["budgetRow"]}>
-            <span className={styles["budgetLabel"]}>{t("monthlyBudget")}</span>
-            <span className={styles["budgetValue"]}>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
-          </div>
-          <Progress value={Math.min(percentUsed, 100)} />
-          <div className={styles["budgetMeta"]}>
-            <span>{t("spent", {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
-            <span>{percentUsed.toFixed(0)}%</span>
-          </div>
-        </div>
-
-        {/* This invoice impact */}
-        <div className={styles["impactBox"]}>
-          <p className={styles["impactLabel"]}>{t("invoiceUsed")}</p>
-          <p className={styles["impactPercent"]}>{thisInvoicePercent.toFixed(1)}%</p>
-          <p className={styles["impactDescription"]}>{t("ofMonthlyBudget")}</p>
-        </div>
-
-        {/* Remaining stats */}
-        <div className={styles["statsGrid"]}>
-          <div className={styles["statItem"]}>
-            <p className={styles["statLabel"]}>{t("remaining")}</p>
-            <p className={`${styles["statValue"]} ${isOverBudget ? styles["overBudgetText"] : ""}`}>
-              {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
-            </p>
-            {isOverBudget ? <p className={styles["overBudgetLabel"]}>{t("overBudget")}</p> : null}
-          </div>
-          <div className={styles["statItem"]}>
-            <p className={styles["statLabel"]}>{t("daysLeft")}</p>
-            <p className={styles["statValue"]}>{daysRemaining}</p>
-            <p className={styles["statLabel"]}>{t("inMonth", {month: monthName})}</p>
-          </div>
-        </div>
-
-        {/* Daily allowance */}
-        {!isOverBudget && (
-          <div className={styles["dailyAllowanceBox"]}>
-            <div className={styles["dailyAllowanceContent"]}>
-              <p className={styles["dailyAllowanceLabel"]}>{t("dailyAllowance")}</p>
-              <p className={styles["dailyAllowanceValue"]}>
-                {t("dailyAllowanceValue", {amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})})}
-              </p>
+          {/* Budget progress */}
+          <div className={styles["budgetSection"]}>
+            <div className={styles["budgetRow"]}>
+              <span className={styles["budgetLabel"]}>{t("monthlyBudget")}</span>
+              <span className={styles["budgetValue"]}>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
             </div>
-            {getDailyAllowanceIcon()}
+            <Progress value={Math.min(percentUsed, 100)} />
+            <div className={styles["budgetMeta"]}>
+              <span>{t("spent", {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
+              <span>{percentUsed.toFixed(0)}%</span>
+            </div>
           </div>
-        )}
+
+          {/* This invoice impact */}
+          <div className={styles["impactBox"]}>
+            <p className={styles["impactLabel"]}>{t("invoiceUsed")}</p>
+            <p className={styles["impactPercent"]}>{thisInvoicePercent.toFixed(1)}%</p>
+            <p className={styles["impactDescription"]}>{t("ofMonthlyBudget")}</p>
+          </div>
+
+          {/* Remaining stats */}
+          <div className={styles["statsGrid"]}>
+            <div className={styles["statItem"]}>
+              <p className={styles["statLabel"]}>{t("remaining")}</p>
+              <p className={`${styles["statValue"]} ${isOverBudget ? styles["overBudgetText"] : ""}`}>
+                {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
+              </p>
+              {isOverBudget ? <p className={styles["overBudgetLabel"]}>{t("overBudget")}</p> : null}
+            </div>
+            <div className={styles["statItem"]}>
+              <p className={styles["statLabel"]}>{t("daysLeft")}</p>
+              <p className={styles["statValue"]}>{daysRemaining}</p>
+              <p className={styles["statLabel"]}>{t("inMonth", {month: monthName})}</p>
+            </div>
+          </div>
+
+          {/* Daily allowance */}
+          {!isOverBudget && (
+            <div className={styles["dailyAllowanceBox"]}>
+              <div className={styles["dailyAllowanceContent"]}>
+                <p className={styles["dailyAllowanceLabel"]}>{t("dailyAllowance")}</p>
+                <p className={styles["dailyAllowanceValue"]}>
+                  {t("dailyAllowanceValue", {amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})})}
+                </p>
+              </div>
+              {getDailyAllowanceIcon()}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

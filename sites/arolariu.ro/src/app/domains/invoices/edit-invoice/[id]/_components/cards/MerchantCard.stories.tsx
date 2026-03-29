@@ -25,7 +25,18 @@ export const Preview: Story = {
       </div>
       <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem"}}>
         <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <div style={{display: "flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "#dbeafe"}}>🛒</div>
+          <div
+            style={{
+              display: "flex",
+              height: "2.5rem",
+              width: "2.5rem",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "9999px",
+              backgroundColor: "#dbeafe",
+            }}>
+            🛒
+          </div>
           <div>
             <p style={{fontWeight: 500}}>Kaufland</p>
             <p style={{fontSize: "0.875rem", color: "#6b7280"}}>123 Main Street, Bucharest</p>
@@ -34,13 +45,31 @@ export const Preview: Story = {
         <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
           <button
             type='button'
-            style={{display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
+            style={{
+              display: "flex",
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              padding: "0.5rem 1rem",
+              fontSize: "0.875rem",
+            }}>
             <span>View Merchant Details</span>
             <span>→</span>
           </button>
           <button
             type='button'
-            style={{display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
+            style={{
+              display: "flex",
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              padding: "0.5rem 1rem",
+              fontSize: "0.875rem",
+            }}>
             <span>🛍 View All Receipts</span>
             <span>→</span>
           </button>

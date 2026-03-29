@@ -25,7 +25,8 @@ import {
 import {useLocale, useTranslations} from "next-intl";
 import Link from "next/link";
 import {useCallback} from "react";
-import {TbArrowsUpDown, TbEye} from "react-icons/tb";
+import {TbArrowsUpDown, TbEye, TbReceipt} from "react-icons/tb";
+import EmptyState from "../../../_components/EmptyState";
 import styles from "./TableView.module.scss";
 import TableViewActions from "./TableViewActions";
 
@@ -80,9 +81,15 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <div className={styles["emptyState"]}>
-        <div className={styles["emptyMessage"]}>{t("empty")}</div>
-      </div>
+      <EmptyState
+        icon={<TbReceipt className={styles["emptyIcon"]} />}
+        title={t("empty.title")}
+        description={t("empty.description")}
+        primaryAction={{
+          label: t("empty.uploadCta"),
+          href: "/domains/invoices/upload-scans",
+        }}
+      />
     );
   }
 
@@ -171,7 +178,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                             className={styles["viewLink"]}>
                             <TbEye className={styles["viewIcon"]} />
                           </Link>
-                        } />
+                        }
+                      />
                       <TooltipContent>{t("viewInvoice")}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

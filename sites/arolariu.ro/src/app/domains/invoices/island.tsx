@@ -5,7 +5,6 @@
  * @module app/domains/invoices/island
  */
 
-import BentoSection from "./_components/homepage/BentoSection";
 import EnhancedCTASection from "./_components/homepage/EnhancedCTASection";
 import FeaturesSection from "./_components/homepage/FeaturesSection";
 import HeroSection from "./_components/homepage/HeroSection";
@@ -28,7 +27,6 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       <HeroSection isAuthenticated={isAuthenticated} />
       <WorkflowSection />
       <FeaturesSection isAuthenticated={isAuthenticated} />
-      <BentoSection />
       <EnhancedCTASection />
       <div className={styles["footerSpacing"]} />
     </div>

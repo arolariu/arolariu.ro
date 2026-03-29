@@ -10,11 +10,21 @@
   @include flex-column-center;
   justify-content: center;
   padding-block: space(10);
+
+  // Adjust padding on mobile
+  @include respond-below('md') {
+    padding-block: space(6);
+  }
 }
 
 .emptyMessage {
   color: color('muted-foreground');
   margin-bottom: space(2);
+}
+
+.emptyIcon {
+  @include icon-size(space(12));
+  color: color('primary');
 }
 
 // ===========================================
@@ -61,6 +71,13 @@
   display: flex;
   align-items: center;
   gap: space(2);
+
+  // Stack vertically on mobile for better readability
+  @include respond-below('md') {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: space(3);
+  }
 }
 
 .footerLabel {
@@ -137,4 +154,10 @@
   height: 100%;
   width: 100%;
   cursor: pointer;
+
+  // Larger touch target on mobile
+  @include respond-below('md') {
+    min-height: space(11);
+    padding: space(3);
+  }
 }

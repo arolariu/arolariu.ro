@@ -600,9 +600,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t.rich("delete.description", {name: recipe.name, strong: RichTextStrong})}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{t.rich("delete.description", {name: recipe.name, strong: RichTextStrong})}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("buttons.cancel")}</AlertDialogCancel>

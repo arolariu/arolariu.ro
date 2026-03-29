@@ -2,117 +2,126 @@
 
 import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
-import {
-  Button,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  useWindowSize,
-} from "@arolariu/components";
-import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
-import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";
+import {useWindowSize} from "@arolariu/components";
+import {useCallback, useEffect} from "react";
+import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
+import {useInvoiceFilters} from "../../_hooks/useInvoiceFilters";
+import FilterBar from "../filters/FilterBar";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
 import styles from "./InvoicesView.module.scss";
-
-type FiltersType = {category: string; time: string};
 
 type Props = {
   invoices: ReadonlyArray<Invoice>;
 };
 
 /**
- * The RenderInvoicesView component displays a list of invoices with search and filter functionality.
+ * The RenderInvoicesView component displays a list of invoices with advanced filtering and sorting.
  * It allows users to switch between table and grid views.
- * @param invoices The list of invoices to display.
+ *
+ * @remarks
+ * This component integrates URL-based filter management using the `useInvoiceFilters` hook.
+ * All filter state is synchronized with URL search parameters, enabling:
+ * - **Bookmarkable filters**: Users can save filtered views as bookmarks
+ * - **Shareable URLs**: Users can share filtered views with colleagues
+ * - **Browser history**: Back/forward navigation respects filter changes
+ * - **No prop drilling**: Filter state is managed via URL, not React state
+ *
+ * **Filter Capabilities**:
+ * - Text search with debouncing (300ms)
+ * - Date range filtering (from/to dates)
+ * - Amount range filtering (min/max amounts)
+ * - Multi-select category filtering
+ * - Multi-select payment type filtering
+ * - Sort by multiple fields (date, amount, name)
+ * - View mode toggle (table/grid)
+ *
+ * **Responsive Design**:
+ * - Defaults to grid view on mobile devices for better touch interaction
+ * - Uses window size detection to set initial view mode
+ * - View mode is stored in URL and persists across sessions
+ *
+ * **Performance**:
+ * - Filtered results are memoized via `useFilteredInvoices` hook
+ * - Pagination reduces DOM nodes for large invoice lists
+ * - Debounced search input prevents excessive filtering
+ *
+ * @param props - Component props
  * @returns The RenderInvoicesView component, CSR'ed.
  */
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.invoicesView");
   const {isMobile} = useWindowSize();
-  const [view, setView] = useState<"table" | "grid">("table");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filters, setFilters] = useState<FiltersType>({category: "all", time: "all"});
-  const {paginatedItems, resetPagination, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} =
-    usePaginationWithSearch<Invoice>({
-      items: invoices,
-      initialPageSize: 10,
-      searchQuery,
-    });
+  const {filters, setFilters, activeFilterCount} = useInvoiceFilters();
 
-  const handleSearch = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const query = e.target.value;
-      setSearchQuery(query);
-      resetPagination();
+  // Set initial view mode based on device type (only on first render if not in URL)
+  useEffect(() => {
+    if (!filters.view) {
+      setFilters({view: isMobile ? "grid" : "table"});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Apply filters and sorting
+  const filteredInvoices = useFilteredInvoices(invoices, filters);
+
+  // Pagination for filtered results
+  const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
+    items: filteredInvoices,
+    initialPageSize: 10,
+    searchQuery: "", // Search is handled by URL filters
+  });
+
+  /**
+   * Handle filter changes from FilterBar.
+   * Updates URL search params via the useInvoiceFilters hook.
+   */
+  const handleFiltersChange = useCallback(
+    (newFilters: Partial<typeof filters>) => {
+      setFilters(newFilters);
+      setCurrentPage(1); // Reset to first page when filters change
     },
-    [resetPagination],
+    [setFilters, setCurrentPage],
   );
 
-  const handleFilters = useCallback(
-    (value: string) => {
-      if (
-        value === "all"
-        || value === "groceries"
-        || value === "dining"
-        || value === "utilities"
-        || value === "entertainment"
-        || value === "travel"
-        || value === "other"
-      ) {
-        setFilters((prev) => ({...prev, category: value}));
-      } else if (value === "day" || value === "night") {
-        setFilters((prev) => ({...prev, time: value}));
-      }
-      resetPagination();
+  /**
+   * Handle view mode change.
+   * Updates URL search params to persist view mode.
+   */
+  const handleViewModeChange = useCallback(
+    (mode: "table" | "grid") => {
+      setFilters({view: mode});
     },
-    [resetPagination],
+    [setFilters],
   );
 
-  const handleNextPage = useCallback(
-    () => {
-      if (currentPage < totalPages) {
-        setCurrentPage(currentPage + 1);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [currentPage, totalPages],
-  );
+  /**
+   * Handle pagination.
+   */
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages, setCurrentPage]);
 
-  const handlePrevPage = useCallback(
-    () => {
-      if (currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [currentPage],
-  );
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  }, [currentPage, setCurrentPage]);
 
   const handlePageSizeChange = useCallback(
     (size: number) => {
       setPageSize(size);
       setCurrentPage(1);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
-    [],
+    [setPageSize, setCurrentPage],
   );
 
+  /**
+   * Render view content based on view mode from URL.
+   */
   const viewContent =
-    view === "table" ? (
+    filters.view === "table" ? (
       <TableView
         invoices={paginatedItems}
         pageSize={pageSize}
@@ -128,161 +137,13 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
 
   return (
     <div className={styles["container"]}>
-      <div className={styles["toolbar"]}>
-        <div className={styles["searchWrapper"]}>
-          <TbSearch className={styles["searchIcon"]} />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            className={styles["searchInput"]}
-            value={searchQuery}
-            onChange={handleSearch}
-          />
-        </div>
-        <div className={styles["filtersRow"]}>
-          <Select
-            value={filters.category}
-            onValueChange={handleFilters}>
-            <SelectTrigger className={styles["selectTrigger"]}>
-              <div className={styles["filterTriggerContent"]}>
-                <TbCategory className={styles["filterIcon"]} />
-                <span>{t("filters.category")}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='all'>
-                {t("categories.all")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='groceries'>
-                {t("categories.groceries")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='dining'>
-                {t("categories.dining")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='utilities'>
-                {t("categories.utilities")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='entertainment'>
-                {t("categories.entertainment")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='travel'>
-                {t("categories.travel")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='other'>
-                {t("categories.other")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.time}
-            onValueChange={handleFilters}>
-            <SelectTrigger className={styles["selectTrigger"]}>
-              <div className={styles["filterTriggerContent"]}>
-                <TbClock className={styles["filterIcon"]} />
-                <span>{t("filters.timeOfDay")}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='all'>
-                {t("times.all")}
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='day'>
-                <div className={styles["filterTriggerContent"]}>
-                  <TbSun className={styles["sunIcon"]} />
-                  <span>{t("times.day")}</span>
-                </div>
-              </SelectItem>
-              <SelectItem
-                className={styles["selectItem"]}
-                value='night'>
-                <div className={styles["filterTriggerContent"]}>
-                  <TbMoon className={styles["moonIcon"]} />
-                  <span>{t("times.night")}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {isMobile ? (
-            <Sheet>
-              <SheetTrigger render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["filterButton"]}>
-                  <TbFilter className={styles["filterIcon"]} />
-                </Button>
-              } />
-              <SheetContent>{t("placeholderPanel")}</SheetContent>
-            </Sheet>
-          ) : (
-            <Popover>
-              <PopoverTrigger render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["filterButton"]}>
-                  <TbFilter className={styles["filterIcon"]} />
-                </Button>
-              } />
-              <PopoverContent>{t("placeholderPanel")}</PopoverContent>
-            </Popover>
-          )}
-
-          <div className={styles["viewToggle"]}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  className={styles["tooltipTrigger"]}
-                  render={
-                    <Button
-                      variant={view === "table" ? "default" : "ghost"}
-                      size='sm'
-                      className={styles["viewButtonLeft"]}
-                      // eslint-disable-next-line react/jsx-no-bind -- small fn
-                      onClick={() => setView("table")}>
-                      <TbTable className={styles["filterIcon"]} />
-                    </Button>
-                  } />
-                <TooltipContent>{t("viewModes.table")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger
-                  className={styles["tooltipTrigger"]}
-                  render={
-                    <Button
-                      variant={view === "grid" ? "default" : "ghost"}
-                      size='sm'
-                      className={styles["viewButtonRight"]}
-                      // eslint-disable-next-line react/jsx-no-bind -- small fn
-                      onClick={() => setView("grid")}>
-                      <TbCards className={styles["filterIcon"]} />
-                    </Button>
-                  } />
-                <TooltipContent>{t("viewModes.grid")}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
+      <FilterBar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        activeFilterCount={activeFilterCount}
+        viewMode={filters.view}
+        onViewModeChange={handleViewModeChange}
+      />
       {viewContent}
     </div>
   );

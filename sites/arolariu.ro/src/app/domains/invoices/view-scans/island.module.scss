@@ -130,10 +130,121 @@
 }
 
 // ===========================================
+// CREATE FROM ALL BUTTON
+// ===========================================
+.createFromAllContainer {
+  margin-top: abstracts.space(4);
+  margin-bottom: abstracts.space(4);
+}
+
+.createFromAllCard {
+  border: 2px solid abstracts.color('primary');
+  background: linear-gradient(135deg, abstracts.color-alpha('primary', 0.05), abstracts.color-alpha('primary', 0.1));
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('primary', 0.5);
+    background: linear-gradient(135deg, abstracts.color-alpha('primary', 0.1), abstracts.color-alpha('primary', 0.15));
+  }
+}
+
+.createFromAllContent {
+  display: flex;
+  flex-direction: column;
+  gap: abstracts.space(4);
+  padding: abstracts.space(6);
+
+  @include abstracts.respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.createFromAllText {
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(4);
+  flex: 1;
+}
+
+.createFromAllIcon {
+  height: abstracts.space(8);
+  width: abstracts.space(8);
+  flex-shrink: 0;
+  color: abstracts.color('primary');
+}
+
+.createFromAllTitle {
+  font-size: abstracts.font-size('lg');
+  font-weight: abstracts.font-weight('semibold');
+  color: abstracts.color('foreground');
+
+  @include abstracts.dark {
+    color: white;
+  }
+}
+
+.createFromAllDescription {
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
+}
+
+.createFromAllButton {
+  flex-shrink: 0;
+  background-color: abstracts.color('primary');
+
+  &:hover {
+    background-color: abstracts.color('primary');
+    opacity: 0.9;
+  }
+}
+
+.buttonIcon {
+  height: abstracts.space(4);
+  width: abstracts.space(4);
+  margin-right: abstracts.space(2);
+}
+
+// ===========================================
 // SIDEBAR
 // ===========================================
 .sidebar {
   @include abstracts.spaced-children(abstracts.space(6));
+
+  // Hide sidebar tips on tablet and below
+  @include abstracts.respond-below('md') {
+    display: none;
+  }
+}
+
+// ===========================================
+// MOBILE TIPS BUTTON
+// ===========================================
+.mobileTipsButton {
+  margin-bottom: abstracts.space(4);
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(2);
+
+  // Only show on mobile
+  @include abstracts.respond-to('md') {
+    display: none;
+  }
+}
+
+.tipsIcon {
+  height: abstracts.space(4);
+  width: abstracts.space(4);
+}
+
+.mobileTipsSheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.mobileTipsContent {
+  @include abstracts.spaced-children(abstracts.space(6));
+  padding: abstracts.space(4);
 }
 
 .sidebarTitle {
@@ -240,6 +351,11 @@
 .contentSection {
   margin-inline: auto;
   max-width: 80rem; // max-w-7xl
+
+  // Bottom padding for mobile nav
+  @include abstracts.respond-below('md') {
+    padding-bottom: abstracts.space(20);
+  }
 }
 
 .breadcrumb {
@@ -271,11 +387,22 @@
 .contentGrid {
   display: grid;
   gap: abstracts.space(8);
+
+  // Single column on mobile
+  @include abstracts.respond-below('md') {
+    grid-template-columns: 1fr;
+    gap: abstracts.space(6);
+  }
 }
 
 .contentGridWithSidebar {
   @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  // More spacious layout on xl
+  @include abstracts.respond-to('xl') {
+    gap: abstracts.space(10);
   }
 }
 

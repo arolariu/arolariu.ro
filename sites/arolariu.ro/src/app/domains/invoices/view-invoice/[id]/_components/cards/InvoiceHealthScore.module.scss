@@ -1,0 +1,204 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.card {
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  align-items: center;
+}
+
+// Circular Progress
+.progressContainer {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progressCircle {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progressTrack {
+  stroke: color('muted');
+  opacity: 0.2;
+}
+
+.progressIndicator {
+  @include transition(stroke-dashoffset, 'slow');
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.success {
+    stroke: color('success');
+  }
+
+  &.warning {
+    stroke: color('warning');
+  }
+
+  &.error {
+    stroke: color('destructive');
+  }
+}
+
+.progressText {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  fill: color('foreground');
+}
+
+// Status Label
+.statusLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  padding: space(1) space(3);
+  border-radius: radius('full');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &.success {
+    background-color: color-alpha('success', 0.1);
+    color: color('success');
+  }
+
+  &.warning {
+    background-color: color-alpha('warning', 0.1);
+    color: color('warning');
+  }
+
+  &.error {
+    background-color: color-alpha('destructive', 0.1);
+    color: color('destructive');
+  }
+}
+
+// Score breakdown
+.scoreBreakdown {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  font-weight: font-weight('medium');
+}
+
+// Toggle button
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
+  justify-content: center;
+}
+
+.chevronIcon {
+  @include icon-size(space(4));
+}
+
+// Factor List
+.factorList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  width: 100%;
+  margin-top: space(3);
+}
+
+.factorItem {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  padding: space(2);
+  border-radius: radius('md');
+  @include transition(background-color);
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.factorIcon {
+  @include icon-size(space(5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.achievedIcon {
+  color: hsl(var(--color-primary));
+  @include icon-size(space(5));
+}
+
+.missingIcon {
+  color: color('muted-foreground');
+  @include icon-size(space(5));
+}
+
+.factorContent {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  gap: space(2);
+}
+
+.achievedText {
+  color: color('foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.missingText {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.factorDetail {
+  font-weight: font-weight('normal');
+  opacity: 0.8;
+}
+
+.factorPoints {
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  color: color('muted-foreground');
+  min-width: 2rem;
+  text-align: right;
+}
+
+// CTA Container
+.ctaContainer {
+  width: 100%;
+  margin-top: space(2);
+}
+
+.ctaButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+}
+
+.ctaIcon {
+  @include icon-size(space(4));
+}

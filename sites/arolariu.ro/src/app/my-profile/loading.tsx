@@ -19,34 +19,34 @@ export default function Loading(): React.JSX.Element {
             <Skeleton className={styles["avatarSkeleton"]} />
             <div className={styles["textLines"]}>
               {/* Name */}
-              <Skeleton style={{height: '1.5rem', width: '12rem'}} />
+              <Skeleton style={{height: "1.5rem", width: "12rem"}} />
               {/* Email */}
-              <Skeleton style={{height: '1rem', width: '8rem'}} />
+              <Skeleton style={{height: "1rem", width: "8rem"}} />
               {/* Badges row (3 badges) */}
               <div className={styles["badgeRow"]}>
-                <Skeleton style={{height: '1.25rem', width: '7rem'}} />
-                <Skeleton style={{height: '1.25rem', width: '7rem'}} />
-                <Skeleton style={{height: '1.25rem', width: '6rem'}} />
+                <Skeleton style={{height: "1.25rem", width: "7rem"}} />
+                <Skeleton style={{height: "1.25rem", width: "7rem"}} />
+                <Skeleton style={{height: "1.25rem", width: "6rem"}} />
               </div>
             </div>
           </div>
           {/* Progress bar area */}
           <div className={styles["progressArea"]}>
             <div className={styles["progressHeader"]}>
-              <Skeleton style={{height: '0.75rem', width: '7rem'}} />
-              <Skeleton style={{height: '0.75rem', width: '2rem'}} />
+              <Skeleton style={{height: "0.75rem", width: "7rem"}} />
+              <Skeleton style={{height: "0.75rem", width: "2rem"}} />
             </div>
-            <Skeleton style={{height: '0.5rem', width: '100%'}} />
+            <Skeleton style={{height: "0.5rem", width: "100%"}} />
           </div>
         </div>
 
         {/* Stats Summary Card */}
         <div className={styles["statsCard"]}>
-          <Skeleton style={{height: '2.5rem', width: '4rem'}} />
-          <Skeleton style={{height: '1rem', width: '6rem'}} />
+          <Skeleton style={{height: "2.5rem", width: "4rem"}} />
+          <Skeleton style={{height: "1rem", width: "6rem"}} />
           <div className={styles["statsMeta"]}>
-            <Skeleton style={{height: '0.75rem', width: '5rem'}} />
-            <Skeleton style={{height: '0.75rem', width: '4rem'}} />
+            <Skeleton style={{height: "0.75rem", width: "5rem"}} />
+            <Skeleton style={{height: "0.75rem", width: "4rem"}} />
           </div>
         </div>
       </section>
@@ -67,8 +67,8 @@ export default function Loading(): React.JSX.Element {
         <div className={styles["contentSkeleton"]}>
           {/* Section header (title + description) */}
           <div className={styles["sectionHeader"]}>
-            <Skeleton style={{height: '1.5rem', width: '9rem'}} />
-            <Skeleton style={{height: '1rem', width: '16rem'}} />
+            <Skeleton style={{height: "1.5rem", width: "9rem"}} />
+            <Skeleton style={{height: "1rem", width: "16rem"}} />
           </div>
 
           {/* 6 Stat Cards in 1→2→3 grid */}
@@ -92,8 +92,8 @@ export default function Loading(): React.JSX.Element {
           <div
             key={`bottom-nav-${index.toString()}`}
             className={styles["bottomNavPill"]}>
-            <Skeleton style={{height: '1.25rem', width: '1.25rem'}} />
-            <Skeleton style={{height: '0.5rem', width: '2rem'}} />
+            <Skeleton style={{height: "1.25rem", width: "1.25rem"}} />
+            <Skeleton style={{height: "0.5rem", width: "2rem"}} />
           </div>
         ))}
       </div>

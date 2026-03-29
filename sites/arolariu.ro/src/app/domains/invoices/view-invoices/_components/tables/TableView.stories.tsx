@@ -37,38 +37,40 @@ export const Preview: Story = {
   render: () => {
     const rows = generateMockRows(8);
     return (
-      <div style={{padding: '1.5rem'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+      <div style={{padding: "1.5rem"}}>
+        <table style={{width: "100%", borderCollapse: "collapse"}}>
           <thead>
-            <tr style={{borderBottom: '1px solid #e5e7eb', textAlign: 'left', fontSize: '0.875rem', fontWeight: 500, color: '#6b7280'}}>
-              <th style={{padding: '0.75rem'}}>
+            <tr style={{borderBottom: "1px solid #e5e7eb", textAlign: "left", fontSize: "0.875rem", fontWeight: 500, color: "#6b7280"}}>
+              <th style={{padding: "0.75rem"}}>
                 <input type='checkbox' />
               </th>
-              <th style={{padding: '0.75rem'}}>Invoice</th>
-              <th style={{padding: '0.75rem'}}>Category</th>
-              <th style={{padding: '0.75rem'}}>Date ↕</th>
-              <th style={{padding: '0.75rem'}}>Amount ↕</th>
-              <th style={{padding: '0.75rem', textAlign: 'end'}}>Actions</th>
+              <th style={{padding: "0.75rem"}}>Invoice</th>
+              <th style={{padding: "0.75rem"}}>Category</th>
+              <th style={{padding: "0.75rem"}}>Date ↕</th>
+              <th style={{padding: "0.75rem"}}>Amount ↕</th>
+              <th style={{padding: "0.75rem", textAlign: "end"}}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr
                 key={row.id}
-                style={{borderBottom: '1px solid #e5e7eb', fontSize: '0.875rem'}}>
-                <td style={{padding: '0.75rem'}}>
+                style={{borderBottom: "1px solid #e5e7eb", fontSize: "0.875rem"}}>
+                <td style={{padding: "0.75rem"}}>
                   <input type='checkbox' />
                 </td>
-                <td style={{padding: '0.75rem', fontWeight: 500}}>{row.name}</td>
-                <td style={{padding: '0.75rem'}}>
-                  <span style={{borderRadius: '9999px', backgroundColor: '#f3f4f6', padding: '0.125rem 0.5rem', fontSize: '0.75rem'}}>{row.category}</span>
+                <td style={{padding: "0.75rem", fontWeight: 500}}>{row.name}</td>
+                <td style={{padding: "0.75rem"}}>
+                  <span style={{borderRadius: "9999px", backgroundColor: "#f3f4f6", padding: "0.125rem 0.5rem", fontSize: "0.75rem"}}>
+                    {row.category}
+                  </span>
                 </td>
-                <td style={{padding: '0.75rem', color: '#6b7280'}}>{row.date}</td>
-                <td style={{padding: '0.75rem', fontWeight: 500}}>{row.amount.toFixed(2)} RON</td>
-                <td style={{padding: '0.75rem', textAlign: 'end'}}>
+                <td style={{padding: "0.75rem", color: "#6b7280"}}>{row.date}</td>
+                <td style={{padding: "0.75rem", fontWeight: 500}}>{row.amount.toFixed(2)} RON</td>
+                <td style={{padding: "0.75rem", textAlign: "end"}}>
                   <button
                     type='button'
-                    style={{color: '#9ca3af'}}>
+                    style={{color: "#9ca3af"}}>
                     👁 ⋮
                   </button>
                 </td>
@@ -76,23 +78,29 @@ export const Preview: Story = {
             ))}
           </tbody>
           <tfoot>
-            <tr style={{borderTop: '1px solid #e5e7eb'}}>
+            <tr style={{borderTop: "1px solid #e5e7eb"}}>
               <td
                 colSpan={4}
-                style={{padding: '0.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
+                style={{padding: "0.75rem", fontSize: "0.875rem", color: "#6b7280"}}>
                 Rows per page: 10 | Page 1 of 1
               </td>
               <td
                 colSpan={2}
-                style={{padding: '0.75rem', textAlign: 'end'}}>
+                style={{padding: "0.75rem", textAlign: "end"}}>
                 <button
                   type='button'
-                  style={{borderRadius: '0.25rem', border: '1px solid #e5e7eb', padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
+                  style={{borderRadius: "0.25rem", border: "1px solid #e5e7eb", padding: "0.25rem 0.75rem", fontSize: "0.75rem"}}>
                   Previous
                 </button>
                 <button
                   type='button'
-                  style={{marginLeft: '0.5rem', borderRadius: '0.25rem', border: '1px solid #e5e7eb', padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
+                  style={{
+                    marginLeft: "0.5rem",
+                    borderRadius: "0.25rem",
+                    border: "1px solid #e5e7eb",
+                    padding: "0.25rem 0.75rem",
+                    fontSize: "0.75rem",
+                  }}>
                   Next
                 </button>
               </td>
@@ -107,9 +115,9 @@ export const Preview: Story = {
 /** Empty state — no invoices. */
 export const EmptyState: Story = {
   render: () => (
-    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem'}}>
-      <div style={{textAlign: 'center', color: '#6b7280'}}>
-        <p style={{fontSize: '1.125rem'}}>No invoices found</p>
+    <div style={{display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem"}}>
+      <div style={{textAlign: "center", color: "#6b7280"}}>
+        <p style={{fontSize: "1.125rem"}}>No invoices found</p>
       </div>
     </div>
   ),

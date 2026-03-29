@@ -17,11 +17,21 @@
   margin-bottom: space(2);
 }
 
+.emptyIcon {
+  @include icon-size(space(12));
+  color: color('primary');
+}
+
 // ===========================================
 // GRID LAYOUT
 // ===========================================
 .grid {
   @include responsive-grid(1, 2, 3, space(4));
+
+  // Add extra bottom padding on mobile for nav
+  @include respond-below('md') {
+    padding-bottom: space(4);
+  }
 }
 
 // ===========================================
@@ -29,6 +39,19 @@
 // ===========================================
 .cardWrapper {
   position: relative;
+
+  // Enhanced mobile touch interactions
+  @include respond-below('md') {
+    // Touch-friendly minimum height
+    min-height: 44px;
+
+    // Subtle press feedback
+    &:active {
+      transform: scale(0.98);
+      @include transition(transform);
+      transition-duration: 100ms;
+    }
+  }
 }
 
 .checkboxOverlay {
@@ -39,6 +62,12 @@
 
   @media print {
     display: none;
+  }
+
+  // Larger touch target on mobile
+  @include respond-below('md') {
+    top: space(3);
+    left: space(3);
   }
 }
 
@@ -117,6 +146,23 @@
 
 .card {
   overflow: hidden;
+
+  // Enhanced mobile card styling
+  @include respond-below('md') {
+    // Larger touch target
+    min-height: space(48);
+    
+    // Better shadow for depth perception
+    box-shadow: 0 2px 8px color-alpha('foreground', 0.1);
+    
+    // Smooth interactions
+    @include transition(box-shadow);
+    transition-duration: 200ms;
+
+    &:active {
+      box-shadow: 0 4px 12px color-alpha('foreground', 0.15);
+    }
+  }
 }
 
 .imageButton {
@@ -124,6 +170,12 @@
   height: space(8);
   width: space(8);
   @include backdrop-blur(blur-size('md'));
+
+  // Larger touch target on mobile
+  @include respond-below('md') {
+    height: space(10);
+    width: space(10);
+  }
 }
 
 .tooltipTrigger {

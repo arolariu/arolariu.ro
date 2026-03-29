@@ -43,46 +43,54 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
               className={styles["actionButton"]}>
               <TbMenu3 className={styles["menuIcon"]} />
             </Button>
-          } />
+          }
+        />
         <DropdownMenuContent
           align='end'
           className={styles["menuContent"]}>
           <Tooltip>
-            <TooltipTrigger render={
-              <DropdownMenuItem
-                className={styles["menuItem"]}
-                render={
-                  <Link
-                    href={`/domains/invoices/edit-invoice/${invoice.id}`}
-                    className={styles["editLink"]}>
-                    <TbEdit className={styles["menuItemIcon"]} />
-                    {t("actions.edit")}
-                  </Link>
-                } />
-            } />
+            <TooltipTrigger
+              render={
+                <DropdownMenuItem
+                  className={styles["menuItem"]}
+                  render={
+                    <Link
+                      href={`/domains/invoices/edit-invoice/${invoice.id}`}
+                      className={styles["editLink"]}>
+                      <TbEdit className={styles["menuItemIcon"]} />
+                      {t("actions.edit")}
+                    </Link>
+                  }
+                />
+              }
+            />
             <TooltipContent side='left'>{t("tooltips.edit")}</TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger render={
-              <DropdownMenuItem
-                onClick={openShareDialog}
-                className={styles["menuItem"]}>
-                <TbShare className={styles["menuItemIcon"]} />
-                {t("actions.share")}
-              </DropdownMenuItem>
-            } />
+            <TooltipTrigger
+              render={
+                <DropdownMenuItem
+                  onClick={openShareDialog}
+                  className={styles["menuItem"]}>
+                  <TbShare className={styles["menuItemIcon"]} />
+                  {t("actions.share")}
+                </DropdownMenuItem>
+              }
+            />
             <TooltipContent side='left'>{t("tooltips.share")}</TooltipContent>
           </Tooltip>
           <DropdownMenuSeparator />
           <Tooltip>
-            <TooltipTrigger render={
-              <DropdownMenuItem
-                className={styles["menuItemDestructive"]}
-                onClick={openDeleteDialog}>
-                <TbTrash className={styles["menuItemIcon"]} />
-                {t("actions.delete")}
-              </DropdownMenuItem>
-            } />
+            <TooltipTrigger
+              render={
+                <DropdownMenuItem
+                  className={styles["menuItemDestructive"]}
+                  onClick={openDeleteDialog}>
+                  <TbTrash className={styles["menuItemIcon"]} />
+                  {t("actions.delete")}
+                </DropdownMenuItem>
+              }
+            />
             <TooltipContent side='left'>{t("tooltips.delete")}</TooltipContent>
           </Tooltip>
         </DropdownMenuContent>

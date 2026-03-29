@@ -1,0 +1,340 @@
+// ===========================================
+// FILTER BAR STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// CONTAINER & LAYOUT
+// ===========================================
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  margin-bottom: space(4);
+
+  @media print {
+    display: none;
+  }
+}
+
+.topBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(3);
+
+  @include respond-to('sm') {
+    flex-wrap: nowrap;
+  }
+}
+
+// ===========================================
+// SEARCH INPUT
+// ===========================================
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+
+  @include respond-to('sm') {
+    min-width: 300px;
+  }
+
+  // Sticky on mobile for better UX
+  @include respond-below('md') {
+    position: sticky;
+    top: 0;
+    z-index: z('sticky');
+    background-color: color('background');
+    padding-block: space(2);
+    margin-inline: calc(-1 * space(2));
+    padding-inline: space(2);
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: space(3);
+  transform: translateY(-50%);
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: space(9);
+  width: 100%;
+}
+
+// ===========================================
+// FILTER BUTTON & BADGE
+// ===========================================
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: pointer;
+  position: relative;
+}
+
+.filterIcon {
+  @include icon-size(space(4));
+}
+
+.filterBadge {
+  margin-left: space(1);
+  padding: 0 space(1.5);
+  height: 18px;
+  min-width: 18px;
+  font-size: 0.75rem;
+  border-radius: radius('full');
+}
+
+// ===========================================
+// CLEAR FILTERS BUTTON
+// ===========================================
+.clearFiltersButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: pointer;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: pointer;
+}
+
+.clearIcon {
+  @include icon-size(space(4));
+}
+
+// ===========================================
+// VIEW TOGGLE
+// ===========================================
+.viewToggle {
+  display: flex;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.viewButtonLeft {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 1px solid color('border');
+}
+
+.viewButtonRight {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.viewIcon {
+  @include icon-size(space(4));
+}
+
+.tooltipTrigger {
+  cursor: pointer;
+}
+
+// ===========================================
+// ACTIVE FILTERS BAR
+// ===========================================
+.activeFiltersBar {
+  display: flex;
+  align-items: center;
+  padding: space(2) space(3);
+  background-color: color('muted');
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.activeFiltersText {
+  font-size: 0.875rem;
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// FILTER PANEL (POPOVER & SHEET CONTENT)
+// ===========================================
+.filterPanel {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding: space(2);
+  max-height: 70vh;
+  overflow-y: auto;
+
+  @include respond-to('sm') {
+    max-height: 600px;
+  }
+}
+
+.filterPopover {
+  width: 400px;
+  max-width: 90vw;
+}
+
+.filterSheet {
+  display: flex;
+  flex-direction: column;
+}
+
+.popoverHeader,
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(4);
+  padding-bottom: space(3);
+  border-bottom: 1px solid color('border');
+}
+
+.popoverTitle,
+.sheetTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: color('foreground');
+}
+
+// ===========================================
+// FILTER SECTIONS
+// ===========================================
+.filterSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: color('foreground');
+}
+
+// ===========================================
+// DATE RANGE INPUTS
+// ===========================================
+.dateRangeInputs {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.dateButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  justify-content: flex-start;
+  width: 100%;
+  cursor: pointer;
+}
+
+.dateIcon {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.calendarPopover {
+  width: auto;
+}
+
+// ===========================================
+// AMOUNT RANGE INPUTS
+// ===========================================
+.amountRangeInputs {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.amountInputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.currencyIcon {
+  position: absolute;
+  top: 50%;
+  left: space(3);
+  transform: translateY(-50%);
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+  pointer-events: none;
+}
+
+.amountInput {
+  padding-left: space(8);
+  width: 100%;
+}
+
+// ===========================================
+// CATEGORY CHIPS
+// ===========================================
+.categoryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+
+  // Horizontal scroll on mobile for better UX
+  @include respond-below('md') {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-block: space(2);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+.categoryChip {
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ===========================================
+// PAYMENT TYPE LIST
+// ===========================================
+.paymentTypeList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.checkboxLabel {
+  font-size: 0.875rem;
+  color: color('foreground');
+  cursor: pointer;
+}
+
+// ===========================================
+// SORT SELECT
+// ===========================================
+.sortSelect {
+  width: 100%;
+  cursor: pointer;
+}

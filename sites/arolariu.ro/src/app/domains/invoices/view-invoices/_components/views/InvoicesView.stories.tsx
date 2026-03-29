@@ -22,44 +22,103 @@ type Story = StoryObj<typeof meta>;
 /** Default invoices view with search toolbar and table placeholder. */
 export const Default: Story = {
   render: () => (
-    <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+    <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
       {/* Toolbar */}
-      <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-        <div style={{position: 'relative'}}>
-          <TbSearch style={{position: 'absolute', top: '50%', left: '0.75rem', height: '1rem', width: '1rem', transform: 'translateY(-50%)', color: '#9ca3af'}} />
+      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem"}}>
+        <div style={{position: "relative"}}>
+          <TbSearch
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "0.75rem",
+              height: "1rem",
+              width: "1rem",
+              transform: "translateY(-50%)",
+              color: "#9ca3af",
+            }}
+          />
           <input
             type='text'
             placeholder='Search invoices...'
-            style={{width: '100%', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: 'transparent', padding: '0.5rem 0.75rem 0.5rem 2.25rem', fontSize: '0.875rem', outline: 'none'}}
+            style={{
+              width: "100%",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              backgroundColor: "transparent",
+              padding: "0.5rem 0.75rem 0.5rem 2.25rem",
+              fontSize: "0.875rem",
+              outline: "none",
+            }}
             readOnly
           />
         </div>
-        <div style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem'}}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem'}}>
-            <TbCategory style={{height: '1rem', width: '1rem', color: '#6b7280'}} />
+        <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem"}}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              padding: "0.375rem 0.75rem",
+              fontSize: "0.875rem",
+            }}>
+            <TbCategory style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
             <span>Category</span>
           </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem'}}>
-            <TbClock style={{height: '1rem', width: '1rem', color: '#6b7280'}} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              padding: "0.375rem 0.75rem",
+              fontSize: "0.875rem",
+            }}>
+            <TbClock style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
             <span>Time of Day</span>
           </div>
-          <button style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.5rem'}}>
-            <TbFilter style={{height: '1rem', width: '1rem', color: '#6b7280'}} />
+          <button style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.375rem 0.5rem"}}>
+            <TbFilter style={{height: "1rem", width: "1rem", color: "#6b7280"}} />
           </button>
-          <div style={{marginLeft: 'auto', display: 'flex'}}>
-            <button style={{borderTopLeftRadius: '0.375rem', borderBottomLeftRadius: '0.375rem', backgroundColor: '#111827', padding: '0.375rem 0.5rem', color: '#ffffff'}}>
-              <TbTable style={{height: '1rem', width: '1rem'}} />
+          <div style={{marginLeft: "auto", display: "flex"}}>
+            <button
+              style={{
+                borderTopLeftRadius: "0.375rem",
+                borderBottomLeftRadius: "0.375rem",
+                backgroundColor: "#111827",
+                padding: "0.375rem 0.5rem",
+                color: "#ffffff",
+              }}>
+              <TbTable style={{height: "1rem", width: "1rem"}} />
             </button>
-            <button style={{borderTopRightRadius: '0.375rem', borderBottomRightRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.5rem'}}>
-              <TbCards style={{height: '1rem', width: '1rem'}} />
+            <button
+              style={{
+                borderTopRightRadius: "0.375rem",
+                borderBottomRightRadius: "0.375rem",
+                border: "1px solid #e5e7eb",
+                padding: "0.375rem 0.5rem",
+              }}>
+              <TbCards style={{height: "1rem", width: "1rem"}} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Table placeholder */}
-      <div style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb'}}>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb', padding: '0.625rem 1rem', fontSize: '0.75rem', fontWeight: 500, color: '#6b7280'}}>
+      <div style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb"}}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            borderBottom: "1px solid #e5e7eb",
+            backgroundColor: "#f9fafb",
+            padding: "0.625rem 1rem",
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            color: "#6b7280",
+          }}>
           <span>Merchant</span>
           <span>Date</span>
           <span>Category</span>
@@ -73,12 +132,18 @@ export const Default: Story = {
         ].map((row) => (
           <div
             key={row.merchant}
-            style={{display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', borderBottom: '1px solid #e5e7eb', padding: '0.75rem 1rem', fontSize: '0.875rem'}}>
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 1fr)",
+              borderBottom: "1px solid #e5e7eb",
+              padding: "0.75rem 1rem",
+              fontSize: "0.875rem",
+            }}>
             <span style={{fontWeight: 500}}>{row.merchant}</span>
-            <span style={{color: '#6b7280'}}>{row.date}</span>
+            <span style={{color: "#6b7280"}}>{row.date}</span>
             <span>{row.category}</span>
             <span>{row.total}</span>
-            <span style={{color: row.status === "Analyzed" ? '#16a34a' : '#ca8a04'}}>{row.status}</span>
+            <span style={{color: row.status === "Analyzed" ? "#16a34a" : "#ca8a04"}}>{row.status}</span>
           </div>
         ))}
       </div>

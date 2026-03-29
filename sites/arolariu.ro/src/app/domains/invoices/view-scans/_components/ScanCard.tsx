@@ -21,16 +21,22 @@ import {
   Card,
   CardContent,
   Checkbox,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
   toast,
 } from "@arolariu/components";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
-import {useCallback, useState} from "react";
-import {TbDotsVertical, TbFileTypePdf, TbLink, TbTrash} from "react-icons/tb";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {TbCheck, TbDotsVertical, TbFileTypePdf, TbLink, TbMaximize, TbPencil, TbTrash, TbX} from "react-icons/tb";
 import styles from "./ScanCard.module.scss";
 
 type ScanCardProps = {
@@ -60,15 +66,29 @@ function formatDate(date: Date): string {
 }
 
 /**
- * Individual scan card with selection checkbox.
+ * Individual scan card with selection checkbox, inline rename, and preview.
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans.scanCard");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState(scan.name);
+  const [showPreview, setShowPreview] = useState(false);
+  const [justRenamed, setJustRenamed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const removeScan = useScansStore((state) => state.removeScan);
+  const updateScanName = useScansStore((state) => state.updateScanName);
 
   const isUsedByInvoice = scan.metadata?.["usedByInvoice"] === "true";
+
+  // Focus input when entering rename mode
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
 
   const handleDelete = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
@@ -93,29 +113,84 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     setShowDeleteDialog(true);
   }, []);
 
+  const handleStartRename = useCallback((): void => {
+    setIsRenaming(true);
+    setNewName(scan.name);
+  }, [scan.name]);
+
+  const handleSaveRename = useCallback((): void => {
+    const trimmedName = newName.trim();
+    if (trimmedName && trimmedName !== scan.name) {
+      updateScanName(scan.id, trimmedName);
+      toast.success(t("rename"));
+      setJustRenamed(true);
+      setTimeout(() => setJustRenamed(false), 300);
+    }
+    setIsRenaming(false);
+  }, [newName, scan.id, scan.name, updateScanName, t]);
+
+  const handleCancelRename = useCallback((): void => {
+    setIsRenaming(false);
+    setNewName(scan.name);
+  }, [scan.name]);
+
+  const handleRenameKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>): void => {
+      if (event.key === "Enter") {
+        handleSaveRename();
+      } else if (event.key === "Escape") {
+        handleCancelRename();
+      }
+    },
+    [handleSaveRename, handleCancelRename],
+  );
+
+  const handleOpenPreview = useCallback((): void => {
+    if (scan.mimeType !== "application/pdf") {
+      setShowPreview(true);
+    }
+  }, [scan.mimeType]);
+
   return (
     <>
-      <Card
-        className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
+      <Card className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
         <CardContent className={styles["cardContentFlush"]}>
           {/* Preview */}
-          <div className={styles["previewArea"]}>
+          <div
+            className={styles["previewArea"]}
+            onClick={handleOpenPreview}
+            role={scan.mimeType !== "application/pdf" ? "button" : undefined}
+            tabIndex={scan.mimeType !== "application/pdf" ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (scan.mimeType !== "application/pdf" && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                handleOpenPreview();
+              }
+            }}>
             {scan.mimeType === "application/pdf" ? (
               <div className={styles["pdfPlaceholder"]}>
                 <TbFileTypePdf className={styles["pdfIcon"]} />
               </div>
             ) : (
-              <Image
-                src={scan.blobUrl}
-                alt={scan.name}
-                fill
-                className={styles["imagePreview"]}
-                unoptimized
-              />
+              <>
+                <Image
+                  src={scan.blobUrl}
+                  alt={scan.name}
+                  fill
+                  className={styles["imagePreview"]}
+                  unoptimized
+                />
+                {/* Preview overlay icon */}
+                <div className={styles["previewOverlay"]}>
+                  <TbMaximize className={styles["previewIcon"]} />
+                </div>
+              </>
             )}
 
             {/* Selection checkbox */}
-            <div className={styles["checkboxPosition"]}>
+            <div
+              className={styles["checkboxPosition"]}
+              onClick={(e) => e.stopPropagation()}>
               <Checkbox
                 checked={isSelected}
                 nativeButton
@@ -125,17 +200,25 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
 
             {/* Actions menu */}
-            <div className={styles["actionsPosition"]}>
+            <div
+              className={styles["actionsPosition"]}
+              onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
-                <DropdownMenuTrigger render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={styles["actionsButton"]}>
-                    <TbDotsVertical className={styles["menuIcon"]} />
-                  </Button>
-                } />
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className={styles["actionsButton"]}>
+                      <TbDotsVertical className={styles["menuIcon"]} />
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align='end'>
+                  <DropdownMenuItem onClick={handleStartRename}>
+                    <TbPencil className={styles["trashIcon"]} />
+                    {t("rename")}
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className={styles["deleteMenuItem"]}
                     onClick={handleOpenDeleteDialog}>
@@ -159,11 +242,57 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
           {/* File info */}
           <div className={styles["fileInfo"]}>
-            <p
-              className={styles["fileName"]}
-              title={scan.name}>
-              {scan.name}
-            </p>
+            {isRenaming ? (
+              <motion.div
+                initial={{opacity: 0, y: -5}}
+                animate={{opacity: 1, y: 0}}
+                className={styles["renameContainer"]}>
+                <Input
+                  ref={inputRef}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={handleRenameKeyDown}
+                  onBlur={handleCancelRename}
+                  placeholder={t("renamePlaceholder")}
+                  className={styles["renameInput"]}
+                />
+                <div className={styles["renameActions"]}>
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    onClick={handleSaveRename}
+                    className={styles["renameSaveButton"]}>
+                    <TbCheck className={styles["renameIcon"]} />
+                  </Button>
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    onClick={handleCancelRename}
+                    className={styles["renameCancelButton"]}>
+                    <TbX className={styles["renameIcon"]} />
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <div
+                className={styles["fileNameContainer"]}
+                onDoubleClick={handleStartRename}>
+                <motion.p
+                  className={styles["fileName"]}
+                  title={scan.name}
+                  animate={justRenamed ? {scale: [1, 1.05, 1]} : {}}
+                  transition={{duration: 0.3}}>
+                  {scan.name}
+                </motion.p>
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  onClick={handleStartRename}
+                  className={styles["editButton"]}>
+                  <TbPencil className={styles["editIcon"]} />
+                </Button>
+              </div>
+            )}
             <div className={styles["fileMeta"]}>
               <span>{formatFileSize(scan.sizeInBytes)}</span>
               <span>{formatDate(scan.uploadedAt)}</span>
@@ -171,6 +300,28 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           </div>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      {scan.mimeType !== "application/pdf" && (
+        <Dialog
+          open={showPreview}
+          onOpenChange={setShowPreview}>
+          <DialogContent className={styles["previewDialog"]}>
+            <DialogHeader>
+              <DialogTitle>{t("previewTitle")}</DialogTitle>
+            </DialogHeader>
+            <div className={styles["previewImageContainer"]}>
+              <Image
+                src={scan.blobUrl}
+                alt={scan.name}
+                fill
+                className={styles["previewImage"]}
+                unoptimized
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog

@@ -43,7 +43,16 @@ export const Default: Story = {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                style={{display: "flex", height: "3.5rem", width: "3.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
+                style={{
+                  display: "flex",
+                  height: "3.5rem",
+                  width: "3.5rem",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "0.375rem",
+                  border: "1px solid #e5e7eb",
+                  backgroundColor: "white",
+                }}>
                 <TbPhoto style={{height: "1.5rem", width: "1.5rem", color: "#d1d5db"}} />
               </div>
             ))}
@@ -55,7 +64,17 @@ export const Default: Story = {
           <p style={{fontSize: "0.875rem", fontWeight: 500}}>Choose creation mode:</p>
 
           {/* Single mode */}
-          <label style={{display: "flex", cursor: "pointer", alignItems: "flex-start", gap: "0.75rem", borderRadius: "0.5rem", border: "2px solid #a855f7", backgroundColor: "#faf5ff", padding: "0.75rem"}}>
+          <label
+            style={{
+              display: "flex",
+              cursor: "pointer",
+              alignItems: "flex-start",
+              gap: "0.75rem",
+              borderRadius: "0.5rem",
+              border: "2px solid #a855f7",
+              backgroundColor: "#faf5ff",
+              padding: "0.75rem",
+            }}>
             <input
               type='radio'
               style={{marginTop: "0.125rem"}}
@@ -72,7 +91,16 @@ export const Default: Story = {
           </label>
 
           {/* Batch mode */}
-          <label style={{display: "flex", cursor: "pointer", alignItems: "flex-start", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid #e5e7eb", padding: "0.75rem"}}>
+          <label
+            style={{
+              display: "flex",
+              cursor: "pointer",
+              alignItems: "flex-start",
+              gap: "0.75rem",
+              borderRadius: "0.5rem",
+              border: "1px solid #e5e7eb",
+              padding: "0.75rem",
+            }}>
             <input
               type='radio'
               style={{marginTop: "0.125rem"}}
@@ -102,8 +130,28 @@ export const Default: Story = {
 
       {/* Footer */}
       <div style={{display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem"}}>Cancel</button>
-        <button style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", backgroundImage: "linear-gradient(to right, #9333ea, #db2777)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "white"}}>
+        <button
+          style={{
+            borderRadius: "0.375rem",
+            border: "1px solid #e5e7eb",
+            paddingInline: "1rem",
+            paddingBlock: "0.5rem",
+            fontSize: "0.875rem",
+          }}>
+          Cancel
+        </button>
+        <button
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            borderRadius: "0.375rem",
+            backgroundImage: "linear-gradient(to right, #9333ea, #db2777)",
+            paddingInline: "1rem",
+            paddingBlock: "0.5rem",
+            fontSize: "0.875rem",
+            color: "white",
+          }}>
           Create 3 Invoices
           <TbArrowRight style={{height: "1rem", width: "1rem"}} />
         </button>

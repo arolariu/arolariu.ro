@@ -1,0 +1,136 @@
+// ===========================================
+// BULK ACTIONS TOOLBAR COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+.toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: z('sticky');
+  padding: space(3) space(6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: color-alpha('background', 0.9);
+  @include backdrop-blur(8px);
+  border-top: 1px solid color('border');
+  @include shadow('lg');
+
+  @include dark {
+    background-color: color-alpha('foreground', 0.9);
+    border-color: color('border');
+  }
+}
+
+.toolbarContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 80rem; // max-w-7xl
+  margin-inline: auto;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.selectedCount {
+  font-weight: font-weight('medium');
+  color: color('foreground');
+  font-size: font-size('sm');
+
+  @include dark {
+    color: white;
+  }
+}
+
+// ===========================================
+// BUTTON STYLES
+// ===========================================
+.clearButton {
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+
+  @include dark {
+    color: color('muted-foreground');
+
+    &:hover {
+      color: color('foreground');
+    }
+  }
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.icon {
+  width: space(4);
+  height: space(4);
+  flex-shrink: 0;
+}
+
+.categoryIcon {
+  width: space(4);
+  height: space(4);
+  flex-shrink: 0;
+  color: color('foreground');
+  margin-right: space(2);
+
+  @include dark {
+    color: white;
+  }
+}
+
+// ===========================================
+// CATEGORY SELECT STYLES
+// ===========================================
+.categorySelect {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.selectTrigger {
+  min-width: 150px;
+
+  @include respond-to('sm') {
+    min-width: 180px;
+  }
+}
+
+// ===========================================
+// RESPONSIVE STYLES
+// ===========================================
+.hiddenMobile {
+  display: none;
+
+  @include respond-to('sm') {
+    display: inline;
+  }
+}
+
+.visibleMobile {
+  @include respond-to('sm') {
+    display: none;
+  }
+}

@@ -28,7 +28,8 @@ export default mergeConfig(
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),
-        "@arolariu/components": resolve(__dirname, "../../packages/components/src/index.ts"),
+        // Resolve to dist to avoid cross-package @/ alias issues with components source
+        "@arolariu/components": resolve(__dirname, "../../packages/components/dist/index.js"),
       },
     },
   }),

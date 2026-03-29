@@ -1,0 +1,114 @@
+// ===========================================
+// CREATE INVOICE WIZARD ISLAND STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.wizard {
+  @include flex-column;
+  gap: space(8);
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.header {
+  @include flex-column;
+  gap: space(2);
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.title {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  margin: 0;
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  font-size: font-size('base');
+  color: color('muted-foreground');
+  margin: 0;
+}
+
+.stepContent {
+  min-height: 400px;
+  
+  @include respond-to('md') {
+    min-height: 500px;
+  }
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: space(4);
+  padding-top: space(6);
+  border-top: 1px solid color('border');
+}
+
+.nextButton {
+  margin-left: auto;
+}
+
+// Empty state styles
+.emptyState {
+  margin-top: space(8);
+}
+
+.emptyStateContent {
+  @include flex-column;
+  align-items: center;
+  text-align: center;
+  padding: space(12);
+  gap: space(4);
+}
+
+.emptyStateIcon {
+  font-size: 64px;
+  opacity: 0.5;
+}
+
+.emptyStateTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin: 0;
+}
+
+.emptyStateDescription {
+  font-size: font-size('base');
+  color: color('muted-foreground');
+  max-width: 500px;
+  margin: 0;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: space(3);
+  margin-top: space(4);
+
+  @include respond-below('sm') {
+    flex-direction: column;
+    width: 100%;
+
+    a {
+      width: 100%;
+    }
+  }
+}

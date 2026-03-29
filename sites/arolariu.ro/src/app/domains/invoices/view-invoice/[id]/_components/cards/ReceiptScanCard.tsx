@@ -20,7 +20,7 @@ import {
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
-import {TbZoomIn} from "react-icons/tb";
+import {TbArrowLeft, TbArrowRight, TbDownload, TbMaximize, TbRotateClockwise, TbZoomIn, TbZoomOut, TbZoomReset} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 
@@ -28,8 +28,16 @@ export function ReceiptScanCard(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.receiptScanCard");
   const {invoice} = useInvoiceContext();
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [currentScanIndex, setCurrentScanIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentScanIndex, setCurrentScanIndex] = useState<number>(0);
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+
+  // Zoom and rotate state for card view
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [rotation, setRotation] = useState<number>(0);
+
+  // Zoom and rotate state for dialog view
+  const [dialogZoomLevel, setDialogZoomLevel] = useState<number>(1);
+  const [dialogRotation, setDialogRotation] = useState<number>(0);
 
   const scans = invoice.scans || [];
   const totalScans = scans.length;
@@ -42,6 +50,11 @@ export function ReceiptScanCard(): React.JSX.Element {
       setTimeout(() => {
         setCurrentScanIndex((prev) => prev + 1);
         setIsTransitioning(false);
+        // Reset zoom and rotation when changing scans
+        setZoomLevel(1);
+        setRotation(0);
+        setDialogZoomLevel(1);
+        setDialogRotation(0);
       }, 200);
     }
   }, [currentScanIndex, totalScans]);
@@ -52,6 +65,11 @@ export function ReceiptScanCard(): React.JSX.Element {
       setTimeout(() => {
         setCurrentScanIndex((prev) => prev - 1);
         setIsTransitioning(false);
+        // Reset zoom and rotation when changing scans
+        setZoomLevel(1);
+        setRotation(0);
+        setDialogZoomLevel(1);
+        setDialogRotation(0);
       }, 200);
     }
   }, [currentScanIndex]);
@@ -59,6 +77,49 @@ export function ReceiptScanCard(): React.JSX.Element {
   const handleOpenImage = useCallback(() => {
     setIsOpen(true);
   }, []);
+
+  // Card zoom controls
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((prev) => Math.min(prev + 0.25, 3));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  }, []);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomLevel(1);
+  }, []);
+
+  const handleRotate = useCallback(() => {
+    setRotation((prev) => (prev + 90) % 360);
+  }, []);
+
+  // Dialog zoom controls
+  const handleDialogZoomIn = useCallback(() => {
+    setDialogZoomLevel((prev) => Math.min(prev + 0.25, 3));
+  }, []);
+
+  const handleDialogZoomOut = useCallback(() => {
+    setDialogZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  }, []);
+
+  const handleDialogResetZoom = useCallback(() => {
+    setDialogZoomLevel(1);
+  }, []);
+
+  const handleDialogRotate = useCallback(() => {
+    setDialogRotation((prev) => (prev + 90) % 360);
+  }, []);
+
+  const handleDownload = useCallback(() => {
+    const link = document.createElement("a");
+    link.href = currentScanSrc;
+    link.download = `receipt-scan-${currentScanIndex + 1}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [currentScanSrc, currentScanIndex]);
 
   return (
     <TooltipProvider>
@@ -72,17 +133,25 @@ export function ReceiptScanCard(): React.JSX.Element {
           <Dialog
             open={isOpen}
             onOpenChange={setIsOpen}>
-            <DialogTrigger render={
-              <div className={styles["imageContainer"]}>
-                <Image
-                  src={currentScanSrc}
-                  alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
-                  width={400}
-                  height={600}
-                  className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
-                />
-              </div>
-            } />
+            <DialogTrigger
+              render={
+                <div className={styles["imageContainer"]}>
+                  <div
+                    className={styles["imageWrapper"]}
+                    style={{
+                      transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                    }}>
+                    <Image
+                      src={currentScanSrc}
+                      alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
+                      width={400}
+                      height={600}
+                      className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
+                    />
+                  </div>
+                </div>
+              }
+            />
             <DialogContent className={styles["dialogContent"]}>
               <DialogHeader>
                 <DialogTitle>
@@ -92,44 +161,250 @@ export function ReceiptScanCard(): React.JSX.Element {
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["dialogImageContainer"]}>
-                <Image
-                  src={currentScanSrc}
-                  alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
-                  width={800}
-                  height={1200}
-                  className={styles["dialogImage"]}
-                />
+                <div
+                  className={styles["dialogImageWrapper"]}
+                  style={{
+                    transform: `scale(${dialogZoomLevel}) rotate(${dialogRotation}deg)`,
+                  }}>
+                  <Image
+                    src={currentScanSrc}
+                    alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
+                    width={800}
+                    height={1200}
+                    className={styles["dialogImage"]}
+                  />
+                </div>
+              </div>
+              {/* Dialog controls */}
+              <div className={styles["dialogControls"]}>
+                <div className={styles["controlGroup"]}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleDialogZoomIn}
+                          disabled={dialogZoomLevel >= 3}>
+                          <TbZoomIn className={styles["controlIcon"]} />
+                          <span className={styles["controlLabelDesktop"]}>{t("controls.zoomIn")}</span>
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{t("controls.zoomIn")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleDialogZoomOut}
+                          disabled={dialogZoomLevel <= 0.5}>
+                          <TbZoomOut className={styles["controlIcon"]} />
+                          <span className={styles["controlLabelDesktop"]}>{t("controls.zoomOut")}</span>
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{t("controls.zoomOut")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleDialogResetZoom}
+                          disabled={dialogZoomLevel === 1}>
+                          <TbZoomReset className={styles["controlIcon"]} />
+                          <span className={styles["controlLabelDesktop"]}>{t("controls.reset")}</span>
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{t("controls.reset")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleDialogRotate}>
+                          <TbRotateClockwise className={styles["controlIcon"]} />
+                          <span className={styles["controlLabelDesktop"]}>{t("controls.rotate")}</span>
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{t("controls.rotate")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleDownload}>
+                          <TbDownload className={styles["controlIcon"]} />
+                          <span className={styles["controlLabelDesktop"]}>{t("controls.download")}</span>
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{t("controls.download")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {totalScans > 1 && (
+                  <div className={styles["dialogNavigation"]}>
+                    <Button
+                      variant='secondary'
+                      size='sm'
+                      onClick={handlePreviousScan}
+                      disabled={currentScanIndex === 0}>
+                      <TbArrowLeft className={styles["controlIcon"]} />
+                      <span className={styles["controlLabelDesktop"]}>{t("navigation.previous")}</span>
+                    </Button>
+                    <span className={styles["scanCounter"]}>
+                      {currentScanIndex + 1} {t("navigation.of")} {totalScans}
+                    </span>
+                    <Button
+                      variant='secondary'
+                      size='sm'
+                      onClick={handleNextScan}
+                      disabled={currentScanIndex === totalScans - 1}>
+                      <span className={styles["controlLabelDesktop"]}>{t("navigation.next")}</span>
+                      <TbArrowRight className={styles["controlIcon"]} />
+                    </Button>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Card controls */}
+          <div className={styles["cardControls"]}>
+            <div className={styles["controlGroup"]}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}>
+                      <TbZoomIn className={styles["controlIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("controls.zoomIn")}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 0.5}>
+                      <TbZoomOut className={styles["controlIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("controls.zoomOut")}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleResetZoom}
+                      disabled={zoomLevel === 1}>
+                      <TbZoomReset className={styles["controlIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("controls.reset")}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleRotate}>
+                      <TbRotateClockwise className={styles["controlIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("controls.rotate")}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleDownload}>
+                      <TbDownload className={styles["controlIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("controls.download")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
         </CardContent>
         <CardFooter className={styles["cardFooter"]}>
           <Tooltip>
-            <TooltipTrigger render={
-              <Button
-                variant='outline'
-                className={styles["expandButton"]}
-                onClick={handleOpenImage}>
-                <TbZoomIn className={styles["zoomIcon"]} />
-                {t("buttons.expand")}
-              </Button>
-            } />
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  className={styles["expandButton"]}
+                  onClick={handleOpenImage}>
+                  <TbMaximize className={styles["zoomIcon"]} />
+                  {t("controls.fullScreen")}
+                </Button>
+              }
+            />
             <TooltipContent>
-              <p>{t("tooltips.expand")}</p>
+              <p>{t("controls.fullScreen")}</p>
             </TooltipContent>
           </Tooltip>
           {totalScans > 1 && (
             <div className={styles["scanNavigation"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
-                  <TooltipTrigger render={
-                    <Button
-                      variant='secondary'
-                      className={styles["navButton"]}
-                      onClick={handlePreviousScan}>
-                      {t("buttons.previousScan")}
-                    </Button>
-                  } />
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant='secondary'
+                        className={styles["navButton"]}
+                        onClick={handlePreviousScan}>
+                        <TbArrowLeft className={styles["navIcon"]} />
+                        {t("buttons.previousScan")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.previousScan")}</p>
                   </TooltipContent>
@@ -137,14 +412,17 @@ export function ReceiptScanCard(): React.JSX.Element {
               )}
               {currentScanIndex < totalScans - 1 && (
                 <Tooltip>
-                  <TooltipTrigger render={
-                    <Button
-                      variant='secondary'
-                      className={styles["navButton"]}
-                      onClick={handleNextScan}>
-                      {t("buttons.nextScan")}
-                    </Button>
-                  } />
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant='secondary'
+                        className={styles["navButton"]}
+                        onClick={handleNextScan}>
+                        {t("buttons.nextScan")}
+                        <TbArrowRight className={styles["navIcon"]} />
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.nextScan")}</p>
                   </TooltipContent>

@@ -9,6 +9,8 @@ import {Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, Too
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
+import {useEffect, useRef, useState} from "react";
 import {
   TbArrowLeft,
   TbArrowRight,
@@ -20,6 +22,11 @@ import {
   TbPhoto,
   TbShieldCheck,
 } from "react-icons/tb";
+import {AnimatedCounter} from "../_components/AnimatedCounter";
+import {FadeIn} from "../_components/FadeIn";
+import OnboardingOverlay from "../_components/OnboardingOverlay";
+import WorkflowProgress from "../_components/WorkflowProgress";
+import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
 import {ScanUploadProvider, useScanUpload} from "./_context/ScanUploadContext";
@@ -90,34 +97,44 @@ function UploadStats(): React.JSX.Element | null {
         <div className={styles["statsGroup"]}>
           {/* Session total */}
           <div className={styles["statItem"]}>
-            <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>{totalAdded}</p>
+            <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>
+              <AnimatedCounter value={totalAdded} />
+            </p>
             <p className={styles["statLabel"]}>{t("stats.added")}</p>
           </div>
           {/* Pending in current batch */}
           {pending > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>{pending}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>
+                <AnimatedCounter value={pending} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.pending")}</p>
             </div>
           )}
           {/* Currently uploading */}
           {uploading > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>{uploading}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>
+                <AnimatedCounter value={uploading} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.uploading")}</p>
             </div>
           )}
           {/* Session completed (persistent) */}
           {totalCompleted > 0 && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>{totalCompleted}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>
+                <AnimatedCounter value={totalCompleted} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.completed")}</p>
             </div>
           )}
           {/* Session failed (persistent) + current queue failures */}
           {(totalFailed > 0 || failedInQueue > 0) && (
             <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>{totalFailed + failedInQueue}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>
+                <AnimatedCounter value={totalFailed + failedInQueue} />
+              </p>
               <p className={styles["statLabel"]}>{t("stats.failed")}</p>
             </div>
           )}
@@ -131,7 +148,8 @@ function UploadStats(): React.JSX.Element | null {
                 {t("buttons.viewScans")}
                 <TbArrowRight className={styles["arrowIcon"]} />
               </Link>
-            } />
+            }
+          />
         ) : null}
       </div>
     </motion.div>
@@ -143,7 +161,66 @@ function UploadStats(): React.JSX.Element | null {
  */
 function UploadContent(): React.JSX.Element {
   const t = useTranslations("Invoices.UploadScans");
+  const router = useRouter();
   const {pendingUploads, sessionStats} = useScanUpload();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [completedScans, setCompletedScans] = useState<Array<{id: string; preview: string; name: string}>>([]);
+  const completedScansRef = useRef<Array<{id: string; preview: string; name: string}>>([]);
+  const hasPromptedRef = useRef(false);
+
+  /**
+   * Effect to collect completed scans before they're removed from the queue.
+   */
+  useEffect(() => {
+    const completed = pendingUploads.filter((u) => u.status === "completed").map((u) => ({id: u.id, preview: u.preview, name: u.name}));
+    if (completed.length > 0) {
+      completedScansRef.current = completed;
+    }
+    // Reset the prompted flag when a new upload batch starts
+    if (pendingUploads.length > 0) {
+      hasPromptedRef.current = false;
+    }
+  }, [pendingUploads]);
+
+  /**
+   * Effect to detect when all uploads complete and show the prompt once per batch.
+   */
+  useEffect(() => {
+    const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0;
+
+    if (allDone && !hasPromptedRef.current) {
+      hasPromptedRef.current = true;
+      setCompletedScans(completedScansRef.current);
+      const timer = setTimeout(() => {
+        setShowPrompt(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [pendingUploads, sessionStats.totalCompleted]);
+
+  /**
+   * Navigate to create invoice page.
+   */
+  const handleCreateInvoice = (): void => {
+    setShowPrompt(false);
+    router.push("/domains/invoices/create-invoice");
+  };
+
+  /**
+   * Navigate to view scans page.
+   */
+  const handleViewScans = (): void => {
+    setShowPrompt(false);
+    router.push("/domains/invoices/view-scans");
+  };
+
+  /**
+   * Dismiss the prompt and stay on page.
+   */
+  const handleDismiss = (): void => {
+    setShowPrompt(false);
+  };
 
   return (
     <section className={styles["contentSection"]}>
@@ -157,70 +234,83 @@ function UploadContent(): React.JSX.Element {
         </Link>
       </div>
 
+      {/* Workflow Progress */}
+      <WorkflowProgress currentStep='upload' />
+
       {/* Header */}
-      <div className={styles["header"]}>
-        <div className={styles["headerLeft"]}>
-          <div>
-            <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
-            <p className={styles["headerDescription"]}>{t("header.description")}</p>
+      <FadeIn>
+        <div className={styles["header"]}>
+          <div className={styles["headerLeft"]}>
+            <div>
+              <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
+              <p className={styles["headerDescription"]}>{t("header.description")}</p>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className={styles["infoButton"]}>
+                      <TbInfoCircle className={styles["infoIcon"]} />
+                    </Button>
+                  }
+                />
+                <TooltipContent
+                  side='right'
+                  className={styles["tooltipContent"]}>
+                  <p>{t("header.tooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className={styles["infoButton"]}>
-                  <TbInfoCircle className={styles["infoIcon"]} />
-                </Button>
-              } />
-              <TooltipContent
-                side='right'
-                className={styles["tooltipContent"]}>
-                <p>{t("header.tooltip")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
 
-        <div className={styles["headerActions"]}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='outline'
-                  className={styles["outlineButton"]}
+          <div className={styles["headerActions"]}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
                   render={
-                    <Link href='/domains/invoices/view-scans'>
-                      <TbEye className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
-                      <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
-                    </Link>
-                  } />
-              } />
-              <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                    <Button
+                      variant='outline'
+                      className={styles["outlineButton"]}
+                      render={
+                        <Link href='/domains/invoices/view-scans'>
+                          <TbEye className={styles["actionIcon"]} />
+                          <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
+                          <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
+                        </Link>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='outline'
-                  className={styles["outlineButton"]}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
                   render={
-                    <Link href='/domains/invoices/view-invoices'>
-                      <TbFileInvoice className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
-                      <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
-                    </Link>
-                  } />
-              } />
-              <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                    <Button
+                      variant='outline'
+                      className={styles["outlineButton"]}
+                      render={
+                        <Link href='/domains/invoices/view-invoices'>
+                          <TbFileInvoice className={styles["actionIcon"]} />
+                          <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
+                          <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
+                        </Link>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Upload Stats (when there are pending uploads) */}
       <UploadStats />
@@ -300,13 +390,26 @@ function UploadContent(): React.JSX.Element {
                         {t("sidebar.nextSteps.button")}
                         <TbArrowRight className={styles["arrowIcon"]} />
                       </Link>
-                    } />
+                    }
+                  />
                 </CardContent>
               </Card>
             </motion.div>
           )}
         </div>
       </div>
+
+      {/* Post-upload prompt */}
+      <PostUploadPrompt
+        completedScans={completedScans}
+        onCreateInvoice={handleCreateInvoice}
+        onViewScans={handleViewScans}
+        onDismiss={handleDismiss}
+        isVisible={showPrompt}
+      />
+
+      {/* Onboarding overlay */}
+      <OnboardingOverlay />
     </section>
   );
 }

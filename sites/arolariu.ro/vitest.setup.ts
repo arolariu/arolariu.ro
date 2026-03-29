@@ -39,6 +39,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
   useLocale: () => "en",
+  useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
+  NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
 }));
 
 // Mock Clerk

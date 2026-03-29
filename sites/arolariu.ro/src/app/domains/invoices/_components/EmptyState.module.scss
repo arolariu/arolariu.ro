@@ -1,0 +1,64 @@
+// ===========================================
+// EMPTY STATE COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(12) space(6);
+  text-align: center;
+}
+
+.iconWrapper {
+  width: space(24);
+  height: space(24);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: space(6);
+  background: radial-gradient(circle, color-alpha('primary', 0.08) 0%, transparent 70%),
+    linear-gradient(135deg, color-alpha('primary', 0.1), color-alpha('primary', 0.05));
+
+  @include dark {
+    background: radial-gradient(circle, color-alpha('primary', 0.08) 0%, transparent 70%),
+      linear-gradient(135deg, color-alpha('primary', 0.2), color-alpha('primary', 0.1));
+  }
+}
+
+.icon {
+  @include icon-size(space(12));
+  color: color('primary');
+}
+
+.title {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  margin-bottom: space(2);
+  color: color('foreground');
+
+  @include dark {
+    color: white;
+  }
+}
+
+.description {
+  color: color('muted-foreground');
+  font-size: font-size('base');
+  max-width: 400px;
+  margin-bottom: space(6);
+
+  @include dark {
+    color: color('border');
+  }
+}
+
+.actions {
+  display: flex;
+  gap: space(3);
+  flex-wrap: wrap;
+  justify-content: center;
+}

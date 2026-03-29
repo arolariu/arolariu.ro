@@ -3,12 +3,12 @@
 import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
-import styles from "./Navigation.module.scss";
 import {useAuth} from "@clerk/nextjs";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import React, {memo, useCallback, useMemo, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
+import styles from "./Navigation.module.scss";
 
 /**
  * Hook to get translated navigation items.

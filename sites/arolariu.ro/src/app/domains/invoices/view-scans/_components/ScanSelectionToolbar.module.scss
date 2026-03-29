@@ -24,12 +24,24 @@
   @include flex-between;
   margin-inline: auto;
   max-width: 80rem; // max-w-7xl
+
+  // Full-width compact layout on mobile
+  @include respond-below('md') {
+    flex-wrap: wrap;
+    gap: space(3);
+  }
 }
 
 .toolbarLeft {
   display: flex;
   align-items: center;
   gap: space(4);
+
+  // Full width on mobile
+  @include respond-below('md') {
+    flex: 1 1 100%;
+    gap: space(2);
+  }
 }
 
 .selectedCount {
@@ -45,6 +57,12 @@
   display: flex;
   align-items: center;
   gap: space(3);
+
+  // Full width on mobile
+  @include respond-below('md') {
+    flex: 1 1 100%;
+    gap: space(2);
+  }
 }
 
 // ===========================================
@@ -93,6 +111,11 @@
       color: color('foreground');
     }
   }
+
+  // Ensure 44px minimum height on mobile
+  @include respond-below('md') {
+    min-height: space(11); // 44px
+  }
 }
 
 .createButton {
@@ -101,5 +124,10 @@
 
   &:hover {
     opacity: 0.9;
+  }
+
+  // Ensure 44px minimum height on mobile
+  @include respond-below('md') {
+    min-height: space(11); // 44px
   }
 }

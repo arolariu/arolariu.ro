@@ -1,0 +1,306 @@
+// ===========================================
+// SPENDING CALENDAR HEATMAP STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.cardHeader {
+  padding: space(6);
+  padding-bottom: space(4);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: space(4);
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+.cardContent {
+  padding: 0 space(6) space(6);
+}
+
+// ===========================================
+// NAVIGATION
+// ===========================================
+.navigationButtons {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: color('background');
+  border: 1px solid color('border');
+  border-radius: space(1);
+  color: color('foreground');
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: color('accent');
+    border-color: color('accent');
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+  }
+}
+
+.monthLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  min-width: 120px;
+  text-align: center;
+}
+
+// ===========================================
+// CALENDAR GRID
+// ===========================================
+.calendarContainer {
+  display: flex;
+  gap: space(2);
+  overflow-x: auto;
+  padding: space(2) 0;
+}
+
+.dayLabelsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  padding-right: space(2);
+}
+
+.dayLabelEmpty {
+  height: 12px;
+  margin-bottom: space(1);
+}
+
+.dayLabel {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  height: 12px;
+  display: flex;
+  align-items: center;
+  margin-bottom: space(1);
+}
+
+.weeksContainer {
+  display: flex;
+  gap: space(1);
+}
+
+.weekRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+}
+
+// ===========================================
+// DAY CELLS
+// ===========================================
+.dayCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+
+  &:hover:not(.dayCellEmpty) {
+    transform: scale(1.2);
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+  }
+}
+
+.dayCellEmpty {
+  background: transparent;
+  cursor: default;
+}
+
+// ===========================================
+// COLOR LEVELS
+// ===========================================
+.levelEmpty {
+  background: color('muted');
+  opacity: 0.3;
+}
+
+.level1 {
+  background: hsl(var(--chart-3));
+  opacity: 0.3;
+}
+
+.level2 {
+  background: hsl(var(--chart-3));
+  opacity: 0.5;
+}
+
+.level3 {
+  background: hsl(var(--chart-3));
+  opacity: 0.75;
+}
+
+.level4 {
+  background: hsl(var(--chart-3));
+  opacity: 1;
+}
+
+// ===========================================
+// TOOLTIP
+// ===========================================
+.tooltipContent {
+  background: color('popover');
+  border: 1px solid color('border');
+  border-radius: space(2);
+  padding: space(3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tooltipDate {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin-bottom: space(2);
+}
+
+.tooltipAmount {
+  font-size: font-size('base');
+  font-weight: font-weight('bold');
+  color: color('primary');
+  margin-bottom: space(1);
+}
+
+.tooltipInvoices {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.tooltipNoSpending {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  font-style: italic;
+}
+
+// ===========================================
+// LEGEND
+// ===========================================
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+  margin-top: space(4);
+  padding-top: space(4);
+  border-top: 1px solid color('border');
+}
+
+.legendLabel {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.legendColors {
+  display: flex;
+  gap: space(1);
+}
+
+.legendCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+// ===========================================
+// RESPONSIVE
+// ===========================================
+@media (max-width: 640px) {
+  .headerRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .navigationButtons {
+    justify-content: space-between;
+  }
+
+  .monthLabel {
+    min-width: auto;
+    flex: 1;
+  }
+
+  .calendarContainer {
+    overflow-x: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: color('muted') transparent;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: color('muted');
+      border-radius: 3px;
+    }
+  }
+}
+
+// ===========================================
+// ACCESSIBILITY
+// ===========================================
+.dayCell:focus-visible {
+  outline: 2px solid color('ring');
+  outline-offset: 2px;
+  transform: scale(1.2);
+}
+
+.navButton:focus-visible {
+  outline: 2px solid color('ring');
+  outline-offset: 2px;
+}
+
+// ===========================================
+// DARK MODE SPECIFIC
+// ===========================================
+:global(.dark) {
+  .tooltipContent {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}

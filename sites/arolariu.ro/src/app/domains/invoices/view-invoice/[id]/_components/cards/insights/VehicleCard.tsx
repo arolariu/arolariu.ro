@@ -64,165 +64,165 @@ export function VehicleCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Expense Type Badge */}
-        <div className={styles["expenseType"]}>
-          <TbGasStation className={styles["iconAmber"]} />
-          <span className={styles["expenseTypeLabel"]}>{t("expenseType")}</span>
-        </div>
-
-        {/* Fuel Details Grid */}
-        <div className={styles["detailsGrid"]}>
-          <div className={styles["detailItem"]}>
+          {/* Expense Type Badge */}
+          <div className={styles["expenseType"]}>
             <TbGasStation className={styles["iconAmber"]} />
-            <div>
-              <p className={styles["detailLabel"]}>{t("details.liters")}</p>
-              <p className={styles["detailValue"]}>~{liters}L</p>
+            <span className={styles["expenseTypeLabel"]}>{t("expenseType")}</span>
+          </div>
+
+          {/* Fuel Details Grid */}
+          <div className={styles["detailsGrid"]}>
+            <div className={styles["detailItem"]}>
+              <TbGasStation className={styles["iconAmber"]} />
+              <div>
+                <p className={styles["detailLabel"]}>{t("details.liters")}</p>
+                <p className={styles["detailValue"]}>~{liters}L</p>
+              </div>
+            </div>
+            <div className={styles["detailItem"]}>
+              <TbCurrencyDollar className={styles["iconGreen"]} />
+              <div>
+                <p className={styles["detailLabel"]}>{t("details.pricePerLiter")}</p>
+                <p className={styles["detailValue"]}>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
+              </div>
+            </div>
+            <div className={styles["detailItem"]}>
+              <TbMapPin className={styles["iconRed"]} />
+              <div>
+                <p className={styles["detailLabel"]}>{t("details.station")}</p>
+                <p className={styles["detailValue"]}>{station}</p>
+              </div>
+            </div>
+            <div className={styles["detailItem"]}>
+              <TbCar className={styles["iconBlue"]} />
+              <div>
+                <p className={styles["detailLabel"]}>{t("details.vehicle")}</p>
+                <p className={styles["detailValueMuted"]}>{t("details.notSet")}</p>
+              </div>
             </div>
           </div>
-          <div className={styles["detailItem"]}>
-            <TbCurrencyDollar className={styles["iconGreen"]} />
-            <div>
-              <p className={styles["detailLabel"]}>{t("details.pricePerLiter")}</p>
-              <p className={styles["detailValue"]}>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
+
+          {/* Monthly Fuel Spending Chart */}
+          <div className={styles["chartSection"]}>
+            <h4 className={styles["chartTitle"]}>{t("chart.title")}</h4>
+            <ChartContainer
+              config={{
+                amount: {label: t("chart.amount"), color: "hsl(var(--chart-1))"},
+              }}
+              className={styles["chartWrapper"]}>
+              <ResponsiveContainer
+                width='100%'
+                height='100%'>
+                <AreaChart
+                  data={fuelData}
+                  margin={{top: 5, right: 5, left: -20, bottom: 0}}>
+                  <defs>
+                    <linearGradient
+                      id='fillFuel'
+                      x1='0'
+                      y1='0'
+                      x2='0'
+                      y2='1'>
+                      <stop
+                        offset='0%'
+                        stopColor='hsl(var(--chart-1))'
+                        stopOpacity={0.3}
+                      />
+                      <stop
+                        offset='100%'
+                        stopColor='hsl(var(--chart-1))'
+                        stopOpacity={0.05}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey='month'
+                    tick={{fontSize: 11}}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{fontSize: 11}}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
+                  <Area
+                    type='monotone'
+                    dataKey='amount'
+                    stroke='hsl(var(--chart-1))'
+                    fill='url(#fillFuel)'
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </div>
+
+          {/* Stats Cards */}
+          <div className={styles["statsGrid"]}>
+            <div className={styles["statCard"]}>
+              <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
+              <p className={styles["statLabel"]}>{t("stats.thisMonth")}</p>
+              <p className={styles["statValue"]}>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
+              <p className={styles["statSub"]}>{t("stats.fillUps", {count: String(fillUps)})}</p>
+            </div>
+            <div className={styles["statCard"]}>
+              <TbGauge className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
+              <p className={styles["statLabel"]}>{t("stats.costPerKm")}</p>
+              <p className={styles["statValue"]}>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
+              <p className={styles["statSub"]}>{t("stats.estimated")}</p>
+            </div>
+            <div className={styles["statCard"]}>
+              <TbTrendingUp className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
+              <p className={styles["statLabel"]}>{t("stats.fuelPrice")}</p>
+              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
+              <p className={styles["statSub"]}>{t("stats.thisMonthSuffix")}</p>
             </div>
           </div>
-          <div className={styles["detailItem"]}>
-            <TbMapPin className={styles["iconRed"]} />
-            <div>
-              <p className={styles["detailLabel"]}>{t("details.station")}</p>
-              <p className={styles["detailValue"]}>{station}</p>
-            </div>
-          </div>
-          <div className={styles["detailItem"]}>
-            <TbCar className={styles["iconBlue"]} />
-            <div>
-              <p className={styles["detailLabel"]}>{t("details.vehicle")}</p>
-              <p className={styles["detailValueMuted"]}>{t("details.notSet")}</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Monthly Fuel Spending Chart */}
-        <div className={styles["chartSection"]}>
-          <h4 className={styles["chartTitle"]}>{t("chart.title")}</h4>
-          <ChartContainer
-            config={{
-              amount: {label: t("chart.amount"), color: "hsl(var(--chart-1))"},
-            }}
-            className={styles["chartWrapper"]}>
-            <ResponsiveContainer
-              width='100%'
-              height='100%'>
-              <AreaChart
-                data={fuelData}
-                margin={{top: 5, right: 5, left: -20, bottom: 0}}>
-                <defs>
-                  <linearGradient
-                    id='fillFuel'
-                    x1='0'
-                    y1='0'
-                    x2='0'
-                    y2='1'>
-                    <stop
-                      offset='0%'
-                      stopColor='hsl(var(--chart-1))'
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset='100%'
-                      stopColor='hsl(var(--chart-1))'
-                      stopOpacity={0.05}
-                    />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey='month'
-                  tick={{fontSize: 11}}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{fontSize: 11}}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
-                <Area
-                  type='monotone'
-                  dataKey='amount'
-                  stroke='hsl(var(--chart-1))'
-                  fill='url(#fillFuel)'
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </div>
-
-        {/* Stats Cards */}
-        <div className={styles["statsGrid"]}>
-          <div className={styles["statCard"]}>
-            <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
-            <p className={styles["statLabel"]}>{t("stats.thisMonth")}</p>
-            <p className={styles["statValue"]}>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
-            <p className={styles["statSub"]}>{t("stats.fillUps", {count: String(fillUps)})}</p>
-          </div>
-          <div className={styles["statCard"]}>
-            <TbGauge className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
-            <p className={styles["statLabel"]}>{t("stats.costPerKm")}</p>
-            <p className={styles["statValue"]}>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
-            <p className={styles["statSub"]}>{t("stats.estimated")}</p>
-          </div>
-          <div className={styles["statCard"]}>
-            <TbTrendingUp className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
-            <p className={styles["statLabel"]}>{t("stats.fuelPrice")}</p>
-            <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
-            <p className={styles["statSub"]}>{t("stats.thisMonthSuffix")}</p>
-          </div>
-        </div>
-
-        {/* Maintenance Reminders */}
-        <div>
-          <div className={styles["remindersHeader"]}>
-            <TbBarrel className={styles["iconGray"]} />
-            <h4 className={styles["remindersTitle"]}>{t("maintenance.title")}</h4>
-          </div>
-          <ul className={styles["remindersList"]}>
-            {reminders.map((r) => (
-              <li
-                key={r.id}
-                className={styles["reminderItem"]}>
-                <span className={styles["reminderBullet"]}>•</span>
-                {r.task}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Cheapest Nearby */}
-        <div className={styles["tipBox"]}>
-          <TbBulb className={styles["tipIcon"]} />
+          {/* Maintenance Reminders */}
           <div>
-            <p className={styles["tipTitle"]}>{t("tip.title")}</p>
-            <p className={styles["tipDescription"]}>
-              {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/{t("tip.perLiter")}
-            </p>
+            <div className={styles["remindersHeader"]}>
+              <TbBarrel className={styles["iconGray"]} />
+              <h4 className={styles["remindersTitle"]}>{t("maintenance.title")}</h4>
+            </div>
+            <ul className={styles["remindersList"]}>
+              {reminders.map((r) => (
+                <li
+                  key={r.id}
+                  className={styles["reminderItem"]}>
+                  <span className={styles["reminderBullet"]}>•</span>
+                  {r.task}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
 
-        {/* CTA Buttons */}
-        <div className={styles["ctaButtons"]}>
-          <Button
-            variant='outline'
-            size='sm'>
-            {t("buttons.addVehicle")}
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'>
-            {t("buttons.fullReport")}
-          </Button>
-        </div>
+          {/* Cheapest Nearby */}
+          <div className={styles["tipBox"]}>
+            <TbBulb className={styles["tipIcon"]} />
+            <div>
+              <p className={styles["tipTitle"]}>{t("tip.title")}</p>
+              <p className={styles["tipDescription"]}>
+                {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/{t("tip.perLiter")}
+              </p>
+            </div>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className={styles["ctaButtons"]}>
+            <Button
+              variant='outline'
+              size='sm'>
+              {t("buttons.addVehicle")}
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'>
+              {t("buttons.fullReport")}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

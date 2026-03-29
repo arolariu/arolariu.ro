@@ -67,51 +67,51 @@ export function CategorySuggestionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
-        {/* Explanation */}
-        <p className={styles["description"]}>{t("description")}</p>
+          {/* Explanation */}
+          <p className={styles["description"]}>{t("description")}</p>
 
-        {/* Main Categories Grid */}
-        <div className={styles["mainGrid"]}>
-          {mainCategories.map((category) => (
-            <CategoryButton
-              key={category.id}
-              category={category}
-              isSelected={selected === category.id}
-              onSelect={handleSelect}
-              variant='main'
-            />
-          ))}
-        </div>
-
-        {/* More Categories Grid */}
-        <div className={styles["moreSection"]}>
-          <p className={styles["moreLabel"]}>{t("moreCategories")}</p>
-          <div className={styles["moreGrid"]}>
-            {extendedCategories.map((category) => (
+          {/* Main Categories Grid */}
+          <div className={styles["mainGrid"]}>
+            {mainCategories.map((category) => (
               <CategoryButton
                 key={category.id}
                 category={category}
                 isSelected={selected === category.id}
                 onSelect={handleSelect}
-                variant='extended'
+                variant='main'
               />
             ))}
           </div>
-        </div>
 
-        {/* Gamification */}
-        <div className={styles["gamificationBox"]}>
-          <div className={styles["gamificationHeader"]}>
-            <TbGift className={styles["gamificationGiftIcon"]} />
-            <span className={styles["gamificationLabel"]}>{t("gamification", {goal: String(goal)})}</span>
+          {/* More Categories Grid */}
+          <div className={styles["moreSection"]}>
+            <p className={styles["moreLabel"]}>{t("moreCategories")}</p>
+            <div className={styles["moreGrid"]}>
+              {extendedCategories.map((category) => (
+                <CategoryButton
+                  key={category.id}
+                  category={category}
+                  isSelected={selected === category.id}
+                  onSelect={handleSelect}
+                  variant='extended'
+                />
+              ))}
+            </div>
           </div>
-          <div className={styles["gamificationProgress"]}>
-            <Progress value={(categorizedCount / goal) * 100} />
-            <span className={styles["gamificationCount"]}>
-              {categorizedCount}/{goal}
-            </span>
+
+          {/* Gamification */}
+          <div className={styles["gamificationBox"]}>
+            <div className={styles["gamificationHeader"]}>
+              <TbGift className={styles["gamificationGiftIcon"]} />
+              <span className={styles["gamificationLabel"]}>{t("gamification", {goal: String(goal)})}</span>
+            </div>
+            <div className={styles["gamificationProgress"]}>
+              <Progress value={(categorizedCount / goal) * 100} />
+              <span className={styles["gamificationCount"]}>
+                {categorizedCount}/{goal}
+              </span>
+            </div>
           </div>
-        </div>
         </div>
       </CardContent>
     </Card>

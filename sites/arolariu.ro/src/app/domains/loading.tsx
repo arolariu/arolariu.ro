@@ -46,21 +46,21 @@ export default function Loading(): React.JSX.Element {
       <section className={styles["headerSection"]}>
         {/* Progress Bar */}
         <div className={styles["progressTrack"]}>
-          <Skeleton style={{height: '100%', width: '6rem'}} />
+          <Skeleton style={{height: "100%", width: "6rem"}} />
         </div>
 
         {/* Title and Subtitle Container */}
         <div className={styles["titleRow"]}>
           {/* Title Skeleton */}
           <div className={styles["titleSkeleton"]}>
-            <Skeleton style={{marginLeft: 'auto', marginRight: 'auto', height: '3.5rem', width: '80%'}} />
+            <Skeleton style={{marginLeft: "auto", marginRight: "auto", height: "3.5rem", width: "80%"}} />
           </div>
 
           {/* Subtitle Skeleton */}
           <article className={styles["subtitleArticle"]}>
-            <Skeleton style={{height: '1rem', width: '100%'}} />
-            <Skeleton style={{height: '1rem', width: '83.333%'}} />
-            <Skeleton style={{height: '1rem', width: '80%'}} />
+            <Skeleton style={{height: "1rem", width: "100%"}} />
+            <Skeleton style={{height: "1rem", width: "83.333%"}} />
+            <Skeleton style={{height: "1rem", width: "80%"}} />
           </article>
         </div>
       </section>
@@ -71,51 +71,51 @@ export default function Loading(): React.JSX.Element {
         <section className={styles["serviceCard"]}>
           {/* Image Skeleton */}
           <article className={styles["imageContainer"]}>
-            <Skeleton style={{height: '100%', width: '100%'}} />
+            <Skeleton style={{height: "100%", width: "100%"}} />
           </article>
 
           {/* Card Content Skeleton */}
           <article className={styles["cardContent"]}>
             {/* Title */}
-            <Skeleton style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '1.25rem', height: '1.75rem', width: '75%'}} />
+            <Skeleton style={{marginLeft: "auto", marginRight: "auto", marginTop: "1.25rem", height: "1.75rem", width: "75%"}} />
 
             {/* Description Lines */}
             <div className={styles["descriptionLines"]}>
-              <Skeleton style={{height: '1rem', width: '100%'}} />
-              <Skeleton style={{height: '1rem', width: '83.333%'}} />
+              <Skeleton style={{height: "1rem", width: "100%"}} />
+              <Skeleton style={{height: "1rem", width: "83.333%"}} />
             </div>
 
             {/* Call to Action Link */}
-            <Skeleton style={{marginTop: '0.75rem', height: '1rem', width: '8rem'}} />
+            <Skeleton style={{marginTop: "0.75rem", height: "1rem", width: "8rem"}} />
           </article>
         </section>
 
         {/* Additional Card Placeholders (for future domains) */}
         <section className={styles["serviceCardFaded"]}>
           <article className={styles["imageContainer"]}>
-            <Skeleton style={{height: '100%', width: '100%'}} />
+            <Skeleton style={{height: "100%", width: "100%"}} />
           </article>
           <article className={styles["cardContent"]}>
-            <Skeleton style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '1.25rem', height: '1.75rem', width: '75%'}} />
+            <Skeleton style={{marginLeft: "auto", marginRight: "auto", marginTop: "1.25rem", height: "1.75rem", width: "75%"}} />
             <div className={styles["descriptionLines"]}>
-              <Skeleton style={{height: '1rem', width: '100%'}} />
-              <Skeleton style={{height: '1rem', width: '83.333%'}} />
+              <Skeleton style={{height: "1rem", width: "100%"}} />
+              <Skeleton style={{height: "1rem", width: "83.333%"}} />
             </div>
-            <Skeleton style={{marginTop: '0.75rem', height: '1rem', width: '8rem'}} />
+            <Skeleton style={{marginTop: "0.75rem", height: "1rem", width: "8rem"}} />
           </article>
         </section>
 
         <section className={styles["serviceCardFadedMore"]}>
           <article className={styles["imageContainer"]}>
-            <Skeleton style={{height: '100%', width: '100%'}} />
+            <Skeleton style={{height: "100%", width: "100%"}} />
           </article>
           <article className={styles["cardContent"]}>
-            <Skeleton style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '1.25rem', height: '1.75rem', width: '75%'}} />
+            <Skeleton style={{marginLeft: "auto", marginRight: "auto", marginTop: "1.25rem", height: "1.75rem", width: "75%"}} />
             <div className={styles["descriptionLines"]}>
-              <Skeleton style={{height: '1rem', width: '100%'}} />
-              <Skeleton style={{height: '1rem', width: '83.333%'}} />
+              <Skeleton style={{height: "1rem", width: "100%"}} />
+              <Skeleton style={{height: "1rem", width: "83.333%"}} />
             </div>
-            <Skeleton style={{marginTop: '0.75rem', height: '1rem', width: '8rem'}} />
+            <Skeleton style={{marginTop: "0.75rem", height: "1rem", width: "8rem"}} />
           </article>
         </section>
       </section>

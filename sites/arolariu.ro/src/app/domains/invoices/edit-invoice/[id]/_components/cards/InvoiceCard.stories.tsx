@@ -19,11 +19,27 @@ type Story = StoryObj<typeof meta>;
 /** Static preview of the editable invoice card. */
 export const Preview: Story = {
   render: () => (
-    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+    <div
+      style={{
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid #e5e7eb",
+        backgroundColor: "white",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}>
       <div style={{display: "flex", flexDirection: "column", gap: "0.25rem", borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
         <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
           <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Invoice Details</h3>
-          <span style={{cursor: "pointer", borderRadius: "9999px", border: "1px solid #e5e7eb", padding: "0.25rem 0.75rem", fontSize: "0.75rem"}}>♡ Mark Important</span>
+          <span
+            style={{
+              cursor: "pointer",
+              borderRadius: "9999px",
+              border: "1px solid #e5e7eb",
+              padding: "0.25rem 0.75rem",
+              fontSize: "0.75rem",
+            }}>
+            ♡ Mark Important
+          </span>
         </div>
         <p style={{fontSize: "0.875rem", color: "#6b7280"}}>From: Mock Merchant • Weekly grocery shopping</p>
       </div>

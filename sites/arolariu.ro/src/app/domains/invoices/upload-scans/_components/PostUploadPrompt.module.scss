@@ -1,0 +1,226 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+// ===========================================
+// OVERLAY
+// ===========================================
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: abstracts.z('modal');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: abstracts.color-alpha('background', 0.8);
+  @include abstracts.backdrop-blur(abstracts.blur-size('lg'));
+  padding: abstracts.space(4);
+}
+
+// ===========================================
+// CARD WRAPPER
+// ===========================================
+.cardWrapper {
+  width: 100%;
+  max-width: 550px;
+}
+
+.card {
+  position: relative;
+  @include abstracts.shadow('xl');
+}
+
+.content {
+  padding: abstracts.space(6);
+  display: flex;
+  flex-direction: column;
+  gap: abstracts.space(4);
+}
+
+// ===========================================
+// DISMISS BUTTON
+// ===========================================
+.dismissButton {
+  position: absolute;
+  top: abstracts.space(4);
+  right: abstracts.space(4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: abstracts.space(8);
+  height: abstracts.space(8);
+  border-radius: abstracts.radius('full');
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: abstracts.color('muted-foreground');
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: abstracts.color('muted');
+    color: abstracts.color('foreground');
+  }
+
+  &:focus-visible {
+    outline: 2px solid abstracts.color('ring');
+    outline-offset: 2px;
+  }
+}
+
+.dismissIcon {
+  width: abstracts.space(5);
+  height: abstracts.space(5);
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: abstracts.space(3);
+}
+
+.checkmarkCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: abstracts.space(16);
+  height: abstracts.space(16);
+  border-radius: abstracts.radius('full');
+  background: linear-gradient(135deg, abstracts.color('success') 0%, abstracts.color('success') 100%);
+  @include abstracts.shadow('lg');
+}
+
+.checkmarkIcon {
+  width: abstracts.space(10);
+  height: abstracts.space(10);
+  color: white;
+  stroke-width: 3;
+}
+
+.title {
+  font-size: abstracts.font-size('2xl');
+  font-weight: abstracts.font-weight('bold');
+  color: abstracts.color('foreground');
+  text-align: center;
+}
+
+// ===========================================
+// THUMBNAIL ROW
+// ===========================================
+.thumbnailRow {
+  display: flex;
+  gap: abstracts.space(2);
+  overflow-x: auto;
+  padding: abstracts.space(2);
+  justify-content: center;
+  flex-wrap: wrap;
+
+  // Hide scrollbar but keep functionality
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.thumbnail {
+  width: abstracts.space(20);
+  height: abstracts.space(20);
+  object-fit: cover;
+  border-radius: abstracts.radius('md');
+  border: 2px solid abstracts.color('border');
+  @include abstracts.shadow('md');
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.thumbnailMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: abstracts.space(20);
+  height: abstracts.space(20);
+  border-radius: abstracts.radius('md');
+  background-color: abstracts.color('muted');
+  color: abstracts.color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  font-weight: abstracts.font-weight('semibold');
+  border: 2px solid abstracts.color('border');
+  @include abstracts.shadow('md');
+}
+
+// ===========================================
+// SUBTITLE
+// ===========================================
+.subtitle {
+  font-size: abstracts.font-size('base');
+  color: abstracts.color('muted-foreground');
+  text-align: center;
+  line-height: abstracts.line-height('relaxed');
+  margin-top: abstracts.space(2);
+}
+
+// ===========================================
+// ACTIONS
+// ===========================================
+.actions {
+  display: flex;
+  gap: abstracts.space(3);
+  margin-top: abstracts.space(4);
+  flex-direction: column;
+
+  @include abstracts.respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.primaryButton,
+.secondaryButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: abstracts.space(2);
+  font-weight: abstracts.font-weight('semibold');
+}
+
+.buttonIcon {
+  width: abstracts.space(5);
+  height: abstracts.space(5);
+}
+
+// ===========================================
+// RESPONSIVE
+// ===========================================
+@include abstracts.respond-below('xsm') {
+  .content {
+    padding: abstracts.space(4);
+  }
+
+  .title {
+    font-size: abstracts.font-size('xl');
+  }
+
+  .checkmarkCircle {
+    width: abstracts.space(14);
+    height: abstracts.space(14);
+  }
+
+  .checkmarkIcon {
+    width: abstracts.space(8);
+    height: abstracts.space(8);
+  }
+
+  .thumbnail {
+    width: abstracts.space(16);
+    height: abstracts.space(16);
+  }
+
+  .thumbnailMore {
+    width: abstracts.space(16);
+    height: abstracts.space(16);
+  }
+}

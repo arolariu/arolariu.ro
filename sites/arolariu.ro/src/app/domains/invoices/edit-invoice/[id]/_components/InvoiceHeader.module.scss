@@ -8,6 +8,12 @@
   justify-content: space-between;
   gap: space(4);
 
+  // Compact header on mobile
+  @include respond-below('md') {
+    margin-bottom: space(4);
+    gap: space(3);
+  }
+
   @include respond-to('md') {
     flex-direction: row;
     align-items: center;
@@ -33,6 +39,11 @@
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
   letter-spacing: tracking('tight');
+
+  // Smaller font on mobile for better fit
+  @include respond-below('md') {
+    font-size: font-size('2xl');
+  }
 
   &:focus-visible {
     border: 0;

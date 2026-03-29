@@ -1,0 +1,65 @@
+// ===========================================
+// CREATE INVOICE LOADING SKELETON STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.container {
+  @include flex-column;
+  gap: space(8);
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: space(6);
+}
+
+.stepIndicator {
+  @include flex-center;
+  gap: space(4);
+  margin-bottom: space(4);
+}
+
+.stepDot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.content {
+  @include flex-column;
+  gap: space(6);
+}
+
+.title {
+  height: 36px;
+  width: 300px;
+  max-width: 100%;
+}
+
+.subtitle {
+  height: 20px;
+  width: 400px;
+  max-width: 100%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: space(4);
+  margin-top: space(4);
+}
+
+.card {
+  height: 250px;
+  border-radius: var(--radius-lg);
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: space(6);
+}
+
+.button {
+  height: 44px;
+  width: 120px;
+  border-radius: var(--radius-md);
+}

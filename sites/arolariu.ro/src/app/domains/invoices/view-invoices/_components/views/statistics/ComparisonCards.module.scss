@@ -1,0 +1,111 @@
+// ===========================================
+// COMPARISON CARDS STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.container {
+  margin-top: space(6);
+}
+
+.sectionTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  margin-bottom: space(4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.cardHeader {
+  padding: space(4);
+  padding-bottom: space(2);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.iconWrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color('muted');
+  color: color('muted-foreground');
+  border-radius: space(2);
+}
+
+.cardTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardContent {
+  padding: 0 space(4) space(4);
+}
+
+.valueSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(3);
+}
+
+.value {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  line-height: 1;
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  padding: space(1) space(2);
+  border-radius: space(1);
+}
+
+.trendPositive {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.trendNegative {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+.trendNeutral {
+  background: color('muted');
+  color: color('muted-foreground');
+}
+
+.progress {
+  height: 6px;
+}
