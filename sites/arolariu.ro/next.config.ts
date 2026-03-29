@@ -174,10 +174,7 @@ const nextConfig: NextConfig = {
   },
 
   typescript: {
-    // Skip TS type-checking during `next build` — handled separately by tsc/ESLint in CI.
-    // Required because next-intl type inference on large message files (200KB+)
-    // causes "Map maximum size exceeded" and "Type instantiation excessively deep" errors.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
   },
 
@@ -196,7 +193,11 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
   enabled: process.env["ANALYZE"] === "true",
 });
 
-const withTranslation = createNextIntlPlugin({});
+const withTranslation = createNextIntlPlugin({
+  experimental: {
+    createMessagesDeclaration: "./messages/en.json",
+  },
+});
 
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;
