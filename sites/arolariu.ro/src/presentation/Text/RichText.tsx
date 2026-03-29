@@ -1,7 +1,7 @@
 // We're turning off react/no-unstable-nested-components -- This is a false positive with the i18n lib.
 /* eslint react/no-unstable-nested-components: 0 */
 
-import {Messages, NamespaceKeys, useTranslations} from "next-intl";
+import {useTranslations} from "next-intl";
 import React from "react";
 import styles from "./RichText.module.scss";
 
@@ -19,19 +19,17 @@ type Props = {
  * including strong, em, br, code, ul, li, and span elements.
  * @param props The props object containing the sectionKey and textKey
  * @returns The formatted internationalized text content
- * @throws {Error} If the specified text key is not found in the namespace
  * @example
  * ```tsx
- * <RichText a11ySectionKey="about" a11yTextKey="description" />
+ * <RichText sectionKey="about" textKey="description" />
  * ```
  */
 export function RichText({className, sectionKey, textKey}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations<NamespaceKeys<Messages, string>>(sectionKey as any);
-  const isTextKeyInNamespace = t.has(textKey as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sectionKey is dynamic, can't be statically typed
+  const t = useTranslations(sectionKey as any);
 
-  if (isTextKeyInNamespace) {
-    // @ts-expect-error -- This is a known issue with the library
-    const text = t.rich(textKey, {
+  try {
+    const text = t.rich(textKey as never, {
       strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
       em: (chunks: React.ReactNode) => <em>{chunks}</em>,
       br: (chunks: React.ReactNode) => (
@@ -47,9 +45,8 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
     });
 
     return <span className={className}>{text}</span>;
+  } catch (error) {
+    console.warn(`[RichText] Failed to render key "${textKey}" in namespace "${sectionKey}":`, error);
+    return <span className={className} />;
   }
-
-  // Graceful fallback instead of throwing — prevents cascading error boundary crashes
-  console.warn(`[RichText] The key "${textKey}" was not found in the namespace "${sectionKey}"`);
-  return <span className={className} />;
 }
