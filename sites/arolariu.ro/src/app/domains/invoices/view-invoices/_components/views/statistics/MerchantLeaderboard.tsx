@@ -39,7 +39,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipMerchant"]}>{data.merchantId}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.totalSpent.toFixed(2)} {currency}
+        {data.totalSpend.toFixed(2)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>

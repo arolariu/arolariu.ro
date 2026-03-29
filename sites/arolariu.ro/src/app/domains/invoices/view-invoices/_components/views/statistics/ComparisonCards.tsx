@@ -92,9 +92,9 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
       icon: spendingIcon,
       label: t("spendingDelta"),
       value: `${Math.abs(data.spendingDelta).toFixed(2)} ${currency}`,
-      delta: `${data.spendingDeltaPercentage >= 0 ? "+" : ""}${data.spendingDeltaPercentage.toFixed(1)}%`,
+      delta: `${data.spendingDeltaPercent >= 0 ? "+" : ""}${data.spendingDeltaPercent.toFixed(1)}%`,
       isPositive: data.spendingDelta < 0, // Spending less is positive (saving)
-      progressValue: Math.min(Math.abs(data.spendingDeltaPercentage), 100),
+      progressValue: Math.min(Math.abs(data.spendingDeltaPercent), 100),
     },
     {
       icon: invoiceIcon,
@@ -107,10 +107,10 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     {
       icon: <TbBuildingStore size={20} />,
       label: t("newMerchants"),
-      value: data.newMerchants.toString(),
-      delta: data.newMerchants > 0 ? t("discovered") : t("none"),
-      isPositive: data.newMerchants > 0 ? true : null,
-      progressValue: Math.min(data.newMerchants * 20, 100),
+      value: data.newMerchantCount.toString(),
+      delta: data.newMerchantCount > 0 ? t("discovered") : t("none"),
+      isPositive: data.newMerchantCount > 0 ? true : null,
+      progressValue: Math.min(data.newMerchantCount * 20, 100),
     },
   ];
 
