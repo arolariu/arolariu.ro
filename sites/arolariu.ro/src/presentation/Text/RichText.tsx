@@ -49,5 +49,7 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
     return <span className={className}>{text}</span>;
   }
 
-  throw new Error(`The key ${textKey} is not in the namespace ${sectionKey}`);
+  // Graceful fallback instead of throwing — prevents cascading error boundary crashes
+  console.warn(`[RichText] The key "${textKey}" was not found in the namespace "${sectionKey}"`);
+  return <span className={className} />;
 }
