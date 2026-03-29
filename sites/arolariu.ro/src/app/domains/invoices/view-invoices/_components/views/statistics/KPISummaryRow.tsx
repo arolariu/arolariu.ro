@@ -78,19 +78,14 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
       icon: <TbCurrencyDollar size={24} />,
       label: t("totalSpending"),
       value: `${data.totalSpending.toFixed(2)} ${currency}`,
-      subtitle: t("vsLastMonth"),
-      trend: {
-        value: data.trendVsPreviousMonth,
-        isPositive: data.trendVsPreviousMonth >= 0,
-      },
+      subtitle: `${data.invoiceCount} invoices`,
     },
     {
       icon: <TbReceipt size={24} />,
       label: t("invoiceCount"),
       value: data.invoiceCount.toString(),
       subtitle: t("avgPerInvoice", {
-        avg: data.invoiceCount > 0 ? (data.totalSpending / data.invoiceCount).toFixed(2) : "0.00",
-        currency,
+        amount: data.invoiceCount > 0 ? (data.totalSpending / data.invoiceCount).toFixed(2) : "0.00",
       }),
     },
     {
