@@ -1,0 +1,56 @@
+# =============================================================================
+# Close E2E Failure Issues Workflow
+# =============================================================================
+# Manually closes all open E2E test failure issues (labeled "automated-test-failure").
+# Use this workflow when E2E test failures have been fixed but the CI has not yet
+# run to auto-close them via the close-issues-on-success mechanism.
+# =============================================================================
+
+name: "official-close-e2e-issues"
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        default: false
+        description: "Confirm closing all open E2E failure issues."
+        required: true
+        type: boolean
+
+jobs:
+  close-issues:
+    name: ✅ Close all open E2E failure issues
+    if: github.repository == 'arolariu/arolariu.ro' && inputs.confirm == true
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+
+      - name: 🚀 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          cache-key-prefix: "close-issues"
+          dotnet-version: ""
+          install-node-dependencies: "false"
+          node-version: "24"
+
+      - name: ✅ Close all open E2E failure issues
+        uses: actions/github-script@v8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+        with:
+          script: |
+            const {execSync} = require('node:child_process');
+            execSync('cd .github/scripts && npm ci', {stdio: 'inherit'});
+            const {closeOpenFailureIssues} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
+            await closeOpenFailureIssues();
