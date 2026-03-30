@@ -37,6 +37,14 @@ public sealed record PaymentInformation
   /// <summary>Tax component of the total amount in <see cref="Currency"/>.</summary>
   /// <remarks><para>May be zero for tax-exempt purchases or when parsing failed to isolate tax line items.</para></remarks>
   public decimal TotalTaxAmount { get; set; } = 0.0m;
+
+  /// <summary>Pre-tax subtotal amount in <see cref="Currency"/>.</summary>
+  /// <remarks><para>Extracted from Document Intelligence <c>Subtotal</c> field. Zero when not available on receipt.</para></remarks>
+  public decimal SubtotalAmount { get; set; } = 0.0m;
+
+  /// <summary>Tip / gratuity amount in <see cref="Currency"/>.</summary>
+  /// <remarks><para>Extracted from Document Intelligence <c>Tip</c> field. Common on restaurant and service receipts.</para></remarks>
+  public decimal TipAmount { get; set; } = 0.0m;
 }
 
 /// <summary>

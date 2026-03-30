@@ -26,4 +26,9 @@ public record struct ProductMetadata
   /// <summary>Logical deletion marker (soft delete) retaining historical context.</summary>
   /// <remarks><para>Soft-deleted products remain persisted; aggregate-level queries are expected to exclude them unless explicitly overridden.</para></remarks>
   public bool IsSoftDeleted { get; set; }
+
+  /// <summary>OCR confidence score for this product line item (0.0 to 1.0).</summary>
+  /// <remarks><para>Sourced from Document Intelligence field-level confidence. Higher values indicate more reliable extraction.
+  /// Zero indicates confidence was not available or not yet computed.</para></remarks>
+  public double Confidence { get; set; }
 }

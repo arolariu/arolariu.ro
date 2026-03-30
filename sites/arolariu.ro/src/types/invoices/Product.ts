@@ -37,26 +37,42 @@ import type {Allergen} from "./index.ts";
  * - `isEdited`: User has manually modified AI-extracted data
  * - `isComplete`: All required fields have been populated
  * - `isSoftDeleted`: Product is hidden but retained for analytics
+ * - `confidence`: OCR confidence score (0.0 to 1.0), zero when unavailable
  *
  * **Processing Behavior:**
  * - Edited products skip re-analysis to preserve user corrections
  * - Incomplete products are flagged for user attention in the UI
  * - Soft-deleted products are excluded from totals and reports
+ * - Low confidence products may require manual review
  *
  * @example
  * ```typescript
  * const metadata: ProductMetadata = {
  *   isEdited: false,
  *   isComplete: true,
- *   isSoftDeleted: false
+ *   isSoftDeleted: false,
+ *   confidence: 0.95
  * };
  *
  * if (!metadata.isComplete) {
  *   showIncompleteWarning();
  * }
+ *
+ * if (metadata.confidence < 0.7) {
+ *   flagForManualReview();
+ * }
  * ```
  */
-export type ProductMetadata = {isEdited: boolean; isComplete: boolean; isSoftDeleted: boolean};
+export type ProductMetadata = {
+  /** Whether the product has been user-modified post-ingestion. */
+  isEdited: boolean;
+  /** Whether required enrichment steps have completed. */
+  isComplete: boolean;
+  /** Logical deletion marker (soft delete). */
+  isSoftDeleted: boolean;
+  /** OCR confidence score (0.0 to 1.0). Zero when not available. */
+  confidence: number;
+};
 
 /**
  * Categorizes products by their type for analytics and filtering.

@@ -91,6 +91,30 @@ public sealed class Invoice : NamedEntity<Guid>
   [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
   public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 
+  /// <summary>Receipt type as classified by Document Intelligence (e.g., "Itemized", "Meal", "Gas", "Parking", "Hotel").</summary>
+  /// <remarks><para>Extracted from the <c>ReceiptType</c> field of the prebuilt-receipt model. Empty when not determined.</para></remarks>
+  [JsonPropertyOrder(12)]
+  public string ReceiptType { get; set; } = string.Empty;
+
+  /// <summary>Country or region where the receipt was issued (ISO code).</summary>
+  /// <remarks><para>Extracted from the <c>CountryRegion</c> field of the prebuilt-receipt model.</para></remarks>
+  [JsonPropertyOrder(13)]
+  public string CountryRegion { get; set; } = string.Empty;
+
+  /// <summary>Structured tax breakdown extracted from the receipt.</summary>
+  /// <remarks><para>Contains individual tax lines with amount, rate, net amount, and description.
+  /// Supplements the flat <c>PaymentInformation.TotalTaxAmount</c> with granular detail.</para></remarks>
+  [JsonPropertyOrder(14)]
+  [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
+  public ICollection<TaxDetail> TaxDetails { get; set; } = [];
+
+  /// <summary>Payment methods and amounts used to settle the transaction.</summary>
+  /// <remarks><para>Supports multiple payment methods per receipt (e.g., split payment with cash + card).
+  /// Supplements the <c>PaymentInformation.PaymentType</c> with granular per-method amounts.</para></remarks>
+  [JsonPropertyOrder(15)]
+  [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
+  public ICollection<PaymentDetail> Payments { get; set; } = [];
+
 
   /// <summary>
   /// Performs an update operation on the current object or its state.

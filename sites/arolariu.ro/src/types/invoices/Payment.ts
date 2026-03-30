@@ -119,6 +119,62 @@ export type PaymentInformation = {
 
   /** The total tax amount of the payment. */
   totalTaxAmount: number;
+
+  /** The pre-tax subtotal amount. Zero when not available on receipt. */
+  subtotalAmount: number;
+
+  /** The tip/gratuity amount. Common on restaurant receipts. */
+  tipAmount: number;
+};
+
+/**
+ * Represents a single tax line item extracted from a receipt.
+ *
+ * @remarks
+ * Receipts may contain multiple tax lines (e.g., VAT, sales tax).
+ * Extracted from Document Intelligence v4.0 `TaxDetails` field.
+ *
+ * @example
+ * ```typescript
+ * const taxDetail: TaxDetail = {
+ *   amount: 25.12,
+ *   rate: 19,
+ *   netAmount: 132.38,
+ *   description: "VAT 19%"
+ * };
+ * ```
+ */
+export type TaxDetail = {
+  /** The tax amount for this line. */
+  amount: number;
+  /** The tax rate as a percentage (e.g., 19 for 19% VAT). */
+  rate: number;
+  /** The net amount before this tax was applied. */
+  netAmount: number;
+  /** Description of the tax type (e.g., "VAT", "Sales Tax"). */
+  description: string;
+};
+
+/**
+ * Represents a single payment method and amount used in a transaction.
+ *
+ * @remarks
+ * Receipts may record multiple payment methods (e.g., partial cash + card).
+ * Extracted from Document Intelligence v4.0 `Payments` field.
+ *
+ * @example
+ * ```typescript
+ * const payment: PaymentDetail = {
+ *   method: "Credit Card",
+ *   amount: 157.50
+ * };
+ * ```
+ */
+export type PaymentDetail = {
+  /** The payment method (e.g., "Cash", "Credit Card", "Debit Card"). */
+  method: string;
+  /** The amount paid via this method. */
+  amount: number;
 };
 
 /**

@@ -80,7 +80,9 @@ export {
   PaymentType,
   type CreatePaymentInformationDtoPayload,
   type DeletePaymentInformationDtoPayload,
+  type PaymentDetail,
   type PaymentInformation,
+  type TaxDetail,
   type UpdatePaymentInformationDtoPayload,
 } from "./Payment";
 
