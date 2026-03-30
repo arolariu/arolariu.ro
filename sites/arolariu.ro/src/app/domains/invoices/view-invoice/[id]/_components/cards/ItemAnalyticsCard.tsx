@@ -387,7 +387,35 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableRow key={`${item.productCode}-${index}`}>
                         <TableCell>
                           <div className={styles["itemCell"]}>
-                            <div className={styles["itemName"]}>{item.genericName}</div>
+                            <div className={styles["itemNameRow"]}>
+                              <div className={styles["itemName"]}>{item.genericName}</div>
+                              {/* OCR Confidence Indicator - New DI v4.0 field */}
+                              {item.metadata.confidence > 0 && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge
+                                      variant={
+                                        item.metadata.confidence >= 0.9
+                                          ? "default"
+                                          : item.metadata.confidence >= 0.7
+                                            ? "secondary"
+                                            : "destructive"
+                                      }
+                                      className={styles["confidenceBadge"]}>
+                                      {item.metadata.confidence >= 0.9 ? "✓" : item.metadata.confidence >= 0.7 ? "~" : "!"}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className={styles["confidenceTooltip"]}>
+                                      {t("confidence.label")}: {(item.metadata.confidence * 100).toFixed(0)}%
+                                    </p>
+                                    {item.metadata.confidence < 0.7 && (
+                                      <p className={styles["confidenceWarning"]}>{t("confidence.lowWarning")}</p>
+                                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
                             {item.detectedAllergens.length > 0 && (
                               <div className={styles["allergenList"]}>
                                 {item.detectedAllergens.map((allergen) => (

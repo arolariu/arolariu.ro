@@ -2057,7 +2057,23 @@
           "dateUtc": "Date (UTC)",
           "category": "Category",
           "payment": "Payment",
-          "totalAmount": "Total Amount"
+          "totalAmount": "Total Amount",
+          "receiptType": "Receipt Type",
+          "countryRegion": "Country/Region",
+          "subtotal": "Subtotal",
+          "tip": "Tip",
+          "ronEquivalent": "RON Equivalent"
+        },
+        "tooltips": {
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+        },
+        "sections": {
+          "paymentMethods": "Payment Methods",
+          "taxBreakdown": "Tax Breakdown"
+        },
+        "taxLabels": {
+          "net": "Net",
+          "tax": "Tax"
         },
         "itemsTitle": "Items ({count})",
         "table": {
@@ -2542,6 +2558,10 @@
           "price": "Price",
           "quantity": "Qty",
           "total": "Total"
+        },
+        "confidence": {
+          "label": "OCR Confidence",
+          "lowWarning": "Low confidence — consider reviewing this item"
         },
         "summary": {
           "title": "Summary",
