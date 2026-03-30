@@ -1,5 +1,6 @@
 "use client";
 
+import {useUserInformation} from "@/hooks/useUserInformation";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -142,8 +143,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [isRevoking, setIsRevoking] = useState<boolean>(false);
+  const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
 
   const router = useRouter();
+  const {userInformation} = useUserInformation();
 
   const {
     currentDialog: {payload},
@@ -250,17 +253,56 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
-   * Sends an email invitation to share the invoice privately.
-   * Currently shows "coming soon" toast as the API endpoint is not yet implemented.
+   * Sends an email invitation to share the invoice privately via the /api/email endpoint.
+   * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(
-    (e: React.SubmitEvent) => {
+    (e: React.FormEvent) => {
       e.preventDefault();
-      // Email sharing feature is not yet implemented
-      toast.info(t("toasts.sendEmail.comingSoon"));
-      setEmail("");
+      if (!email) return;
+
+      setIsSendingEmail(true);
+
+      const sendEmailAction = async () => {
+        // Get the user's display name from Clerk
+        const fromName =
+          userInformation.user?.firstName && userInformation.user?.lastName
+            ? `${userInformation.user.firstName} ${userInformation.user.lastName}`
+            : userInformation.user?.firstName
+              ? userInformation.user.firstName
+              : userInformation.user?.emailAddresses[0]?.emailAddress ?? "User";
+
+        const response = await fetch("/api/email", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            type: "invoice-share",
+            to: email,
+            fromName,
+            invoiceId: invoice.id,
+            invoiceName: invoice.name,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error((data as {error?: string}).error ?? "Failed to send email");
+        }
+
+        setEmail("");
+      };
+
+      toast.promise(
+        sendEmailAction().finally(() => setIsSendingEmail(false)),
+        {
+          loading: t("toasts.sendEmail.loading", {email}),
+          success: t("toasts.sendEmail.success", {email}),
+          error: (error: unknown) =>
+            t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
+        },
+      );
     },
-    [email, t],
+    [email, invoice.id, invoice.name, t, userInformation.user],
   );
 
   /**
@@ -382,6 +424,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
                 email={email}
                 onEmailChange={setEmail}
                 onSendEmail={handleSendEmail}
+                isSending={isSendingEmail}
               />
             )}
           </>

@@ -3693,6 +3693,7 @@
         "emailPlaceholder": "name@example.com",
         "emailHint": "O invitație pe email va fi trimisă la această adresă cu un link privat pentru a vedea factura.",
         "sendInvitation": "Trimite invitație privată",
+        "sending": "Se trimite invitația...",
         "comingSoonTooltip": "Funcția de partajare prin email va fi disponibilă în curând"
       },
       "deleteInvoiceDialog": {

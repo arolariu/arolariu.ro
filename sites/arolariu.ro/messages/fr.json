@@ -3687,7 +3687,9 @@
         "emailLabel": "Recipient's e-mail address",
         "emailPlaceholder": "nom@exemple.com",
         "emailHint": "Une invitation par e-mail sera envoyée à cette adresse avec un lien privé pour consulter la facture.",
-        "sendInvitation": "Envoyer une invitation privée"
+        "sendInvitation": "Envoyer une invitation privée",
+        "sending": "Envoi de l'invitation...",
+        "comingSoonTooltip": "La fonction de partage par e-mail sera bientôt disponible"
       },
       "deleteInvoiceDialog": {
         "title": "Supprimer facture",

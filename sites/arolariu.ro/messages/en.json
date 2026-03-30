@@ -3694,6 +3694,7 @@
         "emailPlaceholder": "name@example.com",
         "emailHint": "An email invitation will be sent to this address with a private link to view the invoice.",
         "sendInvitation": "Send private invitation",
+        "sending": "Sending invitation...",
         "comingSoonTooltip": "Email sharing feature is coming soon"
       },
       "deleteInvoiceDialog": {
