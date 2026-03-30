@@ -123,9 +123,19 @@
 }
 
 .tableRow {
+  position: relative;
+
   &:hover {
     background-color: color-alpha('muted', 0.5);
   }
+}
+
+.rowIndicatorIncomplete {
+  border-left: 4px solid color('warning');
+}
+
+.rowIndicatorLowConfidence {
+  border-left: 4px solid color('destructive');
 }
 
 .tableRowSelected {
@@ -261,3 +271,149 @@
 .cursorPointer {
   cursor: pointer;
 }
+
+.cellWithBadges {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  width: 100%;
+}
+
+.cellContent {
+  flex: 1;
+}
+
+.issueBadges {
+  display: flex;
+  gap: space(1);
+  flex-wrap: wrap;
+  margin-top: space(1);
+}
+
+.issueBadge {
+  font-size: font-size('xs');
+  padding: space(0.5) space(1.5);
+  cursor: help;
+}
+
+// New styles for enhanced product management
+.tableRowSoftDeleted {
+  opacity: 0.5;
+  background-color: color-alpha('muted', 0.3);
+
+  &:hover {
+    background-color: color-alpha('muted', 0.4);
+  }
+}
+
+.strikethrough {
+  text-decoration: line-through;
+  color: color('muted-foreground');
+}
+
+.cellWithIndicators {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  flex-wrap: wrap;
+}
+
+.editedBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+  padding: space(0.5) space(1.5);
+  border: 1px solid color('primary');
+  cursor: help;
+}
+
+.editedIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.allergenBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+  padding: space(0.5) space(1.5);
+  background-color: color-alpha('warning', 0.2);
+  cursor: help;
+}
+
+.allergenIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.tableCellActions {
+  padding: space(2);
+  text-align: center;
+  width: space(20);
+}
+
+.tableHeaderCenter {
+  composes: tableHeader;
+  text-align: center;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(1);
+}
+
+.actionButton {
+  padding: space(2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.actionIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.categoryButton {
+  height: space(8);
+  cursor: pointer;
+}
+
+.categoryIcon {
+  margin-right: space(1);
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .searchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchInputWrapper {
+    max-width: 100%;
+  }
+
+  .bulkToolbar {
+    flex-wrap: wrap;
+  }
+
+  .cellWithIndicators {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+}
+

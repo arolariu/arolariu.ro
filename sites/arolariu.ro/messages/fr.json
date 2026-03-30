@@ -3231,6 +3231,33 @@
         "newItem": {
           "defaultName": "New Item",
           "added": "New item added"
+        },
+        "indicators": {
+          "uncategorized": "Non catégorisé",
+          "uncategorizedTooltip": "Ce produit nécessite une catégorie pour un meilleur suivi des dépenses",
+          "missingName": "Nom manquant",
+          "missingNameTooltip": "La traduction du nom générique est manquante ou identique au texte OCR brut",
+          "lowConfidence": "Faible confiance",
+          "lowConfidenceTooltip": "La confiance OCR est de {confidence}% - révision manuelle recommandée"
+        }
+      },
+      "guidedEdit": {
+        "banner": {
+          "title": "{count, plural, one {# produit nécessite une révision} other {# produits nécessitent une révision}}",
+          "summary": {
+            "uncategorized": "{count, plural, one {# non catégorisé} other {# non catégorisés}}",
+            "lowConfidence": "{count, plural, one {# faible confiance} other {# faible confiance}}",
+            "missingName": "{count, plural, one {# nom manquant} other {# noms manquants}}"
+          },
+          "actions": {
+            "reviewAll": "Tout réviser",
+            "dismiss": "Fermer"
+          },
+          "badges": {
+            "uncategorized": "{count, plural, one {# non catégorisé} other {# non catégorisés}}",
+            "lowConfidence": "{count, plural, one {# faible confiance} other {# faible confiance}}",
+            "missingName": "{count, plural, one {# nom manquant} other {# noms manquants}}"
+          }
         }
       },
       "changeHistory": {

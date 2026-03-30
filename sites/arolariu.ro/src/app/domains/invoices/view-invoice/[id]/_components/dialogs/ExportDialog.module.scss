@@ -1,0 +1,79 @@
+/**
+ * Styles for the ExportDialog component.
+ *
+ * @remarks
+ * - Grid layout for export options (2 columns on desktop, 1 on mobile)
+ * - Card-style buttons with hover effects
+ * - Responsive design with mobile-first approach
+ * - Dark mode support with proper contrast
+ */
+
+.dialogContent {
+  max-width: 600px;
+  width: 90vw;
+}
+
+.exportOptions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.exportButton {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  height: auto;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--accent));
+  }
+}
+
+.buttonIcon {
+  font-size: 2rem;
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+}
+
+.buttonContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.buttonTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.buttonDescription {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+}
+
+/**
+ * Dark mode adjustments
+ */
+@media (prefers-color-scheme: dark) {
+  .exportButton {
+    &:hover {
+      background-color: hsl(var(--accent) / 0.8);
+    }
+  }
+}

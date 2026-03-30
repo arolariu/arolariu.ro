@@ -37,6 +37,7 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * @property isImportant - Optional importance flag
  * @property sharedWith - Optional list of user GUIDs to share with (replaces existing)
  * @property additionalMetadata - Optional metadata entries to merge
+ * @property items - Optional updated items array (replaces entire items list)
  */
 type PatchInvoicePayload = Readonly<{
   name?: string;
@@ -47,6 +48,7 @@ type PatchInvoicePayload = Readonly<{
   isImportant?: boolean;
   sharedWith?: string[];
   additionalMetadata?: Record<string, unknown>;
+  items?: Invoice["items"];
 }>;
 
 /**

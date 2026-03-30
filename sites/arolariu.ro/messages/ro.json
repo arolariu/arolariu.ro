@@ -2587,32 +2587,50 @@
           "modified": "Ultima modificare {time}",
           "daysAgo": "{count, plural, one {acum # zi} other {acum # zile}}",
           "today": "astăzi"
-        }
+        },
+        "publicAccess": "Acces Public",
+        "publicAccessDescription": "Oricine cu link-ul poate vizualiza această factură",
+        "madePublic": "Factura este acum publică",
+        "madePrivate": "Factura este acum privată",
+        "toggleError": "Eroare la actualizarea setărilor de partajare",
+        "qrCode": "Cod QR",
+        "qrCopied": "Link copiat! Generarea codului QR va fi adăugată în curând."
       },
       "healthScore": {
-        "title": "Invoice Completeness",
-        "subtitle": "How complete is your invoice data",
-        "points": "points",
-        "showDetails": "Show details",
-        "hideDetails": "Hide details",
-        "factors": {
-          "name": "Name provided",
-          "items": "Items extracted",
-          "payment": "Payment information",
-          "recipes": "Recipes generated",
-          "category": "Category set",
-          "description": "Description added",
-          "date": "Transaction date",
-          "merchant": "Merchant information"
+        "suggestions": {
+          "uncategorizedProducts": "<strong>{count}</strong> produse fără categorie — atribuie categorii pentru analiza cheltuielilor",
+          "incompleteProducts": "<strong>{count}</strong> produse incomplete — revizuiește și completează câmpurile lipsă",
+          "title": "Îmbunătățiri Sugerate",
+          "noMerchant": "Niciun comerciant asociat — adaugă detalii comerciant pentru statistici mai bune",
+          "lowOcrConfidence": "Confidență OCR scăzută la <strong>{count}</strong> produse — revizuiește manual pentru acuratețe",
+          "noRecipes": "Nu sunt rețete generate — rulează analiza AI pentru a descoperi idei de mese",
+          "incompletePayment": "Informații plată incomplete — adaugă data tranzacției, suma și moneda",
+          "fix": "Rezolvă",
+          "noProducts": "Nu sunt produse găsite — încarcă un bon sau adaugă articole manual"
         },
-        "cta": {
-          "analyze": "Run AI Analysis",
-          "edit": "Edit Invoice"
+        "title": "Scor Sănătate Factură",
+        "subtitle": "Evaluare comprehensivă a calității datelor",
+        "factors": {
+          "ocrConfidence": "Confidență OCR",
+          "categoriesAssigned": "Categorii atribuite",
+          "paymentInfo": "Informații plată",
+          "merchantLinked": "Comerciant asociat",
+          "recipesGenerated": "Rețete generate",
+          "productsPresent": "Produse extrase",
+          "productCompleteness": "Completitudine produse"
         },
         "status": {
-          "complete": "Complete",
-          "needsWork": "Needs Work",
-          "incomplete": "Incomplete"
+          "incomplete": "Incomplet",
+          "needsAttention": "Necesită Atenție",
+          "excellent": "Excelent",
+          "good": "Bun"
+        },
+        "points": "puncte",
+        "showDetails": "Arată detalii factori",
+        "hideDetails": "Ascunde detalii factori",
+        "cta": {
+          "edit": "Editează Factura",
+          "analyze": "Rulează Analiza AI"
         }
       },
       "itemAnalytics": {
@@ -2684,6 +2702,34 @@
           "granularOptions": "Sau alege o analiză specifică",
           "updates": "{count, plural, one {# actualizare} other {# actualizări}}",
           "lastAnalyzed": "Ultima Analiză"
+        }
+      },
+      "export": {
+        "print": {
+          "title": "Printare",
+          "description": "Printează factura folosind browserul"
+        },
+        "csv": {
+          "title": "Exportă ca CSV",
+          "description": "Descarcă articolele ca foaie de calcul"
+        },
+        "copyError": "Eroare la copierea rezumatului",
+        "csvSuccess": "Fișier CSV descărcat cu succes",
+        "jsonSuccess": "Fișier JSON descărcat cu succes",
+        "title": "Exportă Factură",
+        "printError": "Eroare la deschiderea dialogului de printare",
+        "copySuccess": "Rezumat copiat în clipboard",
+        "jsonError": "Eroare la exportul JSON",
+        "copySummary": {
+          "title": "Copiază Rezumat",
+          "description": "Copiază rezumatul text în clipboard"
+        },
+        "printSuccess": "Dialog de printare deschis",
+        "description": "Exportă datele facturii în diverse formate",
+        "csvError": "Eroare la exportul CSV",
+        "json": {
+          "title": "Exportă ca JSON",
+          "description": "Descarcă datele complete ale facturii"
         }
       }
     },
@@ -3323,7 +3369,8 @@
           "quantity": "Cantitate",
           "price": "Preț",
           "unit": "Unitate",
-          "total": "Total"
+          "total": "Total",
+          "actions": "Acțiuni"
         },
         "tableHeaders": {
           "item": "Articol",
@@ -3345,7 +3392,9 @@
         },
         "bulkToolbar": {
           "selectedCount": "{count, plural, one {# articol selectat} few {# articole selectate} other {# de articole selectate}}",
-          "deleteSelected": "Șterge selecționate"
+          "deleteSelected": "Șterge selecționate",
+          "changeCategory": "Schimbă Categoria",
+          "noSelection": "Niciun produs selectat"
         },
         "editing": {
           "saved": "Articol actualizat cu succes",
@@ -3361,6 +3410,52 @@
         "newItem": {
           "defaultName": "Articol nou",
           "added": "Articol nou adăugat"
+        },
+        "indicators": {
+          "uncategorized": "Necategorizat",
+          "uncategorizedTooltip": "Acest produs necesită o categorie atribuită pentru o urmărire mai bună a cheltuielilor",
+          "missingName": "Nume lipsă",
+          "missingNameTooltip": "Traducerea numelui generic lipsește sau este identică cu textul OCR brut",
+          "lowConfidence": "Încredere scăzută",
+          "lowConfidenceTooltip": "Încrederea OCR este de {confidence}% - se recomandă revizuire manuală",
+          "edited": "Editat",
+          "editedTooltip": "Acest produs a fost modificat manual",
+          "allergens": "{count, plural, one {# alergen} other {# alergeni}}"
+        },
+        "actions": {
+          "restore": "Restabilește produs",
+          "editAllergens": "Editează alergeni",
+          "remove": "Elimină produs"
+        },
+        "softDelete": {
+          "error": "Eroare la eliminarea produsului",
+          "success": "Produsul '{name}' a fost eliminat"
+        },
+        "restore": {
+          "error": "Eroare la restabilirea produsului",
+          "success": "Produsul '{name}' a fost restabilit"
+        },
+        "bulkCategory": {
+          "noSelection": "Vă rugăm să selectați cel puțin un produs"
+        }
+      },
+      "guidedEdit": {
+        "banner": {
+          "title": "{count, plural, one {# produs necesită revizuire} few {# produse necesită revizuire} other {# de produse necesită revizuire}}",
+          "summary": {
+            "uncategorized": "{count, plural, one {# necategorizat} few {# necategorizate} other {# necategorizate}}",
+            "lowConfidence": "{count, plural, one {# încredere scăzută} few {# încredere scăzută} other {# încredere scăzută}}",
+            "missingName": "{count, plural, one {# nume lipsă} few {# nume lipsă} other {# nume lipsă}}"
+          },
+          "actions": {
+            "reviewAll": "Revizuiește toate",
+            "dismiss": "Închide"
+          },
+          "badges": {
+            "uncategorized": "{count, plural, one {# necategorizat} few {# necategorizate} other {# necategorizate}}",
+            "lowConfidence": "{count, plural, one {# încredere scăzută} few {# încredere scăzută} other {# încredere scăzută}}",
+            "missingName": "{count, plural, one {# nume lipsă} few {# nume lipsă} other {# nume lipsă}}"
+          }
         }
       },
       "changeHistory": {
@@ -3386,6 +3481,67 @@
           "markedImportant": "Marcat ca important",
           "importanceChanged": "Importanță modificată"
         }
+      },
+      "allergenDialog": {
+        "title": "Editează Alergeni",
+        "success": {
+          "saved": "Alergenii au fost actualizați cu succes",
+          "added": "Alergen adăugat: {name}",
+          "removed": "Alergen eliminat: {name}"
+        },
+        "labels": {
+          "currentAllergens": "Alergeni Actuali",
+          "customAllergen": "Adaugă Alergen Personalizat",
+          "quickAdd": "Adaugă Rapid Alergeni Comuni"
+        },
+        "description": "Gestionează alergenii pentru {productName}",
+        "placeholders": {
+          "customAllergen": "Introdu numele alergenului..."
+        },
+        "buttons": {
+          "saving": "Se salvează...",
+          "save": "Salvează Modificările",
+          "add": "Adaugă",
+          "cancel": "Anulează"
+        },
+        "empty": {
+          "noAllergens": "Niciun alergen detectat"
+        },
+        "aria": {
+          "removeAllergen": "Elimină alergenul {name}"
+        },
+        "defaultDescription": "Conține {name}",
+        "errors": {
+          "duplicate": "Alergenul '{name}' este deja adăugat",
+          "saveFailed": "Eroare la salvarea alergenilor",
+          "missingData": "Datele produsului lipsesc",
+          "emptyName": "Numele alergenului nu poate fi gol"
+        }
+      },
+      "bulkCategoryDialog": {
+        "success": {
+          "saved": "{count, plural, one {Categoria actualizată pentru # produs} other {Categoria actualizată pentru # produse}}"
+        },
+        "placeholders": {
+          "selectCategory": "Selectează o categorie"
+        },
+        "buttons": {
+          "saving": "Se salvează...",
+          "save": "Aplică Tuturor",
+          "cancel": "Anulează"
+        },
+        "description": "{count, plural, one {Schimbă categoria pentru # produs} other {Schimbă categoria pentru # produse}}",
+        "title": "Schimbă Categoria",
+        "labels": {
+          "andMore": "...și încă {count}",
+          "selectedProducts": "Produse Selectate",
+          "newCategory": "Categorie Nouă"
+        },
+        "errors": {
+          "noProducts": "Niciun produs selectat",
+          "saveFailed": "Eroare la actualizarea categoriilor",
+          "missingData": "Date lipsă"
+        }
       }
     },
     "Shared": {
@@ -3399,7 +3555,8 @@
           "discardAllPendingChanges": "Renunță la toate modificările în așteptare",
           "printInvoiceWithAllDetails": "Tipărește această factură cu toate detaliile",
           "analyzeSpendingPatterns": "Analizează tiparele de cheltuieli pentru această factură",
-          "deleteInvoicePermanently": "Șterge permanent această factură"
+          "deleteInvoicePermanently": "Șterge permanent această factură",
+          "export": "Exportă datele facturii în diverse formate"
         },
         "id": "Identificator: {id}",
         "buttons": {
@@ -3409,7 +3566,8 @@
           "save": "Salvează",
           "saving": "Se salvează...",
           "discard": "Renunță",
-          "analyzeWithAi": "Analizează cu IA"
+          "analyzeWithAi": "Analizează cu IA",
+          "export": "Exportă"
         }
       },
       "states": {
@@ -3681,6 +3839,9 @@
       "detailsForm": {
         "title": "Invoice Details",
         "subtitle": "Provide the details for your new invoice",
+        "scanPreview": {
+          "title": "Previzualizare Scanare"
+        },
         "fields": {
           "name": {
             "label": "Invoice Name",

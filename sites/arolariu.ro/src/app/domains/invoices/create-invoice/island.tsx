@@ -18,7 +18,6 @@ import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {TbArrowLeft} from "react-icons/tb";
-import WorkflowProgress from "../_components/WorkflowProgress";
 import InvoiceDetailsForm from "./_components/InvoiceDetailsForm";
 import ReviewStep from "./_components/ReviewStep";
 import ScanSelector from "./_components/ScanSelector";
@@ -149,9 +148,6 @@ function CreateInvoiceWizard(): React.JSX.Element {
         <h1 className={styles["title"]}>{t("header.title")}</h1>
         <p className={styles["subtitle"]}>{t("header.subtitle")}</p>
       </div>
-
-      {/* Workflow Progress */}
-      <WorkflowProgress currentStep='create' />
 
       {/* Step Indicator */}
       <StepIndicator />

@@ -18,7 +18,7 @@ import {ScanStatus} from "@/types/scans";
 import {Badge, Button, Card, CardContent, Checkbox} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {TbCheck, TbPhoto, TbX} from "react-icons/tb";
+import {TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
 
@@ -70,12 +70,18 @@ function ScanCard({
 
         {/* Scan preview */}
         <div className={styles["scanPreview"]}>
-          <img
-            src={scan.blobUrl}
-            alt={scan.name}
-            className={styles["scanImage"]}
-            loading='lazy'
-          />
+          {scan.mimeType === "application/pdf" || scan.blobUrl?.endsWith(".pdf") ? (
+            <div className={styles["pdfPlaceholder"]}>
+              <TbFileTypePdf className={styles["pdfIcon"]} />
+            </div>
+          ) : (
+            <img
+              src={scan.blobUrl}
+              alt={scan.name}
+              className={styles["scanImage"]}
+              loading='lazy'
+            />
+          )}
         </div>
 
         {/* Scan info */}
@@ -86,16 +92,6 @@ function ScanCard({
             <span className={styles["scanSize"]}>{formatSize(scan.sizeInBytes)}</span>
           </div>
         </CardContent>
-
-        {/* Selected badge */}
-        {isSelected && (
-          <motion.div
-            initial={{scale: 0}}
-            animate={{scale: 1}}
-            className={styles["selectedBadge"]}>
-            <TbCheck />
-          </motion.div>
-        )}
       </Card>
     </motion.div>
   );

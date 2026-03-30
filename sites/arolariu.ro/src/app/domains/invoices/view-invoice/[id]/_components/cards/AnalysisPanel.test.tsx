@@ -3,14 +3,14 @@
  * @module app/domains/invoices/view-invoice/[id]/_components/cards/AnalysisPanel.test
  */
 
+import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {render, screen, waitFor} from "@testing-library/react";
 import {userEvent} from "@testing-library/user-event";
 import {NextIntlClientProvider} from "next-intl";
 import {useRouter} from "next/navigation";
 import {describe, expect, it, vi} from "vitest";
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
-import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
 import {InvoiceContextProvider} from "../../_context/InvoiceContext";
 import {AnalysisPanel} from "./AnalysisPanel";
 

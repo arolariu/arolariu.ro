@@ -5,7 +5,7 @@ import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import * as React from "react";
-import {TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
+import {TbDownload, TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./InvoiceHeader.module.scss";
@@ -17,6 +17,7 @@ export function InvoiceHeader(): React.JSX.Element {
     userInformation: {userIdentifier},
   } = useUserInformation();
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
+  const {open: openExportDialog} = useDialog("VIEW_INVOICE__EXPORT");
   const isOwner = invoice.userIdentifier === userIdentifier;
 
   return (
@@ -84,6 +85,21 @@ export function InvoiceHeader(): React.JSX.Element {
             />
             <TooltipContent>
               <p>{t("tooltips.print")}</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  onClick={openExportDialog}>
+                  <TbDownload className={styles["buttonIcon"]} />
+                  {t("buttons.export")}
+                </Button>
+              }
+            />
+            <TooltipContent>
+              <p>{t("tooltips.export")}</p>
             </TooltipContent>
           </Tooltip>
         </div>

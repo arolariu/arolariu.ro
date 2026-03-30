@@ -28,12 +28,13 @@
 
 "use client";
 
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, toast} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback, useMemo} from "react";
-import {TbClipboard, TbLock, TbMail, TbShare, TbUsers, TbWorld} from "react-icons/tb";
+import {useCallback, useMemo, useTransition} from "react";
+import {TbClipboard, TbLock, TbMail, TbQrcode, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
@@ -85,8 +86,9 @@ type SharingStatus = "private" | "public" | "shared";
  */
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.shareCollaborate");
-  const {invoice} = useInvoiceContext();
+  const {invoice, setInvoice} = useInvoiceContext();
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
+  const [isPending, startTransition] = useTransition();
 
   /**
    * Computes the current sharing status based on invoice.sharedWith array.
@@ -190,6 +192,40 @@ export function ShareCollaborateCard(): React.JSX.Element {
   );
 
   /**
+   * Handles toggling the public/private status of the invoice.
+   *
+   * @remarks
+   * **Behavior:**
+   * - If currently public (has LAST_GUID), removes it to make private
+   * - If currently private/shared, adds LAST_GUID to make public
+   * - Uses optimistic UI updates with server action
+   * - Shows toast feedback for success/failure
+   */
+  const handleTogglePublic = useCallback(async (): Promise<void> => {
+    const isCurrentlyPublic = sharingStatus === "public";
+    const newSharedWith = isCurrentlyPublic ? invoice.sharedWith.filter((guid) => guid !== LAST_GUID) : [...invoice.sharedWith, LAST_GUID];
+
+    startTransition(async () => {
+      try {
+        const result = await patchInvoice({
+          invoiceId: invoice.id,
+          payload: {sharedWith: newSharedWith},
+        });
+
+        if (result.success) {
+          setInvoice(result.invoice);
+          toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
+        } else {
+          toast.error(t("toggleError"));
+        }
+      } catch (error) {
+        console.error("Failed to toggle public status:", error);
+        toast.error(t("toggleError"));
+      }
+    });
+  }, [sharingStatus, invoice, setInvoice, t]);
+
+  /**
    * Handles copying the invoice link to clipboard.
    *
    * @remarks
@@ -208,6 +244,24 @@ export function ShareCollaborateCard(): React.JSX.Element {
       toast.success(t("copied"));
     } catch (error) {
       console.error("Failed to copy link:", error);
+      toast.error("Failed to copy link");
+    }
+  }, [invoice.id, t]);
+
+  /**
+   * Handles opening a QR code view with the share link.
+   *
+   * @remarks
+   * For now, just copies the link to clipboard. QR code generation
+   * can be added in a future enhancement with a dedicated dialog.
+   */
+  const handleShowQRCode = useCallback(async (): Promise<void> => {
+    try {
+      const invoiceUrl = `${window.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
+      await navigator.clipboard.writeText(invoiceUrl);
+      toast.success(t("qrCopied"));
+    } catch (error) {
+      console.error("Failed to copy link for QR:", error);
       toast.error("Failed to copy link");
     }
   }, [invoice.id, t]);
@@ -248,6 +302,25 @@ export function ShareCollaborateCard(): React.JSX.Element {
       </CardHeader>
 
       <CardContent className={styles["cardContent"]}>
+        {/* Public Toggle Section */}
+        <div className={styles["toggleSection"]}>
+          <div className={styles["toggleRow"]}>
+            <Label
+              htmlFor='public-toggle'
+              className={styles["toggleLabel"]}>
+              <TbWorld className={styles["toggleIcon"]} />
+              {t("publicAccess")}
+            </Label>
+            <Switch
+              id='public-toggle'
+              checked={sharingStatus === "public"}
+              onCheckedChange={handleTogglePublic}
+              disabled={isPending}
+            />
+          </div>
+          <p className={styles["toggleDescription"]}>{t("publicAccessDescription")}</p>
+        </div>
+
         {/* Sharing Status Section */}
         <div className={styles["statusSection"]}>
           <div className={styles["statusRow"]}>
@@ -280,6 +353,19 @@ export function ShareCollaborateCard(): React.JSX.Element {
               className={styles["actionButton"]}>
               <TbClipboard className={styles["buttonIcon"]} />
               {t("copyLink")}
+            </Button>
+          </motion.div>
+
+          <motion.div
+            whileHover={{scale: 1.02}}
+            whileTap={{scale: 0.98}}>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleShowQRCode}
+              className={styles["actionButton"]}>
+              <TbQrcode className={styles["buttonIcon"]} />
+              {t("qrCode")}
             </Button>
           </motion.div>
 

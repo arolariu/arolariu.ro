@@ -3,19 +3,14 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/__tests__/merchantAnalytics.test
  */
 
+import type {Invoice} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {computeMerchantTrends, computeMerchantVisitFrequency} from "../statistics";
-import type {Invoice} from "@/types/invoices";
 
 /**
  * Helper to create a simple mock invoice for testing
  */
-function createMockInvoice(
-  merchantId: string,
-  amount: number,
-  date: Date,
-  itemCount: number = 0,
-): Invoice {
+function createMockInvoice(merchantId: string, amount: number, date: Date, itemCount: number = 0): Invoice {
   return {
     id: `invoice-${Math.random()}`,
     name: `Invoice ${merchantId}`,
@@ -89,10 +84,7 @@ describe("Merchant Analytics", () => {
     });
 
     it("should skip invoices without merchant reference", () => {
-      const invoices = [
-        createMockInvoice("merchant-1", 100, new Date()),
-        createMockInvoice("", 50, new Date()),
-      ];
+      const invoices = [createMockInvoice("merchant-1", 100, new Date()), createMockInvoice("", 50, new Date())];
 
       const result = computeMerchantTrends(invoices, 5);
 
@@ -164,10 +156,7 @@ describe("Merchant Analytics", () => {
     });
 
     it("should skip invoices without merchant reference", () => {
-      const invoices = [
-        createMockInvoice("merchant-1", 100, new Date()),
-        createMockInvoice("", 50, new Date()),
-      ];
+      const invoices = [createMockInvoice("merchant-1", 100, new Date()), createMockInvoice("", 50, new Date())];
 
       const result = computeMerchantVisitFrequency(invoices);
 

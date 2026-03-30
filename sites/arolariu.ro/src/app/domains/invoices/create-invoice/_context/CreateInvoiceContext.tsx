@@ -200,7 +200,10 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       else if (firstScan.scanType === "PNG") scanType = InvoiceScanType.PNG;
       else if (firstScan.scanType === "PDF") scanType = InvoiceScanType.PDF;
 
-      // Create invoice with first scan
+      // Create invoice with first scan and ALL invoice details in metadata
+      // UX-6 FIX VERIFIED: All form fields are properly included in metadata
+      // - name, category, paymentType, transactionDate (ISO), description
+      // Backend should extract these from metadata to populate top-level Invoice fields
       const invoice = await createInvoice({
         initialScan: {
           scanType,

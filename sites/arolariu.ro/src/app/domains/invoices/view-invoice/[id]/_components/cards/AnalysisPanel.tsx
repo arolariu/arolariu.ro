@@ -23,18 +23,7 @@ import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import {
-  TbBolt,
-  TbBrain,
-  TbBuildingStore,
-  TbCheck,
-  TbClock,
-  TbInfoCircle,
-  TbRefresh,
-  TbRefreshAlert,
-  TbShoppingCart,
-  TbSparkles,
-} from "react-icons/tb";
+import {TbBolt, TbBrain, TbCheck, TbClock, TbInfoCircle, TbRefresh, TbRefreshAlert, TbShoppingCart, TbSparkles} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./AnalysisPanel.module.scss";
 
@@ -89,6 +78,10 @@ export function AnalysisPanel(): React.JSX.Element {
 
   /**
    * Analysis options configuration.
+   *
+   * @remarks
+   * Note: InvoiceMerchantOnly is intentionally excluded as merchant data
+   * is automatically enriched during invoice creation and analysis.
    */
   const analysisOptions: readonly AnalysisOption[] = [
     {
@@ -108,12 +101,6 @@ export function AnalysisPanel(): React.JSX.Element {
       label: t("options.itemsOnly"),
       description: t("tooltips.itemsOnly"),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
-    },
-    {
-      id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
-      label: t("options.merchantOnly"),
-      description: t("tooltips.merchantOnly"),
-      icon: <TbBuildingStore className={styles["optionIcon"]} />,
     },
   ];
 

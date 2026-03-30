@@ -21,6 +21,44 @@
   gap: space(4);
 }
 
+/* Toggle Section */
+.toggleSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding-bottom: space(3);
+  border-bottom: 1px solid color('border');
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+  cursor: pointer;
+}
+
+.toggleIcon {
+  @include icon-size(space(4));
+  color: color('primary');
+}
+
+.toggleDescription {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* Status Section */
 .statusSection {
   display: flex;
@@ -70,13 +108,12 @@
 
 /* Actions Section */
 .actionsSection {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: space(2);
 }
 
 .actionButton {
-  width: 100%;
   justify-content: flex-start;
   gap: space(2);
   transition: all duration('normal') ease-out;

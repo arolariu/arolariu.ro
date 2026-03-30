@@ -2603,33 +2603,51 @@
           "modified": "Last modified {time}",
           "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
           "today": "today"
-        }
+        },
+        "publicAccess": "Public Access",
+        "publicAccessDescription": "Anyone with the link can view this invoice",
+        "madePublic": "Invoice is now public",
+        "madePrivate": "Invoice is now private",
+        "toggleError": "Failed to update sharing settings",
+        "qrCode": "QR Code",
+        "qrCopied": "Link copied! QR code generation coming soon."
       },
       "healthScore": {
-        "title": "Invoice Completeness",
-        "subtitle": "How complete is your invoice data",
+        "hideDetails": "Hide factor breakdown",
+        "title": "Invoice Health Score",
+        "status": {
+          "incomplete": "Incomplete",
+          "good": "Good",
+          "needsAttention": "Needs Attention",
+          "excellent": "Excellent"
+        },
+        "suggestions": {
+          "noRecipes": "No recipes generated — run AI analysis to discover meal ideas",
+          "title": "Suggested Improvements",
+          "incompletePayment": "Incomplete payment information — add transaction date, amount, and currency",
+          "fix": "Fix",
+          "noMerchant": "No merchant linked — add merchant details for better insights",
+          "noProducts": "No products found — upload a receipt or add items manually",
+          "lowOcrConfidence": "Low OCR confidence on <strong>{count}</strong> products — review manually for accuracy",
+          "uncategorizedProducts": "<strong>{count}</strong> products uncategorized — assign categories for spending analysis",
+          "incompleteProducts": "<strong>{count}</strong> products incomplete — review and complete missing fields"
+        },
         "points": "points",
-        "showDetails": "Show details",
-        "hideDetails": "Hide details",
         "factors": {
-          "name": "Name provided",
-          "items": "Items extracted",
-          "payment": "Payment information",
-          "recipes": "Recipes generated",
-          "category": "Category set",
-          "description": "Description added",
-          "date": "Transaction date",
-          "merchant": "Merchant information"
+          "merchantLinked": "Merchant linked",
+          "ocrConfidence": "OCR confidence",
+          "recipesGenerated": "Recipes generated",
+          "paymentInfo": "Payment information",
+          "productCompleteness": "Product completeness",
+          "productsPresent": "Products extracted",
+          "categoriesAssigned": "Categories assigned"
         },
         "cta": {
-          "analyze": "Run AI Analysis",
-          "edit": "Edit Invoice"
+          "edit": "Edit Invoice",
+          "analyze": "Run AI Analysis"
         },
-        "status": {
-          "complete": "Complete",
-          "needsWork": "Needs Work",
-          "incomplete": "Incomplete"
-        }
+        "showDetails": "Show factor breakdown",
+        "subtitle": "Comprehensive data quality assessment"
       },
       "itemAnalytics": {
         "title": "Items",
@@ -2705,6 +2723,34 @@
           "reanalyze": "Re-Analyze Invoice"
         },
         "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
+      },
+      "export": {
+        "printError": "Failed to open print dialog",
+        "printSuccess": "Print dialog opened",
+        "csv": {
+          "title": "Export as CSV",
+          "description": "Download items as spreadsheet"
+        },
+        "description": "Export your invoice data in various formats",
+        "print": {
+          "title": "Print",
+          "description": "Print invoice using browser"
+        },
+        "csvSuccess": "CSV file downloaded successfully",
+        "copyError": "Failed to copy summary",
+        "copySummary": {
+          "title": "Copy Summary",
+          "description": "Copy text summary to clipboard"
+        },
+        "copySuccess": "Summary copied to clipboard",
+        "json": {
+          "title": "Export as JSON",
+          "description": "Download complete invoice data"
+        },
+        "jsonSuccess": "JSON file downloaded successfully",
+        "jsonError": "Failed to export JSON",
+        "csvError": "Failed to export CSV",
+        "title": "Export Invoice"
       }
     },
     "EditInvoice": {
@@ -3343,7 +3389,8 @@
           "quantity": "Quantity",
           "price": "Price",
           "unit": "Unit",
-          "total": "Total"
+          "total": "Total",
+          "actions": "Actions"
         },
         "tableHeaders": {
           "item": "Item",
@@ -3365,7 +3412,9 @@
         },
         "bulkToolbar": {
           "selectedCount": "{count, plural, one {# item selected} other {# items selected}}",
-          "deleteSelected": "Delete Selected"
+          "deleteSelected": "Delete Selected",
+          "changeCategory": "Change Category",
+          "noSelection": "No products selected"
         },
         "editing": {
           "saved": "Item updated successfully",
@@ -3381,6 +3430,52 @@
         "newItem": {
           "defaultName": "New Item",
           "added": "New item added"
+        },
+        "indicators": {
+          "uncategorized": "Uncategorized",
+          "uncategorizedTooltip": "This product needs a category assigned for better spending tracking",
+          "missingName": "Missing name",
+          "missingNameTooltip": "Generic name translation is missing or identical to raw OCR text",
+          "lowConfidence": "Low confidence",
+          "lowConfidenceTooltip": "OCR confidence is {confidence}% - manual review recommended",
+          "edited": "Edited",
+          "editedTooltip": "This product has been manually modified",
+          "allergens": "{count, plural, one {# allergen} other {# allergens}}"
+        },
+        "actions": {
+          "remove": "Remove item",
+          "restore": "Restore item",
+          "editAllergens": "Edit allergens"
+        },
+        "softDelete": {
+          "success": "Item '{name}' removed",
+          "error": "Failed to remove item"
+        },
+        "restore": {
+          "success": "Item '{name}' restored",
+          "error": "Failed to restore item"
+        },
+        "bulkCategory": {
+          "noSelection": "Please select at least one product"
+        }
+      },
+      "guidedEdit": {
+        "banner": {
+          "title": "{count, plural, one {# product needs review} other {# products need review}}",
+          "summary": {
+            "uncategorized": "{count, plural, one {# uncategorized} other {# uncategorized}}",
+            "lowConfidence": "{count, plural, one {# low confidence} other {# low confidence}}",
+            "missingName": "{count, plural, one {# missing name} other {# missing name}}"
+          },
+          "actions": {
+            "reviewAll": "Review All",
+            "dismiss": "Dismiss"
+          },
+          "badges": {
+            "uncategorized": "{count, plural, one {# uncategorized} other {# uncategorized}}",
+            "lowConfidence": "{count, plural, one {# low confidence} other {# low confidence}}",
+            "missingName": "{count, plural, one {# missing name} other {# missing name}}"
+          }
         }
       },
       "changeHistory": {
@@ -3406,6 +3501,67 @@
           "markedImportant": "Marked as important",
           "importanceChanged": "Importance changed"
         }
+      },
+      "allergenDialog": {
+        "labels": {
+          "currentAllergens": "Current Allergens",
+          "customAllergen": "Add Custom Allergen",
+          "quickAdd": "Quick Add Common Allergens"
+        },
+        "title": "Edit Allergens",
+        "success": {
+          "added": "Added allergen: {name}",
+          "saved": "Allergens updated successfully",
+          "removed": "Removed allergen: {name}"
+        },
+        "buttons": {
+          "save": "Save Changes",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "add": "Add"
+        },
+        "defaultDescription": "Contains {name}",
+        "aria": {
+          "removeAllergen": "Remove {name} allergen"
+        },
+        "placeholders": {
+          "customAllergen": "Enter allergen name..."
+        },
+        "empty": {
+          "noAllergens": "No allergens detected"
+        },
+        "description": "Manage allergens for {productName}",
+        "errors": {
+          "emptyName": "Allergen name cannot be empty",
+          "duplicate": "Allergen '{name}' already added",
+          "missingData": "Missing product data",
+          "saveFailed": "Failed to save allergens"
+        }
+      },
+      "bulkCategoryDialog": {
+        "errors": {
+          "saveFailed": "Failed to update categories",
+          "missingData": "Missing data",
+          "noProducts": "No products selected"
+        },
+        "success": {
+          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
+        },
+        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
+        "buttons": {
+          "save": "Apply to All",
+          "saving": "Saving...",
+          "cancel": "Cancel"
+        },
+        "labels": {
+          "andMore": "...and {count} more",
+          "newCategory": "New Category",
+          "selectedProducts": "Selected Products"
+        },
+        "placeholders": {
+          "selectCategory": "Select a category"
+        },
+        "title": "Change Category"
       }
     },
     "Shared": {
@@ -3419,7 +3575,8 @@
           "discardAllPendingChanges": "Discard all pending changes",
           "printInvoiceWithAllDetails": "Print this invoice with all details",
           "analyzeSpendingPatterns": "Analyze spending patterns for this invoice",
-          "deleteInvoicePermanently": "Delete this invoice permanently"
+          "deleteInvoicePermanently": "Delete this invoice permanently",
+          "export": "Export invoice data in various formats"
         },
         "id": "ID: {id}",
         "buttons": {
@@ -3429,7 +3586,8 @@
           "save": "Save",
           "saving": "Saving...",
           "discard": "Discard",
-          "analyzeWithAi": "Analyze with AI"
+          "analyzeWithAi": "Analyze with AI",
+          "export": "Export"
         }
       },
       "states": {
@@ -3701,6 +3859,9 @@
       "detailsForm": {
         "title": "Invoice Details",
         "subtitle": "Provide the details for your new invoice",
+        "scanPreview": {
+          "title": "Scan Preview"
+        },
         "fields": {
           "name": {
             "label": "Invoice Name",
