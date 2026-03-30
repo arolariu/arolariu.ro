@@ -408,8 +408,105 @@
   }
 }
 
+.retryButton {
+  @include gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
 .dialogContent {
   @include respond-to('sm') {
     max-width: 32rem;
   }
+}
+
+// ===========================================
+// ERROR STATES
+// ===========================================
+.completeIconCircleError {
+  background-color: color-alpha('destructive', 0.18) !important;
+}
+
+.completeErrorIcon {
+  height: space(8);
+  width: space(8);
+  color: color('destructive');
+}
+
+.completeTitleError {
+  color: color('destructive') !important;
+}
+
+.completeIconCircleWarning {
+  background-color: color-alpha('warning', 0.18) !important;
+}
+
+.completeWarningIcon {
+  height: space(8);
+  width: space(8);
+  color: color('warning');
+}
+
+.completeTitleWarning {
+  color: color('warning') !important;
+}
+
+.completeErrorsList {
+  margin-top: space(6);
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  background-color: color('muted');
+  padding: space(4);
+  text-align: left;
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.completeErrorsListTitle {
+  margin-bottom: space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.completeErrorItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  padding: space(2);
+  border-radius: radius('md');
+
+  &:not(:last-child) {
+    margin-bottom: space(2);
+  }
+
+  @include dark {
+    background-color: color-alpha('background', 0.5);
+  }
+}
+
+.completeErrorItemIcon {
+  height: space(5);
+  width: space(5);
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  color: color('destructive');
+}
+
+.completeErrorItemScanName {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin-bottom: space(1);
+}
+
+.completeErrorItemText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  word-break: break-word;
 }

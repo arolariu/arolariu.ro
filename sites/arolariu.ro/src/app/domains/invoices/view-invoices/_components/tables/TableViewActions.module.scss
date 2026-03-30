@@ -45,14 +45,22 @@
 }
 
 .menuContent {
-  width: 10rem;
+  min-width: space(40); // 160px
 }
 
 .menuItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
   cursor: pointer;
 }
 
 .menuItemDestructive {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
   cursor: pointer;
   color: color('destructive');
 }

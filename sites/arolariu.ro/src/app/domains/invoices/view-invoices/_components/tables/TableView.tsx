@@ -24,11 +24,14 @@ import {
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import Link from "next/link";
-import {useCallback} from "react";
-import {TbArrowsUpDown, TbEye, TbReceipt} from "react-icons/tb";
+import {useCallback, useMemo, useState} from "react";
+import {TbArrowDown, TbArrowsUpDown, TbArrowUp, TbEye, TbReceipt} from "react-icons/tb";
 import EmptyState from "../../../_components/EmptyState";
 import styles from "./TableView.module.scss";
 import TableViewActions from "./TableViewActions";
+
+type SortField = "date" | "amount" | "name" | "category" | null;
+type SortDirection = "asc" | "desc";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -46,6 +49,55 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      } else {
+        setSortField(field);
+        setSortDirection("desc");
+      }
+    },
+    [sortField],
+  );
+
+  const sortedInvoices = useMemo(() => {
+    if (!sortField) return invoices.toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return invoices.toSorted((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "date":
+          comparison =
+            new Date(a.paymentInformation?.transactionDate ?? a.createdAt).getTime()
+            - new Date(b.paymentInformation?.transactionDate ?? b.createdAt).getTime();
+          break;
+        case "amount":
+          comparison = (a.paymentInformation?.totalCostAmount ?? 0) - (b.paymentInformation?.totalCostAmount ?? 0);
+          break;
+        case "name":
+          comparison = (a.name ?? "").localeCompare(b.name ?? "");
+          break;
+        case "category":
+          comparison = a.category - b.category;
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [invoices, sortField, sortDirection]);
+
+  const getSortIcon = useCallback(
+    (field: SortField): React.JSX.Element => {
+      if (sortField !== field) return <TbArrowsUpDown className={styles["sortIcon"]} />;
+      return sortDirection === "asc" ? <TbArrowUp className={styles["sortIcon"]} /> : <TbArrowDown className={styles["sortIcon"]} />;
+    },
+    [sortField, sortDirection],
+  );
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {
@@ -114,82 +166,82 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableHead>
             <Button
               variant='ghost'
-              className={styles["sortButton"]}>
+              className={styles["sortButton"]}
+              onClick={() => handleSort("date")}>
               {t("columns.date")}
-              <TbArrowsUpDown className={styles["sortIcon"]} />
+              {getSortIcon("date")}
             </Button>
           </TableHead>
           <TableHead>
             <Button
               variant='ghost'
-              className={styles["sortButton"]}>
+              className={styles["sortButton"]}
+              onClick={() => handleSort("amount")}>
               {t("columns.amount")}
-              <TbArrowsUpDown className={styles["sortIcon"]} />
+              {getSortIcon("amount")}
             </Button>
           </TableHead>
           <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {invoices
-          .toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map((invoice) => (
-            <TableRow key={invoice.id}>
-              <TableCell className={styles["printHidden"]}>
-                <Checkbox
-                  checked={selectedInvoices.some((s) => s.id === invoice.id)}
-                  // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-                  onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                  aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
-                />
-              </TableCell>
-              <TableCell>
-                <span className={styles["printInline"]}>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
-                <span className={styles["printOnly"]}>{invoice.id}</span>
-              </TableCell>
-              <TableCell>
-                <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
-              </TableCell>
-              <TableCell>
+        {sortedInvoices.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableCell className={styles["printHidden"]}>
+              <Checkbox
+                checked={selectedInvoices.some((s) => s.id === invoice.id)}
+                // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+                onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
+              />
+            </TableCell>
+            <TableCell>
+              <span className={styles["printInline"]}>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
+              <span className={styles["printOnly"]}>{invoice.id}</span>
+            </TableCell>
+            <TableCell>
+              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
+            </TableCell>
+            <TableCell>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
+                  <TooltipContent>
+                    <p>{new Date(invoice.createdAt).toUTCString()}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </TableCell>
+            <TableCell>
+              {formatCurrency(invoice.paymentInformation.totalCostAmount, {
+                locale,
+                currencyCode: invoice.paymentInformation.currency.code,
+              })}
+            </TableCell>
+            <TableCell className={styles["actionsCell"]}>
+              <div className={styles["actionsRow"]}>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
-                    <TooltipContent>
-                      <p>{new Date(invoice.createdAt).toUTCString()}</p>
-                    </TooltipContent>
+                    <TooltipTrigger
+                      className={styles["viewTrigger"]}
+                      render={
+                        <Link
+                          href={`/domains/invoices/view-invoice/${invoice.id}`}
+                          className={styles["viewLink"]}>
+                          <TbEye className={styles["viewIcon"]} />
+                        </Link>
+                      }
+                    />
+                    <TooltipContent>{t("viewInvoice")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </TableCell>
-              <TableCell>
-                {formatCurrency(invoice.paymentInformation.totalCostAmount, {
-                  locale,
-                  currencyCode: invoice.paymentInformation.currency.code,
-                })}
-              </TableCell>
-              <TableCell className={styles["actionsCell"]}>
-                <div className={styles["actionsRow"]}>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger
-                        className={styles["viewTrigger"]}
-                        render={
-                          <Link
-                            href={`/domains/invoices/view-invoice/${invoice.id}`}
-                            className={styles["viewLink"]}>
-                            <TbEye className={styles["viewIcon"]} />
-                          </Link>
-                        }
-                      />
-                      <TooltipContent>{t("viewInvoice")}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TableViewActions invoice={invoice} />
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                <TableViewActions invoice={invoice} />
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
-      {invoices.length >= 6 && (
+      {totalPages > 1 && (
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>

@@ -211,6 +211,55 @@ export function mapHttpStatusToErrorCode(status: number): ServerActionErrorCode 
 }
 
 /**
+ * Parses backend error responses with specific status code handling.
+ * Extracts detail from JSON response body when available.
+ *
+ * @param status - HTTP status code from response
+ * @param body - Response body as string
+ * @returns Human-readable error message
+ *
+ * @remarks
+ * This function provides user-friendly messages for common HTTP status codes:
+ * - 402: Payment/subscription required
+ * - 409: Conflict (concurrent modification)
+ * - 413: Payload too large
+ * - 429: Rate limiting
+ *
+ * For other status codes, attempts to parse JSON and extract `detail` field.
+ * Falls back to raw body text if JSON parsing fails.
+ *
+ * @example
+ * ```typescript
+ * const response = await fetch('/api/invoices');
+ * if (!response.ok) {
+ *   const body = await response.text();
+ *   const message = parseBackendError(response.status, body);
+ *   console.error(message); // "Too many requests. Please wait a moment and try again."
+ * }
+ * ```
+ */
+export function parseBackendError(status: number, body: string): string {
+  switch (status) {
+    case 429:
+      return "Too many requests. Please wait a moment and try again.";
+    case 402:
+      return "This feature requires a paid subscription.";
+    case 409:
+      return "Conflict: this resource was modified by another user.";
+    case 413:
+      return "File is too large. Maximum size is 10MB.";
+    default: {
+      try {
+        const parsed = JSON.parse(body) as {detail?: string};
+        return parsed.detail ?? body;
+      } catch {
+        return body;
+      }
+    }
+  }
+}
+
+/**
  * Creates a standardized error result from an error object.
  * @param error - The caught error
  * @param defaultMessage - Default message if error doesn't have one

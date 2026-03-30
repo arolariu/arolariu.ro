@@ -70,6 +70,23 @@ function formatDate(date: Date): string {
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans.scanCard");
+
+  // Guard against incomplete scan data
+  if (!scan.blobUrl && !scan.name) {
+    return (
+      <Card className={styles["card"]}>
+        <CardContent className={styles["cardContentFlush"]}>
+          <div className={styles["previewArea"]}>
+            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
+          </div>
+          <div className={styles["fileInfo"]}>
+            <div className={styles["fileName"]}>Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -146,10 +163,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   );
 
   const handleOpenPreview = useCallback((): void => {
-    if (scan.mimeType !== "application/pdf") {
-      setShowPreview(true);
-    }
-  }, [scan.mimeType]);
+    setShowPreview(true);
+  }, []);
 
   return (
     <>
@@ -159,10 +174,10 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           <div
             className={styles["previewArea"]}
             onClick={handleOpenPreview}
-            role={scan.mimeType !== "application/pdf" ? "button" : undefined}
-            tabIndex={scan.mimeType !== "application/pdf" ? 0 : undefined}
+            role='button'
+            tabIndex={0}
             onKeyDown={(e) => {
-              if (scan.mimeType !== "application/pdf" && (e.key === "Enter" || e.key === " ")) {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 handleOpenPreview();
               }
@@ -185,6 +200,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   <TbMaximize className={styles["previewIcon"]} />
                 </div>
               </>
+            )}
+
+            {/* Preview overlay for PDFs */}
+            {scan.mimeType === "application/pdf" && (
+              <div className={styles["previewOverlay"]}>
+                <TbMaximize className={styles["previewIcon"]} />
+              </div>
             )}
 
             {/* Selection checkbox */}
@@ -302,14 +324,22 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
       </Card>
 
       {/* Preview Dialog */}
-      {scan.mimeType !== "application/pdf" && (
-        <Dialog
-          open={showPreview}
-          onOpenChange={setShowPreview}>
-          <DialogContent className={styles["previewDialog"]}>
-            <DialogHeader>
-              <DialogTitle>{t("previewTitle")}</DialogTitle>
-            </DialogHeader>
+      <Dialog
+        open={showPreview}
+        onOpenChange={setShowPreview}>
+        <DialogContent className={styles["previewDialog"]}>
+          <DialogHeader>
+            <DialogTitle>{t("previewTitle")}</DialogTitle>
+          </DialogHeader>
+          {scan.mimeType === "application/pdf" ? (
+            <div className={styles["pdfPreviewContainer"]}>
+              <iframe
+                src={scan.blobUrl}
+                className={styles["pdfPreview"]}
+                title={scan.name}
+              />
+            </div>
+          ) : (
             <div className={styles["previewImageContainer"]}>
               <Image
                 src={scan.blobUrl}
@@ -319,9 +349,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 unoptimized
               />
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog

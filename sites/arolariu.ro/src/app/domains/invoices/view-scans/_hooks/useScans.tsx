@@ -33,7 +33,7 @@ interface UseScansOutput {
   /** Clear selection */
   clearSelection: () => void;
   /** Sync scans with Azure */
-  syncScans: () => Promise<void>;
+  syncScans: (manual?: boolean) => Promise<void>;
   /** Remove a scan from store and optionally delete from Azure */
   removeScan: (scanId: string) => void;
 }
@@ -85,33 +85,43 @@ export function useScans(): UseScansOutput {
    * Sync scans with Azure Blob Storage.
    * Fetches all scans for the user and merges with local cache.
    * Authentication is handled by the server action.
+   *
+   * @param manual - If true, shows success toast. If false (auto-sync), no toast.
    */
-  const syncScans = useCallback(async (): Promise<void> => {
-    if (isSyncing) return;
+  const syncScans = useCallback(
+    async (manual = false): Promise<void> => {
+      if (isSyncing) return;
 
-    setIsSyncing(true);
+      setIsSyncing(true);
 
-    try {
-      const fetchedScans = await fetchScans({
-        includeArchived: false,
-      });
+      try {
+        const fetchedScans = await fetchScans({
+          includeArchived: false,
+        });
 
-      // Convert to cached scans with cache timestamp
-      const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
-        ...scan,
-        cachedAt: new Date(),
-      }));
+        // Convert to cached scans with cache timestamp
+        const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+          ...scan,
+          cachedAt: new Date(),
+        }));
 
-      setScans(cachedScans);
-      setLastSyncTimestamp(new Date());
-      toast.success("Scans synced successfully");
-    } catch (error) {
-      console.error("Failed to sync scans:", error);
-      toast.error("Failed to sync scans");
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp]);
+        setScans(cachedScans);
+        setLastSyncTimestamp(new Date());
+
+        // Only show success toast for manual sync
+        if (manual) {
+          toast.success("Scans synced successfully");
+        }
+      } catch (error) {
+        console.error("Failed to sync scans:", error);
+        // Always show error toast
+        toast.error("Failed to sync scans");
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp],
+  );
 
   // Auto-sync on mount when hydrated
   useEffect(() => {

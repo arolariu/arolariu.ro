@@ -121,7 +121,7 @@ export default function ScansHeader(): React.JSX.Element {
               render={
                 <Button
                   variant='outline'
-                  onClick={syncScans}
+                  onClick={() => syncScans(true)}
                   disabled={isSyncing}
                   className={styles["outlineButton"]}>
                   <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />

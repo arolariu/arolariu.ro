@@ -1532,7 +1532,13 @@
           "nextStepsDescription": "Review your invoice, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
           "nextStepsDescriptionPlural": "Review your invoices, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
           "viewButton": "View Invoice",
-          "viewButtonPlural": "View Invoices"
+          "viewButtonPlural": "View Invoices",
+          "failureTitle": "Creation Failed",
+          "failureDescription": "We couldn't create any invoices. Please review the errors below and try again.",
+          "partialTitle": "{created} of {total} Invoices Created",
+          "partialDescription": "Some scans couldn't be processed. Successfully created invoices are ready for viewing.",
+          "errorsLabel": "Failed Scans:",
+          "retryButton": "Try Again"
         },
         "errors": {
           "partialFail": "Failed to create {count} invoice(s)",
@@ -1546,8 +1552,9 @@
         "description": "Create invoices from all {count} scans at once"
       },
       "groupBanner": {
-        "combine": "Create Invoice →",
-        "title": "{count} scans uploaded together — combine?",
+        "title": "These {count} scans were uploaded together",
+        "subtitle": "Create an invoice from these scans?",
+        "createInvoice": "Create Invoice",
         "dismiss": "Dismiss"
       }
     },
@@ -1821,6 +1828,11 @@
             "csv": "CSV",
             "json": "JSON",
             "pdf": "PDF"
+          },
+          "descriptions": {
+            "json": "Structured data format",
+            "csv": "Spreadsheet format, compatible with Excel",
+            "pdf": "Printable document format"
           }
         },
         "options": {
@@ -1839,7 +1851,16 @@
         },
         "buttons": {
           "cancel": "Cancel",
-          "export": "Export"
+          "export": "Export",
+          "copy": "Copy to Clipboard",
+          "copied": "Copied!"
+        },
+        "filename": {
+          "hint": "The file will be saved with the extension based on format",
+          "label": "Filename"
+        },
+        "estimate": {
+          "label": "Estimated file size:"
         }
       },
       "importDialog": {
@@ -3514,7 +3535,10 @@
       "steps": {
         "selectScans": "Select Scans",
         "details": "Invoice Details",
-        "review": "Review & Create"
+        "review": "Review & Create",
+        "selectScansDesc": "Choose receipt scans",
+        "detailsDesc": "Fill in invoice info",
+        "reviewDesc": "Confirm and create"
       },
       "scanSelector": {
         "title": "Select Scans",

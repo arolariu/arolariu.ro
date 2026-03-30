@@ -245,26 +245,26 @@ function UploadContent(): React.JSX.Element {
               <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
               <p className={styles["headerDescription"]}>{t("header.description")}</p>
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className={styles["infoButton"]}>
-                      <TbInfoCircle className={styles["infoIcon"]} />
-                    </Button>
-                  }
-                />
-                <TooltipContent
-                  side='right'
-                  className={styles["tooltipContent"]}>
-                  <p>{t("header.tooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={styles["infoButton"]}>
+                    <TbInfoCircle className={styles["infoIcon"]} />
+                  </Button>
+                }
+              />
+              <TooltipContent
+                side='right'
+                className={styles["tooltipContent"]}>
+                <p>{t("header.tooltip")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <div className={styles["headerActions"]}>
             <TooltipProvider>

@@ -50,8 +50,11 @@ export default function ScansGrid(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
 
+  // Filter out invalid scans
+  const validScans = scans.filter((s) => s.id && (s.blobUrl || s.name));
+
   // Show loading state
-  if (!hasHydrated || (isSyncing && scans.length === 0)) {
+  if (!hasHydrated || (isSyncing && validScans.length === 0)) {
     return (
       <div className={styles["scansGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
@@ -70,7 +73,7 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   // Show empty state
-  if (scans.length === 0) {
+  if (validScans.length === 0) {
     return (
       <EmptyState
         icon={<TbCamera className={styles["emptyIcon"]} />}
@@ -93,7 +96,7 @@ export default function ScansGrid(): React.JSX.Element {
       className={styles["scansGrid"]}
       staggerDelay={0.05}>
       <AnimatePresence mode='popLayout'>
-        {scans.map((scan) => (
+        {validScans.map((scan) => (
           <motion.div
             key={scan.id}
             layout

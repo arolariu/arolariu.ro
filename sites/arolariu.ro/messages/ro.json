@@ -1532,7 +1532,13 @@
           "nextStepsDescription": "Revizuiți factura, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
           "nextStepsDescriptionPlural": "Revizuiți facturile, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
           "viewButton": "Vizualizați Factura",
-          "viewButtonPlural": "Vizualizați Facturile"
+          "viewButtonPlural": "Vizualizați Facturile",
+          "failureTitle": "Creare Eșuată",
+          "failureDescription": "Nu am putut crea nicio factură. Vă rugăm să revedeți erorile de mai jos și să încercați din nou.",
+          "partialTitle": "{created} din {total} Facturi Create",
+          "partialDescription": "Unele scanări nu au putut fi procesate. Facturile create cu succes sunt gata pentru vizualizare.",
+          "errorsLabel": "Scanări Eșuate:",
+          "retryButton": "Încearcă Din Nou"
         },
         "errors": {
           "partialFail": "Nu s-au putut crea {count} facturi",
@@ -1546,9 +1552,10 @@
         "description": "Creează facturi din toate cele {count} scanări deodată"
       },
       "groupBanner": {
-        "combine": "Creează Factură →",
-        "title": "{count} scanări încărcate împreună — combinați?",
-        "dismiss": "Închide"
+        "title": "Aceste {count} scanări au fost încărcate împreună",
+        "subtitle": "Creați o factură din aceste scanări?",
+        "createInvoice": "Creează Factură",
+        "dismiss": "Renunță"
       }
     },
     "ViewInvoices": {
@@ -1821,6 +1828,11 @@
             "csv": "CSV",
             "json": "JSON",
             "pdf": "PDF"
+          },
+          "descriptions": {
+            "json": "Format de date structurate",
+            "pdf": "Format document imprimabil",
+            "csv": "Format de foaie de calcul, compatibil cu Excel"
           }
         },
         "options": {
@@ -1839,7 +1851,16 @@
         },
         "buttons": {
           "cancel": "Anulează",
-          "export": "Exportă"
+          "export": "Exportă",
+          "copy": "Copiază în Clipboard",
+          "copied": "Copiat!"
+        },
+        "filename": {
+          "hint": "Fișierul va fi salvat cu extensia bazată pe format",
+          "label": "Nume fișier"
+        },
+        "estimate": {
+          "label": "Dimensiune estimată fișier:"
         }
       },
       "importDialog": {
@@ -3514,7 +3535,10 @@
       "steps": {
         "selectScans": "Select Scans",
         "details": "Invoice Details",
-        "review": "Review & Create"
+        "review": "Review & Create",
+        "selectScansDesc": "Alege scanările",
+        "detailsDesc": "Completează detalii",
+        "reviewDesc": "Confirmă și creează"
       },
       "scanSelector": {
         "title": "Select Scans",

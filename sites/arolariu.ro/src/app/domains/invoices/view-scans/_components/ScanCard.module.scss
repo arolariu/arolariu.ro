@@ -87,12 +87,12 @@
 // ===========================================
 .actionsPosition {
   position: absolute;
-  top: space(2);
+  bottom: space(2);
   right: space(2);
 
   // Larger touch target on mobile (min 44px)
   @include respond-below('md') {
-    top: space(3);
+    bottom: space(3);
     right: space(3);
   }
 
@@ -260,6 +260,26 @@
 
 .previewImage {
   object-fit: contain;
+}
+
+.pdfPreviewContainer {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  border-radius: radius('lg');
+  overflow: hidden;
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.pdfPreview {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: radius('md');
 }
 
 // ===========================================
