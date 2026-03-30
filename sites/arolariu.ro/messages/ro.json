@@ -48,9 +48,9 @@
     "sourceCodeAnchor": "aici (GitHub)",
     "subtitle": "Platforma este construită folosind cele mai recente tehnologii stabile, de ultimă generație și cu experiență de nivel enterprise. \n<br></br> <br></br> Sperăm că aveți o experiență grozavă când explorați această platformă.",
     "accessibility": {
-      "goHome": "Go home",
+      "goHome": "Pagina principală",
       "brandTitle": "AROLARIU.RO",
-      "logoAlt": "The arolariu.ro logo."
+      "logoAlt": "Logo-ul arolariu.ro."
     }
   },
   "Commander": {
@@ -639,7 +639,7 @@
           "viewSource": "Vezi codul sursă"
         },
         "trust": {
-          "openSource": "Open Source",
+          "openSource": "Sursă Deschisă",
           "privacyFirst": "Confidențialitate în prim-plan",
           "freeForever": "Gratuit pentru totdeauna"
         },
@@ -969,7 +969,7 @@
             "value": "5",
             "suffix": "+",
             "label": "Contribuitori",
-            "description": "Open source"
+            "description": "Sursă deschisă"
           }
         }
       },
@@ -1056,7 +1056,7 @@
         },
         "trust": {
           "openSource": {
-            "title": "Open Source",
+            "title": "Sursă Deschisă",
             "description": "100% open source cu licență MIT"
           },
           "privacyFirst": {
@@ -1390,11 +1390,11 @@
         "retryAttempt": "Reîncercarea {attempt}"
       },
       "postUpload": {
-        "title": "Upload Complete!",
-        "subtitle": "Do these scans represent a single purchase?",
-        "createInvoice": "Yes, create invoice",
-        "viewScans": "No, I'll combine later",
-        "dismiss": "Dismiss"
+        "title": "Încărcare finalizată!",
+        "subtitle": "Aceste scanări reprezintă o singură achiziție?",
+        "createInvoice": "Da, creează factura",
+        "viewScans": "Nu, le voi combina mai târziu",
+        "dismiss": "Închide"
       }
     },
     "ViewScans": {
@@ -1485,7 +1485,8 @@
         "rename": "Redenumește scanarea",
         "renamePlaceholder": "Introduceți un nume nou",
         "preview": "Previzualizare scanare",
-        "previewTitle": "Previzualizare Scanare"
+        "previewTitle": "Previzualizare Scanare",
+        "loading": "Se încarcă..."
       },
       "createInvoiceDialog": {
         "title": "Creați Factură",
@@ -1596,26 +1597,26 @@
         "filters": {
           "category": "Categorie",
           "timeOfDay": "Momentul zilei",
-          "categories": "Categories",
-          "paymentTypes": "Payment Types",
-          "dateRange": "Date Range",
-          "dateFrom": "From date",
-          "dateTo": "To date",
-          "amountRange": "Amount Range",
-          "amountMin": "Min amount",
-          "amountMax": "Max amount",
-          "sortBy": "Sort By",
+          "categories": "Categorii",
+          "paymentTypes": "Tipuri de plată",
+          "dateRange": "Interval de date",
+          "dateFrom": "De la data",
+          "dateTo": "Până la data",
+          "amountRange": "Interval de sumă",
+          "amountMin": "Sumă minimă",
+          "amountMax": "Sumă maximă",
+          "sortBy": "Sortare după",
           "sortOptions": {
-            "dateNewest": "Date (newest first)",
-            "dateOldest": "Date (oldest first)",
-            "amountHighToLow": "Amount (high to low)",
-            "amountLowToHigh": "Amount (low to high)",
-            "nameAZ": "Name (A-Z)",
-            "nameZA": "Name (Z-A)"
+            "dateNewest": "Dată (cele mai recente)",
+            "dateOldest": "Dată (cele mai vechi)",
+            "amountHighToLow": "Sumă (descrescător)",
+            "amountLowToHigh": "Sumă (crescător)",
+            "nameAZ": "Nume (A-Z)",
+            "nameZA": "Nume (Z-A)"
           },
-          "title": "Filters",
-          "button": "Filters",
-          "clear": "Clear all",
+          "title": "Filtre",
+          "button": "Filtre",
+          "clear": "Șterge tot",
           "activeCount": "{count} active"
         },
         "categories": {
@@ -1682,11 +1683,11 @@
             "description": "Urmăriți tendințele cheltuielilor"
           },
           "categoryBreakdown": {
-            "title": "Spending by Category",
-            "description": "Distribution across categories",
-            "totalLabel": "Total Spending",
+            "title": "Cheltuieli pe categorii",
+            "description": "Distribuție pe categorii",
+            "totalLabel": "Cheltuieli totale",
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} facturi"
             }
           },
           "currencyDistribution": {
@@ -1739,23 +1740,23 @@
             "empty": "Nu există date de vizite încă"
           },
           "priceDistribution": {
-            "title": "Price Distribution",
-            "description": "Item price distribution",
+            "title": "Distribuția prețurilor",
+            "description": "Distribuția prețurilor produselor",
             "labels": {
-              "itemCount": "Item Count"
+              "itemCount": "Număr de produse"
             },
             "tooltip": {
-              "itemCount": "{count} items"
+              "itemCount": "{count} produse"
             }
           },
           "timeOfDay": {
-            "title": "Shopping Patterns",
-            "description": "When you shop",
+            "title": "Obiceiuri de cumpărare",
+            "description": "Când faceți cumpărături",
             "labels": {
-              "invoiceCount": "Invoice Count"
+              "invoiceCount": "Număr de facturi"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} facturi"
             }
           },
           "productCategory": {
@@ -1792,31 +1793,31 @@
           }
         },
         "kpi": {
-          "totalSpending": "Total Spending",
-          "invoiceCount": "Invoice Count",
-          "topMerchant": "Top Merchant",
-          "averageItems": "Avg. Items",
-          "vsLastMonth": "{delta}% vs last month",
-          "avgPerInvoice": "avg {amount} per invoice",
-          "visits": "{count} visits",
-          "acrossInvoices": "across {count} invoices",
-          "noneYet": "No data yet"
+          "totalSpending": "Cheltuieli totale",
+          "invoiceCount": "Număr de facturi",
+          "topMerchant": "Comerciant principal",
+          "averageItems": "Med. produse",
+          "vsLastMonth": "{delta}% față de luna trecută",
+          "avgPerInvoice": "medie {amount} per factură",
+          "visits": "{count} vizite",
+          "acrossInvoices": "din {count} facturi",
+          "noneYet": "Niciun rezultat încă"
         },
         "comparison": {
-          "title": "Month-over-Month",
-          "description": "Comparison with previous month",
-          "spendingDelta": "Spending Change",
-          "invoiceCount": "Invoice Count",
-          "newMerchants": "New Merchants",
-          "discovered": "discovered",
-          "none": "none",
-          "increase": "increase",
-          "decrease": "decrease"
+          "title": "Lună de lună",
+          "description": "Comparație cu luna anterioară",
+          "spendingDelta": "Variația cheltuielilor",
+          "invoiceCount": "Număr de facturi",
+          "newMerchants": "Comercianți noi",
+          "discovered": "descoperiți",
+          "none": "niciunul",
+          "increase": "creștere",
+          "decrease": "scădere"
         },
         "empty": {
-          "title": "No Statistics Yet",
-          "subtitle": "Upload receipts to see analytics",
-          "cta": "Upload Receipt"
+          "title": "Nicio statistică încă",
+          "subtitle": "Încărcați bonuri pentru a vedea statisticile",
+          "cta": "Încarcă bon"
         },
         "productAnalytics": {
           "title": "Analiză Produse",
@@ -2140,11 +2141,11 @@
           "category": "Categorie",
           "payment": "Plată",
           "totalAmount": "Suma totală",
-          "receiptType": "Receipt Type",
-          "countryRegion": "Country/Region",
+          "receiptType": "Tip bon",
+          "countryRegion": "Țară/Regiune",
           "subtotal": "Subtotal",
-          "tip": "Tip",
-          "ronEquivalent": "RON Equivalent"
+          "tip": "Bacșiș",
+          "ronEquivalent": "Echivalent RON"
         },
         "itemsTitle": "Articole ({count})",
         "table": {
@@ -2161,15 +2162,15 @@
           "next": "Următor"
         },
         "tooltips": {
-          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (medie {year})"
         },
         "sections": {
-          "paymentMethods": "Payment Methods",
-          "taxBreakdown": "Tax Breakdown"
+          "paymentMethods": "Metode de plată",
+          "taxBreakdown": "Detalii taxe"
         },
         "taxLabels": {
           "net": "Net",
-          "tax": "Tax"
+          "tax": "Taxă"
         }
       },
       "merchantInfoCard": {
@@ -2650,30 +2651,30 @@
         }
       },
       "itemAnalytics": {
-        "title": "Items",
-        "searchPlaceholder": "Search items...",
+        "title": "Produse",
+        "searchPlaceholder": "Caută produse...",
         "columns": {
-          "name": "Name",
-          "category": "Category",
-          "price": "Price",
-          "quantity": "Qty",
+          "name": "Nume",
+          "category": "Categorie",
+          "price": "Preț",
+          "quantity": "Cant.",
           "total": "Total"
         },
         "summary": {
-          "title": "Summary",
-          "mostExpensive": "Most expensive",
-          "cheapest": "Cheapest",
-          "categories": "{count} categories",
-          "allergens": "{count} allergens detected"
+          "title": "Rezumat",
+          "mostExpensive": "Cel mai scump",
+          "cheapest": "Cel mai ieftin",
+          "categories": "{count} categorii",
+          "allergens": "{count} alergeni detectați"
         },
         "empty": {
-          "title": "No items",
-          "subtitle": "Run AI analysis to extract items from your receipt"
+          "title": "Niciun produs",
+          "subtitle": "Rulați analiza AI pentru a extrage produsele din bon"
         },
         "totalLabel": "TOTAL",
         "confidence": {
-          "label": "OCR Confidence",
-          "lowWarning": "Low confidence — consider reviewing this item"
+          "label": "Încredere OCR",
+          "lowWarning": "Încredere scăzută — verificați acest produs"
         }
       },
       "analysisPanel": {
@@ -2895,7 +2896,7 @@
           "additionalLabel": "Ingrediente suplimentare:"
         },
         "timing": {
-          "prepLabel": "Prep: {minutes}′",
+          "prepLabel": "Pregătire: {minutes}′",
           "prepTooltip": "Timpul de pregătire este de {minutes} minute.",
           "cookLabel": "Gătire: {minutes}′",
           "cookTooltip": "Timpul de gătire este de {minutes} minute."
@@ -3822,124 +3823,124 @@
     },
     "CreateInvoice": {
       "metadata": {
-        "title": "Invoice Management System - Create Invoice",
-        "description": "Create a new invoice from your uploaded scans."
+        "title": "Sistem de gestionare a facturilor - Creare factură",
+        "description": "Creați o factură nouă din scanările încărcate."
       },
       "navigation": {
-        "back": "Back",
-        "next": "Next"
+        "back": "Înapoi",
+        "next": "Înainte"
       },
       "emptyState": {
-        "title": "No Scans Available",
-        "description": "Upload some receipt scans first to create an invoice.",
-        "uploadButton": "Upload Scans",
-        "viewScansButton": "View Scans"
+        "title": "Nicio scanare disponibilă",
+        "description": "Încărcați mai întâi câteva scanări de bonuri pentru a crea o factură.",
+        "uploadButton": "Încarcă scanări",
+        "viewScansButton": "Vezi scanările"
       },
       "header": {
-        "backToInvoices": "Back to Invoices",
-        "title": "Create Invoice",
-        "subtitle": "Follow the steps below to create a new invoice from your scans"
+        "backToInvoices": "Înapoi la facturi",
+        "title": "Creare factură",
+        "subtitle": "Urmați pașii de mai jos pentru a crea o factură nouă din scanările dvs."
       },
       "steps": {
-        "selectScans": "Select Scans",
-        "details": "Invoice Details",
-        "review": "Review & Create",
+        "selectScans": "Selectare scanări",
+        "details": "Detalii factură",
+        "review": "Verificare și creare",
         "selectScansDesc": "Alege scanările",
         "detailsDesc": "Completează detalii",
         "reviewDesc": "Confirmă și creează"
       },
       "scanSelector": {
-        "title": "Select Scans",
-        "subtitle": "Choose the scans that belong to this invoice",
-        "selectedCount": "{count} selected",
-        "clearAll": "Clear",
-        "selectAll": "Select All",
-        "noScans": "No scans available"
+        "title": "Selectare scanări",
+        "subtitle": "Alegeți scanările care aparțin acestei facturi",
+        "selectedCount": "{count} selectate",
+        "clearAll": "Golește",
+        "selectAll": "Selectează tot",
+        "noScans": "Nicio scanare disponibilă"
       },
       "detailsForm": {
-        "title": "Invoice Details",
-        "subtitle": "Provide the details for your new invoice",
+        "title": "Detalii factură",
+        "subtitle": "Completați detaliile pentru factura nouă",
         "scanPreview": {
           "title": "Previzualizare Scanare"
         },
         "fields": {
           "name": {
-            "label": "Invoice Name",
-            "placeholder": "e.g., Weekly Groceries",
-            "hint": "Give your invoice a descriptive name"
+            "label": "Nume factură",
+            "placeholder": "ex., Cumpărături săptămânale",
+            "hint": "Dați facturii un nume descriptiv"
           },
           "category": {
-            "label": "Category",
-            "placeholder": "Select a category",
+            "label": "Categorie",
+            "placeholder": "Selectați o categorie",
             "options": {
-              "notDefined": "Uncategorized",
-              "grocery": "Grocery",
-              "fastFood": "Dining",
-              "homeCleaning": "Home & Cleaning",
-              "carAuto": "Auto & Vehicle",
-              "other": "Other"
+              "notDefined": "Necategorizat",
+              "grocery": "Alimente",
+              "fastFood": "Restaurante",
+              "homeCleaning": "Casă și curățenie",
+              "carAuto": "Auto și vehicule",
+              "other": "Altele"
             }
           },
           "paymentType": {
-            "label": "Payment Method",
-            "placeholder": "Select payment method",
+            "label": "Metodă de plată",
+            "placeholder": "Selectați metoda de plată",
             "options": {
-              "unknown": "Unknown",
-              "cash": "Cash",
+              "unknown": "Necunoscut",
+              "cash": "Numerar",
               "card": "Card",
-              "transfer": "Bank Transfer",
-              "mobilePayment": "Mobile Payment",
+              "transfer": "Transfer bancar",
+              "mobilePayment": "Plată mobilă",
               "voucher": "Voucher",
-              "other": "Other"
+              "other": "Altele"
             }
           },
           "transactionDate": {
-            "label": "Transaction Date"
+            "label": "Data tranzacției"
           },
           "description": {
-            "label": "Description",
-            "placeholder": "Add any notes about this invoice (optional)",
-            "hint": "Optional notes about this purchase"
+            "label": "Descriere",
+            "placeholder": "Adăugați orice notițe despre această factură (opțional)",
+            "hint": "Note opționale despre această achiziție"
           }
         }
       },
       "reviewStep": {
-        "title": "Review & Create",
-        "subtitle": "Review your invoice details before creating",
+        "title": "Verificare și creare",
+        "subtitle": "Verificați detaliile facturii înainte de creare",
         "categories": {
-          "notDefined": "Uncategorized",
-          "grocery": "Grocery",
-          "fastFood": "Dining",
-          "homeCleaning": "Home & Cleaning",
-          "carAuto": "Auto & Vehicle",
-          "other": "Other"
+          "notDefined": "Necategorizat",
+          "grocery": "Alimente",
+          "fastFood": "Restaurante",
+          "homeCleaning": "Casă și curățenie",
+          "carAuto": "Auto și vehicule",
+          "other": "Altele"
         },
         "paymentTypes": {
-          "unknown": "Unknown",
-          "cash": "Cash",
+          "unknown": "Necunoscut",
+          "cash": "Numerar",
           "card": "Card",
-          "transfer": "Bank Transfer",
-          "mobilePayment": "Mobile Payment",
+          "transfer": "Transfer bancar",
+          "mobilePayment": "Plată mobilă",
           "voucher": "Voucher",
-          "other": "Other"
+          "other": "Altele"
         },
         "sections": {
           "scans": {
-            "title": "Scans"
+            "title": "Scanări"
           },
           "details": {
-            "title": "Invoice Details",
-            "name": "Name",
-            "category": "Category",
-            "paymentType": "Payment Method",
-            "transactionDate": "Transaction Date",
-            "description": "Description"
+            "title": "Detalii factură",
+            "name": "Nume",
+            "category": "Categorie",
+            "paymentType": "Metodă de plată",
+            "transactionDate": "Data tranzacției",
+            "description": "Descriere"
           }
         },
         "actions": {
-          "creating": "Creating invoice...",
-          "create": "Create Invoice",
-          "hint": "This will create the invoice and upload the selected scans."
+          "creating": "Se creează factura...",
+          "create": "Creează factură",
+          "hint": "Factura va fi creată și scanările selectate vor fi încărcate."
         }
       }
     }
@@ -4468,7 +4469,7 @@
       "title": "Mulțumiri"
     },
     "hero": {
-      "badge": "Open Source",
+      "badge": "Sursă Deschisă",
       "title": "Mulțumiri",
       "subtitle": "Această platformă este construită pe umerii unor proiecte open-source incredibile. Suntem recunoscători întreținătorilor și contributorilor care își fac munca disponibilă gratuit.",
       "lastUpdate": "Ultima actualizare: {date}"
@@ -4563,7 +4564,7 @@
       "card": {
         "license": "Licență:",
         "dependencies": "Dependențe:",
-        "website": "Website",
+        "website": "Site web",
         "viewDependencies": "Vezi dependențele"
       },
       "table": {
@@ -4573,7 +4574,7 @@
         "description": "Descriere",
         "license": "Licență",
         "dependencies": "Dependențe",
-        "website": "Website"
+        "website": "Site web"
       },
       "dialog": {
         "dependencies": "Dependențele {name}",

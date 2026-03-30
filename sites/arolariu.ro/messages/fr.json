@@ -48,9 +48,9 @@
     "sourceCodeAnchor": "ici (dépôt GitHub)",
     "subtitle": "La plateforme est construite en utilisant les dernières technologies stables et de pointe avec une expérience de niveau entreprise. <br></br> <br></br> Nous espérons que vous aurez une excellente expérience en explorant cette plateforme.",
     "accessibility": {
-      "goHome": "Go home",
+      "goHome": "Aller à l'accueil",
       "brandTitle": "AROLARIU.RO",
-      "logoAlt": "The arolariu.ro logo."
+      "logoAlt": "Le logo d'arolariu.ro."
     }
   },
   "Commander": {
@@ -1390,11 +1390,11 @@
         "retryAttempt": "Nouvelle tentative {attempt}"
       },
       "postUpload": {
-        "title": "Upload Complete!",
-        "subtitle": "Do these scans represent a single purchase?",
-        "createInvoice": "Yes, create invoice",
-        "viewScans": "No, I'll combine later",
-        "dismiss": "Dismiss"
+        "title": "Téléchargement terminé !",
+        "subtitle": "Ces numérisations représentent-elles un seul achat ?",
+        "createInvoice": "Oui, créer une facture",
+        "viewScans": "Non, je les combinerai plus tard",
+        "dismiss": "Fermer"
       }
     },
     "ViewScans": {
@@ -1548,15 +1548,15 @@
         }
       },
       "createFromAll": {
-        "button": "Create from All Scans",
-        "title": "All scans are ready!",
-        "description": "Create invoices from all {count} scans at once"
+        "button": "Créer à partir de toutes les numérisations",
+        "title": "Toutes les numérisations sont prêtes !",
+        "description": "Créer des factures à partir de l'ensemble des {count} numérisations"
       },
       "groupBanner": {
         "title": "{count} scans uploaded together — combine?",
-        "subtitle": "Create an invoice from these scans?",
-        "createInvoice": "Create Invoice",
-        "dismiss": "Dismiss"
+        "subtitle": "Créer une facture à partir de ces numérisations ?",
+        "createInvoice": "Créer une facture",
+        "dismiss": "Fermer"
       }
     },
     "ViewInvoices": {
@@ -1597,27 +1597,27 @@
         "filters": {
           "category": "Catégorie",
           "timeOfDay": "Moment de la journée",
-          "categories": "Categories",
-          "paymentTypes": "Payment Types",
-          "dateRange": "Date Range",
-          "dateFrom": "From date",
-          "dateTo": "To date",
-          "amountRange": "Amount Range",
-          "amountMin": "Min amount",
-          "amountMax": "Max amount",
-          "sortBy": "Sort By",
+          "categories": "Catégories",
+          "paymentTypes": "Types de paiement",
+          "dateRange": "Plage de dates",
+          "dateFrom": "Date de début",
+          "dateTo": "Date de fin",
+          "amountRange": "Plage de montants",
+          "amountMin": "Montant min.",
+          "amountMax": "Montant max.",
+          "sortBy": "Trier par",
           "sortOptions": {
-            "dateNewest": "Date (newest first)",
-            "dateOldest": "Date (oldest first)",
-            "amountHighToLow": "Amount (high to low)",
-            "amountLowToHigh": "Amount (low to high)",
-            "nameAZ": "Name (A-Z)",
-            "nameZA": "Name (Z-A)"
+            "dateNewest": "Date (plus récente)",
+            "dateOldest": "Date (plus ancienne)",
+            "amountHighToLow": "Montant (décroissant)",
+            "amountLowToHigh": "Montant (croissant)",
+            "nameAZ": "Nom (A-Z)",
+            "nameZA": "Nom (Z-A)"
           },
-          "title": "Filters",
-          "button": "Filters",
-          "clear": "Clear all",
-          "activeCount": "{count} active"
+          "title": "Filtres",
+          "button": "Filtres",
+          "clear": "Tout effacer",
+          "activeCount": "{count} actifs"
         },
         "categories": {
           "all": "Toutes les catégories",
@@ -1645,31 +1645,31 @@
         "charts": {
           "calendarHeatmap": {
             "days": {
-              "wed": "Wed",
-              "thu": "Thu",
-              "fri": "Fri",
-              "sun": "Sun",
-              "mon": "Mon",
-              "sat": "Sat",
-              "tue": "Tue"
+              "wed": "Mer",
+              "thu": "Jeu",
+              "fri": "Ven",
+              "sun": "Dim",
+              "mon": "Lun",
+              "sat": "Sam",
+              "tue": "Mar"
             },
             "tooltip": {
-              "noSpending": "No spending",
-              "amount": "Spent",
-              "invoices": "{count} invoices"
+              "noSpending": "Aucune dépense",
+              "amount": "Dépensé",
+              "invoices": "{count} factures"
             },
             "legend": {
-              "less": "Less",
-              "more": "More"
+              "less": "Moins",
+              "more": "Plus"
             },
-            "title": "Spending Calendar",
-            "description": "Daily spending intensity over time",
+            "title": "Calendrier des dépenses",
+            "description": "Intensité des dépenses quotidiennes au fil du temps",
             "navigation": {
-              "previous": "Previous month",
-              "next": "Next month"
+              "previous": "Mois précédent",
+              "next": "Mois suivant"
             },
             "aria": {
-              "calendarGrid": "Daily spending calendar"
+              "calendarGrid": "Calendrier des dépenses quotidiennes"
             }
           },
           "spendingOverTime": {
@@ -1683,145 +1683,145 @@
             "description": ""
           },
           "categoryBreakdown": {
-            "title": "Spending by Category",
-            "description": "Distribution across categories",
-            "totalLabel": "Total Spending",
+            "title": "Dépenses par catégorie",
+            "description": "Répartition par catégories",
+            "totalLabel": "Dépenses totales",
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} factures"
             }
           },
           "merchantLeaderboard": {
-            "title": "Top Merchants",
-            "description": "Where you spend most",
+            "title": "Principaux commerçants",
+            "description": "Où vous dépensez le plus",
             "labels": {
-              "totalSpent": "Total Spent"
+              "totalSpent": "Total dépensé"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} factures"
             }
           },
           "priceDistribution": {
-            "title": "Price Distribution",
-            "description": "Item price distribution",
+            "title": "Distribution des prix",
+            "description": "Distribution des prix des articles",
             "labels": {
-              "itemCount": "Item Count"
+              "itemCount": "Nombre d'articles"
             },
             "tooltip": {
-              "itemCount": "{count} items"
+              "itemCount": "{count} articles"
             }
           },
           "timeOfDay": {
-            "title": "Shopping Patterns",
-            "description": "When you shop",
+            "title": "Habitudes d'achat",
+            "description": "Quand vous faites vos achats",
             "labels": {
-              "invoiceCount": "Invoice Count"
+              "invoiceCount": "Nombre de factures"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} factures"
             }
           },
           "currencyDistribution": {
-            "title": "Currency Distribution",
-            "description": "Spending breakdown by currency with RON conversion",
-            "toggleLabel": "Toggle currency view",
-            "showOriginal": "Show Original",
-            "showRON": "Show RON",
-            "singleCurrency": "All invoices in {currency} ({symbol})",
-            "invoiceCount": "{count} invoices",
+            "title": "Répartition par devise",
+            "description": "Répartition des dépenses par devise avec conversion en RON",
+            "toggleLabel": "Basculer la vue des devises",
+            "showOriginal": "Afficher l'original",
+            "showRON": "Afficher en RON",
+            "singleCurrency": "Toutes les factures en {currency} ({symbol})",
+            "invoiceCount": "{count} factures",
             "originalAmount": "Original",
-            "ronEquivalent": "RON equivalent",
-            "totalAmount": "Total Amount",
-            "totalCurrencies": "Total Currencies",
-            "totalSpending": "Total Spending"
+            "ronEquivalent": "Équivalent RON",
+            "totalAmount": "Montant total",
+            "totalCurrencies": "Total des devises",
+            "totalSpending": "Dépenses totales"
           },
           "merchantTrends": {
-            "title": "Merchant Spending Trends",
-            "description": "Monthly spending patterns for top merchants",
+            "title": "Tendances de dépenses par commerçant",
+            "description": "Évolution mensuelle des dépenses chez les principaux commerçants",
             "labels": {
-              "merchant": "Merchant",
-              "totalSpend": "Total Spend",
-              "trend": "Trend (Last 6 Months)"
+              "merchant": "Commerçant",
+              "totalSpend": "Total dépensé",
+              "trend": "Tendance (6 derniers mois)"
             },
             "aria": {
-              "sparkline": "Spending trend for {merchant}"
+              "sparkline": "Tendance des dépenses pour {merchant}"
             },
-            "empty": "No merchant data available yet"
+            "empty": "Aucune donnée de commerçant disponible"
           },
           "merchantVisit": {
-            "title": "Merchant Visit Patterns",
-            "description": "Shopping frequency and basket insights",
+            "title": "Fréquentation des commerçants",
+            "description": "Fréquence d'achat et aperçu du panier",
             "metrics": {
-              "totalVisits": "Total Visits",
-              "visitsPerMonth": "Visits/Month",
-              "basketSize": "Avg Basket",
-              "preferredDay": "Preferred Day",
-              "avgSpend": "Avg Spend/Visit"
+              "totalVisits": "Visites totales",
+              "visitsPerMonth": "Visites/mois",
+              "basketSize": "Panier moyen",
+              "preferredDay": "Jour préféré",
+              "avgSpend": "Dépense moy./visite"
             },
-            "empty": "No visit data available yet"
+            "empty": "Aucune donnée de visite disponible"
           },
           "productCategory": {
-            "description": "Spending breakdown by product type",
+            "description": "Répartition des dépenses par type de produit",
             "tooltip": {
-              "productCount": "{count} products"
+              "productCount": "{count} produits"
             },
-            "title": "Product Category Spending",
-            "empty": "No products to analyze yet"
+            "title": "Dépenses par catégorie de produit",
+            "empty": "Aucun produit à analyser pour le moment"
           },
           "topProducts": {
-            "ariaLabel": "Top products leaderboard",
-            "description": "Most purchased items",
+            "ariaLabel": "Classement des produits les plus achetés",
+            "description": "Articles les plus achetés",
             "headers": {
               "rank": "#",
-              "avgPrice": "Avg Price",
-              "quantity": "Qty",
-              "purchases": "Purchases",
-              "product": "Product",
+              "avgPrice": "Prix moyen",
+              "quantity": "Qté",
+              "purchases": "Achats",
+              "product": "Produit",
               "totalSpent": "Total"
             },
-            "title": "Top Products",
-            "empty": "No products purchased yet"
+            "title": "Produits principaux",
+            "empty": "Aucun produit acheté pour le moment"
           },
           "allergenSummary": {
-            "ariaLabel": "Allergen frequency summary",
-            "description": "Allergen exposure across products",
+            "ariaLabel": "Résumé de la fréquence des allergènes",
+            "description": "Exposition aux allergènes dans vos produits",
             "stats": {
-              "products": "products",
-              "ofTotal": "of total"
+              "products": "produits",
+              "ofTotal": "du total"
             },
-            "title": "Allergen Summary",
-            "empty": "No allergens detected in your purchases"
+            "title": "Résumé des allergènes",
+            "empty": "Aucun allergène détecté dans vos achats"
           }
         },
         "kpi": {
-          "totalSpending": "Total Spending",
-          "invoiceCount": "Invoice Count",
-          "topMerchant": "Top Merchant",
-          "averageItems": "Avg. Items",
-          "vsLastMonth": "{delta}% vs last month",
-          "avgPerInvoice": "avg {amount} per invoice",
-          "visits": "{count} visits",
-          "acrossInvoices": "across {count} invoices",
-          "noneYet": "No data yet"
+          "totalSpending": "Dépenses totales",
+          "invoiceCount": "Nombre de factures",
+          "topMerchant": "Commerçant principal",
+          "averageItems": "Articles moy.",
+          "vsLastMonth": "{delta}% par rapport au mois dernier",
+          "avgPerInvoice": "moy. {amount} par facture",
+          "visits": "{count} visites",
+          "acrossInvoices": "sur {count} factures",
+          "noneYet": "Pas encore de données"
         },
         "comparison": {
-          "title": "Month-over-Month",
-          "description": "Comparison with previous month",
-          "spendingDelta": "Spending Change",
-          "invoiceCount": "Invoice Count",
-          "newMerchants": "New Merchants",
-          "discovered": "discovered",
-          "none": "none",
-          "increase": "increase",
-          "decrease": "decrease"
+          "title": "Mois par mois",
+          "description": "Comparaison avec le mois précédent",
+          "spendingDelta": "Variation des dépenses",
+          "invoiceCount": "Nombre de factures",
+          "newMerchants": "Nouveaux commerçants",
+          "discovered": "découverts",
+          "none": "aucun",
+          "increase": "augmentation",
+          "decrease": "diminution"
         },
         "empty": {
-          "title": "No Statistics Yet",
-          "subtitle": "Upload receipts to see analytics",
-          "cta": "Upload Receipt"
+          "title": "Pas encore de statistiques",
+          "subtitle": "Téléchargez des reçus pour voir les analyses",
+          "cta": "Télécharger un reçu"
         },
         "productAnalytics": {
-          "title": "Product-Level Analytics",
-          "subtitle": "Insights into your purchased items"
+          "title": "Analyse des produits",
+          "subtitle": "Aperçu de vos articles achetés"
         }
       },
       "generativeView": {
@@ -1968,30 +1968,30 @@
         }
       },
       "bulkActions": {
-        "selected": "{count, plural, one {# invoice selected} other {# invoices selected}}",
-        "clearSelection": "Clear selection",
-        "export": "Export",
-        "delete": "Delete",
-        "changeCategory": "Change Category",
+        "selected": "{count, plural, one {# facture sélectionnée} other {# factures sélectionnées}}",
+        "clearSelection": "Effacer la sélection",
+        "export": "Exporter",
+        "delete": "Supprimer",
+        "changeCategory": "Changer de catégorie",
         "deleteConfirm": {
-          "title": "Delete Invoices",
-          "description": "{count, plural, one {Are you sure you want to delete this invoice? This action cannot be undone.} other {Are you sure you want to delete these # invoices? This action cannot be undone.}}",
-          "confirm": "Delete",
-          "cancel": "Cancel"
+          "title": "Supprimer les factures",
+          "description": "{count, plural, one {Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible.} other {Êtes-vous sûr de vouloir supprimer ces # factures ? Cette action est irréversible.}}",
+          "confirm": "Supprimer",
+          "cancel": "Annuler"
         },
-        "deleteSuccess": "{count, plural, one {Invoice deleted successfully} other {# invoices deleted successfully}}",
-        "deleteError": "Failed to delete invoices. Please try again.",
-        "deletePartialSuccess": "{success} invoice(s) deleted, {failed} failed",
-        "categoryChanged": "{count, plural, one {Invoice category updated successfully} other {# invoice categories updated successfully}}",
-        "categoryChangeError": "Failed to update invoice categories. Please try again.",
-        "categoryPartialSuccess": "{success} invoice(s) updated, {failed} failed",
+        "deleteSuccess": "{count, plural, one {Facture supprimée avec succès} other {# factures supprimées avec succès}}",
+        "deleteError": "Échec de la suppression des factures. Veuillez réessayer.",
+        "deletePartialSuccess": "{success} facture(s) supprimée(s), {failed} en échec",
+        "categoryChanged": "{count, plural, one {Catégorie de la facture mise à jour avec succès} other {Catégories de # factures mises à jour avec succès}}",
+        "categoryChangeError": "Échec de la mise à jour des catégories de factures. Veuillez réessayer.",
+        "categoryPartialSuccess": "{success} facture(s) mise(s) à jour, {failed} en échec",
         "categories": {
-          "notDefined": "Not Defined",
-          "grocery": "Groceries",
-          "fastFood": "Fast Food",
-          "homeCleaning": "Home Cleaning",
-          "carAuto": "Car & Auto",
-          "other": "Other"
+          "notDefined": "Non défini",
+          "grocery": "Épicerie",
+          "fastFood": "Restauration rapide",
+          "homeCleaning": "Entretien ménager",
+          "carAuto": "Auto et véhicule",
+          "other": "Autre"
         }
       }
     },
@@ -2021,7 +2021,7 @@
           "duration": "{minutes} min",
           "prepCook": "Prépa : {prep}m • Cuisson : {cook}m",
           "viewRecipe": "Voir Recipe",
-          "ingredients": "Ingredients",
+          "ingredients": "Ingrédients",
           "instructions": "Instructions"
         },
         "empty": {
@@ -2029,9 +2029,9 @@
           "additionalInfo": "Aucune information supplémentaire disponible"
         },
         "actions": {
-          "regenerate": "Regenerate Recipes",
-          "regenerateTooltip": "Re-analyze the invoice to generate new recipe suggestions",
-          "generate": "Generate Recipes"
+          "regenerate": "Régénérer les recettes",
+          "regenerateTooltip": "Réanalyser la facture pour générer de nouvelles suggestions de recettes",
+          "generate": "Générer des recettes"
         }
       },
       "timelineItem": {
@@ -2141,11 +2141,11 @@
           "category": "Catégorie",
           "payment": "Paiement",
           "totalAmount": "Montant total",
-          "receiptType": "Receipt Type",
-          "countryRegion": "Country/Region",
-          "subtotal": "Subtotal",
-          "tip": "Tip",
-          "ronEquivalent": "RON Equivalent"
+          "receiptType": "Type de reçu",
+          "countryRegion": "Pays/Région",
+          "subtotal": "Sous-total",
+          "tip": "Pourboire",
+          "ronEquivalent": "Équivalent RON"
         },
         "itemsTitle": "Articles ({count})",
         "table": {
@@ -2162,27 +2162,27 @@
           "next": "Suivant"
         },
         "tooltips": {
-          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (moy. {year})"
         },
         "sections": {
-          "paymentMethods": "Payment Methods",
-          "taxBreakdown": "Tax Breakdown"
+          "paymentMethods": "Modes de paiement",
+          "taxBreakdown": "Détail des taxes"
         },
         "taxLabels": {
           "net": "Net",
-          "tax": "Tax"
+          "tax": "Taxe"
         }
       },
       "merchantInfoCard": {
         "viewAllReceipts": "Voir tous les reçus",
-        "viewAllInvoices": "View All Invoices",
-        "viewOnMap": "View on Map",
-        "spendingHistory": "Spending History",
-        "categoryDistribution": "Category Distribution",
+        "viewAllInvoices": "Voir toutes les factures",
+        "viewOnMap": "Voir sur la carte",
+        "spendingHistory": "Historique des dépenses",
+        "categoryDistribution": "Répartition par catégorie",
         "stats": {
-          "visits": "visits",
-          "avgSpend": "Avg Spend",
-          "daysAgo": "days ago"
+          "visits": "visites",
+          "avgSpend": "Dépense moyenne",
+          "daysAgo": "il y a quelques jours"
         }
       },
       "receiptScanCard": {
@@ -2203,17 +2203,17 @@
         "titleWithIndex": "Scan du reçu ({current}/{total})",
         "dialogTitleWithIndex": "Image du reçu ({current}/{total})",
         "controls": {
-          "zoomIn": "Zoom In",
-          "zoomOut": "Zoom Out",
-          "reset": "Reset Zoom",
-          "rotate": "Rotate",
-          "download": "Download",
-          "fullScreen": "Full Screen"
+          "zoomIn": "Zoom avant",
+          "zoomOut": "Zoom arrière",
+          "reset": "Réinitialiser le zoom",
+          "rotate": "Pivoter",
+          "download": "Télécharger",
+          "fullScreen": "Plein écran"
         },
         "navigation": {
-          "previous": "Previous",
-          "next": "Next",
-          "of": "of"
+          "previous": "Précédent",
+          "next": "Suivant",
+          "of": "sur"
         }
       },
       "seasonalInsightsCard": {
@@ -2369,7 +2369,7 @@
         "email": {
           "description": "Envoyez les analyses à une adresse e-mail.",
           "label": "E-mail address",
-          "placeholder": "name@example.com",
+          "placeholder": "nom@exemple.com",
           "send": "Envoyer E-mail"
         },
         "toasts": {
@@ -2570,48 +2570,48 @@
         }
       },
       "print": {
-        "generatedOn": "Printed on {date}",
+        "generatedOn": "Imprimé le {date}",
         "page": "Page",
         "labels": {
           "date": "Date",
-          "merchant": "Merchant",
-          "total": "Total Amount",
-          "items": "Items"
+          "merchant": "Commerçant",
+          "total": "Montant total",
+          "items": "Articles"
         }
       },
       "relatedInvoices": {
-        "noRelated": "No related invoices found",
-        "subtitle": "Similar invoices based on merchant, category, or amount",
-        "sameCategory": "Same Category",
-        "viewInvoice": "View",
-        "similarAmount": "Similar Amount",
-        "sameMerchant": "Same Merchant",
-        "title": "Related Invoices"
+        "noRelated": "Aucune facture associée trouvée",
+        "subtitle": "Factures similaires par commerçant, catégorie ou montant",
+        "sameCategory": "Même catégorie",
+        "viewInvoice": "Afficher",
+        "similarAmount": "Montant similaire",
+        "sameMerchant": "Même commerçant",
+        "title": "Factures associées"
       },
       "shareCollaborate": {
-        "title": "Sharing & Collaboration",
-        "private": "Private",
-        "shared": "Shared",
+        "title": "Partage et collaboration",
+        "private": "Privé",
+        "shared": "Partagé",
         "public": "Public",
-        "sharedWith": "Shared with",
-        "copyLink": "Copy Link",
-        "shareEmail": "Share via Email",
-        "manageSharing": "Manage Sharing",
-        "copied": "Link copied to clipboard!",
+        "sharedWith": "Partagé avec",
+        "copyLink": "Copier le lien",
+        "shareEmail": "Partager par e-mail",
+        "manageSharing": "Gérer le partage",
+        "copied": "Lien copié dans le presse-papiers !",
         "activity": {
-          "title": "Activity",
-          "created": "Created {time}",
-          "modified": "Last modified {time}",
-          "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
-          "today": "today"
+          "title": "Activité",
+          "created": "Créé {time}",
+          "modified": "Dernière modification {time}",
+          "daysAgo": "{count, plural, one {il y a # jour} other {il y a # jours}}",
+          "today": "aujourd'hui"
         },
-        "publicAccess": "Public Access",
-        "publicAccessDescription": "Anyone with the link can view this invoice",
-        "madePublic": "Invoice is now public",
-        "madePrivate": "Invoice is now private",
-        "toggleError": "Failed to update sharing settings",
-        "qrCode": "QR Code",
-        "qrCopied": "Link copied! QR code generation coming soon."
+        "publicAccess": "Accès public",
+        "publicAccessDescription": "Toute personne ayant le lien peut voir cette facture",
+        "madePublic": "La facture est maintenant publique",
+        "madePrivate": "La facture est maintenant privée",
+        "toggleError": "Échec de la mise à jour des paramètres de partage",
+        "qrCode": "Code QR",
+        "qrCopied": "Lien copié ! Génération du code QR bientôt disponible."
       },
       "healthScore": {
         "title": "Invoice Completeness",
@@ -2620,148 +2620,138 @@
         "showDetails": "Show details",
         "hideDetails": "Hide details",
         "factors": {
-          "name": "Name provided",
-          "items": "Items extracted",
-          "payment": "Payment information",
-          "recipes": "Recipes generated",
-          "category": "Category set",
-          "description": "Description added",
-          "date": "Transaction date",
-          "merchant": "Merchant information",
-          "merchantLinked": "Merchant linked",
-          "ocrConfidence": "OCR confidence",
-          "recipesGenerated": "Recipes generated",
-          "paymentInfo": "Payment information",
-          "productCompleteness": "Product completeness",
-          "productsPresent": "Products extracted",
-          "categoriesAssigned": "Categories assigned"
+          "merchantLinked": "Commerçant associé",
+          "ocrConfidence": "Confiance OCR",
+          "recipesGenerated": "Recettes générées",
+          "paymentInfo": "Informations de paiement",
+          "productCompleteness": "Complétude des produits",
+          "productsPresent": "Produits extraits",
+          "categoriesAssigned": "Catégories attribuées"
         },
         "cta": {
-          "analyze": "Run AI Analysis",
-          "edit": "Edit Invoice"
+          "analyze": "Lancer l'analyse IA",
+          "edit": "Modifier la facture"
         },
         "status": {
-          "complete": "Complete",
-          "needsWork": "Needs Work",
-          "incomplete": "Incomplete",
-          "good": "Good",
-          "needsAttention": "Needs Attention",
+          "incomplete": "Incomplet",
+          "good": "Bon",
+          "needsAttention": "Nécessite une attention",
           "excellent": "Excellent"
         },
         "suggestions": {
-          "noRecipes": "No recipes generated — run AI analysis to discover meal ideas",
-          "title": "Suggested Improvements",
-          "incompletePayment": "Incomplete payment information — add transaction date, amount, and currency",
-          "fix": "Fix",
-          "noMerchant": "No merchant linked — add merchant details for better insights",
-          "noProducts": "No products found — upload a receipt or add items manually",
-          "lowOcrConfidence": "Low OCR confidence on <strong>{count}</strong> products — review manually for accuracy",
-          "uncategorizedProducts": "<strong>{count}</strong> products uncategorized — assign categories for spending analysis",
-          "incompleteProducts": "<strong>{count}</strong> products incomplete — review and complete missing fields"
+          "noRecipes": "Aucune recette générée — lancez l'analyse IA pour découvrir des idées de repas",
+          "title": "Améliorations suggérées",
+          "incompletePayment": "Informations de paiement incomplètes — ajoutez la date, le montant et la devise de la transaction",
+          "fix": "Corriger",
+          "noMerchant": "Aucun commerçant associé — ajoutez les détails du commerçant pour de meilleures analyses",
+          "noProducts": "Aucun produit trouvé — téléchargez un reçu ou ajoutez des articles manuellement",
+          "lowOcrConfidence": "Faible confiance OCR sur <strong>{count}</strong> produits — vérifiez manuellement pour plus de précision",
+          "uncategorizedProducts": "<strong>{count}</strong> produits non catégorisés — attribuez des catégories pour l'analyse des dépenses",
+          "incompleteProducts": "<strong>{count}</strong> produits incomplets — vérifiez et complétez les champs manquants"
         }
       },
       "itemAnalytics": {
-        "title": "Items",
-        "searchPlaceholder": "Search items...",
+        "title": "Articles",
+        "searchPlaceholder": "Rechercher des articles...",
         "columns": {
-          "name": "Name",
-          "category": "Category",
-          "price": "Price",
-          "quantity": "Qty",
+          "name": "Nom",
+          "category": "Catégorie",
+          "price": "Prix",
+          "quantity": "Qté",
           "total": "Total"
         },
         "summary": {
-          "title": "Summary",
-          "mostExpensive": "Most expensive",
-          "cheapest": "Cheapest",
-          "categories": "{count} categories",
-          "allergens": "{count} allergens detected"
+          "title": "Résumé",
+          "mostExpensive": "Le plus cher",
+          "cheapest": "Le moins cher",
+          "categories": "{count} catégories",
+          "allergens": "{count} allergènes détectés"
         },
         "empty": {
-          "title": "No items",
-          "subtitle": "Run AI analysis to extract items from your receipt"
+          "title": "Aucun article",
+          "subtitle": "Lancez l'analyse IA pour extraire les articles de votre reçu"
         },
         "totalLabel": "TOTAL",
         "confidence": {
-          "label": "OCR Confidence",
-          "lowWarning": "Low confidence — consider reviewing this item"
+          "label": "Confiance OCR",
+          "lowWarning": "Faible confiance — vérifiez cet article"
         }
       },
       "analysisPanel": {
         "tooltips": {
-          "itemsOnly": "Re-categorize and analyze line items only",
-          "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
-          "merchantOnly": "Re-identify merchant and location data",
-          "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
-          "reanalyze": "Trigger complete re-analysis with all AI features"
+          "itemsOnly": "Recatégoriser et analyser uniquement les articles",
+          "completeAnalysis": "Extraction OCR complète + traitement IA de toutes les données de la facture",
+          "merchantOnly": "Réidentifier le commerçant et les données de localisation",
+          "invoiceOnly": "Réextraire les informations de base de la facture (date, total, paiement)",
+          "reanalyze": "Relancer l'analyse complète avec toutes les fonctionnalités IA"
         },
-        "title": "AI Analysis",
+        "title": "Analyse IA",
         "options": {
-          "itemsOnly": "Items Only",
-          "completeAnalysis": "Full Analysis",
-          "merchantOnly": "Merchant Only",
-          "invoiceOnly": "Invoice Only"
+          "itemsOnly": "Articles uniquement",
+          "completeAnalysis": "Analyse complète",
+          "merchantOnly": "Commerçant uniquement",
+          "invoiceOnly": "Facture uniquement"
         },
         "steps": {
-          "processing": "Processing items...",
-          "finalizing": "Finalizing results...",
-          "preparing": "Preparing document...",
-          "complete": "Analysis complete!",
-          "analyzing": "Analyzing with AI...",
-          "extracting": "Running OCR extraction..."
+          "processing": "Traitement des articles...",
+          "finalizing": "Finalisation des résultats...",
+          "preparing": "Préparation du document...",
+          "complete": "Analyse terminée !",
+          "analyzing": "Analyse en cours avec l'IA...",
+          "extracting": "Extraction OCR en cours..."
         },
         "analyzing": {
-          "progress": "{progress}% complete",
-          "title": "Analyzing..."
+          "progress": "{progress}% terminé",
+          "title": "Analyse en cours..."
         },
         "labels": {
-          "lastAnalyzed": "Last Analyzed",
-          "updates": "{count, plural, one {# update} other {# updates}}",
-          "granularOptions": "Or choose specific analysis"
+          "lastAnalyzed": "Dernière analyse",
+          "updates": "{count, plural, one {# mise à jour} other {# mises à jour}}",
+          "granularOptions": "Ou choisissez une analyse spécifique"
         },
         "toasts": {
           "error": {
-            "description": "Unable to analyze invoice. Please try again later.",
-            "title": "Analysis Failed"
+            "description": "Impossible d'analyser la facture. Veuillez réessayer plus tard.",
+            "title": "Échec de l'analyse"
           },
           "success": {
-            "description": "Invoice has been successfully re-analyzed with updated data.",
-            "title": "Analysis Complete"
+            "description": "La facture a été réanalysée avec succès avec des données mises à jour.",
+            "title": "Analyse terminée"
           }
         },
-        "description": "Re-analyze this invoice with AI to extract or update data",
+        "description": "Réanalyser cette facture avec l'IA pour extraire ou mettre à jour les données",
         "buttons": {
-          "reanalyze": "Re-Analyze Invoice"
+          "reanalyze": "Réanalyser la facture"
         },
-        "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
+        "tip": "Astuce : L'analyse complète prend 30 à 60 secondes mais fournit les résultats les plus précis."
       },
       "export": {
-        "printError": "Failed to open print dialog",
-        "printSuccess": "Print dialog opened",
+        "printError": "Échec de l'ouverture de la boîte de dialogue d'impression",
+        "printSuccess": "Boîte de dialogue d'impression ouverte",
         "csv": {
-          "title": "Export as CSV",
-          "description": "Download items as spreadsheet"
+          "title": "Exporter en CSV",
+          "description": "Télécharger les articles sous forme de feuille de calcul"
         },
-        "description": "Export your invoice data in various formats",
+        "description": "Exportez vos données de facture dans différents formats",
         "print": {
-          "title": "Print",
-          "description": "Print invoice using browser"
+          "title": "Imprimer",
+          "description": "Imprimer la facture via le navigateur"
         },
-        "csvSuccess": "CSV file downloaded successfully",
-        "copyError": "Failed to copy summary",
+        "csvSuccess": "Fichier CSV téléchargé avec succès",
+        "copyError": "Échec de la copie du résumé",
         "copySummary": {
-          "title": "Copy Summary",
-          "description": "Copy text summary to clipboard"
+          "title": "Copier le résumé",
+          "description": "Copier le résumé texte dans le presse-papiers"
         },
-        "copySuccess": "Summary copied to clipboard",
+        "copySuccess": "Résumé copié dans le presse-papiers",
         "json": {
-          "title": "Export as JSON",
-          "description": "Download complete invoice data"
+          "title": "Exporter en JSON",
+          "description": "Télécharger les données complètes de la facture"
         },
-        "jsonSuccess": "JSON file downloaded successfully",
-        "jsonError": "Failed to export JSON",
-        "csvError": "Failed to export CSV",
-        "title": "Export Invoice"
+        "jsonSuccess": "Fichier JSON téléchargé avec succès",
+        "jsonError": "Échec de l'export JSON",
+        "csvError": "Échec de l'export CSV",
+        "title": "Exporter la facture"
       }
     },
     "EditInvoice": {
@@ -2781,8 +2771,8 @@
       },
       "triviaTips": {
         "title": "Astuces économies",
-        "completeness": "Invoice is {percentage}% complete",
-        "completeLabel": "Invoice is fully complete!",
+        "completeness": "La facture est complète à {percentage}%",
+        "completeLabel": "La facture est entièrement complète !",
         "difficulty": {
           "easy": "Facile",
           "medium": "Moyen"
@@ -2792,16 +2782,16 @@
           "hint": "Appliquez ces astuces pour économiser lors de votre prochaine visite chez {merchantName}"
         },
         "contextTips": {
-          "noItems": "Run AI analysis to extract items from your receipt",
-          "noDescription": "Add a description to help you remember this purchase",
-          "noCategory": "Set a category to track spending patterns",
-          "defaultCategory": "Change the category from 'Uncategorized' to track better",
-          "noRecipes": "AI can suggest recipes based on your grocery items"
+          "noItems": "Lancez l'analyse IA pour extraire les articles de votre reçu",
+          "noDescription": "Ajoutez une description pour vous souvenir de cet achat",
+          "noCategory": "Définissez une catégorie pour suivre vos habitudes de dépenses",
+          "defaultCategory": "Changez la catégorie de « Non catégorisé » pour un meilleur suivi",
+          "noRecipes": "L'IA peut suggérer des recettes basées sur vos articles d'épicerie"
         },
         "contextActions": {
-          "analyze": "Run Analysis",
-          "addDescription": "Add Description",
-          "setCategory": "Set Category"
+          "analyze": "Lancer l'analyse",
+          "addDescription": "Ajouter une description",
+          "setCategory": "Définir la catégorie"
         },
         "tips": {
           "loyaltyProgram": {
@@ -3119,7 +3109,7 @@
           "dropHere": "Déposez le fichier ici...",
           "dragAndDrop": "Glissez-déposez un fichier ici",
           "orClickBrowse": "ou cliquez pour parcourir",
-          "formats": "JPEG, PNG, PDF (max 10MB)"
+          "formats": "JPEG, PNG, PDF (max 10 Mo)"
         },
         "scanType": {
           "label": "Type de scan",
@@ -3388,18 +3378,18 @@
         "title": "Articles",
         "buttons": {
           "editItems": "Modifier les articles",
-          "addItem": "Add Item"
+          "addItem": "Ajouter un article"
         },
         "tooltips": {
           "editInvoiceItemsAndQuantities": "Modifier les articles et les quantités de la facture"
         },
         "columns": {
-          "selectAll": "Select all items",
-          "selectRow": "Select {name}",
-          "name": "Name",
-          "quantity": "Quantity",
-          "price": "Price",
-          "unit": "Unit",
+          "selectAll": "Tout sélectionner",
+          "selectRow": "Sélectionner {name}",
+          "name": "Nom",
+          "quantity": "Quantité",
+          "price": "Prix",
+          "unit": "Unité",
           "total": "Total",
           "actions": "Actions"
         },
@@ -3419,28 +3409,28 @@
           "pageOf": "Page {currentPage} sur {totalPages}"
         },
         "search": {
-          "placeholder": "Search items..."
+          "placeholder": "Rechercher des articles..."
         },
         "bulkToolbar": {
-          "selectedCount": "{count, plural, one {# item selected} other {# items selected}}",
-          "deleteSelected": "Delete Selected",
-          "changeCategory": "Change Category",
-          "noSelection": "No products selected"
+          "selectedCount": "{count, plural, one {# article sélectionné} other {# articles sélectionnés}}",
+          "deleteSelected": "Supprimer la sélection",
+          "changeCategory": "Changer de catégorie",
+          "noSelection": "Aucun produit sélectionné"
         },
         "editing": {
-          "saved": "Item updated successfully",
-          "cancel": "Edit canceled"
+          "saved": "Article mis à jour avec succès",
+          "cancel": "Modification annulée"
         },
         "deleteConfirm": {
-          "title": "Delete Items",
-          "description": "{count, plural, one {Are you sure you want to delete this item?} other {Are you sure you want to delete # items?}}",
-          "confirm": "Delete",
-          "cancel": "Cancel",
-          "success": "{count, plural, one {# item deleted} other {# items deleted}}"
+          "title": "Supprimer les articles",
+          "description": "{count, plural, one {Êtes-vous sûr de vouloir supprimer cet article ?} other {Êtes-vous sûr de vouloir supprimer # articles ?}}",
+          "confirm": "Supprimer",
+          "cancel": "Annuler",
+          "success": "{count, plural, one {# article supprimé} other {# articles supprimés}}"
         },
         "newItem": {
-          "defaultName": "New Item",
-          "added": "New item added"
+          "defaultName": "Nouvel article",
+          "added": "Nouvel article ajouté"
         },
         "indicators": {
           "uncategorized": "Non catégorisé",
@@ -3449,25 +3439,25 @@
           "missingNameTooltip": "La traduction du nom générique est manquante ou identique au texte OCR brut",
           "lowConfidence": "Faible confiance",
           "lowConfidenceTooltip": "La confiance OCR est de {confidence}% - révision manuelle recommandée",
-          "edited": "Edited",
-          "editedTooltip": "This product has been manually modified",
-          "allergens": "{count, plural, one {# allergen} other {# allergens}}"
+          "edited": "Modifié",
+          "editedTooltip": "Ce produit a été modifié manuellement",
+          "allergens": "{count, plural, one {# allergène} other {# allergènes}}"
         },
         "actions": {
-          "remove": "Remove item",
-          "restore": "Restore item",
-          "editAllergens": "Edit allergens"
+          "remove": "Supprimer l'article",
+          "restore": "Restaurer l'article",
+          "editAllergens": "Modifier les allergènes"
         },
         "softDelete": {
-          "success": "Item '{name}' removed",
-          "error": "Failed to remove item"
+          "success": "Article « {name} » supprimé",
+          "error": "Échec de la suppression de l'article"
         },
         "restore": {
-          "success": "Item '{name}' restored",
-          "error": "Failed to restore item"
+          "success": "Article « {name} » restauré",
+          "error": "Échec de la restauration de l'article"
         },
         "bulkCategory": {
-          "noSelection": "Please select at least one product"
+          "noSelection": "Veuillez sélectionner au moins un produit"
         }
       },
       "guidedEdit": {
@@ -3490,89 +3480,89 @@
         }
       },
       "changeHistory": {
-        "unsavedChanges": "Unsaved changes",
-        "pending": "Pending",
-        "created": "Invoice created",
-        "title": "Change History",
+        "unsavedChanges": "Modifications non enregistrées",
+        "pending": "En attente",
+        "created": "Facture créée",
+        "title": "Historique des modifications",
         "time": {
-          "justNow": "Just now",
-          "secondsAgo": "{seconds} seconds ago",
-          "hoursAgo": "{hours} hours ago",
-          "daysAgo": "{days} days ago",
-          "minutesAgo": "{minutes} minutes ago"
+          "justNow": "À l'instant",
+          "secondsAgo": "il y a {seconds} secondes",
+          "hoursAgo": "il y a {hours} heures",
+          "daysAgo": "il y a {days} jours",
+          "minutesAgo": "il y a {minutes} minutes"
         },
-        "modified": "Last modified",
+        "modified": "Dernière modification",
         "changes": {
-          "paymentTypeChanged": "Payment type changed",
-          "unmarkedImportant": "Unmarked as important",
-          "categoryUpdated": "Category updated",
-          "transactionDateChanged": "Transaction date changed",
-          "nameChanged": "Name changed",
-          "descriptionChanged": "Description changed",
-          "markedImportant": "Marked as important",
-          "importanceChanged": "Importance changed"
+          "paymentTypeChanged": "Type de paiement modifié",
+          "unmarkedImportant": "Retiré des favoris",
+          "categoryUpdated": "Catégorie mise à jour",
+          "transactionDateChanged": "Date de transaction modifiée",
+          "nameChanged": "Nom modifié",
+          "descriptionChanged": "Description modifiée",
+          "markedImportant": "Marqué comme important",
+          "importanceChanged": "Importance modifiée"
         }
       },
       "allergenDialog": {
         "labels": {
-          "currentAllergens": "Current Allergens",
-          "customAllergen": "Add Custom Allergen",
-          "quickAdd": "Quick Add Common Allergens"
+          "currentAllergens": "Allergènes actuels",
+          "customAllergen": "Ajouter un allergène personnalisé",
+          "quickAdd": "Ajout rapide d'allergènes courants"
         },
-        "title": "Edit Allergens",
+        "title": "Modifier les allergènes",
         "success": {
-          "added": "Added allergen: {name}",
-          "saved": "Allergens updated successfully",
-          "removed": "Removed allergen: {name}"
+          "added": "Allergène ajouté : {name}",
+          "saved": "Allergènes mis à jour avec succès",
+          "removed": "Allergène retiré : {name}"
         },
         "buttons": {
-          "save": "Save Changes",
-          "saving": "Saving...",
-          "cancel": "Cancel",
-          "add": "Add"
+          "save": "Enregistrer les modifications",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "add": "Ajouter"
         },
-        "defaultDescription": "Contains {name}",
+        "defaultDescription": "Contient {name}",
         "aria": {
-          "removeAllergen": "Remove {name} allergen"
+          "removeAllergen": "Retirer l'allergène {name}"
         },
         "placeholders": {
-          "customAllergen": "Enter allergen name..."
+          "customAllergen": "Entrez le nom de l'allergène..."
         },
         "empty": {
-          "noAllergens": "No allergens detected"
+          "noAllergens": "Aucun allergène détecté"
         },
-        "description": "Manage allergens for {productName}",
+        "description": "Gérer les allergènes pour {productName}",
         "errors": {
-          "emptyName": "Allergen name cannot be empty",
-          "duplicate": "Allergen '{name}' already added",
-          "missingData": "Missing product data",
-          "saveFailed": "Failed to save allergens"
+          "emptyName": "Le nom de l'allergène ne peut pas être vide",
+          "duplicate": "L'allergène « {name} » a déjà été ajouté",
+          "missingData": "Données de produit manquantes",
+          "saveFailed": "Échec de l'enregistrement des allergènes"
         }
       },
       "bulkCategoryDialog": {
         "errors": {
-          "saveFailed": "Failed to update categories",
-          "missingData": "Missing data",
-          "noProducts": "No products selected"
+          "saveFailed": "Échec de la mise à jour des catégories",
+          "missingData": "Données manquantes",
+          "noProducts": "Aucun produit sélectionné"
         },
         "success": {
-          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
+          "saved": "{count, plural, one {Catégorie mise à jour pour # produit} other {Catégorie mise à jour pour # produits}}"
         },
-        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
+        "description": "{count, plural, one {Changer la catégorie pour # produit} other {Changer la catégorie pour # produits}}",
         "buttons": {
-          "save": "Apply to All",
-          "saving": "Saving...",
-          "cancel": "Cancel"
+          "save": "Appliquer à tous",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler"
         },
         "labels": {
-          "andMore": "...and {count} more",
-          "newCategory": "New Category",
-          "selectedProducts": "Selected Products"
+          "andMore": "...et {count} de plus",
+          "newCategory": "Nouvelle catégorie",
+          "selectedProducts": "Produits sélectionnés"
         },
         "placeholders": {
-          "selectCategory": "Select a category"
+          "selectCategory": "Sélectionner une catégorie"
         },
-        "title": "Change Category"
+        "title": "Changer de catégorie"
       }
     },
     "Shared": {
@@ -3587,7 +3577,7 @@
           "printInvoiceWithAllDetails": "Imprimer cette facture avec tous les détails",
           "analyzeSpendingPatterns": "Analyser les habitudes de dépenses de cette facture",
           "deleteInvoicePermanently": "Supprimer cette facture définitivement",
-          "export": "Export invoice data in various formats"
+          "export": "Exporter les données de la facture dans différents formats"
         },
         "id": "ID : {id}",
         "buttons": {
@@ -3598,7 +3588,7 @@
           "saving": "Enregistrement...",
           "discard": "Annuler",
           "analyzeWithAi": "Analyser avec l'IA",
-          "export": "Export"
+          "export": "Exporter"
         }
       },
       "states": {
@@ -3695,7 +3685,7 @@
         "title": "Privé sharing",
         "description": "L’invitation sera envoyée directement à l’adresse e-mail que vous indiquez. Seul ce destinataire recevra l’accès pour consulter la facture.",
         "emailLabel": "Recipient's e-mail address",
-        "emailPlaceholder": "name@example.com",
+        "emailPlaceholder": "nom@exemple.com",
         "emailHint": "Une invitation par e-mail sera envoyée à cette adresse avec un lien privé pour consulter la facture.",
         "sendInvitation": "Envoyer une invitation privée"
       },
@@ -3735,222 +3725,222 @@
         }
       },
       "shortcuts": {
-        "title": "Keyboard Shortcuts",
-        "description": "Quick access to common actions using your keyboard",
-        "openSearch": "Open search",
-        "newInvoice": "New invoice",
-        "uploadScan": "Upload scan",
-        "showHelp": "Show this help",
-        "closeDialog": "Close dialog",
-        "close": "Close"
+        "title": "Raccourcis clavier",
+        "description": "Accès rapide aux actions courantes via votre clavier",
+        "openSearch": "Ouvrir la recherche",
+        "newInvoice": "Nouvelle facture",
+        "uploadScan": "Télécharger une numérisation",
+        "showHelp": "Afficher cette aide",
+        "closeDialog": "Fermer la boîte de dialogue",
+        "close": "Fermer"
       },
       "commandPalette": {
-        "placeholder": "Search invoices, merchants, items...",
-        "noResults": "No results found",
+        "placeholder": "Rechercher des factures, commerçants, articles...",
+        "noResults": "Aucun résultat trouvé",
         "groups": {
-          "quickActions": "Quick Actions",
-          "recentInvoices": "Recent Invoices",
-          "searchResults": "Search Results"
+          "quickActions": "Actions rapides",
+          "recentInvoices": "Factures récentes",
+          "searchResults": "Résultats de recherche"
         },
         "actions": {
-          "uploadScans": "Upload Scans",
-          "createInvoice": "Create Invoice",
-          "viewStatistics": "View Statistics",
-          "viewAll": "View All Invoices"
+          "uploadScans": "Télécharger des numérisations",
+          "createInvoice": "Créer une facture",
+          "viewStatistics": "Voir les statistiques",
+          "viewAll": "Voir toutes les factures"
         }
       },
       "onboarding": {
         "steps": {
           "upload": {
-            "description": "Take a photo or upload a PDF of your receipt. Our system supports multiple formats and can process batches of receipts at once.",
-            "title": "Upload Your Receipts"
+            "description": "Prenez une photo ou téléchargez un PDF de votre reçu. Notre système prend en charge plusieurs formats et peut traiter des lots de reçus en même temps.",
+            "title": "Téléchargez vos reçus"
           },
           "analyze": {
-            "description": "Our AI-powered system automatically extracts merchant names, dates, amounts, and line items from your receipts with high accuracy.",
-            "title": "AI Extracts the Details"
+            "description": "Notre système alimenté par l'IA extrait automatiquement les noms des commerçants, les dates, les montants et les articles de vos reçus avec une grande précision.",
+            "title": "L'IA extrait les détails"
           },
           "track": {
-            "description": "View detailed analytics and insights into your spending patterns. Understand where your money goes with interactive charts and reports.",
-            "title": "Track Your Spending"
+            "description": "Consultez des analyses détaillées et des informations sur vos habitudes de dépenses. Comprenez où va votre argent grâce à des graphiques et rapports interactifs.",
+            "title": "Suivez vos dépenses"
           }
         },
-        "getStarted": "Get Started",
-        "stepOf": "Step {current} of {total}",
-        "next": "Next",
-        "skip": "Skip",
-        "back": "Back",
+        "getStarted": "Commencer",
+        "stepOf": "Étape {current} sur {total}",
+        "next": "Suivant",
+        "skip": "Passer",
+        "back": "Retour",
         "dontShowAgain": "Ne plus afficher"
       },
       "notifications": {
         "timeAgo": {
-          "hours": "{count, plural, one {# hour ago} other {# hours ago}}",
-          "minutes": "{count, plural, one {# minute ago} other {# minutes ago}}",
-          "days": "{count, plural, one {# day ago} other {# days ago}}",
-          "now": "Just now"
+          "hours": "{count, plural, one {il y a # heure} other {il y a # heures}}",
+          "minutes": "{count, plural, one {il y a # minute} other {il y a # minutes}}",
+          "days": "{count, plural, one {il y a # jour} other {il y a # jours}}",
+          "now": "À l'instant"
         },
         "types": {
-          "invoiceCreated": "Invoice created",
-          "analysisComplete": "AI analysis complete",
-          "monthlyReport": "Monthly report ready"
+          "invoiceCreated": "Facture créée",
+          "analysisComplete": "Analyse IA terminée",
+          "monthlyReport": "Rapport mensuel prêt"
         },
         "title": "Notifications",
-        "noNotifications": "No notifications yet",
-        "markAllRead": "Mark all as read"
+        "noNotifications": "Aucune notification pour le moment",
+        "markAllRead": "Tout marquer comme lu"
       },
       "preferences": {
-        "title": "Invoice Preferences",
-        "defaultView": "Default View",
-        "sortBy": "Sort By",
-        "pageSize": "Items per Page",
-        "currency": "Currency",
-        "showStats": "Show statistics on home",
-        "save": "Save Preferences",
-        "saved": "Preferences saved successfully",
+        "title": "Préférences de facturation",
+        "defaultView": "Vue par défaut",
+        "sortBy": "Trier par",
+        "pageSize": "Éléments par page",
+        "currency": "Devise",
+        "showStats": "Afficher les statistiques sur l'accueil",
+        "save": "Enregistrer les préférences",
+        "saved": "Préférences enregistrées avec succès",
         "views": {
-          "table": "Table View",
-          "grid": "Grid View"
+          "table": "Vue tableau",
+          "grid": "Vue grille"
         },
         "sortOptions": {
-          "dateDesc": "Date (Newest First)",
-          "dateAsc": "Date (Oldest First)",
-          "amountDesc": "Amount (High to Low)",
-          "amountAsc": "Amount (Low to High)",
-          "nameAsc": "Name (A to Z)"
+          "dateDesc": "Date (plus récente)",
+          "dateAsc": "Date (plus ancienne)",
+          "amountDesc": "Montant (décroissant)",
+          "amountAsc": "Montant (croissant)",
+          "nameAsc": "Nom (A à Z)"
         }
       },
       "mobileNav": {
-        "profile": "Profile",
-        "ariaLabel": "Mobile navigation",
-        "home": "Home",
-        "scan": "Scan",
-        "invoices": "Invoices"
+        "profile": "Profil",
+        "ariaLabel": "Navigation mobile",
+        "home": "Accueil",
+        "scan": "Numériser",
+        "invoices": "Factures"
       },
       "workflowProgress": {
-        "upload": "Upload",
-        "review": "Review",
-        "create": "Create"
+        "upload": "Télécharger",
+        "review": "Vérifier",
+        "create": "Créer"
       }
     },
     "CreateInvoice": {
       "metadata": {
-        "title": "Invoice Management System - Create Invoice",
-        "description": "Create a new invoice from your uploaded scans."
+        "title": "Système de gestion des factures - Créer une facture",
+        "description": "Créez une nouvelle facture à partir de vos numérisations téléchargées."
       },
       "navigation": {
-        "back": "Back",
-        "next": "Next"
+        "back": "Retour",
+        "next": "Suivant"
       },
       "emptyState": {
-        "title": "No Scans Available",
-        "description": "Upload some receipt scans first to create an invoice.",
-        "uploadButton": "Upload Scans",
-        "viewScansButton": "View Scans"
+        "title": "Aucune numérisation disponible",
+        "description": "Téléchargez d'abord des numérisations de reçus pour créer une facture.",
+        "uploadButton": "Télécharger des numérisations",
+        "viewScansButton": "Voir les numérisations"
       },
       "header": {
-        "backToInvoices": "Back to Invoices",
-        "title": "Create Invoice",
-        "subtitle": "Follow the steps below to create a new invoice from your scans"
+        "backToInvoices": "Retour aux factures",
+        "title": "Créer une facture",
+        "subtitle": "Suivez les étapes ci-dessous pour créer une nouvelle facture à partir de vos numérisations"
       },
       "steps": {
-        "selectScans": "Select Scans",
-        "details": "Invoice Details",
-        "review": "Review & Create",
-        "selectScansDesc": "Choose receipt scans",
-        "detailsDesc": "Fill in invoice info",
-        "reviewDesc": "Confirm and create"
+        "selectScans": "Sélectionner les numérisations",
+        "details": "Détails de la facture",
+        "review": "Vérifier et créer",
+        "selectScansDesc": "Choisir les numérisations de reçus",
+        "detailsDesc": "Remplir les informations de la facture",
+        "reviewDesc": "Confirmer et créer"
       },
       "scanSelector": {
-        "title": "Select Scans",
-        "subtitle": "Choose the scans that belong to this invoice",
-        "selectedCount": "{count} selected",
-        "clearAll": "Clear",
-        "selectAll": "Select All",
-        "noScans": "No scans available"
+        "title": "Sélectionner les numérisations",
+        "subtitle": "Choisissez les numérisations qui correspondent à cette facture",
+        "selectedCount": "{count} sélectionnée(s)",
+        "clearAll": "Effacer",
+        "selectAll": "Tout sélectionner",
+        "noScans": "Aucune numérisation disponible"
       },
       "detailsForm": {
-        "title": "Invoice Details",
-        "subtitle": "Provide the details for your new invoice",
+        "title": "Détails de la facture",
+        "subtitle": "Renseignez les détails de votre nouvelle facture",
         "fields": {
           "name": {
-            "label": "Invoice Name",
-            "placeholder": "e.g., Weekly Groceries",
-            "hint": "Give your invoice a descriptive name"
+            "label": "Nom de la facture",
+            "placeholder": "ex. Courses hebdomadaires",
+            "hint": "Donnez un nom descriptif à votre facture"
           },
           "category": {
-            "label": "Category",
-            "placeholder": "Select a category",
+            "label": "Catégorie",
+            "placeholder": "Sélectionner une catégorie",
             "options": {
-              "notDefined": "Uncategorized",
-              "grocery": "Grocery",
-              "fastFood": "Dining",
-              "homeCleaning": "Home & Cleaning",
-              "carAuto": "Auto & Vehicle",
-              "other": "Other"
+              "notDefined": "Non catégorisé",
+              "grocery": "Épicerie",
+              "fastFood": "Restauration",
+              "homeCleaning": "Maison et entretien",
+              "carAuto": "Auto et véhicule",
+              "other": "Autre"
             }
           },
           "paymentType": {
-            "label": "Payment Method",
-            "placeholder": "Select payment method",
+            "label": "Mode de paiement",
+            "placeholder": "Sélectionner un mode de paiement",
             "options": {
-              "unknown": "Unknown",
-              "cash": "Cash",
-              "card": "Card",
-              "transfer": "Bank Transfer",
-              "mobilePayment": "Mobile Payment",
-              "voucher": "Voucher",
-              "other": "Other"
+              "unknown": "Inconnu",
+              "cash": "Espèces",
+              "card": "Carte",
+              "transfer": "Virement bancaire",
+              "mobilePayment": "Paiement mobile",
+              "voucher": "Bon d'achat",
+              "other": "Autre"
             }
           },
           "transactionDate": {
-            "label": "Transaction Date"
+            "label": "Date de transaction"
           },
           "description": {
             "label": "Description",
-            "placeholder": "Add any notes about this invoice (optional)",
-            "hint": "Optional notes about this purchase"
+            "placeholder": "Ajoutez des notes sur cette facture (facultatif)",
+            "hint": "Notes facultatives sur cet achat"
           }
         },
         "scanPreview": {
-          "title": "Scan Preview"
+          "title": "Aperçu de la numérisation"
         }
       },
       "reviewStep": {
-        "title": "Review & Create",
-        "subtitle": "Review your invoice details before creating",
+        "title": "Vérifier et créer",
+        "subtitle": "Vérifiez les détails de votre facture avant de la créer",
         "categories": {
-          "notDefined": "Uncategorized",
-          "grocery": "Grocery",
-          "fastFood": "Dining",
-          "homeCleaning": "Home & Cleaning",
-          "carAuto": "Auto & Vehicle",
-          "other": "Other"
+          "notDefined": "Non catégorisé",
+          "grocery": "Épicerie",
+          "fastFood": "Restauration",
+          "homeCleaning": "Maison et entretien",
+          "carAuto": "Auto et véhicule",
+          "other": "Autre"
         },
         "paymentTypes": {
-          "unknown": "Unknown",
-          "cash": "Cash",
-          "card": "Card",
-          "transfer": "Bank Transfer",
-          "mobilePayment": "Mobile Payment",
-          "voucher": "Voucher",
-          "other": "Other"
+          "unknown": "Inconnu",
+          "cash": "Espèces",
+          "card": "Carte",
+          "transfer": "Virement bancaire",
+          "mobilePayment": "Paiement mobile",
+          "voucher": "Bon d'achat",
+          "other": "Autre"
         },
         "sections": {
           "scans": {
-            "title": "Scans"
+            "title": "Numérisations"
           },
           "details": {
-            "title": "Invoice Details",
-            "name": "Name",
-            "category": "Category",
-            "paymentType": "Payment Method",
-            "transactionDate": "Transaction Date",
+            "title": "Détails de la facture",
+            "name": "Nom",
+            "category": "Catégorie",
+            "paymentType": "Mode de paiement",
+            "transactionDate": "Date de transaction",
             "description": "Description"
           }
         },
         "actions": {
-          "creating": "Creating invoice...",
-          "create": "Create Invoice",
-          "hint": "This will create the invoice and upload the selected scans."
+          "creating": "Création de la facture...",
+          "create": "Créer la facture",
+          "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
         }
       }
     }
@@ -4578,7 +4568,7 @@
         "viewDependencies": "Voir les Dépendances"
       },
       "table": {
-        "package": "Package",
+        "package": "Paquet",
         "version": "Version",
         "type": "Type",
         "description": "Description",
