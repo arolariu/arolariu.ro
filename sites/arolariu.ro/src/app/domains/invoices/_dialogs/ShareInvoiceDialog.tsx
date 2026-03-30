@@ -251,36 +251,16 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
 
   /**
    * Sends an email invitation to share the invoice privately.
-   * Uses toast.promise for consistent loading/success/error states.
+   * Currently shows "coming soon" toast as the API endpoint is not yet implemented.
    */
   const handleSendEmail = useCallback(
     (e: React.SubmitEvent) => {
       e.preventDefault();
-
-      const sendEmailAction = async () => {
-        // NOTE: User email should come from auth context when available
-        const userEmail = "user@arolariu.ro";
-
-        const response = await fetch(`/api/mail/invoices/share/${invoice.id}`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({toEmail: email, fromEmail: userEmail}),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to send email: ${response.status}`);
-        }
-
-        setEmail("");
-      };
-
-      toast.promise(sendEmailAction(), {
-        loading: t("toasts.sendEmail.loading", {email}),
-        success: t("toasts.sendEmail.success", {email}),
-        error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
-      });
+      // Email sharing feature is not yet implemented
+      toast.info(t("toasts.sendEmail.comingSoon"));
+      setEmail("");
     },
-    [email, invoice.id, t],
+    [email, t],
   );
 
   /**

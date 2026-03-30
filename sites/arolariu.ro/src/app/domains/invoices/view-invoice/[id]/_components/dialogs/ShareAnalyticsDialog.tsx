@@ -76,7 +76,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
 
   const handleCopyImage = useCallback(async () => {
     // Get the image URL from the component
-    const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant.name}/${invoice.id}`;
+    const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant?.name ?? ""}/${invoice.id}`;
 
     // Fetch the image data
     const response = await fetch(imageUrl);
@@ -105,9 +105,9 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   const handleDownloadImage = useCallback(() => {
     // In a real app, this would generate and download an image
     toast(t("toasts.imageSaved.title"), {
-      description: t("toasts.imageSaved.description", {merchant: merchant.name}),
+      description: t("toasts.imageSaved.description", {merchant: merchant?.name ?? ""}),
     });
-  }, [merchant.name, t]);
+  }, [merchant?.name, t]);
 
   return (
     <Dialog
@@ -117,7 +117,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
+          <DialogDescription>{t("description", {merchant: merchant?.name ?? ""})}</DialogDescription>
         </DialogHeader>
 
         <Tabs

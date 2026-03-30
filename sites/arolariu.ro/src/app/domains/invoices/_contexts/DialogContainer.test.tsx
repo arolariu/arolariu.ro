@@ -124,7 +124,7 @@ vi.mock("../view-scans/_components/dialogs/CreateInvoiceDialog", () => ({
 }));
 
 vi.mock("../view-invoice/[id]/_components/dialogs/ExportDialog", () => ({
-  default: () => <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>,
+  ExportDialog: () => <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>,
 }));
 
 // Import the component after mocks are set up
@@ -231,6 +231,24 @@ describe("DialogContainer", () => {
       expect(screen.getByTestId("recipe-dialog")).toBeInTheDocument();
       expect(screen.getByText("InvoiceRecipeDialog")).toBeInTheDocument();
     });
+
+    test("renders AllergenDialog when type is EDIT_INVOICE__ALLERGENS", () => {
+      setupMockDialogType("EDIT_INVOICE__ALLERGENS");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("allergen-dialog")).toBeInTheDocument();
+      expect(screen.getByText("AllergenDialog")).toBeInTheDocument();
+    });
+
+    test("renders BulkCategoryDialog when type is EDIT_INVOICE__BULK_CATEGORY", () => {
+      setupMockDialogType("EDIT_INVOICE__BULK_CATEGORY");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("bulk-category-dialog")).toBeInTheDocument();
+      expect(screen.getByText("BulkCategoryDialog")).toBeInTheDocument();
+    });
   });
 
   describe("view-invoice dialogs", () => {
@@ -241,6 +259,15 @@ describe("DialogContainer", () => {
 
       expect(screen.getByTestId("share-analytics-dialog")).toBeInTheDocument();
       expect(screen.getByText("ShareAnalyticsDialog")).toBeInTheDocument();
+    });
+
+    test("renders ViewInvoiceExportDialog when type is VIEW_INVOICE__EXPORT", () => {
+      setupMockDialogType("VIEW_INVOICE__EXPORT");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("view-invoice-export-dialog")).toBeInTheDocument();
+      expect(screen.getByText("ViewInvoiceExportDialog")).toBeInTheDocument();
     });
   });
 
@@ -261,6 +288,17 @@ describe("DialogContainer", () => {
 
       expect(screen.getByTestId("export-dialog")).toBeInTheDocument();
       expect(screen.getByText("InvoicesExportDialog")).toBeInTheDocument();
+    });
+  });
+
+  describe("view-scans dialogs", () => {
+    test("renders CreateInvoiceDialog when type is VIEW_SCANS__CREATE_INVOICE", () => {
+      setupMockDialogType("VIEW_SCANS__CREATE_INVOICE");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("create-invoice-dialog")).toBeInTheDocument();
+      expect(screen.getByText("CreateInvoiceDialog")).toBeInTheDocument();
     });
   });
 
@@ -294,11 +332,15 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__ALLERGENS", expectedTestId: "allergen-dialog"},
+      {type: "EDIT_INVOICE__BULK_CATEGORY", expectedTestId: "bulk-category-dialog"},
       {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
       {type: "EDIT_INVOICE__SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
+      {type: "VIEW_INVOICE__EXPORT", expectedTestId: "view-invoice-export-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
+      {type: "VIEW_SCANS__CREATE_INVOICE", expectedTestId: "create-invoice-dialog"},
       {type: "SHARED__INVOICE_DELETE", expectedTestId: "delete-invoice-dialog"},
       {type: "SHARED__INVOICE_SHARE", expectedTestId: "share-invoice-dialog"},
     ];
@@ -322,10 +364,14 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
+        "EDIT_INVOICE__ALLERGENS",
+        "EDIT_INVOICE__BULK_CATEGORY",
         "EDIT_INVOICE__SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",
+        "VIEW_INVOICE__EXPORT",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",
+        "VIEW_SCANS__CREATE_INVOICE",
         "SHARED__INVOICE_DELETE",
         "SHARED__INVOICE_SHARE",
         null,

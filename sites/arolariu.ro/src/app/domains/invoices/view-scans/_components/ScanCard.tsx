@@ -337,7 +337,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}
                 title={scan.name}
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-scripts"
               />
             </div>
           ) : (

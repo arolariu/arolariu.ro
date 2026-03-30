@@ -3,7 +3,7 @@
  * @module domains/invoices/_dialogs/ShareInvoiceDialog.Private
  */
 
-import {Alert, AlertDescription, AlertTitle, Button, Input, Label} from "@arolariu/components";
+import {Alert, AlertDescription, AlertTitle, Button, Input, Label, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
@@ -77,14 +77,22 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           />
           <p className={styles["emailHint"]}>{t("emailHint")}</p>
         </div>
-        <Button
-          type='submit'
-          // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
-          disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
-          className={styles["buttonFull"]}>
-          <TbMail className={styles["mailIcon"]} />
-          {t("sendInvitation")}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type='submit'
+                disabled
+                className={styles["buttonFull"]}>
+                <TbMail className={styles["mailIcon"]} />
+                {t("sendInvitation")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("comingSoonTooltip")}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </form>
     </div>
   );

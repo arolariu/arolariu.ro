@@ -2,7 +2,7 @@
 
 .ctaSection {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   padding: abstracts.space(20) abstracts.space(4);
 
   @include abstracts.respond-to('sm') {
@@ -175,5 +175,25 @@
 
   &:hover {
     background-color: abstracts.color-alpha('muted', 0.4);
+  }
+}
+
+// ===========================================
+// MOBILE RESPONSIVE OVERRIDES
+// ===========================================
+@include abstracts.respond-below('sm') {
+  .orbTopLeft {
+    display: none;
+  }
+
+  .orbBottomRight {
+    right: 0;
+    height: 6rem;
+    width: 6rem;
+  }
+
+  .orbCenter {
+    height: 10rem;
+    width: 10rem;
   }
 }

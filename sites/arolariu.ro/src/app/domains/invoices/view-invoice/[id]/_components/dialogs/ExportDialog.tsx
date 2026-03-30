@@ -206,7 +206,7 @@ export function ExportDialog(): React.JSX.Element {
       const paymentDate = new Date(invoice.paymentInformation.paymentDate).toLocaleDateString();
       const summary = `
 Invoice: ${invoice.name}
-Merchant: ${merchant.name}
+Merchant: ${merchant?.name ?? "N/A"}
 Date: ${paymentDate}
 Total: $${invoice.paymentInformation.totalCostAmount.toFixed(2)}
 Items: ${invoice.items.length}

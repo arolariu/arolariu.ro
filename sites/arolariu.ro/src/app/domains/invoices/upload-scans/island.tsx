@@ -170,9 +170,12 @@ function UploadContent(): React.JSX.Element {
 
   /**
    * Effect to collect completed scans before they're removed from the queue.
+   * Use blobUrl (from Azure) if available, otherwise fallback to preview (blob URL).
    */
   useEffect(() => {
-    const completed = pendingUploads.filter((u) => u.status === "completed").map((u) => ({id: u.id, preview: u.preview, name: u.name}));
+    const completed = pendingUploads
+      .filter((u) => u.status === "completed")
+      .map((u) => ({id: u.id, preview: u.blobUrl || u.preview, name: u.name}));
     if (completed.length > 0) {
       completedScansRef.current = completed;
     }

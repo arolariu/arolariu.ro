@@ -10,7 +10,7 @@
   @include container(80rem);
   padding-inline: space(5);
   padding-block: space(24);
-  min-height: calc(100vh - 64px); // 64px is typical header height
+  min-height: calc(200vh - 64px); // 64px is typical header height
 }
 
 // ===========================================

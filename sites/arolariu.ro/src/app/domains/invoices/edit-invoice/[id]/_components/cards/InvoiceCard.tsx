@@ -186,7 +186,7 @@ export default function InvoiceCard(): React.JSX.Element {
             </TooltipProvider>
           </div>
           <CardDescription>
-            {t("fromMerchant", {merchant: merchant.name})}
+            {t("fromMerchant", {merchant: merchant?.name ?? ""})}
             <Separator className={styles["separatorSmall"]} />
             <Textarea
               value={currentDescription}

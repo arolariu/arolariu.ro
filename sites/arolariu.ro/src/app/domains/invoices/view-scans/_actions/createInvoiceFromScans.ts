@@ -21,8 +21,9 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceScanType} from "@/types/invoices";
+import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceAnalysisOptions, InvoiceScanType} from "@/types/invoices";
 import {type Scan, ScanType} from "@/types/scans";
 
 /**
@@ -151,6 +152,8 @@ async function processSingleScan(
   try {
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
+    // Fire-and-forget auto-analysis after successful creation
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
     return {success: true, invoice};
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -239,6 +242,9 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
       {invoiceId: invoice.id, scansAttached: convertedScanIds.length + 1},
       "server",
     );
+
+    // Fire-and-forget auto-analysis after successful batch creation
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
 
     addSpanEvent("bff.invoice.create.batch.complete");
     return {

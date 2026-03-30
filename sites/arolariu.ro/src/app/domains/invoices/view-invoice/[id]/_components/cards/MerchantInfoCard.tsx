@@ -93,6 +93,22 @@ export function MerchantInfoCard(): React.JSX.Element {
   const {invoices} = useInvoicesStore();
   const t = useTranslations("Invoices.ViewInvoice.merchantInfoCard");
 
+  // Early return if merchant is null
+  if (!merchant) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={styles["emptyState"]}>
+            <p className={styles["emptyStateText"]}>{t("noMerchantLinked")}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   /**
    * Filter all invoices for this merchant.
    * Memoized to prevent recalculation on every render.

@@ -145,7 +145,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
                 <MerchantBreakdownChart
                   data={merchantBreakdown}
                   currency={currency}
-                  currentMerchant={merchant.name}
+                  currentMerchant={merchant?.name ?? ""}
                 />
               </div>
             </div>

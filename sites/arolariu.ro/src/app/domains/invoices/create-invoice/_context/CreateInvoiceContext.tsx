@@ -13,8 +13,9 @@
  */
 
 import {createInvoice} from "@/lib/actions/invoices/createInvoice";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {useScansStore} from "@/stores";
-import {InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
+import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
@@ -228,6 +229,9 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
 
       // Navigate to view invoice page — user can trigger analysis from there
       router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+
+      // Fire-and-forget auto-analysis after successful creation
+      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
     } catch (error) {
       console.error("Error creating invoice:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");

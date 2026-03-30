@@ -35,6 +35,7 @@ interface PendingUpload {
   progress: number;
   attempts: number;
   error?: string;
+  blobUrl?: string; // Azure blob URL after successful upload
 }
 
 /**
@@ -194,10 +195,10 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   }, []);
 
   /**
-   * Update a single upload's status.
+   * Update a single upload's status and optionally its blobUrl.
    */
-  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, error?: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, error} : u)));
+  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, error?: string, blobUrl?: string) => {
+    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, error, ...(blobUrl && {blobUrl})} : u)));
   }, []);
 
   /**
@@ -252,8 +253,8 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
             };
             addScan(cachedScan);
 
-            // Mark as completed and remove from pending
-            updateUploadStatus(upload.id, "completed");
+            // Mark as completed and store the blobUrl for PostUploadPrompt
+            updateUploadStatus(upload.id, "completed", undefined, result.scan.blobUrl);
             successCount++;
 
             // Remove from pending after short delay (for visual feedback)

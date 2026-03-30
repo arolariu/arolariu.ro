@@ -16,7 +16,7 @@ import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
 
 type Props = {
-  merchant: Merchant;
+  merchant: Merchant | null;
 };
 
 /**
@@ -58,6 +58,20 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
   const t = useTranslations("Invoices.EditInvoice.merchantCard");
   const {open: openMerchantInfoDialog} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
   const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
+
+  // Early return if merchant is null
+  if (!merchant) {
+    return (
+      <Card className={styles["card"]}>
+        <CardHeader>
+          <CardTitle>{t("title")}</CardTitle>
+        </CardHeader>
+        <CardContent className={styles["cardContent"]}>
+          <p className={styles["noMerchantText"]}>{t("noMerchantLinked")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={styles["card"]}>

@@ -91,7 +91,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </span>
             </CardTitle>
             <CardDescription>
-              {merchant.name} • {invoice.description}
+              {merchant?.name ?? ""} • {invoice.description}
             </CardDescription>
           </div>
         </div>

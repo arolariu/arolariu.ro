@@ -2174,6 +2174,8 @@
         }
       },
       "merchantInfoCard": {
+        "title": "Informații comerciant",
+        "noMerchantLinked": "Niciun comerciant asociat acestei facturi",
         "viewAllReceipts": "Vezi toate bonurile",
         "viewAllInvoices": "Vezi toate facturile",
         "viewOnMap": "Vezi pe hartă",
@@ -2841,6 +2843,7 @@
       },
       "merchantCard": {
         "title": "Comerciant",
+        "noMerchantLinked": "Niciun comerciant asociat acestei facturi",
         "addressLabel": "Adresă: {address}",
         "buttons": {
           "viewMerchantDetails": "Vezi detalii comerciant",
@@ -3178,6 +3181,7 @@
       },
       "merchantDialog": {
         "title": "Detalii comerciant",
+        "noMerchantLinked": "Niciun comerciant asociat acestei facturi",
         "description": "Informații despre {merchantName}",
         "fields": {
           "address": "Adresă",
@@ -3645,7 +3649,8 @@
           "sendEmail": {
             "loading": "Se trimite invitația către {email}...",
             "success": "Invitație trimisă către {email}!",
-            "error": "Eșuat: {message}"
+            "error": "Eșuat: {message}",
+            "comingSoon": "Partajarea prin email va fi disponibilă în curând"
           },
           "revoke": {
             "loading": "Se trimite cererea de revocare către server...",
@@ -3687,7 +3692,8 @@
         "emailLabel": "Adresa de email a destinatarului",
         "emailPlaceholder": "name@example.com",
         "emailHint": "O invitație pe email va fi trimisă la această adresă cu un link privat pentru a vedea factura.",
-        "sendInvitation": "Trimite invitație privată"
+        "sendInvitation": "Trimite invitație privată",
+        "comingSoonTooltip": "Funcția de partajare prin email va fi disponibilă în curând"
       },
       "deleteInvoiceDialog": {
         "title": "Șterge factură",
@@ -3819,7 +3825,8 @@
         "upload": "Încărcare",
         "review": "Revizuire",
         "create": "Creare"
-      }
+      },
+      "unknownMerchant": "Comerciant Necunoscut"
     },
     "CreateInvoice": {
       "metadata": {

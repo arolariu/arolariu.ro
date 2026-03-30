@@ -2174,6 +2174,8 @@
         }
       },
       "merchantInfoCard": {
+        "title": "Merchant Information",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "viewAllReceipts": "View All Receipts",
         "viewAllInvoices": "View All Invoices",
         "viewOnMap": "View on Map",
@@ -2842,6 +2844,7 @@
       },
       "merchantCard": {
         "title": "Merchant",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "addressLabel": "Address: {address}",
         "buttons": {
           "viewMerchantDetails": "View Merchant Details",
@@ -3179,6 +3182,7 @@
       },
       "merchantDialog": {
         "title": "Merchant Details",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "description": "Information about {merchantName}",
         "fields": {
           "address": "Address",
@@ -3646,7 +3650,8 @@
           "sendEmail": {
             "loading": "Sending invitation to {email}...",
             "success": "Invitation sent to {email}!",
-            "error": "Failed: {message}"
+            "error": "Failed: {message}",
+            "comingSoon": "Email sharing is coming soon"
           },
           "revoke": {
             "loading": "Sending revoke request to backend...",
@@ -3688,7 +3693,8 @@
         "emailLabel": "Recipient's email address",
         "emailPlaceholder": "name@example.com",
         "emailHint": "An email invitation will be sent to this address with a private link to view the invoice.",
-        "sendInvitation": "Send private invitation"
+        "sendInvitation": "Send private invitation",
+        "comingSoonTooltip": "Email sharing feature is coming soon"
       },
       "deleteInvoiceDialog": {
         "title": "Delete invoice",
@@ -3820,7 +3826,8 @@
         "upload": "Upload",
         "review": "Review",
         "create": "Create"
-      }
+      },
+      "unknownMerchant": "Unknown Merchant"
     },
     "CreateInvoice": {
       "metadata": {
