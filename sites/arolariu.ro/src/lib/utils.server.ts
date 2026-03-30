@@ -246,15 +246,34 @@ export function parseBackendError(status: number, body: string): string {
       return "This feature requires a paid subscription.";
     case 409:
       return "Conflict: this resource was modified by another user.";
-    case 413:
-      return "File is too large. Maximum size is 10MB.";
+    case 413: {
+      // Try to parse the actual limit from the backend response
+      try {
+        const parsed = JSON.parse(body) as {detail?: string; maxSize?: string};
+        if (parsed.maxSize) {
+          return `File is too large. Maximum size is ${parsed.maxSize}.`;
+        }
+        if (parsed.detail) {
+          return parsed.detail;
+        }
+      } catch {
+        // Fallback if parsing fails
+      }
+      return "File is too large. Please check the size limit and try again.";
+    }
     default: {
       try {
         const parsed = JSON.parse(body) as {detail?: string};
-        return parsed.detail ?? body;
+        if (parsed.detail) {
+          return parsed.detail;
+        }
       } catch {
-        return body;
+        // If JSON parsing fails, sanitize the raw body
+        const sanitized = body.slice(0, 200);
+        return sanitized || "An unknown error occurred.";
       }
+      // Fallback for successful JSON parse but no detail field
+      return "An unknown error occurred.";
     }
   }
 }

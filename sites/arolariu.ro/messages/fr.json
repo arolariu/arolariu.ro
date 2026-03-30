@@ -1469,6 +1469,7 @@
         "createInvoices": "Créer des Factures"
       },
       "scanCard": {
+        "loading": "Chargement...",
         "delete": "Supprimer le scan",
         "linked": "Lié",
         "deleteDialog": {
@@ -1482,10 +1483,10 @@
           "success": "Scan supprimé avec succès",
           "error": "Échec de la suppression du scan"
         },
-        "rename": "Rename scan",
-        "renamePlaceholder": "Enter new name",
-        "preview": "Preview scan",
-        "previewTitle": "Scan Preview"
+        "rename": "Renommer le scan",
+        "renamePlaceholder": "Entrez le nouveau nom",
+        "preview": "Aperçu du scan",
+        "previewTitle": "Aperçu du scan"
       },
       "createInvoiceDialog": {
         "title": "Créer une Facture",
@@ -1533,12 +1534,12 @@
           "nextStepsDescriptionPlural": "Examinez vos factures, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
           "viewButton": "Voir la Facture",
           "viewButtonPlural": "Voir les Factures",
-          "failureTitle": "Creation Failed",
-          "failureDescription": "We couldn't create any invoices. Please review the errors below and try again.",
-          "partialTitle": "{created} of {total} Invoices Created",
-          "partialDescription": "Some scans couldn't be processed. Successfully created invoices are ready for viewing.",
-          "errorsLabel": "Failed Scans:",
-          "retryButton": "Try Again"
+          "failureTitle": "Échec de la création",
+          "failureDescription": "Nous n'avons pas pu créer de factures. Veuillez vérifier les erreurs ci-dessous et réessayer.",
+          "partialTitle": "{created} factures créées sur {total}",
+          "partialDescription": "Certains scans n'ont pas pu être traités. Les factures créées avec succès sont prêtes à être consultées.",
+          "errorsLabel": "Scans échoués :",
+          "retryButton": "Réessayer"
         },
         "errors": {
           "partialFail": "Échec de la création de {count} facture(s)",
@@ -1905,9 +1906,9 @@
             "pdf": "PDF"
           },
           "descriptions": {
-            "json": "Structured data format",
-            "csv": "Spreadsheet format, compatible with Excel",
-            "pdf": "Printable document format"
+            "json": "Format de données structurées",
+            "csv": "Format tableur, compatible avec Excel",
+            "pdf": "Format de document imprimable"
           }
         },
         "options": {
@@ -1927,15 +1928,15 @@
         "buttons": {
           "cancel": "Annuler",
           "export": "Exporter",
-          "copy": "Copy to Clipboard",
-          "copied": "Copied!"
+          "copy": "Copier dans le presse-papiers",
+          "copied": "Copié !"
         },
         "filename": {
-          "hint": "The file will be saved with the extension based on format",
-          "label": "Filename"
+          "hint": "Le fichier sera enregistré avec l'extension basée sur le format",
+          "label": "Nom du fichier"
         },
         "estimate": {
-          "label": "Estimated file size:"
+          "label": "Taille estimée du fichier :"
         }
       },
       "importDialog": {

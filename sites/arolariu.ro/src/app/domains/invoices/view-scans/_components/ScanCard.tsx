@@ -80,7 +80,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
           </div>
           <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>Loading...</div>
+            <div className={styles["fileName"]}>{t("loading")}</div>
           </div>
         </CardContent>
       </Card>
@@ -337,6 +337,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}
                 title={scan.name}
+                sandbox="allow-same-origin"
               />
             </div>
           ) : (

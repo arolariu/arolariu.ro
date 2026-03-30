@@ -16,6 +16,7 @@ import {
   Label,
   RadioGroup,
   RadioGroupItem,
+  toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import React, {useCallback, useMemo, useState} from "react";
@@ -92,24 +93,28 @@ export default function ExportDialog(): React.JSX.Element {
       e.preventDefault();
       e.stopPropagation();
 
-      // Generate JSON string
-      const jsonData = JSON.stringify(
-        invoicesToExport.map((invoice) => ({
-          id: invoice.id,
-          merchantName: exportOptions.includeMerchant ? invoice.merchantName : undefined,
-          totalAmount: invoice.totalAmount,
-          currency: invoice.currency,
-          createdAt: invoice.createdAt,
-          metadata: exportOptions.includeMetadata ? invoice.metadata : undefined,
-          products: exportOptions.includeProducts ? invoice.products : undefined,
-        })),
-        null,
-        exportOptions.jsonOptions?.prettyPrint ? 2 : 0,
-      );
+      try {
+        // Generate JSON string
+        const jsonData = JSON.stringify(
+          invoicesToExport.map((invoice) => ({
+            id: invoice.id,
+            merchantReference: exportOptions.includeMerchant ? invoice.merchantReference : undefined,
+            paymentInformation: invoice.paymentInformation,
+            createdAt: invoice.createdAt,
+            additionalMetadata: exportOptions.includeMetadata ? invoice.additionalMetadata : undefined,
+            items: exportOptions.includeProducts ? invoice.items : undefined,
+          })),
+          null,
+          exportOptions.jsonOptions?.prettyPrint ? 2 : 0,
+        );
 
-      await navigator.clipboard.writeText(jsonData);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+        await navigator.clipboard.writeText(jsonData);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        toast.error("Failed to copy to clipboard");
+        console.error("Clipboard error:", error);
+      }
     },
     [invoicesToExport, exportOptions],
   );

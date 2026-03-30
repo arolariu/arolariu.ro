@@ -121,7 +121,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 
     merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
 
-    // Only generate description if category was successfully classified (not default OTHER)
+    // Generate description for non-OTHER categories or for OTHER merchants with a known name
     if (merchant.Category != MerchantCategory.OTHER || !string.IsNullOrWhiteSpace(merchant.Name))
     {
       var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);

@@ -1,6 +1,6 @@
 Bugs to iron out / UI/UX to enhance:
 
-1. When pressing on the "Sync" button in the view-scans page OR when navigating for the first time to it, I am flooded by toats with the success sync message. This should happen only once (the toast should be displayed once, not multiple times)
+1. When pressing on the "Sync" button in the view-scans page OR when navigating for the first time to it, I am flooded by toasts with the success sync message. This should happen only once (the toast should be displayed once, not multiple times)
 2. The view-scans page sometimes doesn't properly mount the newly synchronized/fetched scans in their card correctly -- aka, the card shows up as an empty container, it occupies the space but there is no thumbnail or data visible -- I have to refresh the page.
 3. When I press on the "Sync" button, the banner with "All scans are ready!" appears, prompting me to create an invoice with all the available scans -- this dialog and banner should be more user friendly or have a better UX.
 4. In case we have a PDF scan, I'm okay with showing a placeholder "PDF" thumbnail like we do now, but maybe we should also offer the possibility to preview the PDF in a modal or something like that, just like we do for images when the user clicks on them we enhance them, so the user doesn't have to download it to see what's inside.

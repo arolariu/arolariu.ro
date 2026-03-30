@@ -3,17 +3,18 @@
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
-// Mock server-only modules FIRST
+import {InvoiceScanType} from "@/types/invoices";
+import type {Scan} from "@/types/scans";
+import {ScanStatus, ScanType} from "@/types/scans";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+
+// Mock instrumentation.server
 vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
   withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
   getTraceparentHeader: vi.fn(() => ""),
   injectTraceContextHeaders: vi.fn(() => ({})),
-}));
-
-vi.mock("@/lib/utils.server", () => ({
-  fetchWithTimeout: vi.fn(),
 }));
 
 // Mock fetchUser
@@ -26,14 +27,6 @@ vi.mock("@/lib/actions/user/fetchUser", () => ({
 vi.mock("@/lib/config/configProxy", () => ({
   fetchApiUrl: async () => "https://api.test.com",
 }));
-
-// Import vitest functions AFTER mocks
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-
-// Import types
-import {InvoiceScanType} from "@/types/invoices";
-import type {Scan} from "@/types/scans";
-import {ScanStatus, ScanType} from "@/types/scans";
 
 // Mock global fetch
 const mockFetch = vi.fn();

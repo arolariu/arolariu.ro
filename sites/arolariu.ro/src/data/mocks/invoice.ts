@@ -148,6 +148,8 @@ export class InvoiceBuilder {
     };
 
     const totalAmount = faker.number.float({min: 10, max: 1000, multipleOf: 0.01});
+    const subtotal = faker.number.float({min: totalAmount * 0.8, max: totalAmount, multipleOf: 0.01});
+    const tip = faker.number.float({min: 0, max: totalAmount * 0.2, multipleOf: 0.01});
 
     this.invoice = {
       id: faker.string.uuid(),
@@ -178,9 +180,15 @@ export class InvoiceBuilder {
         currency,
         totalCostAmount: totalAmount,
         totalTaxAmount: faker.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 0.01}),
+        subtotalAmount: subtotal,
+        tipAmount: tip,
       },
       possibleRecipes: [],
       additionalMetadata: {},
+      receiptType: "",
+      countryRegion: "",
+      taxDetails: [],
+      payments: [],
     };
   }
 
@@ -536,6 +544,60 @@ export class InvoiceBuilder {
    */
   withPaymentInformation(paymentInfo: PaymentInformation): this {
     this.invoice.paymentInformation = paymentInfo;
+    return this;
+  }
+
+  /**
+   * Convenience method to set the total payment amount.
+   *
+   * @param amount - Total cost amount for the invoice
+   * @returns This InvoiceBuilder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const invoice = new InvoiceBuilder()
+   *   .withPaymentAmount(150.50)
+   *   .build();
+   * ```
+   */
+  withPaymentAmount(amount: number): this {
+    this.invoice.paymentInformation.totalCostAmount = amount;
+    return this;
+  }
+
+  /**
+   * Convenience method to set the transaction date.
+   *
+   * @param date - Transaction date for the payment
+   * @returns This InvoiceBuilder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const invoice = new InvoiceBuilder()
+   *   .withTransactionDate(new Date("2024-01-15"))
+   *   .build();
+   * ```
+   */
+  withTransactionDate(date: Date): this {
+    this.invoice.paymentInformation.transactionDate = date;
+    return this;
+  }
+
+  /**
+   * Convenience method to set the payment currency code.
+   *
+   * @param currencyCode - ISO 4217 currency code (e.g., "USD", "EUR", "RON")
+   * @returns This InvoiceBuilder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const invoice = new InvoiceBuilder()
+   *   .withPaymentCurrency("USD")
+   *   .build();
+   * ```
+   */
+  withPaymentCurrency(currencyCode: string): this {
+    this.invoice.paymentInformation.currency.code = currencyCode;
     return this;
   }
 

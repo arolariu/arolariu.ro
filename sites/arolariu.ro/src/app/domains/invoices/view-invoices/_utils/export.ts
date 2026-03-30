@@ -25,32 +25,23 @@ import type {InvoiceExportRequest} from "../_types/InvoiceExport";
  * ```
  */
 function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
-  console.log(">>> jsonOptions:", options);
   const {includeMerchant, includeMetadata, includeProducts, jsonOptions} = options;
   const {prettyPrint} = jsonOptions ?? {};
   const jsonSpaces = prettyPrint ? 2 : 0;
 
-  let jsonValue = [...invoices];
-  if (!includeMerchant) {
-    jsonValue = jsonValue.map((invoice) => {
-      invoice.merchantReference = "";
-      return invoice;
-    });
-  }
-
-  if (!includeMetadata) {
-    jsonValue = jsonValue.map((invoice) => {
-      invoice.additionalMetadata = {};
-      return invoice;
-    });
-  }
-
-  if (!includeProducts) {
-    jsonValue = jsonValue.map((invoice) => {
-      invoice.items = [];
-      return invoice;
-    });
-  }
+  const jsonValue = invoices.map((invoice) => {
+    const copy = structuredClone(invoice);
+    if (!includeMerchant) {
+      copy.merchantReference = "";
+    }
+    if (!includeMetadata) {
+      copy.additionalMetadata = {};
+    }
+    if (!includeProducts) {
+      copy.items = [];
+    }
+    return copy;
+  });
 
   const json = JSON.stringify(jsonValue, null, jsonSpaces);
   const blob = new Blob([json], {type: "application/json"});
@@ -71,7 +62,6 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
  */
 function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
   // TODO: impl of feature.
-  console.log(">>> Exporting to CSV...", {invoices, options, filename});
 }
 
 /**
@@ -82,7 +72,6 @@ function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportReq
  */
 function exportToPdf(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
   // TODO: impl of feature.
-  console.log(">>> Exporting to PDF...", {invoices, options, filename});
 }
 
 /**

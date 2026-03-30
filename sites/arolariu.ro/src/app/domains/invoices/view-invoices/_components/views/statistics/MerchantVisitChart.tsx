@@ -37,6 +37,11 @@ function MerchantVisitCard({
 }): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
 
+  // Format day name using Intl.DateTimeFormat for i18n support
+  const dayName = new Intl.DateTimeFormat("en-US", {weekday: "long"}).format(
+    new Date(2024, 0, pattern.mostCommonDayOfWeek + 1),
+  );
+
   return (
     <div className={styles["merchantCard"]}>
       <div className={styles["cardHeader"]}>
@@ -79,7 +84,7 @@ function MerchantVisitCard({
           </div>
           <div className={styles["metricContent"]}>
             <span className={styles["metricLabel"]}>{t("metrics.preferredDay")}</span>
-            <span className={styles["metricValue"]}>{pattern.mostCommonDayOfWeek}</span>
+            <span className={styles["metricValue"]}>{dayName}</span>
           </div>
         </div>
 

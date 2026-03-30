@@ -214,7 +214,8 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         // Show partial failure toast with first error details
         const firstError = result.errors[0];
         const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
-        toast.error(t("errors.partialFail", {count: String(result.errors.length), details: errorMessage}));
+        const partialFailMessage = t("errors.partialFail", {count: String(result.errors.length)});
+        toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("errors.unknown");
@@ -437,10 +438,13 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <div className={styles["completeErrorsList"]}>
               {errors.map((error, index) => (
                 <div
-                  key={index}
+                  key={error.scanId ?? error.message}
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
-                  <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                  <div>
+                    {error.scanName && <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p>}
+                    <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                  </div>
                 </div>
               ))}
             </div>

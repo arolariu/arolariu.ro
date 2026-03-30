@@ -134,24 +134,21 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
             height='100%'>
             <BarChart
               data={coloredData}
-              layout='horizontal'
-              margin={{top: 8, right: 8, bottom: 8, left: 8}}>
+              layout='vertical'
+              margin={{top: 8, right: 8, bottom: 8, left: 120}}>
               <XAxis
+                type='number'
+                tick={{fontSize: 10}}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
                 type='category'
                 dataKey='category'
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}
-                angle={-45}
-                textAnchor='end'
-                height={80}
-              />
-              <YAxis
-                type='number'
-                tick={{fontSize: 10}}
-                tickLine={false}
-                axisLine={false}
-                width={60}
+                width={110}
               />
               <Tooltip
                 content={
@@ -164,7 +161,7 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
               />
               <Bar
                 dataKey='totalSpent'
-                radius={[4, 4, 0, 0]}
+                radius={[0, 4, 4, 0]}
               />
             </BarChart>
           </ResponsiveContainer>

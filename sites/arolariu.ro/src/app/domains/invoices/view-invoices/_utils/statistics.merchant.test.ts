@@ -115,7 +115,7 @@ describe("Merchant Analytics", () => {
       expect(result).toHaveLength(1);
       expect(result[0]?.merchantId).toBe("merchant-1");
       expect(result[0]?.totalVisits).toBe(2);
-      expect(result[0]?.mostCommonDayOfWeek).toBe("Wednesday");
+      expect(result[0]?.mostCommonDayOfWeek).toBe(3); // Wednesday = day index 3
       expect(result[0]?.averageBasketSize).toBe(6); // (5 + 7) / 2
       expect(result[0]?.averageSpendPerVisit).toBe(125); // (100 + 150) / 2
     });

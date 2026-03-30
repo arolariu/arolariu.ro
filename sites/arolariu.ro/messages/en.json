@@ -1469,6 +1469,7 @@
         "createInvoices": "Create Invoices"
       },
       "scanCard": {
+        "loading": "Loading...",
         "delete": "Delete scan",
         "linked": "Linked",
         "deleteDialog": {

@@ -1032,8 +1032,8 @@ export type MerchantVisitPattern = {
   totalVisits: number;
   /** Average visits per month */
   averageVisitsPerMonth: number;
-  /** Most common shopping day */
-  mostCommonDayOfWeek: string;
+  /** Most common shopping day (0=Sunday, 6=Saturday) */
+  mostCommonDayOfWeek: number;
   /** Average number of items per visit */
   averageBasketSize: number;
   /** Average spending per visit */
@@ -1165,8 +1165,6 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
  * ```
  */
 export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>): MerchantVisitPattern[] {
-  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
   type MerchantData = {
     visits: number;
     dates: Date[];
@@ -1236,8 +1234,6 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
       }
     }
 
-    const mostCommonDayOfWeek = dayNames[mostCommonDay] ?? "Unknown";
-
     // Calculate averages
     const averageBasketSize = data.visits > 0 ? data.totalItems / data.visits : 0;
     const averageSpendPerVisit = data.visits > 0 ? data.totalSpend / data.visits : 0;
@@ -1246,7 +1242,7 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
       merchantId,
       totalVisits: data.visits,
       averageVisitsPerMonth: Math.round(averageVisitsPerMonth * 100) / 100,
-      mostCommonDayOfWeek,
+      mostCommonDayOfWeek: mostCommonDay,
       averageBasketSize: Math.round(averageBasketSize * 100) / 100,
       averageSpendPerVisit: Math.round(averageSpendPerVisit * 100) / 100,
     });
