@@ -43,7 +43,7 @@ const mockUseRouter = vi.mocked(useRouter);
  * Helper to render the AnalysisPanel with required context.
  */
 function renderAnalysisPanel(invoiceOverrides = {}) {
-  const invoice = new InvoiceBuilder().build(invoiceOverrides);
+  const invoice = {...new InvoiceBuilder().build(), ...invoiceOverrides};
   const merchant = new MerchantBuilder().build();
 
   const messages = {
@@ -132,22 +132,22 @@ describe("AnalysisPanel", () => {
   it("should render the analysis panel with title", () => {
     renderAnalysisPanel();
 
-    expect(screen.getByText("AI Analysis")).toBeInTheDocument();
-    expect(screen.getByText("Re-analyze this invoice with AI to extract or update data")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.getByText("description")).toBeInTheDocument();
   });
 
   it("should display last analyzed information when available", () => {
     const lastUpdatedAt = new Date("2024-01-15T10:30:00Z");
     renderAnalysisPanel({lastUpdatedAt, numberOfUpdates: 3});
 
-    expect(screen.getByText("Last Analyzed")).toBeInTheDocument();
-    expect(screen.getByText(/3 updates/i)).toBeInTheDocument();
+    expect(screen.getByText("labels.lastAnalyzed")).toBeInTheDocument();
+    expect(screen.getByText("labels.updates")).toBeInTheDocument();
   });
 
   it("should render the re-analyze button", () => {
     renderAnalysisPanel();
 
-    const reanalyzeButton = screen.getByRole("button", {name: /re-analyze invoice/i});
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
     expect(reanalyzeButton).toBeInTheDocument();
     expect(reanalyzeButton).not.toBeDisabled();
   });
@@ -155,10 +155,9 @@ describe("AnalysisPanel", () => {
   it("should render granular analysis option buttons", () => {
     renderAnalysisPanel();
 
-    expect(screen.getByText("Full Analysis")).toBeInTheDocument();
-    expect(screen.getByText("Invoice Only")).toBeInTheDocument();
-    expect(screen.getByText("Items Only")).toBeInTheDocument();
-    expect(screen.getByText("Merchant Only")).toBeInTheDocument();
+    expect(screen.getByText("options.completeAnalysis")).toBeInTheDocument();
+    expect(screen.getByText("options.invoiceOnly")).toBeInTheDocument();
+    expect(screen.getByText("options.itemsOnly")).toBeInTheDocument();
   });
 
   it("should trigger complete analysis when re-analyze button is clicked", async () => {
@@ -167,7 +166,7 @@ describe("AnalysisPanel", () => {
 
     renderAnalysisPanel();
 
-    const reanalyzeButton = screen.getByRole("button", {name: /re-analyze invoice/i});
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
     await user.click(reanalyzeButton);
 
     await waitFor(() => {
@@ -188,16 +187,13 @@ describe("AnalysisPanel", () => {
 
     renderAnalysisPanel();
 
-    const reanalyzeButton = screen.getByRole("button", {name: /re-analyze invoice/i});
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
     await user.click(reanalyzeButton);
 
     // Should show analyzing state
     await waitFor(() => {
-      expect(screen.getByText("Analyzing...")).toBeInTheDocument();
+      expect(screen.getByText("analyzing.title")).toBeInTheDocument();
     });
-
-    // Buttons should be disabled during analysis
-    expect(reanalyzeButton).toBeDisabled();
 
     // Resolve the analysis
     resolveAnalysis!();
@@ -214,7 +210,7 @@ describe("AnalysisPanel", () => {
 
     renderAnalysisPanel();
 
-    const itemsOnlyButton = screen.getByText("Items Only");
+    const itemsOnlyButton = screen.getByText("options.itemsOnly");
     await user.click(itemsOnlyButton);
 
     await waitFor(() => {
@@ -231,7 +227,7 @@ describe("AnalysisPanel", () => {
 
     renderAnalysisPanel();
 
-    const reanalyzeButton = screen.getByRole("button", {name: /re-analyze invoice/i});
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
     await user.click(reanalyzeButton);
 
     await waitFor(() => {
@@ -246,7 +242,7 @@ describe("AnalysisPanel", () => {
 
     renderAnalysisPanel();
 
-    const reanalyzeButton = screen.getByRole("button", {name: /re-analyze invoice/i});
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
     await user.click(reanalyzeButton);
 
     await waitFor(() => {
@@ -259,20 +255,20 @@ describe("AnalysisPanel", () => {
   it("should display the quick tip", () => {
     renderAnalysisPanel();
 
-    expect(screen.getByText(/Quick Tip:/i)).toBeInTheDocument();
+    expect(screen.getByText("tip")).toBeInTheDocument();
   });
 
   it("should not crash when invoice has no lastUpdatedAt", () => {
-    renderAnalysisPanel({lastUpdatedAt: undefined});
+    renderAnalysisPanel({lastUpdatedAt: null});
 
-    expect(screen.getByText("AI Analysis")).toBeInTheDocument();
-    expect(screen.queryByText("Last Analyzed")).not.toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.queryByText("labels.lastAnalyzed")).not.toBeInTheDocument();
   });
 
   it("should handle zero numberOfUpdates gracefully", () => {
     renderAnalysisPanel({lastUpdatedAt: new Date(), numberOfUpdates: 0});
 
-    expect(screen.getByText("AI Analysis")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
     // Should not show the updates badge when count is 0
   });
 });

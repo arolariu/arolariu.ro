@@ -36,12 +36,16 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock next-intl
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
-  useLocale: () => "en",
-  useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
-  NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
-}));
+vi.mock("next-intl", () => {
+  const mockT = (key: string) => key;
+  mockT.rich = (key: string) => key;
+  return {
+    useTranslations: () => mockT,
+    useLocale: () => "en",
+    useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
+    NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
+  };
+});
 
 // Mock Clerk
 vi.mock("@clerk/nextjs", () => ({
