@@ -57,3 +57,26 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("server-only", () => {
   return {};
 });
+
+// Mock OpenTelemetry to prevent deep node_modules resolution issues in tests
+vi.mock("@opentelemetry/api", async (importOriginal) => {
+  try {
+    return await importOriginal();
+  } catch {
+    return {trace: {getTracer: () => ({startSpan: vi.fn()})}, context: {active: vi.fn()}, createContextKey: vi.fn()};
+  }
+});
+vi.mock("@opentelemetry/sdk-logs", () => ({}));
+vi.mock("@opentelemetry/sdk-trace-base", () => ({}));
+vi.mock("@opentelemetry/resources", () => ({}));
+
+// Mock Azure SDKs to prevent CJS resolution issues (function-bind/implementation)
+vi.mock("@azure/storage-blob", () => ({BlobServiceClient: vi.fn()}));
+vi.mock("@azure/identity", () => ({DefaultAzureCredential: vi.fn()}));
+vi.mock("@azure/app-configuration", () => ({}));
+
+// Mock server-side utilities that import next/headers
+vi.mock("@/lib/azure/storageClient", () => ({
+  createBlobClient: vi.fn(),
+  rewriteAzuriteUrl: vi.fn((url: string) => url),
+}));

@@ -3,7 +3,15 @@
  * @module hooks/index.test
  */
 
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
+
+// Mock server action modules to prevent Vite from resolving "use server" dependency chain
+vi.mock("@/lib/actions/invoices/fetchInvoice", () => ({default: vi.fn()}));
+vi.mock("@/lib/actions/invoices/fetchInvoices", () => ({default: vi.fn()}));
+vi.mock("@/lib/actions/invoices/fetchMerchant", () => ({default: vi.fn()}));
+vi.mock("@/lib/actions/invoices/fetchMerchants", () => ({default: vi.fn()}));
+vi.mock("@/lib/actions/user/fetchUser", () => ({fetchBFFUserFromAuthService: vi.fn(), fetchAaaSUserFromAuthService: vi.fn()}));
+
 import {useInvoice, useInvoices, useMerchant, useMerchants, usePaginationWithSearch, useUserInformation} from "./index";
 
 describe("hooks barrel export", () => {
