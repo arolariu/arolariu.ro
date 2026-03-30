@@ -184,9 +184,9 @@ describe("getSupportedCurrencies", () => {
     expect(currencies).toContain("KWD");
   });
 
-  it("should contain exactly 50 currencies", () => {
+  it("should contain exactly 100 currencies", () => {
     const currencies = getSupportedCurrencies();
-    expect(currencies.length).toBe(50);
+    expect(currencies.length).toBe(100);
   });
 });
 
