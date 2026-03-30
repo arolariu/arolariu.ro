@@ -1,4 +1,5 @@
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
+import {getTransactionYear, toRON} from "@/lib/currency";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
@@ -78,7 +79,15 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             - new Date(b.paymentInformation?.transactionDate ?? b.createdAt).getTime();
           break;
         case "amount":
-          comparison = (a.paymentInformation?.totalCostAmount ?? 0) - (b.paymentInformation?.totalCostAmount ?? 0);
+          {
+            const aAmount = a.paymentInformation?.totalCostAmount ?? 0;
+            const bAmount = b.paymentInformation?.totalCostAmount ?? 0;
+            const aCurrency = a.paymentInformation?.currency?.code ?? "RON";
+            const bCurrency = b.paymentInformation?.currency?.code ?? "RON";
+            const aYear = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
+            const bYear = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
+            comparison = toRON(aAmount, aCurrency, aYear) - toRON(bAmount, bCurrency, bYear);
+          }
           break;
         case "name":
           comparison = (a.name ?? "").localeCompare(b.name ?? "");

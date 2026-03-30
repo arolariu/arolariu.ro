@@ -12,7 +12,7 @@
  * - TypeScript strict mode with explicit return types
  * - Safe access patterns (optional chaining, nullish coalescing)
  * - Performance-conscious (single-pass aggregations where possible)
- * - Currency-aware (extracts from first invoice, assumes homogeneous currency)
+ * - Currency-aware (all amounts normalized to RON via yearly average exchange rates)
  *
  * **Performance Considerations:**
  * All functions are O(n) complexity where n is the number of invoices.
@@ -39,6 +39,25 @@
  */
 
 import type {Invoice} from "@/types/invoices";
+import {getTransactionYear, toRON} from "@/lib/currency";
+
+/**
+ * Extracts the RON-normalized amount from an invoice.
+ *
+ * @remarks
+ * Converts the invoice's `totalCostAmount` to RON using the yearly average
+ * exchange rate for the invoice's transaction year. RON invoices pass through
+ * unchanged. Unknown currencies are returned as-is.
+ *
+ * @param invoice - The invoice to extract the amount from
+ * @returns The amount in RON (or original amount if currency is unknown)
+ */
+function getAmountInRON(invoice: Invoice): number {
+  const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+  const currencyCode = invoice.paymentInformation?.currency?.code ?? "RON";
+  const year = getTransactionYear(invoice.paymentInformation?.transactionDate, invoice.createdAt);
+  return toRON(amount, currencyCode, year);
+}
 
 /**
  * Key Performance Indicator data for dashboard summary row.
@@ -332,7 +351,7 @@ export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
 
   // Single pass aggregation
   for (const invoice of invoices) {
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
     totalSpending += amount;
     totalItems += invoice.items?.length ?? 0;
 
@@ -350,8 +369,8 @@ export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
     }
   }
 
-  // Extract currency from first invoice
-  const currency = invoices[0]?.paymentInformation?.currency?.code ?? "RON";
+  // Extract currency — always RON since amounts are now normalized
+  const currency = "RON";
 
   return {
     totalSpending: Math.round(totalSpending * 100) / 100,
@@ -401,7 +420,7 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const monthKey = `${year}-${month}`;
 
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
 
     const existing = monthMap.get(monthKey) ?? {amount: 0, count: 0};
     monthMap.set(monthKey, {
@@ -498,7 +517,7 @@ export function computeCategoryAggregates(invoices: ReadonlyArray<Invoice>): Cat
 
   for (const invoice of invoices) {
     const category = invoice.category ?? 0;
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
     totalSpending += amount;
 
     const existing = categoryMap.get(category) ?? {amount: 0, count: 0};
@@ -553,7 +572,7 @@ export function computeMerchantAggregates(invoices: ReadonlyArray<Invoice>): Mer
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
     if (merchantId) {
-      const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+      const amount = getAmountInRON(invoice);
       const existing = merchantMap.get(merchantId) ?? {totalSpend: 0, count: 0};
 
       merchantMap.set(merchantId, {
@@ -613,7 +632,7 @@ export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpe
     const day = String(date.getDate()).padStart(2, "0");
     const dayKey = `${year}-${month}-${day}`;
 
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
     const existing = dayMap.get(dayKey) ?? {amount: 0, count: 0};
 
     dayMap.set(dayKey, {
@@ -676,7 +695,7 @@ export function computePriceDistribution(invoices: ReadonlyArray<Invoice>): Pric
   }));
 
   for (const invoice of invoices) {
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
 
     // Find appropriate bucket
     for (const bucket of bucketData) {
@@ -736,7 +755,7 @@ export function computeTimeOfDay(invoices: ReadonlyArray<Invoice>): TimeOfDaySeg
     const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
     const date = new Date(transactionDate);
     const hour = date.getHours();
-    const amount = invoice.paymentInformation?.totalCostAmount ?? 0;
+    const amount = getAmountInRON(invoice);
 
     const segment: keyof typeof segments =
       hour >= 6 && hour < 12 ? "Morning" : hour >= 12 && hour < 17 ? "Afternoon" : hour >= 17 && hour < 21 ? "Evening" : "Night";
