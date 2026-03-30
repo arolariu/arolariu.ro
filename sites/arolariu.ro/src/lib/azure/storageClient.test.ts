@@ -12,6 +12,9 @@ const {mockFromConnectionString} = vi.hoisted(() => ({
 // Mock server-only
 vi.mock("server-only", () => ({}));
 
+// Undo the global storageClient mock so we test the REAL implementation
+vi.unmock("@/lib/azure/storageClient");
+
 // Mock @azure/storage-blob
 vi.mock("@azure/storage-blob", () => ({
   BlobServiceClient: class MockBlobServiceClient {
