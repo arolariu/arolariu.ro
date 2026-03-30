@@ -129,8 +129,7 @@ test.describe("Legal Pages @legal", () => {
       // Try to find terms of service link
       const termsLink = page.getByRole("link", {name: /terms/i}).first();
       if (await termsLink.isVisible({timeout: 3000})) {
-        await termsLink.click();
-        await expect(page).toHaveURL(/terms-of-service/);
+        await Promise.all([page.waitForURL(/terms-of-service/, {timeout: 15000}), termsLink.click()]);
       }
     });
   });
