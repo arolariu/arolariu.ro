@@ -4,7 +4,15 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {getAvailableYears, getSupportedCurrencies, getTransactionYear, isSupportedCurrency, parseRatesCSV, toRON, toRONDetailed} from "./converter";
+import {
+  getAvailableYears,
+  getSupportedCurrencies,
+  getTransactionYear,
+  isSupportedCurrency,
+  parseRatesCSV,
+  toRON,
+  toRONDetailed,
+} from "./converter";
 
 describe("toRON", () => {
   it("should return the same amount for RON currency", () => {

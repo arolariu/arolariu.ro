@@ -7,6 +7,46 @@
   @include respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.recipesHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: space(4);
+}
+
+.regenerateButton {
+  gap: space(2);
+
+  svg {
+    @include icon-size(space(4));
+  }
+}
+
+.generateButton {
+  margin-top: space(4);
+  gap: space(2);
+
+  svg {
+    @include icon-size(space(4));
+  }
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .recipeHeader {
@@ -19,7 +59,7 @@
 .recipeDescription {
   color: color('muted-foreground');
   font-size: font-size('sm');
-  @include line-clamp(2);
+  line-height: line-height('relaxed');
 }
 
 .recipeDetails {
@@ -27,6 +67,7 @@
   align-items: center;
   gap: space(4);
   font-size: font-size('sm');
+  flex-wrap: wrap;
 }
 
 .recipeDetailItem {
@@ -38,6 +79,62 @@
 
 .recipeDetailMuted {
   color: color('muted-foreground');
+}
+
+.ingredientsSection {
+  padding: space(3);
+  background-color: color-alpha('muted', 0.3);
+  border-radius: border-radius('md');
+}
+
+.ingredientsHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  margin-bottom: space(2);
+}
+
+.sectionIcon {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.sectionTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin: 0;
+}
+
+.ingredientsList {
+  list-style: disc;
+  padding-left: space(5);
+  margin: 0;
+
+  li + li {
+    margin-top: space(1);
+  }
+}
+
+.ingredientItem {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  line-height: line-height('relaxed');
+}
+
+.instructionsSection {
+  padding: space(3);
+  border-left: 2px solid color('border');
+  padding-left: space(4);
+}
+
+.instructionsText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  line-height: line-height('relaxed');
+  white-space: pre-line;
+  margin: 0;
+  margin-top: space(2);
 }
 
 .emptyState {

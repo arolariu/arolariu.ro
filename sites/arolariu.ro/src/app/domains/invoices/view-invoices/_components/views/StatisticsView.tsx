@@ -28,23 +28,35 @@ import {useTranslations} from "next-intl";
 import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
+  computeAllergenFrequency,
   computeCategoryAggregates,
+  computeCurrencyDistribution,
   computeDailySpending,
   computeKPIs,
   computeMerchantAggregates,
+  computeMerchantTrends,
+  computeMerchantVisitFrequency,
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
+  computeProductCategorySpending,
   computeTimeOfDay,
+  computeTopProducts,
 } from "../../_utils/statistics";
+import {AllergenSummaryChart} from "./statistics/AllergenSummaryChart";
 import {CategoryBreakdownChart} from "./statistics/CategoryBreakdownChart";
 import {ComparisonCards} from "./statistics/ComparisonCards";
+import {CurrencyDistributionChart} from "./statistics/CurrencyDistributionChart";
 import {KPISummaryRow} from "./statistics/KPISummaryRow";
 import {MerchantLeaderboard} from "./statistics/MerchantLeaderboard";
+import {MerchantTrendsChart} from "./statistics/MerchantTrendsChart";
+import {MerchantVisitChart} from "./statistics/MerchantVisitChart";
 import {PriceDistributionChart} from "./statistics/PriceDistributionChart";
+import {ProductCategoryChart} from "./statistics/ProductCategoryChart";
 import SpendingCalendarHeatmap from "./statistics/SpendingCalendarHeatmap";
 import {SpendingOverTimeChart} from "./statistics/SpendingOverTimeChart";
 import {TimeOfDayChart} from "./statistics/TimeOfDayChart";
+import {TopProductsChart} from "./statistics/TopProductsChart";
 import styles from "./StatisticsView.module.scss";
 
 type Props = {
@@ -105,6 +117,18 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const timeOfDaySegments = useMemo(() => computeTimeOfDay(invoices), [invoices]);
   const monthComparison = useMemo(() => computeMonthComparison(invoices), [invoices]);
   const dailySpending = useMemo(() => computeDailySpending(invoices), [invoices]);
+
+  // Product-level analytics
+  const productCategorySpending = useMemo(() => computeProductCategorySpending(invoices), [invoices]);
+  const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
+  const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
+
+  // Merchant-level analytics
+  const merchantTrends = useMemo(() => computeMerchantTrends(invoices, 5), [invoices]);
+  const merchantVisitPatterns = useMemo(() => computeMerchantVisitFrequency(invoices), [invoices]);
+
+  // Currency distribution
+  const currencyDistribution = useMemo(() => computeCurrencyDistribution(invoices), [invoices]);
 
   // Determine currency from first invoice's payment info
   const currency = useMemo(() => {
@@ -187,6 +211,32 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
         </div>
       </section>
 
+      {/* Merchant Analytics - Trends & Visit Patterns */}
+      <section className={styles["section"]}>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.52}}>
+          <MerchantTrendsChart
+            data={merchantTrends}
+            currency={currency}
+          />
+        </motion.div>
+      </section>
+
+      <section className={styles["section"]}>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.54}}>
+          <MerchantVisitChart
+            data={merchantVisitPatterns}
+            currency={currency}
+            topN={6}
+          />
+        </motion.div>
+      </section>
+
       {/* Spending Calendar Heatmap - Full Width */}
       <section className={styles["section"]}>
         <motion.div
@@ -213,6 +263,16 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
         </motion.div>
       </section>
 
+      {/* Currency Distribution - Full Width */}
+      <section className={styles["section"]}>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.65}}>
+          <CurrencyDistributionChart data={currencyDistribution} />
+        </motion.div>
+      </section>
+
       {/* Price Distribution & Time of Day - 2 Column */}
       <section className={styles["section"]}>
         <div className={styles["twoColumnGrid"]}>
@@ -232,6 +292,52 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             <TimeOfDayChart data={timeOfDaySegments} />
           </motion.div>
         </div>
+      </section>
+
+      {/* Product-Level Analytics Section */}
+      <section className={styles["section"]}>
+        <motion.div
+          className={styles["sectionHeader"]}
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.75}}>
+          <h2 className={styles["sectionTitle"]}>{t("productAnalytics.title")}</h2>
+          <p className={styles["sectionSubtitle"]}>{t("productAnalytics.subtitle")}</p>
+        </motion.div>
+      </section>
+
+      {/* Product Category Spending & Top Products - 2 Column */}
+      <section className={styles["section"]}>
+        <div className={styles["twoColumnGrid"]}>
+          <motion.div
+            initial={{opacity: 0, x: -20}}
+            animate={{opacity: 1, x: 0}}
+            transition={{duration: 0.5, delay: 0.8}}>
+            <ProductCategoryChart
+              data={productCategorySpending}
+              currency={currency}
+            />
+          </motion.div>
+          <motion.div
+            initial={{opacity: 0, x: 20}}
+            animate={{opacity: 1, x: 0}}
+            transition={{duration: 0.5, delay: 0.8}}>
+            <TopProductsChart
+              data={topProducts}
+              currency={currency}
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Allergen Summary - Full Width */}
+      <section className={styles["section"]}>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5, delay: 0.85}}>
+          <AllergenSummaryChart data={allergenFrequency} />
+        </motion.div>
       </section>
     </div>
   );

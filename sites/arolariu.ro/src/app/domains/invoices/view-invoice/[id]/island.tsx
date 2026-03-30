@@ -6,6 +6,7 @@ import type {Invoice, Merchant} from "@/types/invoices";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
 import {InvoiceGuestBanner} from "./_components/banners/InvoiceGuestBanner";
+import {AnalysisPanel} from "./_components/cards/AnalysisPanel";
 import {BudgetImpactCard} from "./_components/cards/BudgetImpactCard";
 import {CategoryInsightsCardContainer} from "./_components/cards/insights/CategoryInsightsCardContainer";
 import {InvoiceDetailsCard} from "./_components/cards/InvoiceDetailsCard";
@@ -101,6 +102,11 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               <div className={styles["rightItem"]}>
                 <InvoiceHealthScore />
               </div>
+              {Boolean(isOwner && !isLoadingUserInformation) && (
+                <div className={styles["rightItem"]}>
+                  <AnalysisPanel />
+                </div>
+              )}
               <div className={styles["rightItem"]}>
                 <ReceiptScanCard />
               </div>

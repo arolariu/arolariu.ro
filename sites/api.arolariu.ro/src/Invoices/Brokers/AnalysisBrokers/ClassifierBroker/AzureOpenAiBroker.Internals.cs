@@ -270,10 +270,10 @@ public sealed partial class AzureOpenAiBroker
         var name = parts[0];
         var description = parts[1];
         var duration = int.TryParse(parts[2], out var durationValue) ? durationValue : -1;
-        
+
         var complexityString = parts[3].ToUpperInvariant();
-        var complexity = Enum.TryParse<RecipeComplexity>(complexityString, out var complexityEnum) 
-          ? complexityEnum 
+        var complexity = Enum.TryParse<RecipeComplexity>(complexityString, out var complexityEnum)
+          ? complexityEnum
           : RecipeComplexity.UNKNOWN;
 
         var ingredients = parts[4]

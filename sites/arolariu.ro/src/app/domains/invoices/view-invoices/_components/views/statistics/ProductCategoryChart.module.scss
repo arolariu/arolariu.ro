@@ -1,0 +1,94 @@
+// ===========================================
+// PRODUCT CATEGORY CHART STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.cardHeader {
+  padding: space(6);
+  padding-bottom: space(4);
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+.cardContent {
+  padding: 0 space(6) space(6);
+}
+
+.chartContainer {
+  height: 350px;
+
+  @include respond-to('md') {
+    height: 400px;
+  }
+}
+
+// ===========================================
+// TOOLTIP
+// ===========================================
+.tooltip {
+  background: color('popover');
+  border: 1px solid color('border');
+  border-radius: space(2);
+  padding: space(3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tooltipCategory {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin-bottom: space(1);
+}
+
+.tooltipAmount {
+  font-size: font-size('base');
+  font-weight: font-weight('bold');
+  color: color('primary');
+  margin-bottom: space(0.5);
+}
+
+.tooltipPercentage {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin-bottom: space(0.5);
+}
+
+.tooltipCount {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.emptyText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-align: center;
+}

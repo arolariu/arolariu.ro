@@ -1689,15 +1689,54 @@
               "invoiceCount": "{count} invoices"
             }
           },
+          "currencyDistribution": {
+            "title": "Distribuție Valutară",
+            "description": "Defalcarea cheltuielilor pe valute cu conversie în RON",
+            "toggleLabel": "Comutați vizualizarea valutei",
+            "showOriginal": "Arată Original",
+            "showRON": "Arată RON",
+            "singleCurrency": "Toate facturile în {currency} ({symbol})",
+            "invoiceCount": "{count} facturi",
+            "originalAmount": "Original",
+            "ronEquivalent": "Echivalent RON",
+            "totalAmount": "Sumă Totală",
+            "totalCurrencies": "Total Valute",
+            "totalSpending": "Cheltuieli Totale"
+          },
           "merchantLeaderboard": {
-            "title": "Top Merchants",
-            "description": "Where you spend most",
+            "title": "Comercianți de Top",
+            "description": "Unde cheltuiești cel mai mult",
             "labels": {
-              "totalSpent": "Total Spent"
+              "totalSpent": "Total Cheltuit"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} facturi"
             }
+          },
+          "merchantTrends": {
+            "title": "Tendințe Cheltuieli Comercianți",
+            "description": "Modele lunare de cheltuieli pentru comercianții de top",
+            "labels": {
+              "merchant": "Comerciant",
+              "totalSpend": "Total Cheltuit",
+              "trend": "Tendință (Ultimele 6 Luni)"
+            },
+            "aria": {
+              "sparkline": "Tendință cheltuieli pentru {merchant}"
+            },
+            "empty": "Nu există date despre comercianți încă"
+          },
+          "merchantVisit": {
+            "title": "Modele de Vizitare Comercianți",
+            "description": "Frecvența cumpărăturilor și informații despre coș",
+            "metrics": {
+              "totalVisits": "Total Vizite",
+              "visitsPerMonth": "Vizite/Lună",
+              "basketSize": "Coș Mediu",
+              "preferredDay": "Zi Preferată",
+              "avgSpend": "Cheltuială Medie/Vizită"
+            },
+            "empty": "Nu există date de vizite încă"
           },
           "priceDistribution": {
             "title": "Price Distribution",
@@ -1718,6 +1757,38 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             }
+          },
+          "productCategory": {
+            "tooltip": {
+              "productCount": "{count} produse"
+            },
+            "empty": "Niciun produs de analizat încă",
+            "title": "Cheltuieli pe Categorii de Produse",
+            "description": "Defalcare cheltuieli după tip de produs"
+          },
+          "topProducts": {
+            "headers": {
+              "totalSpent": "Total",
+              "rank": "#",
+              "avgPrice": "Preț Mediu",
+              "purchases": "Achiziții",
+              "product": "Produs",
+              "quantity": "Cant"
+            },
+            "empty": "Niciun produs cumpărat încă",
+            "title": "Produse Preferate",
+            "description": "Cele mai cumpărate articole",
+            "ariaLabel": "Clasament produse preferate"
+          },
+          "allergenSummary": {
+            "empty": "Niciun alergen detectat în achizițiile tale",
+            "stats": {
+              "ofTotal": "din total",
+              "products": "produse"
+            },
+            "title": "Rezumat Alergeni",
+            "description": "Expunerea la alergeni în produse",
+            "ariaLabel": "Rezumat frecvență alergeni"
           }
         },
         "kpi": {
@@ -1746,6 +1817,10 @@
           "title": "No Statistics Yet",
           "subtitle": "Upload receipts to see analytics",
           "cta": "Upload Receipt"
+        },
+        "productAnalytics": {
+          "title": "Analiză Produse",
+          "subtitle": "Detalii despre articolele achiziționate"
         }
       },
       "generativeView": {
@@ -1944,7 +2019,14 @@
         "recipe": {
           "duration": "{minutes} min",
           "prepCook": "Pregătire: {prep}m • Gătire: {cook}m",
-          "viewRecipe": "Vede Recipe"
+          "viewRecipe": "Vezi rețeta",
+          "ingredients": "Ingrediente",
+          "instructions": "Instrucțiuni"
+        },
+        "actions": {
+          "regenerate": "Regenerează rețetele",
+          "regenerateTooltip": "Re-analizează factura pentru a genera noi sugestii de rețete",
+          "generate": "Generează rețete"
         },
         "empty": {
           "recipes": "Nu există sugestii de rețete",
@@ -2555,6 +2637,54 @@
           "subtitle": "Run AI analysis to extract items from your receipt"
         },
         "totalLabel": "TOTAL"
+      },
+      "analysisPanel": {
+        "title": "Analiză AI",
+        "options": {
+          "completeAnalysis": "Analiză Completă",
+          "merchantOnly": "Doar Comerciant",
+          "itemsOnly": "Doar Articole",
+          "invoiceOnly": "Doar Factura"
+        },
+        "tooltips": {
+          "completeAnalysis": "Extragere OCR completă + procesare AI a tuturor datelor facturii",
+          "merchantOnly": "Re-identifică comerciantul și datele de locație",
+          "itemsOnly": "Re-categorizează și analizează doar articolele individuale",
+          "invoiceOnly": "Re-extrage informații de bază ale facturii (dată, total, plată)",
+          "reanalyze": "Declanșează re-analiza completă cu toate caracteristicile AI"
+        },
+        "steps": {
+          "processing": "Se procesează articolele...",
+          "complete": "Analiză completă!",
+          "finalizing": "Se finalizează rezultatele...",
+          "extracting": "Se rulează extragerea OCR...",
+          "analyzing": "Se analizează cu AI...",
+          "preparing": "Se pregătește documentul..."
+        },
+        "tip": "Sfat Rapid: Analiza completă durează 30-60 secunde, dar oferă cele mai precise rezultate.",
+        "buttons": {
+          "reanalyze": "Re-analizează Factura"
+        },
+        "description": "Re-analizează această factură cu AI pentru a extrage sau actualiza datele",
+        "toasts": {
+          "success": {
+            "title": "Analiză Completă",
+            "description": "Factura a fost re-analizată cu succes cu date actualizate."
+          },
+          "error": {
+            "title": "Analiză Eșuată",
+            "description": "Nu s-a putut analiza factura. Vă rugăm să încercați din nou mai târziu."
+          }
+        },
+        "analyzing": {
+          "title": "Se analizează...",
+          "progress": "{progress}% completat"
+        },
+        "labels": {
+          "granularOptions": "Sau alege o analiză specifică",
+          "updates": "{count, plural, one {# actualizare} other {# actualizări}}",
+          "lastAnalyzed": "Ultima Analiză"
+        }
       }
     },
     "EditInvoice": {

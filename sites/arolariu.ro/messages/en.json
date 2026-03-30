@@ -1689,6 +1689,20 @@
               "invoiceCount": "{count} invoices"
             }
           },
+          "currencyDistribution": {
+            "title": "Currency Distribution",
+            "description": "Spending breakdown by currency with RON conversion",
+            "toggleLabel": "Toggle currency view",
+            "showOriginal": "Show Original",
+            "showRON": "Show RON",
+            "singleCurrency": "All invoices in {currency} ({symbol})",
+            "invoiceCount": "{count} invoices",
+            "originalAmount": "Original",
+            "ronEquivalent": "RON equivalent",
+            "totalAmount": "Total Amount",
+            "totalCurrencies": "Total Currencies",
+            "totalSpending": "Total Spending"
+          },
           "merchantLeaderboard": {
             "title": "Top Merchants",
             "description": "Where you spend most",
@@ -1698,6 +1712,31 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             }
+          },
+          "merchantTrends": {
+            "title": "Merchant Spending Trends",
+            "description": "Monthly spending patterns for top merchants",
+            "labels": {
+              "merchant": "Merchant",
+              "totalSpend": "Total Spend",
+              "trend": "Trend (Last 6 Months)"
+            },
+            "aria": {
+              "sparkline": "Spending trend for {merchant}"
+            },
+            "empty": "No merchant data available yet"
+          },
+          "merchantVisit": {
+            "title": "Merchant Visit Patterns",
+            "description": "Shopping frequency and basket insights",
+            "metrics": {
+              "totalVisits": "Total Visits",
+              "visitsPerMonth": "Visits/Month",
+              "basketSize": "Avg Basket",
+              "preferredDay": "Preferred Day",
+              "avgSpend": "Avg Spend/Visit"
+            },
+            "empty": "No visit data available yet"
           },
           "priceDistribution": {
             "title": "Price Distribution",
@@ -1718,6 +1757,38 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             }
+          },
+          "productCategory": {
+            "description": "Spending breakdown by product type",
+            "tooltip": {
+              "productCount": "{count} products"
+            },
+            "title": "Product Category Spending",
+            "empty": "No products to analyze yet"
+          },
+          "topProducts": {
+            "ariaLabel": "Top products leaderboard",
+            "description": "Most purchased items",
+            "headers": {
+              "rank": "#",
+              "avgPrice": "Avg Price",
+              "quantity": "Qty",
+              "purchases": "Purchases",
+              "product": "Product",
+              "totalSpent": "Total"
+            },
+            "title": "Top Products",
+            "empty": "No products purchased yet"
+          },
+          "allergenSummary": {
+            "ariaLabel": "Allergen frequency summary",
+            "description": "Allergen exposure across products",
+            "stats": {
+              "products": "products",
+              "ofTotal": "of total"
+            },
+            "title": "Allergen Summary",
+            "empty": "No allergens detected in your purchases"
           }
         },
         "kpi": {
@@ -1746,6 +1817,10 @@
           "title": "No Statistics Yet",
           "subtitle": "Upload receipts to see analytics",
           "cta": "Upload Receipt"
+        },
+        "productAnalytics": {
+          "title": "Product-Level Analytics",
+          "subtitle": "Insights into your purchased items"
         }
       },
       "generativeView": {
@@ -1944,7 +2019,14 @@
         "recipe": {
           "duration": "{minutes} min",
           "prepCook": "Prep: {prep}m • Cook: {cook}m",
-          "viewRecipe": "View Recipe"
+          "viewRecipe": "View Recipe",
+          "ingredients": "Ingredients",
+          "instructions": "Instructions"
+        },
+        "actions": {
+          "regenerate": "Regenerate Recipes",
+          "regenerateTooltip": "Re-analyze the invoice to generate new recipe suggestions",
+          "generate": "Generate Recipes"
         },
         "empty": {
           "recipes": "No recipe suggestions available",
@@ -2575,6 +2657,54 @@
           "subtitle": "Run AI analysis to extract items from your receipt"
         },
         "totalLabel": "TOTAL"
+      },
+      "analysisPanel": {
+        "tooltips": {
+          "itemsOnly": "Re-categorize and analyze line items only",
+          "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
+          "merchantOnly": "Re-identify merchant and location data",
+          "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
+          "reanalyze": "Trigger complete re-analysis with all AI features"
+        },
+        "title": "AI Analysis",
+        "options": {
+          "itemsOnly": "Items Only",
+          "completeAnalysis": "Full Analysis",
+          "merchantOnly": "Merchant Only",
+          "invoiceOnly": "Invoice Only"
+        },
+        "steps": {
+          "processing": "Processing items...",
+          "finalizing": "Finalizing results...",
+          "preparing": "Preparing document...",
+          "complete": "Analysis complete!",
+          "analyzing": "Analyzing with AI...",
+          "extracting": "Running OCR extraction..."
+        },
+        "analyzing": {
+          "progress": "{progress}% complete",
+          "title": "Analyzing..."
+        },
+        "labels": {
+          "lastAnalyzed": "Last Analyzed",
+          "updates": "{count, plural, one {# update} other {# updates}}",
+          "granularOptions": "Or choose specific analysis"
+        },
+        "toasts": {
+          "error": {
+            "description": "Unable to analyze invoice. Please try again later.",
+            "title": "Analysis Failed"
+          },
+          "success": {
+            "description": "Invoice has been successfully re-analyzed with updated data.",
+            "title": "Analysis Complete"
+          }
+        },
+        "description": "Re-analyze this invoice with AI to extract or update data",
+        "buttons": {
+          "reanalyze": "Re-Analyze Invoice"
+        },
+        "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
       }
     },
     "EditInvoice": {
