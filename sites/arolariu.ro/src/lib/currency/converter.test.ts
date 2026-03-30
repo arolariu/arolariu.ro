@@ -35,6 +35,27 @@ describe("toRON", () => {
     expect(result).toBe(290.1);
   });
 
+  it("should convert new currencies added in 50-currency expansion", () => {
+    // AED (UAE Dirham)
+    const aed = toRON(100, "AED", 2024);
+    expect(aed).toBeGreaterThan(100); // 1 AED > 1 RON
+    expect(aed).toBeLessThan(200);
+
+    // KWD (Kuwaiti Dinar — one of the strongest currencies)
+    const kwd = toRON(10, "KWD", 2024);
+    expect(kwd).toBeGreaterThan(100); // 1 KWD ≈ 15 RON
+
+    // MDL (Moldovan Leu — close to RON value)
+    const mdl = toRON(100, "MDL", 2024);
+    expect(mdl).toBeGreaterThan(20);
+    expect(mdl).toBeLessThan(30);
+
+    // VND (Vietnamese Dong — very small per-unit value)
+    const vnd = toRON(1000000, "VND", 2024);
+    expect(vnd).toBeGreaterThan(100);
+    expect(vnd).toBeLessThan(300);
+  });
+
   it("should handle zero amounts", () => {
     expect(toRON(0, "EUR", 2024)).toBe(0);
     expect(toRON(0, "USD", 2023)).toBe(0);
@@ -156,6 +177,16 @@ describe("getSupportedCurrencies", () => {
     expect(currencies).toContain("USD");
     expect(currencies).toContain("GBP");
     expect(currencies).toContain("CHF");
+    // New currencies added in 50-currency expansion
+    expect(currencies).toContain("AED");
+    expect(currencies).toContain("THB");
+    expect(currencies).toContain("MDL");
+    expect(currencies).toContain("KWD");
+  });
+
+  it("should contain exactly 50 currencies", () => {
+    const currencies = getSupportedCurrencies();
+    expect(currencies.length).toBe(50);
   });
 });
 

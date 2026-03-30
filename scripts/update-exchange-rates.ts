@@ -31,15 +31,25 @@ import {styleText} from "node:util";
 const FRANKFURTER_API = "https://api.frankfurter.dev";
 const CSV_PATH = join(import.meta.dirname, "..", "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
 
-/** Top 25 currencies to track (by global relevance + Romanian context). */
+/** Top 50 currencies to track (by global relevance + Romanian context). */
 const TARGET_CURRENCIES = [
+  // Major reserve currencies
   "EUR",
   "USD",
   "GBP",
   "CHF",
   "JPY",
+  // Americas
   "CAD",
   "AUD",
+  "NZD",
+  "BRL",
+  "MXN",
+  "ARS",
+  "CLP",
+  "COP",
+  "PEN",
+  // Europe (non-Eurozone)
   "SEK",
   "NOK",
   "DKK",
@@ -49,15 +59,36 @@ const TARGET_CURRENCIES = [
   "BGN",
   "HRK",
   "TRY",
+  "ISK",
+  "UAH",
+  "MDL",
+  "RSD",
+  "GEL",
+  // Asia-Pacific
   "CNY",
   "INR",
-  "BRL",
-  "MXN",
-  "ZAR",
   "KRW",
   "SGD",
   "HKD",
-  "NZD",
+  "TWD",
+  "THB",
+  "IDR",
+  "MYR",
+  "PHP",
+  "VND",
+  "PKR",
+  // Middle East
+  "ILS",
+  "AED",
+  "SAR",
+  "KWD",
+  "QAR",
+  // Africa
+  "ZAR",
+  "EGP",
+  "KES",
+  "NGN",
+  "MAD",
 ] as const;
 
 /** Delay between API requests to avoid overwhelming the service (in ms). */

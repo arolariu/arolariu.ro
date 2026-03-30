@@ -126,10 +126,14 @@ test.describe("Legal Pages @legal", () => {
     test(tagged("should be able to navigate between legal pages", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
       await safeNavigate("/privacy-policy/");
 
-      // Try to find terms of service link
-      const termsLink = page.getByRole("link", {name: /terms/i}).first();
+      // Scope to footer to avoid matching section headings containing "terms"
+      const footer = page.locator("footer");
+      const termsLink = footer.getByRole("link", {name: /terms of service/i});
+
       if (await termsLink.isVisible({timeout: 3000})) {
-        await Promise.all([page.waitForURL(/terms-of-service/, {timeout: 15000}), termsLink.click()]);
+        await termsLink.scrollIntoViewIfNeeded();
+        await termsLink.click();
+        await expect(page).toHaveURL(/terms-of-service/, {timeout: 15000});
       }
     });
   });
