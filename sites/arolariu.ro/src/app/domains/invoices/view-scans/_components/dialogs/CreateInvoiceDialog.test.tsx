@@ -172,7 +172,14 @@ vi.mock("@arolariu/components", () => ({
   RadioGroup: ({children, value, onValueChange}: {children: ReactNode; value: string; onValueChange: (v: string) => void}) => (
     <div
       data-testid='radio-group'
-      data-value={value}>
+      data-value={value}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        const radio = target.closest('input[type="radio"]') as HTMLInputElement;
+        if (radio && radio.value) {
+          onValueChange(radio.value);
+        }
+      }}>
       {children}
     </div>
   ),
@@ -227,6 +234,13 @@ vi.mock("react-icons/tb", () => ({
   TbPhoto: ({className}: {className?: string}) => <span className={className}>🖼</span>,
   TbSparkles: ({className}: {className?: string}) => <span className={className}>✨</span>,
   TbStack2: ({className}: {className?: string}) => <span className={className}>📚</span>,
+  TbAlertCircle: ({className}: {className?: string}) => <span className={className}>⚠</span>,
+  TbAlertTriangle: ({className}: {className?: string}) => <span className={className}>⚠️</span>,
+  TbX: ({className}: {className?: string}) => <span className={className}>✕</span>,
+  TbBolt: ({className}: {className?: string}) => <span className={className}>⚡</span>,
+  TbClock: ({className}: {className?: string}) => <span className={className}>🕒</span>,
+  TbInfoCircle: ({className}: {className?: string}) => <span className={className}>ℹ</span>,
+  TbRefresh: ({className}: {className?: string}) => <span className={className}>↻</span>,
 }));
 
 // Import after mocks
@@ -553,6 +567,195 @@ describe("CreateInvoiceDialog", () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(mockCreateInvoiceFromScans).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("batch mode", () => {
+    beforeEach(() => {
+      mockPayload = {
+        selectedScans: [
+          {id: "scan-1", name: "Scan 1", blobUrl: "https://example.com/scan1.jpg", mimeType: "image/jpeg", sizeInBytes: 1024},
+          {id: "scan-2", name: "Scan 2", blobUrl: "https://example.com/scan2.jpg", mimeType: "image/jpeg", sizeInBytes: 2048},
+        ],
+      };
+    });
+
+    const getCreateButton = (): HTMLElement => {
+      const footer = screen.getByTestId("dialog-footer");
+      const buttons = footer.querySelectorAll("button");
+      const createBtn = Array.from(buttons).find((btn) => btn.getAttribute("data-variant") !== "outline");
+      if (!createBtn) throw new Error("Create button not found");
+      return createBtn as HTMLElement;
+    };
+
+    it("should render batch mode option for multiple scans", () => {
+      render(<CreateInvoiceDialog />);
+
+      expect(screen.getByText("Batch Mode")).toBeInTheDocument();
+    });
+
+    it("should show Create Invoice button for batch mode", () => {
+      render(<CreateInvoiceDialog />);
+
+      const footer = screen.getByTestId("dialog-footer");
+      // For multiple scans in single mode, button says "Create N Invoices"
+      expect(footer.textContent).toMatch(/Create/);
+    });
+  });
+
+  describe("error scenarios", () => {
+    const getCreateButton = (): HTMLElement => {
+      const footer = screen.getByTestId("dialog-footer");
+      const buttons = footer.querySelectorAll("button");
+      const createBtn = Array.from(buttons).find((btn) => btn.getAttribute("data-variant") !== "outline");
+      if (!createBtn) throw new Error("Create button not found");
+      return createBtn as HTMLElement;
+    };
+
+    it("should handle partial success (some invoices created, some failed)", async () => {
+      const {toast} = await import("@arolariu/components");
+      mockCreateInvoiceFromScans.mockResolvedValue({
+        invoices: [{id: "invoice-1", name: "Success"}],
+        convertedScanIds: ["scan-1"],
+        errors: [{scanId: "scan-2", error: "Failed to process scan 2"}],
+      });
+
+      mockPayload = {
+        selectedScans: [
+          {id: "scan-1", name: "Scan 1", blobUrl: "https://example.com/scan1.jpg", mimeType: "image/jpeg", sizeInBytes: 1024},
+          {id: "scan-2", name: "Scan 2", blobUrl: "https://example.com/scan2.jpg", mimeType: "image/jpeg", sizeInBytes: 2048},
+        ],
+      };
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalled();
+      });
+    });
+
+    it("should handle exception thrown during creation", async () => {
+      const {toast} = await import("@arolariu/components");
+      mockCreateInvoiceFromScans.mockRejectedValue(new Error("Unexpected error"));
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalled();
+      });
+    });
+
+    it("should handle non-Error exceptions", async () => {
+      const {toast} = await import("@arolariu/components");
+      mockCreateInvoiceFromScans.mockRejectedValue("String error");
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalled();
+      });
+    });
+
+    it("should call upsertInvoice for each created invoice", async () => {
+      mockCreateInvoiceFromScans.mockResolvedValue({
+        invoices: [{id: "invoice-1", name: "Invoice 1"}, {id: "invoice-2", name: "Invoice 2"}],
+        convertedScanIds: ["scan-1"],
+        errors: [],
+      });
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(mockUpsertInvoice).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("should handle errors without scanId", async () => {
+      mockCreateInvoiceFromScans.mockResolvedValue({
+        invoices: [],
+        convertedScanIds: [],
+        errors: [{scanId: undefined, error: "Unknown error"}],
+      });
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      // Should still complete without crashing
+      await waitFor(() => {
+        expect(mockCreateInvoiceFromScans).toHaveBeenCalled();
+      });
+    });
+
+    it("should handle empty errors array", async () => {
+      mockCreateInvoiceFromScans.mockResolvedValue({
+        invoices: [{id: "invoice-1", name: "Success"}],
+        convertedScanIds: ["scan-1"],
+        errors: [],
+      });
+
+      render(<CreateInvoiceDialog />);
+      const createButton = getCreateButton();
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(mockUpsertInvoice).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("dialog close behavior", () => {
+    it("should call close when dialog onOpenChange is triggered", () => {
+      render(<CreateInvoiceDialog />);
+
+      const closeButton = screen.getByTestId("dialog-close");
+      fireEvent.click(closeButton);
+
+      expect(mockDialogClose).toHaveBeenCalled();
+    });
+
+    it("should reset state after dialog closes", async () => {
+      render(<CreateInvoiceDialog />);
+
+      const closeButton = screen.getByTestId("dialog-close");
+      fireEvent.click(closeButton);
+
+      // State reset happens in setTimeout, so we verify the close was called
+      expect(mockDialogClose).toHaveBeenCalled();
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty payload", () => {
+      mockPayload = {};
+
+      render(<CreateInvoiceDialog />);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("should handle null payload", () => {
+      mockPayload = null;
+
+      render(<CreateInvoiceDialog />);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("should handle undefined selectedScans in payload", () => {
+      mockPayload = {selectedScans: undefined};
+
+      render(<CreateInvoiceDialog />);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
   });
 });

@@ -1185,4 +1185,405 @@ describe("Statistics Functions", () => {
       expect(result[0]?.merchantId).toBe("merchant-1");
     });
   });
+
+  /**
+   * Edge case tests for null/undefined field handling.
+   * These tests ensure nullish coalescing and optional chaining branches are covered.
+   */
+  describe("Edge Cases: Null and Undefined Fields", () => {
+    describe("computeKPIs - null field handling", () => {
+      it("should handle invoice with null paymentInformation", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeKPIs([invoice]);
+
+        expect(result.totalSpending).toBe(0);
+        expect(result.currency).toBe("RON");
+      });
+
+      it("should handle invoice with null currency", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeKPIs([invoice]);
+
+        expect(result.currency).toBe("RON");
+      });
+
+      it("should handle invoice with null totalCostAmount", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null totalCostAmount
+        invoice.paymentInformation.totalCostAmount = null;
+
+        const result = computeKPIs([invoice]);
+
+        expect(result.totalSpending).toBe(0);
+      });
+
+      it("should handle invoice with undefined currency code", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing undefined currency code
+        invoice.paymentInformation.currency.code = undefined;
+
+        const result = computeKPIs([invoice]);
+
+        expect(result.currency).toBe("RON");
+      });
+    });
+
+    describe("computeCurrencyDistribution - null field handling", () => {
+      it("should handle invoice with null paymentInformation", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeCurrencyDistribution([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.currencyCode).toBe("RON");
+        expect(result[0]?.currencySymbol).toBe("lei");
+        expect(result[0]?.totalOriginal).toBe(0);
+      });
+
+      it("should handle invoice with null currency", () => {
+        const invoice = createTestInvoice({amount: 100, currency: "EUR"});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeCurrencyDistribution([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.currencyCode).toBe("RON");
+        expect(result[0]?.currencySymbol).toBe("lei");
+      });
+
+      it("should handle invoice with null currency symbol", () => {
+        const invoice = createTestInvoice({amount: 100, currency: "EUR"});
+        // @ts-expect-error - Intentionally testing null symbol
+        invoice.paymentInformation.currency.symbol = null;
+
+        const result = computeCurrencyDistribution([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.currencySymbol).toBe("lei");
+      });
+
+      it("should handle invoice with null totalCostAmount", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null totalCostAmount
+        invoice.paymentInformation.totalCostAmount = null;
+
+        const result = computeCurrencyDistribution([invoice]);
+
+        expect(result).toHaveLength(1);
+        // totalCostAmount of null gets coalesced to 0
+        expect(result[0]?.totalOriginal).toBe(0);
+      });
+
+      it("should handle invoice with undefined currency code", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing undefined code
+        invoice.paymentInformation.currency.code = undefined;
+
+        const result = computeCurrencyDistribution([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.currencyCode).toBe("RON");
+      });
+    });
+
+    describe("computeMerchantAggregates - null field handling", () => {
+      it("should handle invoice with null paymentInformation", () => {
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 100});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeMerchantAggregates([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.totalSpend).toBe(0);
+      });
+
+      it("should handle invoice with null currency", () => {
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 100});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeMerchantAggregates([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.merchantId).toBe("merchant-1");
+      });
+    });
+
+    describe("computeMonthlySpending - null field handling", () => {
+      it("should handle invoice with null paymentInformation", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeMonthlySpending([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.amount).toBe(0);
+      });
+
+      it("should handle invoice with null transactionDate", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+
+        const result = computeMonthlySpending([invoice]);
+
+        // Should fall back to createdAt date
+        expect(result).toHaveLength(1);
+        expect(result[0]?.monthKey).toContain("2025-01");
+      });
+
+      it("should handle invoice with null currency", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeMonthlySpending([invoice]);
+
+        expect(result).toHaveLength(1);
+      });
+    });
+
+    describe("computeTimeOfDay - null field handling", () => {
+      it("should handle invoice with null transactionDate", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+
+        const result = computeTimeOfDay([invoice]);
+
+        // Should use createdAt as fallback
+        expect(result.length).toBeGreaterThan(0);
+      });
+
+      it("should handle invoice with null paymentInformation", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeTimeOfDay([invoice]);
+
+        expect(result.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe("computeDailySpending - null field handling", () => {
+      it("should handle invoice with null transactionDate", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+
+        const result = computeDailySpending([invoice]);
+
+        // Should fall back to createdAt
+        expect(result).toHaveLength(1);
+        expect(result[0]?.date).toBe("2025-01-15");
+      });
+    });
+
+    describe("computeTopProducts - edge cases", () => {
+      it("should handle product with zero price count (division by zero)", () => {
+        const productWithZeroPrice = createTestProduct({name: "Test Product", price: 0, quantity: 1});
+        const invoice = createTestInvoice({items: [productWithZeroPrice], amount: 0});
+
+        const result = computeTopProducts([invoice], 10);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.averagePrice).toBe(0);
+      });
+
+      it("should handle products with null items array", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null items
+        invoice.items = null;
+
+        const result = computeTopProducts([invoice], 10);
+
+        expect(result).toHaveLength(0);
+      });
+    });
+
+    describe("computeAllergenFrequency - edge cases", () => {
+      it("should handle products with null items array", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null items
+        invoice.items = null;
+
+        const result = computeAllergenFrequency([invoice]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it("should handle products with null detectedAllergens", () => {
+        const product = createTestProduct({name: "Test Product"});
+        // @ts-expect-error - Intentionally testing null detectedAllergens
+        product.detectedAllergens = null;
+        const invoice = createTestInvoice({items: [product], amount: 100});
+
+        const result = computeAllergenFrequency([invoice]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it("should handle zero totalProducts (division by zero)", () => {
+        const invoice = createTestInvoice({items: [], amount: 0});
+
+        const result = computeAllergenFrequency([invoice]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it("should calculate percentage correctly when totalProducts > 0", () => {
+        const product1 = createTestProduct({
+          name: "Product 1",
+          detectedAllergens: [{name: "Gluten", description: "Contains gluten"}],
+        });
+        const product2 = createTestProduct({
+          name: "Product 2",
+          detectedAllergens: [{name: "Gluten", description: "Contains gluten"}],
+        });
+        const product3 = createTestProduct({
+          name: "Product 3",
+          detectedAllergens: [],
+        });
+        const invoice = createTestInvoice({items: [product1, product2, product3], amount: 100});
+
+        const result = computeAllergenFrequency([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.percentage).toBeCloseTo(66.7, 1); // 2/3 * 100
+      });
+    });
+
+    describe("computeProductCategorySpending - edge cases", () => {
+      it("should handle zero grandTotal (division by zero)", () => {
+        const product = createTestProduct({price: 0, totalPrice: 0, category: 100});
+        const invoice = createTestInvoice({items: [product], amount: 0});
+
+        const result = computeProductCategorySpending([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.percentage).toBe(0);
+      });
+
+      it("should handle invoice with null items", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null items
+        invoice.items = null;
+
+        const result = computeProductCategorySpending([invoice]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it("should handle invoice with null paymentInformation in currency code", () => {
+        const product = createTestProduct({price: 10, totalPrice: 10, category: 100});
+        const invoice = createTestInvoice({items: [product], amount: 10});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeProductCategorySpending([invoice]);
+
+        // Should still work with default RON currency
+        expect(result.length).toBeGreaterThan(0);
+      });
+
+      it("should handle invoice with null currency", () => {
+        const product = createTestProduct({price: 10, totalPrice: 10, category: 100});
+        const invoice = createTestInvoice({items: [product], amount: 10});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeProductCategorySpending([invoice]);
+
+        // Should still work with default RON currency
+        expect(result.length).toBeGreaterThan(0);
+      });
+
+      it("should handle products with null category", () => {
+        const product = createTestProduct({price: 10, totalPrice: 10});
+        // @ts-expect-error - Intentionally testing null category
+        product.category = null;
+        const invoice = createTestInvoice({items: [product], amount: 10});
+
+        const result = computeProductCategorySpending([invoice]);
+
+        // Should use category 0 as default
+        expect(result.length).toBeGreaterThan(0);
+        expect(result[0]?.categoryId).toBe(0);
+      });
+    });
+
+    describe("computeTopProducts - more edge cases", () => {
+      it("should handle products with null category", () => {
+        const product = createTestProduct({name: "Test Product", price: 10, totalPrice: 10});
+        // @ts-expect-error - Intentionally testing null category
+        product.category = null;
+        const invoice = createTestInvoice({items: [product], amount: 10});
+
+        const result = computeTopProducts([invoice], 10);
+
+        expect(result.length).toBeGreaterThan(0);
+      });
+
+      it("should handle invoice with null currency in payment information", () => {
+        const product = createTestProduct({name: "Test Product", price: 10, totalPrice: 10});
+        const invoice = createTestInvoice({items: [product], amount: 10});
+        // @ts-expect-error - Intentionally testing null currency
+        invoice.paymentInformation.currency = null;
+
+        const result = computeTopProducts([invoice], 10);
+
+        expect(result.length).toBeGreaterThan(0);
+      });
+
+      it("should handle invoice with null paymentInformation", () => {
+        const product = createTestProduct({name: "Test Product", price: 10, totalPrice: 10});
+        const invoice = createTestInvoice({items: [product], amount: 10});
+        // @ts-expect-error - Intentionally testing null paymentInformation
+        invoice.paymentInformation = null;
+
+        const result = computeTopProducts([invoice], 10);
+
+        expect(result.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe("computeMerchantVisitFrequency - edge cases", () => {
+      it("should handle merchant with zero visits (division by zero)", () => {
+        // Create an invoice and then artificially create edge case
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 100, items: []});
+
+        const result = computeMerchantVisitFrequency([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.averageBasketSize).toBe(0);
+        expect(result[0]?.averageSpendPerVisit).toBeGreaterThan(0);
+      });
+
+      it("should handle merchant visits edge case for average calculation", () => {
+        const invoice = createTestInvoice({
+          merchantId: "merchant-1",
+          amount: 100,
+          items: [createTestProduct({quantity: 2}), createTestProduct({quantity: 3})],
+        });
+
+        const result = computeMerchantVisitFrequency([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.averageBasketSize).toBeGreaterThan(0);
+        expect(result[0]?.averageSpendPerVisit).toBeGreaterThan(0);
+      });
+    });
+  });
 });

@@ -271,4 +271,103 @@ describe("AnalysisPanel", () => {
     expect(screen.getByText("title")).toBeInTheDocument();
     // Should not show the updates badge when count is 0
   });
+
+  it("should handle undefined numberOfUpdates", () => {
+    renderAnalysisPanel({lastUpdatedAt: new Date(), numberOfUpdates: undefined});
+
+    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.queryByText("labels.updates")).not.toBeInTheDocument();
+  });
+
+  it("should handle null numberOfUpdates", () => {
+    renderAnalysisPanel({lastUpdatedAt: new Date(), numberOfUpdates: null});
+
+    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(screen.queryByText("labels.updates")).not.toBeInTheDocument();
+  });
+
+  it("should handle negative numberOfUpdates", () => {
+    renderAnalysisPanel({lastUpdatedAt: new Date(), numberOfUpdates: -1});
+
+    expect(screen.getByText("title")).toBeInTheDocument();
+    // Should not show badge for negative numbers
+    expect(screen.queryByText("labels.updates")).not.toBeInTheDocument();
+  });
+
+  it("should show analyzing state during analysis", async () => {
+    const user = userEvent.setup();
+    let resolveAnalysis: () => void;
+    const analysisPromise = new Promise<void>((resolve) => {
+      resolveAnalysis = resolve;
+    });
+    mockAnalyzeInvoice.mockReturnValue(analysisPromise);
+
+    renderAnalysisPanel();
+
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
+    await user.click(reanalyzeButton);
+
+    // Check that analyzing state is shown
+    await waitFor(() => {
+      expect(screen.getByText("analyzing.title")).toBeInTheDocument();
+    });
+
+    // Check that progress text is shown
+    expect(screen.getByText(/analyzing.progress/)).toBeInTheDocument();
+
+    // Resolve and cleanup
+    resolveAnalysis!();
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+
+  it("should show currentStep during analysis", async () => {
+    const user = userEvent.setup();
+    let resolveAnalysis: () => void;
+    const analysisPromise = new Promise<void>((resolve) => {
+      resolveAnalysis = resolve;
+    });
+    mockAnalyzeInvoice.mockReturnValue(analysisPromise);
+
+    renderAnalysisPanel();
+
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
+    await user.click(reanalyzeButton);
+
+    // Wait for first step to appear
+    await waitFor(() => {
+      const stepText = screen.queryByText("steps.preparing") || screen.queryByText("steps.extracting");
+      expect(stepText).toBeTruthy();
+    });
+
+    resolveAnalysis!();
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+
+  it("should hide idle state when analyzing", async () => {
+    const user = userEvent.setup();
+    let resolveAnalysis: () => void;
+    const analysisPromise = new Promise<void>((resolve) => {
+      resolveAnalysis = resolve;
+    });
+    mockAnalyzeInvoice.mockReturnValue(analysisPromise);
+
+    renderAnalysisPanel();
+
+    // Initially should show idle state
+    expect(screen.getByRole("button", {name: "buttons.reanalyze"})).toBeInTheDocument();
+
+    const reanalyzeButton = screen.getByRole("button", {name: "buttons.reanalyze"});
+    await user.click(reanalyzeButton);
+
+    // Should hide idle state during analysis
+    await waitFor(() => {
+      expect(screen.queryByText("labels.granularOptions")).not.toBeInTheDocument();
+    });
+
+    resolveAnalysis!();
+  });
 });
