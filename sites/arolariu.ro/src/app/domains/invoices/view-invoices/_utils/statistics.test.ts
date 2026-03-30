@@ -34,6 +34,8 @@ import {
   computeDailySpending,
   computeKPIs,
   computeMerchantAggregates,
+  computeMerchantTrends,
+  computeMerchantVisitFrequency,
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
@@ -1022,6 +1024,165 @@ describe("Statistics Functions", () => {
       const result = computeAllergenFrequency(invoices);
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe("computeMerchantTrends", () => {
+    it("should return empty array for no invoices", () => {
+      const result = computeMerchantTrends([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should compute trends for top N merchants", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-2", amount: 400, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-1", amount: 200, date: new Date("2025-02-15")}),
+      ];
+
+      const result = computeMerchantTrends(invoices, 5);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.merchantId).toBe("merchant-2");
+      expect(result[0]?.totalSpend).toBe(400);
+      expect(result[1]?.merchantId).toBe("merchant-1");
+      expect(result[1]?.totalSpend).toBe(300);
+    });
+
+    it("should return only top N merchants", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-2", amount: 300, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-3", amount: 200, date: new Date("2025-01-15")}),
+      ];
+
+      const result = computeMerchantTrends(invoices, 2);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.merchantId).toBe("merchant-2");
+      expect(result[1]?.merchantId).toBe("merchant-3");
+    });
+
+    it("should compute monthly breakdown per merchant", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-1", amount: 200, date: new Date("2025-02-15")}),
+      ];
+
+      const result = computeMerchantTrends(invoices, 5);
+
+      expect(result[0]?.monthlyData).toHaveLength(2);
+      expect(result[0]?.monthlyData[0]?.monthKey).toBe("2025-01");
+      expect(result[0]?.monthlyData[0]?.amount).toBe(100);
+      expect(result[0]?.monthlyData[1]?.monthKey).toBe("2025-02");
+      expect(result[0]?.monthlyData[1]?.amount).toBe(200);
+    });
+
+    it("should skip invoices without merchant reference", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "", amount: 50, date: new Date("2025-01-15")}),
+      ];
+
+      const result = computeMerchantTrends(invoices, 5);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.merchantId).toBe("merchant-1");
+    });
+  });
+
+  describe("computeMerchantVisitFrequency", () => {
+    it("should return empty array for no invoices", () => {
+      const result = computeMerchantVisitFrequency([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should compute visit patterns for merchants", () => {
+      const invoices = [
+        createTestInvoice({
+          merchantId: "merchant-1",
+          amount: 100,
+          date: new Date("2025-01-15T10:00:00"),
+          items: [createTestProduct({}), createTestProduct({})],
+        }),
+        createTestInvoice({
+          merchantId: "merchant-1",
+          amount: 150,
+          date: new Date("2025-01-22T10:00:00"),
+          items: [createTestProduct({}), createTestProduct({}), createTestProduct({})],
+        }),
+      ];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.merchantId).toBe("merchant-1");
+      expect(result[0]?.totalVisits).toBe(2);
+      expect(result[0]?.averageSpendPerVisit).toBe(125); // (100 + 150) / 2
+      expect(result[0]?.averageBasketSize).toBe(2.5); // (2 + 3) / 2
+    });
+
+    it("should sort by total visits descending", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date()}),
+        createTestInvoice({merchantId: "merchant-2", amount: 100, date: new Date()}),
+        createTestInvoice({merchantId: "merchant-2", amount: 100, date: new Date()}),
+        createTestInvoice({merchantId: "merchant-2", amount: 100, date: new Date()}),
+      ];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]?.merchantId).toBe("merchant-2");
+      expect(result[0]?.totalVisits).toBe(3);
+      expect(result[1]?.merchantId).toBe("merchant-1");
+      expect(result[1]?.totalVisits).toBe(1);
+    });
+
+    it("should calculate most common day of week", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}), // Wednesday
+        createTestInvoice({merchantId: "merchant-1", amount: 150, date: new Date("2025-01-22")}), // Wednesday
+      ];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result[0]?.mostCommonDayOfWeek).toBe(3); // Wednesday = 3
+    });
+
+    it("should calculate average visits per month", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-01")}),
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")}),
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-02-01")}),
+      ];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result[0]?.totalVisits).toBe(3);
+      expect(result[0]?.averageVisitsPerMonth).toBeGreaterThan(0);
+    });
+
+    it("should handle invoices without items", () => {
+      const invoices = [createTestInvoice({merchantId: "merchant-1", amount: 100, items: []})];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result[0]?.averageBasketSize).toBe(0);
+    });
+
+    it("should skip invoices without merchant reference", () => {
+      const invoices = [
+        createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date()}),
+        createTestInvoice({merchantId: "", amount: 50, date: new Date()}),
+      ];
+
+      const result = computeMerchantVisitFrequency(invoices);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.merchantId).toBe("merchant-1");
     });
   });
 });

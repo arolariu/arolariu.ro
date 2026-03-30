@@ -645,8 +645,8 @@ describe("convertBase64ToBlob - edge cases", () => {
   it("should handle invalid base64 input gracefully", async () => {
     const {convertBase64ToBlob} = await import("./utils.server");
 
-    // Invalid base64 should still process (atob will handle it)
-    await expect(convertBase64ToBlob("invalid!!!")).resolves.toBeDefined();
+    // Invalid base64 throws DOMException in happy-dom
+    await expect(convertBase64ToBlob("invalid!!!")).rejects.toBeDefined();
   });
 
   it("should extract MIME type correctly from data URL", async () => {
@@ -669,8 +669,7 @@ describe("fetchWithTimeout - edge cases", () => {
     const {fetchWithTimeout} = await import("./utils.server");
 
     // Mock injectTraceContextHeaders to return a plain object
-    const {injectTraceContextHeaders} = await import("@/instrumentation.server");
-    vi.mocked(injectTraceContextHeaders).mockReturnValueOnce({
+    instrumentationMocks.injectTraceContextHeaders.mockReturnValueOnce({
       "X-Custom-Header": "custom-value",
       traceparent: "00-abc-def-01",
     } as any);
