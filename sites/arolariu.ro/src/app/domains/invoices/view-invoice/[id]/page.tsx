@@ -134,13 +134,15 @@ export default async function ViewInvoicePage(
   }
 
   const invoice = invoiceResult.data;
-  const merchantResult = await fetchMerchant({merchantId: invoice.merchantReference});
-  if (!merchantResult.success) {
-    // Handle merchant fetch error
-    return <RenderForbiddenScreen />;
-  }
 
-  const merchant = merchantResult.data;
+  // Skip merchant fetch if no merchant is linked (empty GUID = unlinked)
+  let merchant = null;
+  if (invoice.merchantReference && invoice.merchantReference !== EMPTY_GUID) {
+    const merchantResult = await fetchMerchant({merchantId: invoice.merchantReference});
+    if (merchantResult.success) {
+      merchant = merchantResult.data;
+    }
+  }
 
   const {userIdentifier} = await fetchBFFUserFromAuthService();
   const isGuestUser = userIdentifier === EMPTY_GUID;

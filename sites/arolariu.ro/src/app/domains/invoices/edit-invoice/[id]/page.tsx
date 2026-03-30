@@ -1,6 +1,7 @@
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {EMPTY_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
 import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
@@ -133,13 +134,15 @@ export default async function EditInvoicePage(
   }
 
   const invoice = invoiceResult.data;
-  const merchantResult = await fetchMerchant({merchantId: invoice.merchantReference});
-  if (!merchantResult.success) {
-    // Handle merchant fetch error
-    return <RenderForbiddenScreen />;
-  }
 
-  const merchant = merchantResult.data;
+  // Skip merchant fetch if no merchant is linked (empty GUID = unlinked)
+  let merchant = null;
+  if (invoice.merchantReference && invoice.merchantReference !== EMPTY_GUID) {
+    const merchantResult = await fetchMerchant({merchantId: invoice.merchantReference});
+    if (merchantResult.success) {
+      merchant = merchantResult.data;
+    }
+  }
 
   return (
     <div className={styles["page"]}>

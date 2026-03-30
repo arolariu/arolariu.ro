@@ -10,6 +10,7 @@ import ImageCard from "./_components/cards/ImageCard";
 import InvoiceCard from "./_components/cards/InvoiceCard";
 import MerchantCard from "./_components/cards/MerchantCard";
 import SharingCard from "./_components/cards/SharingCard";
+import GuidedEditBanner from "./_components/GuidedEditBanner";
 import InvoiceHeader from "./_components/InvoiceHeader";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
@@ -18,7 +19,7 @@ import styles from "./island.module.scss";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
 }>;
 
 /**
@@ -88,6 +89,17 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
     },
   };
 
+  /**
+   * Scrolls to the first incomplete product in the items table.
+   */
+  const handleReviewAll = (): void => {
+    // Find the items table section
+    const itemsSection = document.querySelector('[class*="InvoiceCard"]');
+    if (itemsSection) {
+      itemsSection.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+  };
+
   return (
     <DialogProvider>
       <EditInvoiceContextProvider
@@ -96,6 +108,12 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
         <section className={styles["section"]}>
           {/* Header */}
           <InvoiceHeader />
+
+          {/* Guided Edit Banner */}
+          <GuidedEditBanner
+            items={invoice.items}
+            onReviewAll={handleReviewAll}
+          />
 
           <div className={styles["mainGrid"]}>
             <motion.div

@@ -28,7 +28,7 @@ import styles from "./island.module.scss";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
 }>;
 
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
@@ -44,7 +44,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   // We only add the invoice and the merchant to the store if the user is the owner.
   if (!isLoadingUserInformation && isOwner) {
     upsertInvoice(invoice);
-    upsertMerchant(merchant);
+    if (merchant) upsertMerchant(merchant);
   }
 
   return (
