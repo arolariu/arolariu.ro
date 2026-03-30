@@ -3,19 +3,22 @@
  * @module domains/invoices/view-invoice/[id]/components/cards/InvoiceHealthScore.test
  */
 
-import {InvoiceContextProvider} from "@/app/domains/invoices/view-invoice/[id]/_context/InvoiceContext";
-import {InvoiceBuilder, MerchantBuilder, ProductBuilder} from "@/data/mocks";
-import {ProductCategory, type Invoice, type Merchant} from "@/types/invoices";
-import {render, screen} from "@testing-library/react";
-import {userEvent} from "@testing-library/user-event";
-import {NextIntlClientProvider} from "next-intl";
-import {describe, expect, it, vi} from "vitest";
-import {InvoiceHealthScore} from "./InvoiceHealthScore";
-
 // Mock next/link
 vi.mock("next/link", () => ({
   default: ({children, href}: {children: React.ReactNode; href: string}) => <a href={href}>{children}</a>,
 }));
+
+// Import vitest functions AFTER mocks
+import {render, screen} from "@testing-library/react";
+import {userEvent} from "@testing-library/user-event";
+import {describe, expect, it, vi} from "vitest";
+
+// Import types and utilities
+import {InvoiceBuilder, MerchantBuilder, ProductBuilder} from "@/data/mocks";
+import {ProductCategory, type Invoice, type Merchant} from "@/types/invoices";
+import {NextIntlClientProvider} from "next-intl";
+import {InvoiceContextProvider} from "../../_context/InvoiceContext";
+import {InvoiceHealthScore} from "./InvoiceHealthScore";
 
 const messages = {
   Invoices: {

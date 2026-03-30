@@ -38,7 +38,7 @@
  * @see {@link PaymentInformation} for payment details
  */
 
-import {getTransactionYear, toRON} from "@/lib/currency";
+import {getTransactionYear, toRON} from "../../../../../lib/currency";
 import type {Invoice} from "@/types/invoices";
 
 /**

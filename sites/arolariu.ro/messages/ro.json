@@ -2139,7 +2139,12 @@
           "dateUtc": "Dată (UTC)",
           "category": "Categorie",
           "payment": "Plată",
-          "totalAmount": "Suma totală"
+          "totalAmount": "Suma totală",
+          "receiptType": "Receipt Type",
+          "countryRegion": "Country/Region",
+          "subtotal": "Subtotal",
+          "tip": "Tip",
+          "ronEquivalent": "RON Equivalent"
         },
         "itemsTitle": "Articole ({count})",
         "table": {
@@ -2154,6 +2159,17 @@
           "pageOf": "Pagina {current} din {total}",
           "previous": "Anterior",
           "next": "Următor"
+        },
+        "tooltips": {
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+        },
+        "sections": {
+          "paymentMethods": "Payment Methods",
+          "taxBreakdown": "Tax Breakdown"
+        },
+        "taxLabels": {
+          "net": "Net",
+          "tax": "Tax"
         }
       },
       "merchantInfoCard": {
@@ -2654,7 +2670,11 @@
           "title": "No items",
           "subtitle": "Run AI analysis to extract items from your receipt"
         },
-        "totalLabel": "TOTAL"
+        "totalLabel": "TOTAL",
+        "confidence": {
+          "label": "OCR Confidence",
+          "lowWarning": "Low confidence — consider reviewing this item"
+        }
       },
       "analysisPanel": {
         "title": "Analiză AI",

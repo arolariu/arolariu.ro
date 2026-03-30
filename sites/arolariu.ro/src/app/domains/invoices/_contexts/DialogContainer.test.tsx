@@ -11,6 +11,24 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
+// Mock server-only modules that are imported by server actions
+vi.mock("@/instrumentation.server", () => ({
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
+
+// Mock server actions
+vi.mock("@/lib/actions/invoices/patchInvoice", () => ({
+  default: vi.fn(),
+}));
+
 // Mock @arolariu/components to avoid path alias resolution issues in tests
 vi.mock("@arolariu/components", () => ({
   Dialog: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
@@ -81,6 +99,14 @@ vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
   default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
 }));
 
+vi.mock("../edit-invoice/[id]/_components/dialogs/AllergenDialog", () => ({
+  default: () => <div data-testid='allergen-dialog'>AllergenDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog", () => ({
+  default: () => <div data-testid='bulk-category-dialog'>BulkCategoryDialog</div>,
+}));
+
 vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
   default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
@@ -91,6 +117,14 @@ vi.mock("../view-invoices/_components/dialogs/ExportDialog", () => ({
 
 vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
   default: () => <div data-testid='import-dialog'>InvoicesImportDialog</div>,
+}));
+
+vi.mock("../view-scans/_components/dialogs/CreateInvoiceDialog", () => ({
+  default: () => <div data-testid='create-invoice-dialog'>CreateInvoiceDialog</div>,
+}));
+
+vi.mock("../view-invoice/[id]/_components/dialogs/ExportDialog", () => ({
+  default: () => <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>,
 }));
 
 // Import the component after mocks are set up

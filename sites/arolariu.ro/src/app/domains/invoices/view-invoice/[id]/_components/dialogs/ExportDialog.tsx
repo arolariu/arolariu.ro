@@ -27,7 +27,7 @@
 
 "use client";
 
-import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 import {Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";

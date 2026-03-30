@@ -1718,6 +1718,77 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             }
+          },
+          "currencyDistribution": {
+            "title": "Currency Distribution",
+            "description": "Spending breakdown by currency with RON conversion",
+            "toggleLabel": "Toggle currency view",
+            "showOriginal": "Show Original",
+            "showRON": "Show RON",
+            "singleCurrency": "All invoices in {currency} ({symbol})",
+            "invoiceCount": "{count} invoices",
+            "originalAmount": "Original",
+            "ronEquivalent": "RON equivalent",
+            "totalAmount": "Total Amount",
+            "totalCurrencies": "Total Currencies",
+            "totalSpending": "Total Spending"
+          },
+          "merchantTrends": {
+            "title": "Merchant Spending Trends",
+            "description": "Monthly spending patterns for top merchants",
+            "labels": {
+              "merchant": "Merchant",
+              "totalSpend": "Total Spend",
+              "trend": "Trend (Last 6 Months)"
+            },
+            "aria": {
+              "sparkline": "Spending trend for {merchant}"
+            },
+            "empty": "No merchant data available yet"
+          },
+          "merchantVisit": {
+            "title": "Merchant Visit Patterns",
+            "description": "Shopping frequency and basket insights",
+            "metrics": {
+              "totalVisits": "Total Visits",
+              "visitsPerMonth": "Visits/Month",
+              "basketSize": "Avg Basket",
+              "preferredDay": "Preferred Day",
+              "avgSpend": "Avg Spend/Visit"
+            },
+            "empty": "No visit data available yet"
+          },
+          "productCategory": {
+            "description": "Spending breakdown by product type",
+            "tooltip": {
+              "productCount": "{count} products"
+            },
+            "title": "Product Category Spending",
+            "empty": "No products to analyze yet"
+          },
+          "topProducts": {
+            "ariaLabel": "Top products leaderboard",
+            "description": "Most purchased items",
+            "headers": {
+              "rank": "#",
+              "avgPrice": "Avg Price",
+              "quantity": "Qty",
+              "purchases": "Purchases",
+              "product": "Product",
+              "totalSpent": "Total"
+            },
+            "title": "Top Products",
+            "empty": "No products purchased yet"
+          },
+          "allergenSummary": {
+            "ariaLabel": "Allergen frequency summary",
+            "description": "Allergen exposure across products",
+            "stats": {
+              "products": "products",
+              "ofTotal": "of total"
+            },
+            "title": "Allergen Summary",
+            "empty": "No allergens detected in your purchases"
           }
         },
         "kpi": {
@@ -1746,6 +1817,10 @@
           "title": "No Statistics Yet",
           "subtitle": "Upload receipts to see analytics",
           "cta": "Upload Receipt"
+        },
+        "productAnalytics": {
+          "title": "Product-Level Analytics",
+          "subtitle": "Insights into your purchased items"
         }
       },
       "generativeView": {
@@ -1944,11 +2019,18 @@
         "recipe": {
           "duration": "{minutes} min",
           "prepCook": "Prépa : {prep}m • Cuisson : {cook}m",
-          "viewRecipe": "Voir Recipe"
+          "viewRecipe": "Voir Recipe",
+          "ingredients": "Ingredients",
+          "instructions": "Instructions"
         },
         "empty": {
           "recipes": "Aucune suggestion de recette disponible",
           "additionalInfo": "Aucune information supplémentaire disponible"
+        },
+        "actions": {
+          "regenerate": "Regenerate Recipes",
+          "regenerateTooltip": "Re-analyze the invoice to generate new recipe suggestions",
+          "generate": "Generate Recipes"
         }
       },
       "timelineItem": {
@@ -2057,7 +2139,12 @@
           "dateUtc": "Date et heure (UTC)",
           "category": "Catégorie",
           "payment": "Paiement",
-          "totalAmount": "Montant total"
+          "totalAmount": "Montant total",
+          "receiptType": "Receipt Type",
+          "countryRegion": "Country/Region",
+          "subtotal": "Subtotal",
+          "tip": "Tip",
+          "ronEquivalent": "RON Equivalent"
         },
         "itemsTitle": "Articles ({count})",
         "table": {
@@ -2072,6 +2159,17 @@
           "pageOf": "Page {current} sur {total}",
           "previous": "Précédent",
           "next": "Suivant"
+        },
+        "tooltips": {
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+        },
+        "sections": {
+          "paymentMethods": "Payment Methods",
+          "taxBreakdown": "Tax Breakdown"
+        },
+        "taxLabels": {
+          "net": "Net",
+          "tax": "Tax"
         }
       },
       "merchantInfoCard": {
@@ -2505,7 +2603,14 @@
           "modified": "Last modified {time}",
           "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
           "today": "today"
-        }
+        },
+        "publicAccess": "Public Access",
+        "publicAccessDescription": "Anyone with the link can view this invoice",
+        "madePublic": "Invoice is now public",
+        "madePrivate": "Invoice is now private",
+        "toggleError": "Failed to update sharing settings",
+        "qrCode": "QR Code",
+        "qrCopied": "Link copied! QR code generation coming soon."
       },
       "healthScore": {
         "title": "Invoice Completeness",
@@ -2521,7 +2626,14 @@
           "category": "Category set",
           "description": "Description added",
           "date": "Transaction date",
-          "merchant": "Merchant information"
+          "merchant": "Merchant information",
+          "merchantLinked": "Merchant linked",
+          "ocrConfidence": "OCR confidence",
+          "recipesGenerated": "Recipes generated",
+          "paymentInfo": "Payment information",
+          "productCompleteness": "Product completeness",
+          "productsPresent": "Products extracted",
+          "categoriesAssigned": "Categories assigned"
         },
         "cta": {
           "analyze": "Run AI Analysis",
@@ -2530,7 +2642,21 @@
         "status": {
           "complete": "Complete",
           "needsWork": "Needs Work",
-          "incomplete": "Incomplete"
+          "incomplete": "Incomplete",
+          "good": "Good",
+          "needsAttention": "Needs Attention",
+          "excellent": "Excellent"
+        },
+        "suggestions": {
+          "noRecipes": "No recipes generated — run AI analysis to discover meal ideas",
+          "title": "Suggested Improvements",
+          "incompletePayment": "Incomplete payment information — add transaction date, amount, and currency",
+          "fix": "Fix",
+          "noMerchant": "No merchant linked — add merchant details for better insights",
+          "noProducts": "No products found — upload a receipt or add items manually",
+          "lowOcrConfidence": "Low OCR confidence on <strong>{count}</strong> products — review manually for accuracy",
+          "uncategorizedProducts": "<strong>{count}</strong> products uncategorized — assign categories for spending analysis",
+          "incompleteProducts": "<strong>{count}</strong> products incomplete — review and complete missing fields"
         }
       },
       "itemAnalytics": {
@@ -2554,7 +2680,87 @@
           "title": "No items",
           "subtitle": "Run AI analysis to extract items from your receipt"
         },
-        "totalLabel": "TOTAL"
+        "totalLabel": "TOTAL",
+        "confidence": {
+          "label": "OCR Confidence",
+          "lowWarning": "Low confidence — consider reviewing this item"
+        }
+      },
+      "analysisPanel": {
+        "tooltips": {
+          "itemsOnly": "Re-categorize and analyze line items only",
+          "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
+          "merchantOnly": "Re-identify merchant and location data",
+          "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
+          "reanalyze": "Trigger complete re-analysis with all AI features"
+        },
+        "title": "AI Analysis",
+        "options": {
+          "itemsOnly": "Items Only",
+          "completeAnalysis": "Full Analysis",
+          "merchantOnly": "Merchant Only",
+          "invoiceOnly": "Invoice Only"
+        },
+        "steps": {
+          "processing": "Processing items...",
+          "finalizing": "Finalizing results...",
+          "preparing": "Preparing document...",
+          "complete": "Analysis complete!",
+          "analyzing": "Analyzing with AI...",
+          "extracting": "Running OCR extraction..."
+        },
+        "analyzing": {
+          "progress": "{progress}% complete",
+          "title": "Analyzing..."
+        },
+        "labels": {
+          "lastAnalyzed": "Last Analyzed",
+          "updates": "{count, plural, one {# update} other {# updates}}",
+          "granularOptions": "Or choose specific analysis"
+        },
+        "toasts": {
+          "error": {
+            "description": "Unable to analyze invoice. Please try again later.",
+            "title": "Analysis Failed"
+          },
+          "success": {
+            "description": "Invoice has been successfully re-analyzed with updated data.",
+            "title": "Analysis Complete"
+          }
+        },
+        "description": "Re-analyze this invoice with AI to extract or update data",
+        "buttons": {
+          "reanalyze": "Re-Analyze Invoice"
+        },
+        "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
+      },
+      "export": {
+        "printError": "Failed to open print dialog",
+        "printSuccess": "Print dialog opened",
+        "csv": {
+          "title": "Export as CSV",
+          "description": "Download items as spreadsheet"
+        },
+        "description": "Export your invoice data in various formats",
+        "print": {
+          "title": "Print",
+          "description": "Print invoice using browser"
+        },
+        "csvSuccess": "CSV file downloaded successfully",
+        "copyError": "Failed to copy summary",
+        "copySummary": {
+          "title": "Copy Summary",
+          "description": "Copy text summary to clipboard"
+        },
+        "copySuccess": "Summary copied to clipboard",
+        "json": {
+          "title": "Export as JSON",
+          "description": "Download complete invoice data"
+        },
+        "jsonSuccess": "JSON file downloaded successfully",
+        "jsonError": "Failed to export JSON",
+        "csvError": "Failed to export CSV",
+        "title": "Export Invoice"
       }
     },
     "EditInvoice": {
@@ -3193,7 +3399,8 @@
           "quantity": "Quantity",
           "price": "Price",
           "unit": "Unit",
-          "total": "Total"
+          "total": "Total",
+          "actions": "Actions"
         },
         "tableHeaders": {
           "item": "Article",
@@ -3215,7 +3422,9 @@
         },
         "bulkToolbar": {
           "selectedCount": "{count, plural, one {# item selected} other {# items selected}}",
-          "deleteSelected": "Delete Selected"
+          "deleteSelected": "Delete Selected",
+          "changeCategory": "Change Category",
+          "noSelection": "No products selected"
         },
         "editing": {
           "saved": "Item updated successfully",
@@ -3238,7 +3447,26 @@
           "missingName": "Nom manquant",
           "missingNameTooltip": "La traduction du nom générique est manquante ou identique au texte OCR brut",
           "lowConfidence": "Faible confiance",
-          "lowConfidenceTooltip": "La confiance OCR est de {confidence}% - révision manuelle recommandée"
+          "lowConfidenceTooltip": "La confiance OCR est de {confidence}% - révision manuelle recommandée",
+          "edited": "Edited",
+          "editedTooltip": "This product has been manually modified",
+          "allergens": "{count, plural, one {# allergen} other {# allergens}}"
+        },
+        "actions": {
+          "remove": "Remove item",
+          "restore": "Restore item",
+          "editAllergens": "Edit allergens"
+        },
+        "softDelete": {
+          "success": "Item '{name}' removed",
+          "error": "Failed to remove item"
+        },
+        "restore": {
+          "success": "Item '{name}' restored",
+          "error": "Failed to restore item"
+        },
+        "bulkCategory": {
+          "noSelection": "Please select at least one product"
         }
       },
       "guidedEdit": {
@@ -3283,6 +3511,67 @@
           "markedImportant": "Marked as important",
           "importanceChanged": "Importance changed"
         }
+      },
+      "allergenDialog": {
+        "labels": {
+          "currentAllergens": "Current Allergens",
+          "customAllergen": "Add Custom Allergen",
+          "quickAdd": "Quick Add Common Allergens"
+        },
+        "title": "Edit Allergens",
+        "success": {
+          "added": "Added allergen: {name}",
+          "saved": "Allergens updated successfully",
+          "removed": "Removed allergen: {name}"
+        },
+        "buttons": {
+          "save": "Save Changes",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "add": "Add"
+        },
+        "defaultDescription": "Contains {name}",
+        "aria": {
+          "removeAllergen": "Remove {name} allergen"
+        },
+        "placeholders": {
+          "customAllergen": "Enter allergen name..."
+        },
+        "empty": {
+          "noAllergens": "No allergens detected"
+        },
+        "description": "Manage allergens for {productName}",
+        "errors": {
+          "emptyName": "Allergen name cannot be empty",
+          "duplicate": "Allergen '{name}' already added",
+          "missingData": "Missing product data",
+          "saveFailed": "Failed to save allergens"
+        }
+      },
+      "bulkCategoryDialog": {
+        "errors": {
+          "saveFailed": "Failed to update categories",
+          "missingData": "Missing data",
+          "noProducts": "No products selected"
+        },
+        "success": {
+          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
+        },
+        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
+        "buttons": {
+          "save": "Apply to All",
+          "saving": "Saving...",
+          "cancel": "Cancel"
+        },
+        "labels": {
+          "andMore": "...and {count} more",
+          "newCategory": "New Category",
+          "selectedProducts": "Selected Products"
+        },
+        "placeholders": {
+          "selectCategory": "Select a category"
+        },
+        "title": "Change Category"
       }
     },
     "Shared": {
@@ -3296,7 +3585,8 @@
           "discardAllPendingChanges": "Annuler toutes les modifications en attente",
           "printInvoiceWithAllDetails": "Imprimer cette facture avec tous les détails",
           "analyzeSpendingPatterns": "Analyser les habitudes de dépenses de cette facture",
-          "deleteInvoicePermanently": "Supprimer cette facture définitivement"
+          "deleteInvoicePermanently": "Supprimer cette facture définitivement",
+          "export": "Export invoice data in various formats"
         },
         "id": "ID : {id}",
         "buttons": {
@@ -3306,7 +3596,8 @@
           "save": "Enregistrer",
           "saving": "Enregistrement...",
           "discard": "Annuler",
-          "analyzeWithAi": "Analyser avec l'IA"
+          "analyzeWithAi": "Analyser avec l'IA",
+          "export": "Export"
         }
       },
       "states": {
@@ -3617,6 +3908,9 @@
             "placeholder": "Add any notes about this invoice (optional)",
             "hint": "Optional notes about this purchase"
           }
+        },
+        "scanPreview": {
+          "title": "Scan Preview"
         }
       },
       "reviewStep": {

@@ -3,18 +3,26 @@
  * @module domains/invoices/view-invoice/[id]/components/dialogs/ExportDialog.test
  */
 
+import {DialogProvider, useDialogs} from "../../../../_contexts/DialogContext";
 import {render, screen} from "@testing-library/react";
+import {useEffect} from "react";
 import {describe, expect, it, vi} from "vitest";
 import {ExportDialog} from "./ExportDialog";
 
-// Mock dependencies
-vi.mock("@/app/domains/invoices/_contexts/DialogContext", () => ({
-  useDialog: vi.fn(() => ({
-    isOpen: true,
-    close: vi.fn(),
-  })),
+// Mock @arolariu/components
+vi.mock("@arolariu/components", () => ({
+  Dialog: ({children, open}: {children: React.ReactNode; open?: boolean}) => (open ? <div>{children}</div> : null),
+  DialogContent: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogTitle: ({children}: {children: React.ReactNode}) => <h2>{children}</h2>,
+  DialogDescription: ({children}: {children: React.ReactNode}) => <p>{children}</p>,
+  Button: ({children, onClick}: {children: React.ReactNode; onClick?: () => void}) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  toast: vi.fn(),
 }));
 
+// Mock InvoiceContext
 vi.mock("../../_context/InvoiceContext", () => ({
   useInvoiceContext: vi.fn(() => ({
     invoice: {
@@ -31,7 +39,7 @@ vi.mock("../../_context/InvoiceContext", () => ({
       ],
       paymentInformation: {
         totalCostAmount: 21.0,
-        paymentDate: new Date("2024-01-01"),
+        transactionDate: new Date("2024-01-01"),
       },
     },
     merchant: {
@@ -40,18 +48,38 @@ vi.mock("../../_context/InvoiceContext", () => ({
   })),
 }));
 
+// Mock next-intl
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+/** Test component that opens the dialog on mount */
+function TestComponentWithDialog() {
+  const {openDialog} = useDialogs();
+  useEffect(() => {
+    openDialog("VIEW_INVOICE__EXPORT");
+  }, [openDialog]);
+  return <ExportDialog />;
+}
+
 describe("ExportDialog", () => {
   it("should render the export dialog", () => {
-    render(<ExportDialog />);
+    render(
+      <DialogProvider>
+        <TestComponentWithDialog />
+      </DialogProvider>,
+    );
+
     expect(screen.getByText("title")).toBeInTheDocument();
   });
 
   it("should display all export options", () => {
-    render(<ExportDialog />);
+    render(
+      <DialogProvider>
+        <TestComponentWithDialog />
+      </DialogProvider>,
+    );
+
     expect(screen.getByText("print.title")).toBeInTheDocument();
     expect(screen.getByText("csv.title")).toBeInTheDocument();
     expect(screen.getByText("json.title")).toBeInTheDocument();

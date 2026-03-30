@@ -1,11 +1,15 @@
 /**
  * @fileoverview Unit tests for merchant analytics functions.
- * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/__tests__/merchantAnalytics.test
+ * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/statistics.merchant.test
  */
 
-import type {Invoice} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
-import {computeMerchantTrends, computeMerchantVisitFrequency} from "../statistics";
+
+// Import types
+import type {Invoice} from "@/types/invoices";
+
+// Import functions to test
+import {computeMerchantTrends, computeMerchantVisitFrequency} from "./statistics";
 
 /**
  * Helper to create a simple mock invoice for testing

@@ -3,9 +3,23 @@
  * @module app/domains/invoices/view-scans/_components/dialogs/CreateInvoiceDialog.test
  */
 
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
-import type {ReactNode} from "react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+// Mock server-only modules FIRST
+vi.mock("@/instrumentation.server", () => ({
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
+
+// Mock server action
+vi.mock("../../_actions/createInvoiceFromScans", () => ({
+  createInvoiceFromScans: vi.fn(),
+}));
 
 // Mock stores
 const mockArchiveScans = vi.fn();
@@ -29,6 +43,11 @@ vi.mock("@/stores", () => ({
     return selector(state);
   },
 }));
+
+// Import vitest functions AFTER mocks
+import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import type {ReactNode} from "react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 // Mock DialogContext
 const mockDialogClose = vi.fn();

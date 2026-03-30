@@ -3,22 +3,38 @@
  * @module app/domains/invoices/view-invoice/[id]/_components/cards/AnalysisPanel.test
  */
 
-import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
-import {render, screen, waitFor} from "@testing-library/react";
-import {userEvent} from "@testing-library/user-event";
-import {NextIntlClientProvider} from "next-intl";
-import {useRouter} from "next/navigation";
-import {describe, expect, it, vi} from "vitest";
-import {InvoiceContextProvider} from "../../_context/InvoiceContext";
-import {AnalysisPanel} from "./AnalysisPanel";
+// Mock server-only modules FIRST
+vi.mock("@/instrumentation.server", () => ({
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock("@/lib/actions/invoices/analyzeInvoice");
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
 }));
+
+// Import vitest functions AFTER mocks
+import {render, screen, waitFor} from "@testing-library/react";
+import {userEvent} from "@testing-library/user-event";
+import {describe, expect, it, vi} from "vitest";
+
+// Import types and utilities
+import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
+import {NextIntlClientProvider} from "next-intl";
+import {useRouter} from "next/navigation";
+import {InvoiceContextProvider} from "../../_context/InvoiceContext";
+import {AnalysisPanel} from "./AnalysisPanel";
 
 const mockAnalyzeInvoice = vi.mocked(analyzeInvoice);
 const mockUseRouter = vi.mocked(useRouter);

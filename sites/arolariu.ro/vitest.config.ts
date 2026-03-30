@@ -31,6 +31,8 @@ export default mergeConfig(
         // Resolve to dist to avoid cross-package @/ alias issues with components source
         "@arolariu/components": resolve(__dirname, "../../packages/components/dist/index.js"),
       },
+      conditions: ["node", "default"],
+      mainFields: ["module", "jsnext:main", "jsnext"],
     },
   }),
 );
