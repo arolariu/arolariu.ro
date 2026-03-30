@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure.AI.OpenAI;
@@ -99,5 +100,37 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 
     invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
     return invoice;
+  }
+
+  /// <summary>
+  /// Executes merchant enrichment sequence including category classification and description generation.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Sequence:</b> Category classification -> Description generation.</para>
+  /// <para><b>Graceful Degradation:</b> Failures yield default category (OTHER) and empty description.</para>
+  /// <para><b>Mutation:</b> Operates on supplied <paramref name="merchant"/> in-place (returns same reference).</para>
+  /// <para><b>Integration Point:</b> Should be called from <c>MerchantOrchestrationService</c> during merchant 
+  /// creation/update flows to ensure category is populated before persistence.</para>
+  /// </remarks>
+  /// <param name="merchant">Merchant entity to enrich (MUST NOT be null; MUST have Name populated).</param>
+  /// <returns>Mutated merchant entity (same instance) with enriched category and description.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
+  public async ValueTask<Merchant> PerformGptAnalysisOnSingleMerchant(Merchant merchant)
+  {
+    ArgumentNullException.ThrowIfNull(merchant);
+
+    merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+    
+    // Only generate description if category was successfully classified (not default OTHER)
+    if (merchant.Category != MerchantCategory.OTHER || !string.IsNullOrWhiteSpace(merchant.Name))
+    {
+      var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
+      if (!string.IsNullOrWhiteSpace(description))
+      {
+        merchant.AdditionalMetadata["ai.description"] = description;
+      }
+    }
+
+    return merchant;
   }
 }

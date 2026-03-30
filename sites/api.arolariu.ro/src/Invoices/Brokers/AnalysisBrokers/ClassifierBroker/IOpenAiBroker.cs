@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBro
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
@@ -40,4 +41,18 @@ public interface IOpenAiBroker
   /// <returns>Mutated (enriched) invoice instance (same reference or updated clone per implementation strategy).</returns>
   /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="invoice"/> or <paramref name="options"/> is null.</exception>
   ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options);
+
+  /// <summary>
+  /// Performs GPT-backed enrichment of a single <see cref="Merchant"/> entity, populating category and description.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Behavior:</b> Applies LLM prompts to classify merchant category and generate a concise description.</para>
+  /// <para><b>Graceful Degradation:</b> Prompt failures result in default values (OTHER category, empty description) without throwing.</para>
+  /// <para><b>Intended Usage:</b> Should be called from merchant orchestration service after merchant creation/discovery.</para>
+  /// <para><b>Thread Safety:</b> Thread-safe (AzureOpenAIClient is internally safe for concurrent usage).</para>
+  /// </remarks>
+  /// <param name="merchant">Merchant entity to enrich (MUST NOT be null; MUST have Name populated).</param>
+  /// <returns>Mutated merchant instance with Category and enriched metadata.</returns>
+  /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="merchant"/> is null.</exception>
+  ValueTask<Merchant> PerformGptAnalysisOnSingleMerchant(Merchant merchant);
 }

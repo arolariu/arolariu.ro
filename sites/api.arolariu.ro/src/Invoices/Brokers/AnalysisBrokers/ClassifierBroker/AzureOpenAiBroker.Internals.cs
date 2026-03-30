@@ -199,15 +199,18 @@ public sealed partial class AzureOpenAiBroker
   }
 
   /// <summary>
-  /// Generates a collection of candidate recipe names derived from invoice product composition.
+  /// Generates a collection of candidate recipes derived from invoice product composition with full enrichment metadata.
   /// </summary>
   /// <remarks>
-  /// <para><b>Parsing:</b> Expects vertical bar (|) separated recipe names; trims and converts each into a <see cref="Recipe"/> with only <c>Name</c> set.</para>
+  /// <para><b>Parsing:</b> Expects recipes separated by vertical bar (|), each recipe in format: 
+  /// "Name;Description;Duration;Complexity;Ingredient1,Ingredient2,..."</para>
+  /// <para><b>Enrichment:</b> Populates Name, Description, ApproximateTotalDuration (minutes), 
+  /// Complexity (EASY/NORMAL/HARD), and Ingredients list for each recipe.</para>
   /// <para><b>Limitations:</b> No semantic deduplication or profanity filtering is applied (backlog: post-processing module).</para>
-  /// <para><b>Failure Handling:</b> Returns empty list on provider/content filter failure.</para>
+  /// <para><b>Failure Handling:</b> Returns empty list on provider/content filter failure. Malformed recipe entries are skipped.</para>
   /// </remarks>
   /// <param name="invoice">Invoice whose product raw names seed the recipe brainstorming prompt.</param>
-  /// <returns>Collection of recipe stubs (possibly empty).</returns>
+  /// <returns>Collection of enriched recipes (possibly empty).</returns>
   internal async Task<ICollection<Recipe>> GenerateInvoiceRecipes(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
@@ -225,34 +228,67 @@ public sealed partial class AzureOpenAiBroker
 
             RULES:
             - Suggest 2-5 recipes (depending on ingredient variety)
-            - Each recipe name should be clear and descriptive
-            - Recipes should be practical and achievable
+            - Each recipe should be practical and achievable
             - Consider common cooking methods and cuisines
-            - Separate recipe names with a vertical bar (|)
-            - Do NOT include numbers or bullets
-            - Do NOT include preparation instructions, just names
+            - Provide structured information for each recipe
 
-            OUTPUT FORMAT: Recipe One | Recipe Two | Recipe Three
+            OUTPUT FORMAT (each recipe separated by |):
+            RecipeName;Short description (1-2 sentences);DurationMinutes;Complexity;Ingredient1,Ingredient2,Ingredient3
+
+            Where:
+            - RecipeName: Clear, descriptive name
+            - Short description: 1-2 sentences describing the dish
+            - DurationMinutes: Estimated total time in minutes (cooking + prep)
+            - Complexity: One of EASY, NORMAL, or HARD
+            - Ingredients: Comma-separated list of main ingredients from the product list
+
+            EXAMPLE:
+            Recipe1;Description of recipe1;30;EASY;ingredient1,ingredient2|Recipe2;Description of recipe2;45;NORMAL;ingredient3,ingredient4
             """),
           new UserChatMessage("Products: parmezan, flour, tomato, rigatoni pasta, pepper, salami, minced meat"),
-          new AssistantChatMessage("Classic Bolognese Pasta | Homemade Salami Pizza | Stuffed Rigatoni with Parmesan"),
+          new AssistantChatMessage("Classic Bolognese Pasta;A hearty Italian pasta dish with rich meat sauce and parmesan cheese;45;NORMAL;rigatoni pasta,minced meat,tomato,parmezan|Homemade Salami Pizza;A simple pizza topped with salami and fresh tomatoes;35;EASY;flour,salami,tomato,parmezan"),
           new UserChatMessage("Products: chicken breast, rice, soy sauce, ginger, garlic, broccoli"),
-          new AssistantChatMessage("Teriyaki Chicken with Rice | Chicken Stir Fry | Garlic Ginger Chicken"),
+          new AssistantChatMessage("Teriyaki Chicken with Rice;Asian-inspired glazed chicken served over fluffy rice;30;EASY;chicken breast,rice,soy sauce,ginger,garlic|Chicken Stir Fry;Quick and healthy stir-fried chicken with vegetables;25;EASY;chicken breast,broccoli,garlic,ginger,soy sauce"),
           new UserChatMessage("Products: bread, eggs, milk, sugar, vanilla"),
-          new AssistantChatMessage("Classic French Toast | Vanilla Custard | Bread Pudding"),
+          new AssistantChatMessage("Classic French Toast;Sweet breakfast dish made with egg-soaked bread;15;EASY;bread,eggs,milk,sugar,vanilla|Bread Pudding;Comforting baked dessert with custardy texture;60;NORMAL;bread,eggs,milk,sugar,vanilla"),
           new UserChatMessage($"Products: {productList}")
         }).ConfigureAwait(false);
 
       var invoiceRecipesAsString = invoiceRecipesCompletion.Value.Content[0].Text;
       var invoiceRecipesAsList = invoiceRecipesAsString
         .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Where(recipe => !string.IsNullOrWhiteSpace(recipe))
         .ToList();
 
       var recipesList = new List<Recipe>();
-      foreach (var recipeName in invoiceRecipesAsList)
+      foreach (var recipeString in invoiceRecipesAsList)
       {
-        recipesList.Add(new Recipe() { Name = recipeName.Trim() });
+        // Parse format: Name;Description;Duration;Complexity;Ingredient1,Ingredient2,...
+        var parts = recipeString.Split(';', StringSplitOptions.TrimEntries);
+        if (parts.Length < 5) continue; // Skip malformed entries
+
+        var name = parts[0];
+        var description = parts[1];
+        var duration = int.TryParse(parts[2], out var durationValue) ? durationValue : -1;
+        
+        var complexityString = parts[3].ToUpperInvariant();
+        var complexity = Enum.TryParse<RecipeComplexity>(complexityString, out var complexityEnum) 
+          ? complexityEnum 
+          : RecipeComplexity.UNKNOWN;
+
+        var ingredients = parts[4]
+          .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+          .Where(ing => !string.IsNullOrWhiteSpace(ing))
+          .ToList();
+
+        recipesList.Add(new Recipe
+        {
+          Name = name,
+          Description = description,
+          ApproximateTotalDuration = duration,
+          Complexity = complexity,
+          Ingredients = ingredients
+        });
       }
 
       return recipesList;
@@ -338,16 +374,17 @@ public sealed partial class AzureOpenAiBroker
   }
 
   /// <summary>
-  /// Attempts to infer potential allergens for a product based on raw and translated (generic) names.
+  /// Attempts to infer potential allergens for a product based on raw and translated (generic) names with descriptions.
   /// </summary>
   /// <remarks>
   /// <para><b>Prompt Strategy:</b> Uses EU major allergen list as reference for consistent classification.</para>
-  /// <para><b>Output Parsing:</b> Vertical bar (|) separated token list converted into <see cref="Allergen"/> instances.</para>
+  /// <para><b>Output Parsing:</b> Format "AllergenName:Description" separated by vertical bar (|).</para>
+  /// <para><b>Enrichment:</b> Populates both allergen Name and Description for UI tooltips and accessibility.</para>
   /// <para><b>Filtering:</b> Automatically filters out 'N/A', 'NONE', and empty tokens.</para>
   /// <para><b>Reliability:</b> Heuristic / probabilistic; upstream layers should NOT treat output as medically authoritative.</para>
   /// </remarks>
   /// <param name="product">Product context used to seed allergen inference.</param>
-  /// <returns>Sequence of inferred allergens (possibly empty).</returns>
+  /// <returns>Sequence of inferred allergens with descriptions (possibly empty).</returns>
   internal async Task<IEnumerable<Allergen>> GenerateProductAllergens(Product product)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
@@ -377,23 +414,24 @@ public sealed partial class AzureOpenAiBroker
 
             RULES:
             - Output allergens separated by vertical bar (|)
+            - For each allergen, provide: AllergenName:Short one-sentence description
             - If NO allergens likely, output EXACTLY: NONE
             - Be conservative - only list allergens likely to be present
             - Consider common ingredients in the product type
-            - Do NOT include explanations
+            - Keep descriptions concise (max 15 words)
 
-            OUTPUT FORMAT: ALLERGEN1 | ALLERGEN2  OR  NONE
+            OUTPUT FORMAT: ALLERGEN1:Description for allergen1 | ALLERGEN2:Description for allergen2  OR  NONE
             """),
           new UserChatMessage("Product: rosii (tomatoes)"),
           new AssistantChatMessage("NONE"),
           new UserChatMessage("Product: lapte (milk)"),
-          new AssistantChatMessage("LACTOSE | DAIRY"),
+          new AssistantChatMessage("LACTOSE:A milk sugar that can cause digestive issues in intolerant individuals | DAIRY:Milk-based products that may trigger allergic reactions"),
           new UserChatMessage("Product: paine alba (white bread)"),
-          new AssistantChatMessage("GLUTEN"),
+          new AssistantChatMessage("GLUTEN:A protein found in wheat that can cause celiac disease"),
           new UserChatMessage("Product: inghetata cu alune (hazelnut ice cream)"),
-          new AssistantChatMessage("LACTOSE | DAIRY | NUTS"),
+          new AssistantChatMessage("LACTOSE:A milk sugar that can cause digestive issues | DAIRY:Milk-based products that may trigger reactions | NUTS:Tree nuts that can cause severe allergic reactions"),
           new UserChatMessage("Product: biscuiti cu ciocolata (chocolate cookies)"),
-          new AssistantChatMessage("GLUTEN | DAIRY | EGGS | SOY"),
+          new AssistantChatMessage("GLUTEN:A protein found in wheat flour | DAIRY:Milk products in chocolate or dough | EGGS:Common baking ingredient that may cause allergies | SOY:Often present in chocolate or as lecithin"),
           new UserChatMessage($"Product: {product.RawName} ({product.GenericName})")
         }).ConfigureAwait(false);
 
@@ -413,9 +451,18 @@ public sealed partial class AzureOpenAiBroker
         .ToList();
 
       var allergensList = new List<Allergen>();
-      foreach (var allergenName in productAllergensAsList)
+      foreach (var allergenEntry in productAllergensAsList)
       {
-        allergensList.Add(new Allergen() { Name = allergenName.Trim().ToUpperInvariant() });
+        // Parse format: AllergenName:Description
+        var parts = allergenEntry.Split(':', 2, StringSplitOptions.TrimEntries);
+        var allergenName = parts[0].Trim().ToUpperInvariant();
+        var allergenDescription = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+
+        allergensList.Add(new Allergen
+        {
+          Name = allergenName,
+          Description = allergenDescription
+        });
       }
 
       return allergensList;
