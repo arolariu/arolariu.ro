@@ -48,8 +48,10 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   const defaultFilename = `invoices_${Date.now()}`;
+  // Sanitize filename to prevent path traversal or invalid characters
+  const safeName = filename ? filename.replace(/[^a-zA-Z0-9._-]/g, "_") : defaultFilename;
   link.href = url;
-  link.download = `${filename || defaultFilename}.json`;
+  link.download = `${safeName}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }

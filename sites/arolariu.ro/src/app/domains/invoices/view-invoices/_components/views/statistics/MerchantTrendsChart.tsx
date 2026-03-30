@@ -12,7 +12,7 @@
 
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useMemo} from "react";
 import type {MerchantTrend} from "../../../_utils/statistics";
 import styles from "./MerchantTrendsChart.module.scss";
@@ -26,12 +26,13 @@ type Props = {
  * Formats a month key (YYYY-MM) into a short display format.
  *
  * @param monthKey - Month key in YYYY-MM format
+ * @param locale - Locale string for formatting (e.g., "en-US", "ro-RO")
  * @returns Formatted month label (e.g., "Jan '25")
  */
-function formatMonthLabel(monthKey: string): string {
+function formatMonthLabel(monthKey: string, locale: string): string {
   const [year, month] = monthKey.split("-");
   const date = new Date(Number(year), Number(month) - 1, 1);
-  const monthLabel = new Intl.DateTimeFormat("en-US", {month: "short"}).format(date);
+  const monthLabel = new Intl.DateTimeFormat(locale, {month: "short"}).format(date);
   const yearShort = year?.slice(-2);
   return `${monthLabel} '${yearShort}`;
 }
@@ -60,6 +61,7 @@ function formatMonthLabel(monthKey: string): string {
  */
 export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantTrends");
+  const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
 
   // Find max monthly amount for scaling
@@ -152,8 +154,8 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                             <div
                               key={monthKey}
                               className={styles["bar"]}
-                              title={`${formatMonthLabel(monthKey)}: ${amount.toFixed(2)} ${currency}`}
-                              aria-label={`${formatMonthLabel(monthKey)}: ${amount.toFixed(2)} ${currency}`}>
+                              title={`${formatMonthLabel(monthKey, locale)}: ${amount.toFixed(2)} ${currency}`}
+                              aria-label={`${formatMonthLabel(monthKey, locale)}: ${amount.toFixed(2)} ${currency}`}>
                               <div
                                 className={styles["barFill"]}
                                 style={{height: `${heightPercent}%`}}
@@ -167,7 +169,7 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                           <span
                             key={monthKey}
                             className={styles["monthLabel"]}>
-                            {formatMonthLabel(monthKey)}
+                            {formatMonthLabel(monthKey, locale)}
                           </span>
                         ))}
                       </div>

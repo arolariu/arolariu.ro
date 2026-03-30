@@ -205,23 +205,24 @@ export function ShareCollaborateCard(): React.JSX.Element {
     const isCurrentlyPublic = sharingStatus === "public";
     const newSharedWith = isCurrentlyPublic ? invoice.sharedWith.filter((guid) => guid !== LAST_GUID) : [...invoice.sharedWith, LAST_GUID];
 
-    startTransition(async () => {
-      try {
-        const result = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {sharedWith: newSharedWith},
-        });
-
-        if (result.success) {
-          setInvoice(result.invoice);
-          toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
-        } else {
+    startTransition(() => {
+      // Execute async work inside the transition without async keyword
+      patchInvoice({
+        invoiceId: invoice.id,
+        payload: {sharedWith: newSharedWith},
+      })
+        .then((result) => {
+          if (result.success) {
+            setInvoice(result.invoice);
+            toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
+          } else {
+            toast.error(t("toggleError"));
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to toggle public status:", error);
           toast.error(t("toggleError"));
-        }
-      } catch (error) {
-        console.error("Failed to toggle public status:", error);
-        toast.error(t("toggleError"));
-      }
+        });
     });
   }, [sharingStatus, invoice, setInvoice, t]);
 
@@ -244,7 +245,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       toast.success(t("copied"));
     } catch (error) {
       console.error("Failed to copy link:", error);
-      toast.error("Failed to copy link");
+      toast.error(t("copyError"));
     }
   }, [invoice.id, t]);
 
@@ -262,7 +263,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       toast.success(t("qrCopied"));
     } catch (error) {
       console.error("Failed to copy link for QR:", error);
-      toast.error("Failed to copy link");
+      toast.error(t("copyError"));
     }
   }, [invoice.id, t]);
 

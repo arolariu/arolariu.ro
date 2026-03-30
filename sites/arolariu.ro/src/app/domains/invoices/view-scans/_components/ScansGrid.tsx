@@ -50,7 +50,17 @@ export default function ScansGrid(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
 
-  // Filter out invalid scans
+  /**
+   * Filter out scans without required fields.
+   *
+   * @remarks
+   * Scans are filtered silently because they represent incomplete uploads:
+   * - Missing `id`: Scan not yet persisted to backend
+   * - Missing `blobUrl` or `name`: Upload still in progress
+   *
+   * These scans will appear once upload/processing completes and store refreshes.
+   * No user feedback is shown to avoid UI noise during normal upload flow.
+   */
   const validScans = scans.filter((s) => s.id && (s.blobUrl || s.name));
 
   // Show loading state

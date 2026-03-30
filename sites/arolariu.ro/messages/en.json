@@ -2611,7 +2611,8 @@
         "madePrivate": "Invoice is now private",
         "toggleError": "Failed to update sharing settings",
         "qrCode": "QR Code",
-        "qrCopied": "Link copied! QR code generation coming soon."
+        "qrCopied": "Link copied! QR code generation coming soon.",
+        "copyError": "Failed to copy link"
       },
       "healthScore": {
         "hideDetails": "Hide factor breakdown",

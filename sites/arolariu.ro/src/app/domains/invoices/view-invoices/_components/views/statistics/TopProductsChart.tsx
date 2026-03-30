@@ -17,6 +17,11 @@
  *
  * **Empty State:**
  * Displays a friendly message when no products are available.
+ *
+ * **Testing:**
+ * Pure calculation functions in statistics.ts have unit test coverage.
+ * Component visual testing and integration scenarios are covered via Storybook.
+ * See `packages/components/stories/` for visual regression tests.
  */
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";

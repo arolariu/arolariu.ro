@@ -12,7 +12,7 @@
 
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbCalendar, TbReceipt, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import type {MerchantVisitPattern} from "../../../_utils/statistics";
 import styles from "./MerchantVisitChart.module.scss";
@@ -30,15 +30,17 @@ function MerchantVisitCard({
   pattern,
   currency,
   merchantName,
+  locale,
 }: {
   readonly pattern: MerchantVisitPattern;
   readonly currency: string;
   readonly merchantName: string;
+  readonly locale: string;
 }): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
 
   // Format day name using Intl.DateTimeFormat for i18n support
-  const dayName = new Intl.DateTimeFormat("en-US", {weekday: "long"}).format(
+  const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(
     new Date(2024, 0, pattern.mostCommonDayOfWeek + 1),
   );
 
@@ -133,6 +135,7 @@ function MerchantVisitCard({
  */
 export function MerchantVisitChart({data, currency, topN = 6}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
+  const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
 
   const displayData = data.slice(0, topN);
@@ -170,6 +173,7 @@ export function MerchantVisitChart({data, currency, topN = 6}: Props): React.JSX
                 pattern={pattern}
                 currency={currency}
                 merchantName={merchantName}
+                locale={locale}
               />
             );
           })}

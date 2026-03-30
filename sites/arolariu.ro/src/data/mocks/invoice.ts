@@ -148,8 +148,9 @@ export class InvoiceBuilder {
     };
 
     const totalAmount = faker.number.float({min: 10, max: 1000, multipleOf: 0.01});
-    const subtotal = faker.number.float({min: totalAmount * 0.8, max: totalAmount, multipleOf: 0.01});
-    const tip = faker.number.float({min: 0, max: totalAmount * 0.2, multipleOf: 0.01});
+    const totalTax = faker.number.float({min: totalAmount * 0.05, max: totalAmount * 0.2, multipleOf: 0.01});
+    const tip = faker.number.float({min: 0, max: totalAmount * 0.1, multipleOf: 0.01});
+    const subtotal = totalAmount - totalTax;
 
     this.invoice = {
       id: faker.string.uuid(),
@@ -179,7 +180,7 @@ export class InvoiceBuilder {
         paymentType: faker.number.int({min: 0, max: 4}) as PaymentType,
         currency,
         totalCostAmount: totalAmount,
-        totalTaxAmount: faker.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 0.01}),
+        totalTaxAmount: totalTax,
         subtotalAmount: subtotal,
         tipAmount: tip,
       },

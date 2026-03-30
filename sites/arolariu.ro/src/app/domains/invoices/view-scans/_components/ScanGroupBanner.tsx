@@ -27,7 +27,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {TbCheck} from "react-icons/tb";
+import {TbCheck, TbFileTypePdf} from "react-icons/tb";
 import styles from "./ScanGroupBanner.module.scss";
 
 /**
@@ -144,11 +144,17 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
             <div
               key={scan.id}
               className={styles["thumbnail"]}>
-              <img
-                src={scan.blobUrl}
-                alt={scan.name}
-                className={styles["thumbnailImage"]}
-              />
+              {scan.mimeType === "application/pdf" ? (
+                <div className={styles["pdfPlaceholder"]}>
+                  <TbFileTypePdf className={styles["pdfIcon"]} />
+                </div>
+              ) : (
+                <img
+                  src={scan.blobUrl}
+                  alt={scan.name}
+                  className={styles["thumbnailImage"]}
+                />
+              )}
             </div>
           ))}
           {remainingCount > 0 && <div className={styles["thumbnailMore"]}>+{remainingCount}</div>}
