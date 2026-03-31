@@ -37,7 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useMemo, useState} from "react";
 import {TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import type {DailySpending} from "../../../_utils/statistics";

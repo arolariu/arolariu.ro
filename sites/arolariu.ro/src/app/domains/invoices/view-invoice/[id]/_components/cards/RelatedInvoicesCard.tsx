@@ -26,9 +26,9 @@
 
 "use client";
 
-import {formatAmount, formatDate} from "@/lib/utils.generic";
+import {formatAmount, formatDate, formatEnum} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
-import type {Invoice} from "@/types/invoices";
+import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -303,7 +303,7 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
         {invoice.category !== 0 && (
           <div className={styles["categoryRow"]}>
             <TbTag className={styles["icon"]} />
-            <Badge variant='outline'>{invoice.category}</Badge>
+            <Badge variant='outline'>{formatEnum(InvoiceCategory, invoice.category as number) || "Other"}</Badge>
           </div>
         )}
 
