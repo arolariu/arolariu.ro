@@ -35,7 +35,7 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
+  readonly active?: boolean;
   readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
@@ -152,13 +152,12 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 width={110}
               />
               <Tooltip
-                content={
+                content={(props) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                   />
-                }
+                )}
               />
               <Bar
                 dataKey='totalSpent'

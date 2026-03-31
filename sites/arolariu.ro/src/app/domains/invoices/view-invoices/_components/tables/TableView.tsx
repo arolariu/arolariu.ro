@@ -68,7 +68,13 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   );
 
   const sortedInvoices = useMemo(() => {
-    if (!sortField) return invoices.toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (!sortField) {
+      return invoices.toSorted((a, b) => {
+        const dateA = new Date(a.paymentInformation?.transactionDate ?? a.createdAt).getTime();
+        const dateB = new Date(b.paymentInformation?.transactionDate ?? b.createdAt).getTime();
+        return dateB - dateA;
+      });
+    }
 
     return invoices.toSorted((a, b) => {
       let comparison = 0;

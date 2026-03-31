@@ -89,9 +89,9 @@ export const TwoCurrencies: Story = {
 export const HighEuroSpending: Story = {
   args: {
     data: computeCurrencyDistribution(
-      mockInvoices.filter((inv) => {
+      mockInvoices.filter((inv, index) => {
         const code = inv.paymentInformation.currency?.code;
-        return code === "EUR" || (code === "RON" && Math.random() < 0.3);
+        return code === "EUR" || (code === "RON" && index % 3 === 0);
       }),
     ),
   },

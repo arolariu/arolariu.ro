@@ -161,7 +161,9 @@ export default function InvoiceCard(): React.JSX.Element {
   );
 
   return (
-    <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
+    <motion.div
+      variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}
+      data-section='invoice-items'>
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div className={styles["headerRow"]}>

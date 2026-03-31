@@ -254,7 +254,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
-   * Sends an email invitation to share the invoice privately via the /api/email endpoint.
+   * Sends an email invitation to share the invoice privately using the sendInvoiceShareEmail server action.
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(

@@ -94,7 +94,7 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
    */
   const handleReviewAll = (): void => {
     // Find the items table section
-    const itemsSection = document.querySelector('[class*="InvoiceCard"]');
+    const itemsSection = document.querySelector('[data-section="invoice-items"]');
     if (itemsSection) {
       itemsSection.scrollIntoView({behavior: "smooth", block: "start"});
     }
