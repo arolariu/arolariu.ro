@@ -9,7 +9,6 @@ import "server-only";
 import {addSpanEvent, injectTraceContextHeaders, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
 import {fetchApiUrl} from "@/lib/config/configProxy";
 import {type JWTPayload, SignJWT, jwtVerify} from "jose";
-import {Blob} from "node:buffer";
 
 /**
  * This async function converts a base64 string to a Blob object.
