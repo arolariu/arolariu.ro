@@ -38,8 +38,8 @@
  * @see {@link PaymentInformation} for payment details
  */
 
-import {getTransactionYear, toRON} from "../../../../../lib/currency";
 import type {Invoice} from "@/types/invoices";
+import {getTransactionYear, toRON} from "../../../../../lib/currency";
 
 /**
  * Extracts the RON-normalized amount from an invoice.

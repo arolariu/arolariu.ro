@@ -173,10 +173,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should handle invoices without merchant reference", () => {
-      const invoices = [
-        createTestInvoice({merchantId: "", amount: 100}),
-        createTestInvoice({merchantId: "merchant-1", amount: 200}),
-      ];
+      const invoices = [createTestInvoice({merchantId: "", amount: 100}), createTestInvoice({merchantId: "merchant-1", amount: 200})];
 
       const result = computeKPIs(invoices);
 
@@ -205,9 +202,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should normalize EUR to RON", () => {
-      const invoices = [
-        createTestInvoice({amount: 100, currency: "EUR", date: new Date("2025-01-15")}),
-      ];
+      const invoices = [createTestInvoice({amount: 100, currency: "EUR", date: new Date("2025-01-15")})];
 
       const result = computeKPIs(invoices);
 
@@ -322,7 +317,7 @@ describe("Statistics Functions", () => {
       const result = computeCategoryAggregates(invoices);
 
       expect(result).toHaveLength(2);
-      
+
       const grocery = result.find((c) => c.categoryId === 100);
       expect(grocery?.category).toBe("Grocery");
       expect(grocery?.amount).toBe(250);
@@ -359,10 +354,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should compute percentages correctly", () => {
-      const invoices = [
-        createTestInvoice({amount: 50, category: 100}),
-        createTestInvoice({amount: 50, category: 200}),
-      ];
+      const invoices = [createTestInvoice({amount: 50, category: 100}), createTestInvoice({amount: 50, category: 200})];
 
       const result = computeCategoryAggregates(invoices);
 
@@ -415,10 +407,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should skip invoices without merchant reference", () => {
-      const invoices = [
-        createTestInvoice({merchantId: "merchant-1", amount: 100}),
-        createTestInvoice({merchantId: "", amount: 50}),
-      ];
+      const invoices = [createTestInvoice({merchantId: "merchant-1", amount: 100}), createTestInvoice({merchantId: "", amount: 50})];
 
       const result = computeMerchantAggregates(invoices);
 
@@ -739,9 +728,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should convert all amounts to RON", () => {
-      const invoices = [
-        createTestInvoice({amount: 100, currency: "EUR", date: new Date("2025-01-15")}),
-      ];
+      const invoices = [createTestInvoice({amount: 100, currency: "EUR", date: new Date("2025-01-15")})];
 
       const result = computeCurrencyDistribution(invoices);
 
@@ -751,10 +738,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should compute percentages correctly", () => {
-      const invoices = [
-        createTestInvoice({amount: 100, currency: "RON"}),
-        createTestInvoice({amount: 100, currency: "RON"}),
-      ];
+      const invoices = [createTestInvoice({amount: 100, currency: "RON"}), createTestInvoice({amount: 100, currency: "RON"})];
 
       const result = computeCurrencyDistribution(invoices);
 
@@ -804,10 +788,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should compute percentages correctly", () => {
-      const products = [
-        createTestProduct({category: 300, totalPrice: 50}),
-        createTestProduct({category: 400, totalPrice: 50}),
-      ];
+      const products = [createTestProduct({category: 300, totalPrice: 50}), createTestProduct({category: 400, totalPrice: 50})];
 
       const invoices = [createTestInvoice({items: products})];
 

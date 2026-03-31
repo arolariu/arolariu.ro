@@ -36,7 +36,19 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {TbCheck, TbDotsVertical, TbFileTypePdf, TbLink, TbMaximize, TbPencil, TbRotate, TbRotateClockwise, TbTrash, TbX} from "react-icons/tb";
+import {
+  TbCheck,
+  TbDotsVertical,
+  TbFileTypePdf,
+  TbLink,
+  TbMaximize,
+  TbPencil,
+  TbRotate,
+  TbRotateClockwise,
+  TbTrash,
+  TbX,
+  TbZoomIn,
+} from "react-icons/tb";
 import styles from "./ScanCard.module.scss";
 
 type ScanCardProps = {
@@ -177,13 +189,16 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
       setIsRotating(true);
       try {
-        // 1. Load image
+        // 1. Fetch image data directly (avoids CORS)
+        const response = await fetch(scan.blobUrl);
+        const imageBlob = await response.blob();
+        const objectUrl = URL.createObjectURL(imageBlob);
+
         const img = new Image();
-        img.crossOrigin = "anonymous";
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
           img.onerror = () => reject(new Error("Failed to load image"));
-          img.src = scan.blobUrl;
+          img.src = objectUrl;
         });
 
         // 2. Create rotated canvas
@@ -235,7 +250,10 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           metadata: {rotated: "true"},
         });
 
-        // 7. Update scan in store
+        // 7. Clean up object URL
+        URL.revokeObjectURL(objectUrl);
+
+        // 8. Update scan in store
         if (result.success && result.blobUrl) {
           updateScanBlobUrl(scan.id, result.blobUrl);
           toast.success(t("actions.rotateSuccess"));
@@ -281,9 +299,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   className={styles["imagePreview"]}
                   unoptimized
                 />
-                {/* Preview overlay icon */}
+                {/* Preview overlay icon for images - use zoom icon */}
                 <div className={styles["previewOverlay"]}>
-                  <TbMaximize className={styles["previewIcon"]} />
+                  <TbZoomIn className={styles["previewIcon"]} />
                 </div>
               </>
             )}

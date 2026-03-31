@@ -9,7 +9,8 @@
  * scans to Azure Blob Storage. Does not create invoices.
  */
 
-import {uploadScan} from "@/lib/actions/scans";
+import {generateUploadSasUrl, registerScan, uploadScan} from "@/lib/actions/scans";
+import {withConcurrencyLimit} from "@/lib/concurrency.client";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
@@ -221,7 +222,8 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
   /**
    * Upload all pending files to Azure.
-   * Authentication is handled by the server action.
+   * Uses parallel direct-to-Azure uploads with SAS tokens for better performance.
+   * Falls back to server-side upload if SAS generation fails.
    */
   const uploadAll = useCallback(async (): Promise<void> => {
     const uploadsToProcess = pendingUploads.filter((u) => u.status === "idle" || u.status === "failed");
@@ -241,48 +243,77 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     let successCount = 0;
     let failCount = 0;
 
-    await Promise.all(
-      uploadsToProcess.map(async (upload) => {
-        try {
-          // Convert file to base64
-          const base64Data = await fileToBase64(upload.file);
+    // Create upload tasks with concurrency limit (max 5 parallel)
+    const uploadTasks = uploadsToProcess.map((upload) => async () => {
+      try {
+        // Step 1: Generate SAS URL for direct upload
+        const sasResult = await generateUploadSasUrl({
+          fileName: upload.name,
+          mimeType: upload.mimeType,
+        });
 
-          // Upload to Azure (server action handles authentication)
-          const result = await uploadScan({
-            base64Data,
-            fileName: upload.name,
-            mimeType: upload.mimeType,
-          });
-
-          if (result.status === 201) {
-            // Add to scans store with cache timestamp
-            const cachedScan: CachedScan = {
-              ...result.scan,
-              cachedAt: new Date(),
-            };
-            addScan(cachedScan);
-
-            // Mark as completed and store the blobUrl for PostUploadPrompt
-            updateUploadStatus(upload.id, "completed", undefined, result.scan.blobUrl);
-            successCount++;
-
-            // Remove from pending after short delay (for visual feedback)
-            scheduleUploadRemoval(upload.id, 1000);
-          } else {
-            updateUploadStatus(upload.id, "failed", `Upload failed with status ${result.status}`);
-            failCount++;
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          updateUploadStatus(upload.id, "failed", errorMessage);
-          failCount++;
+        if (!sasResult.success || !sasResult.sasUrl || !sasResult.scanId || !sasResult.blobUrl) {
+          // SAS generation failed, fall back to server-side upload
+          console.warn(`SAS generation failed for ${upload.name}, falling back to server upload`);
+          return await fallbackToServerUpload(upload);
         }
-      }),
-    );
+
+        // Step 2: Upload file directly to Azure using SAS URL
+        const uploadResponse = await fetch(sasResult.sasUrl, {
+          method: "PUT",
+          body: upload.file,
+          headers: {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": upload.mimeType,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Direct upload failed: ${uploadResponse.statusText}`);
+        }
+
+        // Step 3: Register scan metadata with server
+        const registerResult = await registerScan({
+          scanId: sasResult.scanId,
+          blobUrl: sasResult.blobUrl,
+          fileName: upload.name,
+          mimeType: upload.mimeType,
+          sizeInBytes: upload.size,
+        });
+
+        if (!registerResult.success || !registerResult.scan) {
+          throw new Error(registerResult.error ?? "Failed to register scan");
+        }
+
+        // Step 4: Add to scans store
+        const cachedScan: CachedScan = {
+          ...registerResult.scan,
+          cachedAt: new Date(),
+        };
+        addScan(cachedScan);
+
+        // Mark as completed
+        updateUploadStatus(upload.id, "completed", undefined, registerResult.scan.blobUrl);
+        successCount++;
+
+        // Remove from pending after short delay (for visual feedback)
+        scheduleUploadRemoval(upload.id, 1000);
+
+        return {success: true, uploadId: upload.id};
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        updateUploadStatus(upload.id, "failed", errorMessage);
+        failCount++;
+        return {success: false, uploadId: upload.id, error: errorMessage};
+      }
+    });
+
+    // Execute uploads with concurrency limit (5 parallel uploads)
+    await withConcurrencyLimit(uploadTasks, 5);
 
     setIsUploading(false);
 
-    // Update session stats with completed and failed counts
+    // Update session stats
     setSessionStats((prev) => ({
       ...prev,
       totalCompleted: prev.totalCompleted + successCount,
@@ -294,6 +325,45 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     }
     if (failCount > 0) {
       toast.error(`Failed to upload ${failCount} scan(s)`);
+    }
+
+    /**
+     * Fallback to server-side upload when SAS token generation fails.
+     * This maintains backward compatibility with the original upload flow.
+     */
+    async function fallbackToServerUpload(upload: PendingUpload) {
+      try {
+        // Convert file to base64
+        const base64Data = await fileToBase64(upload.file);
+
+        // Upload to Azure via server action
+        const result = await uploadScan({
+          base64Data,
+          fileName: upload.name,
+          mimeType: upload.mimeType,
+        });
+
+        if (result.status === 201) {
+          const cachedScan: CachedScan = {
+            ...result.scan,
+            cachedAt: new Date(),
+          };
+          addScan(cachedScan);
+
+          updateUploadStatus(upload.id, "completed", undefined, result.scan.blobUrl);
+          successCount++;
+          scheduleUploadRemoval(upload.id, 1000);
+
+          return {success: true, uploadId: upload.id};
+        } else {
+          throw new Error(`Upload failed with status ${result.status}`);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        updateUploadStatus(upload.id, "failed", errorMessage);
+        failCount++;
+        return {success: false, uploadId: upload.id, error: errorMessage};
+      }
     }
   }, [pendingUploads, updateUploadStatus, addScan, scheduleUploadRemoval]);
 

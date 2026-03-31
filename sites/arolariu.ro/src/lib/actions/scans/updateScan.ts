@@ -18,7 +18,6 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {type Scan} from "@/types/scans";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -144,12 +143,7 @@ export async function updateScan({base64Data, blobName, mimeType, metadata = {}}
       }
 
       addSpanEvent("azure.blob.update.error");
-      logWithTrace(
-        "error",
-        "Error updating blob in Azure Storage",
-        {status: blobUploadResponse._response.status},
-        "server",
-      );
+      logWithTrace("error", "Error updating blob in Azure Storage", {status: blobUploadResponse._response.status}, "server");
       return {
         success: false,
         error: `Failed to update scan (status: ${blobUploadResponse._response.status})`,

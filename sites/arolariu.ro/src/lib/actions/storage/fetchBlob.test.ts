@@ -21,9 +21,9 @@ vi.mock("@/lib/azure/storageClient", () => ({
 }));
 vi.mock("./fetchConfig");
 
+import {createBlobClient} from "@/lib/azure/storageClient";
 import fetchBlob from "./fetchBlob";
 import fetchConfigurationValue from "./fetchConfig";
-import {createBlobClient} from "@/lib/azure/storageClient";
 
 describe("fetchBlob", () => {
   beforeEach(() => {

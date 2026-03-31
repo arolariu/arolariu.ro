@@ -20,10 +20,16 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceAnalysisOptions, InvoiceScanType} from "@/types/invoices";
+import {
+  type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
+  type Invoice,
+  InvoiceAnalysisOptions,
+  InvoiceScanType,
+} from "@/types/invoices";
 import {type Scan, ScanType} from "@/types/scans";
 
 /**

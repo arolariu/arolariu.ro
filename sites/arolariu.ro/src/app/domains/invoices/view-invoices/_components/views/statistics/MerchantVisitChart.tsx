@@ -40,9 +40,7 @@ function MerchantVisitCard({
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
 
   // Format day name using Intl.DateTimeFormat for i18n support
-  const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(
-    new Date(2024, 0, pattern.mostCommonDayOfWeek + 1),
-  );
+  const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(new Date(2024, 0, pattern.mostCommonDayOfWeek + 1));
 
   return (
     <div className={styles["merchantCard"]}>

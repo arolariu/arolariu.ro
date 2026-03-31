@@ -5,8 +5,7 @@
  * @module app/domains/invoices/view-scans/_components/dialogs/CreateInvoiceDialog
  */
 
-import {useInvoicesStore} from "@/stores";
-import {useScansStore} from "@/stores";
+import {useInvoicesStore, useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {
   Button,

@@ -1387,7 +1387,8 @@
           "failed": "Failed"
         },
         "removeTooltip": "Remove this file",
-        "retryAttempt": "Retry attempt {attempt}"
+        "retryAttempt": "Retry attempt {attempt}",
+        "pendingTooltip": "This scan will not be persisted until you click Upload"
       },
       "postUpload": {
         "title": "Upload Complete!",

@@ -664,7 +664,10 @@ describe("CreateInvoiceDialog", () => {
 
     it("should call upsertInvoice for each created invoice", async () => {
       mockCreateInvoiceFromScans.mockResolvedValue({
-        invoices: [{id: "invoice-1", name: "Invoice 1"}, {id: "invoice-2", name: "Invoice 2"}],
+        invoices: [
+          {id: "invoice-1", name: "Invoice 1"},
+          {id: "invoice-2", name: "Invoice 2"},
+        ],
         convertedScanIds: ["scan-1"],
         errors: [],
       });

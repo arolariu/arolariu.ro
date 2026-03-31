@@ -12,8 +12,8 @@
  * - Invoice creation orchestration
  */
 
-import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";

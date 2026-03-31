@@ -3,10 +3,10 @@
  * @module domains/invoices/view-invoice/[id]/components/dialogs/ExportDialog.test
  */
 
-import {DialogProvider, useDialogs} from "../../../../_contexts/DialogContext";
 import {render, screen} from "@testing-library/react";
 import {useEffect} from "react";
 import {describe, expect, it, vi} from "vitest";
+import {DialogProvider, useDialogs} from "../../../../_contexts/DialogContext";
 import {ExportDialog} from "./ExportDialog";
 
 // Mock @arolariu/components
@@ -16,9 +16,7 @@ vi.mock("@arolariu/components", () => ({
   DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
   DialogTitle: ({children}: {children: React.ReactNode}) => <h2>{children}</h2>,
   DialogDescription: ({children}: {children: React.ReactNode}) => <p>{children}</p>,
-  Button: ({children, onClick}: {children: React.ReactNode; onClick?: () => void}) => (
-    <button onClick={onClick}>{children}</button>
-  ),
+  Button: ({children, onClick}: {children: React.ReactNode; onClick?: () => void}) => <button onClick={onClick}>{children}</button>,
   toast: vi.fn(),
 }));
 

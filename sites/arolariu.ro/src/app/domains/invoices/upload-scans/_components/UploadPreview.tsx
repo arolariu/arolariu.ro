@@ -106,11 +106,20 @@ function UploadCard({
           {/* Status badge */}
           <div className={styles["badgePosition"]}>
             {status === "idle" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgePending"]}>
-                {t("preview.status.pending")}
-              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Badge
+                        variant='secondary'
+                        className={styles["badgePending"]}>
+                        {t("preview.status.pending")}
+                      </Badge>
+                    }
+                  />
+                  <TooltipContent side='top'>{t("preview.pendingTooltip")}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             {status === "uploading" && (
               <Badge

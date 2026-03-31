@@ -5,17 +5,18 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-const {mockConvertBase64ToBlob, mockGetContainerClient, mockGetBlockBlobClient, mockUploadData, mockArrayBuffer, mockCreateBlobClient} = vi.hoisted(() => {
-  const _mockGetContainerClient = vi.fn();
-  return {
-    mockConvertBase64ToBlob: vi.fn(),
-    mockGetContainerClient: _mockGetContainerClient,
-    mockGetBlockBlobClient: vi.fn(),
-    mockUploadData: vi.fn(),
-    mockArrayBuffer: vi.fn(),
-    mockCreateBlobClient: vi.fn().mockResolvedValue({getContainerClient: _mockGetContainerClient}),
-  };
-});
+const {mockConvertBase64ToBlob, mockGetContainerClient, mockGetBlockBlobClient, mockUploadData, mockArrayBuffer, mockCreateBlobClient} =
+  vi.hoisted(() => {
+    const _mockGetContainerClient = vi.fn();
+    return {
+      mockConvertBase64ToBlob: vi.fn(),
+      mockGetContainerClient: _mockGetContainerClient,
+      mockGetBlockBlobClient: vi.fn(),
+      mockUploadData: vi.fn(),
+      mockArrayBuffer: vi.fn(),
+      mockCreateBlobClient: vi.fn().mockResolvedValue({getContainerClient: _mockGetContainerClient}),
+    };
+  });
 
 // Override global mock with configurable createBlobClient
 vi.mock("@/lib/azure/storageClient", () => ({

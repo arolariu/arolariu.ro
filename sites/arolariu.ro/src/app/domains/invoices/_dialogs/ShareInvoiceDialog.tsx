@@ -283,8 +283,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         {
           loading: t("toasts.sendEmail.loading", {email}),
           success: t("toasts.sendEmail.success", {email}),
-          error: (error: unknown) =>
-            t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
+          error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
         },
       );
     },
