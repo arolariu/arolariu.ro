@@ -288,23 +288,9 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * formatDate(new Date(), { dateStyle: "full" }); // "Thursday, October 12, 2023"
  * ```
  */
-/**
- * Converts a possible date value to a Date object.
- * @param possibleDate - The date to convert (ISO string or Date object).
- * @returns A Date object.
- */
-function toDate(possibleDate: string | Date): Date {
-  if (typeof possibleDate === "string") {
-    return new Date(possibleDate);
-  }
-  if (possibleDate instanceof Date) {
-    return possibleDate;
-  }
-  return new Date();
-}
-
-export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
-  const date: Date = toDate(possibleDate);
+export function formatDate(possibleDate: string | Date | null | undefined, options: FormatDateOptions): string {
+  const date: Date = toSafeDate(possibleDate);
+  if (date.getTime() === 0) return "";
 
   const formatOptions: Intl.DateTimeFormatOptions = {
     dateStyle: "short",
@@ -357,3 +343,149 @@ export function formatEnum<T extends Record<string, string | number>>(enumObj: T
     return key ?? "";
   };
 }
+
+// #region Date & Number Utilities (Phase 9 — centralized formatting)
+
+/**
+ * Safely converts any date-like value to a Date object.
+ *
+ * @remarks
+ * Handles ISO strings, Date objects, null, and undefined.
+ * Returns `new Date(0)` (epoch) for invalid/missing input rather than throwing.
+ *
+ * @param value - The date-like value to convert
+ * @returns A valid Date object
+ *
+ * @example
+ * ```typescript
+ * toSafeDate("2024-01-15T10:30:00Z"); // Date object
+ * toSafeDate(new Date());              // Same Date object
+ * toSafeDate(null);                    // Date(0) — epoch
+ * ```
+ */
+export function toSafeDate(value: Date | string | null | undefined): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "string" && value.length > 0) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  }
+  return new Date(0);
+}
+
+/**
+ * Formats a numeric amount with locale-aware thousand separators and decimals.
+ *
+ * @remarks
+ * Replaces raw `.toFixed(2)` usage across the codebase.
+ * Uses `Intl.NumberFormat` for proper locale-aware formatting.
+ *
+ * Unlike `formatCurrency`, this does NOT include a currency symbol — it
+ * formats the number only (e.g., "1,234.56" instead of "$1,234.56").
+ *
+ * @param amount - The numeric value to format
+ * @param locale - The locale string (defaults to "en-US")
+ * @param decimals - Number of decimal places (defaults to 2)
+ * @returns Locale-aware formatted number string
+ *
+ * @example
+ * ```typescript
+ * formatAmount(1234.5);                    // "1,234.50"
+ * formatAmount(1234.5, "de-DE");           // "1.234,50"
+ * formatAmount(1234.5, "en-US", 0);        // "1,235"
+ * ```
+ */
+export function formatAmount(amount: number, locale = "en-US", decimals = 2): string {
+  if (!Number.isFinite(amount)) return "0.00";
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(amount);
+}
+
+/**
+ * Formats a date with both date and time components.
+ *
+ * @remarks
+ * Extends `formatDate` by including time information.
+ * Uses `Intl.DateTimeFormat` for locale-aware formatting.
+ *
+ * @param date - The date to format (ISO string or Date object)
+ * @param locale - The locale string (defaults to "en-US")
+ * @param options - Optional Intl.DateTimeFormatOptions overrides
+ * @returns Formatted datetime string
+ *
+ * @example
+ * ```typescript
+ * formatDateTime("2024-01-15T10:30:00Z");
+ * // "1/15/2024, 10:30 AM"
+ *
+ * formatDateTime(new Date(), "ro-RO");
+ * // "15.01.2024, 10:30"
+ * ```
+ */
+export function formatDateTime(
+  date: Date | string | null | undefined,
+  locale = "en-US",
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const dateObj = toSafeDate(date);
+  if (dateObj.getTime() === 0) return "";
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    dateStyle: "short",
+    timeStyle: "short",
+    ...options,
+  };
+
+  return new Intl.DateTimeFormat(locale, formatOptions).format(dateObj);
+}
+
+/**
+ * Formats a date as a human-readable relative time string.
+ *
+ * @remarks
+ * Consolidates 3 scattered `getRelativeTime` implementations into one.
+ * Handles both Date objects and ISO strings.
+ *
+ * **Output examples:**
+ * - "just now" (< 1 minute)
+ * - "5 minutes ago"
+ * - "2 hours ago"
+ * - "3 days ago"
+ * - "2 weeks ago"
+ * - "1 month ago"
+ *
+ * @param date - The date to format relative to now
+ * @returns Human-readable relative time string
+ *
+ * @example
+ * ```typescript
+ * formatRelativeTime(new Date(Date.now() - 5 * 60_000));  // "5 minutes ago"
+ * formatRelativeTime("2024-01-01T00:00:00Z");              // "6 months ago"
+ * ```
+ */
+export function formatRelativeTime(date: Date | string | null | undefined): string {
+  const dateObj = toSafeDate(date);
+  if (dateObj.getTime() === 0) return "";
+
+  const now = new Date();
+  const diffMs = now.getTime() - dateObj.getTime();
+  const diffSecs = Math.floor(Math.abs(diffMs) / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+
+  const isFuture = diffMs < 0;
+  const suffix = isFuture ? "from now" : "ago";
+
+  if (diffSecs < 60) return "just now";
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"} ${suffix}`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ${suffix}`;
+  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ${suffix}`;
+  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ${suffix}`;
+  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ${suffix}`;
+}
+
+// #endregion

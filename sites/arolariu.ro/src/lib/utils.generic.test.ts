@@ -4,7 +4,19 @@
  */
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP, validateStringIsGuidType} from "./utils.generic";
+import {
+  COMMIT_SHA,
+  formatAmount,
+  formatDateTime,
+  formatRelativeTime,
+  generateGuid,
+  SITE_ENV,
+  SITE_NAME,
+  SITE_URL,
+  TIMESTAMP,
+  toSafeDate,
+  validateStringIsGuidType,
+} from "./utils.generic";
 
 describe("generateGuid", () => {
   it("should generate a valid UUIDv4 string", () => {
@@ -196,10 +208,148 @@ describe("formatDate", () => {
 
   it("should handle invalid input types gracefully", async () => {
     const {formatDate} = await import("./utils.generic");
-    // @ts-expect-error - Testing invalid input
     const formatted = formatDate(null, {locale: "en-US"});
-    // Current implementation defaults to current date if input is invalid/undefined
-    expect(formatted).toBeTruthy();
+    // null input now returns empty string (safe default)
+    expect(formatted).toBe("");
+  });
+});
+
+describe("toSafeDate", () => {
+  it("should handle Date objects", () => {
+    const date = new Date("2024-01-15");
+    expect(toSafeDate(date)).toBe(date);
+  });
+
+  it("should handle ISO strings", () => {
+    const result = toSafeDate("2024-01-15T10:30:00Z");
+    expect(result).toBeInstanceOf(Date);
+    expect(result.getFullYear()).toBe(2024);
+  });
+
+  it("should return epoch for null", () => {
+    expect(toSafeDate(null).getTime()).toBe(0);
+  });
+
+  it("should return epoch for undefined", () => {
+    expect(toSafeDate(undefined).getTime()).toBe(0);
+  });
+
+  it("should return epoch for empty string", () => {
+    expect(toSafeDate("").getTime()).toBe(0);
+  });
+
+  it("should return epoch for invalid date string", () => {
+    expect(toSafeDate("not-a-date").getTime()).toBe(0);
+  });
+});
+
+describe("formatAmount", () => {
+  it("should format with default locale and decimals", () => {
+    expect(formatAmount(1234.5)).toBe("1,234.50");
+  });
+
+  it("should format with custom locale", () => {
+    expect(formatAmount(1234.5, "de-DE")).toBe("1.234,50");
+  });
+
+  it("should format with zero decimals", () => {
+    expect(formatAmount(1234.5, "en-US", 0)).toBe("1,235");
+  });
+
+  it("should handle zero", () => {
+    expect(formatAmount(0)).toBe("0.00");
+  });
+
+  it("should handle NaN", () => {
+    expect(formatAmount(NaN)).toBe("0.00");
+  });
+
+  it("should handle Infinity", () => {
+    expect(formatAmount(Infinity)).toBe("0.00");
+  });
+
+  it("should handle negative numbers", () => {
+    expect(formatAmount(-42.1)).toContain("42.10");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("should format a valid date string", () => {
+    const result = formatDateTime("2024-01-15T10:30:00Z");
+    expect(result).toBeTruthy();
+    expect(result.length).toBeGreaterThan(5);
+  });
+
+  it("should format a Date object", () => {
+    const result = formatDateTime(new Date("2024-06-15T14:30:00Z"), "en-US");
+    expect(result).toBeTruthy();
+  });
+
+  it("should return empty string for null", () => {
+    expect(formatDateTime(null)).toBe("");
+  });
+
+  it("should return empty string for undefined", () => {
+    expect(formatDateTime(undefined)).toBe("");
+  });
+
+  it("should accept custom options", () => {
+    const result = formatDateTime("2024-01-15T10:30:00Z", "en-US", {dateStyle: "long", timeStyle: "short"});
+    expect(result).toContain("2024");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  it("should return 'just now' for recent dates", () => {
+    expect(formatRelativeTime(new Date())).toBe("just now");
+  });
+
+  it("should return minutes ago", () => {
+    const fiveMinAgo = new Date(Date.now() - 5 * 60_000);
+    expect(formatRelativeTime(fiveMinAgo)).toBe("5 minutes ago");
+  });
+
+  it("should return hours ago", () => {
+    const twoHoursAgo = new Date(Date.now() - 2 * 3600_000);
+    expect(formatRelativeTime(twoHoursAgo)).toBe("2 hours ago");
+  });
+
+  it("should return days ago", () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400_000);
+    expect(formatRelativeTime(threeDaysAgo)).toBe("3 days ago");
+  });
+
+  it("should return weeks ago", () => {
+    const twoWeeksAgo = new Date(Date.now() - 14 * 86400_000);
+    expect(formatRelativeTime(twoWeeksAgo)).toBe("2 weeks ago");
+  });
+
+  it("should return months ago", () => {
+    const twoMonthsAgo = new Date(Date.now() - 60 * 86400_000);
+    expect(formatRelativeTime(twoMonthsAgo)).toBe("2 months ago");
+  });
+
+  it("should handle singular forms", () => {
+    const oneMinAgo = new Date(Date.now() - 61_000);
+    expect(formatRelativeTime(oneMinAgo)).toBe("1 minute ago");
+  });
+
+  it("should handle ISO strings", () => {
+    const fiveMinAgo = new Date(Date.now() - 5 * 60_000).toISOString();
+    expect(formatRelativeTime(fiveMinAgo)).toBe("5 minutes ago");
+  });
+
+  it("should return empty string for null", () => {
+    expect(formatRelativeTime(null)).toBe("");
+  });
+
+  it("should return empty string for undefined", () => {
+    expect(formatRelativeTime(undefined)).toBe("");
+  });
+
+  it("should handle future dates", () => {
+    const fiveMinFuture = new Date(Date.now() + 5 * 60_000);
+    expect(formatRelativeTime(fiveMinFuture)).toContain("from now");
   });
 });
 
