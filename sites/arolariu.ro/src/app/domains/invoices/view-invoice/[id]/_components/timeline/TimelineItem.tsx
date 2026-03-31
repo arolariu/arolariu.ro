@@ -81,9 +81,10 @@ function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTransla
   }
 }
 
-function getRelativeTimeLabel(date: Date, locale: string, t: ReturnType<typeof useTranslations>): string {
+function getRelativeTimeLabel(date: Date | string, locale: string, t: ReturnType<typeof useTranslations>): string {
   const now = new Date();
-  const diffMs = date.getTime() - now.getTime();
+  const dateObj = date instanceof Date ? date : new Date(date);
+  const diffMs = dateObj.getTime() - now.getTime();
   const diffMinutes = Math.round(diffMs / (1000 * 60));
 
   if (Math.abs(diffMinutes) < 1) {

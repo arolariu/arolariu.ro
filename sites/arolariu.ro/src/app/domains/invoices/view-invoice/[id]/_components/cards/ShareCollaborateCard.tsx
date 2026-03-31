@@ -177,9 +177,10 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * - Past days → "activity.daysAgo" with count
    */
   const getRelativeTime = useCallback(
-    (date: Date): string => {
+    (date: Date | string): string => {
       const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
+      const dateObj = date instanceof Date ? date : new Date(date);
+      const diffInMs = now.getTime() - dateObj.getTime();
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
       if (diffInDays === 0) {

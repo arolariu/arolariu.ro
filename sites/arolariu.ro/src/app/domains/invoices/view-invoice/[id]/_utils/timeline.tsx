@@ -53,9 +53,10 @@ export function generateEventId(): string {
  * @param {Date} date - The date to calculate relative time for
  * @returns {string} Relative time string
  */
-export function getRelativeTime(date: Date): string {
+export function getRelativeTime(date: Date | string): string {
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const dateObj = date instanceof Date ? date : new Date(date);
+  const diffMs = now.getTime() - dateObj.getTime();
   const diffSecs = Math.floor(diffMs / 1000);
   const diffMins = Math.floor(diffSecs / 60);
   const diffHours = Math.floor(diffMins / 60);
