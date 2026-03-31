@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
+using System.Linq;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -58,15 +59,16 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 
   private async Task<Invoice> PerformTranslationAnalysis(Invoice invoice)
   {
-    foreach (var product in invoice.Items)
+    // Translate all products in parallel — each call is independent
+    var translationTasks = invoice.Items.Select(async product =>
     {
-      var productRawName = product.RawName;
       var translatedName = await translatorBroker
-        .Translate(productRawName)
+        .Translate(product.RawName)
         .ConfigureAwait(false);
-
       product.GenericName = translatedName;
-    }
+    });
+
+    await Task.WhenAll(translationTasks).ConfigureAwait(false);
     return invoice;
   }
   private async Task<Invoice> PerformGptAnalysis(Invoice invoice, AnalysisOptions options) => await analysisBroker
