@@ -60,7 +60,13 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 
     client = new DocumentIntelligenceClient(
       endpoint: new Uri(documentIntelligenceEndpoint),
-      credential: credentials);
+      credential: credentials,
+      options: new DocumentIntelligenceClientOptions
+      {
+        // Document Intelligence OCR can take 2-3 minutes for complex receipts.
+        // Default Azure SDK timeout is 100s — increase to 5 minutes.
+        Retry = { NetworkTimeout = TimeSpan.FromMinutes(5) },
+      });
   }
 
 
