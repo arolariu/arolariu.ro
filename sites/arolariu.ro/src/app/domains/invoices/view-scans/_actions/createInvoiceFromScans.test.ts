@@ -3,36 +3,20 @@
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {InvoiceScanType} from "@/types/invoices";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-// Mock instrumentation.server
-vi.mock("@/instrumentation.server", () => ({
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
-  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
-  getTraceparentHeader: vi.fn(() => ""),
-  injectTraceContextHeaders: vi.fn(() => ({})),
-}));
+// analyzeInvoice is imported by the module under test — mock it as async (must return a Promise)
+vi.mock("@/lib/actions/invoices/analyzeInvoice", () => ({default: vi.fn(async () => {})}));
 
-// Mock fetchUser
-const mockFetchBFFUser = vi.fn();
-vi.mock("@/lib/actions/user/fetchUser", () => ({
-  fetchBFFUserFromAuthService: () => mockFetchBFFUser(),
-}));
+// Stub references (from tests/stubs/) — use vi.mocked for type-safe access
+const mockFetch = vi.mocked(fetchWithTimeout);
+const mockFetchBFFUser = vi.mocked(fetchBFFUserFromAuthService);
 
-// Mock configProxy
-vi.mock("@/lib/config/configProxy", () => ({
-  fetchApiUrl: async () => "https://api.test.com",
-}));
-
-// Mock global fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-// Import after mocks
 import {createInvoiceFromScans} from "./createInvoiceFromScans";
 
 /**
@@ -409,9 +393,9 @@ describe("createInvoiceFromScans", () => {
 
       await createInvoiceFromScans({scans, mode: "batch"});
 
-      // Check attachment call
+      // Check attachment call (relative path — URL resolution happens inside real fetchWithTimeout)
       const attachCall = mockFetch.mock.calls[1];
-      expect(attachCall?.[0]).toBe("https://api.test.com/rest/v1/invoices/invoice-batch/scans");
+      expect(attachCall?.[0]).toBe("/rest/v1/invoices/invoice-batch/scans");
 
       const body = JSON.parse(attachCall?.[1]?.body as string);
       expect(body.type).toBe(InvoiceScanType.PNG);

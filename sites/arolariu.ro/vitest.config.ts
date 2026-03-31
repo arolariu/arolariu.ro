@@ -27,16 +27,23 @@ export default mergeConfig(
     },
     resolve: {
       alias: [
-        // Stub server-only modules in tests (MUST come before general @/ alias)
-        {find: "server-only", replacement: resolve(__dirname, "./vitest-stubs/server-only.ts")},
-        {find: "@/instrumentation.server", replacement: resolve(__dirname, "./vitest-stubs/instrumentation.server.ts")},
-        {find: "@/lib/config/configProxy", replacement: resolve(__dirname, "./vitest-stubs/lib/config/configProxy.ts")},
-        {find: "@/lib/utils.server", replacement: resolve(__dirname, "./vitest-stubs/lib/utils.server.ts")},
+        // ── Stubs: server-only modules that crash in happy-dom ──
+        // These MUST come before the general `@/` alias so they take priority.
+        // See tests/README.md for the full mock architecture documentation.
+        {find: "server-only", replacement: resolve(__dirname, "./tests/stubs/server-only.ts")},
+        {find: "@/instrumentation.server", replacement: resolve(__dirname, "./tests/stubs/instrumentation.server.ts")},
+        {find: "@/lib/config/configProxy", replacement: resolve(__dirname, "./tests/stubs/lib/config/configProxy.ts")},
+        {find: "@/lib/utils.server", replacement: resolve(__dirname, "./tests/stubs/lib/utils.server.ts")},
+        {find: "@/lib/azure/storageClient", replacement: resolve(__dirname, "./tests/stubs/lib/azure/storageClient.ts")},
         {
           find: "@/lib/actions/storage/fetchConfig",
-          replacement: resolve(__dirname, "./vitest-stubs/lib/actions/storage/fetchConfig.ts"),
+          replacement: resolve(__dirname, "./tests/stubs/lib/actions/storage/fetchConfig.ts"),
         },
-        // General aliases (must come after specific ones)
+        {
+          find: "@/lib/actions/user/fetchUser",
+          replacement: resolve(__dirname, "./tests/stubs/lib/actions/user/fetchUser.ts"),
+        },
+        // ── General aliases (must come after stubs) ──
         {find: "@", replacement: resolve(__dirname, "./src")},
         {find: "@arolariu/components", replacement: resolve(__dirname, "../../packages/components/dist/index.js")},
       ],

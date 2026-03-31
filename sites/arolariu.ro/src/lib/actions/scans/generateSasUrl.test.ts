@@ -6,13 +6,12 @@
 import {describe, expect, it, vi, beforeEach} from "vitest";
 import {generateUploadSasUrl} from "./generateSasUrl";
 import * as fetchUserModule from "../user/fetchUser";
-import * as fetchConfigModule from "../storage/fetchConfig";
-import * as storageClientModule from "@/lib/azure/storageClient";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {createBlobClient} from "@/lib/azure/storageClient";
 
-// Mock modules
+// Mock modules: fetchUser uses relative path in source, so mock the real file
 vi.mock("../user/fetchUser");
-vi.mock("../storage/fetchConfig");
-vi.mock("@/lib/azure/storageClient");
+// fetchConfig and storageClient are stubs (aliased) — no vi.mock needed
 vi.mock("@azure/storage-blob", () => ({
   BlobSASPermissions: {
     parse: vi.fn(() => ({permissions: "cw"})),
@@ -20,11 +19,6 @@ vi.mock("@azure/storage-blob", () => ({
   generateBlobSASQueryParameters: vi.fn(() => ({
     toString: () => "sv=2021-08-06&st=2024-01-01T00:00:00Z&se=2024-01-01T00:30:00Z&sp=cw&sig=mockSasToken",
   })),
-}));
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
 }));
 
 describe("generateUploadSasUrl", () => {
@@ -65,7 +59,7 @@ describe("generateUploadSasUrl", () => {
       createdAt: new Date(),
     });
 
-    vi.spyOn(fetchConfigModule, "default").mockResolvedValue("http://localhost:10000/devstoreaccount1");
+    vi.mocked(fetchConfigurationValue).mockResolvedValue("http://localhost:10000/devstoreaccount1");
 
     const mockBlobClient = {
       url: "http://localhost:10000/devstoreaccount1/invoices/scans/user_123/test_123.jpg",
@@ -79,7 +73,7 @@ describe("generateUploadSasUrl", () => {
       getContainerClient: vi.fn(() => mockContainerClient),
     };
 
-    vi.spyOn(storageClientModule, "createBlobClient").mockResolvedValue(mockStorageClient as never);
+    vi.mocked(createBlobClient).mockResolvedValue(mockStorageClient as never);
 
     // Act
     const result = await generateUploadSasUrl({
@@ -105,7 +99,7 @@ describe("generateUploadSasUrl", () => {
       createdAt: new Date(),
     });
 
-    vi.spyOn(fetchConfigModule, "default").mockResolvedValue("https://storageaccount.blob.core.windows.net");
+    vi.mocked(fetchConfigurationValue).mockResolvedValue("https://storageaccount.blob.core.windows.net");
 
     const mockBlobClient = {
       url: "https://storageaccount.blob.core.windows.net/invoices/scans/user_123/test_123.jpg",
@@ -131,7 +125,7 @@ describe("generateUploadSasUrl", () => {
       ),
     };
 
-    vi.spyOn(storageClientModule, "createBlobClient").mockResolvedValue(mockStorageClient as never);
+    vi.mocked(createBlobClient).mockResolvedValue(mockStorageClient as never);
 
     // Act
     const result = await generateUploadSasUrl({
@@ -173,7 +167,7 @@ describe("generateUploadSasUrl", () => {
       createdAt: new Date(),
     });
 
-    vi.spyOn(fetchConfigModule, "default").mockResolvedValue("http://localhost:10000/devstoreaccount1");
+    vi.mocked(fetchConfigurationValue).mockResolvedValue("http://localhost:10000/devstoreaccount1");
 
     const mockBlobClient = {
       url: "http://localhost:10000/devstoreaccount1/invoices/scans/user_123/test.jpg",
@@ -187,7 +181,7 @@ describe("generateUploadSasUrl", () => {
       getContainerClient: vi.fn(() => mockContainerClient),
     };
 
-    vi.spyOn(storageClientModule, "createBlobClient").mockResolvedValue(mockStorageClient as never);
+    vi.mocked(createBlobClient).mockResolvedValue(mockStorageClient as never);
 
     // Act
     const results = await Promise.all([

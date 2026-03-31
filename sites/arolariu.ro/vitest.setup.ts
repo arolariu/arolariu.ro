@@ -1,20 +1,35 @@
 /**
- * @fileoverview Vitest setup for the arolariu.ro website.
+ * @fileoverview Global Vitest setup for the arolariu.ro website.
  * @module sites/arolariu.ro/vitest.setup
  *
  * @remarks
- * Provides Next.js specific mocks and extends the monorepo test setup.
+ * ## Mock Architecture (3 tiers)
+ *
+ * 1. **Stubs** (`tests/stubs/`): Module aliases resolved via `vitest.config.ts`.
+ *    Replace server-only modules that crash in happy-dom. These use `vi.fn(impl)`
+ *    so the original implementation survives `restoreMocks: true`.
+ *    Modules: `server-only`, `instrumentation.server`, `configProxy`, `utils.server`,
+ *    `storageClient`, `fetchConfig`, `fetchUser`.
+ *
+ * 2. **Global mocks** (this file): Browser APIs and SDK shims that every test needs.
+ *    Modules: `next/navigation`, `next-intl`, `@clerk/nextjs`, `@opentelemetry/*`,
+ *    `@azure/*` SDKs.
+ *
+ * 3. **Per-test mocks**: Inline `vi.mock()` + `vi.hoisted()` in individual test files
+ *    for module-specific behavior (e.g., Resend class, specific server actions).
+ *
+ * @see tests/README.md for full documentation.
  */
 
 import "@testing-library/jest-dom/vitest";
 import "fake-indexeddb/auto";
 import {vi} from "vitest";
 
-// Set required environment variables before any imports that depend on them
-// This must be done before modules like utils.server.ts are imported
+// ── Environment ──
 process.env["RESEND_API_KEY"] = "re_test_mock_api_key_for_vitest";
 
-// Mock Next.js router
+// ── Browser API mocks (Next.js) ──
+
 vi.mock("next/navigation", () => ({
   useRouter() {
     return {
@@ -27,15 +42,10 @@ vi.mock("next/navigation", () => ({
       asPath: "/",
     };
   },
-  usePathname() {
-    return "/";
-  },
-  useSearchParams() {
-    return new URLSearchParams();
-  },
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock next-intl
 vi.mock("next-intl", () => {
   const mockT = (key: string) => key;
   mockT.rich = (key: string) => key;
@@ -47,31 +57,13 @@ vi.mock("next-intl", () => {
   };
 });
 
-// Mock Clerk
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
 }));
 
-// Mock server-only to prevent errors in tests
-vi.mock("server-only", () => {
-  return {};
-});
+// ── SDK shims (prevent CJS/ESM resolution crashes in happy-dom) ──
 
-// Mock instrumentation
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
-  getTraceparentHeader: vi.fn(() => ""),
-  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
-    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
-    enrichedHeaders.set("traceparent", "00-test-trace-id");
-    return enrichedHeaders;
-  }),
-}));
-
-// Mock OpenTelemetry to prevent deep node_modules resolution issues in tests
 vi.mock("@opentelemetry/api", async (importOriginal) => {
   try {
     return await importOriginal();
@@ -83,36 +75,6 @@ vi.mock("@opentelemetry/sdk-logs", () => ({}));
 vi.mock("@opentelemetry/sdk-trace-base", () => ({}));
 vi.mock("@opentelemetry/resources", () => ({}));
 
-// Mock Azure SDKs to prevent CJS resolution issues (function-bind/implementation)
 vi.mock("@azure/storage-blob", () => ({BlobServiceClient: vi.fn()}));
 vi.mock("@azure/identity", () => ({DefaultAzureCredential: vi.fn()}));
 vi.mock("@azure/app-configuration", () => ({}));
-
-// Mock server-side utilities that import next/headers
-vi.mock("@/lib/azure/storageClient", () => ({
-  createBlobClient: vi.fn(),
-  rewriteAzuriteUrl: vi.fn((url: string) => url),
-}));
-
-// Mock server-side utils
-vi.mock("@/lib/utils.server", () => ({
-  convertBase64ToBlob: vi.fn(),
-}));
-
-// Mock config proxy
-vi.mock("@/lib/config/configProxy", () => ({
-  fetchResendApiKey: vi.fn(),
-  fetchConfigValue: vi.fn(),
-  fetchApiUrl: vi.fn(),
-  fetchApiJwtSecret: vi.fn(),
-}));
-
-// Mock storage fetch config
-vi.mock("@/lib/actions/storage/fetchConfig", () => ({
-  default: vi.fn(),
-}));
-
-// Mock user fetch action
-vi.mock("@/lib/actions/user/fetchUser", () => ({
-  fetchBFFUserFromAuthService: vi.fn(),
-}));
