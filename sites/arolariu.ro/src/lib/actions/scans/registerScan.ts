@@ -22,7 +22,8 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -142,9 +143,38 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       }
       addSpanEvent("scan.validation.complete");
 
-      // Step 3. Construct the Scan entity
-      addSpanEvent("scan.registration.start");
+      // Step 3. Set blob metadata in Azure (direct upload doesn't set metadata)
+      addSpanEvent("azure.blob.metadata.start");
       const uploadedAt = new Date();
+      const blobMetadata = {
+        useridentifier: userIdentifier,
+        scanid: input.scanId,
+        uploadedat: uploadedAt.toISOString(),
+        originalfilename: input.fileName,
+        status: ScanStatus.READY,
+      };
+
+      try {
+        const containerName = "invoices";
+        const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
+        const storageClient = await createBlobClient(storageEndpoint);
+        const containerClient = storageClient.getContainerClient(containerName);
+
+        // Extract blob name from the full URL
+        const urlPath = new URL(input.blobUrl).pathname;
+        const blobName = urlPath.split(`/${containerName}/`)[1] ?? urlPath.slice(1);
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        await blockBlobClient.setMetadata(blobMetadata);
+        addSpanEvent("azure.blob.metadata.complete");
+        logWithTrace("info", "Set blob metadata after direct upload", {scanId: input.scanId}, "server");
+      } catch (metadataError) {
+        // Non-fatal: scan is uploaded, metadata is just convenience
+        logWithTrace("warn", "Failed to set blob metadata (non-fatal)", {error: String(metadataError)}, "server");
+        addSpanEvent("azure.blob.metadata.failed");
+      }
+
+      // Step 4. Construct the Scan entity
 
       const scan: Scan = {
         id: input.scanId,
