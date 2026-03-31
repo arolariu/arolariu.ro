@@ -61,6 +61,7 @@ module aiFoundryDeployment 'aiFoundry.bicep' = {
 }
 
 output openAiName string = openAiDeployment.outputs.openAiName
+output aiFoundryName string = aiFoundryDeployment.outputs.aiFoundryName
 
 output aiResources object = {
   openAiId: openAiDeployment.outputs.openAiId

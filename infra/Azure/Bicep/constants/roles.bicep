@@ -82,6 +82,10 @@ var cognitiveServicesOpenAiUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
 @description('Grants read access to Cognitive Services data actions including Form Recognizer/Document Intelligence analysis.')
 var cognitiveServicesUser = 'a97b65f3-24c7-4388-baec-2e87135dc908'
 
+@export()
+@description('Grants user-level access to Azure AI Foundry resources for inference and data operations.')
+var azureAiUser = 'a2c28859-6249-4e0c-8e86-a0b5ad18e86f'
+
 // -------------------------------------------------------------------------------------
 // Compute Roles
 // -------------------------------------------------------------------------------------
