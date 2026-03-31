@@ -1387,7 +1387,13 @@
           "failed": "Échoué"
         },
         "removeTooltip": "Supprimer ce fichier",
-        "retryAttempt": "Nouvelle tentative {attempt}"
+        "retryAttempt": "Nouvelle tentative {attempt}",
+        "pendingTooltip": "Ce scan ne sera pas enregistré tant que vous n'aurez pas cliqué sur Télécharger",
+        "pagination": {
+          "previous": "Précédent",
+          "next": "Suivant",
+          "pageInfo": "{current} / {total} ({count} scans)"
+        }
       },
       "postUpload": {
         "title": "Téléchargement terminé !",
@@ -2185,6 +2191,8 @@
         }
       },
       "merchantInfoCard": {
+        "title": "Informations sur le commerçant",
+        "noMerchantLinked": "Aucun commerçant lié à cette facture",
         "viewAllReceipts": "Voir tous les reçus",
         "viewAllInvoices": "Voir toutes les factures",
         "viewOnMap": "Voir sur la carte",
@@ -2622,7 +2630,8 @@
         "madePrivate": "La facture est maintenant privée",
         "toggleError": "Échec de la mise à jour des paramètres de partage",
         "qrCode": "Code QR",
-        "qrCopied": "Lien copié ! Génération du code QR bientôt disponible."
+        "qrCopied": "Lien copié ! Génération du code QR bientôt disponible.",
+        "copyError": "Échec de la copie du lien"
       },
       "healthScore": {
         "title": "Invoice Completeness",
@@ -2762,7 +2771,14 @@
         "jsonSuccess": "Fichier JSON téléchargé avec succès",
         "jsonError": "Échec de l'export JSON",
         "csvError": "Échec de l'export CSV",
-        "title": "Exporter la facture"
+        "title": "Exporter la facture",
+        "pdf": {
+          "title": "Exporter en PDF",
+          "description": "Télécharger un document de facture professionnel"
+        },
+        "pdfSuccess": "Fichier PDF téléchargé avec succès",
+        "pdfError": "Échec de la génération du PDF",
+        "pdfGenerating": "Génération du PDF en cours..."
       }
     },
     "EditInvoice": {
@@ -2852,6 +2868,7 @@
       },
       "merchantCard": {
         "title": "Commerçant",
+        "noMerchantLinked": "Aucun commerçant lié à cette facture",
         "addressLabel": "Adresse : {address}",
         "buttons": {
           "viewMerchantDetails": "Voir les détails du commerçant",
@@ -3189,6 +3206,7 @@
       },
       "merchantDialog": {
         "title": "Détails du commerçant",
+        "noMerchantLinked": "Aucun commerçant lié à cette facture",
         "description": "Informations sur {merchantName}",
         "fields": {
           "address": "Adresse",
@@ -3656,7 +3674,8 @@
           "sendEmail": {
             "loading": "Envoi de l’invitation à {email}...",
             "success": "Invitation envoyée à {email} !",
-            "error": "Échoué: {message}"
+            "error": "Échoué: {message}",
+            "comingSoon": "Le partage par e-mail arrive bientôt"
           },
           "revoke": {
             "loading": "Envoi de la demande de révocation au serveur...",
@@ -3832,7 +3851,8 @@
         "upload": "Télécharger",
         "review": "Vérifier",
         "create": "Créer"
-      }
+      },
+      "unknownMerchant": "Commerçant inconnu"
     },
     "CreateInvoice": {
       "metadata": {

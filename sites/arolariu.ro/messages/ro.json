@@ -1388,6 +1388,7 @@
         },
         "removeTooltip": "Elimină acest fișier",
         "retryAttempt": "Reîncercarea {attempt}",
+        "pendingTooltip": "Această scanare nu va fi salvată până nu apăsați pe Încarcă",
         "pagination": {
           "previous": "Anterior",
           "next": "Următor",
@@ -2629,7 +2630,8 @@
         "madePrivate": "Factura este acum privată",
         "toggleError": "Eroare la actualizarea setărilor de partajare",
         "qrCode": "Cod QR",
-        "qrCopied": "Link copiat! Generarea codului QR va fi adăugată în curând."
+        "qrCopied": "Link copiat! Generarea codului QR va fi adăugată în curând.",
+        "copyError": "Nu s-a putut copia linkul"
       },
       "healthScore": {
         "suggestions": {
