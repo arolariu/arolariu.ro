@@ -58,6 +58,19 @@ vi.mock("server-only", () => {
   return {};
 });
 
+// Mock instrumentation
+vi.mock("@/instrumentation.server", () => ({
+  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
+    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
+    enrichedHeaders.set("traceparent", "00-test-trace-id");
+    return enrichedHeaders;
+  }),
+}));
+
 // Mock OpenTelemetry to prevent deep node_modules resolution issues in tests
 vi.mock("@opentelemetry/api", async (importOriginal) => {
   try {
@@ -79,4 +92,27 @@ vi.mock("@azure/app-configuration", () => ({}));
 vi.mock("@/lib/azure/storageClient", () => ({
   createBlobClient: vi.fn(),
   rewriteAzuriteUrl: vi.fn((url: string) => url),
+}));
+
+// Mock server-side utils
+vi.mock("@/lib/utils.server", () => ({
+  convertBase64ToBlob: vi.fn(),
+}));
+
+// Mock config proxy
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchResendApiKey: vi.fn(),
+  fetchConfigValue: vi.fn(),
+  fetchApiUrl: vi.fn(),
+  fetchApiJwtSecret: vi.fn(),
+}));
+
+// Mock storage fetch config
+vi.mock("@/lib/actions/storage/fetchConfig", () => ({
+  default: vi.fn(),
+}));
+
+// Mock user fetch action
+vi.mock("@/lib/actions/user/fetchUser", () => ({
+  fetchBFFUserFromAuthService: vi.fn(),
 }));
