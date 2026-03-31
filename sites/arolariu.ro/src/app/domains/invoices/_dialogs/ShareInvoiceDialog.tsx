@@ -1,6 +1,7 @@
 "use client";
 
 import {useUserInformation} from "@/hooks/useUserInformation";
+import {sendInvoiceShareEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -264,29 +265,14 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       setIsSendingEmail(true);
 
       const sendEmailAction = async () => {
-        // Get the user's display name from Clerk
-        const fromName =
-          userInformation.user?.firstName && userInformation.user?.lastName
-            ? `${userInformation.user.firstName} ${userInformation.user.lastName}`
-            : userInformation.user?.firstName
-              ? userInformation.user.firstName
-              : userInformation.user?.emailAddresses[0]?.emailAddress ?? "User";
-
-        const response = await fetch("/api/email", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            type: "invoice-share",
-            to: email,
-            fromName,
-            invoiceId: invoice.id,
-            invoiceName: invoice.name,
-          }),
+        const result = await sendInvoiceShareEmail({
+          toEmail: email,
+          toName: email.split("@")[0] ?? "there",
+          invoiceId: invoice.id,
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error((data as {error?: string}).error ?? "Failed to send email");
+        if (!result.success) {
+          throw new Error(result.error ?? "Failed to send email");
         }
 
         setEmail("");
