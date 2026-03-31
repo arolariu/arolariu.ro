@@ -2673,7 +2673,9 @@
           "analyze": "Run AI Analysis"
         },
         "showDetails": "Show factor breakdown",
-        "subtitle": "Comprehensive data quality assessment"
+        "subtitle": "Comprehensive data quality assessment",
+        "seeReport": "See detailed report",
+        "dialogTitle": "Invoice Health Report"
       },
       "itemAnalytics": {
         "title": "Items",

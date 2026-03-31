@@ -2,9 +2,10 @@
  * Styles for the ExportDialog component.
  *
  * @remarks
- * - Grid layout for export options (2 columns on desktop, 1 on mobile)
- * - Card-style buttons with hover effects
- * - Responsive design with mobile-first approach
+ * - Selection card pattern with rich visual hierarchy
+ * - Vertical stack layout (no grid) for better mobile experience
+ * - Icon, title, description, and arrow for each card
+ * - Hover and disabled states with proper accessibility
  * - Dark mode support with proper contrast
  */
 
@@ -14,66 +15,69 @@
 }
 
 .exportOptions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   margin-top: 1rem;
-
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
-.exportButton {
+.exportCard {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
-  height: auto;
-  width: 100%;
-  justify-content: flex-start;
+  padding: 1.25rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background: hsl(var(--card));
+  cursor: pointer;
   text-align: left;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s ease;
+  width: 100%;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: hsl(var(--primary));
-    background-color: hsl(var(--accent));
+    background: hsl(var(--accent));
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
-.buttonIcon {
-  font-size: 2rem;
-  color: hsl(var(--primary));
+.exportCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 1.25rem;
   flex-shrink: 0;
 }
 
-.buttonContent {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.exportCardContent {
   flex: 1;
-}
 
-.buttonTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-}
-
-.buttonDescription {
-  font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
-  line-height: 1.4;
-}
-
-/**
- * Dark mode adjustments
- */
-@media (prefers-color-scheme: dark) {
-  .exportButton {
-    &:hover {
-      background-color: hsl(var(--accent) / 0.8);
-    }
+  h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+    color: hsl(var(--foreground));
   }
+
+  p {
+    font-size: 0.8125rem;
+    margin: 0.25rem 0 0;
+    color: hsl(var(--muted-foreground));
+    line-height: 1.4;
+  }
+}
+
+.exportCardArrow {
+  color: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+  font-size: 1.25rem;
 }

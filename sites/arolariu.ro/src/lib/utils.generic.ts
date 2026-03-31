@@ -426,11 +426,7 @@ export function formatAmount(amount: number, locale = "en-US", decimals = 2): st
  * // "15.01.2024, 10:30"
  * ```
  */
-export function formatDateTime(
-  date: Date | string | null | undefined,
-  locale = "en-US",
-  options?: Intl.DateTimeFormatOptions,
-): string {
+export function formatDateTime(date: Date | string | null | undefined, locale = "en-US", options?: Intl.DateTimeFormatOptions): string {
   const dateObj = toSafeDate(date);
   if (dateObj.getTime() === 0) return "";
 

@@ -16,7 +16,6 @@ vi.mock("@arolariu/components", () => ({
   DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
   DialogTitle: ({children}: {children: React.ReactNode}) => <h2>{children}</h2>,
   DialogDescription: ({children}: {children: React.ReactNode}) => <p>{children}</p>,
-  Button: ({children, onClick}: {children: React.ReactNode; onClick?: () => void}) => <button onClick={onClick}>{children}</button>,
   toast: vi.fn(),
 }));
 
@@ -78,7 +77,7 @@ describe("ExportDialog", () => {
       </DialogProvider>,
     );
 
-    expect(await screen.findByText("print.title")).toBeInTheDocument();
+    expect(await screen.findByText("pdf.title")).toBeInTheDocument();
     expect(await screen.findByText("csv.title")).toBeInTheDocument();
     expect(await screen.findByText("json.title")).toBeInTheDocument();
     expect(await screen.findByText("copySummary.title")).toBeInTheDocument();

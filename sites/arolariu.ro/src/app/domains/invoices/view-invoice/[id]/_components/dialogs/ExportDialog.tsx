@@ -4,7 +4,6 @@
  *
  * @remarks
  * Provides multiple export options for invoice data:
- * - **Print**: Triggers browser print dialog (uses existing print styles)
  * - **CSV**: Exports invoice items as CSV (product name, quantity, price, total, category)
  * - **JSON**: Exports full invoice data as formatted JSON
  * - **PDF**: Generates professional invoice document using @react-pdf/renderer
@@ -17,9 +16,10 @@
  * - Text Summary: Human-readable summary for sharing
  *
  * **User Experience:**
+ * - Selection card pattern with rich descriptions
  * - Toast notifications for successful exports
- * - Clear visual hierarchy with icons
- * - Responsive layout with grid of export options
+ * - Clear visual hierarchy with icons, titles, and descriptions
+ * - Vertical stack layout for better mobile experience
  * - Automatic file download for CSV and JSON formats
  *
  * **Performance:**
@@ -30,12 +30,11 @@
 "use client";
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
-import {Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
-import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
-import {TbClipboard, TbCode, TbFileTypeCsv, TbFileTypePdf, TbPrinter} from "react-icons/tb";
+import {TbChevronRight, TbClipboard, TbCode, TbFileSpreadsheet, TbFileTypePdf} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {InvoicePDF} from "../export/InvoicePDF";
@@ -47,9 +46,10 @@ import styles from "./ExportDialog.module.scss";
  * @remarks
  * **Export Options:**
  *
- * 1. **Print**: Triggers `window.print()` to use browser print dialog
- *    - Utilizes existing print styles from PrintStyles.module.scss
- *    - Invoice layout is optimized for printing
+ * 1. **PDF Export**: Generates professional invoice document
+ *    - Multi-page PDF with invoice overview and product table
+ *    - Professional styling with merchant and payment information
+ *    - Automatic download with filename: `invoice-{name}-{date}.pdf`
  *
  * 2. **CSV Export**: Exports invoice items as CSV
  *    - Headers: Product Name, Quantity, Price, Total, Category
@@ -60,14 +60,14 @@ import styles from "./ExportDialog.module.scss";
  *    - Formatted with 2-space indentation for readability
  *    - Automatic download with filename: `invoice-{id}.json`
  *
- * 4. **PDF Export**: Generates professional invoice document
- *    - Multi-page PDF with invoice overview and product table
- *    - Professional styling with merchant and payment information
- *    - Automatic download with filename: `invoice-{name}-{date}.pdf`
- *
- * 5. **Copy Summary**: Copies text summary to clipboard
+ * 4. **Copy Summary**: Copies text summary to clipboard
  *    - Includes: Merchant name, date, total amount, item count
  *    - Uses Clipboard API with toast feedback
+ *
+ * **UI Pattern:**
+ * - Selection cards with icon, title, description, and arrow
+ * - Vertical stack layout for better mobile readability
+ * - Loading state for PDF generation
  *
  * **Error Handling:**
  * - Toast notifications for failures
@@ -88,24 +88,6 @@ export function ExportDialog(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
   const {isOpen, close} = useDialog("VIEW_INVOICE__EXPORT");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-  /**
-   * Handles triggering the browser print dialog.
-   *
-   * @remarks
-   * Uses `window.print()` to trigger the native print dialog.
-   * The invoice page has print-specific styles that will be applied.
-   */
-  const handlePrint = useCallback((): void => {
-    try {
-      window.print();
-      toast.success(t("printSuccess"));
-      close();
-    } catch (error) {
-      console.error("Failed to trigger print:", error);
-      toast.error(t("printError"));
-    }
-  }, [close, t]);
 
   /**
    * Handles exporting invoice items as CSV.
@@ -305,86 +287,62 @@ Items: ${invoice.items.length}
         </DialogHeader>
 
         <div className={styles["exportOptions"]}>
-          {/* Print Option */}
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              className={styles["exportButton"]}
-              onClick={handlePrint}>
-              <TbPrinter className={styles["buttonIcon"]} />
-              <div className={styles["buttonContent"]}>
-                <span className={styles["buttonTitle"]}>{t("print.title")}</span>
-                <span className={styles["buttonDescription"]}>{t("print.description")}</span>
-              </div>
-            </Button>
-          </motion.div>
+          {/* PDF Export Card */}
+          <button
+            className={styles["exportCard"]}
+            onClick={handleExportPDF}
+            disabled={isGeneratingPDF}>
+            <div className={styles["exportCardIcon"]}>
+              <TbFileTypePdf />
+            </div>
+            <div className={styles["exportCardContent"]}>
+              <h3>{t("pdf.title")}</h3>
+              <p>{t("pdf.description")}</p>
+            </div>
+            <TbChevronRight className={styles["exportCardArrow"]} />
+          </button>
 
-          {/* CSV Export Option */}
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              className={styles["exportButton"]}
-              onClick={handleExportCSV}>
-              <TbFileTypeCsv className={styles["buttonIcon"]} />
-              <div className={styles["buttonContent"]}>
-                <span className={styles["buttonTitle"]}>{t("csv.title")}</span>
-                <span className={styles["buttonDescription"]}>{t("csv.description")}</span>
-              </div>
-            </Button>
-          </motion.div>
+          {/* CSV Export Card */}
+          <button
+            className={styles["exportCard"]}
+            onClick={handleExportCSV}>
+            <div className={styles["exportCardIcon"]}>
+              <TbFileSpreadsheet />
+            </div>
+            <div className={styles["exportCardContent"]}>
+              <h3>{t("csv.title")}</h3>
+              <p>{t("csv.description")}</p>
+            </div>
+            <TbChevronRight className={styles["exportCardArrow"]} />
+          </button>
 
-          {/* PDF Export Option */}
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              className={styles["exportButton"]}
-              onClick={handleExportPDF}
-              disabled={isGeneratingPDF}>
-              <TbFileTypePdf className={styles["buttonIcon"]} />
-              <div className={styles["buttonContent"]}>
-                <span className={styles["buttonTitle"]}>{t("pdf.title")}</span>
-                <span className={styles["buttonDescription"]}>{t("pdf.description")}</span>
-              </div>
-            </Button>
-          </motion.div>
+          {/* JSON Export Card */}
+          <button
+            className={styles["exportCard"]}
+            onClick={handleExportJSON}>
+            <div className={styles["exportCardIcon"]}>
+              <TbCode />
+            </div>
+            <div className={styles["exportCardContent"]}>
+              <h3>{t("json.title")}</h3>
+              <p>{t("json.description")}</p>
+            </div>
+            <TbChevronRight className={styles["exportCardArrow"]} />
+          </button>
 
-          {/* JSON Export Option */}
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              className={styles["exportButton"]}
-              onClick={handleExportJSON}>
-              <TbCode className={styles["buttonIcon"]} />
-              <div className={styles["buttonContent"]}>
-                <span className={styles["buttonTitle"]}>{t("json.title")}</span>
-                <span className={styles["buttonDescription"]}>{t("json.description")}</span>
-              </div>
-            </Button>
-          </motion.div>
-
-          {/* Copy Summary Option */}
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              className={styles["exportButton"]}
-              onClick={handleCopySummary}>
-              <TbClipboard className={styles["buttonIcon"]} />
-              <div className={styles["buttonContent"]}>
-                <span className={styles["buttonTitle"]}>{t("copySummary.title")}</span>
-                <span className={styles["buttonDescription"]}>{t("copySummary.description")}</span>
-              </div>
-            </Button>
-          </motion.div>
+          {/* Copy Summary Card */}
+          <button
+            className={styles["exportCard"]}
+            onClick={handleCopySummary}>
+            <div className={styles["exportCardIcon"]}>
+              <TbClipboard />
+            </div>
+            <div className={styles["exportCardContent"]}>
+              <h3>{t("copySummary.title")}</h3>
+              <p>{t("copySummary.description")}</p>
+            </div>
+            <TbChevronRight className={styles["exportCardArrow"]} />
+          </button>
         </div>
       </DialogContent>
     </Dialog>

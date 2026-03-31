@@ -149,7 +149,12 @@ export function AnalysisPanel(): React.JSX.Element {
         };
 
         await Promise.race([analysisSettledPromise, animateSteps()]);
-        await analysisPromise;
+        const result = await analysisPromise;
+
+        // Check if the analysis failed
+        if (result && !result.success) {
+          throw new Error(result.error ?? "Analysis failed");
+        }
 
         setCurrentStep(t("steps.complete"));
         setProgress(100);

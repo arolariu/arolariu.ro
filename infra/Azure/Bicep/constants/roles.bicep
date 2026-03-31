@@ -78,6 +78,10 @@ var keyVaultReader = '21090545-7ca7-4776-b22c-e363652d74d2'
 @export()
 var cognitiveServicesOpenAiUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
 
+@export()
+@description('Grants read access to Cognitive Services data actions including Form Recognizer/Document Intelligence analysis.')
+var cognitiveServicesUser = 'a97b65f3-24c7-4388-baec-2e87135dc908'
+
 // -------------------------------------------------------------------------------------
 // Compute Roles
 // -------------------------------------------------------------------------------------

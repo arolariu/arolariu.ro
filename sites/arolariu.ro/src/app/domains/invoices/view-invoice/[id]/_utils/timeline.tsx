@@ -3,7 +3,7 @@
  * @module lib/utils/timeline-helpers
  */
 
-import {formatDate, formatRelativeTime} from "@/lib/utils.generic";
+import {formatDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {Locale} from "next-intl";
 import {TbCalendar, TbChefHat, TbDownload, TbFile, TbScan, TbShare2, TbSparkles, TbStar, TbTag} from "react-icons/tb";

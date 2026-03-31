@@ -39,9 +39,9 @@ type ServerActionInputType = Readonly<{
 }>;
 
 /**
- * Output type indicating async completion with no return value.
+ * Output type indicating success or failure of the analysis operation.
  */
-type ServerActionOutputType = Promise<Readonly<void>>;
+type ServerActionOutputType = Promise<Readonly<{success: boolean; error?: string}>>;
 
 /**
  * Submits an invoice to the AI-powered analysis pipeline.
@@ -56,26 +56,26 @@ type ServerActionOutputType = Promise<Readonly<void>>;
  * - Triggers async processing in the backend
  * - Analysis results are stored on the invoice entity
  *
- * **Error Handling**: Throws on validation failure, auth failure, or API errors.
+ * **Error Handling**: Returns result object with success/error fields.
  * Errors are logged with trace context for debugging.
  *
  * @param input - The invoice identifier and analysis configuration
  * @param input.invoiceIdentifier - UUIDv4 of the target invoice. Must exist and be owned by user.
  * @param input.analysisOptions - Analysis mode (Basic or Detailed)
- * @returns Promise that resolves when analysis is successfully queued
- * @throws {Error} When invoiceIdentifier is not a valid GUID
- * @throws {Error} When authentication fails
- * @throws {Error} When API returns non-OK status
+ * @returns Promise that resolves to a result object indicating success or failure
  *
  * @example
  * ```typescript
  * import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
  * import {InvoiceAnalysisOptions} from "@/types/invoices";
  *
- * await analyzeInvoice({
+ * const result = await analyzeInvoice({
  *   invoiceIdentifier: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
  *   analysisOptions: InvoiceAnalysisOptions.DetailedAnalysis
  * });
+ * if (!result.success) {
+ *   console.error("Analysis failed:", result.error);
+ * }
  * ```
  *
  * @see {@link fetchInvoice} to retrieve the analyzed invoice
@@ -113,16 +113,21 @@ export default async function analyzeInvoice({invoiceIdentifier, analysisOptions
 
       if (response.ok) {
         logWithTrace("info", "Successfully analyzed invoice", {}, "server");
-        return;
+        return {success: true};
       }
 
       const errorText = await response.text();
-      throw new Error(`BFF analyze invoice request failed: ${response.status} ${response.statusText} - ${errorText}`);
-    } catch (error) {
+      const errorMessage = `BFF analyze invoice request failed: ${response.status} ${response.statusText} - ${errorText}`;
       addSpanEvent("bff.invoice.analyze.error");
-      logWithTrace("error", "Error analyzing the invoice", {error}, "server");
-      console.error("Error analyzing invoice:", error);
-      throw error;
+      logWithTrace("error", "Error analyzing the invoice", {error: errorMessage, invoiceId: invoiceIdentifier}, "server");
+      console.error("Error analyzing invoice:", errorMessage);
+      return {success: false, error: errorMessage};
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown analysis error";
+      addSpanEvent("bff.invoice.analyze.error");
+      logWithTrace("error", "Invoice analysis failed", {error: errorMessage, invoiceId: invoiceIdentifier}, "server");
+      console.error("analyzeInvoice failed:", errorMessage, error);
+      return {success: false, error: errorMessage};
     }
   });
 }

@@ -117,7 +117,9 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   const addScan = useScansStore((state) => state.addScan);
 
   // Batched progress updates to reduce React re-renders during concurrent uploads
-  const pendingProgressUpdates = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(new Map());
+  const pendingProgressUpdates = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(
+    new Map(),
+  );
   const rafId = useRef<number | null>(null);
 
   /**
@@ -212,36 +214,44 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
    * Batched progress update function to reduce React re-renders during concurrent uploads.
    * Uses requestAnimationFrame to batch multiple progress updates into a single state update.
    */
-  const batchedUpdateProgress = useCallback((id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
-    pendingProgressUpdates.current.set(id, {status, progress, error, blobUrl});
+  const batchedUpdateProgress = useCallback(
+    (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
+      pendingProgressUpdates.current.set(id, {status, progress, error, blobUrl});
 
-    if (rafId.current === null) {
-      rafId.current = requestAnimationFrame(() => {
-        const updates = new Map(pendingProgressUpdates.current);
-        pendingProgressUpdates.current.clear();
-        rafId.current = null;
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
+          const updates = new Map(pendingProgressUpdates.current);
+          pendingProgressUpdates.current.clear();
+          rafId.current = null;
 
-        setPendingUploads((prev) =>
-          prev.map((u) => {
-            const update = updates.get(u.id);
-            return update ? {...u, status: update.status, progress: update.progress, ...(update.error && {error: update.error}), ...(update.blobUrl && {blobUrl: update.blobUrl})} : u;
-          }),
-        );
-      });
-    }
-  }, []);
+          setPendingUploads((prev) =>
+            prev.map((u) => {
+              const update = updates.get(u.id);
+              return update
+                ? {
+                    ...u,
+                    status: update.status,
+                    progress: update.progress,
+                    ...(update.error && {error: update.error}),
+                    ...(update.blobUrl && {blobUrl: update.blobUrl}),
+                  }
+                : u;
+            }),
+          );
+        });
+      }
+    },
+    [],
+  );
 
   /**
    * Update a single upload's status, progress, and optionally its blobUrl.
    * Use this for final/critical states (completed, error).
    * Use batchedUpdateProgress for intermediate progress updates.
    */
-  const updateUploadStatus = useCallback(
-    (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
-      setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, progress, error, ...(blobUrl && {blobUrl})} : u)));
-    },
-    [],
-  );
+  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
+    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, progress, error, ...(blobUrl && {blobUrl})} : u)));
+  }, []);
 
   /**
    * Remove a completed upload from the pending list after a delay.

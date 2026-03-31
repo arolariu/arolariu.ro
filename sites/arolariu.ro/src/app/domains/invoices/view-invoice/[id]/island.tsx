@@ -3,6 +3,9 @@
 import {useUserInformation} from "@/hooks";
 import {useInvoicesStore, useMerchantsStore} from "@/stores";
 import type {Invoice, Merchant} from "@/types/invoices";
+import {Button, Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
+import {useTranslations} from "next-intl";
+import {useMemo, useState} from "react";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
 import {InvoiceGuestBanner} from "./_components/banners/InvoiceGuestBanner";
@@ -33,6 +36,7 @@ type Props = Readonly<{
 
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
+  const t = useTranslations("Invoices.ViewInvoice");
   const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
   const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
   const {
@@ -40,12 +44,55 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
     userInformation: {userIdentifier},
   } = useUserInformation();
 
+  const [showHealthDialog, setShowHealthDialog] = useState(false);
+
   const isOwner = invoice.userIdentifier === userIdentifier;
   // We only add the invoice and the merchant to the store if the user is the owner.
   if (!isLoadingUserInformation && isOwner) {
     upsertInvoice(invoice);
     if (merchant) upsertMerchant(merchant);
   }
+
+  // Calculate health score percentage for compact display
+  const healthScorePercentage = useMemo(() => {
+    const items = invoice.items.filter((item) => !item.metadata.isSoftDeleted);
+    const totalItems = items.length;
+
+    // Same calculation as InvoiceHealthScore component
+    const hasProducts = totalItems > 0;
+    const productsPoints = hasProducts ? 15 : 0;
+
+    const completeProducts = items.filter((item) => item.metadata.isComplete).length;
+    const completenessRatio = totalItems > 0 ? completeProducts / totalItems : 0;
+    const completenessPoints = Math.round(completenessRatio * 20);
+
+    const confidenceScores = items.map((item) => item.metadata.confidence).filter((c) => c > 0);
+    const avgConfidence = confidenceScores.length > 0 ? confidenceScores.reduce((sum, c) => sum + c, 0) / confidenceScores.length : 0;
+    const confidencePoints = Math.round(avgConfidence * 20);
+
+    const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+    const hasMerchant = invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0;
+    const merchantPoints = hasMerchant ? 10 : 0;
+
+    const hasCompletePayment =
+      Boolean(invoice.paymentInformation.transactionDate)
+      && invoice.paymentInformation.totalCostAmount > 0
+      && invoice.paymentInformation.currency.length > 0;
+    const paymentPoints = hasCompletePayment ? 15 : 0;
+
+    const categorizedProducts = items.filter((item) => item.category !== "NOT_DEFINED").length;
+    const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
+    const categoryPoints = Math.round(categoryRatio * 10);
+
+    const hasRecipes = invoice.possibleRecipes.length > 0;
+    const recipesPoints = hasRecipes ? 10 : 0;
+
+    const totalScore =
+      productsPoints + completenessPoints + confidencePoints + merchantPoints + paymentPoints + categoryPoints + recipesPoints;
+    const maxScore = 100;
+
+    return maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  }, [invoice]);
 
   return (
     <InvoiceContextProvider
@@ -79,6 +126,24 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                 <InvoiceDetailsCard />
               </div>
 
+              {/* Compact health score indicator */}
+              <div className={styles["centerItem"]}>
+                <div className={styles["healthScoreCompact"]}>
+                  <div className={styles["healthScoreBar"]}>
+                    <div
+                      className={styles["healthScoreFill"]}
+                      style={{width: `${healthScorePercentage}%`}}
+                    />
+                  </div>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => setShowHealthDialog(true)}>
+                    {t("healthScore.seeReport")}
+                  </Button>
+                </div>
+              </div>
+
               <div className={styles["centerItem"]}>
                 <ItemAnalyticsCard />
               </div>
@@ -91,11 +156,6 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                 <InvoiceTabs />
               </div>
 
-              {/* HealthScore on mobile/tablet (shown before timeline) */}
-              <div className={styles["mobileHealthScore"]}>
-                <InvoiceHealthScore />
-              </div>
-
               {/* Timeline on mobile/tablet (shown below main content) */}
               <div className={styles["mobileTimeline"]}>
                 <InvoiceTimeline />
@@ -104,9 +164,6 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
 
             {/* Sidebar - Right Column */}
             <div className={styles["rightColumn"]}>
-              <div className={styles["rightItem"]}>
-                <InvoiceHealthScore />
-              </div>
               {Boolean(isOwner && !isLoadingUserInformation) && (
                 <div className={styles["rightItem"]}>
                   <AnalysisPanel />
@@ -125,10 +182,12 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
             </div>
           </div>
 
-          {/* Analytics Section */}
-          <div className={styles["analyticsSection"]}>
-            <InvoiceAnalytics />
-          </div>
+          {/* Analytics Section - only show when invoice has been analyzed */}
+          {invoice.items.length > 0 && (
+            <div className={styles["analyticsSection"]}>
+              <InvoiceAnalytics />
+            </div>
+          )}
 
           {/* Related Invoices Section */}
           {Boolean(isOwner && !isLoadingUserInformation) && (
@@ -138,6 +197,18 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
           )}
         </div>
         <DialogContainer />
+
+        {/* Health Score Dialog */}
+        <Dialog
+          open={showHealthDialog}
+          onOpenChange={setShowHealthDialog}>
+          <DialogContent className='max-h-[85vh] max-w-2xl overflow-y-auto'>
+            <DialogHeader>
+              <DialogTitle>{t("healthScore.dialogTitle")}</DialogTitle>
+            </DialogHeader>
+            <InvoiceHealthScore />
+          </DialogContent>
+        </Dialog>
       </DialogProvider>
     </InvoiceContextProvider>
   );

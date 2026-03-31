@@ -115,8 +115,18 @@ export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): 
       });
 
       if (emailData.error) {
-        logWithTrace("error", "Resend API error", {error: emailData.error.message, toEmail}, "server");
-        return {success: false, error: "Failed to send email"};
+        console.error("Resend API error:", emailData.error);
+        logWithTrace(
+          "error",
+          "Failed to send email via Resend",
+          {
+            error: emailData.error.message ?? "Unknown Resend error",
+            errorName: emailData.error.name,
+            toEmail,
+          },
+          "server",
+        );
+        return {success: false, error: `Failed to send email: ${emailData.error.message ?? "Unknown Resend error"}`};
       }
 
       addSpanEvent("email.sent_successfully", {resendId: emailData.data?.id ?? "unknown"});
@@ -124,8 +134,10 @@ export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): 
 
       return {success: true};
     } catch (error) {
-      logWithTrace("error", "Unexpected email error", {error: String(error), toEmail}, "server");
-      return {success: false, error: "Failed to send email"};
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("sendInvoiceShareEmail failed:", errorMessage, error);
+      logWithTrace("error", "Email sending failed", {error: errorMessage, toEmail}, "server");
+      return {success: false, error: `Email sending failed: ${errorMessage}`};
     }
   });
 }

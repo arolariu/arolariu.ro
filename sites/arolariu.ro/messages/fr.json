@@ -2673,7 +2673,9 @@
           "lowOcrConfidence": "Faible confiance OCR sur <strong>{count}</strong> produits — vérifiez manuellement pour plus de précision",
           "uncategorizedProducts": "<strong>{count}</strong> produits non catégorisés — attribuez des catégories pour l'analyse des dépenses",
           "incompleteProducts": "<strong>{count}</strong> produits incomplets — vérifiez et complétez les champs manquants"
-        }
+        },
+        "seeReport": "Voir le rapport détaillé",
+        "dialogTitle": "Rapport de santé de la facture"
       },
       "itemAnalytics": {
         "title": "Articles",

@@ -2673,7 +2673,9 @@
         "cta": {
           "edit": "Editează Factura",
           "analyze": "Rulează Analiza AI"
-        }
+        },
+        "seeReport": "Vezi raport detaliat",
+        "dialogTitle": "Raport de sănătate factură"
       },
       "itemAnalytics": {
         "title": "Produse",

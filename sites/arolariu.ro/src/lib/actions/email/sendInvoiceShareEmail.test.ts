@@ -352,7 +352,7 @@ describe("sendInvoiceShareEmail", () => {
       // Assert
       expect(result).toEqual({
         success: false,
-        error: "Failed to send email",
+        error: expect.stringContaining("Failed to send email"),
       });
     });
 
@@ -372,7 +372,7 @@ describe("sendInvoiceShareEmail", () => {
       // Assert
       expect(result).toEqual({
         success: false,
-        error: "Failed to send email",
+        error: expect.stringContaining("Network error"),
       });
     });
 
@@ -392,7 +392,7 @@ describe("sendInvoiceShareEmail", () => {
       // Assert
       expect(result).toEqual({
         success: false,
-        error: "Failed to send email",
+        error: expect.stringContaining("failed"),
       });
     });
   });

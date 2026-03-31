@@ -86,8 +86,10 @@ describe("analyzeInvoice", () => {
       text: async () => errorMessage,
     });
 
-    await expect(analyzeInvoice({invoiceIdentifier: mockInvoice.id, analysisOptions})).rejects.toThrow(
-      `BFF analyze invoice request failed: 500 Internal Server Error - ${errorMessage}`,
-    );
+    const result = await analyzeInvoice({invoiceIdentifier: mockInvoice.id, analysisOptions});
+    expect(result).toEqual({
+      success: false,
+      error: expect.stringContaining("500 Internal Server Error"),
+    });
   });
 });

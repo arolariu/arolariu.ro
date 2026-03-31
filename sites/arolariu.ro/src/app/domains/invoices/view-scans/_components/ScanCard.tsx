@@ -289,6 +289,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   className={styles["imagePreview"]}
                   loading='lazy'
                   sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                  unoptimized
                 />
                 {/* Preview overlay icon for images - use zoom icon */}
                 <div className={styles["previewOverlay"]}>

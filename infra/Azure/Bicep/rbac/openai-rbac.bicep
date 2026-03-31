@@ -21,6 +21,7 @@ metadata version = '1.0.0'
 
 import {
   cognitiveServicesOpenAiUser
+  cognitiveServicesUser
 } from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
@@ -54,5 +55,17 @@ resource backendOpenAiUser 'Microsoft.Authorization/roleAssignments@2022-04-01' 
     principalId: backendPrincipalId
     principalType: 'ServicePrincipal'
     description: 'Backend: OpenAI inference access on cognitive services account'
+  }
+}
+
+// Grants the backend data-plane access to Cognitive Services (Form Recognizer / Document Intelligence)
+resource backendCognitiveServicesUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: openAiAccount
+  name: guid(openAiAccount.id, backendPrincipalId, cognitiveServicesUser)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesUser)
+    principalId: backendPrincipalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend: Cognitive Services User for Document Intelligence (Form Recognizer) analysis'
   }
 }
