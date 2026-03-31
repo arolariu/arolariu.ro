@@ -22,7 +22,14 @@ export default mergeConfig(
       setupFiles: [resolve(__dirname, "./vitest.setup.ts")],
       exclude: ["**/node_modules/**", "**/tests/**"], // Exclude E2E tests directory
       coverage: {
-        exclude: ["**/instrumentation.server.ts", "**/instrumentation.ts", "**/.next/**", "**/tests/**"],
+        exclude: [
+          "**/instrumentation.server.ts",
+          "**/instrumentation.ts",
+          "**/.next/**",
+          "**/tests/**",
+          "**/export/InvoicePDF.tsx", // @react-pdf/renderer template — not unit-testable
+          "**/*.stories.tsx", // Storybook stories
+        ],
       },
     },
     resolve: {

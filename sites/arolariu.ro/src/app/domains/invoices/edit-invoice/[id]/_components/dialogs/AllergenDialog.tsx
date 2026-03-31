@@ -9,7 +9,7 @@
  * Includes quick-add buttons for common allergens to streamline data entry.
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import updateProduct from "@/lib/actions/invoices/updateProduct";
 import type {Allergen, Invoice, Product} from "@/types/invoices";
 import {
   Badge,
@@ -84,7 +84,7 @@ interface AllergenDialogPayload {
  * 1. User opens dialog from ItemsTable row
  * 2. Dialog receives product and invoice via payload
  * 3. User modifies allergens list
- * 4. On save, calls patchInvoice with updated items array
+ * 4. On save, calls updateProduct with the modified product data
  * 5. Success → page reload to show fresh data
  *
  * **Validation**:
@@ -106,7 +106,7 @@ interface AllergenDialogPayload {
  * ```
  *
  * @see {@link useDialog} - Dialog state management hook
- * @see {@link patchInvoice} - Server action for persisting changes
+ * @see {@link updateProduct} - Server action for persisting changes
  * @see {@link Allergen} - Allergen type definition
  */
 export default function AllergenDialog(): React.JSX.Element {
@@ -186,7 +186,7 @@ export default function AllergenDialog(): React.JSX.Element {
   );
 
   /**
-   * Saves allergen changes via patchInvoice.
+   * Saves allergen changes via updateProduct.
    */
   const handleSave = useCallback(async () => {
     if (!invoice || !product || productIndex === undefined) {
@@ -197,22 +197,19 @@ export default function AllergenDialog(): React.JSX.Element {
     setIsSaving(true);
 
     try {
-      // Clone items array and update the specific product
-      const updatedItems = [...invoice.items];
-      updatedItems[productIndex] = {
-        ...product,
-        detectedAllergens: allergens,
-        metadata: {
-          ...product.metadata,
-          isEdited: true,
-        },
-      };
-
-      // Call patchInvoice with updated items
-      const result = await patchInvoice({
+      // Call updateProduct with the updated allergens
+      const result = await updateProduct({
         invoiceId: invoice.id,
         payload: {
-          items: updatedItems,
+          originalProductName: product.rawName,
+          rawName: product.rawName,
+          genericName: product.genericName,
+          category: product.category,
+          quantity: product.quantity,
+          quantityUnit: product.quantityUnit,
+          productCode: product.productCode,
+          price: product.price,
+          detectedAllergens: allergens,
         },
       });
 

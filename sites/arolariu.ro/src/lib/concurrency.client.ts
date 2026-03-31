@@ -66,9 +66,9 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
     while (currentIndex < tasks.length) {
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
-      
+
       if (!task) continue;
-      
+
       try {
         results[taskIndex] = await task();
       } catch (error) {
@@ -81,7 +81,7 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
   // Create worker pool limited by `limit`
   const workers = Array.from({length: Math.min(limit, tasks.length)}, () => executeNext());
   await Promise.all(workers);
-  
+
   return results;
 }
 
@@ -135,9 +135,9 @@ export async function withConcurrencyLimitAndProgress<T>(
     while (currentIndex < tasks.length) {
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
-      
+
       if (!task) continue;
-      
+
       try {
         const result = await task();
         results[taskIndex] = result;
@@ -157,6 +157,6 @@ export async function withConcurrencyLimitAndProgress<T>(
   // Create worker pool limited by `limit`
   const workers = Array.from({length: Math.min(limit, tasks.length)}, () => executeNext());
   await Promise.all(workers);
-  
+
   return results;
 }

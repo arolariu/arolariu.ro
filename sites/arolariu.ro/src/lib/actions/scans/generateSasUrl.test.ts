@@ -3,11 +3,11 @@
  * @module lib/actions/scans/generateSasUrl.test
  */
 
-import {describe, expect, it, vi, beforeEach} from "vitest";
-import {generateUploadSasUrl} from "./generateSasUrl";
-import * as fetchUserModule from "../user/fetchUser";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {createBlobClient} from "@/lib/azure/storageClient";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import * as fetchUserModule from "../user/fetchUser";
+import {generateUploadSasUrl} from "./generateSasUrl";
 
 // Mock modules: fetchUser uses relative path in source, so mock the real file
 vi.mock("../user/fetchUser");

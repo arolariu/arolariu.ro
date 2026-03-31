@@ -3,4 +3,4 @@
  * @module tests/helpers
  */
 
-export {createMockMessages, renderWithProviders, screen, waitFor, within, act, userEvent} from "./render";
+export {act, createMockMessages, renderWithProviders, screen, userEvent, waitFor, within} from "./render";

@@ -6,20 +6,19 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 // Setup blob client mock chain using vi.hoisted FIRST
-const {mockGetProperties, mockUploadData, mockGetBlockBlobClient, mockGetContainerClient, mockCreateBlobClient} =
-  vi.hoisted(() => {
-    const _mockGetBlockBlobClient = vi.fn();
-    const _mockGetContainerClient = vi.fn();
-    return {
-      mockGetProperties: vi.fn(),
-      mockUploadData: vi.fn(),
-      mockGetBlockBlobClient: _mockGetBlockBlobClient,
-      mockGetContainerClient: _mockGetContainerClient,
-      mockCreateBlobClient: vi.fn().mockResolvedValue({
-        getContainerClient: _mockGetContainerClient,
-      }),
-    };
-  });
+const {mockGetProperties, mockUploadData, mockGetBlockBlobClient, mockGetContainerClient, mockCreateBlobClient} = vi.hoisted(() => {
+  const _mockGetBlockBlobClient = vi.fn();
+  const _mockGetContainerClient = vi.fn();
+  return {
+    mockGetProperties: vi.fn(),
+    mockUploadData: vi.fn(),
+    mockGetBlockBlobClient: _mockGetBlockBlobClient,
+    mockGetContainerClient: _mockGetContainerClient,
+    mockCreateBlobClient: vi.fn().mockResolvedValue({
+      getContainerClient: _mockGetContainerClient,
+    }),
+  };
+});
 
 // Mock instrumentation
 vi.mock("@/instrumentation.server", () => ({
@@ -44,10 +43,10 @@ vi.mock("@/lib/azure/storageClient", () => ({
 }));
 
 // Import after mocks
-import {updateScan} from "./updateScan";
-import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {convertBase64ToBlob} from "@/lib/utils.server";
+import {fetchBFFUserFromAuthService} from "../user/fetchUser";
+import {updateScan} from "./updateScan";
 
 describe("updateScan", () => {
   const mockBlobUrl = "https://test.blob.core.windows.net/invoices/scans/test.jpg";
@@ -101,9 +100,7 @@ describe("updateScan", () => {
     });
 
     // Mock blob conversion
-    (convertBase64ToBlob as any).mockResolvedValue(
-      new Blob(["fake-image-data"], {type: "image/jpeg"}),
-    );
+    (convertBase64ToBlob as any).mockResolvedValue(new Blob(["fake-image-data"], {type: "image/jpeg"}));
 
     // Mock console.info to avoid test output clutter
     vi.spyOn(console, "info").mockImplementation(() => {});

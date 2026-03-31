@@ -7,11 +7,13 @@
  * - **Print**: Triggers browser print dialog (uses existing print styles)
  * - **CSV**: Exports invoice items as CSV (product name, quantity, price, total, category)
  * - **JSON**: Exports full invoice data as formatted JSON
+ * - **PDF**: Generates professional invoice document using @react-pdf/renderer
  * - **Copy Summary**: Copies a text summary to clipboard
  *
  * **Export Formats:**
  * - CSV: Simple comma-separated values for spreadsheet import
  * - JSON: Complete invoice data structure for programmatic use
+ * - PDF: Professional multi-page invoice document
  * - Text Summary: Human-readable summary for sharing
  *
  * **User Experience:**
@@ -28,12 +30,14 @@
 "use client";
 
 import {Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {pdf} from "@react-pdf/renderer";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback} from "react";
-import {TbClipboard, TbCode, TbFileTypeCsv, TbPrinter} from "react-icons/tb";
+import {useCallback, useState} from "react";
+import {TbClipboard, TbCode, TbFileTypeCsv, TbFileTypePdf, TbPrinter} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
+import {InvoicePDF} from "../export/InvoicePDF";
 import styles from "./ExportDialog.module.scss";
 
 /**
@@ -55,7 +59,12 @@ import styles from "./ExportDialog.module.scss";
  *    - Formatted with 2-space indentation for readability
  *    - Automatic download with filename: `invoice-{id}.json`
  *
- * 4. **Copy Summary**: Copies text summary to clipboard
+ * 4. **PDF Export**: Generates professional invoice document
+ *    - Multi-page PDF with invoice overview and product table
+ *    - Professional styling with merchant and payment information
+ *    - Automatic download with filename: `invoice-{name}-{date}.pdf`
+ *
+ * 5. **Copy Summary**: Copies text summary to clipboard
  *    - Includes: Merchant name, date, total amount, item count
  *    - Uses Clipboard API with toast feedback
  *
@@ -77,6 +86,7 @@ export function ExportDialog(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.export");
   const {invoice, merchant} = useInvoiceContext();
   const {isOpen, close} = useDialog("VIEW_INVOICE__EXPORT");
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   /**
    * Handles triggering the browser print dialog.
@@ -221,6 +231,68 @@ Items: ${invoice.items.length}
     }
   }, [invoice, merchant, close, t]);
 
+  /**
+   * Handles exporting invoice as a professional PDF document.
+   *
+   * @remarks
+   * **PDF Generation Process:**
+   * 1. Shows loading state with toast notification
+   * 2. Renders InvoicePDF component using @react-pdf/renderer
+   * 3. Converts PDF document to Blob
+   * 4. Creates download link and triggers download
+   * 5. Cleans up object URL after download
+   *
+   * **Filename Format:**
+   * `invoice-{name}-{date}.pdf`
+   * - Name is sanitized to remove special characters
+   * - Date is formatted as YYYY-MM-DD
+   *
+   * **Error Handling:**
+   * - Catches PDF generation errors
+   * - Shows error toast with descriptive message
+   * - Logs error to console for debugging
+   * - Ensures loading state is reset in finally block
+   */
+  const handleExportPDF = useCallback(async (): Promise<void> => {
+    setIsGeneratingPDF(true);
+    const loadingToastId = toast.loading(t("pdfGenerating"));
+
+    try {
+      // Generate PDF blob
+      const blob = await pdf(
+        <InvoicePDF
+          invoice={invoice}
+          merchant={merchant}
+        />,
+      ).toBlob();
+
+      // Create filename with invoice name and date
+      const transactionDate = new Date(invoice.paymentInformation.transactionDate).toISOString().split("T")[0]; // YYYY-MM-DD
+      const safeName = invoice.name.replace(/[^a-z0-9]/gi, "-").toLowerCase(); // Sanitize name
+      const filename = `invoice-${safeName}-${transactionDate}.pdf`;
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.dismiss(loadingToastId);
+      toast.success(t("pdfSuccess"));
+      close();
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      toast.dismiss(loadingToastId);
+      toast.error(t("pdfError"));
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  }, [invoice, merchant, close, t]);
+
   return (
     <Dialog
       open={isOpen}
@@ -260,6 +332,23 @@ Items: ${invoice.items.length}
               <div className={styles["buttonContent"]}>
                 <span className={styles["buttonTitle"]}>{t("csv.title")}</span>
                 <span className={styles["buttonDescription"]}>{t("csv.description")}</span>
+              </div>
+            </Button>
+          </motion.div>
+
+          {/* PDF Export Option */}
+          <motion.div
+            whileHover={{scale: 1.02}}
+            whileTap={{scale: 0.98}}>
+            <Button
+              variant='outline'
+              className={styles["exportButton"]}
+              onClick={handleExportPDF}
+              disabled={isGeneratingPDF}>
+              <TbFileTypePdf className={styles["buttonIcon"]} />
+              <div className={styles["buttonContent"]}>
+                <span className={styles["buttonTitle"]}>{t("pdf.title")}</span>
+                <span className={styles["buttonDescription"]}>{t("pdf.description")}</span>
               </div>
             </Button>
           </motion.div>

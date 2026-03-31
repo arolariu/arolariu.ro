@@ -8,7 +8,7 @@
  * Provides UI for changing the category of multiple products at once.
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import updateProduct from "@/lib/actions/invoices/updateProduct";
 import type {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
@@ -55,16 +55,19 @@ interface BulkCategoryDialogPayload {
  * **Features**:
  * - **Category Selection**: Dropdown with all ProductCategory enum values
  * - **Preview**: Shows count of products to be updated
- * - **Batch Update**: Updates all selected products in a single operation
- * - **Save**: Persists changes via patchInvoice server action
+ * - **Progress Tracking**: Shows "Updating X/Y products..." during save
+ * - **Batch Update**: Updates all selected products via individual updateProduct calls
+ * - **Error Summary**: Collects and reports errors for failed updates
+ * - **Save**: Persists changes via updateProduct server action
  *
  * **Data Flow**:
  * 1. User selects multiple products in ItemsTable
  * 2. User clicks "Change Category" button
  * 3. Dialog receives selected products and invoice via payload
  * 4. User selects new category
- * 5. On save, calls patchInvoice with updated items array
- * 6. Success → page reload to show fresh data
+ * 5. On save, calls updateProduct for each selected product sequentially
+ * 6. Progress indicator shows "Updating X/Y products..."
+ * 7. Success → page reload to show fresh data
  *
  * **Validation**:
  * - At least one product must be selected
@@ -84,7 +87,7 @@ interface BulkCategoryDialogPayload {
  * ```
  *
  * @see {@link useDialog} - Dialog state management hook
- * @see {@link patchInvoice} - Server action for persisting changes
+ * @see {@link updateProduct} - Server action for persisting changes
  * @see {@link ProductCategory} - Product category enum
  */
 export default function BulkCategoryDialog(): React.JSX.Element {
@@ -99,6 +102,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
 
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState<{current: number; total: number} | null>(null);
 
   /**
    * Gets all ProductCategory enum values for the dropdown.
@@ -139,7 +143,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
   }, []);
 
   /**
-   * Saves category changes via patchInvoice.
+   * Saves category changes via updateProduct for each selected product.
    */
   const handleSave = useCallback(async () => {
     if (!invoice || !selectedProducts || !selectedIndices || selectedCategory === null) {
@@ -153,46 +157,70 @@ export default function BulkCategoryDialog(): React.JSX.Element {
     }
 
     setIsSaving(true);
+    setUpdateProgress({current: 0, total: selectedProducts.length});
+
+    const errors: string[] = [];
+    let successCount = 0;
 
     try {
-      // Clone items array and update selected products
-      const updatedItems = [...invoice.items];
+      // Update each product individually
+      for (let i = 0; i < selectedProducts.length; i++) {
+        const product = selectedProducts[i];
+        if (!product) continue;
 
-      for (const index of selectedIndices) {
-        const product = updatedItems[index];
-        if (product) {
-          updatedItems[index] = {
-            ...product,
-            category: selectedCategory,
-            metadata: {
-              ...product.metadata,
-              isEdited: true,
+        setUpdateProgress({current: i + 1, total: selectedProducts.length});
+
+        try {
+          const result = await updateProduct({
+            invoiceId: invoice.id,
+            payload: {
+              originalProductName: product.rawName,
+              rawName: product.rawName,
+              genericName: product.genericName,
+              category: selectedCategory,
+              quantity: product.quantity,
+              quantityUnit: product.quantityUnit,
+              productCode: product.productCode,
+              price: product.price,
+              detectedAllergens: product.detectedAllergens,
             },
-          };
+          });
+
+          if (result.success) {
+            successCount++;
+          } else {
+            errors.push(`${product.genericName || product.rawName}: ${result.error}`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          errors.push(`${product.genericName || product.rawName}: ${errorMessage}`);
         }
       }
 
-      // Call patchInvoice with updated items
-      const result = await patchInvoice({
-        invoiceId: invoice.id,
-        payload: {
-          items: updatedItems,
-        },
-      });
-
-      if (result.success) {
-        toast.success(t("success.saved", {count: selectedProducts.length}));
+      // Show summary toast
+      if (errors.length === 0) {
+        toast.success(t("success.saved", {count: successCount}));
         close();
         // Trigger page refresh to show updated data
         globalThis.window.location.reload();
+      } else if (successCount > 0) {
+        toast.warning(
+          t("success.partialSuccess", {
+            success: successCount,
+            failed: errors.length,
+          }),
+        );
+        console.error("Some products failed to update:", errors);
       } else {
-        toast.error(result.error);
+        toast.error(t("errors.allFailed"));
+        console.error("All products failed to update:", errors);
       }
     } catch (error) {
       console.error("Failed to update categories:", error);
       toast.error(t("errors.saveFailed"));
     } finally {
       setIsSaving(false);
+      setUpdateProgress(null);
     }
   }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, t]);
 
@@ -255,6 +283,19 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Progress Indicator */}
+          {updateProgress && (
+            <div className={styles["section"]}>
+              <Label className={styles["sectionLabel"]}>{t("labels.progress")}</Label>
+              <p className={styles["progressText"]}>
+                {t("progress.updating", {
+                  current: updateProgress.current,
+                  total: updateProgress.total,
+                })}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

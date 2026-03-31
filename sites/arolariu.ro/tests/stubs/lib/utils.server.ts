@@ -27,9 +27,7 @@ export type ServerActionErrorCode =
   | "SERVER_ERROR"
   | "UNKNOWN_ERROR";
 
-export type ServerActionResult<T> =
-  | {status: "success"; data: T}
-  | {status: "error"; error: string; errorCode: ServerActionErrorCode};
+export type ServerActionResult<T> = {status: "success"; data: T} | {status: "error"; error: string; errorCode: ServerActionErrorCode};
 
 // #endregion
 
@@ -53,6 +51,8 @@ export const verifyJWT = verifyJwtToken;
 export const fetchWithTimeout = vi.fn();
 export const mapHttpStatusToErrorCode = vi.fn(() => "UNKNOWN_ERROR" as ServerActionErrorCode);
 export const parseBackendError = vi.fn(() => "Unknown error");
-export const createErrorResult = vi.fn(<T>() => ({status: "error" as const, error: "test error", errorCode: "UNKNOWN_ERROR" as ServerActionErrorCode}) as ServerActionResult<T>);
+export const createErrorResult = vi.fn(
+  <T>() => ({status: "error" as const, error: "test error", errorCode: "UNKNOWN_ERROR" as ServerActionErrorCode}) as ServerActionResult<T>,
+);
 
 // #endregion

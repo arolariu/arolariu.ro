@@ -3,19 +3,13 @@
  * @module lib/concurrency.client.test
  */
 
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 import {withConcurrencyLimit, withConcurrencyLimitAndProgress} from "./concurrency.client";
 
 describe("withConcurrencyLimit", () => {
   it("should execute all tasks", async () => {
     // Arrange
-    const tasks = [
-      async () => 1,
-      async () => 2,
-      async () => 3,
-      async () => 4,
-      async () => 5,
-    ];
+    const tasks = [async () => 1, async () => 2, async () => 3, async () => 4, async () => 5];
 
     // Act
     const results = await withConcurrencyLimit(tasks, 2);
@@ -134,11 +128,7 @@ describe("withConcurrencyLimitAndProgress", () => {
   it("should execute all tasks and track progress", async () => {
     // Arrange
     const progressUpdates: Array<{completed: number; total: number}> = [];
-    const tasks = [
-      async () => 1,
-      async () => 2,
-      async () => 3,
-    ];
+    const tasks = [async () => 1, async () => 2, async () => 3];
 
     // Act
     const results = await withConcurrencyLimitAndProgress(tasks, {
@@ -158,11 +148,7 @@ describe("withConcurrencyLimitAndProgress", () => {
   it("should call onTaskComplete for each task", async () => {
     // Arrange
     const taskCompletions: Array<{result: number | Error; index: number}> = [];
-    const tasks = [
-      async () => 1,
-      async () => 2,
-      async () => 3,
-    ];
+    const tasks = [async () => 1, async () => 2, async () => 3];
 
     // Act
     await withConcurrencyLimitAndProgress(tasks, {
@@ -225,11 +211,7 @@ describe("withConcurrencyLimitAndProgress", () => {
 
   it("should work without callbacks", async () => {
     // Arrange
-    const tasks = [
-      async () => 1,
-      async () => 2,
-      async () => 3,
-    ];
+    const tasks = [async () => 1, async () => 2, async () => 3];
 
     // Act
     const results = await withConcurrencyLimitAndProgress(tasks, {limit: 2});

@@ -3,10 +3,10 @@
  * @module lib/actions/scans/registerScan.test
  */
 
-import {describe, expect, it, vi, beforeEach} from "vitest";
-import {registerScan} from "./registerScan";
 import {ScanStatus, ScanType} from "@/types/scans";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import * as fetchUserModule from "../user/fetchUser";
+import {registerScan} from "./registerScan";
 
 // Mock modules
 vi.mock("../user/fetchUser");

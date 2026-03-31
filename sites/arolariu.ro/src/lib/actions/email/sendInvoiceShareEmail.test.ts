@@ -38,9 +38,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
-import {sendInvoiceShareEmail} from "./sendInvoiceShareEmail";
 import {fetchResendApiKey} from "@/lib/config/configProxy";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
+import {sendInvoiceShareEmail} from "./sendInvoiceShareEmail";
 
 describe("sendInvoiceShareEmail", () => {
   beforeEach(() => {

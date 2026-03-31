@@ -2766,7 +2766,14 @@
         "jsonSuccess": "JSON file downloaded successfully",
         "jsonError": "Failed to export JSON",
         "csvError": "Failed to export CSV",
-        "title": "Export Invoice"
+        "title": "Export Invoice",
+        "pdf": {
+          "title": "Export as PDF",
+          "description": "Download professional invoice document"
+        },
+        "pdfSuccess": "PDF file downloaded successfully",
+        "pdfError": "Failed to generate PDF",
+        "pdfGenerating": "Generating PDF..."
       }
     },
     "EditInvoice": {

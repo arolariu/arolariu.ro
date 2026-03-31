@@ -23,7 +23,7 @@ import {render, type RenderOptions, type RenderResult} from "@testing-library/re
 import type {ReactElement, ReactNode} from "react";
 
 // Re-export testing library for convenience
-export {screen, waitFor, within, act} from "@testing-library/react";
+export {act, screen, waitFor, within} from "@testing-library/react";
 export {default as userEvent} from "@testing-library/user-event";
 
 /**

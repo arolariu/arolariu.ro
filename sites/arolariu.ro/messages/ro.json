@@ -2764,7 +2764,14 @@
         "json": {
           "title": "Exportă ca JSON",
           "description": "Descarcă datele complete ale facturii"
-        }
+        },
+        "pdf": {
+          "description": "Descarcă document profesional de factură",
+          "title": "Exportă ca PDF"
+        },
+        "pdfSuccess": "Fișier PDF descărcat cu succes",
+        "pdfError": "Eroare la generarea PDF-ului",
+        "pdfGenerating": "Se generează PDF..."
       }
     },
     "EditInvoice": {
