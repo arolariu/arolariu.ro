@@ -10,4 +10,5 @@
 
 export {deleteScan} from "./deleteScan";
 export {fetchScans} from "./fetchScans";
+export {updateScan} from "./updateScan";
 export {uploadScan} from "./uploadScan";

@@ -90,7 +90,7 @@ export default function UploadArea(): React.JSX.Element {
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const {files} = event.target;
       if (files && files.length > 0) {
-        addFiles(files);
+        void addFiles(files); // Fire-and-forget async operation
       }
       // Reset input value to allow re-selecting same files
       event.target.value = "";
@@ -163,7 +163,7 @@ export default function UploadArea(): React.JSX.Element {
         for (const file of droppedFiles) {
           dataTransfer.items.add(file);
         }
-        addFiles(dataTransfer.files);
+        void addFiles(dataTransfer.files); // Fire-and-forget async operation
       }
     },
     [isUploading, addFiles],

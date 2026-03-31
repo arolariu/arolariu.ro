@@ -91,6 +91,11 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                 <InvoiceTabs />
               </div>
 
+              {/* HealthScore on mobile/tablet (shown before timeline) */}
+              <div className={styles["mobileHealthScore"]}>
+                <InvoiceHealthScore />
+              </div>
+
               {/* Timeline on mobile/tablet (shown below main content) */}
               <div className={styles["mobileTimeline"]}>
                 <InvoiceTimeline />

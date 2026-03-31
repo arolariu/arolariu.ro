@@ -18,7 +18,7 @@ import {ScanStatus} from "@/types/scans";
 import {Badge, Button, Card, CardContent, Checkbox} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
+import {TbCheck, TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
 

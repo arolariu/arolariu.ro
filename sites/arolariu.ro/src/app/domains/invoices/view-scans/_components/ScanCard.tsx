@@ -5,7 +5,7 @@
  * @module app/domains/invoices/view-scans/_components/ScanCard
  */
 
-import {deleteScan} from "@/lib/actions/scans";
+import {deleteScan, updateScan} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {
@@ -36,7 +36,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {TbCheck, TbDotsVertical, TbFileTypePdf, TbLink, TbMaximize, TbPencil, TbTrash, TbX} from "react-icons/tb";
+import {TbCheck, TbDotsVertical, TbFileTypePdf, TbLink, TbMaximize, TbPencil, TbRotate, TbRotateClockwise, TbTrash, TbX} from "react-icons/tb";
 import styles from "./ScanCard.module.scss";
 
 type ScanCardProps = {
@@ -93,9 +93,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   const [newName, setNewName] = useState(scan.name);
   const [showPreview, setShowPreview] = useState(false);
   const [justRenamed, setJustRenamed] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const removeScan = useScansStore((state) => state.removeScan);
   const updateScanName = useScansStore((state) => state.updateScanName);
+  const updateScanBlobUrl = useScansStore((state) => state.updateScanBlobUrl);
 
   const isUsedByInvoice = scan.metadata?.["usedByInvoice"] === "true";
 
@@ -165,6 +167,90 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   const handleOpenPreview = useCallback((): void => {
     setShowPreview(true);
   }, []);
+
+  const handleRotate = useCallback(
+    async (degrees: number): Promise<void> => {
+      if (!scan.blobUrl || scan.mimeType === "application/pdf") {
+        toast.error(t("actions.rotateUnsupported"));
+        return;
+      }
+
+      setIsRotating(true);
+      try {
+        // 1. Load image
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load image"));
+          img.src = scan.blobUrl;
+        });
+
+        // 2. Create rotated canvas
+        const canvas = document.createElement("canvas");
+        const isRightAngle = Math.abs(degrees) === 90 || Math.abs(degrees) === 270;
+        canvas.width = isRightAngle ? img.height : img.width;
+        canvas.height = isRightAngle ? img.width : img.height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Failed to get canvas context");
+        }
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((degrees * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+        // 3. Convert to blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(
+            (b) => {
+              if (b) resolve(b);
+              else reject(new Error("Failed to create blob"));
+            },
+            "image/jpeg",
+            0.92,
+          );
+        });
+
+        // 4. Convert to base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]!);
+          };
+          reader.onerror = () => reject(new Error("Failed to read blob"));
+          reader.readAsDataURL(blob);
+        });
+
+        // 5. Extract blob name from URL
+        const blobName = scan.blobUrl.split("/").slice(-2).join("/");
+
+        // 6. Upload rotated image
+        const result = await updateScan({
+          base64Data: base64,
+          blobName,
+          mimeType: "image/jpeg",
+          metadata: {rotated: "true"},
+        });
+
+        // 7. Update scan in store
+        if (result.success && result.blobUrl) {
+          updateScanBlobUrl(scan.id, result.blobUrl);
+          toast.success(t("actions.rotateSuccess"));
+        } else {
+          toast.error(result.error ?? t("actions.rotateError"));
+        }
+      } catch (error) {
+        toast.error(t("actions.rotateError"));
+        console.error("Error rotating scan:", error);
+      } finally {
+        setIsRotating(false);
+      }
+    },
+    [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
+  );
 
   return (
     <>
@@ -239,13 +325,29 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem onClick={handleStartRename}>
                     <TbPencil className={styles["trashIcon"]} />
-                    {t("rename")}
+                    {t("actions.rename")}
                   </DropdownMenuItem>
+                  {scan.mimeType !== "application/pdf" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => handleRotate(90)}
+                        disabled={isRotating}>
+                        <TbRotateClockwise className={styles["trashIcon"]} />
+                        {t("actions.rotateCW")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleRotate(-90)}
+                        disabled={isRotating}>
+                        <TbRotate className={styles["trashIcon"]} />
+                        {t("actions.rotateCCW")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     className={styles["deleteMenuItem"]}
                     onClick={handleOpenDeleteDialog}>
                     <TbTrash className={styles["trashIcon"]} />
-                    {t("delete")}
+                    {t("actions.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -258,6 +360,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   <TbLink className={styles["linkedIcon"]} />
                   {t("linked")}
                 </div>
+              </div>
+            ) : null}
+
+            {/* Rotating overlay */}
+            {isRotating ? (
+              <div className={styles["rotatingOverlay"]}>
+                <div className={styles["rotatingSpinner"]} />
+                <span className={styles["rotatingText"]}>{t("actions.rotating")}</span>
               </div>
             ) : null}
           </div>
@@ -337,7 +447,6 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}
                 title={scan.name}
-                sandbox="allow-same-origin allow-scripts"
               />
             </div>
           ) : (

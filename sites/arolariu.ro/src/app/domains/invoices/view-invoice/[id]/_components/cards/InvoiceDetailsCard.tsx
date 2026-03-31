@@ -67,7 +67,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   const ronEquivalent = useMemo(() => {
     if (invoice.paymentInformation.currency.code === "RON") return null;
 
-    const transactionYear = invoice.paymentInformation.transactionDate.getFullYear();
+    const transactionYear = new Date(invoice.paymentInformation.transactionDate).getFullYear();
     return toRONDetailed(invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, transactionYear);
   }, [invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, invoice.paymentInformation.transactionDate]);
 

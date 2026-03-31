@@ -57,8 +57,8 @@ interface ScanUploadContextType {
   isUploading: boolean;
   /** Session statistics that persist through the upload flow */
   sessionStats: SessionStats;
-  /** Add files to the upload queue */
-  addFiles: (files: FileList) => void;
+  /** Add files to the upload queue (async due to batching) */
+  addFiles: (files: FileList) => Promise<void>;
   /** Remove files from the upload queue */
   removeFiles: (ids: string[]) => void;
   /** Clear all pending files */
@@ -117,8 +117,9 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
   /**
    * Add files to the upload queue.
+   * Uses batching to prevent DOM overload when dropping 50+ files.
    */
-  const addFiles = useCallback((files: FileList) => {
+  const addFiles = useCallback(async (files: FileList) => {
     const newUploads: PendingUpload[] = [];
 
     for (const file of files) {
@@ -149,7 +150,15 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     }
 
     if (newUploads.length > 0) {
-      setPendingUploads((prev) => [...prev, ...newUploads]);
+      // Batch updates to prevent DOM overload with large file counts
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
+        const batch = newUploads.slice(i, i + BATCH_SIZE);
+        // Yield to browser to prevent UI blocking
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        setPendingUploads((prev) => [...prev, ...batch]);
+      }
+
       setSessionStats((prev) => ({
         ...prev,
         totalAdded: prev.totalAdded + newUploads.length,

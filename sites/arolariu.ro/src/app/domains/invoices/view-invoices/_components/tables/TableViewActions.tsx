@@ -34,17 +34,24 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
   return (
     <TooltipProvider>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger
-          className={styles["menuTrigger"]}
-          render={
-            <Button
-              variant='ghost'
-              size='icon'
-              className={styles["actionButton"]}>
-              <TbMenu3 className={styles["menuIcon"]} />
-            </Button>
-          }
-        />
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <DropdownMenuTrigger
+                className={styles["menuTrigger"]}
+                render={
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={styles["actionButton"]}>
+                    <TbMenu3 className={styles["menuIcon"]} />
+                  </Button>
+                }
+              />
+            }
+          />
+          <TooltipContent side='left'>{t("tooltips.moreActions")}</TooltipContent>
+        </Tooltip>
         <DropdownMenuContent
           align='end'
           className={styles["menuContent"]}>

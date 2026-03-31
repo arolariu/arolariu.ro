@@ -1486,7 +1486,17 @@
         "rename": "Rename scan",
         "renamePlaceholder": "Enter new name",
         "preview": "Preview scan",
-        "previewTitle": "Scan Preview"
+        "previewTitle": "Scan Preview",
+        "actions": {
+          "rename": "Rename scan",
+          "delete": "Delete scan",
+          "rotateCW": "Rotate 90° Clockwise",
+          "rotateCCW": "Rotate 90° Counter-clockwise",
+          "rotating": "Rotating...",
+          "rotateSuccess": "Image rotated successfully",
+          "rotateError": "Failed to rotate image",
+          "rotateUnsupported": "Cannot rotate PDF files"
+        }
       },
       "createInvoiceDialog": {
         "title": "Create Invoice",
@@ -1890,6 +1900,7 @@
           "delete": "Delete"
         },
         "tooltips": {
+          "moreActions": "More actions",
           "edit": "Edit invoice details",
           "share": "Share invoice via link or email",
           "delete": "Permanently delete this invoice"

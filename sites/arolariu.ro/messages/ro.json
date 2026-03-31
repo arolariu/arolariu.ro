@@ -1486,7 +1486,17 @@
         "renamePlaceholder": "Introduceți un nume nou",
         "preview": "Previzualizare scanare",
         "previewTitle": "Previzualizare Scanare",
-        "loading": "Se încarcă..."
+        "loading": "Se încarcă...",
+        "actions": {
+          "rename": "Redenumește scanarea",
+          "delete": "Ștergeți scanarea",
+          "rotateCW": "Rotește 90° în sens orar",
+          "rotateCCW": "Rotește 90° în sens antiorar",
+          "rotating": "Se rotește...",
+          "rotateSuccess": "Imaginea a fost rotită cu succes",
+          "rotateError": "Nu s-a putut roti imaginea",
+          "rotateUnsupported": "Nu se pot roti fișierele PDF"
+        }
       },
       "createInvoiceDialog": {
         "title": "Creați Factură",
@@ -1890,6 +1900,7 @@
           "delete": "Șterge"
         },
         "tooltips": {
+          "moreActions": "Mai multe acțiuni",
           "edit": "Editează detaliile facturii",
           "share": "Partajează factura prin link sau e-mail",
           "delete": "Șterge definitiv această factură"

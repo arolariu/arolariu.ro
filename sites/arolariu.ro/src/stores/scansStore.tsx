@@ -88,6 +88,13 @@ type ScansActions = {
   updateScanName: (scanId: string, name: string) => void;
 
   /**
+   * Updates a scan's blob URL
+   * @param scanId The ID of the scan to update
+   * @param blobUrl The new blob URL
+   */
+  updateScanBlobUrl: (scanId: string, blobUrl: string) => void;
+
+  /**
    * Toggles a scan's selection status
    * @param scan The scan to toggle
    */
@@ -240,6 +247,12 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
     set((state) => ({
       scans: state.scans.map((s) => (s.id === scanId ? {...s, name} : s)),
       selectedScans: state.selectedScans.map((s) => (s.id === scanId ? {...s, name} : s)),
+    })),
+
+  updateScanBlobUrl: (scanId, blobUrl) =>
+    set((state) => ({
+      scans: state.scans.map((s) => (s.id === scanId ? {...s, blobUrl} : s)),
+      selectedScans: state.selectedScans.map((s) => (s.id === scanId ? {...s, blobUrl} : s)),
     })),
 
   toggleScanSelection: (scan) =>

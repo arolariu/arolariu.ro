@@ -76,12 +76,14 @@
 // ===========================================
 .imageContainer {
   position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 
 .cardImage {
   height: 100%;
   width: 100%;
-  object-fit: fill;
+  object-fit: cover;
   @include transition(transform);
   transition-duration: 500ms;
 }

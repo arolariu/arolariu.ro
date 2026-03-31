@@ -1486,7 +1486,17 @@
         "rename": "Renommer le scan",
         "renamePlaceholder": "Entrez le nouveau nom",
         "preview": "Aperçu du scan",
-        "previewTitle": "Aperçu du scan"
+        "previewTitle": "Aperçu du scan",
+        "actions": {
+          "rename": "Renommer le scan",
+          "delete": "Supprimer le scan",
+          "rotateCW": "Pivoter de 90° dans le sens horaire",
+          "rotateCCW": "Pivoter de 90° dans le sens antihoraire",
+          "rotating": "Rotation en cours...",
+          "rotateSuccess": "Image pivotée avec succès",
+          "rotateError": "Échec de la rotation de l'image",
+          "rotateUnsupported": "Impossible de pivoter les fichiers PDF"
+        }
       },
       "createInvoiceDialog": {
         "title": "Créer une Facture",
@@ -1890,6 +1900,7 @@
           "delete": "Supprimer"
         },
         "tooltips": {
+          "moreActions": "Plus d'actions",
           "edit": "Modifier les détails de la facture",
           "share": "Partager facture via lien or e-mail",
           "delete": "Supprimer définitivement cette facture"

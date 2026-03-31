@@ -61,7 +61,7 @@ export default function ScansGrid(): React.JSX.Element {
    * These scans will appear once upload/processing completes and store refreshes.
    * No user feedback is shown to avoid UI noise during normal upload flow.
    */
-  const validScans = scans.filter((s) => s.id && (s.blobUrl || s.name));
+  const validScans = scans.filter((s) => s.id);
 
   // Show loading state
   if (!hasHydrated || (isSyncing && validScans.length === 0)) {
