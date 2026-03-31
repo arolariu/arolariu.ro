@@ -205,11 +205,14 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   }, []);
 
   /**
-   * Update a single upload's status and optionally its blobUrl.
+   * Update a single upload's status, progress, and optionally its blobUrl.
    */
-  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, error?: string, blobUrl?: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, error, ...(blobUrl && {blobUrl})} : u)));
-  }, []);
+  const updateUploadStatus = useCallback(
+    (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
+      setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, progress, error, ...(blobUrl && {blobUrl})} : u)));
+    },
+    [],
+  );
 
   /**
    * Remove a completed upload from the pending list after a delay.
@@ -237,7 +240,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
     // Mark all as uploading
     for (const upload of uploadsToProcess) {
-      updateUploadStatus(upload.id, "uploading");
+      updateUploadStatus(upload.id, "uploading", 0);
     }
 
     let successCount = 0;
@@ -248,14 +251,18 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     // Falls back to server-side upload if SAS fails (CORS not deployed yet, etc.)
     const uploadTasks = uploadsToProcess.map((upload) => async () => {
       try {
-        // Step 1: Try SAS-based direct upload
+        // Step 1: Preparing SAS URL (0% → 30%)
+        updateUploadStatus(upload.id, "uploading", 0);
+
         const sasResult = await generateUploadSasUrl({
           fileName: upload.name,
           mimeType: upload.mimeType,
         });
 
+        updateUploadStatus(upload.id, "uploading", 30);
+
         if (sasResult.success && sasResult.sasUrl && sasResult.scanId && sasResult.blobUrl) {
-          // Step 2: Upload file directly to Azure using SAS URL
+          // Step 2: Upload file directly to Azure using SAS URL (30% → 70%)
           const uploadResponse = await fetch(sasResult.sasUrl, {
             method: "PUT",
             body: upload.file,
@@ -265,8 +272,10 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
             },
           });
 
+          updateUploadStatus(upload.id, "uploading", 70);
+
           if (uploadResponse.ok) {
-            // Step 3: Register scan metadata with server
+            // Step 3: Register scan metadata with server (70% → 90%)
             const registerResult = await registerScan({
               scanId: sasResult.scanId,
               blobUrl: sasResult.blobUrl,
@@ -275,13 +284,16 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
               sizeInBytes: upload.size,
             });
 
+            updateUploadStatus(upload.id, "uploading", 90);
+
             if (registerResult.success && registerResult.scan) {
               const cachedScan: CachedScan = {
                 ...registerResult.scan,
                 cachedAt: new Date(),
               };
               addScan(cachedScan);
-              updateUploadStatus(upload.id, "completed", undefined, registerResult.scan.blobUrl);
+              // Step 4: Complete (100%)
+              updateUploadStatus(upload.id, "completed", 100, undefined, registerResult.scan.blobUrl);
               successCount++;
               scheduleUploadRemoval(upload.id, 1000);
               return {success: true, uploadId: upload.id};
@@ -291,6 +303,9 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
         }
 
         // Fallback: Server-side upload (works without CORS)
+        // Reset progress for fallback path
+        updateUploadStatus(upload.id, "uploading", 50);
+
         const base64Data = await fileToBase64(upload.file);
         const result = await uploadScan({
           base64Data,
@@ -298,13 +313,15 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           mimeType: upload.mimeType,
         });
 
+        updateUploadStatus(upload.id, "uploading", 90);
+
         if (result.status === 201) {
           const cachedScan: CachedScan = {
             ...result.scan,
             cachedAt: new Date(),
           };
           addScan(cachedScan);
-          updateUploadStatus(upload.id, "completed", undefined, result.scan.blobUrl);
+          updateUploadStatus(upload.id, "completed", 100, undefined, result.scan.blobUrl);
           successCount++;
           scheduleUploadRemoval(upload.id, 1000);
           return {success: true, uploadId: upload.id};
@@ -313,7 +330,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        updateUploadStatus(upload.id, "failed", errorMessage);
+        updateUploadStatus(upload.id, "failed", 0, errorMessage);
         failCount++;
         return {success: false, uploadId: upload.id, error: errorMessage};
       }

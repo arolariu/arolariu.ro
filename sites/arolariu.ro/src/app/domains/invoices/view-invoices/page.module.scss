@@ -11,6 +11,12 @@
   padding-inline: space(5);
   padding-block: space(24);
   min-height: calc(200vh - 64px); // 64px is typical header height
+
+  // Ensure enough scroll room for dialogs on mobile
+  @include respond-below('md') {
+    min-height: 250vh;
+    padding-bottom: calc(space(16) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 // ===========================================

@@ -1,6 +1,6 @@
 @use '../../../../../styles/abstracts' as *;
 
 .page {
-  overflow: hidden;
+  overflow-x: hidden; // Only clip horizontal overflow, allow vertical for popovers
   padding-block: space(24);
 }

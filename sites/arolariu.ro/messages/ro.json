@@ -1387,7 +1387,12 @@
           "failed": "Eșuat"
         },
         "removeTooltip": "Elimină acest fișier",
-        "retryAttempt": "Reîncercarea {attempt}"
+        "retryAttempt": "Reîncercarea {attempt}",
+        "pagination": {
+          "previous": "Anterior",
+          "next": "Următor",
+          "pageInfo": "{current} / {total} ({count} scanări)"
+        }
       },
       "postUpload": {
         "title": "Încărcare finalizată!",

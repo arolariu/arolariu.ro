@@ -1388,7 +1388,12 @@
         },
         "removeTooltip": "Remove this file",
         "retryAttempt": "Retry attempt {attempt}",
-        "pendingTooltip": "This scan will not be persisted until you click Upload"
+        "pendingTooltip": "This scan will not be persisted until you click Upload",
+        "pagination": {
+          "previous": "Previous",
+          "next": "Next",
+          "pageInfo": "{current} / {total} ({count} scans)"
+        }
       },
       "postUpload": {
         "title": "Upload Complete!",

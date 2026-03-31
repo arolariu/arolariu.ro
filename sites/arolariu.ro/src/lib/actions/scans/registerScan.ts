@@ -147,10 +147,10 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
       addSpanEvent("azure.blob.metadata.start");
       const uploadedAt = new Date();
       const blobMetadata = {
-        useridentifier: userIdentifier,
-        scanid: input.scanId,
-        uploadedat: uploadedAt.toISOString(),
-        originalfilename: input.fileName,
+        userIdentifier,
+        scanId: input.scanId,
+        uploadedAt: uploadedAt.toISOString(),
+        originalFileName: input.fileName,
         status: ScanStatus.READY,
       };
 

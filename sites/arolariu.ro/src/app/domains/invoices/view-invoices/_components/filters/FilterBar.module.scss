@@ -44,7 +44,7 @@
   @include respond-below('md') {
     position: sticky;
     top: 0;
-    z-index: z('sticky');
+    // z-index removed — dialogs/drawers use portal with z('modal')
     background-color: color('background');
     padding-block: space(2);
     margin-inline: calc(-1 * space(2));
