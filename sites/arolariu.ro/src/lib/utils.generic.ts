@@ -292,8 +292,11 @@ export function formatDate(possibleDate: string | Date | null | undefined, optio
   const date: Date = toSafeDate(possibleDate);
   if (date.getTime() === 0) return "";
 
+  // Don't apply dateStyle default when individual fields (year, month, day) are specified
+  // because Intl.DateTimeFormat throws if dateStyle is mixed with individual fields.
+  const hasIndividualFields = options.year ?? options.month ?? options.day ?? options.weekday ?? options.era;
   const formatOptions: Intl.DateTimeFormatOptions = {
-    dateStyle: "short",
+    ...(hasIndividualFields ? {} : {dateStyle: "short" as const}),
     ...options,
   };
 

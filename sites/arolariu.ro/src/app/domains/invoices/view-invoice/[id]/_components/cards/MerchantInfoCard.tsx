@@ -24,7 +24,7 @@
 
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
+import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import type {Invoice} from "@/types/invoices";
 import {MerchantCategory} from "@/types/invoices";
@@ -127,7 +127,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     const monthlyTotals = new Map<string, number>();
     merchantInvoices.forEach((inv: Invoice) => {
-      const date = new Date(inv.paymentInformation.transactionDate);
+      const date = toSafeDate(inv.paymentInformation.transactionDate);
       const monthKey = date.toLocaleString("en-US", {month: "short", year: "numeric"});
       const currentTotal = monthlyTotals.get(monthKey) ?? 0;
       monthlyTotals.set(monthKey, currentTotal + inv.paymentInformation.totalCostAmount);
@@ -152,7 +152,7 @@ export function MerchantInfoCard(): React.JSX.Element {
     const avgSpend = count > 0 ? totalSpent / count : 0;
 
     const sortedDates = merchantInvoices
-      .map((inv: Invoice) => new Date(inv.paymentInformation.transactionDate))
+      .map((inv: Invoice) => toSafeDate(inv.paymentInformation.transactionDate))
       .sort((a, b) => b.getTime() - a.getTime());
 
     const lastVisitDate = sortedDates[0];
@@ -293,7 +293,7 @@ export function MerchantInfoCard(): React.JSX.Element {
               </div>
               <div className={styles["statBadge"]}>
                 <TbReceipt className={styles["statIcon"]} />
-                <span className={styles["statValue"]}>{visitStats.avgSpend.toFixed(2)}</span>
+                <span className={styles["statValue"]}>{formatAmount(visitStats.avgSpend)}</span>
                 <span className={styles["statLabel"]}>{t("stats.avgSpend")}</span>
               </div>
               <div className={styles["statBadge"]}>

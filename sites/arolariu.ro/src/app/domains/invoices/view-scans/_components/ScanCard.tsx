@@ -6,6 +6,7 @@
  */
 
 import {deleteScan, updateScan} from "@/lib/actions/scans";
+import {formatDate} from "@/lib/utils.generic";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {
@@ -64,17 +65,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/**
- * Formats a date as a short date string.
- */
-function formatDate(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 /**
@@ -446,7 +436,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             )}
             <div className={styles["fileMeta"]}>
               <span>{formatFileSize(scan.sizeInBytes)}</span>
-              <span>{formatDate(scan.uploadedAt)}</span>
+              <span>{formatDate(scan.uploadedAt, {locale: "en-US", month: "short", day: "numeric", year: "numeric"})}</span>
             </div>
           </div>
         </CardContent>

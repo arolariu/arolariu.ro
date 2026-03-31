@@ -21,6 +21,7 @@
  * - Percentage badges for quick comparison
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -86,7 +87,7 @@ function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribut
         <div className={styles["statItem"]}>
           <span className={styles["statLabel"]}>{t("totalAmount")}</span>
           <span className={styles["statValue"]}>
-            {currency.totalOriginal.toFixed(2)} {currency.currencySymbol}
+            {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
           </span>
         </div>
         <div className={styles["statItem"]}>
@@ -196,12 +197,12 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                   </div>
                   <div className={styles["currencyAmount"]}>
                     <span className={styles["amount"]}>
-                      {displayAmount.toFixed(2)} {displaySymbol}
+                      {formatAmount(displayAmount)} {displaySymbol}
                     </span>
                     <Badge
                       variant='outline'
                       className={styles["percentageBadge"]}>
-                      {currency.percentage.toFixed(1)}%
+                      {formatAmount(currency.percentage, "en-US", 1)}%
                     </Badge>
                   </div>
                 </div>
@@ -218,11 +219,11 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                   <div className={styles["secondaryAmount"]}>
                     {showRON ? (
                       <span>
-                        {t("originalAmount")}: {currency.totalOriginal.toFixed(2)} {currency.currencySymbol}
+                        {t("originalAmount")}: {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
                       </span>
                     ) : (
                       <span>
-                        {t("ronEquivalent")}: {currency.totalInRON.toFixed(2)} lei
+                        {t("ronEquivalent")}: {formatAmount(currency.totalInRON)} lei
                       </span>
                     )}
                   </div>
@@ -240,7 +241,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
           </div>
           <div className={styles["summaryItem"]}>
             <span className={styles["summaryLabel"]}>{t("totalSpending")}</span>
-            <span className={styles["summaryValue"]}>{data.reduce((sum, curr) => sum + curr.totalInRON, 0).toFixed(2)} lei</span>
+            <span className={styles["summaryValue"]}>{formatAmount(data.reduce((sum, curr) => sum + curr.totalInRON, 0))} lei</span>
           </div>
         </div>
       </CardContent>

@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/CategoryBreakdownChart
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
@@ -48,9 +49,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipCategory"]}>{data.category}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.amount.toFixed(2)} {currency}
+        {formatAmount(data.amount)} {currency}
       </p>
-      <p className={styles["tooltipPercentage"]}>{data.percentage.toFixed(1)}%</p>
+      <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
     </div>
   );
@@ -142,7 +143,7 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
         </ChartContainer>
         <div className={styles["totalSection"]}>
           <p className={styles["totalAmount"]}>
-            {total.toFixed(2)} {currency}
+            {formatAmount(total)} {currency}
           </p>
           <p className={styles["totalLabel"]}>{t("totalLabel")}</p>
         </div>

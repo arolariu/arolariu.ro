@@ -18,6 +18,7 @@
  * Displays a positive message when no allergens are detected.
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {TbAlertTriangle} from "react-icons/tb";
@@ -71,7 +72,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
           <span className={styles["statLabel"]}>{t("stats.products")}</span>
         </div>
         <div className={styles["statItem"]}>
-          <span className={styles["statValue"]}>{allergen.percentage.toFixed(1)}%</span>
+          <span className={styles["statValue"]}>{formatAmount(allergen.percentage, "en-US", 1)}%</span>
           <span className={styles["statLabel"]}>{t("stats.ofTotal")}</span>
         </div>
       </div>

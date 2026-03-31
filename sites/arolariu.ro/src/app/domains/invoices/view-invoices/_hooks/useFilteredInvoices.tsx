@@ -1,5 +1,6 @@
 "use client";
 
+import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
 import type {FilterState} from "./useInvoiceFilters";
@@ -56,20 +57,20 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
 
     // Apply date range filter (dates come as ISO strings from URL)
     if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
+      const fromDate = toSafeDate(filters.dateFrom);
       fromDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter((invoice) => {
-        const transactionDate = new Date(invoice.paymentInformation.transactionDate);
+        const transactionDate = toSafeDate(invoice.paymentInformation.transactionDate);
         transactionDate.setHours(0, 0, 0, 0);
         return transactionDate >= fromDate;
       });
     }
 
     if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
+      const toDate = toSafeDate(filters.dateTo);
       toDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter((invoice) => {
-        const transactionDate = new Date(invoice.paymentInformation.transactionDate);
+        const transactionDate = toSafeDate(invoice.paymentInformation.transactionDate);
         return transactionDate <= toDate;
       });
     }
@@ -98,16 +99,16 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     switch (filters.sortBy) {
       case "date-desc": {
         sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
+          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
+          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
           return dateB - dateA;
         });
         break;
       }
       case "date-asc": {
         sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
+          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
+          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
           return dateA - dateB;
         });
         break;
@@ -131,8 +132,8 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       default: {
         // Default to date descending
         sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
+          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
+          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
           return dateB - dateA;
         });
       }

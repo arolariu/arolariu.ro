@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/SpendingOverTimeChart
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
@@ -39,7 +40,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipMonth"]}>{data.monthName}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.amount.toFixed(2)} {currency}
+        {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>
@@ -50,7 +51,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  * Formats Y-axis tick values to whole numbers.
  */
 function formatYAxisTick(value: number): string {
-  return `${value.toFixed(0)}`;
+  return formatAmount(value, "en-US", 0);
 }
 
 /**

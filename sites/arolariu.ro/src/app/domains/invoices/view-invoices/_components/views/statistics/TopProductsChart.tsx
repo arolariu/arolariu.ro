@@ -24,6 +24,7 @@
  * See `packages/components/stories/` for visual regression tests.
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {TbMedal, TbTrophy} from "react-icons/tb";
@@ -175,13 +176,13 @@ export function TopProductsChart({data, currency}: Props): React.JSX.Element {
                         {product.name}
                       </span>
                     </td>
-                    <td className={styles["cellQuantity"]}>{product.totalQuantity.toFixed(2)}</td>
+                    <td className={styles["cellQuantity"]}>{formatAmount(product.totalQuantity)}</td>
                     <td className={styles["cellSpent"]}>
-                      {product.totalSpent.toFixed(2)} {currency}
+                      {formatAmount(product.totalSpent)} {currency}
                     </td>
                     <td className={styles["cellCount"]}>{product.purchaseCount}</td>
                     <td className={styles["cellAverage"]}>
-                      {product.averagePrice.toFixed(2)} {currency}
+                      {formatAmount(product.averagePrice)} {currency}
                     </td>
                   </tr>
                 );

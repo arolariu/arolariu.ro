@@ -1,7 +1,9 @@
 "use client";
 
+import {formatDateTime} from "@/lib/utils.generic";
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useLocale} from "next-intl";
 import {TbRobot, TbUser} from "react-icons/tb";
 import styles from "./MessageList.module.scss";
 
@@ -20,6 +22,8 @@ type Props = {
  * @returns The rendered message list.
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
+
   return (
     <div className={styles["messageList"]}>
       {messages.map((message, index) => (
@@ -49,7 +53,7 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           <div className={styles["messageBody"]}>
             <div className={styles["messageHeader"]}>
               <p className={styles["messageSender"]}>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
-              <span className={styles["messageTimestamp"]}>{new Date(message.timestamp).toLocaleTimeString()}</span>
+              <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>
               {message.content.split("\n").map((line) => (

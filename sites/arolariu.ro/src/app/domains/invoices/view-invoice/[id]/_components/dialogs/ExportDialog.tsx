@@ -29,6 +29,7 @@
 
 "use client";
 
+import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Button, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
 import {motion} from "motion/react";
@@ -134,8 +135,8 @@ export function ExportDialog(): React.JSX.Element {
         const row = [
           `"${item.name.replace(/"/g, '""')}"`, // Escape quotes in product name
           item.quantity.toString(),
-          item.unitPrice.toFixed(2),
-          item.totalPrice.toFixed(2),
+          formatAmount(item.unitPrice),
+          formatAmount(item.totalPrice),
           `"${item.category}"`,
         ];
         csvRows.push(row.join(","));
@@ -213,12 +214,12 @@ export function ExportDialog(): React.JSX.Element {
    */
   const handleCopySummary = useCallback(async (): Promise<void> => {
     try {
-      const paymentDate = new Date(invoice.paymentInformation.paymentDate).toLocaleDateString();
+      const paymentDate = formatDate(invoice.paymentInformation.paymentDate, {locale: "en-US"});
       const summary = `
 Invoice: ${invoice.name}
 Merchant: ${merchant?.name ?? "N/A"}
 Date: ${paymentDate}
-Total: $${invoice.paymentInformation.totalCostAmount.toFixed(2)}
+Total: $${formatAmount(invoice.paymentInformation.totalCostAmount)}
 Items: ${invoice.items.length}
       `.trim();
 

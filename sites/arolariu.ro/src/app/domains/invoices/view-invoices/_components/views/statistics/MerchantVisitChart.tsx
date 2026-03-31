@@ -10,6 +10,7 @@
  * key metrics like visit count, average basket size, and preferred shopping day.
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
@@ -64,7 +65,7 @@ function MerchantVisitCard({
           </div>
           <div className={styles["metricContent"]}>
             <span className={styles["metricLabel"]}>{t("metrics.visitsPerMonth")}</span>
-            <span className={styles["metricValue"]}>{pattern.averageVisitsPerMonth.toFixed(1)}</span>
+            <span className={styles["metricValue"]}>{formatAmount(pattern.averageVisitsPerMonth, locale, 1)}</span>
           </div>
         </div>
 
@@ -74,7 +75,7 @@ function MerchantVisitCard({
           </div>
           <div className={styles["metricContent"]}>
             <span className={styles["metricLabel"]}>{t("metrics.basketSize")}</span>
-            <span className={styles["metricValue"]}>{pattern.averageBasketSize.toFixed(1)}</span>
+            <span className={styles["metricValue"]}>{formatAmount(pattern.averageBasketSize, locale, 1)}</span>
           </div>
         </div>
 
@@ -92,7 +93,7 @@ function MerchantVisitCard({
           <div className={styles["metricContent"]}>
             <span className={styles["metricLabel"]}>{t("metrics.avgSpend")}</span>
             <span className={styles["metricValue"]}>
-              {pattern.averageSpendPerVisit.toFixed(2)} {currency}
+              {formatAmount(pattern.averageSpendPerVisit, locale)} {currency}
             </span>
           </div>
         </div>

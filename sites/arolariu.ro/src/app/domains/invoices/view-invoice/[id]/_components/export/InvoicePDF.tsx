@@ -28,6 +28,7 @@
 
 "use client";
 
+import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";
 
@@ -91,7 +92,8 @@ interface InvoicePDFProps {
  * ```
  */
 export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): React.JSX.Element {
-  const generatedDate = new Date().toLocaleDateString("en-US", {
+  const generatedDate = formatDate(new Date(), {
+    locale: "en-US",
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -99,7 +101,8 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
     minute: "2-digit",
   });
 
-  const transactionDate = new Date(invoice.paymentInformation.transactionDate).toLocaleDateString("en-US", {
+  const transactionDate = formatDate(invoice.paymentInformation.transactionDate, {
+    locale: "en-US",
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -111,9 +114,9 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
   // Calculate subtotal from active products
   const subtotal = activeProducts.reduce((sum, product) => sum + product.totalPrice, 0);
 
-  // Format currency
-  const formatCurrency = (amount: number): string => {
-    return `${invoice.paymentInformation.currency.symbol}${amount.toFixed(2)}`;
+  // Format currency helper
+  const formatCurrencyValue = (amount: number): string => {
+    return `${invoice.paymentInformation.currency.symbol}${formatAmount(amount)}`;
   };
 
   // Get payment method label
@@ -283,25 +286,25 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
           {invoice.paymentInformation.subtotalAmount > 0 && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Subtotal:</Text>
-              <Text style={styles.value}>{formatCurrency(invoice.paymentInformation.subtotalAmount)}</Text>
+              <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.subtotalAmount)}</Text>
             </View>
           )}
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tax:</Text>
-            <Text style={styles.value}>{formatCurrency(invoice.paymentInformation.totalTaxAmount)}</Text>
+            <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.totalTaxAmount)}</Text>
           </View>
 
           {invoice.paymentInformation.tipAmount > 0 && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Tip:</Text>
-              <Text style={styles.value}>{formatCurrency(invoice.paymentInformation.tipAmount)}</Text>
+              <Text style={styles.value}>{formatCurrencyValue(invoice.paymentInformation.tipAmount)}</Text>
             </View>
           )}
 
           <View style={styles.infoRow}>
             <Text style={styles.labelBold}>Total:</Text>
-            <Text style={styles.valueBold}>{formatCurrency(invoice.paymentInformation.totalCostAmount)}</Text>
+            <Text style={styles.valueBold}>{formatCurrencyValue(invoice.paymentInformation.totalCostAmount)}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -365,15 +368,15 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
                 <Text style={[styles.tableCell, styles.tableCellCategory]}>{getProductCategoryLabel(product.category)}</Text>
                 <Text style={[styles.tableCell, styles.tableCellQty]}>{product.quantity}</Text>
                 <Text style={[styles.tableCell, styles.tableCellUnit]}>{product.quantityUnit || "pcs"}</Text>
-                <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrency(product.price)}</Text>
-                <Text style={[styles.tableCell, styles.tableCellTotal]}>{formatCurrency(product.totalPrice)}</Text>
+                <Text style={[styles.tableCell, styles.tableCellPrice]}>{formatCurrencyValue(product.price)}</Text>
+                <Text style={[styles.tableCell, styles.tableCellTotal]}>{formatCurrencyValue(product.totalPrice)}</Text>
               </View>
             ))}
 
             {/* Subtotal Row */}
             <View style={styles.tableFooter}>
               <Text style={[styles.tableCell, styles.tableCellProduct]}>Subtotal</Text>
-              <Text style={[styles.tableCell, styles.tableCellTotal, styles.subtotalValue]}>{formatCurrency(subtotal)}</Text>
+              <Text style={[styles.tableCell, styles.tableCellTotal, styles.subtotalValue]}>{formatCurrencyValue(subtotal)}</Text>
             </View>
           </View>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import {formatCurrency} from "@/lib/utils.generic";
+import {formatCurrency, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import type {Currency} from "@/types/DDD";
 import {
@@ -202,7 +202,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {invoice} = useInvoiceContext();
-  const transactionDate = useMemo(() => new Date(invoice.paymentInformation.transactionDate), [invoice.paymentInformation.transactionDate]);
+  const transactionDate = useMemo(() => toSafeDate(invoice.paymentInformation.transactionDate), [invoice.paymentInformation.transactionDate]);
   const month = useMemo(() => new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1), [transactionDate]);
   const {currency} = invoice.paymentInformation;
 

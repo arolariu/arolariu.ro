@@ -25,6 +25,7 @@
  * - 75-100%: Dark green (opacity 1.0)
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {
   Card,
   CardContent,
@@ -103,8 +104,8 @@ function calculateLevel(amount: number, maxSpending: number): number {
  * @returns Formatted date string
  */
 function formatDate(dateStr: string, locale: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString(locale, {
+  return formatDateGeneric(dateStr, {
+    locale,
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -197,7 +198,7 @@ function generateCalendarGrid(data: DailySpending[], monthOffset: number): {week
     weeks.push(currentWeek);
   }
 
-  const monthLabel = targetMonth.toLocaleDateString("en", {month: "long", year: "numeric"});
+  const monthLabel = formatDateGeneric(targetMonth, {locale: "en", month: "long", year: "numeric"});
 
   return {weeks, monthLabel};
 }
@@ -219,7 +220,7 @@ function DayCell({day, currency, locale}: {day: DayCell; currency: string; local
           <div
             className={`${styles["dayCell"]} ${getColorClass(day.level)}`}
             role='gridcell'
-            aria-label={`${formatDate(day.date, locale)}: ${day.amount.toFixed(2)} ${currency}`}
+            aria-label={`${formatDate(day.date, locale)}: ${formatAmount(day.amount)} ${currency}`}
           />
         </TooltipTrigger>
         <TooltipContent className={styles["tooltipContent"]}>
@@ -227,7 +228,7 @@ function DayCell({day, currency, locale}: {day: DayCell; currency: string; local
           {day.amount > 0 ? (
             <>
               <div className={styles["tooltipAmount"]}>
-                {t("amount")}: {day.amount.toFixed(2)} {currency}
+                {t("amount")}: {formatAmount(day.amount)} {currency}
               </div>
               <div className={styles["tooltipInvoices"]}>{t("invoices", {count: day.invoiceCount})}</div>
             </>
@@ -264,6 +265,7 @@ function DayCell({day, currency, locale}: {day: DayCell; currency: string; local
  */
 export default function SpendingCalendarHeatmap({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.calendarHeatmap");
+  const locale = useLocale();
   const [monthOffset, setMonthOffset] = useState(0);
 
   const {weeks, monthLabel} = useMemo(() => generateCalendarGrid(data, monthOffset), [data, monthOffset]);
@@ -335,7 +337,7 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
                     key={`day-${weekIdx}-${dayIdx}`}
                     day={day}
                     currency={currency}
-                    locale='en'
+                    locale={locale}
                   />
                 ))}
               </div>

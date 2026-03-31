@@ -1,7 +1,7 @@
 "use client";
 
 import {toRONDetailed} from "@/lib/currency";
-import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
+import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {PaymentType, ProductCategory} from "@/types/invoices";
 import {
   Badge,
@@ -67,7 +67,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   const ronEquivalent = useMemo(() => {
     if (invoice.paymentInformation.currency.code === "RON") return null;
 
-    const transactionYear = new Date(invoice.paymentInformation.transactionDate).getFullYear();
+    const transactionYear = toSafeDate(invoice.paymentInformation.transactionDate).getFullYear();
     return toRONDetailed(invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, transactionYear);
   }, [invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, invoice.paymentInformation.transactionDate]);
 

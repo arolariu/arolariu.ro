@@ -10,6 +10,7 @@
  * Avoids complex charting libraries in favor of clean, accessible HTML/CSS.
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
@@ -139,7 +140,7 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                     </td>
                     <td className={styles["cellTotal"]}>
                       <span className={styles["totalAmount"]}>
-                        {merchant.totalSpend.toFixed(2)} {currency}
+                        {formatAmount(merchant.totalSpend)} {currency}
                       </span>
                     </td>
                     <td className={styles["cellTrend"]}>
@@ -154,8 +155,8 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                             <div
                               key={monthKey}
                               className={styles["bar"]}
-                              title={`${formatMonthLabel(monthKey, locale)}: ${amount.toFixed(2)} ${currency}`}
-                              aria-label={`${formatMonthLabel(monthKey, locale)}: ${amount.toFixed(2)} ${currency}`}>
+                              title={`${formatMonthLabel(monthKey, locale)}: ${formatAmount(amount)} ${currency}`}
+                              aria-label={`${formatMonthLabel(monthKey, locale)}: ${formatAmount(amount)} ${currency}`}>
                               <div
                                 className={styles["barFill"]}
                                 style={{height: `${heightPercent}%`}}

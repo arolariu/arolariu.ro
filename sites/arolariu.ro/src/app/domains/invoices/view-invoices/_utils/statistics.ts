@@ -38,6 +38,7 @@
  * @see {@link PaymentInformation} for payment details
  */
 
+import {formatDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
 
@@ -476,10 +477,11 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
     const date = new Date(Number(year), Number(month) - 1, 1);
 
     // Format month label (e.g., "Jan 2025")
-    const monthLabel = new Intl.DateTimeFormat("en-US", {
+    const monthLabel = formatDate(date, {
+      locale: "en-US",
       month: "short",
       year: "numeric",
-    }).format(date);
+    });
 
     result.push({
       month: monthLabel,

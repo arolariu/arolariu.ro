@@ -1,7 +1,7 @@
 "use client";
 
 import {generateRandomInvoices} from "@/data/mocks/invoice";
-import {formatCurrency, formatEnum} from "@/lib/utils.generic";
+import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {ProductCategory, type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
@@ -125,7 +125,7 @@ function getDefaultInsight(t: ReturnType<typeof useTranslations>): Insight {
 
 function detectSeasonalInsights(invoice: Invoice, t: ReturnType<typeof useTranslations>): Insight[] {
   const insights: Insight[] = [];
-  const date = new Date(invoice.paymentInformation.transactionDate);
+  const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
 
   const categorySpending = calculateCategorySpending(invoice);
@@ -169,7 +169,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.seasonalInsightsCard");
   const {invoice} = useInvoiceContext();
   const insights = detectSeasonalInsights(invoice, t);
-  const date = new Date(invoice.paymentInformation.transactionDate);
+  const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const monthName = new Intl.DateTimeFormat(locale, {month: "long"}).format(date);
   const {currency} = invoice.paymentInformation;
 

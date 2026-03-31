@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/MerchantLeaderboard
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
@@ -39,7 +40,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipMerchant"]}>{data.merchantId}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.totalSpend.toFixed(2)} {currency}
+        {formatAmount(data.totalSpend)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>

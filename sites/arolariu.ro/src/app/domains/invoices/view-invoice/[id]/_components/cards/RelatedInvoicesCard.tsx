@@ -26,6 +26,7 @@
 
 "use client";
 
+import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
@@ -263,13 +264,14 @@ interface RelatedInvoiceMiniCardProps {
 function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoiceMiniCardProps>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.relatedInvoices");
 
-  const formattedDate = new Date(invoice.createdAt).toLocaleDateString("en-US", {
+  const formattedDate = formatDate(invoice.createdAt, {
+    locale: "en-US",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 
-  const amount = `${invoice.paymentInformation.currency.symbol}${invoice.paymentInformation.totalCostAmount.toFixed(2)}`;
+  const amount = `${invoice.paymentInformation.currency.symbol}${formatAmount(invoice.paymentInformation.totalCostAmount)}`;
 
   const relationTypeBadge = t(relationType);
 

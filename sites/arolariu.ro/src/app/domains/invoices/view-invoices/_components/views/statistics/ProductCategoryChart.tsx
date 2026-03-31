@@ -19,6 +19,7 @@
  * Displays a friendly message when no products are available.
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
@@ -58,9 +59,9 @@ function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): Re
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipCategory"]}>{data.category}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.totalSpent.toFixed(2)} {currency}
+        {formatAmount(data.totalSpent)} {currency}
       </p>
-      <p className={styles["tooltipPercentage"]}>{data.percentage.toFixed(1)}%</p>
+      <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
       <p className={styles["tooltipCount"]}>{t("tooltip.productCount", {count: data.productCount})}</p>
     </div>
   );

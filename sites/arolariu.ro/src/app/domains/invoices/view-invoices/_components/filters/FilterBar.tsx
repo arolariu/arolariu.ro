@@ -1,5 +1,6 @@
 "use client";
 
+import {formatDate} from "@/lib/utils.generic";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {
   Badge,
@@ -299,7 +300,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateFrom ? new Date(filters.dateFrom).toLocaleDateString() : t("filters.dateFrom")}
+                  {filters.dateFrom ? formatDate(filters.dateFrom, {locale: "en-US"}) : t("filters.dateFrom")}
                 </Button>
               }
             />
@@ -318,7 +319,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateTo ? new Date(filters.dateTo).toLocaleDateString() : t("filters.dateTo")}
+                  {filters.dateTo ? formatDate(filters.dateTo, {locale: "en-US"}) : t("filters.dateTo")}
                 </Button>
               }
             />

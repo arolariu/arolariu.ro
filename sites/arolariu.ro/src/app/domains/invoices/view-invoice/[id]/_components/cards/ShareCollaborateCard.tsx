@@ -29,7 +29,7 @@
 "use client";
 
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
-import {LAST_GUID} from "@/lib/utils.generic";
+import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -165,32 +165,6 @@ export function ShareCollaborateCard(): React.JSX.Element {
         return "secondary";
     }
   }, [sharingStatus]);
-
-  /**
-   * Computes relative time string for activity dates.
-   *
-   * @param date - The date to compute relative time for
-   * @returns Human-readable relative time string
-   *
-   * @remarks
-   * - Today → "activity.today"
-   * - Past days → "activity.daysAgo" with count
-   */
-  const getRelativeTime = useCallback(
-    (date: Date | string): string => {
-      const now = new Date();
-      const dateObj = date instanceof Date ? date : new Date(date);
-      const diffInMs = now.getTime() - dateObj.getTime();
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-      if (diffInDays === 0) {
-        return t("activity.today");
-      }
-
-      return t("activity.daysAgo", {count: diffInDays});
-    },
-    [t],
-  );
 
   /**
    * Handles toggling the public/private status of the invoice.
@@ -389,8 +363,8 @@ export function ShareCollaborateCard(): React.JSX.Element {
         <div className={styles["activitySection"]}>
           <h4 className={styles["activityTitle"]}>{t("activity.title")}:</h4>
           <ul className={styles["activityList"]}>
-            <li className={styles["activityItem"]}>• {t("activity.created", {time: getRelativeTime(invoice.createdAt)})}</li>
-            <li className={styles["activityItem"]}>• {t("activity.modified", {time: getRelativeTime(invoice.lastUpdatedAt)})}</li>
+            <li className={styles["activityItem"]}>• {t("activity.created", {time: formatRelativeTime(invoice.createdAt)})}</li>
+            <li className={styles["activityItem"]}>• {t("activity.modified", {time: formatRelativeTime(invoice.lastUpdatedAt)})}</li>
           </ul>
         </div>
 
