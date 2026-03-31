@@ -12,17 +12,17 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
-using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.AI.DocumentIntelligence;
 
 /// <summary>
-/// Azure Form Recognizer (Document Intelligence) concrete broker that performs best-effort OCR + structural extraction over invoice scans
+/// Azure Document Intelligence concrete broker that performs best-effort OCR + structural extraction over invoice scans
 /// and projects recognized signals (merchant, products, payment) into a domain aggregate.
 /// </summary>
 /// <remarks>
-/// <para><b>Role (Broker Standard):</b> Implements <see cref="IFormRecognizerBroker"/> by delegating to <see cref="DocumentAnalysisClient"/>
+/// <para><b>Role (Broker Standard):</b> Implements <see cref="IFormRecognizerBroker"/> by delegating to <see cref="DocumentIntelligenceClient"/>
 /// (prebuilt receipt model: <c>prebuilt-receipt</c>). It performs ONLY external service invocation + minimal mapping. No:
 /// domain validation, retry policy, logging, metrics, authorization, enrichment chaining, or persistence.</para>
-/// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentAnalysisClient"/> instance (thread-safe). Scoped lifetime
+/// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentIntelligenceClient"/> instance (thread-safe). Scoped lifetime
 /// registration is acceptable; underlying client could be promoted to singleton if connection reuse optimization is required.</para>
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
 /// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
@@ -38,13 +38,13 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 {
-  private readonly DocumentAnalysisClient client;
+  private readonly DocumentIntelligenceClient client;
 
   /// <summary>
   /// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
   /// </summary>
   /// <remarks>
-  /// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="AzureCredentialFactory"/>. In non-DEBUG builds a managed identity
+  /// <para>Builds a single <see cref="DocumentIntelligenceClient"/> using <see cref="AzureCredentialFactory"/>. In non-DEBUG builds a managed identity
   /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
   /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
   /// </remarks>
@@ -58,7 +58,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
     var credentials = AzureCredentialFactory.CreateCredential();
 
-    client = new DocumentAnalysisClient(
+    client = new DocumentIntelligenceClient(
       endpoint: new Uri(documentIntelligenceEndpoint),
       credential: credentials);
   }
@@ -68,7 +68,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Executes OCR + structured field extraction against the invoice's scan URI and merges recognized data into the provided aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scans"/> contains a resolvable, accessible URI.</para>
+  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scans"/> contains a resolvable, accessible URI.</para>
   /// <para><b>Mutation:</b> Populates (or overwrites) <c>MerchantReference</c>, <c>Items</c>, and <c>PaymentInformation</c> via internal transformation helpers.
   /// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
   /// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
@@ -85,7 +85,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 
     var firstScan = invoice.Scans.First();
 
-    var operation = await client.AnalyzeDocumentFromUriAsync(
+    var operation = await client.AnalyzeDocumentAsync(
       WaitUntil.Completed,
       "prebuilt-receipt",
       firstScan.Location)
@@ -102,7 +102,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   {
     ArgumentNullException.ThrowIfNull(merchant);
 
-    var operation = await client.AnalyzeDocumentFromUriAsync(
+    var operation = await client.AnalyzeDocumentAsync(
      WaitUntil.Completed,
      "prebuilt-receipt",
      scan.Location)

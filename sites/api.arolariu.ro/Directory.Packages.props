@@ -47,7 +47,6 @@
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
-    <PackageVersion Include="Azure.AI.FormRecognizer" Version="4.1.0" />
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.7.0-beta.2" />
     <PackageVersion Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.4" />
     <PackageVersion Include="Azure.AI.Translation.Text" Version="1.0.0" />

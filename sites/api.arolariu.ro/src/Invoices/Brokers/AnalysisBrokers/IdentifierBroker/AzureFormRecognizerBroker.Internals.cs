@@ -10,7 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
-using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.AI.DocumentIntelligence;
 
 public sealed partial class AzureFormRecognizerBroker
 {
@@ -23,22 +23,22 @@ public sealed partial class AzureFormRecognizerBroker
 
     // Step 1. Extract the merchant name from the analyzed document.
     if (photoFields.TryGetValue("MerchantName", out var merchantNameField)
-      && merchantNameField.FieldType is DocumentFieldType.String)
+      && merchantNameField.FieldType == DocumentFieldType.String)
     {
-      merchant.Name = merchantNameField.Value.AsString();
+      merchant.Name = merchantNameField.ValueString;
     }
 
     // Step 2. Extract the merchant address from the analyzed document.
     if (photoFields.TryGetValue("MerchantAddress", out var merchantAddressField))
     {
-      if (merchantAddressField.FieldType is DocumentFieldType.String)
+      if (merchantAddressField.FieldType == DocumentFieldType.String)
       {
         merchant.Address = merchant.Address with
         {
-          Address = merchantAddressField.Value.AsString()
+          Address = merchantAddressField.ValueString
         };
       }
-      else if (merchantAddressField.FieldType is DocumentFieldType.Address)
+      else if (merchantAddressField.FieldType == DocumentFieldType.Address)
       {
         merchant.Address = merchant.Address with
         {
@@ -50,12 +50,12 @@ public sealed partial class AzureFormRecognizerBroker
 
     // Step 3. Extract the merchant phone number from the analyzed document.
     if (photoFields.TryGetValue("MerchantPhoneNumber", out var merchantPhoneNumberField)
-      && (merchantPhoneNumberField.FieldType is DocumentFieldType.PhoneNumber
-        || merchantPhoneNumberField.FieldType is DocumentFieldType.String))
+      && (merchantPhoneNumberField.FieldType == DocumentFieldType.PhoneNumber
+        || merchantPhoneNumberField.FieldType == DocumentFieldType.String))
     {
       merchant.Address = merchant.Address with
       {
-        PhoneNumber = merchantPhoneNumberField.Value.AsPhoneNumber()
+        PhoneNumber = merchantPhoneNumberField.ValuePhoneNumber
       };
     }
 
@@ -97,15 +97,15 @@ public sealed partial class AzureFormRecognizerBroker
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>The extracted transaction datetime, or current time if not found.</returns>
-  private static DateTimeOffset ExtractTransactionDateTime(IReadOnlyDictionary<string, DocumentField> photoFields)
+  private static DateTimeOffset ExtractTransactionDateTime(DocumentFieldDictionary photoFields)
   {
     if (!photoFields.TryGetValue("TransactionDate", out var transactionDateField)
-        || transactionDateField.FieldType is not DocumentFieldType.Date)
+        || transactionDateField.FieldType != DocumentFieldType.Date)
     {
       return DateTimeOffset.Now;
     }
 
-    var transactionDate = transactionDateField.Value.AsDate();
+    var transactionDate = transactionDateField.ValueDate.GetValueOrDefault();
 
     if (!photoFields.TryGetValue("TransactionTime", out var transactionTimeField))
     {
@@ -123,12 +123,13 @@ public sealed partial class AzureFormRecognizerBroker
   /// <returns>The extracted TimeSpan, or TimeSpan.Zero if parsing fails.</returns>
   private static TimeSpan ExtractTimeSpan(DocumentField transactionTimeField)
   {
-    if (transactionTimeField.FieldType is DocumentFieldType.Time)
+    if (transactionTimeField.FieldType == DocumentFieldType.Time)
     {
-      return transactionTimeField.Value.AsTime();
+      return transactionTimeField.ValueTime.GetValueOrDefault();
     }
 
-    if (transactionTimeField.FieldType is not DocumentFieldType.Unknown)
+    // If not a recognized time field type, try to parse from content
+    if (string.IsNullOrEmpty(transactionTimeField.Content))
     {
       return TimeSpan.Zero;
     }
@@ -164,40 +165,51 @@ public sealed partial class AzureFormRecognizerBroker
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>The extracted total amount, or 0 if not found.</returns>
-  private static decimal ExtractTotalAmount(IReadOnlyDictionary<string, DocumentField> photoFields) => photoFields.TryGetValue("Total", out var totalField)
-        && totalField.FieldType is DocumentFieldType.Double
-      ? (decimal)totalField.Value.AsDouble()
-      : 0m;
+  private static decimal ExtractTotalAmount(DocumentFieldDictionary photoFields)
+  {
+    if (photoFields.TryGetValue("Total", out var totalField)
+        && totalField.FieldType == DocumentFieldType.Double)
+    {
+      return (decimal)(totalField.ValueDouble ?? 0.0);
+    }
+    return 0m;
+  }
 
   /// <summary>
   /// Extracts the total tax amount from document fields.
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>The extracted tax amount, or 0 if not found.</returns>
-  private static decimal ExtractTotalTax(IReadOnlyDictionary<string, DocumentField> photoFields) => photoFields.TryGetValue("TotalTax", out var taxField)
-        && taxField.FieldType is DocumentFieldType.Double
-      ? (decimal)taxField.Value.AsDouble()
-      : 0m;
+  private static decimal ExtractTotalTax(DocumentFieldDictionary photoFields)
+  {
+    if (photoFields.TryGetValue("TotalTax", out var taxField)
+        && taxField.FieldType == DocumentFieldType.Double)
+    {
+      return (decimal)(taxField.ValueDouble ?? 0.0);
+    }
+    return 0m;
+  }
 
   /// <summary>
   /// Extracts currency information from document fields.
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>A tuple of the extracted Currency (or null) and the amount.</returns>
-  private static (Currency? Currency, decimal Amount) ExtractCurrencyInformation(IReadOnlyDictionary<string, DocumentField> photoFields)
+  private static (Currency? Currency, decimal Amount) ExtractCurrencyInformation(DocumentFieldDictionary photoFields)
   {
     if (!photoFields.TryGetValue("Total", out var currencySourceField)
-        || currencySourceField.FieldType is not DocumentFieldType.Currency)
+        || currencySourceField.FieldType != DocumentFieldType.Currency
+        || currencySourceField.ValueCurrency == null)
     {
       return (null, 0m);
     }
 
-    CurrencyValue currencyValue = currencySourceField.Value.AsCurrency();
+    CurrencyValue currencyValue = currencySourceField.ValueCurrency;
     Currency currencyObject = new Currency
     {
-      Code = currencyValue.Code,
-      Name = currencyValue.Code,
-      Symbol = currencyValue.Symbol
+      Code = currencyValue.CurrencyCode,
+      Name = currencyValue.CurrencyCode,
+      Symbol = currencyValue.CurrencySymbol
     };
 
     return (currencyObject, (decimal)currencyValue.Amount);
@@ -213,14 +225,16 @@ public sealed partial class AzureFormRecognizerBroker
     // The prebuilt-receipt model returns items as a list of dictionaries with fields:
     // Description (string), Quantity (double), Price (double/currency), TotalPrice (double/currency)
     if (photoFields.TryGetValue("Items", out var itemsList)
-        && itemsList.FieldType is DocumentFieldType.List)
+        && itemsList.FieldType == DocumentFieldType.List)
     {
-      foreach (var item in itemsList.Value.AsList()
-          .Where(item => item.FieldType is DocumentFieldType.Dictionary))
+      foreach (var item in itemsList.ValueList)
       {
-        var itemFields = item.Value.AsDictionary();
-        var product = ExtractProductFromItemFields(itemFields);
-        products.Add(product);
+        if (item.FieldType == DocumentFieldType.Dictionary)
+        {
+          var itemFields = item.ValueDictionary;
+          var product = ExtractProductFromItemFields(itemFields);
+          products.Add(product);
+        }
       }
     }
 
@@ -232,15 +246,15 @@ public sealed partial class AzureFormRecognizerBroker
   /// </summary>
   /// <param name="itemFields">Dictionary of item fields from the prebuilt-receipt model.</param>
   /// <returns>A populated Product instance with extracted field values.</returns>
-  private static Product ExtractProductFromItemFields(IReadOnlyDictionary<string, DocumentField> itemFields)
+  private static Product ExtractProductFromItemFields(DocumentFieldDictionary itemFields)
   {
     var product = new Product();
 
     // Step 1. Extract the raw name of the product (Description field in v4.0).
     if (itemFields.TryGetValue("Description", out var nameField)
-                  && nameField.FieldType is DocumentFieldType.String)
+                  && nameField.FieldType == DocumentFieldType.String)
     {
-      product.RawName = nameField.Value.AsString();
+      product.RawName = nameField.ValueString;
     }
 
     // Step 2. Extract the unit price of the product.
@@ -248,16 +262,16 @@ public sealed partial class AzureFormRecognizerBroker
 
     // Step 3. Extract the quantity of the product.
     if (itemFields.TryGetValue("Quantity", out var quantityField)
-        && quantityField.FieldType is DocumentFieldType.Double)
+        && quantityField.FieldType == DocumentFieldType.Double)
     {
-      product.Quantity = (decimal)quantityField.Value.AsDouble();
+      product.Quantity = (decimal)(quantityField.ValueDouble ?? 0.0);
     }
 
     // Step 4. Extract the quantity unit, if available.
     if (itemFields.TryGetValue("QuantityUnit", out var quantityUnitField)
-                  && quantityUnitField.FieldType is DocumentFieldType.String)
+                  && quantityUnitField.FieldType == DocumentFieldType.String)
     {
-      product.QuantityUnit = quantityUnitField.Value.AsString();
+      product.QuantityUnit = quantityUnitField.ValueString;
     }
 
     // Step 5. Extract the total price for this line item (Quantity * Price).
@@ -285,12 +299,22 @@ public sealed partial class AzureFormRecognizerBroker
   /// <param name="itemFields">Dictionary of item fields.</param>
   /// <param name="fieldName">Name of the field to extract.</param>
   /// <returns>The extracted decimal value, or 0 if not found.</returns>
-  private static decimal ExtractMonetaryValue(IReadOnlyDictionary<string, DocumentField> itemFields, string fieldName) => !itemFields.TryGetValue(fieldName, out var field)
-      ? 0m
-      : field.FieldType switch
-      {
-        DocumentFieldType.Double => (decimal)field.Value.AsDouble(),
-        DocumentFieldType.Currency => (decimal)field.Value.AsCurrency().Amount,
-        _ => 0m
-      };
+  private static decimal ExtractMonetaryValue(DocumentFieldDictionary itemFields, string fieldName)
+  {
+    if (!itemFields.TryGetValue(fieldName, out var field))
+    {
+      return 0m;
+    }
+
+    if (field.FieldType == DocumentFieldType.Double)
+    {
+      return (decimal)(field.ValueDouble ?? 0.0);
+    }
+    else if (field.FieldType == DocumentFieldType.Currency && field.ValueCurrency != null)
+    {
+      return (decimal)field.ValueCurrency.Amount;
+    }
+    
+    return 0m;
+  }
 }
