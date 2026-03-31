@@ -119,16 +119,36 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
   {
     ArgumentNullException.ThrowIfNull(merchant);
 
-    merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+#pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
+    try
+    {
+      merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+    }
+    catch (Exception)
+    {
+      // Graceful degradation: default to OTHER on any failure (including non-ClientResultException)
+      merchant.Category = MerchantCategory.OTHER;
+    }
+#pragma warning restore CA1031 // Do not catch general exception types
 
     // Generate description for non-OTHER categories or for OTHER merchants with a known name
     if (merchant.Category != MerchantCategory.OTHER || !string.IsNullOrWhiteSpace(merchant.Name))
     {
-      var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
-      if (!string.IsNullOrWhiteSpace(description))
+#pragma warning disable CA1031 // Do not catch general exception types - intentional for graceful degradation contract
+      try
       {
-        merchant.AdditionalMetadata["ai.description"] = description;
+        var description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+          merchant.AdditionalMetadata["ai.description"] = description;
+        }
       }
+      catch (Exception)
+      {
+        // Graceful degradation: skip description on any failure (including non-ClientResultException)
+        // No action needed - description remains absent from metadata
+      }
+#pragma warning restore CA1031 // Do not catch general exception types
     }
 
     return merchant;

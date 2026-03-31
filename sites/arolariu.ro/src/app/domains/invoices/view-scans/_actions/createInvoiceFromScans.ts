@@ -159,7 +159,9 @@ async function processSingleScan(
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
     // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      console.error("Background invoice analysis failed:", error);
+    });
     return {success: true, invoice};
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -250,7 +252,9 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     );
 
     // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      console.error("Background invoice analysis failed:", error);
+    });
 
     addSpanEvent("bff.invoice.create.batch.complete");
     return {

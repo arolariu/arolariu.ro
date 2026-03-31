@@ -12,11 +12,17 @@ import type {Invoice} from "@/types/invoices";
 import {computeMerchantTrends, computeMerchantVisitFrequency} from "./statistics";
 
 /**
+ * Counter for generating unique invoice IDs
+ */
+let invoiceIdCounter = 0;
+
+/**
  * Helper to create a simple mock invoice for testing
  */
 function createMockInvoice(merchantId: string, amount: number, date: Date, itemCount: number = 0): Invoice {
+  const invoiceId = `test-invoice-${merchantId}-${invoiceIdCounter++}`;
   return {
-    id: `invoice-${Math.random()}`,
+    id: invoiceId,
     name: `Invoice ${merchantId}`,
     description: "Test invoice",
     createdAt: date,
@@ -33,15 +39,15 @@ function createMockInvoice(merchantId: string, amount: number, date: Date, itemC
       paymentType: 200,
       isValid: true,
     },
-    items: Array(itemCount).fill({
-      id: "product-1",
-      name: "Product",
-      productIdentifier: "prod-1",
+    items: Array.from({length: itemCount}, (_, index) => ({
+      id: `product-${invoiceId}-${index}`,
+      name: `Product ${index}`,
+      productIdentifier: `prod-${invoiceId}-${index}`,
       quantity: 1,
       unitPrice: amount / Math.max(1, itemCount),
       totalPrice: amount,
       category: null,
-    }),
+    })),
     possibleRecipes: [],
   } as Invoice;
 }

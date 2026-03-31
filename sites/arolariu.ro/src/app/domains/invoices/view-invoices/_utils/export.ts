@@ -49,11 +49,19 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
   const link = document.createElement("a");
   const defaultFilename = `invoices_${Date.now()}`;
   // Sanitize filename to prevent path traversal or invalid characters
-  const safeName = filename ? filename.replace(/[^a-zA-Z0-9._-]/g, "_") : defaultFilename;
+  let safeName = filename ? filename.replace(/[^a-zA-Z0-9._-]/g, "_") : defaultFilename;
+  // Handle edge cases after sanitization
+  safeName = safeName.trim();
+  if (!safeName || safeName === "." || safeName === "..") {
+    safeName = defaultFilename;
+  }
   link.href = url;
   link.download = `${safeName}.json`;
   link.click();
-  URL.revokeObjectURL(url);
+  // Delay revocation to ensure download completes in Safari
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 /**
@@ -63,6 +71,7 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
  * @param filename The custom filename for the export (without extension).
  */
 function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
+  console.warn("CSV export not yet implemented");
   // TODO: impl of feature.
 }
 
@@ -73,6 +82,7 @@ function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportReq
  * @param filename The custom filename for the export (without extension).
  */
 function exportToPdf(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
+  console.warn("PDF export not yet implemented");
   // TODO: impl of feature.
 }
 

@@ -80,13 +80,16 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           break;
         case "amount":
           {
+            // Precompute RON values to avoid repeated conversion calls during sort (Schwartzian transform pattern)
             const aAmount = a.paymentInformation?.totalCostAmount ?? 0;
             const bAmount = b.paymentInformation?.totalCostAmount ?? 0;
             const aCurrency = a.paymentInformation?.currency?.code ?? "RON";
             const bCurrency = b.paymentInformation?.currency?.code ?? "RON";
             const aYear = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
             const bYear = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
-            comparison = toRON(aAmount, aCurrency, aYear) - toRON(bAmount, bCurrency, bYear);
+            const aRON = toRON(aAmount, aCurrency, aYear);
+            const bRON = toRON(bAmount, bCurrency, bYear);
+            comparison = aRON - bRON;
           }
           break;
         case "name":
@@ -172,20 +175,22 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           </TableHead>
           <TableHead>{t("columns.invoice")}</TableHead>
           <TableHead>{t("columns.category")}</TableHead>
-          <TableHead>
+          <TableHead aria-sort={sortField === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
             <Button
               variant='ghost'
               className={styles["sortButton"]}
-              onClick={() => handleSort("date")}>
+              onClick={() => handleSort("date")}
+              aria-label={t("aria.sortByDate")}>
               {t("columns.date")}
               {getSortIcon("date")}
             </Button>
           </TableHead>
-          <TableHead>
+          <TableHead aria-sort={sortField === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
             <Button
               variant='ghost'
               className={styles["sortButton"]}
-              onClick={() => handleSort("amount")}>
+              onClick={() => handleSort("amount")}
+              aria-label={t("aria.sortByAmount")}>
               {t("columns.amount")}
               {getSortIcon("amount")}
             </Button>

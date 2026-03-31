@@ -36,7 +36,7 @@ type TooltipPayloadItem = {
 
 type CustomTooltipProps = {
   readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -47,10 +47,11 @@ type CustomTooltipProps = {
  * Displays category name, total spending, product count, and percentage
  * in a formatted card overlay.
  */
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.productCategory");
+  if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  if (!firstItem) return null;
   const data = firstItem.payload;
 
   return (

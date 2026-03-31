@@ -61,26 +61,26 @@ function TestComponentWithDialog() {
 }
 
 describe("ExportDialog", () => {
-  it("should render the export dialog", () => {
+  it("should render the export dialog", async () => {
     render(
       <DialogProvider>
         <TestComponentWithDialog />
       </DialogProvider>,
     );
 
-    expect(screen.getByText("title")).toBeInTheDocument();
+    expect(await screen.findByText("title")).toBeInTheDocument();
   });
 
-  it("should display all export options", () => {
+  it("should display all export options", async () => {
     render(
       <DialogProvider>
         <TestComponentWithDialog />
       </DialogProvider>,
     );
 
-    expect(screen.getByText("print.title")).toBeInTheDocument();
-    expect(screen.getByText("csv.title")).toBeInTheDocument();
-    expect(screen.getByText("json.title")).toBeInTheDocument();
-    expect(screen.getByText("copySummary.title")).toBeInTheDocument();
+    expect(await screen.findByText("print.title")).toBeInTheDocument();
+    expect(await screen.findByText("csv.title")).toBeInTheDocument();
+    expect(await screen.findByText("json.title")).toBeInTheDocument();
+    expect(await screen.findByText("copySummary.title")).toBeInTheDocument();
   });
 });

@@ -231,7 +231,9 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       router.push(`/domains/invoices/view-invoice/${invoice.id}`);
 
       // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch(() => {});
+      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+        console.error("Background invoice analysis failed:", error);
+      });
     } catch (error) {
       console.error("Error creating invoice:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");
