@@ -14,7 +14,7 @@ import {withConcurrencyLimit} from "@/lib/concurrency.client";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {createContext, use, useCallback, useMemo, useState} from "react";
+import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
 import {v4 as uuidv4} from "uuid";
 
 /**
@@ -28,7 +28,7 @@ type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "fa
 interface PendingUpload {
   id: string;
   name: string;
-  file: File;
+  file: File | null; // null after upload completes to free memory
   mimeType: string;
   size: number;
   preview: string;
@@ -115,6 +115,10 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   const [isUploading, setIsUploading] = useState(false);
   const [sessionStats, setSessionStats] = useState<SessionStats>(initialSessionStats);
   const addScan = useScansStore((state) => state.addScan);
+
+  // Batched progress updates to reduce React re-renders during concurrent uploads
+  const pendingProgressUpdates = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(new Map());
+  const rafId = useRef<number | null>(null);
 
   /**
    * Add files to the upload queue.
@@ -205,7 +209,32 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   }, []);
 
   /**
+   * Batched progress update function to reduce React re-renders during concurrent uploads.
+   * Uses requestAnimationFrame to batch multiple progress updates into a single state update.
+   */
+  const batchedUpdateProgress = useCallback((id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
+    pendingProgressUpdates.current.set(id, {status, progress, error, blobUrl});
+
+    if (rafId.current === null) {
+      rafId.current = requestAnimationFrame(() => {
+        const updates = new Map(pendingProgressUpdates.current);
+        pendingProgressUpdates.current.clear();
+        rafId.current = null;
+
+        setPendingUploads((prev) =>
+          prev.map((u) => {
+            const update = updates.get(u.id);
+            return update ? {...u, status: update.status, progress: update.progress, ...(update.error && {error: update.error}), ...(update.blobUrl && {blobUrl: update.blobUrl})} : u;
+          }),
+        );
+      });
+    }
+  }, []);
+
+  /**
    * Update a single upload's status, progress, and optionally its blobUrl.
+   * Use this for final/critical states (completed, error).
+   * Use batchedUpdateProgress for intermediate progress updates.
    */
   const updateUploadStatus = useCallback(
     (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
@@ -251,15 +280,22 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     // Falls back to server-side upload if SAS fails (CORS not deployed yet, etc.)
     const uploadTasks = uploadsToProcess.map((upload) => async () => {
       try {
+        // Guard against null file reference
+        if (!upload.file) {
+          updateUploadStatus(upload.id, "failed", 0, "File reference lost");
+          failCount++;
+          return {success: false, uploadId: upload.id, error: "File reference lost"};
+        }
+
         // Step 1: Preparing SAS URL (0% → 30%)
-        updateUploadStatus(upload.id, "uploading", 0);
+        batchedUpdateProgress(upload.id, "uploading", 0);
 
         const sasResult = await generateUploadSasUrl({
           fileName: upload.name,
           mimeType: upload.mimeType,
         });
 
-        updateUploadStatus(upload.id, "uploading", 30);
+        batchedUpdateProgress(upload.id, "uploading", 30);
 
         if (sasResult.success && sasResult.sasUrl && sasResult.scanId && sasResult.blobUrl) {
           // Step 2: Upload file directly to Azure using SAS URL (30% → 70%)
@@ -272,7 +308,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
             },
           });
 
-          updateUploadStatus(upload.id, "uploading", 70);
+          batchedUpdateProgress(upload.id, "uploading", 70);
 
           if (uploadResponse.ok) {
             // Step 3: Register scan metadata with server (70% → 90%)
@@ -284,7 +320,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
               sizeInBytes: upload.size,
             });
 
-            updateUploadStatus(upload.id, "uploading", 90);
+            batchedUpdateProgress(upload.id, "uploading", 90);
 
             if (registerResult.success && registerResult.scan) {
               const cachedScan: CachedScan = {
@@ -294,6 +330,15 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
               addScan(cachedScan);
               // Step 4: Complete (100%)
               updateUploadStatus(upload.id, "completed", 100, undefined, registerResult.scan.blobUrl);
+
+              // FIX 1: Immediately revoke the object URL to free memory
+              if (upload.preview) {
+                URL.revokeObjectURL(upload.preview);
+              }
+
+              // FIX 2: Clear file reference to free memory
+              setPendingUploads((prev) => prev.map((u) => (u.id === upload.id ? {...u, file: null, preview: ""} : u)));
+
               successCount++;
               scheduleUploadRemoval(upload.id, 1000);
               return {success: true, uploadId: upload.id};
@@ -304,7 +349,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
         // Fallback: Server-side upload (works without CORS)
         // Reset progress for fallback path
-        updateUploadStatus(upload.id, "uploading", 50);
+        batchedUpdateProgress(upload.id, "uploading", 50);
 
         const base64Data = await fileToBase64(upload.file);
         const result = await uploadScan({
@@ -313,7 +358,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           mimeType: upload.mimeType,
         });
 
-        updateUploadStatus(upload.id, "uploading", 90);
+        batchedUpdateProgress(upload.id, "uploading", 90);
 
         if (result.status === 201) {
           const cachedScan: CachedScan = {
@@ -322,6 +367,15 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           };
           addScan(cachedScan);
           updateUploadStatus(upload.id, "completed", 100, undefined, result.scan.blobUrl);
+
+          // FIX 1: Immediately revoke the object URL to free memory
+          if (upload.preview) {
+            URL.revokeObjectURL(upload.preview);
+          }
+
+          // FIX 2: Clear file reference to free memory
+          setPendingUploads((prev) => prev.map((u) => (u.id === upload.id ? {...u, file: null, preview: ""} : u)));
+
           successCount++;
           scheduleUploadRemoval(upload.id, 1000);
           return {success: true, uploadId: upload.id};
@@ -354,7 +408,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     if (failCount > 0) {
       toast.error(`Failed to upload ${failCount} scan(s)`);
     }
-  }, [pendingUploads, updateUploadStatus, addScan, scheduleUploadRemoval]);
+  }, [pendingUploads, updateUploadStatus, batchedUpdateProgress, addScan, scheduleUploadRemoval]);
 
   /**
    * Reset session statistics.

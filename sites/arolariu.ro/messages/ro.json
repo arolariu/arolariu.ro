@@ -1573,6 +1573,11 @@
         "subtitle": "Creați o factură din aceste scanări?",
         "createInvoice": "Creează Factură",
         "dismiss": "Renunță"
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Următor",
+        "pageInfo": "{current} / {total} ({count} scanări)"
       }
     },
     "ViewInvoices": {

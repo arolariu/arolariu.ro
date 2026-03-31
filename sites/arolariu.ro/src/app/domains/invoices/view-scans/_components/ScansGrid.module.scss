@@ -229,3 +229,20 @@
     opacity: 0.9;
   }
 }
+
+// ===========================================
+// PAGINATION CONTROLS
+// ===========================================
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(3);
+  margin-top: space(6);
+  padding: space(3);
+}
+
+.pageInfo {
+  font-size: 0.875rem;
+  color: color('muted-foreground');
+}

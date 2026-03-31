@@ -6,19 +6,24 @@
  */
 
 import type {CachedScan} from "@/types/scans";
-import {Skeleton} from "@arolariu/components";
+import {Button, Skeleton} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback} from "react";
-import {TbCamera} from "react-icons/tb";
+import {useCallback, useEffect, useState} from "react";
+import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import EmptyState from "../../_components/EmptyState";
-import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
 import styles from "./ScansGrid.module.scss";
 
 /** Pre-generated skeleton keys for loading state to avoid array index as key */
 const SKELETON_KEYS = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4", "skeleton-5", "skeleton-6"] as const;
+
+/** Number of scans to display per page on mobile devices */
+const MOBILE_PAGE_SIZE = 20;
+
+/** Number of scans to display per page on desktop devices */
+const DESKTOP_PAGE_SIZE = 50;
 
 type ScanCardWrapperProps = {
   scan: CachedScan;
@@ -49,6 +54,18 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
 export default function ScansGrid(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
+  const [page, setPage] = useState(0);
+
+  // Detect mobile viewport
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = (): void => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   /**
    * Filter out scans without required fields.
@@ -62,6 +79,16 @@ export default function ScansGrid(): React.JSX.Element {
    * No user feedback is shown to avoid UI noise during normal upload flow.
    */
   const validScans = scans.filter((s) => s.id);
+
+  // Calculate pagination
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
+  const totalPages = Math.ceil(validScans.length / pageSize);
+  const paginatedScans = validScans.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Reset page to 0 when scans change (sync, filter, etc.)
+  useEffect(() => {
+    setPage(0);
+  }, [validScans.length]);
 
   // Show loading state
   if (!hasHydrated || (isSyncing && validScans.length === 0)) {
@@ -102,28 +129,49 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <StaggerContainer
-      className={styles["scansGrid"]}
-      staggerDelay={0.05}>
-      <AnimatePresence mode='popLayout'>
-        {validScans.map((scan) => (
-          <motion.div
-            key={scan.id}
-            layout
-            initial={{opacity: 0, scale: 0.9}}
-            animate={{opacity: 1, scale: 1}}
-            exit={{opacity: 0, scale: 0.9, x: -20}}
-            transition={{duration: 0.2}}>
-            <StaggerItem>
+    <>
+      <div className={styles["scansGrid"]}>
+        <AnimatePresence mode='popLayout'>
+          {paginatedScans.map((scan) => (
+            <motion.div
+              key={scan.id}
+              initial={{opacity: 0}}
+              animate={{opacity: 1}}
+              exit={{opacity: 0}}
+              transition={{duration: 0.15, ease: "easeOut"}}>
               <ScanCardWrapper
                 scan={scan}
                 isSelected={selectedScans.some((s) => s.id === scan.id)}
                 onToggleSelection={toggleSelection}
               />
-            </StaggerItem>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </StaggerContainer>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {totalPages > 1 && (
+        <div className={styles["pagination"]}>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}>
+            <TbChevronLeft />
+            {t("pagination.previous")}
+          </Button>
+          <span className={styles["pageInfo"]}>
+            {t("pagination.pageInfo", {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
+          </span>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}>
+            {t("pagination.next")}
+            <TbChevronRight />
+          </Button>
+        </div>
+      )}
+    </>
   );
 }

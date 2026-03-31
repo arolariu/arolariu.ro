@@ -1573,6 +1573,11 @@
         "subtitle": "Create an invoice from these scans?",
         "createInvoice": "Create Invoice",
         "dismiss": "Dismiss"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "{current} / {total} ({count} scans)"
       }
     },
     "ViewInvoices": {

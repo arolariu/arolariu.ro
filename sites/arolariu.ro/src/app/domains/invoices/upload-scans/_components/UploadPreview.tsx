@@ -76,7 +76,7 @@ function UploadCard({
             <div className={styles["pdfPlaceholder"]}>
               <TbFileTypePdf className={styles["pdfIcon"]} />
             </div>
-          ) : (
+          ) : preview ? (
             <Image
               src={preview}
               alt={name}
@@ -84,6 +84,10 @@ function UploadCard({
               className={styles["imagePreview"]}
               unoptimized
             />
+          ) : (
+            <div className={styles["pdfPlaceholder"]}>
+              <TbFileTypePdf className={styles["pdfIcon"]} />
+            </div>
           )}
 
           {/* Status overlay */}
@@ -202,10 +206,13 @@ function UploadCard({
 /** Number of scans to display per page on mobile devices */
 const MOBILE_PAGE_SIZE = 7;
 
+/** Number of scans to display per page on desktop devices */
+const DESKTOP_PAGE_SIZE = 50;
+
 /**
  * Preview component for pending scan uploads.
  * Displays a grid of files with status indicators.
- * On mobile, paginates uploads to prevent memory issues.
+ * Paginates uploads with different page sizes for mobile (7) and desktop (50).
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const t = useTranslations("Invoices.UploadScans");
@@ -224,7 +231,7 @@ export default function UploadPreview(): React.JSX.Element | null {
   }, []);
 
   // Calculate pagination
-  const pageSize = isMobile ? MOBILE_PAGE_SIZE : pendingUploads.length;
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
   const totalPages = Math.ceil(pendingUploads.length / pageSize);
   const currentPageUploads = pendingUploads.slice(page * pageSize, (page + 1) * pageSize);
 
