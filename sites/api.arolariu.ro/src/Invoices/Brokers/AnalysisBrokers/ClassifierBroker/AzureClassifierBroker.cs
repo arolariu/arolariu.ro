@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
@@ -125,6 +126,32 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
       invoice.PossibleRecipes.Add(recipe);
     }
     invoice.Category = await categoryTask.ConfigureAwait(false);
+    #endregion
+
+    // Batch 4: GPT fallback for empty OCR fields (parallel when applicable)
+    #region Fallback for empty ReceiptType and CountryRegion
+    var fallbackTasks = new List<Task>();
+
+    if (string.IsNullOrEmpty(invoice.ReceiptType))
+    {
+      fallbackTasks.Add(Task.Run(async () =>
+      {
+        invoice.ReceiptType = await GenerateReceiptType(invoice).ConfigureAwait(false);
+      }));
+    }
+
+    if (string.IsNullOrEmpty(invoice.CountryRegion))
+    {
+      fallbackTasks.Add(Task.Run(async () =>
+      {
+        invoice.CountryRegion = await GenerateCountryRegion(invoice).ConfigureAwait(false);
+      }));
+    }
+
+    if (fallbackTasks.Count > 0)
+    {
+      await Task.WhenAll(fallbackTasks).ConfigureAwait(false);
+    }
     #endregion
 
     return invoice;

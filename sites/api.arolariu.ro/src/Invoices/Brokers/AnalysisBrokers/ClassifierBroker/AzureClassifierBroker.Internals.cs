@@ -24,6 +24,28 @@ public sealed partial class AzureClassifierBroker
   /// </remarks>
   private const string ChatModelDeploymentName = "model-router";
 
+  /// <summary>
+  /// Maps EU 14 major allergen names to their Wikipedia article URLs for user education.
+  /// </summary>
+  private static readonly Dictionary<string, string> AllergenWikipediaUrls = new(StringComparer.OrdinalIgnoreCase)
+  {
+    ["GLUTEN"] = "https://en.wikipedia.org/wiki/Gluten-related_disorders",
+    ["LACTOSE"] = "https://en.wikipedia.org/wiki/Lactose_intolerance",
+    ["DAIRY"] = "https://en.wikipedia.org/wiki/Milk_allergy",
+    ["EGGS"] = "https://en.wikipedia.org/wiki/Egg_allergy",
+    ["NUTS"] = "https://en.wikipedia.org/wiki/Tree_nut_allergy",
+    ["PEANUTS"] = "https://en.wikipedia.org/wiki/Peanut_allergy",
+    ["SOY"] = "https://en.wikipedia.org/wiki/Soy_allergy",
+    ["FISH"] = "https://en.wikipedia.org/wiki/Fish_allergy",
+    ["SHELLFISH"] = "https://en.wikipedia.org/wiki/Shellfish_allergy",
+    ["CELERY"] = "https://en.wikipedia.org/wiki/Celery#Allergy",
+    ["MUSTARD"] = "https://en.wikipedia.org/wiki/Mustard_(condiment)#Allergy",
+    ["SESAME"] = "https://en.wikipedia.org/wiki/Sesame#Allergies",
+    ["LUPIN"] = "https://en.wikipedia.org/wiki/Lupin_bean#Allergenicity",
+    ["MOLLUSCS"] = "https://en.wikipedia.org/wiki/Shellfish_allergy",
+    ["SULFITES"] = "https://en.wikipedia.org/wiki/Sulfite#Health_effects",
+  };
+
   #region Invoice field generation
   /// <summary>
   /// Generates a short humorous (3-word) invoice name using an LLM prompt over the invoice's product raw names.
@@ -471,7 +493,10 @@ public sealed partial class AzureClassifierBroker
         allergensList.Add(new Allergen
         {
           Name = allergenName,
-          Description = allergenDescription
+          Description = allergenDescription,
+          LearnMoreAddress = AllergenWikipediaUrls.TryGetValue(allergenName, out var wikiUrl)
+            ? new Uri(wikiUrl)
+            : new Uri($"https://en.wikipedia.org/wiki/{allergenName}")  // Fallback: construct URL from name
         });
       }
 
@@ -609,6 +634,104 @@ public sealed partial class AzureClassifierBroker
     {
       logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantCategory), merchant.Name, ex.Message);
       return MerchantCategory.OTHER;
+    }
+  }
+
+  /// <summary>
+  /// Infers the receipt type from product context when OCR doesn't detect it.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Purpose:</b> Provides GPT fallback for empty <c>ReceiptType</c> field from Document Intelligence.</para>
+  /// <para><b>Prompt Strategy:</b> Uses product names to classify receipt into standard types (Itemized, Meal, Gas, Parking, Hotel, Other).</para>
+  /// <para><b>Failure Handling:</b> Returns empty string on provider/content filter failure (best-effort enrichment).</para>
+  /// <para><b>Integration:</b> Called from Batch 4 fallback in <see cref="PerformGptAnalysisOnSingleInvoice"/> when <c>invoice.ReceiptType</c> is empty.</para>
+  /// </remarks>
+  /// <param name="invoice">Invoice whose product raw names seed the classification prompt.</param>
+  /// <returns>Receipt type string (e.g., "Itemized", "Meal") or empty string on failure.</returns>
+  internal async Task<string> GenerateReceiptType(Invoice invoice)
+  {
+    var client = openAIClient.GetChatClient(ChatModelDeploymentName);
+    var productList = string.Join(", ", invoice.Items.Select(i => i.RawName));
+
+    try
+    {
+      var completion = await client.CompleteChatAsync(
+        new List<ChatMessage>()
+        {
+          new SystemChatMessage(
+            """
+            You are a receipt classification assistant. Based on the products listed,
+            determine the receipt type.
+            
+            TYPES (output EXACTLY one):
+            - Itemized (standard retail/grocery receipt with line items)
+            - Meal (restaurant, fast food, café)
+            - Gas (fuel station)
+            - Parking (parking lot/garage)
+            - Hotel (accommodation)
+            - Other (none of the above)
+            
+            Output ONLY the type name, nothing else.
+            """),
+          new UserChatMessage("Products: milk, bread, eggs, cheese, butter"),
+          new AssistantChatMessage("Itemized"),
+          new UserChatMessage("Products: burger, fries, coke, ketchup"),
+          new AssistantChatMessage("Meal"),
+          new UserChatMessage($"Products: {productList}")
+        }).ConfigureAwait(false);
+
+      return completion.Value.Content[0].Text.Trim();
+    }
+    catch (ClientResultException ex)
+    {
+      logger.LogGptMethodFailed(nameof(GenerateReceiptType), ex.Message);
+      return string.Empty;
+    }
+  }
+
+  /// <summary>
+  /// Infers the country/region from product names and currency when OCR doesn't detect it.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Purpose:</b> Provides GPT fallback for empty <c>CountryRegion</c> field from Document Intelligence.</para>
+  /// <para><b>Prompt Strategy:</b> Uses product names (local language hints) and currency code to infer ISO 3166-1 alpha-2 country code.</para>
+  /// <para><b>Failure Handling:</b> Returns empty string on provider/content filter failure (best-effort enrichment).</para>
+  /// <para><b>Integration:</b> Called from Batch 4 fallback in <see cref="PerformGptAnalysisOnSingleInvoice"/> when <c>invoice.CountryRegion</c> is empty.</para>
+  /// </remarks>
+  /// <param name="invoice">Invoice whose product names and currency seed the geographic inference.</param>
+  /// <returns>ISO 3166-1 alpha-2 country code (e.g., "RO", "US") or empty string on failure.</returns>
+  internal async Task<string> GenerateCountryRegion(Invoice invoice)
+  {
+    var client = openAIClient.GetChatClient(ChatModelDeploymentName);
+    var productList = string.Join(", ", invoice.Items.Select(i => i.RawName));
+    var currencyCode = invoice.PaymentInformation.Currency.Code;
+
+    try
+    {
+      var completion = await client.CompleteChatAsync(
+        new List<ChatMessage>()
+        {
+          new SystemChatMessage(
+            $"""
+            You are a geographic classifier. Based on product names (which may be in a local language)
+            and the currency used ({currencyCode}), determine the country where this receipt was issued.
+            
+            Output ONLY the ISO 3166-1 alpha-2 country code (e.g., RO, US, DE, FR).
+            If uncertain, output the most likely country based on the currency.
+            """),
+          new UserChatMessage("Products: lapte, paine, oua | Currency: RON"),
+          new AssistantChatMessage("RO"),
+          new UserChatMessage("Products: milk, bread, eggs | Currency: USD"),
+          new AssistantChatMessage("US"),
+          new UserChatMessage($"Products: {productList} | Currency: {currencyCode}")
+        }).ConfigureAwait(false);
+
+      return completion.Value.Content[0].Text.Trim();
+    }
+    catch (ClientResultException ex)
+    {
+      logger.LogGptMethodFailed(nameof(GenerateCountryRegion), ex.Message);
+      return string.Empty;
     }
   }
   #endregion
