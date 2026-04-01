@@ -69,14 +69,16 @@ public sealed partial class AzureOpenAiBroker
 
       if (invoiceNameCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggered(nameof(GenerateInvoiceName));
         return string.Empty;
       }
 
       var invoiceName = invoiceNameCompletion.Value.Content[0].Text.Trim();
       return invoiceName;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailed(nameof(GenerateInvoiceName), ex.Message);
       return string.Empty;
     }
   }
@@ -123,14 +125,16 @@ public sealed partial class AzureOpenAiBroker
 
       if (invoiceDescriptionCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggered(nameof(GenerateInvoiceDescription));
         return string.Empty;
       }
 
       var invoiceDescription = invoiceDescriptionCompletion.Value.Content[0].Text.Trim();
       return invoiceDescription;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailed(nameof(GenerateInvoiceDescription), ex.Message);
       return string.Empty;
     }
   }
@@ -185,6 +189,7 @@ public sealed partial class AzureOpenAiBroker
 
       if (invoiceCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggered(nameof(GenerateInvoiceCategory));
         return InvoiceCategory.OTHER;
       }
 
@@ -192,8 +197,9 @@ public sealed partial class AzureOpenAiBroker
       var isValidInvoiceCategory = Enum.TryParse<InvoiceCategory>(invoiceCategory, out var correctInvoiceCategory);
       return isValidInvoiceCategory ? correctInvoiceCategory : InvoiceCategory.OTHER;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailed(nameof(GenerateInvoiceCategory), ex.Message);
       return InvoiceCategory.OTHER;
     }
   }
@@ -293,8 +299,9 @@ public sealed partial class AzureOpenAiBroker
 
       return recipesList;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailed(nameof(GenerateInvoiceRecipes), ex.Message);
       return [];
     }
   }
@@ -360,6 +367,7 @@ public sealed partial class AzureOpenAiBroker
 
       if (productCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductCategory), product.RawName);
         return ProductCategory.OTHER;
       }
 
@@ -367,8 +375,9 @@ public sealed partial class AzureOpenAiBroker
       var isValidProductCategory = Enum.TryParse<ProductCategory>(productCategory, out var correctProductCategory);
       return isValidProductCategory ? correctProductCategory : ProductCategory.NOT_DEFINED;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailedWithContext(nameof(GenerateProductCategory), product.RawName, ex.Message);
       return ProductCategory.OTHER;
     }
   }
@@ -437,6 +446,7 @@ public sealed partial class AzureOpenAiBroker
 
       if (productAllergensCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductAllergens), product.RawName);
         return [];
       }
 
@@ -467,8 +477,9 @@ public sealed partial class AzureOpenAiBroker
 
       return allergensList;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailedWithContext(nameof(GenerateProductAllergens), product.RawName, ex.Message);
       return [];
     }
   }
@@ -521,14 +532,16 @@ public sealed partial class AzureOpenAiBroker
 
       if (merchantDescriptionCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateMerchantDescription), merchant.Name);
         return string.Empty;
       }
 
       var merchantDescription = merchantDescriptionCompletion.Value.Content[0].Text.Trim();
       return merchantDescription;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
       return string.Empty;
     }
   }
@@ -584,6 +597,7 @@ public sealed partial class AzureOpenAiBroker
 
       if (merchantCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateMerchantCategory), merchant.Name);
         return MerchantCategory.OTHER;
       }
 
@@ -591,8 +605,9 @@ public sealed partial class AzureOpenAiBroker
       var isValidMerchantCategory = Enum.TryParse<MerchantCategory>(merchantCategory, out var merchantCategoryEnum);
       return isValidMerchantCategory ? merchantCategoryEnum : MerchantCategory.OTHER;
     }
-    catch (ClientResultException) // Azure Open AI is susceptible to strict content filters.
+    catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
+      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantCategory), merchant.Name, ex.Message);
       return MerchantCategory.OTHER;
     }
   }

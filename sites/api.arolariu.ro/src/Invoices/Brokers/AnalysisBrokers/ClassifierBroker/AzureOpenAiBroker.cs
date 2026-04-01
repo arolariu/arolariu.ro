@@ -13,6 +13,8 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure.AI.OpenAI;
 
+using Microsoft.Extensions.Logging;
+
 /// <summary>
 /// Azure OpenAI concrete broker responsible for Large Language Model (LLM) backed enrichment of invoice domain aggregates.
 /// </summary>
@@ -35,9 +37,10 @@ using Azure.AI.OpenAI;
 public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 {
   private readonly AzureOpenAIClient openAIClient;
+  private readonly ILogger<AzureOpenAiBroker> logger;
 
   /// <summary>
-  /// Initializes the broker with configuration-driven Azure OpenAI client settings.
+  /// Initializes the broker with configuration-driven Azure OpenAI client settings and logger.
   /// </summary>
   /// <remarks>
   /// <para>Retrieves application options via <paramref name="optionsManager"/> (endpoint + credentials context) and builds a single
@@ -46,10 +49,15 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
   /// <para>Throws fast on null dependency to fail early in composition root.</para>
   /// </remarks>
   /// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
-  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
-  public AzureOpenAiBroker(IOptionsManager optionsManager)
+  /// <param name="loggerFactory">Logger factory for creating category-specific loggers (MUST NOT be null).</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> or <paramref name="loggerFactory"/> is null.</exception>
+  public AzureOpenAiBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
+    ArgumentNullException.ThrowIfNull(loggerFactory);
+
+    this.logger = loggerFactory.CreateLogger<AzureOpenAiBroker>();
+
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var openAiEndpoint = options.OpenAIEndpoint;
@@ -81,6 +89,8 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
   public async ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
   {
     ArgumentNullException.ThrowIfNull(invoice);
+
+    logger.LogGptAnalysisStarted(ChatModelDeploymentName);
 
     // Batch 1: Invoice-level metadata (parallel — independent calls)
     var nameTask = GenerateInvoiceName(invoice);
@@ -141,8 +151,9 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     {
       merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
     }
-    catch (Exception)
+    catch (Exception ex)
     {
+      logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantCategory), merchant.Name, ex.Message);
       // Graceful degradation: default to OTHER on any failure (including non-ClientResultException)
       merchant.Category = MerchantCategory.OTHER;
     }
@@ -160,8 +171,9 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
           merchant.AdditionalMetadata["ai.description"] = description;
         }
       }
-      catch (Exception)
+      catch (Exception ex)
       {
+        logger.LogGptMethodFailedWithContext(nameof(GenerateMerchantDescription), merchant.Name, ex.Message);
         // Graceful degradation: skip description on any failure (including non-ClientResultException)
         // No action needed - description remains absent from metadata
       }

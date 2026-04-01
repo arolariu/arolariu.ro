@@ -231,4 +231,38 @@ public static partial class Log
   [LoggerMessage(900_100, LogLevel.Warning, "User identifier is not set in the current context.")]
   public static partial void LogUserIdentifierNotSetWarning(this ILogger logger);
   #endregion
+
+  #region OpenAI Broker Logging Methods
+
+  /// <summary>
+  /// Logs when a GPT method fails with an exception.
+  /// </summary>
+  [LoggerMessage(400_100, LogLevel.Error, "[OpenAI] {MethodName} failed: {ErrorMessage}")]
+  public static partial void LogGptMethodFailed(this ILogger logger, string methodName, string errorMessage);
+
+  /// <summary>
+  /// Logs when a GPT method fails with context-specific information.
+  /// </summary>
+  [LoggerMessage(400_101, LogLevel.Error, "[OpenAI] {MethodName} failed for '{Context}': {ErrorMessage}")]
+  public static partial void LogGptMethodFailedWithContext(this ILogger logger, string methodName, string context, string errorMessage);
+
+  /// <summary>
+  /// Logs when Azure OpenAI content filter triggers.
+  /// </summary>
+  [LoggerMessage(400_102, LogLevel.Warning, "[OpenAI] {MethodName}: Content filter triggered")]
+  public static partial void LogContentFilterTriggered(this ILogger logger, string methodName);
+
+  /// <summary>
+  /// Logs when Azure OpenAI content filter triggers with context.
+  /// </summary>
+  [LoggerMessage(400_103, LogLevel.Warning, "[OpenAI] {MethodName}: Content filter triggered for '{Context}'")]
+  public static partial void LogContentFilterTriggeredWithContext(this ILogger logger, string methodName, string context);
+
+  /// <summary>
+  /// Logs the start of GPT analysis workflow.
+  /// </summary>
+  [LoggerMessage(400_104, LogLevel.Information, "[OpenAI] Starting GPT analysis with model: {ModelName}")]
+  public static partial void LogGptAnalysisStarted(this ILogger logger, string modelName);
+
+  #endregion
 }
