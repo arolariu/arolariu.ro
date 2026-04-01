@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -26,7 +25,7 @@ using Azure.AI.DocumentIntelligence;
 /// registration is acceptable; underlying client could be promoted to singleton if connection reuse optimization is required.</para>
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
 /// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
-/// <para><b>Security:</b> Uses <see cref="AzureCredentialFactory"/> (managed identity in non-DEBUG) instead of API key string usage to reduce
+/// <para><b>Security:</b> Uses <see cref="AzureKeyCredential"/> with the Cognitive Services API key from application configuration.
 /// secret management risk. Environment variable <c>AZURE_CLIENT_ID</c> must be present in managed identity deployments.</para>
 /// <para><b>Output Model Fidelity:</b> Mapping intentionally narrow: only fields required for initial enrichment pipeline are projected.
 /// Backlog: field provenance (confidence, bounding boxes) exposure for advanced UI / validation workflows.</para>
@@ -44,7 +43,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
   /// </summary>
   /// <remarks>
-  /// <para>Builds a single <see cref="DocumentIntelligenceClient"/> using <see cref="AzureCredentialFactory"/>. In non-DEBUG builds a managed identity
+  /// <para>Builds a single <see cref="DocumentIntelligenceClient"/> using <see cref="AzureKeyCredential"/>. The API key is sourced from
   /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
   /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
   /// </remarks>
@@ -56,7 +55,10 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
-    var credentials = AzureCredentialFactory.CreateCredential();
+    var cognitiveServicesApiKey = options.CognitiveServicesKey;
+
+    // Use AzureKeyCredential (same pattern as TranslatorBroker)
+    var credentials = new AzureKeyCredential(cognitiveServicesApiKey);
 
     client = new DocumentIntelligenceClient(
       endpoint: new Uri(documentIntelligenceEndpoint),
