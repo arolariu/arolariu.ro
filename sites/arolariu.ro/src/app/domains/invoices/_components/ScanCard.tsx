@@ -243,9 +243,10 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         // 7. Clean up object URL
         URL.revokeObjectURL(objectUrl);
 
-        // 8. Update scan in store
+        // 8. Update scan in store (append cache-buster to force browser to re-fetch rotated image)
         if (result.success && result.blobUrl) {
-          updateScanBlobUrl(scan.id, result.blobUrl);
+          const cacheBustedUrl = `${result.blobUrl}?t=${Date.now()}`;
+          updateScanBlobUrl(scan.id, cacheBustedUrl);
           toast.success(t("actions.rotateSuccess"));
         } else {
           toast.error(result.error || t("actions.rotateError"));
