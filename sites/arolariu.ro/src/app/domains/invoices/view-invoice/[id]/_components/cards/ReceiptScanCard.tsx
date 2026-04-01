@@ -20,7 +20,7 @@ import {
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
-import {TbArrowLeft, TbArrowRight, TbDownload, TbRotateClockwise, TbZoomIn, TbZoomReset} from "react-icons/tb";
+import {TbArrowLeft, TbArrowRight, TbDownload, TbRotateClockwise, TbZoomIn, TbZoomOut, TbZoomReset} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 

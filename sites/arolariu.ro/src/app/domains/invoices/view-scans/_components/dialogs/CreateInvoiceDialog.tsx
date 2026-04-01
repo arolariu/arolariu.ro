@@ -148,9 +148,6 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const totalSize = selectedScans.reduce((sum, scan) => sum + scan.sizeInBytes, 0);
 
   const handleClose = useCallback((): void => {
-    if (step === "complete") {
-      router.push("/domains/invoices/view-invoices");
-    }
     close();
     // Reset state after dialog closes
     setTimeout(() => {
@@ -160,7 +157,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       setErrors([]);
       setMode("single");
     }, 300);
-  }, [step, router, close]);
+  }, [close]);
+
+  const handleViewInvoices = useCallback((): void => {
+    router.push("/domains/invoices/view-invoices");
+    handleClose();
+  }, [router, handleClose]);
 
   const handleCreate = async (): Promise<void> => {
     if (selectedScans.length === 0) return;
@@ -241,9 +243,14 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (shouldOpen) open();
-      else handleClose();
+      else {
+        // Prevent closing during creation to avoid interrupting API call
+        if (step !== "creating") {
+          handleClose();
+        }
+      }
     },
-    [open, handleClose],
+    [open, handleClose, step],
   );
 
   // Render select step content
@@ -501,7 +508,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
           <DialogFooter className={styles["completeFooter"]}>
             <Button
-              onClick={handleClose}
+              variant='outline'
+              onClick={handleClose}>
+              {t("buttons.close")}
+            </Button>
+            <Button
+              onClick={handleViewInvoices}
               className={styles["completeButton"]}>
               {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
               <TbArrowRight className={styles["arrowRightIcon"]} />
@@ -535,7 +547,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
         <DialogFooter className={styles["completeFooter"]}>
           <Button
-            onClick={handleClose}
+            variant='outline'
+            onClick={handleClose}>
+            {t("buttons.close")}
+          </Button>
+          <Button
+            onClick={handleViewInvoices}
             className={styles["completeButton"]}>
             {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
             <TbArrowRight className={styles["arrowRightIcon"]} />

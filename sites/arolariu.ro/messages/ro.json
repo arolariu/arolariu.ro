@@ -1526,7 +1526,8 @@
         "buttons": {
           "cancel": "Anulare",
           "createSingle": "Creați Factură",
-          "createMultiple": "Creați {count} Facturi"
+          "createMultiple": "Creați {count} Facturi",
+          "close": "Închide"
         },
         "creating": {
           "title": "Se creează Factura",

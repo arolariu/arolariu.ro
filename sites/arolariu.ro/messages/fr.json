@@ -1526,7 +1526,8 @@
         "buttons": {
           "cancel": "Annuler",
           "createSingle": "Créer une Facture",
-          "createMultiple": "Créer {count} Factures"
+          "createMultiple": "Créer {count} Factures",
+          "close": "Fermer"
         },
         "creating": {
           "title": "Création de Votre Facture",

@@ -1526,7 +1526,8 @@
         "buttons": {
           "cancel": "Cancel",
           "createSingle": "Create Invoice",
-          "createMultiple": "Create {count} Invoices"
+          "createMultiple": "Create {count} Invoices",
+          "close": "Close"
         },
         "creating": {
           "title": "Creating Your Invoice",

@@ -62,6 +62,7 @@
     "@opentelemetry/sdk-trace-node": "*",
     "@opentelemetry/semantic-conventions": "*",
     "@react-email/components": "*",
+    "@react-email/render": "*",
     "@react-pdf/renderer": "*",
     "dexie": "*",
     "jose": "*",

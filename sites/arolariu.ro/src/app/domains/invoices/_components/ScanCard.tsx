@@ -248,7 +248,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           updateScanBlobUrl(scan.id, result.blobUrl);
           toast.success(t("actions.rotateSuccess"));
         } else {
-          toast.error(result.error ?? t("actions.rotateError"));
+          toast.error(result.error || t("actions.rotateError"));
         }
       } catch (error) {
         toast.error(t("actions.rotateError"));
