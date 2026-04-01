@@ -47,18 +47,23 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(optionsManager);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
-      ? "https://api.cognitive.microsofttranslator.com/"
-      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
-
-    // Use AzureKeyCredential instead of DefaultAzureCredential
     var credentials = new Azure.AzureKeyCredential(cognitiveServicesApiKey);
 
-    textTranslationClient = new TextTranslationClient(
-      credential: credentials,
-      region: "swedencentral",
-      endpoint: new Uri(cognitiveServicesEndpoint));
+    if (string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint))
+    {
+      // Global endpoint — requires region parameter
+      textTranslationClient = new TextTranslationClient(
+        credential: credentials,
+        region: "swedencentral");
+    }
+    else
+    {
+      // Custom/AI Foundry endpoint — region is embedded in the endpoint, do NOT pass region
+      textTranslationClient = new TextTranslationClient(
+        credential: credentials,
+        endpoint: new Uri(options.CognitiveServicesEndpoint));
+    }
   }
 
   /// <summary>
