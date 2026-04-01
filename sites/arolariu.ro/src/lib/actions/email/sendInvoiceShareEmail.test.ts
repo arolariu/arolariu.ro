@@ -83,7 +83,7 @@ describe("sendInvoiceShareEmail", () => {
         from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
         to: "recipient@example.com",
         subject: "John Doe shared an invoice with you",
-        react: "<html>test</html>",
+        html: expect.any(String),
       });
     });
 
