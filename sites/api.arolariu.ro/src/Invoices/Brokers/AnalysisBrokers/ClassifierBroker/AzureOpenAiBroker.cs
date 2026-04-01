@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -30,7 +29,7 @@ using Microsoft.Extensions.Logging;
 /// <para><b>Determinism:</b> Non-deterministic by design; repeated executions can yield variant textual outputs. Upstream caching or
 /// freeze-on-first-success strategies SHOULD be applied if immutability is desired.</para>
 /// <para><b>Thread Safety:</b> Reuses a single <see cref="AzureOpenAIClient"/> instance which is thread-safe; the class itself contains no mutable shared state.</para>
-/// <para><b>Security:</b> Relies on managed identity (non-DEBUG builds) via <see cref="AzureCredentialFactory"/>; API key usage is intentionally avoided.
+/// <para><b>Security:</b> Uses <see cref="Azure.AzureKeyCredential"/> with the OpenAI API key from application configuration.
 /// Ensure environment variables (e.g. AZURE_CLIENT_ID) are correctly provisioned in deployment.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
@@ -61,7 +60,10 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var openAiEndpoint = options.OpenAIEndpoint;
-    var credentials = AzureCredentialFactory.CreateCredential();
+    var openAiApiKey = options.OpenAIKey;
+
+    // Use AzureKeyCredential (same pattern as FormRecognizer + Translator brokers)
+    var credentials = new Azure.AzureKeyCredential(openAiApiKey);
 
     openAIClient = new AzureOpenAIClient(
       endpoint: new Uri(openAiEndpoint),
