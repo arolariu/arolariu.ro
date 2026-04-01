@@ -70,17 +70,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// Gluten, Lactose, Nuts, Eggs, Soy, Fish, Shellfish.
 /// Empty collection if no allergens detected or analysis not performed.
 /// </param>
-/// <param name="IsEdited">
-/// Flag indicating the product data has been manually modified after initial ingestion.
-/// True if user corrections were applied.
-/// </param>
-/// <param name="IsComplete">
-/// Flag indicating all required product data is present and validated.
-/// False if missing critical fields like name or price.
-/// </param>
-/// <param name="IsDeleted">
-/// Flag indicating soft deletion status. Soft-deleted products are excluded from
-/// totals but retained for audit history.
+/// <param name="Metadata">
+/// Nested metadata containing edit status, completeness, soft-deletion flag,
+/// and OCR confidence score. Preserves 1:1 parity with frontend ProductMetadata type.
 /// </param>
 /// <example>
 /// <code>
@@ -110,9 +102,7 @@ public readonly record struct ProductResponseDto(
   decimal Price,
   decimal TotalPrice,
   IReadOnlyCollection<Allergen> DetectedAllergens,
-  bool IsEdited,
-  bool IsComplete,
-  bool IsDeleted)
+  ProductMetadataDto Metadata)
 {
   /// <summary>
   /// Creates a <see cref="ProductResponseDto"/> from a domain <see cref="Product"/> value object.
@@ -128,8 +118,8 @@ public readonly record struct ProductResponseDto(
   /// read-only list is created for immutability.
   /// </para>
   /// <para>
-  /// <b>Metadata Extraction:</b> The <see cref="IsEdited"/>, <see cref="IsComplete"/>,
-  /// and <see cref="IsDeleted"/> flags are extracted from the product's metadata.
+  /// <b>Metadata:</b> The product's <see cref="ProductMetadataDto"/> is preserved as a nested
+  /// structure for 1:1 parity with the frontend TypeScript type.
   /// </para>
   /// </remarks>
   /// <param name="product">
@@ -156,8 +146,21 @@ public readonly record struct ProductResponseDto(
       DetectedAllergens: product.DetectedAllergens is IReadOnlyCollection<Allergen> readOnly
         ? readOnly
         : new List<Allergen>(product.DetectedAllergens).AsReadOnly(),
-      IsEdited: product.Metadata.IsEdited,
-      IsComplete: product.Metadata.IsComplete,
-      IsDeleted: product.Metadata.IsSoftDeleted);
+      Metadata: new ProductMetadataDto(
+        IsEdited: product.Metadata.IsEdited,
+        IsComplete: product.Metadata.IsComplete,
+        IsSoftDeleted: product.Metadata.IsSoftDeleted,
+        Confidence: product.Metadata.Confidence));
   }
 }
+
+/// <summary>
+/// Nested metadata DTO preserving 1:1 parity with the frontend ProductMetadata type.
+/// </summary>
+[Serializable]
+[ExcludeFromCodeCoverage]
+public readonly record struct ProductMetadataDto(
+  bool IsEdited,
+  bool IsComplete,
+  bool IsSoftDeleted,
+  double Confidence);
