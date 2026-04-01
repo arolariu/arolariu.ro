@@ -26,7 +26,7 @@ using Azure.AI.DocumentIntelligence;
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
 /// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
 /// <para><b>Security:</b> Uses <see cref="AzureKeyCredential"/> with the Cognitive Services API key from application configuration.
-/// secret management risk. Environment variable <c>AZURE_CLIENT_ID</c> must be present in managed identity deployments.</para>
+/// Production deployments should rotate keys regularly and use Azure Key Vault for secret management.</para>
 /// <para><b>Output Model Fidelity:</b> Mapping intentionally narrow: only fields required for initial enrichment pipeline are projected.
 /// Backlog: field provenance (confidence, bounding boxes) exposure for advanced UI / validation workflows.</para>
 /// <para><b>Performance:</b> Dominated by service round-trip latency and image size. Caller SHOULD parallelize at orchestration layer for bulk imports
@@ -44,10 +44,10 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// </summary>
   /// <remarks>
   /// <para>Builds a single <see cref="DocumentIntelligenceClient"/> using <see cref="AzureKeyCredential"/>. The API key is sourced from
-  /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
+  /// application configuration via <see cref="ApplicationOptions.CognitiveServicesKey"/>. Throws fast on null dependency to fail early in composition root.</para>
   /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
   /// </remarks>
-  /// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint + key context; key unused when MI is present).</param>
+  /// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint and API key credentials).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   public AzureFormRecognizerBroker(IOptionsManager optionsManager)
   {

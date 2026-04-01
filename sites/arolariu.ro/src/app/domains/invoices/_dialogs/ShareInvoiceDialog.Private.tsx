@@ -34,7 +34,7 @@ export interface PrivateModeProps {
  * - Back button to return to selection
  * - Informational alert about private sharing
  * - Email input form with validation
- * - Send invitation button (now functional via /api/email)
+ * - Send invitation button (calls `sendInvoiceShareEmail` server action which internally calls `/api/email`)
  *
  * Email validation uses HTML5 email input type for client-side validation.
  * The button is disabled while sending to prevent duplicate requests.

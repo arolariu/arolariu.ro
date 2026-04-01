@@ -290,7 +290,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         },
       );
     },
-    [email, invoice.id, invoice.name, t, userInformation.user],
+    [email, invoice.id, t],
   );
 
   /**

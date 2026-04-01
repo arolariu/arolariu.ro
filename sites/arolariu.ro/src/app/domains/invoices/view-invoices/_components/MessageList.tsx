@@ -3,7 +3,7 @@
 import {formatDateTime} from "@/lib/utils.generic";
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbRobot, TbUser} from "react-icons/tb";
 import styles from "./MessageList.module.scss";
 

@@ -402,7 +402,15 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                             : "destructive"
                                       }
                                       className={styles["confidenceBadge"]}
-                                      aria-label={`${item.metadata.confidence >= 0.9 ? "High" : item.metadata.confidence >= 0.7 ? "Medium" : "Low"} OCR confidence ${(item.metadata.confidence * 100).toFixed(0)}%`}>
+                                      aria-label={t("confidence.ariaLabel", {
+                                        level:
+                                          item.metadata.confidence >= 0.9
+                                            ? t("confidence.high")
+                                            : item.metadata.confidence >= 0.7
+                                              ? t("confidence.medium")
+                                              : t("confidence.low"),
+                                        percent: (item.metadata.confidence * 100).toFixed(0),
+                                      })}>
                                       {item.metadata.confidence >= 0.9 ? "✓" : item.metadata.confidence >= 0.7 ? "~" : "!"}
                                     </Badge>
                                   </TooltipTrigger>

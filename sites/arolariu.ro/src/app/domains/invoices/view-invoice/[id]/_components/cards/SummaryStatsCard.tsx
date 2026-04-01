@@ -13,6 +13,7 @@ type Props = {
 };
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoice.summaryStatsCard");
   const stats = [
     {
@@ -35,7 +36,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
     },
     {
       label: t("stats.taxRate.label"),
-      value: `${formatAmount(summary.taxPercentage, "en-US", 1)}%`,
+      value: `${formatAmount(summary.taxPercentage, locale, 1)}%`,
       icon: TbPercentage,
       description: t("stats.taxRate.description", {amount: formatAmount(summary.taxAmount), currency}),
     },
