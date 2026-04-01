@@ -490,6 +490,10 @@ public sealed partial class AzureClassifierBroker
         var allergenName = parts[0].Trim().ToUpperInvariant();
         var allergenDescription = parts.Length > 1 ? parts[1].Trim() : string.Empty;
 
+        // Filter out hallucinated/sentence-like allergen names
+        if (allergenName.Length > 20 || allergenName.Split(' ').Length > 2)
+          continue;
+
         allergensList.Add(new Allergen
         {
           Name = allergenName,

@@ -20,6 +20,7 @@
 import InvoiceHasBeenSharedWithEmail from "@/../emails/invoices/InvoiceHasBeenSharedWithEmail";
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchResendApiKey} from "@/lib/config/configProxy";
+import {render} from "@react-email/render";
 import {Resend} from "resend";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -99,19 +100,24 @@ export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): 
 
     addSpanEvent("email.resend_configured");
 
-    // 4. Send via Resend with React Email template
+    // 4. Send via Resend with React Email template (pre-rendered to HTML)
     try {
       const resend = new Resend(apiKey);
+
+      // Pre-render React Email to HTML to avoid peer dependency issues
+      const emailHtml = await render(
+        InvoiceHasBeenSharedWithEmail({
+          fromUsername: fromName,
+          toUsername: toName,
+          identifier: invoiceId,
+        }),
+      );
 
       const emailData = await resend.emails.send({
         from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
         to: toEmail,
         subject: `${fromName} shared an invoice with you`,
-        react: InvoiceHasBeenSharedWithEmail({
-          fromUsername: fromName,
-          toUsername: toName,
-          identifier: invoiceId,
-        }),
+        html: emailHtml,
       });
 
       if (emailData.error) {

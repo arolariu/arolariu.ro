@@ -154,12 +154,15 @@
 .dayButton {
   height: space(9);
   width: space(9);
+  aspect-ratio: 1;
   padding: 0;
   font-weight: font-weight('normal');
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: radius('md');
+  position: relative;
+  overflow: hidden;
   @include transition(all);
 }
 

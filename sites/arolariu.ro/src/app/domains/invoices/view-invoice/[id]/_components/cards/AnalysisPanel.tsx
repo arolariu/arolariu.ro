@@ -71,6 +71,9 @@ export function AnalysisPanel(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
   const router = useRouter();
 
+  // Hide the entire card when analysis is complete (items exist)
+  if (invoice.items.length > 0) return null;
+
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<string>("");
@@ -130,7 +133,7 @@ export function AnalysisPanel(): React.JSX.Element {
         });
 
         // Animate progress while waiting
-        const stepDelayMs = 2000;
+        const stepDelayMs = 3000;
         const analysisSettledPromise = analysisPromise.then(
           () => true,
           () => true,

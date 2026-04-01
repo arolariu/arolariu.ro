@@ -34,10 +34,12 @@ export function ReceiptScanCard(): React.JSX.Element {
   // Zoom and rotate state for card view
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
+  const [transformOrigin, setTransformOrigin] = useState<string>("center center");
 
   // Zoom and rotate state for dialog view
   const [dialogZoomLevel, setDialogZoomLevel] = useState<number>(1);
   const [dialogRotation, setDialogRotation] = useState<number>(0);
+  const [dialogTransformOrigin, setDialogTransformOrigin] = useState<string>("center center");
 
   const scans = invoice.scans || [];
   const totalScans = scans.length;
@@ -85,6 +87,7 @@ export function ReceiptScanCard(): React.JSX.Element {
 
   const handleResetZoom = useCallback(() => {
     setZoomLevel(1);
+    setTransformOrigin("center center");
   }, []);
 
   const handleRotate = useCallback(() => {
@@ -98,6 +101,7 @@ export function ReceiptScanCard(): React.JSX.Element {
 
   const handleDialogResetZoom = useCallback(() => {
     setDialogZoomLevel(1);
+    setDialogTransformOrigin("center center");
   }, []);
 
   const handleDialogRotate = useCallback(() => {
@@ -112,6 +116,30 @@ export function ReceiptScanCard(): React.JSX.Element {
     link.click();
     document.body.removeChild(link);
   }, [currentScanSrc, currentScanIndex]);
+
+  // Mouse move handler for card view - updates transform origin based on cursor position
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (zoomLevel <= 1) return; // Only track when zoomed in
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setTransformOrigin(`${x}% ${y}%`);
+    },
+    [zoomLevel],
+  );
+
+  // Mouse move handler for dialog view - updates transform origin based on cursor position
+  const handleDialogMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (dialogZoomLevel <= 1) return; // Only track when zoomed in
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setDialogTransformOrigin(`${x}% ${y}%`);
+    },
+    [dialogZoomLevel],
+  );
 
   return (
     <TooltipProvider>
@@ -132,7 +160,9 @@ export function ReceiptScanCard(): React.JSX.Element {
                     className={styles["imageWrapper"]}
                     style={{
                       transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
-                    }}>
+                      transformOrigin,
+                    }}
+                    onMouseMove={handleMouseMove}>
                     <Image
                       src={currentScanSrc}
                       alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
@@ -157,9 +187,11 @@ export function ReceiptScanCard(): React.JSX.Element {
                   className={styles["dialogImageWrapper"]}
                   style={{
                     transform: `scale(${dialogZoomLevel}) rotate(${dialogRotation}deg)`,
+                    transformOrigin: dialogTransformOrigin,
                     cursor: "pointer",
                   }}
                   onClick={handleDialogImageClick}
+                  onMouseMove={handleDialogMouseMove}
                   role='button'
                   tabIndex={0}
                   aria-label={t("controls.toggleZoom")}

@@ -291,9 +291,7 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
                   <SelectTrigger className={styles["categoryTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectCategory")}>
-                      {currentCategoryLabel}
-                    </SelectValue>
+                    <SelectValue placeholder={t("placeholders.selectCategory")}>{currentCategoryLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -317,9 +315,7 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger className={styles["paymentTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectPaymentType")}>
-                      {currentPaymentTypeLabel}
-                    </SelectValue>
+                    <SelectValue placeholder={t("placeholders.selectPaymentType")}>{currentPaymentTypeLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTypeOptions.map((option) => (

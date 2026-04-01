@@ -229,8 +229,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           reader.readAsDataURL(blob);
         });
 
-        // 5. Extract blob name from URL
-        const blobName = scan.blobUrl.split("/").slice(-2).join("/");
+        // 5. Extract blob name from URL (include scans/ prefix)
+        const blobName = scan.blobUrl.split("/").slice(-3).join("/");
 
         // 6. Upload rotated image
         const result = await updateScan({
