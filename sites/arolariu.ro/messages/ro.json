@@ -1903,7 +1903,10 @@
         "rowsPerPage": "Rânduri pe pagină:",
         "pageOf": "Pagina {current} din {total}",
         "previousPage": "Pagina anterioară",
-        "nextPage": "Pagina următoare"
+        "nextPage": "Pagina următoare",
+        "tooltips": {
+          "notAnalyzed": "Această factură nu a fost încă analizată"
+        }
       },
       "gridView": {
         "tooltips": {

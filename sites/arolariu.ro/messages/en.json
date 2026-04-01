@@ -1903,7 +1903,10 @@
         "rowsPerPage": "Rows per page:",
         "pageOf": "Page {current} of {total}",
         "previousPage": "Previous Page",
-        "nextPage": "Next Page"
+        "nextPage": "Next Page",
+        "tooltips": {
+          "notAnalyzed": "This invoice has not been analyzed yet"
+        }
       },
       "gridView": {
         "tooltips": {

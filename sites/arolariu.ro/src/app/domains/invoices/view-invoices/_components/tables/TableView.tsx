@@ -1,4 +1,3 @@
-import {getTransactionYear, toRON} from "@/lib/currency";
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
@@ -25,14 +24,11 @@ import {
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import Link from "next/link";
-import {useCallback, useMemo, useState} from "react";
-import {TbArrowDown, TbArrowsUpDown, TbArrowUp, TbEye, TbReceipt} from "react-icons/tb";
+import {useCallback} from "react";
+import {TbEye, TbReceipt} from "react-icons/tb";
 import EmptyState from "../../../_components/EmptyState";
 import styles from "./TableView.module.scss";
 import TableViewActions from "./TableViewActions";
-
-type SortField = "date" | "amount" | "name" | "category" | null;
-type SortDirection = "asc" | "desc";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -50,72 +46,6 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
-
-  // Sorting state
-  const [sortField, setSortField] = useState<SortField>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-
-  const handleSort = useCallback(
-    (field: SortField) => {
-      if (sortField === field) {
-        setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-      } else {
-        setSortField(field);
-        setSortDirection("desc");
-      }
-    },
-    [sortField],
-  );
-
-  const sortedInvoices = useMemo(() => {
-    if (!sortField) {
-      return invoices.toSorted((a, b) => {
-        const dateA = new Date(a.paymentInformation?.transactionDate ?? a.createdAt).getTime();
-        const dateB = new Date(b.paymentInformation?.transactionDate ?? b.createdAt).getTime();
-        return dateB - dateA;
-      });
-    }
-
-    return invoices.toSorted((a, b) => {
-      let comparison = 0;
-      switch (sortField) {
-        case "date":
-          comparison =
-            new Date(a.paymentInformation?.transactionDate ?? a.createdAt).getTime()
-            - new Date(b.paymentInformation?.transactionDate ?? b.createdAt).getTime();
-          break;
-        case "amount":
-          {
-            // Precompute RON values to avoid repeated conversion calls during sort (Schwartzian transform pattern)
-            const aAmount = a.paymentInformation?.totalCostAmount ?? 0;
-            const bAmount = b.paymentInformation?.totalCostAmount ?? 0;
-            const aCurrency = a.paymentInformation?.currency?.code ?? "RON";
-            const bCurrency = b.paymentInformation?.currency?.code ?? "RON";
-            const aYear = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
-            const bYear = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
-            const aRON = toRON(aAmount, aCurrency, aYear);
-            const bRON = toRON(bAmount, bCurrency, bYear);
-            comparison = aRON - bRON;
-          }
-          break;
-        case "name":
-          comparison = (a.name ?? "").localeCompare(b.name ?? "");
-          break;
-        case "category":
-          comparison = a.category - b.category;
-          break;
-      }
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-  }, [invoices, sortField, sortDirection]);
-
-  const getSortIcon = useCallback(
-    (field: SortField): React.JSX.Element => {
-      if (sortField !== field) return <TbArrowsUpDown className={styles["sortIcon"]} />;
-      return sortDirection === "asc" ? <TbArrowUp className={styles["sortIcon"]} /> : <TbArrowDown className={styles["sortIcon"]} />;
-    },
-    [sortField, sortDirection],
-  );
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {
@@ -181,31 +111,13 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           </TableHead>
           <TableHead>{t("columns.invoice")}</TableHead>
           <TableHead>{t("columns.category")}</TableHead>
-          <TableHead aria-sort={sortField === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
-            <Button
-              variant='ghost'
-              className={styles["sortButton"]}
-              onClick={() => handleSort("date")}
-              aria-label={t("aria.sortByDate")}>
-              {t("columns.date")}
-              {getSortIcon("date")}
-            </Button>
-          </TableHead>
-          <TableHead aria-sort={sortField === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}>
-            <Button
-              variant='ghost'
-              className={styles["sortButton"]}
-              onClick={() => handleSort("amount")}
-              aria-label={t("aria.sortByAmount")}>
-              {t("columns.amount")}
-              {getSortIcon("amount")}
-            </Button>
-          </TableHead>
+          <TableHead>{t("columns.date")}</TableHead>
+          <TableHead>{t("columns.amount")}</TableHead>
           <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortedInvoices.map((invoice) => (
+        {invoices.map((invoice) => (
           <TableRow key={invoice.id}>
             <TableCell className={styles["printHidden"]}>
               <Checkbox
@@ -223,14 +135,29 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
             </TableCell>
             <TableCell>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
-                  <TooltipContent>
-                    <p>{new Date(invoice.createdAt).toUTCString()}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {invoice.paymentInformation?.transactionDate ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <span className={styles["cursorHelp"]}>{formatDate(invoice.paymentInformation.transactionDate, {locale})}</span>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>{new Date(invoice.paymentInformation.transactionDate).toUTCString()}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger render={<Badge variant='outline'>N/A</Badge>} />
+                    <TooltipContent>
+                      <p>{t("tooltips.notAnalyzed")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </TableCell>
             <TableCell>
               {formatCurrency(invoice.paymentInformation.totalCostAmount, {

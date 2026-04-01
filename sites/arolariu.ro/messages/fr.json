@@ -1903,7 +1903,10 @@
         "rowsPerPage": "Lignes par page:",
         "pageOf": "Page {current} sur {total}",
         "previousPage": "Page précédente",
-        "nextPage": "Page suivante"
+        "nextPage": "Page suivante",
+        "tooltips": {
+          "notAnalyzed": "Cette facture n'a pas encore été analysée"
+        }
       },
       "gridView": {
         "tooltips": {

@@ -126,6 +126,11 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
         // Older scans might have lowercase keys from buggy registerScan
         const scanId = metadata["scanId"] ?? metadata["scanid"];
 
+        // Skip scans that have been used by invoices
+        if (metadata["usedByInvoice"] === "true") {
+          continue;
+        }
+
         // Only process blobs with valid scan ID in metadata
         if (scanId) {
           // Parse status from metadata (case-insensitive)

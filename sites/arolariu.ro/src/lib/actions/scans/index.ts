@@ -11,6 +11,7 @@
 export {deleteScan} from "./deleteScan";
 export {fetchScans} from "./fetchScans";
 export {generateUploadSasUrl} from "./generateSasUrl";
+export {markScansAsUsed} from "./markScansAsUsed";
 export {registerScan} from "./registerScan";
 export {updateScan} from "./updateScan";
 export {uploadScan} from "./uploadScan";

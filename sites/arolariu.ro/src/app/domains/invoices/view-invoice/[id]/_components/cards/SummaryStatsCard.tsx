@@ -2,7 +2,7 @@
 
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbGrid3X3, TbPackage, TbPercentage, TbReceipt, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {InvoiceSummary} from "../../_utils/analytics";
 import styles from "./SummaryStatsCard.module.scss";
