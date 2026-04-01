@@ -52,7 +52,9 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
   const warningLevel = getWarningLevel(allergen.percentage);
 
   return (
-    <div className={`${styles["allergenCard"]} ${styles[warningLevel]}`}>
+    <div
+      className={`${styles["allergenCard"]} ${styles[warningLevel]}`}
+      role='listitem'>
       <div className={styles["allergenHeader"]}>
         <div className={styles["allergenIcon"]}>
           <TbAlertTriangle size={20} />

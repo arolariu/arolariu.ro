@@ -1846,6 +1846,10 @@
           "subtitle": "Detalii despre articolele achiziționate"
         }
       },
+      "messageList": {
+        "aiAssistant": "Asistent AI",
+        "you": "Tu"
+      },
       "generativeView": {
         "welcomeMessage": "Salut! Sunt asistentul tău de analiză a facturilor. Cu ce te pot ajuta astăzi? Încearcă comenzi precum /find pentru a căuta facturi.",
         "title": "Analiză live",

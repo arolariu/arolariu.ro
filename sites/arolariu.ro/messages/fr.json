@@ -1846,6 +1846,10 @@
           "subtitle": "Aperçu de vos articles achetés"
         }
       },
+      "messageList": {
+        "aiAssistant": "Assistant IA",
+        "you": "Vous"
+      },
       "generativeView": {
         "welcomeMessage": "Bonjour ! Je suis votre assistant d’analyse de factures. Comment puis-je vous aider aujourd’hui ? Essayez des commandes comme /find pour rechercher des factures.",
         "title": "Analyse en direct",

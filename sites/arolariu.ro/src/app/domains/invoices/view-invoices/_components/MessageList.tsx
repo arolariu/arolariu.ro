@@ -23,6 +23,7 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoices.messageList");
 
   return (
     <div className={styles["messageList"]}>
@@ -52,7 +53,7 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           </Avatar>
           <div className={styles["messageBody"]}>
             <div className={styles["messageHeader"]}>
-              <p className={styles["messageSender"]}>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
+              <p className={styles["messageSender"]}>{message.role === "assistant" ? t("aiAssistant") : t("you")}</p>
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>

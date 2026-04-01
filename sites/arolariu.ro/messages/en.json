@@ -1846,6 +1846,10 @@
           "subtitle": "Insights into your purchased items"
         }
       },
+      "messageList": {
+        "aiAssistant": "AI Assistant",
+        "you": "You"
+      },
       "generativeView": {
         "welcomeMessage": "Hello! I'm your invoice analysis assistant. How can I help you today? Try commands like /find to search invoices.",
         "title": "Live analysis",

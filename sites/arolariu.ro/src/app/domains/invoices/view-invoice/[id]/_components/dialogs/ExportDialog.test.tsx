@@ -51,7 +51,7 @@ vi.mock("next-intl", () => ({
 }));
 
 /** Test component that opens the dialog on mount */
-function TestComponentWithDialog() {
+function TestComponentWithDialog(): React.JSX.Element {
   const {openDialog} = useDialogs();
   useEffect(() => {
     openDialog("VIEW_INVOICE__EXPORT");

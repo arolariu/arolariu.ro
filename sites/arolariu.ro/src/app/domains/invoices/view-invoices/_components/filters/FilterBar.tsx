@@ -27,7 +27,7 @@ import {
   useDebounce,
   useWindowSize,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -102,6 +102,7 @@ export default function FilterBar({
   onViewModeChange,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.invoicesView");
+  const locale = useLocale();
   const {isMobile} = useWindowSize();
   const [searchInput, setSearchInput] = useState<string>(filters.search);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
@@ -300,7 +301,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateFrom ? formatDate(filters.dateFrom, {locale: "en-US"}) : t("filters.dateFrom")}
+                  {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
                 </Button>
               }
             />
@@ -319,7 +320,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateTo ? formatDate(filters.dateTo, {locale: "en-US"}) : t("filters.dateTo")}
+                  {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
                 </Button>
               }
             />

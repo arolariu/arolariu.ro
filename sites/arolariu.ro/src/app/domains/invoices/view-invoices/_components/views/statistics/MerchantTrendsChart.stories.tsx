@@ -37,7 +37,7 @@ const meta = {
       control: false,
     },
     currency: {
-      description: "Currency code for display",
+      description: "Currency display label or symbol",
       control: "text",
     },
   },

@@ -242,20 +242,6 @@ export default function UploadPreview(): React.JSX.Element | null {
     }
   }, [page, currentPageUploads.length, pendingUploads.length]);
 
-  // Revoke object URLs for off-page scans to free memory on mobile
-  useEffect(() => {
-    if (!isMobile) return;
-
-    pendingUploads.forEach((upload, i) => {
-      const isOnPage = i >= page * pageSize && i < (page + 1) * pageSize;
-      if (!isOnPage && upload.preview) {
-        // Note: We don't actually revoke here because the context manages URLs.
-        // This is a placeholder for future memory optimization if needed.
-        // The main memory savings come from not rendering off-page images.
-      }
-    });
-  }, [page, pendingUploads, pageSize, isMobile]);
-
   if (pendingUploads.length === 0) {
     return null;
   }
