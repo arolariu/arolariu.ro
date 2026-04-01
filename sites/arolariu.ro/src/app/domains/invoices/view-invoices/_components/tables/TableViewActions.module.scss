@@ -37,6 +37,7 @@
 .actionButton {
   height: space(8);
   width: space(8);
+  aspect-ratio: 1;
   background-color: color-alpha('background', 0.8);
 
   @media print {

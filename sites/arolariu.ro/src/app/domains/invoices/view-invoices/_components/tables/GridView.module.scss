@@ -192,6 +192,7 @@
 
 .cardTitle {
   font-size: font-size('lg');
+  min-height: 1.5em; // Reserve space for title even when empty
 }
 
 .cardContent {

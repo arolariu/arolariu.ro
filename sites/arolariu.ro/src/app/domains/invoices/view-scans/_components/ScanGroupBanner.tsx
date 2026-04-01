@@ -98,7 +98,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
       }
     }
 
-    return bestGroup.length >= 2 ? bestGroup : null;
+    return bestGroup.length >= 2 && bestGroup.length <= 5 ? bestGroup : null;
   }, [scans]);
 
   /**

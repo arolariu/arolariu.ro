@@ -18,7 +18,8 @@ import {ScanStatus} from "@/types/scans";
 import {Badge, Button, Card, CardContent, Checkbox} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {TbCheck, TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
+import {useEffect, useState} from "react";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
 
@@ -107,9 +108,37 @@ export default function ScanSelector(): React.JSX.Element {
   const {scans} = useScansStore();
   const {selectedScans, toggleScan, selectAllScans, clearSelection} = useCreateInvoiceContext();
 
+  // Pagination constants
+  const MOBILE_PAGE_SIZE = 20;
+  const DESKTOP_PAGE_SIZE = 50;
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive detection
+  useEffect(() => {
+    const checkMobile = (): void => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const readyScans = scans.filter((scan) => scan.status === ScanStatus.READY);
   const hasScans = readyScans.length > 0;
   const allSelected = hasScans && selectedScans.length === readyScans.length;
+
+  // Pagination calculations
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
+  const totalPages = Math.ceil(readyScans.length / pageSize);
+  const paginatedScans = readyScans.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Reset page when scans change
+  useEffect(() => {
+    setPage(0);
+  }, [readyScans.length]);
 
   return (
     <div className={styles["container"]}>
@@ -143,7 +172,8 @@ export default function ScanSelector(): React.JSX.Element {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={selectAllScans}>
+                  onClick={selectAllScans}
+                  disabled={readyScans.length > 5}>
                   <TbCheck />
                   {t("selectAll")}
                 </Button>
@@ -155,16 +185,43 @@ export default function ScanSelector(): React.JSX.Element {
 
       {/* Scans grid */}
       {hasScans ? (
-        <div className={styles["scansGrid"]}>
-          {readyScans.map((scan) => (
-            <ScanCard
-              key={scan.id}
-              scan={scan}
-              isSelected={selectedScans.some((s) => s.id === scan.id)}
-              onToggle={() => toggleScan(scan)}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles["scansGrid"]}>
+            {paginatedScans.map((scan) => (
+              <ScanCard
+                key={scan.id}
+                scan={scan}
+                isSelected={selectedScans.some((s) => s.id === scan.id)}
+                onToggle={() => toggleScan(scan)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className={styles["pagination"]}>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}>
+                <TbChevronLeft />
+                {t("previous")}
+              </Button>
+              <span className={styles["pageInfo"]}>
+                {page + 1} / {totalPages} ({readyScans.length} {t("scansCount")})
+              </span>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}>
+                {t("next")}
+                <TbChevronRight />
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className={styles["emptyState"]}>
           <TbPhoto className={styles["emptyIcon"]} />

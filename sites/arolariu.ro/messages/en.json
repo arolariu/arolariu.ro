@@ -3899,7 +3899,10 @@
         "selectedCount": "{count} selected",
         "clearAll": "Clear",
         "selectAll": "Select All",
-        "noScans": "No scans available"
+        "noScans": "No scans available",
+        "previous": "Previous",
+        "next": "Next",
+        "scansCount": "scans"
       },
       "detailsForm": {
         "title": "Invoice Details",

@@ -25,7 +25,7 @@
  * - 75-100%: Dark green (opacity 1.0)
  */
 
-import {formatAmount} from "@/lib/utils.generic";
+import {formatAmount, formatDate as formatDateGeneric} from "@/lib/utils.generic";
 import {
   Card,
   CardContent,

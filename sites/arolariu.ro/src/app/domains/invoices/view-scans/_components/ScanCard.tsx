@@ -184,7 +184,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         const imageBlob = await response.blob();
         const objectUrl = URL.createObjectURL(imageBlob);
 
-        const img = new Image();
+        const img = new globalThis.Image();
         await new Promise<void>((resolve, reject) => {
           img.onload = () => resolve();
           img.onerror = () => reject(new Error("Failed to load image"));
