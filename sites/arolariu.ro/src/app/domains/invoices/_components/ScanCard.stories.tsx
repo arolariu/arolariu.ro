@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the scan card.
  */
 const meta = {
-  title: "Invoices/ViewScans/ScanCard",
+  title: "Invoices/Shared/ScanCard",
   parameters: {
     layout: "centered",
   },

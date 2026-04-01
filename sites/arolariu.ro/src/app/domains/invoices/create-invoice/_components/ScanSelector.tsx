@@ -15,88 +15,13 @@
 
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
-import {Badge, Button, Card, CardContent, Checkbox} from "@arolariu/components";
-import {motion} from "motion/react";
+import {Badge, Button} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useEffect, useState} from "react";
-import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbPhoto, TbX} from "react-icons/tb";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbPhoto, TbX} from "react-icons/tb";
+import ScanCard from "../../_components/ScanCard";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
-
-/**
- * Individual scan card component.
- */
-function ScanCard({
-  scan,
-  isSelected,
-  onToggle,
-}: Readonly<{
-  scan: {id: string; name: string; blobUrl: string; uploadedAt: Date; sizeInBytes: number};
-  isSelected: boolean;
-  onToggle: () => void;
-}>): React.JSX.Element {
-  const cardClassName = [styles["scanCard"], isSelected && styles["scanCardSelected"]].filter(Boolean).join(" ");
-
-  const formatSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const formatDate = (date: Date): string => {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(date));
-  };
-
-  return (
-    <motion.div
-      whileHover={{scale: 1.02}}
-      whileTap={{scale: 0.98}}
-      className={styles["scanCardWrapper"]}>
-      <Card
-        className={cardClassName}
-        onClick={onToggle}>
-        {/* Selection overlay */}
-        <div className={styles["selectionOverlay"]}>
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onToggle}
-            onClick={(e) => e.stopPropagation()}
-            className={styles["checkbox"]}
-          />
-        </div>
-
-        {/* Scan preview */}
-        <div className={styles["scanPreview"]}>
-          {scan.mimeType === "application/pdf" || scan.blobUrl?.endsWith(".pdf") ? (
-            <div className={styles["pdfPlaceholder"]}>
-              <TbFileTypePdf className={styles["pdfIcon"]} />
-            </div>
-          ) : (
-            <img
-              src={scan.blobUrl}
-              alt={scan.name}
-              className={styles["scanImage"]}
-              loading='lazy'
-            />
-          )}
-        </div>
-
-        {/* Scan info */}
-        <CardContent className={styles["scanInfo"]}>
-          <p className={styles["scanName"]}>{scan.name}</p>
-          <div className={styles["scanMeta"]}>
-            <span className={styles["scanDate"]}>{formatDate(scan.uploadedAt)}</span>
-            <span className={styles["scanSize"]}>{formatSize(scan.sizeInBytes)}</span>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
 
 /**
  * Scan selector component.
@@ -192,7 +117,7 @@ export default function ScanSelector(): React.JSX.Element {
                 key={scan.id}
                 scan={scan}
                 isSelected={selectedScans.some((s) => s.id === scan.id)}
-                onToggle={() => toggleScan(scan)}
+                onToggleSelect={() => toggleScan(scan)}
               />
             ))}
           </div>

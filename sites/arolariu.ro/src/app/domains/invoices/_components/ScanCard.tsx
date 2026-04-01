@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * @fileoverview Individual scan card component with selection support.
- * @module app/domains/invoices/view-scans/_components/ScanCard
+ * @fileoverview Individual scan card component with selection support (shared).
+ * @module app/domains/invoices/_components/ScanCard
  */
 
 import {deleteScan, updateScan} from "@/lib/actions/scans";

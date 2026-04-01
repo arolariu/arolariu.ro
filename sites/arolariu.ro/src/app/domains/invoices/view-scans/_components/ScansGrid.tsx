@@ -12,8 +12,8 @@ import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import EmptyState from "../../_components/EmptyState";
+import ScanCard from "../../_components/ScanCard";
 import {useScans} from "../_hooks/useScans";
-import ScanCard from "./ScanCard";
 import styles from "./ScansGrid.module.scss";
 
 /** Pre-generated skeleton keys for loading state to avoid array index as key */
