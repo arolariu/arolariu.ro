@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
-  private readonly IOpenAiBroker analysisBroker;
+  private readonly IClassifierBroker analysisBroker;
   private readonly ITranslatorBroker translatorBroker;
   private readonly IFormRecognizerBroker receiptRecognizerBroker;
   private readonly ILogger<IInvoiceAnalysisFoundationService> logger;
@@ -29,7 +29,7 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   /// <param name="receiptRecognizerBroker"></param>
   /// <param name="loggerFactory"></param>
   public InvoiceAnalysisFoundationService(
-    IOpenAiBroker analysisBroker,
+    IClassifierBroker analysisBroker,
     ITranslatorBroker translatorBroker,
     IFormRecognizerBroker receiptRecognizerBroker,
     ILoggerFactory loggerFactory)

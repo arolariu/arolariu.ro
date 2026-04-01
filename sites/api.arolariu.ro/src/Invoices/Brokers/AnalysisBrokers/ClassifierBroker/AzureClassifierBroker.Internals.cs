@@ -13,16 +13,16 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using OpenAI.Chat;
 
-public sealed partial class AzureOpenAiBroker
+public sealed partial class AzureClassifierBroker
 {
   /// <summary>
-  /// The Azure OpenAI model deployment name used for chat completions.
+  /// The Azure AI Foundry model deployment name used for chat completions.
   /// </summary>
   /// <remarks>
-  /// <para>This constant defines the GPT-4 model deployment name used across all enrichment operations.</para>
-  /// <para>Change this value to switch to a different model deployment (e.g., "gpt-4-turbo", "gpt-4o").</para>
+  /// <para>This constant defines the model router deployment name used across all enrichment operations.</para>
+  /// <para>The "model-router" endpoint routes requests to appropriate models based on capabilities and availability.</para>
   /// </remarks>
-  private const string ChatModelDeploymentName = "o4-mini";
+  private const string ChatModelDeploymentName = "model-router";
 
   #region Invoice field generation
   /// <summary>

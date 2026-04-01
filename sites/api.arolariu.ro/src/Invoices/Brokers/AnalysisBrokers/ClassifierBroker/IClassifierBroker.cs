@@ -7,10 +7,10 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
-/// Broker contract for delegating invoice analysis / enrichment to Azure OpenAI (LLM) services.
+/// Broker contract for delegating invoice analysis / enrichment to Azure AI Foundry classification services (LLM).
 /// </summary>
 /// <remarks>
-/// <para><b>Layer Role (The Standard):</b> A broker is a thin, test-isolated abstraction over an external dependency (here: Azure OpenAI).
+/// <para><b>Layer Role (The Standard):</b> A broker is a thin, test-isolated abstraction over an external dependency (here: Azure AI Foundry model router).
 /// It provides minimal translation (domain → API request / API response → domain) and surfaces provider-specific failures
 /// as dependency / dependency validation exceptions (wrapping raw SDK exceptions in the concrete implementation).</para>
 /// <para><b>Responsibilities:</b>
@@ -25,7 +25,7 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// caching / freeze policies if consistency is required.</para>
 /// <para><b>Performance and Cost:</b> Each enrichment call may consume tokens (billable). Implementations SHOULD batch prompts where feasible (backlog).</para>
 /// </remarks>
-public interface IOpenAiBroker
+public interface IClassifierBroker
 {
   /// <summary>
   /// Performs GPT-backed enrichment of a single <see cref="Invoice"/> aggregate according to supplied analysis options.

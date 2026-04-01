@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "8748518732528321147"
+      "templateHash": "10036894749759971827"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -104,7 +104,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "16442421982883314484"
+              "templateHash": "17267445621845102755"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -682,7 +682,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "1053257462933018025"
+                      "templateHash": "6790400301008065675"
                     },
                     "description": "Configuration module orchestrator that provisions Key Vault and App Configuration for centralized secrets and settings.",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -751,7 +751,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.40.2.10011",
-                              "templateHash": "5825503932538017065"
+                              "templateHash": "1428590912942807241"
                             },
                             "description": "Azure Key Vault with RBAC authorization and soft delete protection",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -952,14 +952,6 @@
                                   "value": "<your-cognitive-services-endpoint>"
                                 },
                                 {
-                                  "name": "DEVELOPMENT-OpenAIEndpoint",
-                                  "value": "<your-openai-endpoint>"
-                                },
-                                {
-                                  "name": "PRODUCTION-OpenAIEndpoint",
-                                  "value": "<your-openai-endpoint>"
-                                },
-                                {
                                   "name": "DEVELOPMENT-StorageEndpoint",
                                   "value": "<your-storage-account-endpoint>"
                                 },
@@ -1072,7 +1064,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.40.2.10011",
-                              "templateHash": "14737786687505602799"
+                              "templateHash": "15391493936455030583"
                             },
                             "description": "Azure App Configuration with managed identity authentication only",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -1399,20 +1391,6 @@
                                 },
                                 {
                                   "key": "Endpoints:AI:OCR",
-                                  "value": "",
-                                  "label": "PRODUCTION",
-                                  "content_type": "",
-                                  "tags": {}
-                                },
-                                {
-                                  "key": "Endpoints:AI:OpenAI",
-                                  "value": "",
-                                  "label": "DEVELOPMENT",
-                                  "content_type": "",
-                                  "tags": {}
-                                },
-                                {
-                                  "key": "Endpoints:AI:OpenAI",
                                   "value": "",
                                   "label": "PRODUCTION",
                                   "content_type": "",
@@ -7763,9 +7741,9 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "13221023583619774870"
+                      "templateHash": "6898020906581664093"
                     },
-                    "description": "AI services orchestrator deploying Azure OpenAI and AI Foundry",
+                    "description": "AI services orchestrator deploying Azure AI Foundry",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
                     "version": "2.0.0"
                   },
@@ -7799,227 +7777,6 @@
                     "aiConventionPrefix": "[format('{0}-ai', parameters('resourceConventionPrefix'))]"
                   },
                   "resources": {
-                    "openAiDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2025-04-01",
-                      "name": "[format('openAiDeployment-{0}', parameters('resourceDeploymentDate'))]",
-                      "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "openAiConventionPrefix": {
-                            "value": "[variables('aiConventionPrefix')]"
-                          },
-                          "openAiDeploymentDate": {
-                            "value": "[parameters('resourceDeploymentDate')]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.1-experimental",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
-                            "_EXPERIMENTAL_FEATURES_ENABLED": [
-                              "Enable @validate() decorator"
-                            ],
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.40.2.10011",
-                              "templateHash": "3162810337064646691"
-                            },
-                            "description": "Azure OpenAI Service with managed identity authentication",
-                            "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
-                            "version": "2.0.0"
-                          },
-                          "definitions": {
-                            "_1.resourceTags": {
-                              "type": "object",
-                              "properties": {
-                                "environment": {
-                                  "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
-                                  "metadata": {
-                                    "description": "Environment tag"
-                                  }
-                                },
-                                "deploymentType": {
-                                  "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
-                                  "metadata": {
-                                    "description": "Deployment method"
-                                  }
-                                },
-                                "deploymentDate": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Deployment date in YYYY-MM-DD format"
-                                  }
-                                },
-                                "deploymentAuthor": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Deployment author"
-                                  }
-                                },
-                                "module": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Module or service name"
-                                  }
-                                },
-                                "costCenter": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Cost center for billing"
-                                  }
-                                },
-                                "project": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Project name or identifier"
-                                  }
-                                },
-                                "version": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Version of the deployment"
-                                  }
-                                }
-                              },
-                              "metadata": {
-                                "description": "Resource tagging configuration",
-                                "__bicep_imported_from!": {
-                                  "sourceTemplate": "../types/common.type.bicep"
-                                }
-                              }
-                            }
-                          },
-                          "functions": [
-                            {
-                              "namespace": "__bicep",
-                              "members": {
-                                "createTags": {
-                                  "parameters": [
-                                    {
-                                      "type": "string",
-                                      "name": "moduleName"
-                                    },
-                                    {
-                                      "type": "string",
-                                      "name": "deploymentDate"
-                                    }
-                                  ],
-                                  "output": {
-                                    "$ref": "#/definitions/_1.resourceTags",
-                                    "value": {
-                                      "environment": "PRODUCTION",
-                                      "deploymentType": "Bicep",
-                                      "deploymentDate": "[parameters('deploymentDate')]",
-                                      "deploymentAuthor": "Alexandru-Razvan Olariu",
-                                      "module": "[parameters('moduleName')]",
-                                      "costCenter": "infrastructure",
-                                      "project": "arolariu.ro",
-                                      "version": "2.0.0"
-                                    }
-                                  },
-                                  "metadata": {
-                                    "__bicep_imported_from!": {
-                                      "sourceTemplate": "../constants/tags.bicep"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          ],
-                          "parameters": {
-                            "openAiLocation": {
-                              "type": "string",
-                              "defaultValue": "swedencentral",
-                              "metadata": {
-                                "description": "The location for the OpenAI service. Defaults to swedencentral for model-router GlobalStandard support."
-                              }
-                            },
-                            "openAiDeploymentDate": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The date when the deployment is executed."
-                              }
-                            },
-                            "openAiConventionPrefix": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The prefix to use for the names of the resources."
-                              }
-                            }
-                          },
-                          "variables": {
-                            "commonTags": "[__bicep.createTags('ai', parameters('openAiDeploymentDate'))]"
-                          },
-                          "resources": {
-                            "openAi": {
-                              "type": "Microsoft.CognitiveServices/accounts",
-                              "apiVersion": "2025-10-01-preview",
-                              "name": "[format('{0}-openai', parameters('openAiConventionPrefix'))]",
-                              "location": "[parameters('openAiLocation')]",
-                              "sku": {
-                                "name": "S0"
-                              },
-                              "kind": "OpenAI",
-                              "properties": {
-                                "customSubDomainName": "[format('{0}-openai', parameters('openAiConventionPrefix'))]",
-                                "publicNetworkAccess": "Enabled"
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('sku', 'Free Tier'))]"
-                            },
-                            "modelRouter": {
-                              "type": "Microsoft.CognitiveServices/accounts/deployments",
-                              "apiVersion": "2025-06-01",
-                              "name": "[format('{0}/{1}', format('{0}-openai', parameters('openAiConventionPrefix')), 'model-router')]",
-                              "sku": {
-                                "name": "GlobalStandard",
-                                "capacity": 50
-                              },
-                              "properties": {
-                                "model": {
-                                  "format": "OpenAI",
-                                  "name": "model-router",
-                                  "version": "2025-11-18"
-                                },
-                                "versionUpgradeOption": "OnceNewDefaultVersionAvailable",
-                                "raiPolicyName": "Microsoft.DefaultV2"
-                              },
-                              "dependsOn": [
-                                "openAi"
-                              ]
-                            }
-                          },
-                          "outputs": {
-                            "openAiId": {
-                              "type": "string",
-                              "value": "[resourceId('Microsoft.CognitiveServices/accounts', format('{0}-openai', parameters('openAiConventionPrefix')))]"
-                            },
-                            "openAiEndpoint": {
-                              "type": "string",
-                              "value": "[reference('openAi').endpoint]"
-                            },
-                            "openAiName": {
-                              "type": "string",
-                              "value": "[format('{0}-openai', parameters('openAiConventionPrefix'))]"
-                            }
-                          }
-                        }
-                      }
-                    },
                     "aiFoundryDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2025-04-01",
@@ -8256,10 +8013,6 @@
                     }
                   },
                   "outputs": {
-                    "openAiName": {
-                      "type": "string",
-                      "value": "[reference('openAiDeployment').outputs.openAiName.value]"
-                    },
                     "aiFoundryName": {
                       "type": "string",
                       "value": "[reference('aiFoundryDeployment').outputs.aiFoundryName.value]"
@@ -8267,8 +8020,6 @@
                     "aiResources": {
                       "type": "object",
                       "value": {
-                        "openAiId": "[reference('openAiDeployment').outputs.openAiId.value]",
-                        "openAiEndpoint": "[reference('openAiDeployment').outputs.openAiEndpoint.value]",
                         "aiFoundryId": "[reference('aiFoundryDeployment').outputs.aiFoundryId.value]",
                         "aiFoundryEndpoint": "[reference('aiFoundryDeployment').outputs.aiFoundryEndpoint.value]",
                         "aiProjectId": "[reference('aiFoundryDeployment').outputs.aiProjectId.value]"
@@ -9063,9 +8814,6 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
-                  "openAiAccountName": {
-                    "value": "[reference('aiDeployment').outputs.openAiName.value]"
-                  },
                   "aiFoundryAccountName": {
                     "value": "[reference('aiDeployment').outputs.aiFoundryName.value]"
                   },
@@ -9085,19 +8833,13 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "14565349200981324597"
+                      "templateHash": "15787030410488537869"
                     },
-                    "description": "Resource-scoped RBAC role assignments for Azure AI accounts, granting inference access to the backend managed identity.",
+                    "description": "Resource-scoped RBAC role assignments for Azure AI Foundry account, granting inference access to the backend managed identity.",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
                     "version": "2.0.0"
                   },
                   "parameters": {
-                    "openAiAccountName": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The name of the existing Azure OpenAI (Cognitive Services) account to scope role assignments to."
-                      }
-                    },
                     "aiFoundryAccountName": {
                       "type": "string",
                       "metadata": {
@@ -9113,33 +8855,14 @@
                   },
                   "variables": {
                     "azureAiUser": "a2c28859-6249-4e0c-8e86-a0b5ad18e86f",
-                    "cognitiveServicesOpenAiUser": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
                     "cognitiveServicesUser": "a97b65f3-24c7-4388-baec-2e87135dc908"
                   },
                   "resources": {
-                    "openAiAccount": {
-                      "existing": true,
-                      "type": "Microsoft.CognitiveServices/accounts",
-                      "apiVersion": "2025-10-01-preview",
-                      "name": "[parameters('openAiAccountName')]"
-                    },
                     "aiFoundryAccount": {
                       "existing": true,
                       "type": "Microsoft.CognitiveServices/accounts",
                       "apiVersion": "2025-10-01-preview",
                       "name": "[parameters('aiFoundryAccountName')]"
-                    },
-                    "backendOpenAiUser": {
-                      "type": "Microsoft.Authorization/roleAssignments",
-                      "apiVersion": "2022-04-01",
-                      "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName'))]",
-                      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('openAiAccountName')), parameters('backendPrincipalId'), variables('cognitiveServicesOpenAiUser'))]",
-                      "properties": {
-                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesOpenAiUser'))]",
-                        "principalId": "[parameters('backendPrincipalId')]",
-                        "principalType": "ServicePrincipal",
-                        "description": "Backend: OpenAI inference access on cognitive services account"
-                      }
                     },
                     "backendAiFoundryCognitiveUser": {
                       "type": "Microsoft.Authorization/roleAssignments",
@@ -9162,7 +8885,7 @@
                         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('azureAiUser'))]",
                         "principalId": "[parameters('backendPrincipalId')]",
                         "principalType": "ServicePrincipal",
-                        "description": "Backend: Azure AI User for AI Foundry inference operations"
+                        "description": "Backend: Azure AI User for AI Foundry inference operations (includes OpenAI model-router access)"
                       }
                     }
                   }

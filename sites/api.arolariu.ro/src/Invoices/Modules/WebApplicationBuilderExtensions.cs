@@ -99,7 +99,7 @@ public static class WebApplicationBuilderExtensions
     });
 
     // Broker services:
-    services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
+    services.AddScoped<IClassifierBroker, AzureClassifierBroker>();
     services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
     services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
     services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();

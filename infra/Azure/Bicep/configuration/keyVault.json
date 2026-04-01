@@ -65,14 +65,6 @@
       "value": "<your-cognitive-services-endpoint>"
     },
     {
-      "name": "DEVELOPMENT-OpenAIEndpoint",
-      "value": "<your-openai-endpoint>"
-    },
-    {
-      "name": "PRODUCTION-OpenAIEndpoint",
-      "value": "<your-openai-endpoint>"
-    },
-    {
       "name": "DEVELOPMENT-StorageEndpoint",
       "value": "<your-storage-account-endpoint>"
     },

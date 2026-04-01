@@ -154,7 +154,6 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
             "Identity:Tenant:Id",
-            "Endpoints:AI:OpenAI",
             "Endpoints:Database:SQL",
             "Endpoints:Database:NoSQL",
             "Endpoints:Storage:Blob",
@@ -247,10 +246,6 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "API-only and server-only. Prefer managed identity when supported, "
             "and never expose or log this secret value."
         ),
-    ),
-    "Endpoints:AI:OpenAI": ConfigKeyDocumentation(
-        description="OpenAI endpoint under the Endpoint hierarchy, used by API analysis and classification brokers.",
-        usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
     ),
     "Endpoints:Database:NoSQL": ConfigKeyDocumentation(
         description="NoSQL database endpoint under the Endpoint hierarchy, used by the API invoice document store.",

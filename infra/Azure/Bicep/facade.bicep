@@ -243,10 +243,9 @@ module appConfigRbac 'rbac/app-configuration-rbac.bicep' = {
   }
 }
 
-module openAiRbac 'rbac/openai-rbac.bicep' = {
+module openAiRbac 'rbac/ai-rbac.bicep' = {
   name: 'openAiRbac-${resourceDeploymentDate}'
   params: {
-    openAiAccountName: aiDeployment.outputs.openAiName
     aiFoundryAccountName: aiDeployment.outputs.aiFoundryName
     backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
   }

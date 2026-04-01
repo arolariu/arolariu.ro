@@ -63,11 +63,11 @@ using Microsoft.Extensions.Options;
 ///     public async Task ProcessDocumentAsync()
 ///     {
 ///         // Configuration is automatically kept up-to-date
-///         var aiEndpoint = _options.OpenAIEndpoint;
+///         var cognitiveEndpoint = _options.CognitiveServicesEndpoint;
 ///         var storageConnection = _options.StorageAccountEndpoint;
 ///
 ///         // Use current configuration values
-///         var aiClient = new OpenAIClient(new Uri(aiEndpoint), new DefaultAzureCredential());
+///         var cognitiveClient = new AzureAIClient(new Uri(cognitiveEndpoint), new DefaultAzureCredential());
 ///     }
 /// }
 /// </code>

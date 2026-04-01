@@ -15,11 +15,11 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Azure OpenAI concrete broker responsible for Large Language Model (LLM) backed enrichment of invoice domain aggregates.
+/// Azure AI Foundry concrete broker responsible for Large Language Model (LLM) backed enrichment of invoice domain aggregates.
 /// </summary>
 /// <remarks>
-/// <para><b>Role (The Standard):</b> Implements the <see cref="IOpenAiBroker"/> abstraction by issuing chat completion
-/// requests to Azure OpenAI and mapping raw responses back into domain objects. Provides ONLY translation and graceful
+/// <para><b>Role (The Standard):</b> Implements the <see cref="IClassifierBroker"/> abstraction by issuing chat completion
+/// requests to Azure AI Foundry (Cognitive Services) model router and mapping raw responses back into domain objects. Provides ONLY translation and graceful
 /// degradation — NO orchestration, persistence, retry policy, caching, or domain validation (handled upstream).</para>
 /// <para><b>Enrichment Pipeline:</b> Parallelizes LLM calls into 3 batches (when enabled by <see cref="AnalysisOptions"/>): 
 /// Batch 1 (invoice name + description), Batch 2 (all product categories + allergens), Batch 3 (possible recipes + invoice category). 
@@ -29,44 +29,43 @@ using Microsoft.Extensions.Logging;
 /// <para><b>Determinism:</b> Non-deterministic by design; repeated executions can yield variant textual outputs. Upstream caching or
 /// freeze-on-first-success strategies SHOULD be applied if immutability is desired.</para>
 /// <para><b>Thread Safety:</b> Reuses a single <see cref="AzureOpenAIClient"/> instance which is thread-safe; the class itself contains no mutable shared state.</para>
-/// <para><b>Security:</b> Uses <see cref="Azure.AzureKeyCredential"/> with the OpenAI API key from application configuration.
-/// Ensure environment variables (e.g. AZURE_CLIENT_ID) are correctly provisioned in deployment.</para>
+/// <para><b>Security:</b> Uses <see cref="Azure.AzureKeyCredential"/> with the AI Foundry (Cognitive Services) endpoint and API key from application configuration.
+/// Ensure environment variables are correctly provisioned in deployment.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public sealed partial class AzureOpenAiBroker : IOpenAiBroker
+public sealed partial class AzureClassifierBroker : IClassifierBroker
 {
   private readonly AzureOpenAIClient openAIClient;
-  private readonly ILogger<AzureOpenAiBroker> logger;
+  private readonly ILogger<AzureClassifierBroker> logger;
 
   /// <summary>
-  /// Initializes the broker with configuration-driven Azure OpenAI client settings and logger.
+  /// Initializes the broker with configuration-driven Azure AI Foundry (Cognitive Services) client settings and logger.
   /// </summary>
   /// <remarks>
   /// <para>Retrieves application options via <paramref name="optionsManager"/> (endpoint + credentials context) and builds a single
-  /// long-lived <see cref="AzureOpenAIClient"/> instance. In non-DEBUG builds a managed identity client id is injected to support
-  /// workload identity / federated credentials in Azure.</para>
+  /// long-lived <see cref="AzureOpenAIClient"/> instance connected to Azure AI Foundry model router.</para>
   /// <para>Throws fast on null dependency to fail early in composition root.</para>
   /// </remarks>
   /// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
   /// <param name="loggerFactory">Logger factory for creating category-specific loggers (MUST NOT be null).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> or <paramref name="loggerFactory"/> is null.</exception>
-  public AzureOpenAiBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
+  public AzureClassifierBroker(IOptionsManager optionsManager, ILoggerFactory loggerFactory)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
     ArgumentNullException.ThrowIfNull(loggerFactory);
 
-    this.logger = loggerFactory.CreateLogger<AzureOpenAiBroker>();
+    this.logger = loggerFactory.CreateLogger<AzureClassifierBroker>();
 
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var openAiEndpoint = options.OpenAIEndpoint;
-    var openAiApiKey = options.OpenAIKey;
+    var endpoint = options.CognitiveServicesEndpoint;  // AI Foundry endpoint
+    var apiKey = options.CognitiveServicesKey;          // AI Foundry key
 
     // Use AzureKeyCredential (same pattern as FormRecognizer + Translator brokers)
-    var credentials = new Azure.AzureKeyCredential(openAiApiKey);
+    var credentials = new Azure.AzureKeyCredential(apiKey);
 
     openAIClient = new AzureOpenAIClient(
-      endpoint: new Uri(openAiEndpoint),
+      endpoint: new Uri(endpoint),
       credential: credentials);
   }
 
