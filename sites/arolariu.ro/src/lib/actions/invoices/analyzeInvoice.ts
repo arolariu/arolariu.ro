@@ -98,17 +98,21 @@ export default async function analyzeInvoice({invoiceIdentifier, analysisOptions
       // Step 2. Make the API request to analyze the invoice
       addSpanEvent("bff.invoice.analyze.start");
       logWithTrace("info", "Making API request to analyze invoice", {}, "server");
-      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
+      const response = await fetchWithTimeout(
+        `/rest/v1/invoices/${invoiceIdentifier}/analyze`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userIdentifier,
+            analysisOptions,
+          }),
         },
-        body: JSON.stringify({
-          userIdentifier,
-          analysisOptions,
-        }),
-      });
+        60_000,
+      );
       addSpanEvent("bff.invoice.analyze.complete");
 
       if (response.ok) {

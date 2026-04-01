@@ -165,7 +165,7 @@ function CustomDayButton({
   const count = data?.count ?? 0;
   const isCurrentInvoiceDate = isSameDay(date, transactionDate);
   const intensityClass = getSpendingIntensityClass(amount, maxDayAmount);
-  const ringClass = isCurrentInvoiceDate ? styles["dayButtonRing"] : "";
+  const highlightClass = isCurrentInvoiceDate ? styles["dayButtonHighlight"] : "";
 
   const button = (
     <Button
@@ -174,7 +174,7 @@ function CustomDayButton({
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
       tabIndex={tabIndex}
-      className={`${styles["dayButton"]} ${intensityClass} ${ringClass} ${className}`}>
+      className={`${styles["dayButton"]} ${intensityClass} ${highlightClass} ${className}`}>
       <time dateTime={date.toISOString()}>{date.getDate()}</time>
     </Button>
   );
@@ -273,6 +273,8 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               month={month}
               disableNavigation
               hideNavigation
+              weekStartsOn={1}
+              ISOWeek
               className={styles["calendar"]}
               components={{
                 DayButton: CustomDayButton,

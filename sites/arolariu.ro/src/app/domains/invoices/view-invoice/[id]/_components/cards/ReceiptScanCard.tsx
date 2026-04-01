@@ -20,7 +20,7 @@ import {
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
-import {TbArrowLeft, TbArrowRight, TbDownload, TbMaximize, TbRotateClockwise, TbZoomIn, TbZoomOut, TbZoomReset} from "react-icons/tb";
+import {TbArrowLeft, TbArrowRight, TbDownload, TbRotateClockwise, TbZoomReset} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 
@@ -74,10 +74,6 @@ export function ReceiptScanCard(): React.JSX.Element {
     }
   }, [currentScanIndex]);
 
-  const handleOpenImage = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
   // Card zoom controls
   const handleZoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 0.25, 3));
@@ -95,13 +91,9 @@ export function ReceiptScanCard(): React.JSX.Element {
     setRotation((prev) => (prev + 90) % 360);
   }, []);
 
-  // Dialog zoom controls
-  const handleDialogZoomIn = useCallback(() => {
-    setDialogZoomLevel((prev) => Math.min(prev + 0.25, 3));
-  }, []);
-
-  const handleDialogZoomOut = useCallback(() => {
-    setDialogZoomLevel((prev) => Math.max(prev - 0.25, 0.5));
+  // Dialog zoom controls - toggle between normal and zoomed
+  const handleDialogImageClick = useCallback(() => {
+    setDialogZoomLevel((prev) => (prev === 1 ? 2 : 1));
   }, []);
 
   const handleDialogResetZoom = useCallback(() => {
@@ -165,6 +157,17 @@ export function ReceiptScanCard(): React.JSX.Element {
                   className={styles["dialogImageWrapper"]}
                   style={{
                     transform: `scale(${dialogZoomLevel}) rotate(${dialogRotation}deg)`,
+                    cursor: "pointer",
+                  }}
+                  onClick={handleDialogImageClick}
+                  role='button'
+                  tabIndex={0}
+                  aria-label={t("controls.toggleZoom")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleDialogImageClick();
+                    }
                   }}>
                   <Image
                     src={currentScanSrc}
@@ -178,40 +181,6 @@ export function ReceiptScanCard(): React.JSX.Element {
               {/* Dialog controls */}
               <div className={styles["dialogControls"]}>
                 <div className={styles["controlGroup"]}>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={handleDialogZoomIn}
-                          disabled={dialogZoomLevel >= 3}>
-                          <TbZoomIn className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t("controls.zoomIn")}</span>
-                        </Button>
-                      }
-                    />
-                    <TooltipContent>
-                      <p>{t("controls.zoomIn")}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={handleDialogZoomOut}
-                          disabled={dialogZoomLevel <= 0.5}>
-                          <TbZoomOut className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t("controls.zoomOut")}</span>
-                        </Button>
-                      }
-                    />
-                    <TooltipContent>
-                      <p>{t("controls.zoomOut")}</p>
-                    </TooltipContent>
-                  </Tooltip>
                   <Tooltip>
                     <TooltipTrigger
                       render={
@@ -374,22 +343,6 @@ export function ReceiptScanCard(): React.JSX.Element {
           </div>
         </CardContent>
         <CardFooter className={styles["cardFooter"]}>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant='outline'
-                  className={styles["expandButton"]}
-                  onClick={handleOpenImage}>
-                  <TbMaximize className={styles["zoomIcon"]} />
-                  {t("controls.fullScreen")}
-                </Button>
-              }
-            />
-            <TooltipContent>
-              <p>{t("controls.fullScreen")}</p>
-            </TooltipContent>
-          </Tooltip>
           {totalScans > 1 && (
             <div className={styles["scanNavigation"]}>
               {currentScanIndex > 0 && (

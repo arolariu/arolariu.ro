@@ -130,7 +130,7 @@ export function AnalysisPanel(): React.JSX.Element {
         });
 
         // Animate progress while waiting
-        const stepDelayMs = 800;
+        const stepDelayMs = 2000;
         const analysisSettledPromise = analysisPromise.then(
           () => true,
           () => true,
@@ -275,35 +275,42 @@ export function AnalysisPanel(): React.JSX.Element {
               </div>
 
               {/* Granular Analysis Options */}
-              <div className={styles["optionsSection"]}>
-                <p className={styles["optionsLabel"]}>{t("labels.granularOptions")}</p>
-                <div className={styles["optionsGrid"]}>
-                  {analysisOptions.map((option) => (
-                    <TooltipProvider key={option.id}>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              // eslint-disable-next-line react/jsx-no-bind -- simple handler
-                              onClick={() => handleAnalyze(option.id)}
-                              disabled={isAnalyzing}
-                              variant='outline'
-                              size='sm'
-                              className={styles["optionButton"]}>
-                              {option.icon}
-                              <span className={styles["optionLabel"]}>{option.label}</span>
-                              {selectedOption === option.id && isAnalyzing && <TbCheck className={styles["activeIcon"]} />}
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>
-                          <p>{option.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ))}
+              {invoice.items.length === 0 ? (
+                <div className={styles["optionsSection"]}>
+                  <p className={styles["optionsLabel"]}>{t("labels.granularOptions")}</p>
+                  <div className={styles["optionsGrid"]}>
+                    {analysisOptions.map((option) => (
+                      <TooltipProvider key={option.id}>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                // eslint-disable-next-line react/jsx-no-bind -- simple handler
+                                onClick={() => handleAnalyze(option.id)}
+                                disabled={isAnalyzing}
+                                variant='outline'
+                                size='sm'
+                                className={styles["optionButton"]}>
+                                {option.icon}
+                                <span className={styles["optionLabel"]}>{option.label}</span>
+                                {selectedOption === option.id && isAnalyzing && <TbCheck className={styles["activeIcon"]} />}
+                              </Button>
+                            }
+                          />
+                          <TooltipContent>
+                            <p>{option.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className={styles["completionMessage"]}>
+                  <TbCheck className={styles["completionIcon"]} />
+                  <p className={styles["completionText"]}>{t("labels.analysisComplete")}</p>
+                </div>
+              )}
 
               {/* Quick Tip */}
               <div className={styles["tip"]}>

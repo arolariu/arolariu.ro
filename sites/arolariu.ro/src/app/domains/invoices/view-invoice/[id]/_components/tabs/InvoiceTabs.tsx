@@ -1,27 +1,10 @@
 "use client";
 
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {formatEnum} from "@/lib/utils.generic";
-import {InvoiceAnalysisOptions, RecipeComplexity} from "@/types/invoices";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@arolariu/components";
+import {RecipeComplexity} from "@/types/invoices";
+import {Badge, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useState} from "react";
-import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbRefresh, TbToolsKitchen2} from "react-icons/tb";
+import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbToolsKitchen2} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
 
@@ -77,33 +60,12 @@ function getComplexityEmoji(complexity: RecipeComplexity): string {
  * - Ingredients list from invoice products
  * - Instructions display
  * - External recipe link (if available)
- * - "Regenerate Recipes" button to re-run analysis
  *
  * @returns Invoice tabs component with recipe and metadata display
  */
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
   const t = useTranslations("Invoices.ViewInvoice.invoiceTabs");
-  const [isRegenerating, setIsRegenerating] = useState(false);
-
-  /**
-   * Handles recipe regeneration by calling the analyzeInvoice server action.
-   * Reloads the page after successful analysis to display updated recipes.
-   */
-  const handleRegenerateRecipes = async (): Promise<void> => {
-    try {
-      setIsRegenerating(true);
-      await analyzeInvoice({
-        invoiceIdentifier: invoice.invoiceIdentifier,
-        analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis,
-      });
-      // Reload to fetch updated recipes
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to regenerate recipes:", error);
-      setIsRegenerating(false);
-    }
-  };
 
   return (
     <Card className={styles["card"]}>
@@ -131,123 +93,92 @@ export function InvoiceTabs(): React.JSX.Element {
             value='recipes'
             className={styles["tabsContent"]}>
             {invoice.possibleRecipes.length > 0 ? (
-              <>
-                <div className={styles["recipesHeader"]}>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={handleRegenerateRecipes}
-                          disabled={isRegenerating}
-                          className={styles["regenerateButton"]}>
-                          <TbRefresh className={isRegenerating ? styles["spinning"] : ""} />
-                          {t("actions.regenerate")}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t("actions.regenerateTooltip")}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className={styles["recipesGrid"]}>
-                  {invoice.possibleRecipes.map((recipe) => {
-                    const hasValidReference =
-                      recipe.referenceForMoreDetails
-                      && recipe.referenceForMoreDetails !== "https://arolariu.ro"
-                      && recipe.referenceForMoreDetails !== "";
+              <div className={styles["recipesGrid"]}>
+                {invoice.possibleRecipes.map((recipe) => {
+                  const hasValidReference =
+                    recipe.referenceForMoreDetails
+                    && recipe.referenceForMoreDetails !== "https://arolariu.ro"
+                    && recipe.referenceForMoreDetails !== "";
 
-                    return (
-                      <Card
-                        key={recipe.name}
-                        className={styles["recipeCard"]}>
-                        <CardHeader className={styles["recipeCardHeader"]}>
-                          <div className={styles["recipeHeader"]}>
-                            <CardTitle className={styles["recipeTitle"]}>{recipe.name}</CardTitle>
-                            <Badge variant={getComplexityVariant(recipe.complexity)}>
-                              {getComplexityEmoji(recipe.complexity)} {formatEnum(RecipeComplexity, recipe.complexity)}
-                            </Badge>
+                  return (
+                    <Card
+                      key={recipe.name}
+                      className={styles["recipeCard"]}>
+                      <CardHeader className={styles["recipeCardHeader"]}>
+                        <div className={styles["recipeHeader"]}>
+                          <CardTitle className={styles["recipeTitle"]}>{recipe.name}</CardTitle>
+                          <Badge variant={getComplexityVariant(recipe.complexity)}>
+                            {getComplexityEmoji(recipe.complexity)} {formatEnum(RecipeComplexity, recipe.complexity)}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className={styles["recipeBody"]}>
+                        <p className={styles["recipeDescription"]}>{recipe.description}</p>
+
+                        {/* Time Information */}
+                        <div className={styles["recipeDetails"]}>
+                          <div className={styles["recipeDetailItem"]}>
+                            <TbClock className={styles["tabIcon"]} />
+                            <span>{t("recipe.duration", {minutes: String(recipe.approximateTotalDuration)})}</span>
                           </div>
-                        </CardHeader>
-                        <CardContent className={styles["recipeBody"]}>
-                          <p className={styles["recipeDescription"]}>{recipe.description}</p>
-
-                          {/* Time Information */}
-                          <div className={styles["recipeDetails"]}>
-                            <div className={styles["recipeDetailItem"]}>
-                              <TbClock className={styles["tabIcon"]} />
-                              <span>{t("recipe.duration", {minutes: String(recipe.duration)})}</span>
+                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
+                            <div className={styles["recipeDetailMuted"]}>
+                              {t("recipe.prepCook", {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
                             </div>
-                            {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
-                              <div className={styles["recipeDetailMuted"]}>
-                                {t("recipe.prepCook", {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
-                              </div>
-                            )}
+                          )}
+                        </div>
+
+                        {/* Ingredients List */}
+                        {recipe.ingredients.length > 0 && (
+                          <div className={styles["ingredientsSection"]}>
+                            <div className={styles["ingredientsHeader"]}>
+                              <TbToolsKitchen2 className={styles["sectionIcon"]} />
+                              <h4 className={styles["sectionTitle"]}>{t("recipe.ingredients")}</h4>
+                            </div>
+                            <ul className={styles["ingredientsList"]}>
+                              {recipe.ingredients.map((ingredient, index) => (
+                                <li
+                                  key={`${ingredient}-${index}`}
+                                  className={styles["ingredientItem"]}>
+                                  {ingredient}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
+                        )}
 
-                          {/* Ingredients List */}
-                          {recipe.ingredients.length > 0 && (
-                            <div className={styles["ingredientsSection"]}>
-                              <div className={styles["ingredientsHeader"]}>
-                                <TbToolsKitchen2 className={styles["sectionIcon"]} />
-                                <h4 className={styles["sectionTitle"]}>{t("recipe.ingredients")}</h4>
-                              </div>
-                              <ul className={styles["ingredientsList"]}>
-                                {recipe.ingredients.map((ingredient, index) => (
-                                  <li
-                                    key={`${ingredient.name}-${index}`}
-                                    className={styles["ingredientItem"]}>
-                                    {ingredient.name}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                        {/* Instructions */}
+                        {recipe.instructions && (
+                          <div className={styles["instructionsSection"]}>
+                            <h4 className={styles["sectionTitle"]}>{t("recipe.instructions")}</h4>
+                            <p className={styles["instructionsText"]}>{recipe.instructions}</p>
+                          </div>
+                        )}
 
-                          {/* Instructions */}
-                          {recipe.instructions && (
-                            <div className={styles["instructionsSection"]}>
-                              <h4 className={styles["sectionTitle"]}>{t("recipe.instructions")}</h4>
-                              <p className={styles["instructionsText"]}>{recipe.instructions}</p>
-                            </div>
-                          )}
-
-                          {/* External Link */}
-                          {hasValidReference && (
-                            <Button
-                              variant='link'
-                              className={styles["recipeLink"]}
-                              asChild>
-                              <a
-                                href={recipe.referenceForMoreDetails}
-                                target='_blank'
-                                rel='noopener noreferrer'>
-                                {t("recipe.viewRecipe")}
-                                <TbExternalLink className={styles["externalLinkIcon"]} />
-                              </a>
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </>
+                        {/* External Link */}
+                        {hasValidReference && (
+                          <Button
+                            variant='link'
+                            className={styles["recipeLink"]}
+                            asChild>
+                            <a
+                              href={recipe.referenceForMoreDetails}
+                              target='_blank'
+                              rel='noopener noreferrer'>
+                              {t("recipe.viewRecipe")}
+                              <TbExternalLink className={styles["externalLinkIcon"]} />
+                            </a>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             ) : (
               <div className={styles["emptyState"]}>
                 <TbChefHat className={styles["emptyIcon"]} />
                 <p className={styles["emptyStateText"]}>{t("empty.recipes")}</p>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={handleRegenerateRecipes}
-                  disabled={isRegenerating}
-                  className={styles["generateButton"]}>
-                  <TbChefHat />
-                  {t("actions.generate")}
-                </Button>
               </div>
             )}
           </TabsContent>

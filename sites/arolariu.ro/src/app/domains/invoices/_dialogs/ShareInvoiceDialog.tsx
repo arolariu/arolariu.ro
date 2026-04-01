@@ -155,6 +155,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
+  // Null guard: return early if no payload
+  if (!payload) return <></>;
+
   const {invoice} = payload as {invoice: Invoice};
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 

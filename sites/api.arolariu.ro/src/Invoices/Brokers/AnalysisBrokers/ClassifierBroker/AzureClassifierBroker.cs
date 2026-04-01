@@ -119,7 +119,7 @@ public sealed partial class AzureClassifierBroker : IClassifierBroker
     var recipesTask = GenerateInvoiceRecipes(invoice);
     var categoryTask = GenerateInvoiceCategory(invoice);
     await Task.WhenAll(recipesTask, categoryTask).ConfigureAwait(false);
-    
+
     var possibleRecipesCollection = await recipesTask.ConfigureAwait(false);
     foreach (var recipe in possibleRecipesCollection)
     {

@@ -314,7 +314,7 @@ public sealed partial class AzureFormRecognizerBroker
     {
       return (decimal)field.ValueCurrency.Amount;
     }
-    
+
     return 0m;
   }
 }

@@ -2234,7 +2234,8 @@
           "reset": "Reset Zoom",
           "rotate": "Rotate",
           "download": "Download",
-          "fullScreen": "Full Screen"
+          "fullScreen": "Full Screen",
+          "toggleZoom": "Click to toggle zoom"
         },
         "navigation": {
           "previous": "Previous",
@@ -2736,7 +2737,8 @@
         "labels": {
           "lastAnalyzed": "Last Analyzed",
           "updates": "{count, plural, one {# update} other {# updates}}",
-          "granularOptions": "Or choose specific analysis"
+          "granularOptions": "Or choose specific analysis",
+          "analysisComplete": "Analysis Complete — All data has been extracted"
         },
         "toasts": {
           "error": {

@@ -2234,7 +2234,8 @@
           "reset": "Resetează zoom",
           "rotate": "Rotește",
           "download": "Descarcă",
-          "fullScreen": "Ecran complet"
+          "fullScreen": "Ecran complet",
+          "toggleZoom": "Clic pentru a comuta zoom-ul"
         },
         "navigation": {
           "previous": "Anterior",
@@ -2751,7 +2752,8 @@
         "labels": {
           "granularOptions": "Sau alege o analiză specifică",
           "updates": "{count, plural, one {# actualizare} other {# actualizări}}",
-          "lastAnalyzed": "Ultima Analiză"
+          "lastAnalyzed": "Ultima Analiză",
+          "analysisComplete": "Analiză Completă — Toate datele au fost extrase"
         }
       },
       "export": {

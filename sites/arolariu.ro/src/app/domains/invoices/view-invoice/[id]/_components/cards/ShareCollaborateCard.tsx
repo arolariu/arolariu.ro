@@ -6,7 +6,7 @@
  * Displays invoice sharing status and provides quick actions for collaboration:
  * - Sharing status badge (Private/Shared/Public)
  * - Count of users the invoice is shared with
- * - Quick action buttons: Copy Link, Share via Email
+ * - Public/Private toggle switch
  * - Activity summary (created date, last modified)
  * - "Manage Sharing" button to open the full ShareInvoiceDialog
  *
@@ -31,10 +31,9 @@
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
-import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useTransition} from "react";
-import {TbClipboard, TbLock, TbMail, TbQrcode, TbShare, TbUsers, TbWorld} from "react-icons/tb";
+import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
@@ -56,9 +55,7 @@ type SharingStatus = "private" | "public" | "shared";
  * **Features:**
  * 1. Sharing status badge with appropriate icon and color
  * 2. Count of shared users (if applicable)
- * 3. Quick action buttons:
- *    - Copy Link: Copies invoice URL to clipboard with toast feedback
- *    - Share via Email: Opens ShareInvoiceDialog in email mode
+ * 3. Public/Private toggle switch with optimistic updates
  * 4. Activity summary:
  *    - Created date (relative time)
  *    - Last modified date (relative time)
@@ -70,8 +67,8 @@ type SharingStatus = "private" | "public" | "shared";
  * - Otherwise → Shared with N people
  *
  * **User Experience:**
- * - Toast notifications for clipboard actions
- * - Animated hover effects on action buttons
+ * - Toast notifications for state changes
+ * - Optimistic UI updates for toggle switch
  * - Clear visual hierarchy with icons and badges
  *
  * @returns The share & collaborate card component
@@ -202,71 +199,16 @@ export function ShareCollaborateCard(): React.JSX.Element {
   }, [sharingStatus, invoice, setInvoice, t]);
 
   /**
-   * Handles copying the invoice link to clipboard.
-   *
-   * @remarks
-   * **Behavior:**
-   * 1. Constructs full invoice URL from window.location
-   * 2. Uses Clipboard API to copy to clipboard
-   * 3. Shows success toast with feedback
-   * 4. Falls back to error toast if Clipboard API fails
-   *
-   * **Performance:** Memoized with useCallback.
-   */
-  const handleCopyLink = useCallback(async (): Promise<void> => {
-    try {
-      const invoiceUrl = `${window.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
-      await navigator.clipboard.writeText(invoiceUrl);
-      toast.success(t("copied"));
-    } catch (error) {
-      console.error("Failed to copy link:", error);
-      toast.error(t("copyError"));
-    }
-  }, [invoice.id, t]);
-
-  /**
-   * Handles opening a QR code view with the share link.
-   *
-   * @remarks
-   * For now, just copies the link to clipboard. QR code generation
-   * can be added in a future enhancement with a dedicated dialog.
-   */
-  const handleShowQRCode = useCallback(async (): Promise<void> => {
-    try {
-      const invoiceUrl = `${window.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
-      await navigator.clipboard.writeText(invoiceUrl);
-      toast.success(t("qrCopied"));
-    } catch (error) {
-      console.error("Failed to copy link for QR:", error);
-      toast.error(t("copyError"));
-    }
-  }, [invoice.id, t]);
-
-  /**
-   * Handles opening the ShareInvoiceDialog for email sharing.
-   *
-   * @remarks
-   * Opens the dialog using the DialogContext. The ShareInvoiceDialog
-   * component handles the email/public/private sharing logic internally.
-   *
-   * **Performance:** Memoized with useCallback.
-   */
-  const handleShareEmail = useCallback((): void => {
-    openShareDialog();
-  }, [openShareDialog]);
-
-  /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.
    *
    * @remarks
-   * Same as handleShareEmail - opens the full ShareInvoiceDialog.
-   * Separated for semantic clarity and potential future divergence.
+   * Opens the full ShareInvoiceDialog for managing all sharing settings.
    *
    * **Performance:** Memoized with useCallback.
    */
   const handleManageSharing = useCallback((): void => {
-    openShareDialog();
-  }, [openShareDialog]);
+    openShareDialog({invoice});
+  }, [invoice, openShareDialog]);
 
   return (
     <Card>
@@ -315,48 +257,6 @@ export function ShareCollaborateCard(): React.JSX.Element {
               <span className={styles["sharedWithCount"]}>{sharedWithCount} people</span>
             </div>
           )}
-        </div>
-
-        {/* Quick Actions Section */}
-        <div className={styles["actionsSection"]}>
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleCopyLink}
-              className={styles["actionButton"]}>
-              <TbClipboard className={styles["buttonIcon"]} />
-              {t("copyLink")}
-            </Button>
-          </motion.div>
-
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleShowQRCode}
-              className={styles["actionButton"]}>
-              <TbQrcode className={styles["buttonIcon"]} />
-              {t("qrCode")}
-            </Button>
-          </motion.div>
-
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleShareEmail}
-              className={styles["actionButton"]}>
-              <TbMail className={styles["buttonIcon"]} />
-              {t("shareEmail")}
-            </Button>
-          </motion.div>
         </div>
 
         {/* Activity Summary Section */}

@@ -84,7 +84,7 @@ export enum RecipeComplexity {
  * **Time Fields:**
  * - `preparationTime`: Active prep work (chopping, measuring)
  * - `cookingTime`: Passive cooking (baking, simmering)
- * - `duration`: Total time = preparationTime + cookingTime
+ * - `approximateTotalDuration`: Total time = preparationTime + cookingTime
  *
  * **External References:**
  * `referenceForMoreDetails` links to the source recipe (food blog,
@@ -95,7 +95,7 @@ export enum RecipeComplexity {
  * const recipe: Recipe = {
  *   name: "Simple Pasta Carbonara",
  *   description: "Classic Italian pasta with eggs, cheese, and pancetta",
- *   duration: 25,
+ *   approximateTotalDuration: 25,
  *   complexity: RecipeComplexity.Normal,
  *   ingredients: [pastaProduct, eggProduct, cheeseProduct],
  *   instructions: "1. Cook pasta... 2. Fry pancetta... 3. Mix eggs...",
@@ -119,14 +119,14 @@ export type Recipe = {
   /** The description of the recipe. */
   description: string;
 
-  /** The duration of the recipe, in minutes */
-  duration: number;
+  /** The approximate total duration of the recipe, in minutes */
+  approximateTotalDuration: number;
 
   /** The complexity level of the recipe. */
   complexity: RecipeComplexity;
 
   /** The list of ingredients for the recipe. */
-  ingredients: Product[];
+  ingredients: string[];
 
   /** The cooking instructions for the recipe. */
   instructions: string;
@@ -154,7 +154,7 @@ export type Recipe = {
  * custom recipes linked to their invoice products.
  *
  * **Validation:**
- * - `duration` should equal `preparationTime` + `cookingTime`
+ * - `approximateTotalDuration` should equal `preparationTime` + `cookingTime`
  * - `referenceForMoreDetails` must be a valid URL if provided
  *
  * @example

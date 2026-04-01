@@ -163,9 +163,16 @@
   @include transition(all);
 }
 
-.dayButtonRing {
-  outline: 2px solid color('primary');
-  outline-offset: 1px;
+.dayButtonHighlight {
+  background-color: color('primary');
+  color: color('primary-foreground');
+  font-weight: font-weight('semibold');
+
+  &:hover {
+    background-color: color('primary');
+    color: color('primary-foreground');
+    opacity: 0.9;
+  }
 }
 
 .iconMutedShrink {

@@ -32,7 +32,7 @@ import {
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
-import {TbEdit, TbPlus, TbSearch, TbTag, TbTrash} from "react-icons/tb";
+import {TbEdit, TbFlask, TbPlus, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
