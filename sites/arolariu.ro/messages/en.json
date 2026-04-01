@@ -1890,7 +1890,9 @@
         "aria": {
           "selectAllInvoices": "Select all invoices",
           "selectInvoice": "Select invoice {name}",
-          "rowsPerPage": "Rows per page"
+          "rowsPerPage": "Rows per page",
+          "sortByDate": "Sort by date",
+          "sortByAmount": "Sort by amount"
         },
         "viewInvoice": "View Invoice",
         "rowsPerPage": "Rows per page:",

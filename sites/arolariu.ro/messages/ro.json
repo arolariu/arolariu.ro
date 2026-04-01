@@ -1890,7 +1890,9 @@
         "aria": {
           "selectAllInvoices": "Selectează toate facturile",
           "selectInvoice": "Selectează factură {name}",
-          "rowsPerPage": "Rânduri pe pagină"
+          "rowsPerPage": "Rânduri pe pagină",
+          "sortByDate": "Sortare după dată",
+          "sortByAmount": "Sortare după sumă"
         },
         "viewInvoice": "Vede Factură",
         "rowsPerPage": "Rânduri pe pagină:",

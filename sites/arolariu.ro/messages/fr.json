@@ -1890,7 +1890,9 @@
         "aria": {
           "selectAllInvoices": "Sélectionner toutes les factures",
           "selectInvoice": "Sélectionner facture {name}",
-          "rowsPerPage": "Lignes par page"
+          "rowsPerPage": "Lignes par page",
+          "sortByDate": "Trier par date",
+          "sortByAmount": "Trier par montant"
         },
         "viewInvoice": "Voir Facture",
         "rowsPerPage": "Lignes par page:",
