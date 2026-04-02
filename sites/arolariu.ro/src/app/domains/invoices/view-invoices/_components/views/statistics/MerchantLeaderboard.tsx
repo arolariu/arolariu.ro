@@ -21,6 +21,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
 
@@ -34,8 +35,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -44,8 +45,9 @@ type CustomTooltipProps = {
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  if (!firstItem) return null;
   const data = firstItem.payload;
 
   return (
@@ -75,6 +77,22 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
       color: "hsl(var(--chart-2))",
     },
   };
+
+  // Empty state
+  if (data.length === 0) {
+    return (
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
+          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent className={styles["emptyContent"]}>
+          <TbChartBar className={styles["emptyIcon"]} />
+          <p className={styles["emptyText"]}>{t("empty")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Truncate merchant IDs for display
   const displayData = data.map((item) => ({
@@ -113,15 +131,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                    currency={currency}
-                  />
-                }
-              />
+              <Tooltip content={<CustomTooltip currency={currency} />} />
               <Bar
                 dataKey='totalSpent'
                 fill='hsl(var(--chart-2))'

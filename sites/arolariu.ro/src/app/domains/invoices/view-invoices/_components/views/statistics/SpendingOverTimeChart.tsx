@@ -50,7 +50,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipMonth"]}>{data.monthName}</p>
+      <p className={styles["tooltipMonth"]}>{data.month}</p>
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.amount)} {currency}
       </p>
@@ -119,7 +119,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                 </linearGradient>
               </defs>
               <XAxis
-                dataKey='monthName'
+                dataKey='month'
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}

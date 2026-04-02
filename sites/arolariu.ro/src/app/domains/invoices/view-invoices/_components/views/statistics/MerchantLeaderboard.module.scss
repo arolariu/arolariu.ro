@@ -71,3 +71,34 @@
   font-size: font-size('xs');
   color: color('muted-foreground');
 }
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyContent {
+  padding: 0 space(6) space(6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  gap: space(4);
+
+  @include respond-to('md') {
+    min-height: 400px;
+  }
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  color: color('muted-foreground');
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-align: center;
+  max-width: 300px;
+}
