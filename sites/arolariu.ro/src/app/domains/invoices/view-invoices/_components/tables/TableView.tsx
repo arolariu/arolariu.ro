@@ -38,12 +38,16 @@ type Props = Readonly<{
   handlePrevPage: () => void;
   handleNextPage: () => void;
   handlePageSizeChange: (size: number) => void;
+  sortBy: "date" | "amount" | "name";
+  sortDirection: "asc" | "desc";
+  onSort: (field: "date" | "amount" | "name") => void;
 }>;
 
 export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoices.tableView");
-  const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
+  const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange, sortBy, sortDirection, onSort} =
+    props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
@@ -97,6 +101,19 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const isAllSelected = invoices.length > 0 && selectedCountOnPage === invoices.length;
   const isIndeterminate = selectedCountOnPage > 0 && selectedCountOnPage < invoices.length;
 
+  /**
+   * Handle key down events for sortable headers (accessibility).
+   */
+  const handleSortKeyDown = useCallback(
+    (e: React.KeyboardEvent, field: "date" | "amount" | "name") => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSort(field);
+      }
+    },
+    [onSort],
+  );
+
   return (
     <Table>
       <TableHeader>
@@ -109,10 +126,58 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               aria-label={t("aria.selectAllInvoices")}
             />
           </TableHead>
-          <TableHead>{t("columns.invoice")}</TableHead>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("name")}
+            role='columnheader'
+            aria-sort={sortBy === "name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "name")}>
+            {t("columns.invoice")}
+            {sortBy === "name" && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
+          </TableHead>
           <TableHead>{t("columns.category")}</TableHead>
-          <TableHead>{t("columns.date")}</TableHead>
-          <TableHead>{t("columns.amount")}</TableHead>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("date")}
+            role='columnheader'
+            aria-sort={sortBy === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "date")}>
+            {t("columns.date")}
+            {sortBy === "date" && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
+          </TableHead>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("amount")}
+            role='columnheader'
+            aria-sort={sortBy === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "amount")}>
+            {t("columns.amount")}
+            {sortBy === "amount" && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
+          </TableHead>
           <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
