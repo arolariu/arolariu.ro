@@ -27,6 +27,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useRouter} from "next/navigation";
 import {useCallback, useMemo, useState} from "react";
 import {TbTag} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -92,6 +93,7 @@ interface BulkCategoryDialogPayload {
  */
 export default function BulkCategoryDialog(): React.JSX.Element {
   const t = useTranslations("Invoices.EditInvoice.bulkCategoryDialog");
+  const router = useRouter();
   const {
     currentDialog: {payload},
     isOpen,
@@ -201,8 +203,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       if (errors.length === 0) {
         toast.success(t("success.saved", {count: successCount}));
         close();
-        // Trigger page refresh to show updated data
-        globalThis.window.location.reload();
+        router.refresh();
       } else if (successCount > 0) {
         toast.warning(
           t("success.partialSuccess", {
@@ -222,7 +223,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       setIsSaving(false);
       setUpdateProgress(null);
     }
-  }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, t]);
+  }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, router, t]);
 
   if (!selectedProducts || selectedProducts.length === 0) {
     return <></>;

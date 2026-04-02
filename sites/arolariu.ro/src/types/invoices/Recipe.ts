@@ -97,7 +97,7 @@ export enum RecipeComplexity {
  *   description: "Classic Italian pasta with eggs, cheese, and pancetta",
  *   approximateTotalDuration: 25,
  *   complexity: RecipeComplexity.Normal,
- *   ingredients: [pastaProduct, eggProduct, cheeseProduct],
+ *   ingredients: ["Pasta", "Eggs", "Parmesan Cheese"],
  *   instructions: "1. Cook pasta... 2. Fry pancetta... 3. Mix eggs...",
  *   preparationTime: 10,
  *   cookingTime: 15,
@@ -109,7 +109,6 @@ export enum RecipeComplexity {
  * ```
  *
  * @see {@link RecipeComplexity} for difficulty levels
- * @see {@link Product} for ingredient structure
  * @see {@link Invoice.possibleRecipes} for invoice attachment
  */
 export type Recipe = {

@@ -119,7 +119,7 @@ export function ExportDialog(): React.JSX.Element {
           item.quantity.toString(),
           formatAmount(item.unitPrice),
           formatAmount(item.totalPrice),
-          `"${item.category}"`,
+          `"${String(item.category).replace(/"/g, '""')}"`,
         ];
         csvRows.push(row.join(","));
       }

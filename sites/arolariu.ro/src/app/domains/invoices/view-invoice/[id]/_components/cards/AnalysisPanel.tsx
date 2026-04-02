@@ -147,7 +147,8 @@ export function AnalysisPanel(): React.JSX.Element {
             setCurrentStep(steps[i] ?? t("steps.processing"));
             setProgress(((i + 1) / steps.length) * 95);
 
-            await Promise.race([analysisPromise.catch(() => null), delay(stepDelayMs)]);
+            const doneAfterDelay = await Promise.race([analysisSettledPromise, delay(stepDelayMs).then(() => false)]);
+            if (doneAfterDelay) return;
           }
         };
 

@@ -171,6 +171,9 @@ export async function generateUploadSasUrl(input: GenerateSasUrlInput): Promise<
       logWithTrace("info", "Generating SAS URL for production", {blobName}, "server");
 
       const startDate = new Date();
+      // 30 minutes balances security (short-lived token) with usability (allows
+      // slow mobile uploads over cellular connections). SAS is scoped to
+      // create+write only — no read or delete permissions granted.
       const expiryDate = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
       const userDelegationKey = await storageClient.getUserDelegationKey(startDate, expiryDate);
