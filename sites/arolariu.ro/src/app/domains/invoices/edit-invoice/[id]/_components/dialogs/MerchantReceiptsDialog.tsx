@@ -97,19 +97,21 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   useEffect(() => {
     // Fetch receipts from the server or API
     // For now, we'll use a timeout of 3 sec and do mock invoices
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setReceipts([]);
     }, 3000);
+
+    return () => clearTimeout(timeoutId);
   }, [payload]);
 
   // Handle date filter change
   const handleDateFilterChange = (value: string) => {
-    console.log("Selected date filter:", value);
+    // Handle date filter selection
   };
 
   // Handle sort change
   const handleSortChange = (value: string) => {
-    console.log("Selected sort option:", value);
+    // Handle sort option selection
     resetPagination();
   };
 

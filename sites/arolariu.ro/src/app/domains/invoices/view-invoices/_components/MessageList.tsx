@@ -57,9 +57,9 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>
-              {message.content.split("\n").map((line) => (
+              {message.content.split("\n").map((line, lineIndex) => (
                 <p
-                  key={line}
+                  key={`${message.id}-line-${lineIndex}`}
                   className={styles["messageLine"]}>
                   {line}
                 </p>

@@ -326,8 +326,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
   // Handle add new item
   const handleAddItem = useCallback(() => {
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newItem: Product = {
-      rawName: t("newItem.defaultName"),
+      rawName: `${t("newItem.defaultName")}_${uniqueSuffix}`,
       genericName: t("newItem.defaultName"),
       category: ProductCategory.NOT_DEFINED,
       quantity: 1,
@@ -372,7 +373,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         const result = await patchInvoice({
           invoiceId: invoice.id,
           payload: {
-            // @ts-expect-error - items is not in PatchInvoicePayload type but backend supports it
             items: updatedItems,
           },
         });
@@ -417,7 +417,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         const result = await patchInvoice({
           invoiceId: invoice.id,
           payload: {
-            // @ts-expect-error - items is not in PatchInvoicePayload type but backend supports it
             items: updatedItems,
           },
         });
@@ -684,6 +683,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
                           autoFocus
+                          aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.rawName})}
                           className={styles["editInput"]}
                         />
                       ) : (
@@ -742,6 +742,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
+                        aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.rawName})}
                         className={styles["editInput"]}
                       />
                     ) : (
@@ -760,6 +761,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
+                        aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.rawName})}
                         className={styles["editInput"]}
                       />
                     ) : (

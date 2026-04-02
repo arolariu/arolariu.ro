@@ -119,7 +119,7 @@ export function InvoiceContextProvider({
       merchant,
       setInvoice,
     }),
-    [invoice, merchant],
+    [invoice, merchant, setInvoice],
   );
 
   return <InvoiceContext value={value}>{children}</InvoiceContext>;

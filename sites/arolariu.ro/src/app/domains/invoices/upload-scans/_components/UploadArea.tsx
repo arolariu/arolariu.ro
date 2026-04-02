@@ -24,16 +24,25 @@ const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
 /** Accepted file extensions */
 const ACCEPTED_EXTENSIONS = ".jpg,.jpeg,.png,.pdf";
 
+/** Valid file extensions for programmatic validation */
+const VALID_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
+
 /** Maximum file size in bytes (10MB) */
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 /**
- * Checks if a file is valid based on type and size constraints.
+ * Checks if a file is valid based on type, extension, and size constraints.
  * @param file - The file to validate
- * @returns True if the file is valid
+ * @returns True if the file passes all validation checks
  */
 function isValidFile(file: File): boolean {
-  return ACCEPTED_TYPES.has(file.type) && file.size <= MAX_FILE_SIZE;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return (
+    ACCEPTED_TYPES.has(file.type)
+    && file.size <= MAX_FILE_SIZE
+    && extension !== undefined
+    && VALID_EXTENSIONS.has(extension)
+  );
 }
 
 /**
