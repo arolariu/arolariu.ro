@@ -3,9 +3,9 @@
 import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {useWindowSize} from "@arolariu/components";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useMemo} from "react";
 import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
-import {useInvoiceFilters} from "../../_hooks/useInvoiceFilters";
+import {useInvoiceFilters, type FilterState} from "../../_hooks/useInvoiceFilters";
 import FilterBar from "../filters/FilterBar";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
@@ -67,7 +67,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   // Pagination for filtered results
   const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
     items: filteredInvoices,
-    initialPageSize: 10,
+    initialPageSize: 20,
     searchQuery: "", // Search is handled by URL filters
   });
 
@@ -118,6 +118,36 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   );
 
   /**
+   * Parse sort param into field and direction.
+   */
+  const {sortBy, sortDirection} = useMemo(() => {
+    const sortParam = filters.sortBy;
+    const parts = sortParam.split("-");
+    const dir = parts.pop() as "asc" | "desc";
+    const field = parts.join("-") as "date" | "amount" | "name";
+    return {sortBy: field, sortDirection: dir};
+  }, [filters.sortBy]);
+
+  /**
+   * Handle column sort click.
+   * Toggles direction if same field, otherwise defaults to desc (or asc for name).
+   */
+  const handleSort = useCallback(
+    (field: "date" | "amount" | "name") => {
+      const currentSort = filters.sortBy;
+      const [currentField] = currentSort.split("-");
+      const currentDir = currentSort.endsWith("-asc") ? "asc" : "desc";
+
+      // Toggle direction if same field, otherwise default to desc (or asc for name)
+      const newDir = currentField === field ? (currentDir === "asc" ? "desc" : "asc") : field === "name" ? "asc" : "desc";
+
+      setFilters({sortBy: `${field}-${newDir}` as FilterState["sortBy"]});
+      setCurrentPage(1); // Reset to first page when sort changes
+    },
+    [filters.sortBy, setFilters, setCurrentPage],
+  );
+
+  /**
    * Render view content based on view mode from URL.
    */
   const viewContent =
@@ -130,9 +160,20 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
         handlePrevPage={handlePrevPage}
         handleNextPage={handleNextPage}
         handlePageSizeChange={handlePageSizeChange}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
     ) : (
-      <GridView invoices={paginatedItems} />
+      <GridView
+        invoices={paginatedItems}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePrevPage={handlePrevPage}
+        handleNextPage={handleNextPage}
+        handlePageSizeChange={handlePageSizeChange}
+      />
     );
 
   return (

@@ -1,5 +1,6 @@
 "use client";
 
+import {getTransactionYear, toRON} from "@/lib/currency";
 import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
@@ -114,11 +115,23 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
         break;
       }
       case "amount-desc": {
-        sorted.sort((a, b) => b.paymentInformation.totalCostAmount - a.paymentInformation.totalCostAmount);
+        sorted.sort((a, b) => {
+          const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
+          const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
+          const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
+          const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
+          return amountB - amountA;
+        });
         break;
       }
       case "amount-asc": {
-        sorted.sort((a, b) => a.paymentInformation.totalCostAmount - b.paymentInformation.totalCostAmount);
+        sorted.sort((a, b) => {
+          const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
+          const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
+          const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
+          const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
+          return amountA - amountB;
+        });
         break;
       }
       case "name-asc": {
