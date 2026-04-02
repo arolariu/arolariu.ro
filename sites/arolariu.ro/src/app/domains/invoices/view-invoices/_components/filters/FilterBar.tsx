@@ -138,8 +138,8 @@ export default function FilterBar({
       amountMax: null,
       categories: [],
       paymentTypes: [],
-      sortBy: "date",
-      sortOrder: "desc",
+      sortBy: null,
+      sortOrder: null,
     });
   }, [onFiltersChange]);
 
@@ -209,12 +209,17 @@ export default function FilterBar({
   /**
    * Handle sort change.
    * Splits the combined value (e.g., "date-desc") into separate sortBy and sortOrder.
+   * Special value "none" clears sorting.
    */
   const handleSortChange = useCallback(
     (value: string) => {
+      if (value === "none") {
+        onFiltersChange({sortBy: null, sortOrder: null});
+        return;
+      }
       const parts = value.split("-");
       const direction = parts.pop() as "asc" | "desc";
-      const field = parts.join("-") as FilterState["sortBy"];
+      const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
       onFiltersChange({
         sortBy: field,
         sortOrder: direction,
@@ -378,12 +383,13 @@ export default function FilterBar({
       <div className={styles["filterSection"]}>
         <Label className={styles["filterLabel"]}>{t("filters.sortBy")}</Label>
         <Select
-          value={`${filters.sortBy}-${filters.sortOrder}`}
+          value={filters.sortBy && filters.sortOrder ? `${filters.sortBy}-${filters.sortOrder}` : "none"}
           onValueChange={handleSortChange}>
           <SelectTrigger className={styles["sortSelect"]}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value='none'>{t("filters.sortOptions.none")}</SelectItem>
             <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
             <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
             <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>

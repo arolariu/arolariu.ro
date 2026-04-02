@@ -1645,7 +1645,8 @@
             "amountHighToLow": "Amount (high to low)",
             "amountLowToHigh": "Amount (low to high)",
             "nameAZ": "Name (A-Z)",
-            "nameZA": "Name (Z-A)"
+            "nameZA": "Name (Z-A)",
+            "none": "No sorting (default order)"
           },
           "title": "Filters",
           "button": "Filters",
@@ -1745,7 +1746,8 @@
             },
             "tooltip": {
               "invoiceCount": "{count} invoices"
-            }
+            },
+            "empty": "No merchant data available yet"
           },
           "merchantTrends": {
             "title": "Merchant Spending Trends",
@@ -2288,6 +2290,10 @@
           "normalPattern": {
             "title": "Normal Shopping Pattern",
             "description": "Your spending is within typical range"
+          },
+          "insufficientData": {
+            "title": "Building Your Spending Profile",
+            "description": "Add more invoices to see seasonal insights and spending patterns"
           }
         }
       },

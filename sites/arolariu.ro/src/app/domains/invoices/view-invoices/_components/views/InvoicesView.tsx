@@ -5,7 +5,7 @@ import type {Invoice} from "@/types/invoices";
 import {useWindowSize} from "@arolariu/components";
 import {useCallback, useEffect, useMemo} from "react";
 import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
-import {useInvoiceFilters, type FilterState} from "../../_hooks/useInvoiceFilters";
+import {useInvoiceFilters} from "../../_hooks/useInvoiceFilters";
 import FilterBar from "../filters/FilterBar";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
@@ -127,16 +127,18 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   /**
    * Handle column sort click.
    * Toggles direction if same field, otherwise defaults to desc (or asc for name).
+   * Always sets BOTH sortBy and sortOrder together.
    */
   const handleSort = useCallback(
     (field: "date" | "amount" | "name") => {
-      const currentField = filters.sortBy;
-      const currentDir = filters.sortOrder;
-
-      // Toggle direction if same field, otherwise default to desc (or asc for name)
-      const newDir = currentField === field ? (currentDir === "asc" ? "desc" : "asc") : field === "name" ? "asc" : "desc";
-
-      setFilters({sortBy: field, sortOrder: newDir});
+      if (filters.sortBy === field) {
+        // Toggle direction
+        const newOrder = filters.sortOrder === "asc" ? "desc" : "asc";
+        setFilters({sortBy: field, sortOrder: newOrder});
+      } else {
+        // New field — default direction
+        setFilters({sortBy: field, sortOrder: field === "name" ? "asc" : "desc"});
+      }
       setCurrentPage(1); // Reset to first page when sort changes
     },
     [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage],

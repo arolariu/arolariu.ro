@@ -1731,7 +1731,8 @@
             },
             "tooltip": {
               "invoiceCount": "{count} factures"
-            }
+            },
+            "empty": "Aucune donnée de marchand disponible"
           },
           "priceDistribution": {
             "title": "Distribution des prix",

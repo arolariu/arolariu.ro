@@ -38,8 +38,8 @@ type Props = Readonly<{
   handlePrevPage: () => void;
   handleNextPage: () => void;
   handlePageSizeChange: (size: number) => void;
-  sortBy: "date" | "amount" | "name";
-  sortDirection: "asc" | "desc";
+  sortBy: "date" | "amount" | "name" | null;
+  sortDirection: "asc" | "desc" | null;
   onSort: (field: "date" | "amount" | "name") => void;
 }>;
 
@@ -135,7 +135,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "name")}>
             {t("columns.invoice")}
-            {sortBy === "name" && (
+            {sortBy === "name" && sortDirection && (
               <span
                 className={styles["sortArrow"]}
                 aria-hidden='true'>
@@ -153,7 +153,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "date")}>
             {t("columns.date")}
-            {sortBy === "date" && (
+            {sortBy === "date" && sortDirection && (
               <span
                 className={styles["sortArrow"]}
                 aria-hidden='true'>
@@ -170,7 +170,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "amount")}>
             {t("columns.amount")}
-            {sortBy === "amount" && (
+            {sortBy === "amount" && sortDirection && (
               <span
                 className={styles["sortArrow"]}
                 aria-hidden='true'>

@@ -1645,7 +1645,8 @@
             "amountHighToLow": "Sumă (descrescător)",
             "amountLowToHigh": "Sumă (crescător)",
             "nameAZ": "Nume (A-Z)",
-            "nameZA": "Nume (Z-A)"
+            "nameZA": "Nume (Z-A)",
+            "none": "Fără sortare (ordine implicită)"
           },
           "title": "Filtre",
           "button": "Filtre",
@@ -1745,7 +1746,8 @@
             },
             "tooltip": {
               "invoiceCount": "{count} facturi"
-            }
+            },
+            "empty": "Nu sunt date disponibile despre comercianți"
           },
           "merchantTrends": {
             "title": "Tendințe Cheltuieli Comercianți",
@@ -2288,6 +2290,10 @@
           "normalPattern": {
             "title": "Model normal de cumpărături",
             "description": "Cheltuielile tale sunt în intervalul obișnuit"
+          },
+          "insufficientData": {
+            "title": "Construim profilul tău de cheltuieli",
+            "description": "Adaugă mai multe facturi pentru a vedea informații sezoniere și modele de cheltuieli"
           }
         }
       },

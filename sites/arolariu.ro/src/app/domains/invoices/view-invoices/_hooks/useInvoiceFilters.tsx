@@ -18,8 +18,8 @@ import {useCallback, useMemo} from "react";
  * @property amountMax - Maximum amount for amount range filter
  * @property categories - Selected invoice categories (comma-separated enum values)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
- * @property sortBy - Sort field (date, amount, or name)
- * @property sortOrder - Sort direction (asc or desc)
+ * @property sortBy - Sort field (date, amount, name, or null for no sorting)
+ * @property sortOrder - Sort direction (asc, desc, or null for no sorting)
  * @property view - Current view mode (table or grid)
  */
 export type FilterState = {
@@ -30,8 +30,8 @@ export type FilterState = {
   amountMax: number | null;
   categories: number[];
   paymentTypes: number[];
-  sortBy: "date" | "amount" | "name";
-  sortOrder: "asc" | "desc";
+  sortBy: "date" | "amount" | "name" | null;
+  sortOrder: "asc" | "desc" | null;
   view: "table" | "grid";
 };
 
@@ -69,14 +69,15 @@ export type UseInvoiceFiltersReturn = {
  * - `max` (number): Maximum amount for amount range filter
  * - `cat` (comma-separated numbers): Selected category IDs (e.g., `100,200`)
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
- * - `sortBy` (string): Sort field - `date`, `amount`, or `name` (default: `date`)
- * - `sortOrder` (string): Sort direction - `asc` or `desc` (default: `desc`)
+ * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
+ * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
  * - `view` (string): View mode - `table` or `grid` (default: `table`)
  *
  * **Default Values**:
  * - Parameters with default values are removed from URL when set to default
  * - This keeps URLs clean and prevents unnecessary query string pollution
- * - Defaults: `sortBy="date"`, `sortOrder="desc"`, `view="table"`, empty filters
+ * - Defaults: `sortBy=null`, `sortOrder=null`, `view="table"`, empty filters
+ * - When no sort params are present, invoices appear in their natural order
  *
  * **Performance**:
  * - Uses `useMemo` to avoid recomputing filter state on every render
@@ -154,8 +155,8 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
           ?.split(",")
           .map(Number)
           .filter((n) => !Number.isNaN(n)) ?? [],
-      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? "date",
-      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? "desc",
+      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? null,
+      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? null,
       view: (searchParams.get("view") as "table" | "grid") ?? "table",
     }),
     [searchParams],
@@ -229,15 +230,12 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.delete("pay");
       }
 
-      if (merged.sortBy !== "date") {
+      // Sort params: always write BOTH or NEITHER
+      if (merged.sortBy !== null && merged.sortOrder !== null) {
         params.set("sortBy", merged.sortBy);
-      } else {
-        params.delete("sortBy");
-      }
-
-      if (merged.sortOrder !== "desc") {
         params.set("sortOrder", merged.sortOrder);
       } else {
+        params.delete("sortBy");
         params.delete("sortOrder");
       }
 

@@ -21,8 +21,8 @@ const createDefaultFilters = (): FilterState => ({
   amountMax: null,
   categories: [],
   paymentTypes: [],
-  sortBy: "date",
-  sortOrder: "desc",
+  sortBy: null,
+  sortOrder: null,
   view: "table",
 });
 
@@ -866,7 +866,7 @@ describe("useFilteredInvoices", () => {
       expect(result.current[2]).toEqual(appleInvoice);
     });
 
-    it("should fall back to date-desc for unknown sort mode", () => {
+    it("should return invoices in natural order when sort params are null", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
@@ -887,16 +887,17 @@ describe("useFilteredInvoices", () => {
       const invoices = [oldInvoice, newInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "invalid-sort" as any, // Force invalid sort mode
+        sortBy: null, // No sorting
+        sortOrder: null, // No sorting
       };
 
       // Act
       const {result} = renderHook(() => useFilteredInvoices(invoices, filters));
 
-      // Assert: Should default to date-desc (newest first)
+      // Assert: Should return in natural order (as provided)
       expect(result.current).toHaveLength(2);
-      expect(result.current[0]).toEqual(newInvoice);
-      expect(result.current[1]).toEqual(oldInvoice);
+      expect(result.current[0]).toEqual(oldInvoice);
+      expect(result.current[1]).toEqual(newInvoice);
     });
   });
 

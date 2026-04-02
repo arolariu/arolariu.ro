@@ -96,44 +96,39 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => filters.paymentTypes.includes(invoice.paymentInformation.paymentType));
     }
 
-    // Apply sorting
+    // Apply sorting (only if both sortBy and sortOrder are set)
     const sorted = [...filtered];
-    const sortField = filters.sortBy; // "date" | "amount" | "name"
-    const sortOrder = filters.sortOrder; // "asc" | "desc"
-    const direction = sortOrder === "asc" ? 1 : -1;
+    if (filters.sortBy !== null && filters.sortOrder !== null) {
+      const sortField = filters.sortBy; // "date" | "amount" | "name"
+      const sortOrder = filters.sortOrder; // "asc" | "desc"
+      const direction = sortOrder === "asc" ? 1 : -1;
 
-    switch (sortField) {
-      case "date": {
-        sorted.sort((a, b) => {
-          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
-          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
-          return direction * (dateA - dateB);
-        });
-        break;
-      }
-      case "amount": {
-        sorted.sort((a, b) => {
-          const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
-          const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
-          const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
-          const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
-          return direction * (amountA - amountB);
-        });
-        break;
-      }
-      case "name": {
-        sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
-        break;
-      }
-      default: {
-        // Default to date descending
-        sorted.sort((a, b) => {
-          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
-          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
-          return dateB - dateA;
-        });
+      switch (sortField) {
+        case "date": {
+          sorted.sort((a, b) => {
+            const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
+            const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
+            return direction * (dateA - dateB);
+          });
+          break;
+        }
+        case "amount": {
+          sorted.sort((a, b) => {
+            const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
+            const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
+            const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
+            const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
+            return direction * (amountA - amountB);
+          });
+          break;
+        }
+        case "name": {
+          sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
+          break;
+        }
       }
     }
+    // If no sort params, return in natural order (no sorting)
 
     return sorted;
   }, [invoices, filters]);

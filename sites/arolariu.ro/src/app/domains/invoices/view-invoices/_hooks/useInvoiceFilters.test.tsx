@@ -44,8 +44,8 @@ describe("useInvoiceFilters", () => {
         amountMax: null,
         categories: [],
         paymentTypes: [],
-        sortBy: "date",
-        sortOrder: "desc",
+        sortBy: null,
+        sortOrder: null,
         view: "table",
       });
     });
@@ -227,27 +227,27 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
     });
 
-    it("should not include default sort field in URL", () => {
+    it("should not include null sort field in URL", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Act
-      result.current.setFilters({sortBy: "date"});
+      result.current.setFilters({sortBy: null, sortOrder: null});
 
       // Assert
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
     });
 
-    it("should not include default sort direction in URL", () => {
+    it("should not include null sort direction in URL", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Act
-      result.current.setFilters({sortOrder: "desc"});
+      result.current.setFilters({sortBy: null, sortOrder: null});
 
       // Assert
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
