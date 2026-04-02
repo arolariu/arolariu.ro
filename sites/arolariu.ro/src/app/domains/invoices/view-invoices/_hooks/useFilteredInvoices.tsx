@@ -21,7 +21,7 @@ import type {FilterState} from "./useInvoiceFilters";
  * - Payment types: Multi-select filter (OR logic)
  *
  * **Sorting:**
- * Supports sorting by date, amount, and name in ascending/descending order.
+ * Supports sorting by date, amount, and name with separate field and direction parameters.
  *
  * @param invoices - Array of invoices to filter
  * @param filters - Filter state containing all filter criteria
@@ -37,7 +37,8 @@ import type {FilterState} from "./useInvoiceFilters";
  *   amountMax: 100,
  *   categories: [InvoiceCategory.GROCERY],
  *   paymentTypes: [PaymentType.Card],
- *   sortBy: "date-desc",
+ *   sortBy: "date",
+ *   sortOrder: "desc",
  *   view: "table"
  * });
  * ```
@@ -97,49 +98,31 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
 
     // Apply sorting
     const sorted = [...filtered];
-    switch (filters.sortBy) {
-      case "date-desc": {
+    const sortField = filters.sortBy; // "date" | "amount" | "name"
+    const sortOrder = filters.sortOrder; // "asc" | "desc"
+    const direction = sortOrder === "asc" ? 1 : -1;
+
+    switch (sortField) {
+      case "date": {
         sorted.sort((a, b) => {
           const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
           const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
-          return dateB - dateA;
+          return direction * (dateA - dateB);
         });
         break;
       }
-      case "date-asc": {
-        sorted.sort((a, b) => {
-          const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
-          const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
-          return dateA - dateB;
-        });
-        break;
-      }
-      case "amount-desc": {
+      case "amount": {
         sorted.sort((a, b) => {
           const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
           const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
           const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
           const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
-          return amountB - amountA;
+          return direction * (amountA - amountB);
         });
         break;
       }
-      case "amount-asc": {
-        sorted.sort((a, b) => {
-          const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
-          const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
-          const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
-          const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
-          return amountA - amountB;
-        });
-        break;
-      }
-      case "name-asc": {
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      }
-      case "name-desc": {
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case "name": {
+        sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
         break;
       }
       default: {

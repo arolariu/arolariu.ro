@@ -118,15 +118,11 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   );
 
   /**
-   * Parse sort param into field and direction.
+   * Parse sort params into field and direction for TableView.
    */
   const {sortBy, sortDirection} = useMemo(() => {
-    const sortParam = filters.sortBy;
-    const parts = sortParam.split("-");
-    const dir = parts.pop() as "asc" | "desc";
-    const field = parts.join("-") as "date" | "amount" | "name";
-    return {sortBy: field, sortDirection: dir};
-  }, [filters.sortBy]);
+    return {sortBy: filters.sortBy, sortDirection: filters.sortOrder};
+  }, [filters.sortBy, filters.sortOrder]);
 
   /**
    * Handle column sort click.
@@ -134,17 +130,16 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
    */
   const handleSort = useCallback(
     (field: "date" | "amount" | "name") => {
-      const currentSort = filters.sortBy;
-      const [currentField] = currentSort.split("-");
-      const currentDir = currentSort.endsWith("-asc") ? "asc" : "desc";
+      const currentField = filters.sortBy;
+      const currentDir = filters.sortOrder;
 
       // Toggle direction if same field, otherwise default to desc (or asc for name)
       const newDir = currentField === field ? (currentDir === "asc" ? "desc" : "asc") : field === "name" ? "asc" : "desc";
 
-      setFilters({sortBy: `${field}-${newDir}` as FilterState["sortBy"]});
+      setFilters({sortBy: field, sortOrder: newDir});
       setCurrentPage(1); // Reset to first page when sort changes
     },
-    [filters.sortBy, setFilters, setCurrentPage],
+    [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage],
   );
 
   /**

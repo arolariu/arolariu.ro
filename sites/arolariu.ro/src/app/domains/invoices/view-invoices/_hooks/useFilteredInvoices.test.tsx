@@ -21,7 +21,8 @@ const createDefaultFilters = (): FilterState => ({
   amountMax: null,
   categories: [],
   paymentTypes: [],
-  sortBy: "date-desc",
+  sortBy: "date",
+  sortOrder: "desc",
   view: "table",
 });
 
@@ -65,7 +66,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [smallRonInvoice, eurInvoice, ronInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "amount-desc",
+        sortBy: "amount",
+        sortOrder: "desc",
       };
 
       // Act
@@ -116,7 +118,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [largeRonInvoice, usdInvoice, smallRonInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "amount-asc",
+        sortBy: "amount",
+        sortOrder: "asc",
       };
 
       // Act
@@ -153,7 +156,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [ronInvoice, invoiceWithoutCurrency];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "amount-desc",
+        sortBy: "amount",
+        sortOrder: "desc",
       };
 
       // Act
@@ -191,7 +195,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [eur2018, eur2024];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "amount-desc",
+        sortBy: "amount",
+        sortOrder: "desc",
       };
 
       // Act
@@ -768,7 +773,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [oldInvoice, newInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "date-desc",
+        sortBy: "date",
+        sortOrder: "desc",
       };
 
       // Act
@@ -801,7 +807,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [newInvoice, oldInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "date-asc",
+        sortBy: "date",
+        sortOrder: "asc",
       };
 
       // Act
@@ -822,7 +829,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [zebraInvoice, appleInvoice, microsoftInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "name-asc",
+        sortBy: "name",
+        sortOrder: "asc",
       };
 
       // Act
@@ -844,7 +852,8 @@ describe("useFilteredInvoices", () => {
       const invoices = [appleInvoice, microsoftInvoice, zebraInvoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        sortBy: "name-desc",
+        sortBy: "name",
+        sortOrder: "desc",
       };
 
       // Act
@@ -1000,7 +1009,8 @@ describe("useFilteredInvoices", () => {
         paymentTypes: [PaymentType.Card],
         dateFrom: "2024-02-01",
         amountMin: 50,
-        sortBy: "name-asc",
+        sortBy: "name",
+        sortOrder: "asc",
       };
 
       // Act

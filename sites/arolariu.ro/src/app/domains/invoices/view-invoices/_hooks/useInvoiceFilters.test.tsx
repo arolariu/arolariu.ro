@@ -44,7 +44,8 @@ describe("useInvoiceFilters", () => {
         amountMax: null,
         categories: [],
         paymentTypes: [],
-        sortBy: "date-desc",
+        sortBy: "date",
+        sortOrder: "desc",
         view: "table",
       });
     });
@@ -111,16 +112,28 @@ describe("useInvoiceFilters", () => {
       expect(result.current.filters.paymentTypes).toEqual([200, 300]);
     });
 
-    it("should parse sort option from URL param 'sort'", () => {
+    it("should parse sort field from URL param 'sortBy'", () => {
       // Arrange
-      const mockSearchParams = new URLSearchParams("?sort=amount-desc");
+      const mockSearchParams = new URLSearchParams("?sortBy=amount");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Assert
-      expect(result.current.filters.sortBy).toBe("amount-desc");
+      expect(result.current.filters.sortBy).toBe("amount");
+    });
+
+    it("should parse sort direction from URL param 'sortOrder'", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams("?sortOrder=asc");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+
+      // Act
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Assert
+      expect(result.current.filters.sortOrder).toBe("asc");
     });
 
     it("should parse view mode from URL param 'view'", () => {
@@ -214,14 +227,27 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
     });
 
-    it("should not include default sort value in URL", () => {
+    it("should not include default sort field in URL", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Act
-      result.current.setFilters({sortBy: "date-desc"});
+      result.current.setFilters({sortBy: "date"});
+
+      // Assert
+      expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
+    });
+
+    it("should not include default sort direction in URL", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act
+      result.current.setFilters({sortOrder: "desc"});
 
       // Assert
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
@@ -253,17 +279,17 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?pay=100%2C200`, {scroll: false});
     });
 
-    it("should set sort query param", () => {
+    it("should set sort query params", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
       const {result} = renderHook(() => useInvoiceFilters());
 
-      // Act - Set sort to non-default value
-      result.current.setFilters({sortBy: "amount-desc"});
+      // Act - Set sort to non-default values
+      result.current.setFilters({sortBy: "amount", sortOrder: "asc"});
 
-      // Assert - Verify URL includes 'sort' param
-      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?sort=amount-desc`, {scroll: false});
+      // Assert - Verify URL includes both 'sortBy' and 'sortOrder' params
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?sortBy=amount&sortOrder=asc`, {scroll: false});
     });
 
     it("should set view query param", () => {
@@ -279,7 +305,7 @@ describe("useInvoiceFilters", () => {
       expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?view=grid`, {scroll: false});
     });
 
-    it("should set multiple filter params including paymentTypes, sortBy, and view", () => {
+    it("should set multiple filter params including paymentTypes, sortBy, sortOrder, and view", () => {
       // Arrange
       const mockSearchParams = new URLSearchParams();
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
@@ -289,12 +315,13 @@ describe("useInvoiceFilters", () => {
       result.current.setFilters({
         search: "groceries",
         paymentTypes: [100, 200],
-        sortBy: "amount-asc",
+        sortBy: "amount",
+        sortOrder: "asc",
         view: "grid",
       });
 
       // Assert - Verify URL includes all params
-      const expectedUrl = `${mockPathname}?q=groceries&pay=100%2C200&sort=amount-asc&view=grid`;
+      const expectedUrl = `${mockPathname}?q=groceries&pay=100%2C200&sortBy=amount&sortOrder=asc&view=grid`;
       expect(mockReplace).toHaveBeenCalledWith(expectedUrl, {scroll: false});
     });
   });
@@ -401,7 +428,7 @@ describe("useInvoiceFilters", () => {
 
     it("should not count sort and view mode as active filters", () => {
       // Arrange
-      const mockSearchParams = new URLSearchParams("?sort=amount-desc&view=grid");
+      const mockSearchParams = new URLSearchParams("?sortBy=amount&sortOrder=asc&view=grid");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act

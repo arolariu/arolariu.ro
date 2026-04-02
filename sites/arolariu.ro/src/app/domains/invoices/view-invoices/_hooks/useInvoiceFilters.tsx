@@ -18,7 +18,8 @@ import {useCallback, useMemo} from "react";
  * @property amountMax - Maximum amount for amount range filter
  * @property categories - Selected invoice categories (comma-separated enum values)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
- * @property sortBy - Sort field and direction
+ * @property sortBy - Sort field (date, amount, or name)
+ * @property sortOrder - Sort direction (asc or desc)
  * @property view - Current view mode (table or grid)
  */
 export type FilterState = {
@@ -29,7 +30,8 @@ export type FilterState = {
   amountMax: number | null;
   categories: number[];
   paymentTypes: number[];
-  sortBy: "date-desc" | "date-asc" | "amount-desc" | "amount-asc" | "name-asc" | "name-desc";
+  sortBy: "date" | "amount" | "name";
+  sortOrder: "asc" | "desc";
   view: "table" | "grid";
 };
 
@@ -67,13 +69,14 @@ export type UseInvoiceFiltersReturn = {
  * - `max` (number): Maximum amount for amount range filter
  * - `cat` (comma-separated numbers): Selected category IDs (e.g., `100,200`)
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
- * - `sort` (string): Sort field and direction (default: `date-desc`)
+ * - `sortBy` (string): Sort field - `date`, `amount`, or `name` (default: `date`)
+ * - `sortOrder` (string): Sort direction - `asc` or `desc` (default: `desc`)
  * - `view` (string): View mode - `table` or `grid` (default: `table`)
  *
  * **Default Values**:
  * - Parameters with default values are removed from URL when set to default
  * - This keeps URLs clean and prevents unnecessary query string pollution
- * - Defaults: `sortBy="date-desc"`, `view="table"`, empty filters
+ * - Defaults: `sortBy="date"`, `sortOrder="desc"`, `view="table"`, empty filters
  *
  * **Performance**:
  * - Uses `useMemo` to avoid recomputing filter state on every render
@@ -151,7 +154,8 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
           ?.split(",")
           .map(Number)
           .filter((n) => !Number.isNaN(n)) ?? [],
-      sortBy: (searchParams.get("sort") as FilterState["sortBy"]) ?? "date-desc",
+      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? "date",
+      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? "desc",
       view: (searchParams.get("view") as "table" | "grid") ?? "table",
     }),
     [searchParams],
@@ -225,10 +229,16 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.delete("pay");
       }
 
-      if (merged.sortBy !== "date-desc") {
-        params.set("sort", merged.sortBy);
+      if (merged.sortBy !== "date") {
+        params.set("sortBy", merged.sortBy);
       } else {
-        params.delete("sort");
+        params.delete("sortBy");
+      }
+
+      if (merged.sortOrder !== "desc") {
+        params.set("sortOrder", merged.sortOrder);
+      } else {
+        params.delete("sortOrder");
       }
 
       if (merged.view !== "table") {

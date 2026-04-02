@@ -138,7 +138,8 @@ export default function FilterBar({
       amountMax: null,
       categories: [],
       paymentTypes: [],
-      sortBy: "date-desc",
+      sortBy: "date",
+      sortOrder: "desc",
     });
   }, [onFiltersChange]);
 
@@ -207,11 +208,16 @@ export default function FilterBar({
 
   /**
    * Handle sort change.
+   * Splits the combined value (e.g., "date-desc") into separate sortBy and sortOrder.
    */
   const handleSortChange = useCallback(
     (value: string) => {
+      const parts = value.split("-");
+      const direction = parts.pop() as "asc" | "desc";
+      const field = parts.join("-") as FilterState["sortBy"];
       onFiltersChange({
-        sortBy: value as FilterState["sortBy"],
+        sortBy: field,
+        sortOrder: direction,
       });
     },
     [onFiltersChange],
@@ -372,7 +378,7 @@ export default function FilterBar({
       <div className={styles["filterSection"]}>
         <Label className={styles["filterLabel"]}>{t("filters.sortBy")}</Label>
         <Select
-          value={filters.sortBy}
+          value={`${filters.sortBy}-${filters.sortOrder}`}
           onValueChange={handleSortChange}>
           <SelectTrigger className={styles["sortSelect"]}>
             <SelectValue />
