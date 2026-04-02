@@ -565,16 +565,16 @@ describe("configProxy circuit breaker", () => {
     // This test verifies that the circuit breaker can re-close after cooldown.
     // Due to module-level state, we test the logic by verifying the time-based condition
     // without actually waiting or using multiple test runs that pollute state.
-    
+
     // The circuit breaker logic (lines 206-207) checks:
     // if (Date.now() - expCircuitOpenedAt > CIRCUIT_RESET_MS) {
     //   expCircuitOpen = false;
     //   return false;
     // }
-    
+
     // This test verifies the fetch can succeed after enough time has passed.
     // We'll use a shorter test with fewer failures to avoid circuit pollution.
-    
+
     process.env["AZURE_CLIENT_ID"] = "test-client-id";
     vi.useFakeTimers();
 

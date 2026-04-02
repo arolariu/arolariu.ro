@@ -1472,7 +1472,18 @@
         "selected": "sélectionné",
         "clearSelection": "Effacer",
         "createInvoice": "Créer une Facture",
-        "createInvoices": "Créer des Factures"
+        "createInvoices": "Créer des Factures",
+        "delete": {
+          "button": "Supprimer ({count})",
+          "confirmTitle": "Supprimer les scans sélectionnés ?",
+          "confirmDescription": "Cela supprimera définitivement {count} scan(s) du stockage. Cette action est irréversible.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer",
+          "success": "{count} scan(s) supprimé(s) avec succès",
+          "partial": "{success} supprimé(s), {failed} échoué(s)",
+          "failed": "Échec de la suppression des scans",
+          "error": "Une erreur est survenue lors de la suppression des scans"
+        }
       },
       "scanCard": {
         "loading": "Chargement...",

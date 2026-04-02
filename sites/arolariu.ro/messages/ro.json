@@ -1472,7 +1472,18 @@
         "selected": "selectat(e)",
         "clearSelection": "Ștergeți",
         "createInvoice": "Creați Factură",
-        "createInvoices": "Creați Facturi"
+        "createInvoices": "Creați Facturi",
+        "delete": {
+          "button": "Șterge ({count})",
+          "confirmTitle": "Ștergeți scanările selectate?",
+          "confirmDescription": "Aceasta va șterge permanent {count} scanare(i) din stocare. Această acțiune nu poate fi anulată.",
+          "cancel": "Anulează",
+          "confirm": "Șterge",
+          "success": "{count} scanare(i) șterse cu succes",
+          "partial": "{success} șterse, {failed} eșuate",
+          "failed": "Nu s-au putut șterge scanările",
+          "error": "A apărut o eroare la ștergerea scanărilor"
+        }
       },
       "scanCard": {
         "delete": "Ștergeți scanarea",

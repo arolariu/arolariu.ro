@@ -125,15 +125,9 @@ describe("getSpendingTrend", () => {
   });
 
   it("should include invoice count in name", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-01-15"))
-      .withPaymentAmount(100)
-      .build();
+    const invoice1 = new InvoiceBuilder().withTransactionDate(new Date("2024-01-15")).withPaymentAmount(100).build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-01-20"))
-      .withPaymentAmount(200)
-      .build();
+    const invoice2 = new InvoiceBuilder().withTransactionDate(new Date("2024-01-20")).withPaymentAmount(200).build();
 
     const result = getSpendingTrend(invoice1, [invoice1, invoice2]);
 
@@ -141,15 +135,9 @@ describe("getSpendingTrend", () => {
   });
 
   it("should use singular form for single invoice", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-01-15"))
-      .withPaymentAmount(100)
-      .build();
+    const invoice1 = new InvoiceBuilder().withTransactionDate(new Date("2024-01-15")).withPaymentAmount(100).build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-02-15"))
-      .withPaymentAmount(200)
-      .build();
+    const invoice2 = new InvoiceBuilder().withTransactionDate(new Date("2024-02-15")).withPaymentAmount(200).build();
 
     const result = getSpendingTrend(invoice1, [invoice1, invoice2]);
 
@@ -158,20 +146,11 @@ describe("getSpendingTrend", () => {
   });
 
   it("should sort results by date ascending", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-03-15"))
-      .withPaymentAmount(100)
-      .build();
+    const invoice1 = new InvoiceBuilder().withTransactionDate(new Date("2024-03-15")).withPaymentAmount(100).build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-01-15"))
-      .withPaymentAmount(200)
-      .build();
+    const invoice2 = new InvoiceBuilder().withTransactionDate(new Date("2024-01-15")).withPaymentAmount(200).build();
 
-    const invoice3 = new InvoiceBuilder()
-      .withTransactionDate(new Date("2024-02-15"))
-      .withPaymentAmount(150)
-      .build();
+    const invoice3 = new InvoiceBuilder().withTransactionDate(new Date("2024-02-15")).withPaymentAmount(150).build();
 
     const result = getSpendingTrend(invoice1, [invoice1, invoice2, invoice3]);
 
@@ -211,23 +190,11 @@ describe("getComparisonStats", () => {
   });
 
   it("should exclude current invoice from average calculation", () => {
-    const currentInvoice = new InvoiceBuilder()
-      .withId("current")
-      .withPaymentAmount(500)
-      .withPaymentCurrency("RON")
-      .build();
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(500).withPaymentCurrency("RON").build();
 
-    const otherInvoice1 = new InvoiceBuilder()
-      .withId("other1")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const otherInvoice1 = new InvoiceBuilder().withId("other1").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
-    const otherInvoice2 = new InvoiceBuilder()
-      .withId("other2")
-      .withPaymentAmount(200)
-      .withPaymentCurrency("RON")
-      .build();
+    const otherInvoice2 = new InvoiceBuilder().withId("other2").withPaymentAmount(200).withPaymentCurrency("RON").build();
 
     const result = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice1, otherInvoice2]);
 
@@ -237,17 +204,9 @@ describe("getComparisonStats", () => {
   });
 
   it("should calculate percentage difference correctly", () => {
-    const currentInvoice = new InvoiceBuilder()
-      .withId("current")
-      .withPaymentAmount(150)
-      .withPaymentCurrency("RON")
-      .build();
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(150).withPaymentCurrency("RON").build();
 
-    const otherInvoice = new InvoiceBuilder()
-      .withId("other")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
     const result = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice]);
 
@@ -257,17 +216,9 @@ describe("getComparisonStats", () => {
   });
 
   it("should handle below average spending", () => {
-    const currentInvoice = new InvoiceBuilder()
-      .withId("current")
-      .withPaymentAmount(50)
-      .withPaymentCurrency("RON")
-      .build();
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(50).withPaymentCurrency("RON").build();
 
-    const otherInvoice = new InvoiceBuilder()
-      .withId("other")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
     const result = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice]);
 
@@ -276,23 +227,11 @@ describe("getComparisonStats", () => {
   });
 
   it("should compute min and max amounts", () => {
-    const currentInvoice = new InvoiceBuilder()
-      .withId("current")
-      .withPaymentAmount(150)
-      .withPaymentCurrency("RON")
-      .build();
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(150).withPaymentCurrency("RON").build();
 
-    const invoice1 = new InvoiceBuilder()
-      .withId("inv1")
-      .withPaymentAmount(50)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice1 = new InvoiceBuilder().withId("inv1").withPaymentAmount(50).withPaymentCurrency("RON").build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withId("inv2")
-      .withPaymentAmount(300)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice2 = new InvoiceBuilder().withId("inv2").withPaymentAmount(300).withPaymentCurrency("RON").build();
 
     const result = getComparisonStats(currentInvoice, [currentInvoice, invoice1, invoice2]);
 
@@ -342,17 +281,9 @@ describe("getComparisonStats", () => {
   });
 
   it("should handle currency normalization", () => {
-    const currentInvoice = new InvoiceBuilder()
-      .withId("current")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("EUR")
-      .build();
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(100).withPaymentCurrency("EUR").build();
 
-    const otherInvoice = new InvoiceBuilder()
-      .withId("other")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
     const result = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice]);
 
@@ -391,23 +322,11 @@ describe("getMerchantBreakdown", () => {
   });
 
   it("should sort by total spend descending", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withMerchantReference("merchant-a")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice1 = new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withMerchantReference("merchant-b")
-      .withPaymentAmount(300)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice2 = new InvoiceBuilder().withMerchantReference("merchant-b").withPaymentAmount(300).withPaymentCurrency("RON").build();
 
-    const invoice3 = new InvoiceBuilder()
-      .withMerchantReference("merchant-c")
-      .withPaymentAmount(200)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice3 = new InvoiceBuilder().withMerchantReference("merchant-c").withPaymentAmount(200).withPaymentCurrency("RON").build();
 
     const result = getMerchantBreakdown([invoice1, invoice2, invoice3]);
 
@@ -420,17 +339,9 @@ describe("getMerchantBreakdown", () => {
   });
 
   it("should compute average per merchant", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withMerchantReference("merchant-a")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice1 = new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(100).withPaymentCurrency("RON").build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withMerchantReference("merchant-a")
-      .withPaymentAmount(200)
-      .withPaymentCurrency("RON")
-      .build();
+    const invoice2 = new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(200).withPaymentCurrency("RON").build();
 
     const result = getMerchantBreakdown([invoice1, invoice2]);
 
@@ -449,17 +360,9 @@ describe("getMerchantBreakdown", () => {
   });
 
   it("should normalize amounts to RON", () => {
-    const invoice1 = new InvoiceBuilder()
-      .withMerchantReference("merchant-a")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("EUR")
-      .build();
+    const invoice1 = new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(100).withPaymentCurrency("EUR").build();
 
-    const invoice2 = new InvoiceBuilder()
-      .withMerchantReference("merchant-a")
-      .withPaymentAmount(100)
-      .withPaymentCurrency("USD")
-      .build();
+    const invoice2 = new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(100).withPaymentCurrency("USD").build();
 
     const result = getMerchantBreakdown([invoice1, invoice2]);
 
@@ -640,9 +543,7 @@ describe("getQuantityAnalysis", () => {
   });
 
   it("should include quantity and unit", () => {
-    const items = [
-      new ProductBuilder().withGenericName("Product A").withQuantity(2.5).withQuantityUnit("kg").withTotalPrice(50).build(),
-    ];
+    const items = [new ProductBuilder().withGenericName("Product A").withQuantity(2.5).withQuantityUnit("kg").withTotalPrice(50).build()];
 
     const result = getQuantityAnalysis(items);
 
@@ -713,14 +614,7 @@ describe("getUnitPriceAnalysis", () => {
   });
 
   it("should compute unit price correctly", () => {
-    const items = [
-      new ProductBuilder()
-        .withGenericName("Product")
-        .withTotalPrice(100)
-        .withQuantity(5)
-        .withQuantityUnit("kg")
-        .build(),
-    ];
+    const items = [new ProductBuilder().withGenericName("Product").withTotalPrice(100).withQuantity(5).withQuantityUnit("kg").build()];
 
     const result = getUnitPriceAnalysis(items);
 
@@ -731,24 +625,9 @@ describe("getUnitPriceAnalysis", () => {
 
   it("should sort by unit price descending", () => {
     const items = [
-      new ProductBuilder()
-        .withGenericName("A")
-        .withTotalPrice(100)
-        .withQuantity(10)
-        .withQuantityUnit("kg")
-        .build(), // 10 per unit
-      new ProductBuilder()
-        .withGenericName("B")
-        .withTotalPrice(50)
-        .withQuantity(2)
-        .withQuantityUnit("kg")
-        .build(), // 25 per unit
-      new ProductBuilder()
-        .withGenericName("C")
-        .withTotalPrice(90)
-        .withQuantity(6)
-        .withQuantityUnit("kg")
-        .build(), // 15 per unit
+      new ProductBuilder().withGenericName("A").withTotalPrice(100).withQuantity(10).withQuantityUnit("kg").build(), // 10 per unit
+      new ProductBuilder().withGenericName("B").withTotalPrice(50).withQuantity(2).withQuantityUnit("kg").build(), // 25 per unit
+      new ProductBuilder().withGenericName("C").withTotalPrice(90).withQuantity(6).withQuantityUnit("kg").build(), // 15 per unit
     ];
 
     const result = getUnitPriceAnalysis(items);
@@ -850,18 +729,9 @@ describe("computeShoppingPatterns", () => {
 
   it("should group invoices by day of month", () => {
     const invoices = [
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-05"))
-        .withPaymentAmount(100)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-05"))
-        .withPaymentAmount(50)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-10"))
-        .withPaymentAmount(75)
-        .build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-05")).withPaymentAmount(100).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-05")).withPaymentAmount(50).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-10")).withPaymentAmount(75).build(),
     ];
 
     const result = computeShoppingPatterns(invoices, new Date("2024-01-01"));
@@ -876,18 +746,9 @@ describe("computeShoppingPatterns", () => {
 
   it("should filter invoices by target month and year", () => {
     const invoices = [
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-15"))
-        .withPaymentAmount(100)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-02-15"))
-        .withPaymentAmount(200)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2023-01-15"))
-        .withPaymentAmount(300)
-        .build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-15")).withPaymentAmount(100).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-02-15")).withPaymentAmount(200).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2023-01-15")).withPaymentAmount(300).build(),
     ];
 
     const result = computeShoppingPatterns(invoices, new Date("2024-01-01"));
@@ -898,18 +759,9 @@ describe("computeShoppingPatterns", () => {
 
   it("should compute average days between shopping trips", () => {
     const invoices = [
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-05"))
-        .withPaymentAmount(100)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-10"))
-        .withPaymentAmount(100)
-        .build(),
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-20"))
-        .withPaymentAmount(100)
-        .build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-05")).withPaymentAmount(100).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-10")).withPaymentAmount(100).build(),
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-20")).withPaymentAmount(100).build(),
     ];
 
     const result = computeShoppingPatterns(invoices, new Date("2024-01-01"));
@@ -920,18 +772,9 @@ describe("computeShoppingPatterns", () => {
 
   it("should compute weekday activity", () => {
     const invoices = [
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-01"))
-        .withPaymentAmount(100)
-        .build(), // Monday
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-08"))
-        .withPaymentAmount(100)
-        .build(), // Monday
-      new InvoiceBuilder()
-        .withTransactionDate(new Date("2024-01-05"))
-        .withPaymentAmount(100)
-        .build(), // Friday
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-01")).withPaymentAmount(100).build(), // Monday
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-08")).withPaymentAmount(100).build(), // Monday
+      new InvoiceBuilder().withTransactionDate(new Date("2024-01-05")).withPaymentAmount(100).build(), // Friday
     ];
 
     const result = computeShoppingPatterns(invoices, new Date("2024-01-01"));

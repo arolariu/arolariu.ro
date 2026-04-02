@@ -740,5 +740,3 @@ export function getWeekdayName(weekday: number, locale = "en-US"): string {
   const date = new Date(2024, 0, 7 + weekday); // Jan 7, 2024 is a Sunday
   return new Intl.DateTimeFormat(locale, {weekday: "long"}).format(date);
 }
-
-

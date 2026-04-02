@@ -1472,7 +1472,18 @@
         "selected": "selected",
         "clearSelection": "Clear",
         "createInvoice": "Create Invoice",
-        "createInvoices": "Create Invoices"
+        "createInvoices": "Create Invoices",
+        "delete": {
+          "button": "Delete ({count})",
+          "confirmTitle": "Delete selected scans?",
+          "confirmDescription": "This will permanently delete {count} scan(s) from storage. This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "{count} scan(s) deleted successfully",
+          "partial": "{success} deleted, {failed} failed",
+          "failed": "Failed to delete scans",
+          "error": "An error occurred while deleting scans"
+        }
       },
       "scanCard": {
         "loading": "Loading...",
