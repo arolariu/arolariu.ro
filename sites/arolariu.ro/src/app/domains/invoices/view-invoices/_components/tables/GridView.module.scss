@@ -23,8 +23,14 @@
 }
 
 // ===========================================
-// GRID LAYOUT
+// GRID CONTAINER & LAYOUT
 // ===========================================
+.gridContainer {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
 .grid {
   @include responsive-grid(1, 2, 3, space(4));
 
@@ -203,4 +209,88 @@
   display: flex;
   justify-content: space-between;
   padding-top: space(2);
+}
+
+// ===========================================
+// PAGINATION CONTROLS
+// ===========================================
+.paginationControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: space(4);
+  border-top: 1px solid color('border');
+  gap: space(4);
+
+  @media print {
+    display: none;
+  }
+
+  // Stack vertically on mobile
+  @include respond-below('md') {
+    flex-direction: column;
+    align-items: stretch;
+    gap: space(3);
+  }
+}
+
+.pageSizeSelector {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+
+  @include respond-below('md') {
+    justify-content: space-between;
+  }
+}
+
+.pageSizeLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.pageSizeTrigger {
+  height: space(8);
+  width: space(20);
+  cursor: pointer;
+
+  @include respond-below('md') {
+    width: space(24);
+  }
+}
+
+.pageIndicator {
+  display: flex;
+  align-items: center;
+
+  @include respond-below('md') {
+    justify-content: center;
+  }
+}
+
+.pageLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.pageNavigation {
+  display: flex;
+  gap: space(2);
+
+  @include respond-below('md') {
+    width: 100%;
+  }
+}
+
+.paginationButton {
+  cursor: pointer;
+
+  // Full width on mobile
+  @include respond-below('md') {
+    flex: 1;
+    min-height: space(11);
+    padding: space(3);
+  }
 }

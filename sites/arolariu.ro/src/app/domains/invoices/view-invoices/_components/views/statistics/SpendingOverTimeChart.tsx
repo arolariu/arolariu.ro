@@ -22,8 +22,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -120,15 +120,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                 width={40}
                 tickFormatter={formatYAxisTick}
               />
-              <Tooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                    currency={currency}
-                  />
-                }
-              />
+              <Tooltip content={<CustomTooltip currency={currency} />} />
               <Area
                 type='monotone'
                 dataKey='amount'
