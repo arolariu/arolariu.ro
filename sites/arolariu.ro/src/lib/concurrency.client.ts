@@ -21,8 +21,9 @@
  * As tasks complete, new tasks are started to maintain the concurrency level.
  *
  * **Error Handling:**
- * Individual task failures do not stop other tasks. Failed tasks are included
- * in the results and must be handled by the caller.
+ * Fail-fast: if ANY task throws, workers stop picking up new tasks and the
+ * returned promise rejects with the first error. Use
+ * {@link withConcurrencyLimitAndProgress} for per-task error tolerance.
  *
  * **Performance:**
  * - Time complexity: O(n) where n is number of tasks
@@ -61,9 +62,12 @@
 export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<T[]> {
   const results: T[] = new Array(tasks.length);
   let currentIndex = 0;
+  let hasFailed = false;
 
   const executeNext = async (): Promise<void> => {
     while (currentIndex < tasks.length) {
+      if (hasFailed) return;
+
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
 
@@ -72,7 +76,7 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
       try {
         results[taskIndex] = await task();
       } catch (error) {
-        // Re-throw to bubble up error
+        hasFailed = true;
         throw error;
       }
     }
