@@ -1,10 +1,12 @@
 "use client";
 
-import {generateRandomInvoices} from "@/data/mocks/invoice";
+import {toRON} from "@/lib/currency";
 import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
+import {useInvoicesStore} from "@/stores";
 import {ProductCategory, type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
+import {useMemo} from "react";
 import {TbBulb, TbShoppingBag, TbSparkles, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./SeasonalInsightsCard.module.scss";
@@ -29,21 +31,22 @@ function calculateCategorySpending(invoice: Invoice): Record<ProductCategory, nu
 }
 
 /**
- * Calculate historical average spending by category.
+ * Calculate historical average spending by category from real invoices.
  */
-function calculateHistoricalAverage(): Record<ProductCategory, {total: number; count: number}> {
-  const historicalInvoices: Invoice[] = generateRandomInvoices(50);
+function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<ProductCategory, {total: number; count: number}> {
   const historicalAvg: Record<ProductCategory, {total: number; count: number}> = {} as Record<
     ProductCategory,
     {total: number; count: number}
   >;
-  for (const inv of historicalInvoices) {
-    for (const [cat, amount] of Object.entries(inv.items)) {
-      const category = Number.parseInt(cat, 10) as ProductCategory;
+
+  for (const inv of invoices) {
+    for (const item of inv.items) {
+      if (item.metadata.isSoftDeleted) continue;
+      const category = item.category;
       if (!historicalAvg[category]) {
         historicalAvg[category] = {total: 0, count: 0};
       }
-      historicalAvg[category].total += amount.totalPrice;
+      historicalAvg[category].total += item.totalPrice ?? 0;
       historicalAvg[category].count += 1;
     }
   }
@@ -123,13 +126,13 @@ function getDefaultInsight(t: ReturnType<typeof useTranslations>): Insight {
   };
 }
 
-function detectSeasonalInsights(invoice: Invoice, t: ReturnType<typeof useTranslations>): Insight[] {
+function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, t: ReturnType<typeof useTranslations>): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
 
   const categorySpending = calculateCategorySpending(invoice);
-  const historicalAvg = calculateHistoricalAverage();
+  const historicalAvg = calculateHistoricalAverage(allInvoices);
   const spendingSpikes = detectSpendingSpikes(categorySpending, historicalAvg, t);
   insights.push(...spendingSpikes);
 
@@ -168,15 +171,53 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoice.seasonalInsightsCard");
   const {invoice} = useInvoiceContext();
-  const insights = detectSeasonalInsights(invoice, t);
+  const allInvoices = useInvoicesStore((state) => state.invoices);
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const monthName = new Intl.DateTimeFormat(locale, {month: "long"}).format(date);
   const {currency} = invoice.paymentInformation;
 
-  // Simulated December spending data
-  const decemberAverage = 1800;
-  const currentDecemberSpending = 1245;
-  const percentOfAverage = (currentDecemberSpending / decemberAverage) * 100;
+  // Calculate real seasonal spending data
+  const seasonalData = useMemo(() => {
+    const currentDate = toSafeDate(invoice.paymentInformation.transactionDate);
+    const currentMonth = currentDate.getMonth();
+
+    // Find invoices from the same month (any year), excluding the current invoice
+    const sameMonthInvoices = allInvoices.filter((inv) => {
+      if (inv.invoiceIdentifier === invoice.invoiceIdentifier) return false;
+      const invDate = toSafeDate(inv.paymentInformation.transactionDate);
+      return invDate.getMonth() === currentMonth && invDate.getTime() > 0;
+    });
+
+    // Compute average spending for this month
+    const totalSpending = sameMonthInvoices.reduce((sum, inv) => {
+      const year = toSafeDate(inv.paymentInformation.transactionDate).getFullYear();
+      return sum + toRON(inv.paymentInformation.totalCostAmount, inv.paymentInformation.currency?.code ?? "RON", year);
+    }, 0);
+
+    const monthAverage = sameMonthInvoices.length > 0 ? totalSpending / sameMonthInvoices.length : 0;
+
+    // Current invoice amount in RON
+    const currentYear = currentDate.getFullYear();
+    const currentAmount = toRON(
+      invoice.paymentInformation.totalCostAmount,
+      invoice.paymentInformation.currency?.code ?? "RON",
+      currentYear,
+    );
+
+    const percentOfAverage = monthAverage > 0 ? (currentAmount / monthAverage) * 100 : 0;
+
+    return {
+      monthAverage: Math.round(monthAverage),
+      currentAmount: Math.round(currentAmount),
+      percentOfAverage: Math.round(percentOfAverage),
+      invoiceCount: sameMonthInvoices.length,
+    };
+  }, [invoice, allInvoices]);
+
+  const insights = useMemo(() => detectSeasonalInsights(invoice, allInvoices, t), [invoice, allInvoices, t]);
+
+  // If we don't have enough historical data, show a placeholder
+  const hasInsufficientData = allInvoices.length < 2;
 
   return (
     <Card>
@@ -189,40 +230,58 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={styles["contentSpaced"]}>
-          {/* Month comparison */}
-          <div className={styles["monthSection"]}>
-            <div className={styles["monthRow"]}>
-              <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
-              <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
-            </div>
-            <Progress value={percentOfAverage} />
-            <div className={styles["monthMeta"]}>
-              <span>
-                {t("month.vsAverage", {
-                  month: monthName,
-                  amount: formatCurrency(decemberAverage, {currencyCode: currency.code, locale}),
-                })}
-              </span>
-              <span>{percentOfAverage.toFixed(0)}%</span>
-            </div>
-          </div>
-
-          {/* Insights list */}
-          <div className={styles["insightsList"]}>
-            {insights.map((insight) => (
-              <div
-                key={insight.id}
-                className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
-                <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
+        {hasInsufficientData ? (
+          <div className={styles["contentSpaced"]}>
+            <div className={styles["insightsList"]}>
+              <div className={`${styles["insightItem"]} ${styles["insightInfo"]}`}>
+                <div className={`${styles["insightIconWrapper"]} ${styles["insightIconInfo"]}`}>
+                  <TbBulb className={styles["iconSm"]} />
+                </div>
                 <div className={styles["insightContent"]}>
-                  <p className={styles["insightTitle"]}>{insight.title}</p>
-                  <p className={styles["insightDescription"]}>{insight.description}</p>
+                  <p className={styles["insightTitle"]}>{t("insights.insufficientData.title")}</p>
+                  <p className={styles["insightDescription"]}>{t("insights.insufficientData.description")}</p>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles["contentSpaced"]}>
+            {/* Month comparison */}
+            <div className={styles["monthSection"]}>
+              <div className={styles["monthRow"]}>
+                <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
+                <span className={styles["monthValue"]}>
+                  {formatCurrency(seasonalData.currentAmount, {currencyCode: currency.code, locale})}
+                </span>
+              </div>
+              <Progress value={seasonalData.percentOfAverage} />
+              <div className={styles["monthMeta"]}>
+                <span>
+                  {t("month.vsAverage", {
+                    month: monthName,
+                    amount: formatCurrency(seasonalData.monthAverage, {currencyCode: currency.code, locale}),
+                  })}
+                </span>
+                <span>{seasonalData.percentOfAverage.toFixed(0)}%</span>
+              </div>
+            </div>
+
+            {/* Insights list */}
+            <div className={styles["insightsList"]}>
+              {insights.map((insight) => (
+                <div
+                  key={insight.id}
+                  className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
+                  <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
+                  <div className={styles["insightContent"]}>
+                    <p className={styles["insightTitle"]}>{insight.title}</p>
+                    <p className={styles["insightDescription"]}>{insight.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
