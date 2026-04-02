@@ -355,8 +355,8 @@ describe("getMerchantBreakdown", () => {
 
     const result = getMerchantBreakdown([invoice]);
 
-    expect(result[0]?.name).toBe("Unknown");
-    expect(result[0]?.total).toBe(100);
+    // Invoices without valid merchantReference are now filtered out
+    expect(result).toHaveLength(0);
   });
 
   it("should normalize amounts to RON", () => {
@@ -467,7 +467,7 @@ describe("getCategorySpending", () => {
     const result = getCategorySpending(items);
 
     expect(result[0]?.fill).toBeDefined();
-    expect(result[0]?.fill).toContain("var(--chart-");
+    expect(result[0]?.fill).toContain("var(--ac-chart-");
   });
 });
 

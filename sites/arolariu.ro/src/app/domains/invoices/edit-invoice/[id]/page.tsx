@@ -6,6 +6,7 @@ import {createMetadata} from "@/metadata";
 import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
+import {notFound} from "next/navigation";
 import React from "react";
 import RenderEditInvoiceScreen from "./island";
 import styles from "./page.module.scss";
@@ -134,6 +135,11 @@ export default async function EditInvoicePage(
   }
 
   const invoice = invoiceResult.data;
+
+  // Return 404 for soft-deleted invoices
+  if (invoice.isSoftDeleted) {
+    notFound();
+  }
 
   // Skip merchant fetch if no merchant is linked (empty GUID = unlinked)
   let merchant = null;

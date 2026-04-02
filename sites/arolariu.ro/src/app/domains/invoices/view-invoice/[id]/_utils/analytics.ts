@@ -4,6 +4,7 @@
  */
 
 import {getTransactionYear, toRON} from "@/lib/currency";
+import {EMPTY_GUID} from "@/lib/utils.generic";
 import {formatEnum} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
 
@@ -17,16 +18,16 @@ export type CategorySpending = {
 
 // Chart color mapping
 const CATEGORY_COLORS: Record<number, string> = {
-  [ProductCategory.DAIRY]: "var(--chart-1)",
-  [ProductCategory.BAKED_GOODS]: "var(--chart-2)",
-  [ProductCategory.FRUITS]: "var(--chart-3)",
-  [ProductCategory.VEGETABLES]: "var(--chart-4)",
-  [ProductCategory.BEVERAGES]: "var(--chart-5)",
-  [ProductCategory.CLEANING_SUPPLIES]: "var(--chart-1)",
-  [ProductCategory.MEAT]: "var(--chart-2)",
-  [ProductCategory.FISH]: "var(--chart-3)",
-  [ProductCategory.GROCERIES]: "var(--chart-4)",
-  [ProductCategory.OTHER]: "var(--chart-5)",
+  [ProductCategory.DAIRY]: "var(--ac-chart-1)",
+  [ProductCategory.BAKED_GOODS]: "var(--ac-chart-2)",
+  [ProductCategory.FRUITS]: "var(--ac-chart-3)",
+  [ProductCategory.VEGETABLES]: "var(--ac-chart-4)",
+  [ProductCategory.BEVERAGES]: "var(--ac-chart-5)",
+  [ProductCategory.CLEANING_SUPPLIES]: "var(--ac-chart-1)",
+  [ProductCategory.MEAT]: "var(--ac-chart-2)",
+  [ProductCategory.FISH]: "var(--ac-chart-3)",
+  [ProductCategory.GROCERIES]: "var(--ac-chart-4)",
+  [ProductCategory.OTHER]: "var(--ac-chart-5)",
 };
 
 export function getCategorySpending(items: Product[]): CategorySpending[] {
@@ -45,7 +46,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
       category: formatEnum(ProductCategory, category),
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
-      fill: CATEGORY_COLORS[category] || "var(--chart-1)",
+      fill: CATEGORY_COLORS[category] || "var(--ac-chart-1)",
     }))
     .toSorted((a, b) => b.amount - a.amount);
 }
@@ -340,7 +341,7 @@ export type MerchantBreakdown = {
  * - Groups invoices by merchantReference
  * - Normalizes all amounts to RON using yearly average exchange rates
  * - Returns empty array if allInvoices is empty
- * - Handles missing merchantReference gracefully (groups as "Unknown")
+ * - Filters out invoices with empty GUID or missing merchant references
  */
 export function getMerchantBreakdown(allInvoices: ReadonlyArray<Invoice>): MerchantBreakdown[] {
   if (allInvoices.length === 0) {
@@ -350,7 +351,10 @@ export function getMerchantBreakdown(allInvoices: ReadonlyArray<Invoice>): Merch
   const merchantMap = new Map<string, {count: number; total: number}>();
 
   allInvoices.forEach((inv) => {
-    const merchantRef = inv.merchantReference || "Unknown";
+    // Skip invoices without valid merchant reference (EMPTY_GUID or missing)
+    const merchantRef = inv.merchantReference && inv.merchantReference !== EMPTY_GUID ? inv.merchantReference : null;
+    if (!merchantRef) return;
+
     const amount = inv.paymentInformation?.totalCostAmount ?? 0;
     const currency = inv.paymentInformation?.currency?.code ?? "RON";
     const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
