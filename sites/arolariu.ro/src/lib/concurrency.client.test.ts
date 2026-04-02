@@ -146,6 +146,26 @@ describe("withConcurrencyLimit", () => {
     // Act & Assert
     await expect(withConcurrencyLimit(tasks, 2)).rejects.toThrow();
   });
+
+  it("should skip undefined tasks in sparse arrays", async () => {
+    // Arrange - sparse array with holes
+    const tasks: Array<() => Promise<number>> = new Array(5);
+    tasks[0] = async () => 10;
+    // tasks[1] is undefined (sparse)
+    tasks[2] = async () => 20;
+    // tasks[3] is undefined (sparse)
+    tasks[4] = async () => 30;
+
+    // Act
+    const results = await withConcurrencyLimit(tasks, 2);
+
+    // Assert
+    expect(results[0]).toBe(10);
+    expect(results[1]).toBeUndefined();
+    expect(results[2]).toBe(20);
+    expect(results[3]).toBeUndefined();
+    expect(results[4]).toBe(30);
+  });
 });
 
 describe("withConcurrencyLimitAndProgress", () => {
@@ -339,5 +359,68 @@ describe("withConcurrencyLimitAndProgress", () => {
 
     // Assert - should complete without errors
     expect(results).toEqual([1, 2]);
+  });
+
+  it("should skip undefined tasks in sparse arrays", async () => {
+    // Arrange - sparse array with holes
+    const progressUpdates: Array<{completed: number; total: number}> = [];
+    const tasks: Array<() => Promise<number>> = new Array(4);
+    tasks[0] = async () => 100;
+    // tasks[1] is undefined (sparse)
+    tasks[2] = async () => 200;
+    tasks[3] = async () => 300;
+
+    // Act
+    const results = await withConcurrencyLimitAndProgress(tasks, {
+      limit: 2,
+      onProgress: (completed, total) => {
+        progressUpdates.push({completed, total});
+      },
+    });
+
+    // Assert
+    expect(results[0]).toBe(100);
+    expect(results[1]).toBeUndefined();
+    expect(results[2]).toBe(200);
+    expect(results[3]).toBe(300);
+    expect(progressUpdates).toHaveLength(3); // Only 3 tasks completed
+  });
+
+  it("should handle non-Error throw and wrap it in Error", async () => {
+    // Arrange - task that throws a string instead of Error
+    const tasks = [
+      async () => 1,
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw "String error instead of Error instance";
+      },
+      async () => 3,
+    ];
+
+    // Act
+    const results = await withConcurrencyLimitAndProgress(tasks, {limit: 2});
+
+    // Assert
+    expect(results[0]).toBe(1);
+    expect(results[1]).toBeInstanceOf(Error);
+    expect((results[1] as Error).message).toBe("String error instead of Error instance");
+    expect(results[2]).toBe(3);
+  });
+
+  it("should handle non-Error throw for primitive values", async () => {
+    // Arrange - task that throws a number
+    const tasks = [
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw 42;
+      },
+    ];
+
+    // Act
+    const results = await withConcurrencyLimitAndProgress(tasks, {limit: 1});
+
+    // Assert
+    expect(results[0]).toBeInstanceOf(Error);
+    expect((results[0] as Error).message).toBe("42");
   });
 });

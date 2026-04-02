@@ -15,7 +15,6 @@ import {
   getMerchantBreakdown,
   getPriceDistribution,
   getQuantityAnalysis,
-  getShoppingPatterns,
   getSpendingIntensityClass,
   getSpendingTrend,
   getUnitPriceAnalysis,

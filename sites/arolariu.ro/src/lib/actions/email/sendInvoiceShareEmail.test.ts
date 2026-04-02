@@ -124,5 +124,104 @@ describe("sendInvoiceShareEmail", () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain("Network error");
     });
+
+    it("should call internal API and return success on valid email", async () => {
+      // Mock all required dependencies for success path
+      mockFetchBFF.mockResolvedValue(defaultUser);
+      mockFetchJwtSecret.mockResolvedValue("test-jwt-secret-123");
+      mockCreateJwt.mockResolvedValue("generated-jwt-token-456");
+      mockFetch.mockResolvedValue({
+        json: async () => ({success: true}),
+        ok: true,
+      });
+
+      const result = await sendInvoiceShareEmail({
+        toEmail: "recipient@example.com",
+        toName: "Jane Recipient",
+        invoiceId: "invoice-abc-123",
+      });
+
+      // Verify the function returns success
+      expect(result).toEqual({success: true});
+
+      // Verify fetch was called with correct parameters
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3000/api/email",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            Authorization: "Bearer generated-jwt-token-456",
+          }),
+        }),
+      );
+
+      // Verify JWT token was created with correct parameters
+      expect(mockCreateJwt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purpose: "email-send",
+          sub: "user_123",
+        }),
+        "test-jwt-secret-123",
+      );
+
+      // Verify body contains correct data
+      const fetchCall = mockFetch.mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(fetchCall[1].body as string);
+      expect(body.toEmail).toBe("recipient@example.com");
+      expect(body.toName).toBe("Jane Recipient");
+      expect(body.fromName).toBe("John Doe");
+      expect(body.invoiceId).toBe("invoice-abc-123");
+    });
+
+    it("should return error when internal API reports failure", async () => {
+      // Mock auth and JWT to succeed
+      mockFetchBFF.mockResolvedValue(defaultUser);
+      mockFetchJwtSecret.mockResolvedValue("test-jwt-secret");
+      mockCreateJwt.mockResolvedValue("mock-jwt-token");
+
+      // Mock fetch to return API failure response
+      mockFetch.mockResolvedValue({
+        json: async () => ({success: false, error: "Send failed: Rate limit exceeded"}),
+        ok: false,
+      });
+
+      const result = await sendInvoiceShareEmail({
+        toEmail: "test@example.com",
+        toName: "Test User",
+        invoiceId: "inv-fail-123",
+      });
+
+      // Verify function returns the error from API
+      expect(result).toEqual({success: false, error: "Send failed: Rate limit exceeded"});
+
+      // Verify fetch was called
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3000/api/email",
+        expect.objectContaining({
+          method: "POST",
+        }),
+      );
+    });
+
+    it("should return default error message when API returns success:false without error field", async () => {
+      mockFetchBFF.mockResolvedValue(defaultUser);
+      mockFetchJwtSecret.mockResolvedValue("test-jwt-secret");
+      mockCreateJwt.mockResolvedValue("mock-jwt-token");
+
+      // Mock fetch to return success:false with no error field
+      mockFetch.mockResolvedValue({
+        json: async () => ({success: false}),
+        ok: false,
+      });
+
+      const result = await sendInvoiceShareEmail({
+        toEmail: "test@example.com",
+        toName: "Test",
+        invoiceId: "inv-123",
+      });
+
+      expect(result).toEqual({success: false, error: "Failed to send email"});
+    });
   });
 });

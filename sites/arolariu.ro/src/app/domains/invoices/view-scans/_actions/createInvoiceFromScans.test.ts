@@ -3,17 +3,39 @@
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {InvoiceScanType} from "@/types/invoices";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+// Mock server-side modules BEFORE importing them
+vi.mock("@/lib/actions/user/fetchUser", () => ({
+  fetchBFFUserFromAuthService: vi.fn(),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
+
+vi.mock("@/lib/actions/scans/markScansAsUsed", () => ({
+  markScansAsUsed: vi.fn(async () => {}),
+}));
+
 // analyzeInvoice is imported by the module under test — mock it as async (must return a Promise)
 vi.mock("@/lib/actions/invoices/analyzeInvoice", () => ({default: vi.fn(async () => {})}));
 
-// Stub references (from tests/stubs/) — use vi.mocked for type-safe access
+// Mock OpenTelemetry instrumentation
+vi.mock("@/instrumentation.server", () => ({
+  withSpan: vi.fn((name, fn) => fn()),
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+}));
+
+// Now import the mocked modules
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+
+// Stub references — use vi.mocked for type-safe access
 const mockFetch = vi.mocked(fetchWithTimeout);
 const mockFetchBFFUser = vi.mocked(fetchBFFUserFromAuthService);
 
@@ -435,6 +457,133 @@ describe("createInvoiceFromScans", () => {
 
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]?.error).toBe("Unknown error");
+    });
+  });
+
+  describe("fire-and-forget background operations", () => {
+    it("should handle background analysis failure gracefully in single mode", async () => {
+      // Arrange
+      const scans = [createTestScan("scan-1")];
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Import the analyzeInvoice mock
+      const {default: analyzeInvoice} = await import("@/lib/actions/invoices/analyzeInvoice");
+      const mockAnalyze = vi.mocked(analyzeInvoice);
+      mockAnalyze.mockRejectedValueOnce(new Error("Analysis service down"));
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(createMockInvoice("invoice-1")),
+      });
+
+      // Act
+      const result = await createInvoiceFromScans({scans, mode: "single"});
+
+      // The main function should still succeed (analysis is fire-and-forget)
+      expect(result.invoices).toHaveLength(1);
+      expect(result.convertedScanIds).toEqual(["scan-1"]);
+      expect(result.errors).toHaveLength(0);
+
+      // Wait for the microtask queue to flush (fire-and-forget catch runs async)
+      await vi.waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith("Background invoice analysis failed:", expect.any(Error));
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should handle background analysis failure gracefully in batch mode", async () => {
+      // Arrange
+      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const {default: analyzeInvoice} = await import("@/lib/actions/invoices/analyzeInvoice");
+      const mockAnalyze = vi.mocked(analyzeInvoice);
+      mockAnalyze.mockRejectedValueOnce(new Error("Analysis failed"));
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
+        })
+        .mockResolvedValueOnce({ok: true}); // attach scan-2
+
+      // Act
+      const result = await createInvoiceFromScans({scans, mode: "batch"});
+
+      // Main function should succeed
+      expect(result.invoices).toHaveLength(1);
+      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
+      expect(result.errors).toHaveLength(0);
+
+      // Wait for fire-and-forget error handler
+      await vi.waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith("Background invoice analysis failed:", expect.any(Error));
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should handle markScansAsUsed failure gracefully in single mode", async () => {
+      // Arrange
+      const scans = [createTestScan("scan-1")];
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      // Import and configure markScansAsUsed mock to reject
+      const {markScansAsUsed} = await import("@/lib/actions/scans/markScansAsUsed");
+      const mockMarkScans = vi.mocked(markScansAsUsed);
+      mockMarkScans.mockRejectedValueOnce(new Error("Mark scans failed"));
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(createMockInvoice("invoice-1")),
+      });
+
+      // Act
+      const result = await createInvoiceFromScans({scans, mode: "single"});
+
+      // Main function should succeed
+      expect(result.invoices).toHaveLength(1);
+      expect(result.convertedScanIds).toEqual(["scan-1"]);
+
+      // Wait for fire-and-forget warning
+      await vi.waitFor(() => {
+        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as used (non-critical):", expect.any(Error));
+      });
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle markScansAsUsed failure gracefully in batch mode", async () => {
+      // Arrange
+      const scans = [createTestScan("scan-1"), createTestScan("scan-2")];
+      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      // Import and configure markScansAsUsed mock to reject
+      const {markScansAsUsed} = await import("@/lib/actions/scans/markScansAsUsed");
+      const mockMarkScans = vi.mocked(markScansAsUsed);
+      mockMarkScans.mockRejectedValueOnce(new Error("Mark scans batch failed"));
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(createMockInvoice("invoice-batch")),
+        })
+        .mockResolvedValueOnce({ok: true}); // attach scan-2
+
+      // Act
+      const result = await createInvoiceFromScans({scans, mode: "batch"});
+
+      // Main function should succeed
+      expect(result.invoices).toHaveLength(1);
+      expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
+
+      // Wait for fire-and-forget warning
+      await vi.waitFor(() => {
+        expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to mark scans as used (non-critical):", expect.any(Error));
+      });
+
+      consoleWarnSpy.mockRestore();
     });
   });
 });

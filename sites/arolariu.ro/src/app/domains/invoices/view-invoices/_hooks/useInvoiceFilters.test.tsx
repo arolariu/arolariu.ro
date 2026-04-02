@@ -239,6 +239,64 @@ describe("useInvoiceFilters", () => {
       // Assert
       expect(mockReplace).toHaveBeenCalledWith(mockPathname, {scroll: false});
     });
+
+    it("should set payment types query param", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act - Set payment types to [100, 200] (Cash and Card)
+      result.current.setFilters({paymentTypes: [100, 200]});
+
+      // Assert - Verify URL includes 'pay' param
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?pay=100%2C200`, {scroll: false});
+    });
+
+    it("should set sort query param", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act - Set sort to non-default value
+      result.current.setFilters({sortBy: "amount-desc"});
+
+      // Assert - Verify URL includes 'sort' param
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?sort=amount-desc`, {scroll: false});
+    });
+
+    it("should set view query param", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act - Set view to non-default value
+      result.current.setFilters({view: "grid"});
+
+      // Assert - Verify URL includes 'view' param
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?view=grid`, {scroll: false});
+    });
+
+    it("should set multiple filter params including paymentTypes, sortBy, and view", () => {
+      // Arrange
+      const mockSearchParams = new URLSearchParams();
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      // Act - Set multiple filters at once
+      result.current.setFilters({
+        search: "groceries",
+        paymentTypes: [100, 200],
+        sortBy: "amount-asc",
+        view: "grid",
+      });
+
+      // Assert - Verify URL includes all params
+      const expectedUrl = `${mockPathname}?q=groceries&pay=100%2C200&sort=amount-asc&view=grid`;
+      expect(mockReplace).toHaveBeenCalledWith(expectedUrl, {scroll: false});
+    });
   });
 
   describe("clearFilters", () => {

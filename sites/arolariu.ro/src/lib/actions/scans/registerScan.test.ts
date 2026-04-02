@@ -10,13 +10,26 @@ import {registerScan} from "./registerScan";
 
 // Mock modules
 vi.mock("../user/fetchUser");
+vi.mock("@/lib/actions/storage/fetchConfig", () => ({
+  default: vi.fn().mockResolvedValue("http://mock-storage:10000/devstoreaccount1"),
+}));
 vi.mock("@/lib/azure/storageClient", () => ({
   rewriteAzuriteUrl: vi.fn((url: string) => url),
+  createBlobClient: vi.fn().mockResolvedValue({
+    getContainerClient: vi.fn().mockReturnValue({
+      getBlockBlobClient: vi.fn().mockReturnValue({
+        setMetadata: vi.fn().mockResolvedValue(undefined),
+      }),
+    }),
+  }),
 }));
 vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
+}));
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
 }));
 
 describe("registerScan", () => {

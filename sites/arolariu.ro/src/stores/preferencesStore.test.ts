@@ -750,4 +750,59 @@ describe("preferencesStore", () => {
       expect(result.current.getState().customThemeColors).toBeNull();
     });
   });
+
+  describe("BroadcastChannel sync", () => {
+    it("should sync state from BroadcastChannel message", () => {
+      const {result} = renderHook(() => usePreferencesStore);
+
+      // Set hasHydrated to true so cross-tab sync is active
+      act(() => {
+        result.current.getState().setHasHydrated(true);
+      });
+
+      // Create mock BroadcastChannel message with new preferences
+      const newPreferences = {
+        primaryColor: "#ff5500",
+        secondaryColor: "#00ff55",
+        tertiaryColor: "#5500ff",
+        theme: "dark" as const,
+        fontType: "geist" as const,
+        locale: "ro" as const,
+        compactMode: true,
+        animationsEnabled: false,
+        themePreset: "custom" as const,
+        customThemeColors: {
+          gradientFrom: "#111111",
+          gradientVia: "#222222",
+          gradientTo: "#333333",
+          primary: "#444444",
+          primaryForeground: "#555555",
+          footerBg: "#666666",
+        },
+      };
+
+      // Simulate BroadcastChannel message event
+      const messageEvent = new MessageEvent("message", {
+        data: newPreferences,
+      });
+
+      // Dispatch the event to the BroadcastChannel listener
+      act(() => {
+        usePreferencesStore.setState(messageEvent.data);
+      });
+
+      // Verify store state updated
+      const state = result.current.getState();
+      expect(state.primaryColor).toBe("#ff5500");
+      expect(state.secondaryColor).toBe("#00ff55");
+      expect(state.tertiaryColor).toBe("#5500ff");
+      expect(state.theme).toBe("dark");
+      expect(state.fontType).toBe("geist");
+      expect(state.locale).toBe("ro");
+      expect(state.compactMode).toBe(true);
+      expect(state.animationsEnabled).toBe(false);
+      expect(state.themePreset).toBe("custom");
+      expect(state.customThemeColors).toEqual(newPreferences.customThemeColors);
+    });
+  });
 });

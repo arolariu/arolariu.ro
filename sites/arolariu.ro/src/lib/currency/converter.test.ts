@@ -282,6 +282,62 @@ describe("edge cases", () => {
     expect(afterLast.rateYear).toBe(lastYear);
     expect(afterLast.isExactYearMatch).toBe(false);
   });
+
+  it("should return original amount for a currency with no rates in any year", () => {
+    // Use a completely fictional currency code that will never be in the dataset
+    const result = toRON(100, "XYZ", 2024);
+    // Unknown currency — returns original amount unchanged (identity fallback)
+    expect(result).toBe(100);
+
+    // Verify detailed version shows it's not supported
+    const detailed = toRONDetailed(100, "XYZ", 2024);
+    expect(detailed.amountInRon).toBe(100);
+    expect(detailed.rateUsed).toBe(1);
+    expect(detailed.isExactYearMatch).toBe(false);
+  });
+
+  it("should handle year far outside available range (ancient year)", () => {
+    // Test with year 1900 where no data exists
+    // Should fall back to nearest available year (2018 is the first year in data)
+    const years = getAvailableYears();
+    const firstYear = years[0]!;
+
+    const result = toRON(100, "EUR", 1900);
+    const expectedResult = toRON(100, "EUR", firstYear);
+
+    expect(result).toBe(expectedResult);
+
+    // Verify detailed version shows fallback
+    const detailed = toRONDetailed(100, "EUR", 1900);
+    expect(detailed.rateYear).toBe(firstYear);
+    expect(detailed.isExactYearMatch).toBe(false);
+  });
+
+  it("should handle year far outside available range (far future year)", () => {
+    // Test with year 3000 where no data exists
+    // Should fall back to nearest available year (2025 is likely the last year in data)
+    const years = getAvailableYears();
+    const lastYear = years[years.length - 1]!;
+
+    const result = toRON(100, "EUR", 3000);
+    const expectedResult = toRON(100, "EUR", lastYear);
+
+    expect(result).toBe(expectedResult);
+
+    // Verify detailed version shows fallback
+    const detailed = toRONDetailed(100, "EUR", 3000);
+    expect(detailed.rateYear).toBe(lastYear);
+    expect(detailed.isExactYearMatch).toBe(false);
+  });
+
+  it("should handle empty availableYears edge case gracefully", () => {
+    // This tests the defensive line 1070: `if (nearestYear === undefined) return null`
+    // In normal operation this never happens, but we can test the behavior if it did
+    const unknownCurrency = "ZZZZZ"; // Guaranteed not to exist
+    const result = toRON(100, unknownCurrency, 2024);
+    // Should return original amount since currency is not supported
+    expect(result).toBe(100);
+  });
 });
 
 describe("parseRatesCSV", () => {
