@@ -66,11 +66,11 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
   const chartConfig = {
     current: {
       label: t("labels.current"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
     average: {
       label: t("labels.average"),
-      color: "hsl(var(--chart-3))",
+      color: "var(--ac-chart-3)",
     },
   };
 
@@ -122,14 +122,14 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
               />
               <Bar
                 dataKey='current'
-                fill='hsl(var(--chart-1))'
+                fill='var(--ac-chart-1)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
                 name={t("labels.current")}
               />
               <Bar
                 dataKey='average'
-                fill='hsl(var(--chart-3))'
+                fill='var(--ac-chart-3)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
                 name={t("labels.average")}

@@ -120,7 +120,7 @@ export function VehicleCard(): React.JSX.Element {
             <h4 className={styles["chartTitle"]}>{t("chart.title")}</h4>
             <ChartContainer
               config={{
-                amount: {label: t("chart.amount"), color: "hsl(var(--chart-1))"},
+                amount: {label: t("chart.amount"), color: "var(--ac-chart-1)"},
               }}
               className={styles["chartWrapper"]}>
               <ResponsiveContainer
@@ -138,12 +138,12 @@ export function VehicleCard(): React.JSX.Element {
                       y2='1'>
                       <stop
                         offset='0%'
-                        stopColor='hsl(var(--chart-1))'
+                        stopColor='var(--ac-chart-1)'
                         stopOpacity={0.3}
                       />
                       <stop
                         offset='100%'
-                        stopColor='hsl(var(--chart-1))'
+                        stopColor='var(--ac-chart-1)'
                         stopOpacity={0.05}
                       />
                     </linearGradient>
@@ -163,7 +163,7 @@ export function VehicleCard(): React.JSX.Element {
                   <Area
                     type='monotone'
                     dataKey='amount'
-                    stroke='hsl(var(--chart-1))'
+                    stroke='var(--ac-chart-1)'
                     fill='url(#fillFuel)'
                     strokeWidth={2}
                   />

@@ -25,12 +25,12 @@
   td {
     padding: 0.75rem 1rem;
     text-align: left;
-    border-bottom: 1px solid hsl(var(--border));
+    border-bottom: 1px solid var(--ac-border);
   }
 
   th {
     font-weight: 600;
-    color: hsl(var(--muted-foreground));
+    color: var(--ac-muted-foreground);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -53,7 +53,8 @@
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: hsl(var(--accent) / 0.5);
+    background-color: var(--ac-accent);
+    opacity: 0.5;
   }
 }
 
@@ -71,7 +72,7 @@
 
 .cellTotal {
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: var(--ac-foreground);
 }
 
 .totalAmount {
@@ -106,7 +107,7 @@
 
 .barFill {
   width: 100%;
-  background: linear-gradient(180deg, hsl(var(--chart-2)) 0%, hsl(var(--chart-2) / 0.7) 100%);
+  background: linear-gradient(180deg, var(--ac-chart-2) 0%, var(--ac-chart-2) 70%);
   border-radius: 2px 2px 0 0;
   min-height: 2px;
   transition: background-color 0.15s ease;
@@ -116,7 +117,7 @@
   display: flex;
   gap: 0.25rem;
   font-size: 0.625rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--ac-muted-foreground);
 }
 
 .monthLabel {
@@ -127,7 +128,7 @@
 
 .emptyState {
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: var(--ac-muted-foreground);
   padding: 2rem;
   font-size: 0.875rem;
 }

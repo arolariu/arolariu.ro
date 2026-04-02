@@ -82,7 +82,7 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
   const chartConfig = {
     invoiceCount: {
       label: t("labels.invoiceCount"),
-      color: "hsl(var(--chart-4))",
+      color: "var(--ac-chart-4)",
     },
   };
 
@@ -109,23 +109,23 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                   y2='1'>
                   <stop
                     offset='0%'
-                    stopColor='hsl(var(--chart-4))'
+                    stopColor='var(--ac-chart-4)'
                     stopOpacity={0.8}
                   />
                   <stop
                     offset='100%'
-                    stopColor='hsl(var(--chart-4))'
+                    stopColor='var(--ac-chart-4)'
                     stopOpacity={0.2}
                   />
                 </linearGradient>
               </defs>
               <PolarGrid
-                stroke='hsl(var(--border))'
+                stroke='var(--ac-border)'
                 strokeDasharray='3 3'
               />
               <PolarAngleAxis
                 dataKey='segment'
-                tick={{fontSize: 12, fill: "hsl(var(--foreground))"}}
+                tick={{fontSize: 12, fill: "var(--ac-foreground)"}}
               />
               <PolarRadiusAxis
                 angle={90}
@@ -143,7 +143,7 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
               {/* CRITICAL: dataKey must match TimeOfDaySegment field name */}
               <Radar
                 dataKey='invoiceCount'
-                stroke='hsl(var(--chart-4))'
+                stroke='var(--ac-chart-4)'
                 fill='url(#colorTimeOfDay)'
                 strokeWidth={2}
               />

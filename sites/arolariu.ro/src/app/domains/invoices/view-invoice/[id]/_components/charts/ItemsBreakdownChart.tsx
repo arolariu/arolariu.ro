@@ -57,13 +57,13 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   const chartConfig = {
     price: {
       label: t("labels.price"),
-      color: "hsl(var(--chart-2))",
+      color: "var(--ac-chart-2)",
     },
   };
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   const tickFormatter = useCallback((value: number) => `${value}`, []);

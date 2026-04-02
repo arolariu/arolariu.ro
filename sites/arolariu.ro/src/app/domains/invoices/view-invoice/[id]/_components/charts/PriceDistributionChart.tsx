@@ -52,11 +52,11 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   const chartConfig = {
     count: {
       label: t("labels.items"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
-  const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `hsl(var(--chart-${(index % 5) + 1}))`}));
+  const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `var(--ac-chart-${(index % 5) + 1})`}));
 
   return (
     <Card className={styles["card"]}>

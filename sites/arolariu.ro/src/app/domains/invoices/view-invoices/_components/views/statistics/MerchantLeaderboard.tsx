@@ -83,7 +83,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   const chartConfig = {
     totalSpent: {
       label: t("labels.totalSpent"),
-      color: "hsl(var(--chart-2))",
+      color: "var(--ac-chart-2)",
     },
   };
 
@@ -153,7 +153,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
               />
               <Bar
                 dataKey='totalSpent'
-                fill='hsl(var(--chart-2))'
+                fill='var(--ac-chart-2)'
                 radius={[0, 4, 4, 0]}
               />
             </BarChart>

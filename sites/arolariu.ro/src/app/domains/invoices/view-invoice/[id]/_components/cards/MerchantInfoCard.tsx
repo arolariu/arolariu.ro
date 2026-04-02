@@ -270,12 +270,12 @@ export function MerchantInfoCard(): React.JSX.Element {
                         y2='1'>
                         <stop
                           offset='5%'
-                          stopColor='hsl(var(--chart-1))'
+                          stopColor='var(--ac-chart-1)'
                           stopOpacity={0.3}
                         />
                         <stop
                           offset='95%'
-                          stopColor='hsl(var(--chart-1))'
+                          stopColor='var(--ac-chart-1)'
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -283,7 +283,7 @@ export function MerchantInfoCard(): React.JSX.Element {
                     <Area
                       type='monotone'
                       dataKey='amount'
-                      stroke='hsl(var(--chart-1))'
+                      stroke='var(--ac-chart-1)'
                       fill='url(#merchantSparkline)'
                       strokeWidth={2}
                     />

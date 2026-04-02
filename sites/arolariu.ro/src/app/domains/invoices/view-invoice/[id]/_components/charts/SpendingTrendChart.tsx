@@ -57,7 +57,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
   const chartConfig = {
     amount: {
       label: t("labels.amount"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
@@ -89,12 +89,12 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                   y2='1'>
                   <stop
                     offset='5%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0.3}
                   />
                   <stop
                     offset='95%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -125,7 +125,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
               <Area
                 type='monotone'
                 dataKey='amount'
-                stroke='hsl(var(--chart-1))'
+                stroke='var(--ac-chart-1)'
                 strokeWidth={2}
                 fill='url(#colorAmount)'
               />
@@ -134,8 +134,8 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                   x={currentPoint.date}
                   y={currentPoint.amount}
                   r={6}
-                  fill='hsl(var(--primary))'
-                  stroke='hsl(var(--background))'
+                  fill='var(--ac-primary)'
+                  stroke='var(--ac-background)'
                   strokeWidth={2}
                 />
               ) : null}

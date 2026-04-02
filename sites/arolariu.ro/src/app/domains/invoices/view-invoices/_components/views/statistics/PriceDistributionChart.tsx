@@ -70,13 +70,13 @@ export function PriceDistributionChart({data, currency}: Props): React.JSX.Eleme
   const chartConfig = {
     count: {
       label: t("labels.itemCount"),
-      color: "hsl(var(--chart-3))",
+      color: "var(--ac-chart-3)",
     },
   };
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   return (

@@ -98,7 +98,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
   const chartConfig = {
     amount: {
       label: t("labels.amount"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
@@ -127,12 +127,12 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                   y2='1'>
                   <stop
                     offset='5%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0.3}
                   />
                   <stop
                     offset='95%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -155,7 +155,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
               <Area
                 type='monotone'
                 dataKey='amount'
-                stroke='hsl(var(--chart-1))'
+                stroke='var(--ac-chart-1)'
                 strokeWidth={2}
                 fill='url(#colorSpending)'
               />

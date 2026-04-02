@@ -103,13 +103,13 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
       label: item.category,
-      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   const total = data.reduce((sum, item) => sum + item.amount, 0);

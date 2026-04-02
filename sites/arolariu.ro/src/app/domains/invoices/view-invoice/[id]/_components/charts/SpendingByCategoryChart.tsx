@@ -81,7 +81,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
       label: item.category,
-      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
@@ -92,7 +92,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   return (

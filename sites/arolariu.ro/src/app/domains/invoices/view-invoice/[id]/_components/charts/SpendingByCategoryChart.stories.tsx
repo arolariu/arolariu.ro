@@ -59,9 +59,9 @@ export const ManyCategories: Story = {
 export const DominantCategory: Story = {
   args: {
     data: [
-      {category: "Groceries", amount: 450.0, count: 25, fill: "var(--chart-1)"},
-      {category: "Dairy", amount: 30.5, count: 3, fill: "var(--chart-2)"},
-      {category: "Beverages", amount: 18.0, count: 2, fill: "var(--chart-3)"},
+      {category: "Groceries", amount: 450.0, count: 25, fill: "var(--ac-chart-1)"},
+      {category: "Dairy", amount: 30.5, count: 3, fill: "var(--ac-chart-2)"},
+      {category: "Beverages", amount: 18.0, count: 2, fill: "var(--ac-chart-3)"},
     ],
     currency: "RON",
   },
@@ -77,7 +77,7 @@ export const EmptyData: Story = {
 /** Single data point — only one category. */
 export const SingleDataPoint: Story = {
   args: {
-    data: [{category: "Groceries", amount: 156.75, count: 8, fill: "var(--chart-1)"}],
+    data: [{category: "Groceries", amount: 156.75, count: 8, fill: "var(--ac-chart-1)"}],
     currency: "RON",
   },
 };
