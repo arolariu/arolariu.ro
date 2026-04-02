@@ -50,7 +50,7 @@ type MarkScansAsUsedInput = Readonly<{
  * @example
  * ```typescript
  * // After creating invoices from scans
- * const blobNames = scans.map(scan => 
+ * const blobNames = scans.map(scan =>
  *   scan.blobUrl.split("/").slice(-3).join("/")
  * );
  * await markScansAsUsed({blobNames});
@@ -88,8 +88,10 @@ export async function markScansAsUsed({blobNames}: MarkScansAsUsedInput): Promis
               status: "archived",
             };
 
-            // Set updated metadata
-            await blockBlobClient.setMetadata(updatedMetadata);
+            // Set updated metadata with etag conditional write
+            await blockBlobClient.setMetadata(updatedMetadata, {
+              conditions: {ifMatch: props.etag},
+            });
             logWithTrace("info", `Marked scan as used: ${blobName}`, {blobName}, "server");
           } catch (error) {
             // Log but don't fail—best-effort marking
