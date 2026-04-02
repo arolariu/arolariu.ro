@@ -2242,7 +2242,8 @@
           "reset": "Réinitialiser le zoom",
           "rotate": "Pivoter",
           "download": "Télécharger",
-          "fullScreen": "Plein écran"
+          "fullScreen": "Plein écran",
+          "toggleZoom": "Basculer le zoom"
         },
         "navigation": {
           "previous": "Précédent",
@@ -2744,7 +2745,8 @@
         "labels": {
           "lastAnalyzed": "Dernière analyse",
           "updates": "{count, plural, one {# mise à jour} other {# mises à jour}}",
-          "granularOptions": "Ou choisissez une analyse spécifique"
+          "granularOptions": "Ou choisissez une analyse spécifique",
+          "analysisComplete": "Analyse terminée — Toutes les données ont été extraites"
         },
         "toasts": {
           "error": {
@@ -3465,7 +3467,8 @@
         },
         "editing": {
           "saved": "Article mis à jour avec succès",
-          "cancel": "Modification annulée"
+          "cancel": "Modification annulée",
+          "fieldLabel": "Modifier {field} pour {name}"
         },
         "deleteConfirm": {
           "title": "Supprimer les articles",
@@ -3905,7 +3908,10 @@
         "selectedCount": "{count} sélectionnée(s)",
         "clearAll": "Effacer",
         "selectAll": "Tout sélectionner",
-        "noScans": "Aucune numérisation disponible"
+        "noScans": "Aucune numérisation disponible",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "scansCount": "scans"
       },
       "detailsForm": {
         "title": "Détails de la facture",

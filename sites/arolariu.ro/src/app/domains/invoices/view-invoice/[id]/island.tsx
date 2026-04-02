@@ -27,6 +27,7 @@ import {PrintHeader} from "./_components/PrintHeader";
 import {InvoiceTabs} from "./_components/tabs/InvoiceTabs";
 import {InvoiceTimeline} from "./_components/timeline/InvoiceTimeline";
 import {InvoiceContextProvider} from "./_context/InvoiceContext";
+import {calculateHealthScorePercentage} from "./_utils/healthScore";
 import styles from "./island.module.scss";
 
 type Props = Readonly<{
@@ -54,45 +55,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   }
 
   // Calculate health score percentage for compact display
-  const healthScorePercentage = useMemo(() => {
-    const items = invoice.items.filter((item) => !item.metadata.isSoftDeleted);
-    const totalItems = items.length;
-
-    // Same calculation as InvoiceHealthScore component
-    const hasProducts = totalItems > 0;
-    const productsPoints = hasProducts ? 15 : 0;
-
-    const completeProducts = items.filter((item) => item.metadata.isComplete).length;
-    const completenessRatio = totalItems > 0 ? completeProducts / totalItems : 0;
-    const completenessPoints = Math.round(completenessRatio * 20);
-
-    const confidenceScores = items.map((item) => item.metadata.confidence).filter((c) => c > 0);
-    const avgConfidence = confidenceScores.length > 0 ? confidenceScores.reduce((sum, c) => sum + c, 0) / confidenceScores.length : 0;
-    const confidencePoints = Math.round(avgConfidence * 20);
-
-    const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
-    const hasMerchant = invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0;
-    const merchantPoints = hasMerchant ? 10 : 0;
-
-    const hasCompletePayment =
-      Boolean(invoice.paymentInformation.transactionDate)
-      && invoice.paymentInformation.totalCostAmount > 0
-      && invoice.paymentInformation.currency.length > 0;
-    const paymentPoints = hasCompletePayment ? 15 : 0;
-
-    const categorizedProducts = items.filter((item) => item.category !== "NOT_DEFINED").length;
-    const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
-    const categoryPoints = Math.round(categoryRatio * 10);
-
-    const hasRecipes = invoice.possibleRecipes.length > 0;
-    const recipesPoints = hasRecipes ? 10 : 0;
-
-    const totalScore =
-      productsPoints + completenessPoints + confidencePoints + merchantPoints + paymentPoints + categoryPoints + recipesPoints;
-    const maxScore = 100;
-
-    return maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-  }, [invoice]);
+  const healthScorePercentage = useMemo(() => calculateHealthScorePercentage(invoice), [invoice]);
 
   return (
     <InvoiceContextProvider

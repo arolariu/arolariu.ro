@@ -71,8 +71,10 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
  * @param filename The custom filename for the export (without extension).
  */
 function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
-  console.warn("CSV export not yet implemented");
-  // TODO: impl of feature.
+  void invoices;
+  void options;
+  void filename;
+  throw new Error("CSV export is not yet implemented. Please use JSON export.");
 }
 
 /**
@@ -82,8 +84,10 @@ function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportReq
  * @param filename The custom filename for the export (without extension).
  */
 function exportToPdf(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
-  console.warn("PDF export not yet implemented");
-  // TODO: impl of feature.
+  void invoices;
+  void options;
+  void filename;
+  throw new Error("PDF export is not yet implemented. Please use JSON export.");
 }
 
 /**
@@ -105,7 +109,7 @@ export function exportInvoices(invoices: ReadonlyArray<Invoice>, options: Invoic
       exportToPdf(invoices, options, filename);
       break;
     default:
-      console.error(`>>> Unsupported export format: ${format}`);
+      throw new Error(`Unsupported export format: ${String(format)}`);
       break;
   }
 }

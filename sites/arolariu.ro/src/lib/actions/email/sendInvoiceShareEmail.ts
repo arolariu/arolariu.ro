@@ -95,7 +95,8 @@ export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): 
       addSpanEvent("auth_verified", {userIdentifier, toEmail});
 
       // 2. Validate input
-      if (!toEmail || !toEmail.includes("@")) {
+      const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!toEmail || !EMAIL_REGEX.test(toEmail)) {
         return {success: false, error: "Invalid email address"};
       }
       if (!invoiceId) {

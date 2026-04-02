@@ -38,7 +38,15 @@ import {sendInvoiceShareEmail} from "./sendInvoiceShareEmail";
 
 const defaultUser = {
   userIdentifier: "user_123",
-  user: {id: "user_123", firstName: "John", lastName: "Doe", emailAddresses: [{emailAddress: "john@example.com", id: "email_1"}], imageUrl: "https://example.com/avatar.jpg", hasImage: true, createdAt: Date.now()},
+  user: {
+    id: "user_123",
+    firstName: "John",
+    lastName: "Doe",
+    emailAddresses: [{emailAddress: "john@example.com", id: "email_1"}],
+    imageUrl: "https://example.com/avatar.jpg",
+    hasImage: true,
+    createdAt: Date.now(),
+  },
 };
 
 describe("sendInvoiceShareEmail", () => {
@@ -64,7 +72,10 @@ describe("sendInvoiceShareEmail", () => {
     });
 
     it("should use Someone as fallback", async () => {
-      mockFetchBFF.mockResolvedValue({userIdentifier: "u", user: {id: "u", firstName: null, lastName: null, emailAddresses: [], imageUrl: null, hasImage: false, createdAt: 0}});
+      mockFetchBFF.mockResolvedValue({
+        userIdentifier: "u",
+        user: {id: "u", firstName: null, lastName: null, emailAddresses: [], imageUrl: null, hasImage: false, createdAt: 0},
+      });
       await sendInvoiceShareEmail({toEmail: "t@t.com", toName: "T", invoiceId: "i"});
       const body = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string);
       expect(body.fromName).toBe("Someone");

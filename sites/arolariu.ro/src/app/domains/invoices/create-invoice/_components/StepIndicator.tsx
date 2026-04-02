@@ -73,7 +73,9 @@ export default function StepIndicator(): React.JSX.Element {
   const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
 
   return (
-    <div className={styles["container"]}>
+    <nav
+      className={styles["container"]}
+      aria-label='Invoice creation steps'>
       {STEPS.map((step, index) => {
         const isActive = index === currentStepIndex;
         const isCompleted = index < currentStepIndex;
@@ -81,7 +83,8 @@ export default function StepIndicator(): React.JSX.Element {
         return (
           <div
             key={step.id}
-            className={styles["stepWrapper"]}>
+            className={styles["stepWrapper"]}
+            aria-current={isActive ? "step" : undefined}>
             <StepItem
               step={step}
               isActive={isActive}
@@ -93,6 +96,6 @@ export default function StepIndicator(): React.JSX.Element {
           </div>
         );
       })}
-    </div>
+    </nav>
   );
 }

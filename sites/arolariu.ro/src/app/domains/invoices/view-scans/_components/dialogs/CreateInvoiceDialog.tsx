@@ -497,7 +497,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <p className={styles["completeErrorsListTitle"]}>{t("complete.errorsLabel")}</p>
               {errors.map((error, index) => (
                 <div
-                  key={index}
+                  key={`error-${index}-${error.message?.slice(0, 30)}`}
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
                   <p className={styles["completeErrorItemText"]}>{error.message}</p>

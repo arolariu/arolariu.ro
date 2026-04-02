@@ -479,7 +479,7 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
   const isFuture = diffMs < 0;
   const suffix = isFuture ? "from now" : "ago";
 
-  if (diffSecs < 60) return "just now";
+  if (diffSecs < 60) return isFuture ? "in less than a minute" : "just now";
   if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? "" : "s"} ${suffix}`;
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ${suffix}`;
   if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ${suffix}`;
