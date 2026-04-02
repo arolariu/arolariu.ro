@@ -18,11 +18,12 @@
  * - Day-of-week labels and month labels
  *
  * **Color Scale:**
- * - 0: Grey (no spending)
- * - 1-25%: Light green (opacity 0.3)
- * - 25-50%: Medium-light green (opacity 0.5)
- * - 50-75%: Medium-dark green (opacity 0.75)
- * - 75-100%: Dark green (opacity 1.0)
+ * Uses the `--success` CSS variable (green: `hsl(142 71% 35%)`) with opacity levels:
+ * - Level 0: Grey (no spending) - `color('muted')` with opacity 0.3
+ * - Level 1 (1-25%): Light green - `color('success')` with opacity 0.3
+ * - Level 2 (25-50%): Medium-light green - `color('success')` with opacity 0.5
+ * - Level 3 (50-75%): Medium-dark green - `color('success')` with opacity 0.75
+ * - Level 4 (75-100%): Dark green - `color('success')` with opacity 1.0
  */
 
 import {formatAmount, formatDate as formatDateGeneric} from "@/lib/utils.generic";
