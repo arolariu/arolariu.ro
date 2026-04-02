@@ -1711,7 +1711,8 @@
               "amount": "Amount"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} invoices",
+              "andMore": "and {count} more..."
             },
             "title": "Spending Over Time",
             "description": "Track your spending trends"

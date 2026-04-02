@@ -49,7 +49,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>
   );
 }
@@ -59,12 +59,28 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
  *
  * @param data - Time segment data with invoice counts
  * @returns Radar chart component
+ *
+ * @remarks
+ * **Important:** The `dataKey` in the Radar component MUST match the field name
+ * in TimeOfDaySegment (currently 'invoiceCount'). Mismatches will cause the chart
+ * to render with zero values.
+ *
+ * **Data Structure:**
+ * ```typescript
+ * {
+ *   segment: string;       // "Morning" | "Afternoon" | "Evening" | "Night"
+ *   invoiceCount: number;  // Used by Radar dataKey
+ *   totalAmount: number;
+ *   averageAmount: number;
+ * }
+ * ```
  */
 export function TimeOfDayChart({data}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.timeOfDay");
 
+  // IMPORTANT: This key must match the field name in TimeOfDaySegment
   const chartConfig = {
-    count: {
+    invoiceCount: {
       label: t("labels.invoiceCount"),
       color: "hsl(var(--chart-4))",
     },
@@ -124,8 +140,9 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                   />
                 }
               />
+              {/* CRITICAL: dataKey must match TimeOfDaySegment field name */}
               <Radar
-                dataKey='count'
+                dataKey='invoiceCount'
                 stroke='hsl(var(--chart-4))'
                 fill='url(#colorTimeOfDay)'
                 strokeWidth={2}

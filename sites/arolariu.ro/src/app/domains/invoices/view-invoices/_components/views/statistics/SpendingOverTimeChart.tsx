@@ -21,6 +21,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import Link from "next/link";
 import type {MonthlySpending} from "../../../_utils/statistics";
 import styles from "./SpendingOverTimeChart.module.scss";
 
@@ -55,6 +56,24 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      {data.invoices && data.invoices.length > 0 && (
+        <ul className={styles["tooltipInvoices"]}>
+          {data.invoices.slice(0, 10).map((inv) => (
+            <li
+              key={inv.id}
+              className={styles["tooltipInvoiceItem"]}>
+              <Link
+                href={`/domains/invoices/view-invoice/${inv.id}/`}
+                className={styles["tooltipInvoiceLink"]}>
+                {inv.name} — {formatAmount(inv.amount)} {currency}
+              </Link>
+            </li>
+          ))}
+          {data.invoices.length > 10 && (
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }

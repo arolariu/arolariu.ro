@@ -1710,7 +1710,8 @@
               "amount": ""
             },
             "tooltip": {
-              "invoiceCount": ""
+              "invoiceCount": "",
+              "andMore": "et {count} de plus..."
             },
             "title": "",
             "description": ""

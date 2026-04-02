@@ -1711,7 +1711,8 @@
               "amount": "Sumă"
             },
             "tooltip": {
-              "invoiceCount": "{count} facturi"
+              "invoiceCount": "{count} facturi",
+              "andMore": "și încă {count}..."
             },
             "title": "Cheltuieli în Timp",
             "description": "Urmăriți tendințele cheltuielilor"
