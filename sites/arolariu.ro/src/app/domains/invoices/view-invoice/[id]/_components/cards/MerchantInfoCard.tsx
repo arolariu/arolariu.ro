@@ -28,12 +28,22 @@ import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import type {Invoice} from "@/types/invoices";
 import {MerchantCategory} from "@/types/invoices";
-import {Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ResponsiveContainer,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useMemo} from "react";
 import {TbCalendar, TbChartBar, TbGlobe, TbMapPin, TbPhone, TbReceipt, TbShoppingBag} from "react-icons/tb";
-import {Area, AreaChart, ResponsiveContainer} from "recharts";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
 

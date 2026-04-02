@@ -6,9 +6,21 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
 

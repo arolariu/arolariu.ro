@@ -1,9 +1,21 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
 import styles from "./ItemsBreakdownChart.module.scss";
 

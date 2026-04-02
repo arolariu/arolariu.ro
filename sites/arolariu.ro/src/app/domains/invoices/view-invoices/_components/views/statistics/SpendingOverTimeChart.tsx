@@ -6,9 +6,21 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MonthlySpending} from "../../../_utils/statistics";
 import styles from "./SpendingOverTimeChart.module.scss";
 

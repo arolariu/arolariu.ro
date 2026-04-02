@@ -5,9 +5,22 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/TimeOfDayChart
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {TimeOfDaySegment} from "../../../_utils/statistics";
 import styles from "./TimeOfDayChart.module.scss";
 

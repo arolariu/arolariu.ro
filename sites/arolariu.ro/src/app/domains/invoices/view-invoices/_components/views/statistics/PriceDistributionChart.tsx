@@ -5,9 +5,21 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/PriceDistributionChart
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {PriceBucket} from "../../../_utils/statistics";
 import styles from "./PriceDistributionChart.module.scss";
 

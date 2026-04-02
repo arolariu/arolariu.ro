@@ -1,11 +1,24 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {Button, Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip, ChartTooltipContent} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbBarrel, TbBulb, TbCalendar, TbCar, TbCurrencyDollar, TbGasStation, TbGauge, TbMapPin, TbTrendingUp} from "react-icons/tb";
-import {Area, AreaChart, ResponsiveContainer, XAxis, YAxis} from "recharts";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./VehicleCard.module.scss";
 

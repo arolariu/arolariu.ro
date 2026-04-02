@@ -1,8 +1,19 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartLegend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
 
@@ -118,7 +129,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                   />
                 }
               />
-              <Legend content={<CustomLegend payload={[]} />} />
+              <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>

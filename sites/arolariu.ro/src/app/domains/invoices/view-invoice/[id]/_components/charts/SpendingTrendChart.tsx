@@ -1,9 +1,22 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {Area, AreaChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {SpendingTrendData} from "../../_utils/analytics";
 import styles from "./SpendingTrendChart.module.scss";
 

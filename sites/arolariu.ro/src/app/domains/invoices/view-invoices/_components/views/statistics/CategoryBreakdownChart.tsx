@@ -6,9 +6,20 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartLegend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategoryAggregate} from "../../../_utils/statistics";
 import styles from "./CategoryBreakdownChart.module.scss";
 
@@ -137,7 +148,7 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
                   />
                 }
               />
-              <Legend content={<CustomLegend payload={[]} />} />
+              <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
