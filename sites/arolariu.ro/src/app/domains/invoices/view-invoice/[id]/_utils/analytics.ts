@@ -3,7 +3,7 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_utils/analytics
  */
 
-import {generateRandomInvoice, generateRandomInvoices} from "@/data/mocks";
+import {getTransactionYear, toRON} from "@/lib/currency";
 import {formatEnum} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
 
@@ -137,16 +137,79 @@ export type SpendingTrendData = {
   name: string;
 };
 
-export function getSpendingTrend(): SpendingTrendData[] {
-  const historicalInvoices = generateRandomInvoices(20); // This would be fetched from user data
-  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
-  return allInvoices.map((inv) => ({
-    date: inv.createdAt.toLocaleDateString("en-US", {month: "short", day: "numeric"}),
-    amount: inv.paymentInformation.totalCostAmount,
-    isCurrent: inv.id === currentInvoiceSummary.id,
-    name: inv.name,
-  }));
+/**
+ * Computes spending trend data from user's invoices, grouping by month.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of monthly spending data with current month highlighted
+ *
+ * @remarks
+ * - Groups invoices by month using transactionDate (falls back to createdAt)
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Highlights the month containing the current invoice
+ * - Returns empty array if allInvoices has fewer than 2 invoices
+ */
+export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): SpendingTrendData[] {
+  // Need at least 2 invoices for meaningful trend data
+  if (allInvoices.length < 2) {
+    return [];
+  }
+
+  // Group invoices by month
+  const monthlyData = new Map<
+    string,
+    {
+      amount: number;
+      count: number;
+      invoiceIds: Set<string>;
+      names: string[];
+      date: Date;
+    }
+  >();
+
+  allInvoices.forEach((inv) => {
+    const transactionDate = inv.paymentInformation?.transactionDate ?? inv.createdAt;
+    const date = new Date(transactionDate);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+    // Normalize amount to RON
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currencyCode = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    const amountInRON = toRON(amount, currencyCode, year);
+
+    const existing = monthlyData.get(monthKey);
+    if (existing) {
+      existing.amount += amountInRON;
+      existing.count += 1;
+      existing.invoiceIds.add(inv.id);
+      existing.names.push(inv.name);
+    } else {
+      monthlyData.set(monthKey, {
+        amount: amountInRON,
+        count: 1,
+        invoiceIds: new Set([inv.id]),
+        names: [inv.name],
+        date,
+      });
+    }
+  });
+
+  // Determine which month contains the current invoice
+  const currentTransactionDate = currentInvoice.paymentInformation?.transactionDate ?? currentInvoice.createdAt;
+  const currentDate = new Date(currentTransactionDate);
+  const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
+
+  // Convert to array and sort by date
+  return Array.from(monthlyData.entries())
+    .toSorted(([keyA, dataA], [keyB, dataB]) => dataA.date.getTime() - dataB.date.getTime())
+    .map(([monthKey, data]) => ({
+      date: data.date.toLocaleDateString("en-US", {month: "short", year: "numeric"}),
+      amount: Math.round(data.amount * 100) / 100,
+      isCurrent: monthKey === currentMonthKey,
+      name: `${data.count} invoice${data.count > 1 ? "s" : ""}`,
+    }));
 }
 
 export type ComparisonStats = {
@@ -164,35 +227,95 @@ export type ComparisonStats = {
   sameMerchantDiff: number;
 };
 
-export function getComparisonStats(): ComparisonStats {
-  const current = generateRandomInvoice(); // This would be the current invoice
-  const historical = generateRandomInvoices(20); // This would be fetched from user data
+/**
+ * Computes comparison statistics for the current invoice against all user invoices.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Comparison statistics including averages and percentage differences
+ *
+ * @remarks
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Compares against overall average and same-merchant average
+ * - Returns default values if allInvoices has fewer than 2 invoices
+ * - Handles edge cases (empty arrays, missing merchant references)
+ */
+export function getComparisonStats(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): ComparisonStats {
+  // Default stats if not enough data
+  const currentAmount = currentInvoice.paymentInformation?.totalCostAmount ?? 0;
+  const currentCurrency = currentInvoice.paymentInformation?.currency?.code ?? "RON";
+  const currentYear = getTransactionYear(currentInvoice.paymentInformation?.transactionDate, currentInvoice.createdAt);
+  const currentAmountInRON = toRON(currentAmount, currentCurrency, currentYear);
+  const currentItemCount = currentInvoice.items?.length ?? 0;
 
-  const totalAmount = historical.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0);
-  const averageAmount = totalAmount / historical.length;
-  const percentageDiff = ((current.paymentInformation.totalCostAmount - averageAmount) / averageAmount) * 100;
+  if (allInvoices.length < 2) {
+    return {
+      currentAmount: currentAmountInRON,
+      averageAmount: currentAmountInRON,
+      percentageDiff: 0,
+      isAboveAverage: false,
+      minAmount: currentAmountInRON,
+      maxAmount: currentAmountInRON,
+      totalInvoices: allInvoices.length,
+      currentItemCount,
+      averageItemCount: currentItemCount,
+      itemCountDiff: 0,
+      sameMerchantAvg: currentAmountInRON,
+      sameMerchantDiff: 0,
+    };
+  }
 
-  const totalItems = historical.reduce((sum, inv) => sum + inv.items.length, 0);
-  const averageItemCount = totalItems / historical.length;
-  const itemCountDiff = ((current.items.length - averageItemCount) / averageItemCount) * 100;
+  // Filter out current invoice to avoid self-comparison
+  const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
+
+  // Calculate overall statistics with RON normalization
+  const amounts = otherInvoices.map((inv) => {
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currency = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    return toRON(amount, currency, year);
+  });
+
+  const totalAmount = amounts.reduce((sum, amt) => sum + amt, 0);
+  const averageAmount = otherInvoices.length > 0 ? totalAmount / otherInvoices.length : currentAmountInRON;
+  const percentageDiff = averageAmount > 0 ? ((currentAmountInRON - averageAmount) / averageAmount) * 100 : 0;
+
+  const minAmount = amounts.length > 0 ? Math.min(...amounts) : currentAmountInRON;
+  const maxAmount = amounts.length > 0 ? Math.max(...amounts) : currentAmountInRON;
+
+  // Calculate item count statistics
+  const totalItems = otherInvoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0);
+  const averageItemCount = otherInvoices.length > 0 ? totalItems / otherInvoices.length : currentItemCount;
+  const itemCountDiff = averageItemCount > 0 ? ((currentItemCount - averageItemCount) / averageItemCount) * 100 : 0;
 
   // Same merchant comparison
-  const sameMerchant = historical.filter((inv) => inv.merchantReference === current.merchantReference);
-  const sameMerchantAvg =
-    sameMerchant.length > 0
-      ? sameMerchant.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0) / sameMerchant.length
-      : averageAmount;
-  const sameMerchantDiff = ((current.paymentInformation.totalCostAmount - sameMerchantAvg) / sameMerchantAvg) * 100;
+  const currentMerchant = currentInvoice.merchantReference;
+  const sameMerchantInvoices = otherInvoices.filter((inv) => inv.merchantReference === currentMerchant);
+
+  let sameMerchantAvg = averageAmount;
+  let sameMerchantDiff = percentageDiff;
+
+  if (sameMerchantInvoices.length > 0) {
+    const sameMerchantAmounts = sameMerchantInvoices.map((inv) => {
+      const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+      const currency = inv.paymentInformation?.currency?.code ?? "RON";
+      const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+      return toRON(amount, currency, year);
+    });
+    const sameMerchantTotal = sameMerchantAmounts.reduce((sum, amt) => sum + amt, 0);
+    sameMerchantAvg = sameMerchantTotal / sameMerchantInvoices.length;
+    sameMerchantDiff = sameMerchantAvg > 0 ? ((currentAmountInRON - sameMerchantAvg) / sameMerchantAvg) * 100 : 0;
+  }
 
   return {
-    currentAmount: current.paymentInformation.totalCostAmount,
+    currentAmount: Math.round(currentAmountInRON * 100) / 100,
     averageAmount: Math.round(averageAmount * 100) / 100,
     percentageDiff: Math.round(percentageDiff * 10) / 10,
     isAboveAverage: percentageDiff > 0,
-    minAmount: Math.min(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
-    maxAmount: Math.max(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
-    totalInvoices: historical.length,
-    currentItemCount: current.items.length,
+    minAmount: Math.round(minAmount * 100) / 100,
+    maxAmount: Math.round(maxAmount * 100) / 100,
+    totalInvoices: allInvoices.length,
+    currentItemCount,
     averageItemCount: Math.round(averageItemCount * 10) / 10,
     itemCountDiff: Math.round(itemCountDiff * 10) / 10,
     sameMerchantAvg: Math.round(sameMerchantAvg * 100) / 100,
@@ -207,19 +330,42 @@ export type MerchantBreakdown = {
   average: number;
 };
 
-export function getMerchantBreakdown(): MerchantBreakdown[] {
+/**
+ * Computes merchant spending breakdown from user's invoices.
+ *
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of merchant spending data sorted by total spend (descending)
+ *
+ * @remarks
+ * - Groups invoices by merchantReference
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Returns empty array if allInvoices is empty
+ * - Handles missing merchantReference gracefully (groups as "Unknown")
+ */
+export function getMerchantBreakdown(allInvoices: ReadonlyArray<Invoice>): MerchantBreakdown[] {
+  if (allInvoices.length === 0) {
+    return [];
+  }
+
   const merchantMap = new Map<string, {count: number; total: number}>();
 
-  const historicalInvoices = generateRandomInvoices(30); // This would be fetched from user data
-  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
-
   allInvoices.forEach((inv) => {
-    const existing = merchantMap.get(inv.merchantReference) || {count: 0, total: 0};
-    merchantMap.set(inv.merchantReference, {
-      count: existing.count + 1,
-      total: existing.total + inv.paymentInformation.totalCostAmount,
-    });
+    const merchantRef = inv.merchantReference || "Unknown";
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currency = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    const amountInRON = toRON(amount, currency, year);
+
+    const existing = merchantMap.get(merchantRef);
+    if (existing) {
+      existing.count += 1;
+      existing.total += amountInRON;
+    } else {
+      merchantMap.set(merchantRef, {
+        count: 1,
+        total: amountInRON,
+      });
+    }
   });
 
   return Array.from(merchantMap.entries())
@@ -239,21 +385,62 @@ export type CategoryTrendData = {
 };
 
 /**
- * Gets category comparison data for demo purposes.
- * @returns Array of category trend data comparing current to average spending.
+ * Computes category spending comparison between current invoice and all invoices.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of category comparison data sorted by current spending (descending)
+ *
+ * @remarks
+ * - Groups products by ProductCategory
+ * - Compares current invoice's category spending against historical averages
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Returns empty array if current invoice has no items
+ * - Only includes categories present in the current invoice
  */
-export function getCategoryComparison(): CategoryTrendData[] {
-  const current = generateRandomInvoice().category; // This would be the current invoice
+export function getCategoryComparison(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): CategoryTrendData[] {
+  const currentItems = currentInvoice.items ?? [];
+  if (currentItems.length === 0) {
+    return [];
+  }
 
-  return Object.entries(current)
-    .filter(([_, amount]) => amount > 0)
-    .map(([cat, amount]) => ({
-      category: formatEnum(ProductCategory, Number(cat) as ProductCategory),
-      current: Math.round(amount * 100) / 100,
-      average: 0, // Historical averages not yet implemented
-    }))
-    .filter((d) => d.current > 0)
-    .toSorted((a, b) => b.current - a.current);
+  // Calculate current invoice's spending by category
+  const currentCategoryMap = new Map<ProductCategory, number>();
+  currentItems.forEach((item) => {
+    const existing = currentCategoryMap.get(item.category) ?? 0;
+    currentCategoryMap.set(item.category, existing + item.totalPrice);
+  });
+
+  // Calculate historical average spending per category (excluding current invoice)
+  const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
+  const historicalCategoryMap = new Map<ProductCategory, {total: number; count: number}>();
+
+  otherInvoices.forEach((inv) => {
+    const items = inv.items ?? [];
+    items.forEach((item) => {
+      const existing = historicalCategoryMap.get(item.category) ?? {total: 0, count: 0};
+      historicalCategoryMap.set(item.category, {
+        total: existing.total + item.totalPrice,
+        count: existing.count + 1,
+      });
+    });
+  });
+
+  // Build comparison data
+  const result: CategoryTrendData[] = [];
+
+  currentCategoryMap.forEach((currentAmount, category) => {
+    const historical = historicalCategoryMap.get(category);
+    const averageAmount = historical ? historical.total / Math.max(historical.count, 1) : 0;
+
+    result.push({
+      category: formatEnum(ProductCategory, category),
+      current: Math.round(currentAmount * 100) / 100,
+      average: Math.round(averageAmount * 100) / 100,
+    });
+  });
+
+  return result.toSorted((a, b) => b.current - a.current);
 }
 
 // Unit price analysis

@@ -92,3 +92,30 @@
 .tabContent {
   margin-top: 0;
 }
+
+.emptyState {
+  @include flex-column;
+  align-items: center;
+  justify-content: center;
+  padding: space(16) space(4);
+  text-align: center;
+  gap: space(4);
+}
+
+.emptyIcon {
+  @include icon-size(space(16));
+  color: color('muted-foreground');
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.emptyDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  max-width: 400px;
+}

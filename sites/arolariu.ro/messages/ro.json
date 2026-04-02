@@ -2037,6 +2037,10 @@
         "tabs": {
           "current": "Factura curentă",
           "compare": "Comparație"
+        },
+        "emptyState": {
+          "title": "Date insuficiente pentru comparații",
+          "description": "Adaugă mai multe facturi pentru a vedea tendințe de cheltuieli, defalcări pe comercianți și comparații pe categorii."
         }
       },
       "invoiceTimeline": {

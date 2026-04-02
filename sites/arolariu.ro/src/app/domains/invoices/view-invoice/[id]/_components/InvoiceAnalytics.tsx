@@ -1,8 +1,10 @@
 "use client";
 
 import {useUserInformation} from "@/hooks";
+import {useInvoicesStore} from "@/stores";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useMemo} from "react";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import {
@@ -32,16 +34,24 @@ export function InvoiceAnalytics(): React.JSX.Element {
     userInformation: {userIdentifier},
   } = useUserInformation();
 
+  // Get all invoices from Zustand store for comparison analytics
+  const allInvoices = useInvoicesStore((state) => state.invoices);
+
   const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;
   const categoryData = getCategorySpending(invoice.items);
   const priceData = getPriceDistribution(invoice.items);
   const quantityData = getQuantityAnalysis(invoice.items);
   const summary = getInvoiceSummary(invoice);
-  const trendData = getSpendingTrend();
-  const comparisonStats = getComparisonStats();
-  const categoryComparison = getCategoryComparison();
-  const merchantBreakdown = getMerchantBreakdown();
+
+  // Memoize comparison analytics (computed from all cached invoices)
+  const trendData = useMemo(() => getSpendingTrend(invoice, allInvoices), [invoice, allInvoices]);
+  const comparisonStats = useMemo(() => getComparisonStats(invoice, allInvoices), [invoice, allInvoices]);
+  const categoryComparison = useMemo(() => getCategoryComparison(invoice, allInvoices), [invoice, allInvoices]);
+  const merchantBreakdown = useMemo(() => getMerchantBreakdown(allInvoices), [allInvoices]);
+
+  // Check if we have enough data for meaningful comparisons
+  const hasComparisonData = allInvoices.length >= 2;
 
   return (
     <div className={styles["container"]}>
@@ -115,40 +125,48 @@ export function InvoiceAnalytics(): React.JSX.Element {
           <TabsContent
             value='compare'
             className={styles["tabContent"]}>
-            <div className={styles["analyticsGrid"]}>
-              {/* Comparison Stats */}
-              <div className={styles["gridItem"]}>
-                <ComparisonStatsCard
-                  stats={comparisonStats}
-                  currency={currency}
-                />
-              </div>
+            {hasComparisonData ? (
+              <div className={styles["analyticsGrid"]}>
+                {/* Comparison Stats */}
+                <div className={styles["gridItem"]}>
+                  <ComparisonStatsCard
+                    stats={comparisonStats}
+                    currency={currency}
+                  />
+                </div>
 
-              {/* Spending Trend */}
-              <div className={styles["gridItemWide"]}>
-                <SpendingTrendChart
-                  data={trendData}
-                  currency={currency}
-                />
-              </div>
+                {/* Spending Trend */}
+                <div className={styles["gridItemWide"]}>
+                  <SpendingTrendChart
+                    data={trendData}
+                    currency={currency}
+                  />
+                </div>
 
-              {/* Category Comparison */}
-              <div className={styles["gridItemWide"]}>
-                <CategoryComparisonChart
-                  data={categoryComparison}
-                  currency={currency}
-                />
-              </div>
+                {/* Category Comparison */}
+                <div className={styles["gridItemWide"]}>
+                  <CategoryComparisonChart
+                    data={categoryComparison}
+                    currency={currency}
+                  />
+                </div>
 
-              {/* Merchant Breakdown */}
-              <div className={styles["gridItem"]}>
-                <MerchantBreakdownChart
-                  data={merchantBreakdown}
-                  currency={currency}
-                  currentMerchant={merchant?.name ?? ""}
-                />
+                {/* Merchant Breakdown */}
+                <div className={styles["gridItem"]}>
+                  <MerchantBreakdownChart
+                    data={merchantBreakdown}
+                    currency={currency}
+                    currentMerchant={merchant?.name ?? ""}
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className={styles["emptyState"]}>
+                <TbTrendingUp className={styles["emptyIcon"]} />
+                <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
+                <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
+              </div>
+            )}
           </TabsContent>
         )}
       </Tabs>

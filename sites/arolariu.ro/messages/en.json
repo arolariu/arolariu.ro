@@ -2037,6 +2037,10 @@
         "tabs": {
           "current": "This Invoice",
           "compare": "Comparison"
+        },
+        "emptyState": {
+          "title": "Not Enough Data for Comparisons",
+          "description": "Add more invoices to see spending trends, merchant breakdowns, and category comparisons."
         }
       },
       "invoiceTimeline": {
