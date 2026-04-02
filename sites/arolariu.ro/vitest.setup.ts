@@ -46,6 +46,11 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
 vi.mock("next-intl", () => {
   const mockT = (key: string) => key;
   mockT.rich = (key: string) => key;
