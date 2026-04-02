@@ -60,4 +60,16 @@ describe("featureFlags.server", () => {
     expect(flags.commanderEnabled).toBe(false);
     expect(flags.webVitalsEnabled).toBe(false);
   });
+
+  it("returns defaults when config fetch throws during parsing", async () => {
+    mockFetchConfigValue.mockImplementation(async (key: string) => {
+      if (key === "website.commander.enabled") throw new Error("Config parse error");
+      return "false";
+    });
+
+    const {getWebsiteFeatureFlags, DEFAULT_FEATURE_FLAGS} = await import("./featureFlags.server");
+    const flags = await getWebsiteFeatureFlags();
+
+    expect(flags).toEqual(DEFAULT_FEATURE_FLAGS);
+  });
 });

@@ -686,4 +686,68 @@ describe("preferencesStore", () => {
       expect(state.fontType).toBe("dyslexic");
     });
   });
+
+  describe("setThemePreset", () => {
+    it("should update theme preset to default", () => {
+      const {result} = renderHook(() => usePreferencesStore);
+
+      act(() => {
+        result.current.getState().setThemePreset("default");
+      });
+
+      expect(result.current.getState().themePreset).toBe("default");
+    });
+
+    it("should update theme preset to custom", () => {
+      const {result} = renderHook(() => usePreferencesStore);
+
+      act(() => {
+        result.current.getState().setThemePreset("custom");
+      });
+
+      expect(result.current.getState().themePreset).toBe("custom");
+    });
+  });
+
+  describe("setCustomThemeColors", () => {
+    it("should update custom theme colors", () => {
+      const {result} = renderHook(() => usePreferencesStore);
+
+      const colors = {
+        gradientFrom: "#ff0000",
+        gradientVia: "#00ff00",
+        gradientTo: "#0000ff",
+        primary: "#111111",
+        primaryForeground: "#ffffff",
+        footerBg: "#333333",
+      };
+
+      act(() => {
+        result.current.getState().setCustomThemeColors(colors);
+      });
+
+      expect(result.current.getState().customThemeColors).toEqual(colors);
+    });
+
+    it("should clear custom theme colors when set to null", () => {
+      const {result} = renderHook(() => usePreferencesStore);
+
+      act(() => {
+        result.current.getState().setCustomThemeColors({
+          gradientFrom: "#ff0000",
+          gradientVia: "#00ff00",
+          gradientTo: "#0000ff",
+          primary: "#111111",
+          primaryForeground: "#ffffff",
+          footerBg: "#333333",
+        });
+      });
+
+      act(() => {
+        result.current.getState().setCustomThemeColors(null);
+      });
+
+      expect(result.current.getState().customThemeColors).toBeNull();
+    });
+  });
 });

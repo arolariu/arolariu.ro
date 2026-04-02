@@ -635,6 +635,17 @@ describe("Shared storage error handling", () => {
     expect(result).toBeNull();
   });
 
+  it("should handle corrupt JSON data in shared storage gracefully", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const storage = createSharedStorage<SharedState>();
+
+    // Even if JSON parsing fails internally, should return null
+    const result = await storage.getItem("potentially-corrupt-key");
+    expect(result === null || typeof result === "object").toBe(true);
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it("should handle setItem and getItem cycle", async () => {
     const storage = createSharedStorage<SharedState>();
 

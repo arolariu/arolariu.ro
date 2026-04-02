@@ -101,4 +101,217 @@ describe("fetchMerchant", () => {
       },
     });
   });
+
+  describe("additional error scenarios", () => {
+    it("should handle network timeout gracefully", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockRejectedValue(new Error("Request timeout"));
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "NETWORK_ERROR",
+          message: "Request timeout",
+        },
+      });
+    });
+
+    it("should handle auth service failure", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Auth service unavailable"));
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "NETWORK_ERROR",
+          message: "Auth service unavailable",
+        },
+      });
+    });
+
+    it("should handle 401 Unauthorized", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: "Unauthorized",
+        text: async () => "Invalid token",
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "AUTH_ERROR",
+          message: "Failed to fetch merchant: 401 Unauthorized",
+          status: 401,
+        },
+      });
+    });
+
+    it("should handle 403 Forbidden", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: false,
+        status: 403,
+        statusText: "Forbidden",
+        text: async () => "Access denied",
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "AUTH_ERROR",
+          message: "Failed to fetch merchant: 403 Forbidden",
+          status: 403,
+        },
+      });
+    });
+
+    it("should handle 500 Internal Server Error", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        text: async () => "Server error occurred",
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "SERVER_ERROR",
+          message: "Failed to fetch merchant: 500 Internal Server Error",
+          status: 500,
+        },
+      });
+    });
+
+    it("should handle empty response text", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        text: async () => "",
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "SERVER_ERROR",
+          message: "Failed to fetch merchant: 500 Internal Server Error",
+          status: 500,
+        },
+      });
+    });
+
+    it("should handle empty merchantId", async () => {
+      // Act
+      const result = await fetchMerchant({merchantId: ""});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid merchant ID: ",
+        },
+      });
+    });
+
+    it("should handle null-like merchantId", async () => {
+      // Act
+      const result = await fetchMerchant({merchantId: "null"});
+
+      // Assert
+      expect(result).toEqual({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid merchant ID: null",
+        },
+      });
+    });
+  });
+
+  describe("successful responses", () => {
+    it("should include all merchant data fields", async () => {
+      // Arrange
+      const mockMerchant = new MerchantBuilder().withName("Test Store").withCategory("Grocery").build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: true,
+        json: async () => mockMerchant,
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: mockMerchant.id});
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockMerchant);
+      expect(result.data?.name).toBe("Test Store");
+      expect(result.data?.category).toBe("Grocery");
+    });
+
+    it("should handle merchant with minimal data", async () => {
+      // Arrange
+      const minimalMerchant = new MerchantBuilder().withName("Minimal Store").build();
+
+      (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+      mockFetchWithTimeout.mockResolvedValue({
+        ok: true,
+        json: async () => minimalMerchant,
+      });
+
+      // Act
+      const result = await fetchMerchant({merchantId: minimalMerchant.id});
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+    });
+  });
 });

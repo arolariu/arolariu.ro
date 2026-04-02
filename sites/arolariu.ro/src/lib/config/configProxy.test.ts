@@ -471,3 +471,68 @@ describe("configCatalogCache.server", () => {
     expect(getCachedConfigValue("Auth:JWT:Secret")).toBeNull();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Circuit breaker and stale cache tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("configProxy circuit breaker", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllGlobals();
+    delete process.env["AZURE_CLIENT_ID"];
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("should trip circuit breaker on fetch failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("Network error")));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    await expect(fetchConfigValue("Test:Key")).rejects.toThrow();
+  });
+
+  it("should return stale cached value when circuit is open", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Test:Key", "cached-value", 0)))
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Test:Key", "new-value")));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    // First call: cache the value
+    const first = await fetchConfigValue("Test:Key");
+    expect(first).toBe("cached-value");
+
+    // Wait for cache to become stale (TTL = 0)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second call: should fail and trip circuit breaker
+    await expect(fetchConfigValue("Test:Key")).rejects.toThrow();
+
+    // Third call: circuit is open, should return stale cache
+    const third = await fetchConfigValue("Test:Key");
+    expect(third).toBe("cached-value");
+  });
+
+  it("should throw when circuit is open and no stale cache exists", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    // First call trips circuit
+    await expect(fetchConfigValue("New:Key")).rejects.toThrow();
+
+    // Second call: circuit is open, no stale cache
+    await expect(fetchConfigValue("New:Key")).rejects.toThrow("exp circuit breaker open");
+  });
+});

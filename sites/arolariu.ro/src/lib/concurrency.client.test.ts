@@ -107,6 +107,30 @@ describe("withConcurrencyLimit", () => {
     await expect(withConcurrencyLimit(tasks, 2)).rejects.toThrow("Task failed");
   });
 
+  it("should stop picking up new tasks when one task fails", async () => {
+    // Arrange
+    let task3Started = false;
+    const tasks = [
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 1;
+      },
+      async () => {
+        throw new Error("Task 2 failed");
+      },
+      async () => {
+        task3Started = true;
+        return 3;
+      },
+    ];
+
+    // Act & Assert
+    await expect(withConcurrencyLimit(tasks, 2)).rejects.toThrow("Task 2 failed");
+
+    // Task 3 should not have started because task 2 failed and tripped the circuit
+    expect(task3Started).toBe(false);
+  });
+
   it("should handle multiple concurrent errors", async () => {
     // Arrange
     const tasks = [
@@ -261,5 +285,59 @@ describe("withConcurrencyLimitAndProgress", () => {
 
     // Assert
     expect(completedCount).toBe(3); // All tasks completed (including failed one)
+  });
+
+  it("should call onTaskComplete for both success and error results", async () => {
+    // Arrange
+    const taskResults: Array<{result: number | Error; index: number}> = [];
+    const tasks = [
+      async () => 1,
+      async () => {
+        throw new Error("Task 2 failed");
+      },
+      async () => 3,
+    ];
+
+    // Act
+    await withConcurrencyLimitAndProgress(tasks, {
+      limit: 2,
+      onTaskComplete: (result, index) => {
+        taskResults.push({result: result as number | Error, index});
+      },
+    });
+
+    // Assert
+    expect(taskResults).toHaveLength(3);
+    expect(taskResults[0]?.result).toBe(1);
+    expect(taskResults[1]?.result).toBeInstanceOf(Error);
+    expect(taskResults[2]?.result).toBe(3);
+  });
+
+  it("should handle missing onProgress callback gracefully", async () => {
+    // Arrange
+    const tasks = [async () => 1, async () => 2];
+
+    // Act - no onProgress provided
+    const results = await withConcurrencyLimitAndProgress(tasks, {
+      limit: 2,
+      onTaskComplete: vi.fn(), // Only provide onTaskComplete
+    });
+
+    // Assert - should complete without errors
+    expect(results).toEqual([1, 2]);
+  });
+
+  it("should handle missing onTaskComplete callback gracefully", async () => {
+    // Arrange
+    const tasks = [async () => 1, async () => 2];
+
+    // Act - no onTaskComplete provided
+    const results = await withConcurrencyLimitAndProgress(tasks, {
+      limit: 2,
+      onProgress: vi.fn(), // Only provide onProgress
+    });
+
+    // Assert - should complete without errors
+    expect(results).toEqual([1, 2]);
   });
 });
