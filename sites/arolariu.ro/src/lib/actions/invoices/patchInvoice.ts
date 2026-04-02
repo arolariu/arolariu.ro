@@ -18,7 +18,8 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import type {Invoice, InvoiceCategory, PaymentInformation} from "@/types/invoices";
+import type {Invoice, InvoiceCategory, PaymentInformation, Product} from "@/types/invoices";
+import {revalidatePath} from "next/cache";
 import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -48,7 +49,7 @@ type PatchInvoicePayload = Readonly<{
   isImportant?: boolean;
   sharedWith?: string[];
   additionalMetadata?: Record<string, unknown>;
-  items?: Invoice["items"];
+  items?: Product[];
 }>;
 
 /**
@@ -144,13 +145,20 @@ export default async function patchInvoice({invoiceId, payload}: ServerActionInp
       if (response.ok) {
         logWithTrace("info", "Successfully patched invoice", {invoiceId}, "server");
         const invoice = (await response.json()) as Invoice;
+        revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
+        revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
+        revalidatePath("/domains/invoices/view-invoices", "page");
         return {success: true, invoice};
       }
 
       const errorText = await response.text();
-      const errorMessage = `Failed to update invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", errorMessage, {invoiceId, errorText}, "server");
-      return {success: false, error: errorMessage};
+      const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText}`;
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
+      const userMessage =
+        response.status >= 500
+          ? "A server error occurred. Please try again later."
+          : "Failed to update the invoice. Please check your input and try again.";
+      return {success: false, error: userMessage};
     } catch (error) {
       addSpanEvent("bff.request.patch-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

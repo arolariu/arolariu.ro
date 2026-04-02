@@ -25,6 +25,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {revalidatePath} from "next/cache";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -194,6 +195,9 @@ export async function registerScan(input: RegisterScanInput): Promise<RegisterSc
 
       addSpanEvent("scan.registration.complete");
       logWithTrace("info", "Successfully registered scan", {scanId: input.scanId}, "server");
+
+      revalidatePath("/domains/invoices/view-scans", "page");
+      revalidatePath("/domains/invoices/upload-scans", "page");
 
       return {
         success: true,

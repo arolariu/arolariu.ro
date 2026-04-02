@@ -19,6 +19,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Allergen, Product, ProductCategory} from "@/types/invoices";
+import {revalidatePath} from "next/cache";
 import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -144,13 +145,19 @@ export default async function addProduct({invoiceId, payload}: ServerActionInput
       if (response.ok) {
         logWithTrace("info", "Successfully added product to invoice", {invoiceId}, "server");
         const product = (await response.json()) as Product;
+        revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
+        revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {success: true, product};
       }
 
       const errorText = await response.text();
-      const errorMessage = `Failed to add product: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", errorMessage, {invoiceId, errorText}, "server");
-      return {success: false, error: errorMessage};
+      const internalMessage = `Failed to add product: ${response.status} ${response.statusText}`;
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
+      const userMessage =
+        response.status >= 500
+          ? "A server error occurred. Please try again later."
+          : "Failed to update the invoice. Please check your input and try again.";
+      return {success: false, error: userMessage};
     } catch (error) {
       addSpanEvent("bff.request.add-product.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

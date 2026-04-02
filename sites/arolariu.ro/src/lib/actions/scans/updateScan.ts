@@ -18,6 +18,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
+import {revalidatePath} from "next/cache";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -136,6 +137,7 @@ export async function updateScan({base64Data, blobName, mimeType, metadata = {}}
 
       if (blobUploadResponse._response.status === 201) {
         logWithTrace("info", "Successfully updated scan in Azure", {blobName}, "server");
+        revalidatePath("/domains/invoices/view-scans", "page");
         return {
           success: true,
           blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
