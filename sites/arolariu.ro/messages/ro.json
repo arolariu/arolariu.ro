@@ -3467,7 +3467,8 @@
         },
         "editing": {
           "saved": "Articol actualizat cu succes",
-          "cancel": "Editare anulată"
+          "cancel": "Editare anulată",
+          "fieldLabel": "Editează {field} pentru {name}"
         },
         "deleteConfirm": {
           "title": "Șterge articole",

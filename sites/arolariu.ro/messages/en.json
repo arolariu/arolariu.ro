@@ -3467,7 +3467,8 @@
         },
         "editing": {
           "saved": "Item updated successfully",
-          "cancel": "Edit canceled"
+          "cancel": "Edit canceled",
+          "fieldLabel": "Edit {field} for {name}"
         },
         "deleteConfirm": {
           "title": "Delete Items",

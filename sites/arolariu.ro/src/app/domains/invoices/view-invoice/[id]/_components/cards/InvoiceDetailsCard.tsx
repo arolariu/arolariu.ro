@@ -142,7 +142,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <Badge variant='secondary'>
                   <TbReceipt className={styles["iconSm"]} />
                   <span>
-                    {RECEIPT_TYPE_ICONS[invoice.receiptType] ?? ""} {invoice.receiptType}
+                    <span aria-hidden='true'>{RECEIPT_TYPE_ICONS[invoice.receiptType] ?? ""}</span> {invoice.receiptType}
                   </span>
                 </Badge>
               </div>
