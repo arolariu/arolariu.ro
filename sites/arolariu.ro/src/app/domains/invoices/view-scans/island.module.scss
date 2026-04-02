@@ -286,12 +286,12 @@
 
 .selectionTitle {
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('primary');
+  color: abstracts.color('foreground');
 }
 
 .selectionDescription {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary');
+  color: abstracts.color('muted-foreground');
 }
 
 // ===========================================
