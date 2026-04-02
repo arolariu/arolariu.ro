@@ -6,6 +6,7 @@
  */
 
 import {formatAmount} from "@/lib/utils.generic";
+import {useMerchantsStore} from "@/stores/merchantsStore";
 import {
   Bar,
   BarChart,
@@ -38,12 +39,13 @@ type CustomTooltipProps = {
   readonly active?: boolean;
   readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
+  readonly getMerchantName: (id: string) => string;
 };
 
 /**
  * Custom tooltip for the merchant leaderboard.
  */
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -52,7 +54,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipMerchant"]}>{data.merchantId}</p>
+      <p className={styles["tooltipMerchant"]}>{getMerchantName(data.merchantId)}</p>
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpend)} {currency}
       </p>
@@ -70,6 +72,13 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  */
 export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
+
+  // Create a function to get merchant name or fallback to ID
+  const getMerchantName = (id: string): string => {
+    const merchant = getMerchantById(id);
+    return merchant?.name ?? t("unknownMerchant");
+  };
 
   const chartConfig = {
     totalSpent: {
@@ -94,11 +103,14 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
     );
   }
 
-  // Truncate merchant IDs for display
-  const displayData = data.map((item) => ({
-    ...item,
-    displayName: item.merchantId.length > 20 ? `${item.merchantId.slice(0, 17)}...` : item.merchantId,
-  }));
+  // Map data to include display names
+  const displayData = data.map((item) => {
+    const merchantName = getMerchantName(item.merchantId);
+    return {
+      ...item,
+      displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
+    };
+  });
 
   return (
     <Card className={styles["card"]}>
@@ -131,7 +143,14 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    currency={currency}
+                    getMerchantName={getMerchantName}
+                  />
+                }
+              />
               <Bar
                 dataKey='totalSpent'
                 fill='hsl(var(--chart-2))'

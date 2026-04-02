@@ -38,9 +38,34 @@
  * @see {@link PaymentInformation} for payment details
  */
 
-import {formatDate} from "@/lib/utils.generic";
+import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
+
+/**
+ * Empty GUID constant used to filter invalid merchant references.
+ *
+ * @remarks
+ * Some invoices may have an all-zeros GUID as a placeholder merchantReference.
+ * This constant enables consistent filtering across all merchant-related computations.
+ */
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Validates whether a merchant reference is valid and non-empty.
+ *
+ * @param ref - Merchant reference string (may be undefined or null)
+ * @returns `true` if the reference is valid, `false` otherwise
+ *
+ * @remarks
+ * A valid merchant reference must:
+ * - Be defined (not null/undefined)
+ * - Not be the empty GUID (00000000-0000-0000-0000-000000000000)
+ * - Have a non-zero length
+ */
+function isValidMerchantRef(ref: string | undefined | null): boolean {
+  return Boolean(ref) && ref !== EMPTY_GUID && ref.length > 0;
+}
 
 /**
  * Extracts the RON-normalized amount from an invoice.
@@ -129,6 +154,8 @@ export type MonthlySpending = {
   amount: number;
   /** Number of invoices in the month */
   invoiceCount: number;
+  /** List of invoices in the month with id, name, and amount */
+  invoices: ReadonlyArray<{id: string; name: string; amount: number}>;
 };
 
 /**
@@ -397,7 +424,7 @@ export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
     totalItems += invoice.items?.length ?? 0;
 
     const merchantId = invoice.merchantReference;
-    if (merchantId) {
+    if (isValidMerchantRef(merchantId)) {
       merchantCounts.set(merchantId, (merchantCounts.get(merchantId) ?? 0) + 1);
     }
   }
@@ -451,6 +478,7 @@ export function computeKPIs(invoices: ReadonlyArray<Invoice>): KPIData {
  */
 export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): MonthlySpending[] {
   const monthMap = new Map<string, {amount: number; count: number}>();
+  const monthInvoicesMap = new Map<string, Array<{id: string; name: string; amount: number}>>();
 
   for (const invoice of invoices) {
     const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
@@ -468,6 +496,15 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
       amount: existing.amount + amount,
       count: existing.count + 1,
     });
+
+    // Collect invoice details for tooltip
+    const invoiceList = monthInvoicesMap.get(monthKey) ?? [];
+    invoiceList.push({
+      id: invoice.id,
+      name: invoice.name || `Invoice ${invoice.id.slice(0, 8)}`,
+      amount: Math.round(amount * 100) / 100,
+    });
+    monthInvoicesMap.set(monthKey, invoiceList);
   }
 
   // Convert to array and sort chronologically
@@ -488,6 +525,7 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
       monthKey,
       amount: Math.round(data.amount * 100) / 100,
       invoiceCount: data.count,
+      invoices: monthInvoicesMap.get(monthKey) ?? [],
     });
   }
 
@@ -613,7 +651,7 @@ export function computeMerchantAggregates(invoices: ReadonlyArray<Invoice>): Mer
 
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (merchantId) {
+    if (isValidMerchantRef(merchantId)) {
       const amount = getAmountInRON(invoice);
       const existing = merchantMap.get(merchantId) ?? {totalSpend: 0, count: 0};
 
@@ -665,8 +703,15 @@ export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpe
   const dayMap = new Map<string, {amount: number; count: number}>();
 
   for (const invoice of invoices) {
-    const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
-    const date = new Date(transactionDate);
+    // Use toSafeDate for robust parsing with fallback to createdAt
+    let date = toSafeDate(invoice.paymentInformation?.transactionDate);
+
+    // If transaction date is invalid, fall back to createdAt
+    if (date.getTime() === 0) {
+      date = toSafeDate(invoice.createdAt);
+      // Skip invoice if both dates are invalid
+      if (date.getTime() === 0) continue;
+    }
 
     // Create day key (YYYY-MM-DD)
     const year = date.getFullYear();
@@ -861,7 +906,7 @@ function countNewMerchants(invoices: ReadonlyArray<Invoice>, currentMonthStart: 
     const date = new Date(transactionDate);
     const merchantId = invoice.merchantReference;
 
-    if (merchantId) {
+    if (isValidMerchantRef(merchantId)) {
       if (date >= currentMonthStart && date <= currentMonthEnd) {
         merchantsInCurrent.add(merchantId);
       } else if (date < currentMonthStart) {
@@ -1078,7 +1123,7 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
 
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!merchantId) continue;
+    if (!isValidMerchantRef(merchantId)) continue;
 
     const amount = getAmountInRON(invoice);
     merchantTotals.set(merchantId, (merchantTotals.get(merchantId) ?? 0) + amount);
@@ -1096,7 +1141,7 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
 
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!merchantId || !topMerchantIds.has(merchantId)) continue;
+    if (!isValidMerchantRef(merchantId) || !topMerchantIds.has(merchantId)) continue;
 
     const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
     const date = new Date(transactionDate);
@@ -1180,7 +1225,7 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
   // Aggregate data per merchant
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!merchantId) continue;
+    if (!isValidMerchantRef(merchantId)) continue;
 
     const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
     const date = new Date(transactionDate);
