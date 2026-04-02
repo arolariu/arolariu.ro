@@ -9,7 +9,7 @@ import {fetchScans} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
 
 /**
@@ -48,6 +48,8 @@ interface UseScansOutput {
  * Authentication is handled by the server actions.
  */
 export function useScans(): UseScansOutput {
+  const isMountedRef = useRef(true);
+
   const {
     scans,
     selectedScans,
@@ -109,13 +111,15 @@ export function useScans(): UseScansOutput {
         setLastSyncTimestamp(new Date());
 
         // Only show success toast for manual sync
-        if (manual) {
+        if (manual && isMountedRef.current) {
           toast.success("Scans synced successfully");
         }
       } catch (error) {
         console.error("Failed to sync scans:", error);
-        // Always show error toast
-        toast.error("Failed to sync scans");
+        // Only show error toast if component is still mounted
+        if (isMountedRef.current) {
+          toast.error("Failed to sync scans");
+        }
       } finally {
         setIsSyncing(false);
       }
@@ -129,6 +133,13 @@ export function useScans(): UseScansOutput {
       syncScans();
     }
   }, [hasHydrated, lastSyncTimestamp, syncScans]);
+
+  // Cleanup: mark component as unmounted
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return {
     scans: readyScans,

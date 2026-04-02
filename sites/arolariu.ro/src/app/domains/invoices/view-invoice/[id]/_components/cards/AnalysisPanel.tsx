@@ -133,7 +133,7 @@ export function AnalysisPanel(): React.JSX.Element {
         });
 
         // Animate progress while waiting
-        const stepDelayMs = 3000;
+        const stepDelayMs = 4000;
         const analysisSettledPromise = analysisPromise.then(
           () => true,
           () => true,
