@@ -3,6 +3,7 @@
 // TODO: refactor.
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
   AlertDialog,
@@ -29,16 +30,37 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./RecipeDialog.module.scss";
+
+/**
+ * Maps difficulty string values to RecipeComplexity enum values.
+ *
+ * @param difficulty - String difficulty value from the select dropdown
+ * @returns Corresponding RecipeComplexity enum value
+ */
+function mapDifficultyToComplexity(difficulty: string): RecipeComplexity {
+  switch (difficulty) {
+    case "Easy":
+      return RecipeComplexity.Easy;
+    case "Hard":
+      return RecipeComplexity.Hard;
+    case "Normal":
+    default:
+      return RecipeComplexity.Normal;
+  }
+}
 
 /** Rich text renderer for bold/strong text in translations */
 function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
@@ -47,18 +69,21 @@ function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
 
 const CreateDialog = () => {
   const t = useTranslations("Invoices.EditInvoice.recipeDialog");
+  const {invoice} = useEditInvoiceContext();
+  const router = useRouter();
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
     description: "",
     ingredients: [],
-    duration: -1,
-    preparationTime: -1,
-    cookingTime: -1,
+    approximateTotalDuration: 0,
+    preparationTime: 0,
+    cookingTime: 0,
     complexity: RecipeComplexity.Easy,
     instructions: "",
     referenceForMoreDetails: "",
   } satisfies Recipe);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
@@ -69,10 +94,45 @@ const CreateDialog = () => {
     }));
   }, []);
 
-  const handleCreate = useCallback(() => {
-    console.log("Recipe created:", recipe);
-    close();
-  }, [recipe]);
+  const handleCreate = useCallback(async () => {
+    setIsSaving(true);
+
+    try {
+      // Build the new recipe with proper types
+      const newRecipe: Recipe = {
+        name: recipe.name,
+        description: recipe.description,
+        approximateTotalDuration: Number(recipe.preparationTime) + Number(recipe.cookingTime),
+        complexity: recipe.complexity,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        preparationTime: Number(recipe.preparationTime),
+        cookingTime: Number(recipe.cookingTime),
+        referenceForMoreDetails: recipe.referenceForMoreDetails,
+      };
+
+      // Add the new recipe to the existing recipes array
+      const updatedRecipes = [...(invoice.possibleRecipes ?? []), newRecipe];
+
+      const result = await patchInvoice({
+        invoiceId: invoice.id,
+        payload: {possibleRecipes: updatedRecipes},
+      });
+
+      if (result.success) {
+        toast.success(t("create.success") ?? "Recipe created successfully");
+        close();
+        router.refresh();
+      } else {
+        toast.error(result.error ?? t("create.error") ?? "Failed to create recipe");
+      }
+    } catch (error) {
+      console.error("Failed to create recipe:", error);
+      toast.error(t("create.error") ?? "Failed to create recipe");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [recipe, invoice, t, close, router]);
 
   return (
     <Dialog
@@ -153,7 +213,7 @@ const CreateDialog = () => {
                   <div className={styles["ingredientRow"]}>
                     <div className={styles["ingredientInput"]}>
                       <Input
-                        value={ingredient.rawName}
+                        value={ingredient}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
                       />
                     </div>
@@ -176,19 +236,18 @@ const CreateDialog = () => {
             <Select
               value={RecipeComplexity[recipe.complexity]}
               onValueChange={(value) => {
-                const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
                 setRecipe((prev) => ({
                   ...prev,
-                  complexity: complexity,
+                  complexity: mapDifficultyToComplexity(value),
                 }));
               }}>
               <SelectTrigger>
                 <SelectValue placeholder={t("placeholders.selectDifficulty")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='EASY'>{t("difficulty.easy")}</SelectItem>
-                <SelectItem value='MEDIUM'>{t("difficulty.medium")}</SelectItem>
-                <SelectItem value='HARD'>{t("difficulty.hard")}</SelectItem>
+                <SelectItem value='Easy'>{t("difficulty.easy")}</SelectItem>
+                <SelectItem value='Normal'>{t("difficulty.medium")}</SelectItem>
+                <SelectItem value='Hard'>{t("difficulty.hard")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -230,12 +289,13 @@ const CreateDialog = () => {
           {/* Add preparation time field */}
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
+              <Label htmlFor='preparationTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <Input
-                  id='prepTime'
-                  name='prepTime'
+                  id='preparationTime'
+                  name='preparationTime'
+                  type='number'
                   value={recipe.preparationTime}
                   onChange={handleChange}
                   placeholder={t("placeholders.prepTime")}
@@ -245,12 +305,13 @@ const CreateDialog = () => {
 
             {/* Add cooking time field */}
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
+              <Label htmlFor='cookingTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
-                  id='cookTime'
-                  name='cookTime'
+                  id='cookingTime'
+                  name='cookingTime'
+                  type='number'
                   value={recipe.cookingTime}
                   onChange={handleChange}
                   placeholder={t("placeholders.cookTime")}
@@ -258,6 +319,19 @@ const CreateDialog = () => {
               </div>
             </div>
           </div>
+
+          {/* Display total duration */}
+          {(Number(recipe.preparationTime) > 0 || Number(recipe.cookingTime) > 0) && (
+            <div className={styles["fieldGroup"]}>
+              <Label>{t("fields.totalDuration") ?? "Total Duration"}</Label>
+              <div className={styles["timeRow"]}>
+                <TbToolsKitchen3 className={styles["mutedIcon"]} />
+                <span>
+                  {Number(recipe.preparationTime) + Number(recipe.cookingTime)} {t("minutes") ?? "minutes"}
+                </span>
+              </div>
+            </div>
+          )}
         </form>
 
         <DialogFooter className={styles["dialogFooter"]}>
@@ -265,14 +339,16 @@ const CreateDialog = () => {
             <Button
               type='button'
               variant='outline'
-              onClick={close}>
+              onClick={close}
+              disabled={isSaving}>
               {t("buttons.cancel")}
             </Button>
             <Button
               type='button'
-              onClick={handleCreate}>
+              onClick={handleCreate}
+              disabled={isSaving}>
               <TbDisc className={styles["saveIcon"]} />
-              {t("buttons.save")}
+              {isSaving ? (t("buttons.saving") ?? "Saving...") : t("buttons.save")}
             </Button>
           </div>
         </DialogFooter>

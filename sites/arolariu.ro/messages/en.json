@@ -2380,7 +2380,8 @@
           "total": "Total",
           "visits": "Visits",
           "averagePerVisit": "Avg/visit"
-        }
+        },
+        "unknownMerchant": "Unknown Merchant"
       },
       "priceDistributionChart": {
         "title": "Price Distribution",
@@ -3327,7 +3328,9 @@
       "recipeDialog": {
         "create": {
           "title": "Add new recipe",
-          "description": "Fill in the details to create a recipe."
+          "description": "Fill in the details to create a recipe.",
+          "success": "Recipe created successfully",
+          "error": "Failed to create recipe"
         },
         "read": {
           "description": "Recipe details and cooking instructions",
@@ -3350,7 +3353,8 @@
           "complexity": "Complexity level",
           "instructions": "Instructions",
           "prepTime": "Prep time",
-          "cookTime": "Cook time"
+          "cookTime": "Cook time",
+          "totalDuration": "Total Duration"
         },
         "actions": {
           "generateName": "Generate name",
@@ -3377,9 +3381,11 @@
           "add": "Add",
           "cancel": "Cancel",
           "save": "Save",
+          "saving": "Saving...",
           "close": "Close",
           "delete": "Delete"
-        }
+        },
+        "minutes": "minutes"
       },
       "merchantReceiptsDialog": {
         "title": "All receipts from {merchant}",

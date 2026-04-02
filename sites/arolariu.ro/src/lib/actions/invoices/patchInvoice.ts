@@ -18,7 +18,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import type {Invoice, InvoiceCategory, PaymentInformation, Product} from "@/types/invoices";
+import type {Invoice, InvoiceCategory, PaymentInformation, Product, Recipe} from "@/types/invoices";
 import {revalidatePath} from "next/cache";
 import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -39,6 +39,7 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * @property sharedWith - Optional list of user GUIDs to share with (replaces existing)
  * @property additionalMetadata - Optional metadata entries to merge
  * @property items - Optional updated items array (replaces entire items list)
+ * @property possibleRecipes - Optional updated recipes array (replaces entire recipes list)
  */
 type PatchInvoicePayload = Readonly<{
   name?: string;
@@ -50,6 +51,7 @@ type PatchInvoicePayload = Readonly<{
   sharedWith?: string[];
   additionalMetadata?: Record<string, unknown>;
   items?: Product[];
+  possibleRecipes?: Recipe[];
 }>;
 
 /**

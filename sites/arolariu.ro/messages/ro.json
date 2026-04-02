@@ -2380,7 +2380,8 @@
           "total": "Total",
           "visits": "Vizite",
           "averagePerVisit": "Medie/vizită"
-        }
+        },
+        "unknownMerchant": "Comerciant Necunoscut"
       },
       "priceDistributionChart": {
         "title": "Distribuția prețurilor",
@@ -3327,7 +3328,9 @@
       "recipeDialog": {
         "create": {
           "title": "Adaugă o rețetă nouă",
-          "description": "Completează detaliile pentru a crea o rețetă."
+          "description": "Completează detaliile pentru a crea o rețetă.",
+          "success": "Rețeta a fost creată cu succes",
+          "error": "Nu s-a putut crea rețeta"
         },
         "read": {
           "description": "Detalii despre rețetă și instrucțiuni de preparare",
@@ -3350,7 +3353,8 @@
           "complexity": "Nivel de complexitate",
           "instructions": "Instrucțiuni",
           "prepTime": "Timp de pregătire",
-          "cookTime": "Timp de gătire"
+          "cookTime": "Timp de gătire",
+          "totalDuration": "Durata Totală"
         },
         "actions": {
           "generateName": "Generează nume",
@@ -3377,9 +3381,11 @@
           "add": "Adaugă",
           "cancel": "Anulează",
           "save": "Salvează",
+          "saving": "Se salvează...",
           "close": "Închide",
           "delete": "Șterge"
-        }
+        },
+        "minutes": "minute"
       },
       "merchantReceiptsDialog": {
         "title": "Toate bonurile de la {merchant}",
