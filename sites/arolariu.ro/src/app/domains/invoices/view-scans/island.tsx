@@ -245,7 +245,6 @@ function Sidebar(): React.JSX.Element | null {
  * Mobile tips button that opens a Sheet with sidebar content.
  */
 function MobileTipsButton(): React.JSX.Element | null {
-  const t = useTranslations("IMS--ViewScans");
   const {scans} = useScans();
   const isMobile = useIsMobile();
 

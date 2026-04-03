@@ -120,8 +120,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
   const t = useTranslations("IMS--Edit.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
-  const {open: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
-  const {open: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
+  const {openWith: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
+  const {openWith: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
 
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
@@ -500,53 +500,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     return "";
   }, []);
 
-  /**
-   * Builds an array of issue badges to display for a product.
-   *
-   * @param item - The product to analyze
-   * @returns Array of badge configurations
-   */
-  const getProductIssueBadges = useCallback(
-    (item: Product): Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> => {
-      const badges: Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> = [];
-
-      // Skip soft-deleted items
-      if (item.metadata.isSoftDeleted) return badges;
-
-      // Check for uncategorized
-      if (item.category === ProductCategory.NOT_DEFINED) {
-        badges.push({
-          text: t("indicators.uncategorized"),
-          variant: "secondary",
-          tooltip: t("indicators.uncategorizedTooltip"),
-        });
-      }
-
-      // Check for missing generic name
-      if (!item.genericName.trim() || item.genericName === item.rawName) {
-        badges.push({
-          text: t("indicators.missingName"),
-          variant: "secondary",
-          tooltip: t("indicators.missingNameTooltip"),
-        });
-      }
-
-      // Check for low confidence (only show if > 0 to indicate OCR was attempted)
-      if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
-        badges.push({
-          text: t("indicators.lowConfidence"),
-          variant: "outline",
-          tooltip: t("indicators.lowConfidenceTooltip", {
-            confidence: String(Math.round(item.metadata.confidence * 100)),
-          }),
-        });
-      }
-
-      return badges;
-    },
-    [t],
-  );
-
   return (
     <div>
       <div className={styles["headerRow"]}>
@@ -651,7 +604,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const isEdited = item.metadata.isEdited;
               const hasAllergens = item.detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
-              const _issueBadges = getProductIssueBadges(item);
 
               return (
                 <motion.tr

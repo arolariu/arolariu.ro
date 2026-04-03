@@ -113,15 +113,6 @@ function formatDate(dateStr: string, locale: string): string {
   });
 }
 
-/**
- * Gets the day of week (0=Sunday, 6=Saturday) for a date string.
- *
- * @param dateStr - ISO date string (YYYY-MM-DD)
- * @returns Day of week number
- */
-function _getDayOfWeek(dateStr: string): number {
-  return new Date(dateStr).getDay();
-}
 
 /**
  * Generates a 3-month calendar grid of spending data.

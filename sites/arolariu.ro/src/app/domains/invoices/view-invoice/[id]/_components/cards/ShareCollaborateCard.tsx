@@ -84,7 +84,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("IMS--View.shareCollaborate");
   const {invoice, setInvoice} = useInvoiceContext();
-  const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
+  const {openWith: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
   const [isPending, startTransition] = useTransition();
 
   /**
