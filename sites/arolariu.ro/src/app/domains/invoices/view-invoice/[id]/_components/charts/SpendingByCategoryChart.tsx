@@ -11,7 +11,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {CategorySpending} from "../../_utils/analytics";
@@ -32,8 +32,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -43,8 +43,8 @@ type CustomLegendProps = {
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoice.spendingByCategoryChart");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -120,14 +120,13 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                 paddingAngle={2}
                 className={styles["pieStroke"]}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                   />
-                }
+                )}
               />
               <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>

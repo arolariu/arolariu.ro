@@ -13,7 +13,7 @@ import {
   ChartContainer,
   ReferenceDot,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -39,15 +39,15 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoice.spendingTrendChart");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -78,7 +78,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             </li>
           ))}
           {data.invoices.length > 10 ? (
-            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
           ) : null}
         </ul>
       ) : null}
@@ -147,14 +147,13 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                 width={32}
                 tickFormatter={tickFormatter}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                   />
-                }
+                )}
               />
               <Area
                 type='monotone'

@@ -10,7 +10,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -28,14 +28,14 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
 };
 
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoice.priceDistributionChart");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -88,14 +88,7 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
                 allowDecimals={false}
                 width={24}
               />
-              <Tooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                  />
-                }
-              />
+              <ChartTooltip content={(props: Record<string, unknown>) => <CustomTooltip {...props} />} />
               <Bar
                 dataKey='count'
                 radius={[4, 4, 0, 0]}

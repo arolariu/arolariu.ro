@@ -17,7 +17,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {CategoryAggregate} from "../../../_utils/statistics";
@@ -38,8 +38,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -48,12 +48,12 @@ type CustomLegendProps = {
 };
 
 /**
- * Custom tooltip for the category pie chart.
+ * Custom ChartTooltip for the category pie chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.categoryBreakdown");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
 
   return (
@@ -63,7 +63,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -139,14 +139,13 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
                 paddingAngle={2}
                 className={styles["pieStroke"]}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                   />
-                }
+                )}
               />
               <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>

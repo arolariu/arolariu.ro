@@ -15,7 +15,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -33,18 +33,18 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
 /**
- * Custom tooltip for the price distribution chart.
+ * Custom ChartTooltip for the price distribution chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.priceDistribution");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
 
   return (
@@ -52,7 +52,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipRange"]}>
         {data.range} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -107,14 +107,13 @@ export function PriceDistributionChart({data, currency}: Props): React.JSX.Eleme
                 axisLine={false}
                 width={32}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                   />
-                }
+                )}
               />
               <Bar
                 dataKey='count'

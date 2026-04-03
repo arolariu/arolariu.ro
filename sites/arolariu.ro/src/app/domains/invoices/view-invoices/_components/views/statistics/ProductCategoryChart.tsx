@@ -30,7 +30,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -54,7 +54,7 @@ type CustomTooltipProps = {
 };
 
 /**
- * Custom tooltip for the product category chart.
+ * Custom ChartTooltip for the product category chart.
  *
  * @remarks
  * Displays category name, total spending, product count, and percentage
@@ -74,7 +74,7 @@ function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): Re
         {formatAmount(data.totalSpent)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.productCount", {count: data.productCount})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.productCount", {count: String(data.productCount)})}</p>
     </div>
   );
 }
@@ -164,8 +164,8 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 axisLine={false}
                 width={110}
               />
-              <Tooltip
-                content={(props) => (
+              <ChartTooltip
+                content={(props: {active?: boolean; payload?: TooltipPayloadItem[]}) => (
                   <CustomTooltip
                     {...props}
                     currency={currency}

@@ -17,7 +17,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -43,7 +43,7 @@ type CustomTooltipProps = {
 };
 
 /**
- * Custom tooltip for the merchant leaderboard.
+ * Custom ChartTooltip for the merchant leaderboard.
  */
 function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
@@ -58,7 +58,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: CustomToolt
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpend)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -143,13 +143,14 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
+                    {...props}
                     currency={currency}
                     getMerchantName={getMerchantName}
                   />
-                }
+                )}
               />
               <Bar
                 dataKey='totalSpent'

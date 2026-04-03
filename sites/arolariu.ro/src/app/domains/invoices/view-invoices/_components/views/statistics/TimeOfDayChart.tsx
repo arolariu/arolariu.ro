@@ -18,7 +18,7 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {TimeOfDaySegment} from "../../../_utils/statistics";
@@ -33,23 +33,23 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
 };
 
 /**
- * Custom tooltip for the time-of-day radar chart.
+ * Custom ChartTooltip for the time-of-day radar chart.
  */
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.timeOfDay");
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
 
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -132,14 +132,7 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                 domain={[0, "auto"]}
                 tick={{fontSize: 10}}
               />
-              <Tooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                  />
-                }
-              />
+              <ChartTooltip content={(props: Record<string, unknown>) => <CustomTooltip {...props} />} />
               {/* CRITICAL: dataKey must match TimeOfDaySegment field name */}
               <Radar
                 dataKey='invoiceCount'

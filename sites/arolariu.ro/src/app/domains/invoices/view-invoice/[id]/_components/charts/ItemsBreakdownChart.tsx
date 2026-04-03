@@ -10,7 +10,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -29,15 +29,15 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
   readonly quantityLabel: string;
 };
 
 function CustomTooltip({active, payload, currency, quantityLabel}: CustomTooltipProps): React.JSX.Element | null {
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -100,15 +100,14 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                     quantityLabel={t("labels.quantity")}
                   />
-                }
+                )}
               />
               <Bar
                 dataKey='price'

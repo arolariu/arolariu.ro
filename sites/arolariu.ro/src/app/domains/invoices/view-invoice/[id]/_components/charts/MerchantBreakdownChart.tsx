@@ -11,7 +11,7 @@ import {
   CardTitle,
   ChartContainer,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -30,8 +30,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
   readonly totalLabel: string;
   readonly visitsLabel: string;
@@ -46,8 +46,8 @@ function CustomTooltip({
   visitsLabel,
   averagePerVisitLabel,
 }: CustomTooltipProps): React.JSX.Element | null {
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -131,17 +131,16 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                 axisLine={false}
                 width={32}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                     totalLabel={t("labels.total")}
                     visitsLabel={t("labels.visits")}
                     averagePerVisitLabel={t("labels.averagePerVisit")}
                   />
-                }
+                )}
               />
               <Bar
                 dataKey='total'

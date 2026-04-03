@@ -11,7 +11,7 @@ import {
   ChartContainer,
   ChartLegend,
   ResponsiveContainer,
-  Tooltip,
+  ChartTooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -29,16 +29,16 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
   readonly currentLabel: string;
   readonly averageLabel: string;
 };
 
 function CustomTooltip({active, payload, currency, currentLabel, averageLabel}: CustomTooltipProps): React.JSX.Element | null {
-  const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  const [firstItem] = payload ?? [];
+  if (!active || !payload || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
@@ -105,16 +105,15 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 axisLine={false}
                 width={70}
               />
-              <Tooltip
-                content={
+              <ChartTooltip
+                content={(props: Record<string, unknown>) => (
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
+                    {...props}
                     currency={currency}
                     currentLabel={t("labels.current")}
                     averageLabel={t("labels.average")}
                   />
-                }
+                )}
               />
               <ChartLegend
                 iconSize={8}
