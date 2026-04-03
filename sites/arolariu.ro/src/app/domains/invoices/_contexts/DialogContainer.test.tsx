@@ -15,7 +15,7 @@ import {describe, expect, test, vi} from "vitest";
 vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
-  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
   getTraceparentHeader: vi.fn(() => ""),
   injectTraceContextHeaders: vi.fn(() => ({})),
 }));

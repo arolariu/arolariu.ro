@@ -49,7 +49,7 @@ function createMockInvoice(merchantId: string, amount: number, date: Date, itemC
       category: null,
     })),
     possibleRecipes: [],
-  } as Invoice;
+  } as unknown as Invoice;
 }
 
 describe("Merchant Analytics", () => {
