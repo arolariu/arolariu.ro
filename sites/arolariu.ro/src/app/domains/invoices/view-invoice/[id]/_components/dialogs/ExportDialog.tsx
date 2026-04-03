@@ -115,9 +115,9 @@ export function ExportDialog(): React.JSX.Element {
       // CSV Rows - one per product
       for (const item of invoice.items) {
         const row = [
-          `"${item.name.replace(/"/g, '""')}"`, // Escape quotes in product name
+          `"${item.genericName.replace(/"/g, '""')}"`, // Escape quotes in product name
           item.quantity.toString(),
-          formatAmount(item.unitPrice),
+          formatAmount(item.price),
           formatAmount(item.totalPrice),
           `"${String(item.category).replace(/"/g, '""')}"`,
         ];
@@ -196,7 +196,7 @@ export function ExportDialog(): React.JSX.Element {
    */
   const handleCopySummary = useCallback(async (): Promise<void> => {
     try {
-      const paymentDate = formatDate(invoice.paymentInformation.paymentDate, {locale: "en-US"});
+      const paymentDate = formatDate(invoice.paymentInformation.transactionDate, {locale: "en-US"});
       const summary = `
 Invoice: ${invoice.name}
 Merchant: ${merchant?.name ?? "N/A"}

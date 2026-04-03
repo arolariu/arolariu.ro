@@ -92,14 +92,14 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
     {
       icon: <TbBuildingStore size={24} />,
       label: t("topMerchant"),
-      value: data.topMerchant ? data.topMerchant.id.slice(0, 12) : t("noneYet"),
-      subtitle: data.topMerchant ? t("visits", {count: data.topMerchant.count}) : "",
+      value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t("noneYet"),
+      subtitle: data.mostFrequentMerchant ? t("visits", {count: String(data.mostFrequentMerchant.count)}) : "",
     },
     {
       icon: <TbShoppingCart size={24} />,
       label: t("averageItems"),
       value: formatAmount(data.averageItemsPerInvoice, "en-US", 1),
-      subtitle: t("acrossInvoices", {count: data.invoiceCount}),
+      subtitle: t("acrossInvoices", {count: String(data.invoiceCount)}),
     },
   ];
 

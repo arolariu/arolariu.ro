@@ -76,7 +76,7 @@ function detectSpendingSpikes(
         insights.push({
           id: `spike-${category}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: t("insights.spike.title", {category: formatEnum(ProductCategory, category)}),
+          title: t("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
           description: t("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });
@@ -183,7 +183,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
 
     // Find invoices from the same month (any year), excluding the current invoice
     const sameMonthInvoices = allInvoices.filter((inv) => {
-      if (inv.invoiceIdentifier === invoice.invoiceIdentifier) return false;
+      if (inv.id === invoice.id) return false;
       const invDate = toSafeDate(inv.paymentInformation.transactionDate);
       return invDate.getMonth() === currentMonth && invDate.getTime() > 0;
     });

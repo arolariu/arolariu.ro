@@ -2,7 +2,7 @@
 
 import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity} from "@/types/invoices";
-import {Badge, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbToolsKitchen2} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";

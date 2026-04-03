@@ -91,7 +91,7 @@ function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribut
           </span>
         </div>
         <div className={styles["statItem"]}>
-          <span className={styles["statLabel"]}>{t("invoiceCount")}</span>
+          <span className={styles["statLabel"]}>{t("invoiceCountLabel")}</span>
           <span className={styles["statValue"]}>{currency.invoiceCount}</span>
         </div>
       </div>
@@ -192,7 +192,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                     <Badge
                       variant='secondary'
                       className={styles["invoiceBadge"]}>
-                      {t("invoiceCount", {count: currency.invoiceCount})}
+                      {t("invoiceCount", {count: String(currency.invoiceCount)})}
                     </Badge>
                   </div>
                   <div className={styles["currencyAmount"]}>

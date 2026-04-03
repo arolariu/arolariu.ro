@@ -38,8 +38,8 @@ function ComparisonCard({icon, label, value, delta, isPositive, progressValue, i
   };
 
   const getTrendClass = (): string => {
-    if (isPositive === null) return styles["trendNeutral"];
-    return isPositive ? styles["trendPositive"] : styles["trendNegative"];
+    if (isPositive === null) return styles["trendNeutral"] ?? "";
+    return isPositive ? styles["trendPositive"] ?? "" : styles["trendNegative"] ?? "";
   };
 
   const trendIcon = getTrendIcon();

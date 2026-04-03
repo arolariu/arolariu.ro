@@ -110,6 +110,5 @@ export function exportInvoices(invoices: ReadonlyArray<Invoice>, options: Invoic
       break;
     default:
       throw new Error(`Unsupported export format: ${String(format)}`);
-      break;
   }
 }

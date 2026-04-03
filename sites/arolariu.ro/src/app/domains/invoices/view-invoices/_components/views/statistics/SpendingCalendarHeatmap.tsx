@@ -67,17 +67,17 @@ type WeekRow = DayCell[];
 function getColorClass(level: number): string {
   switch (level) {
     case 0:
-      return styles["levelEmpty"];
+      return styles["levelEmpty"] ?? "";
     case 1:
-      return styles["level1"];
+      return styles["level1"] ?? "";
     case 2:
-      return styles["level2"];
+      return styles["level2"] ?? "";
     case 3:
-      return styles["level3"];
+      return styles["level3"] ?? "";
     case 4:
-      return styles["level4"];
+      return styles["level4"] ?? "";
     default:
-      return styles["levelEmpty"];
+      return styles["levelEmpty"] ?? "";
   }
 }
 
@@ -119,10 +119,6 @@ function formatDate(dateStr: string, locale: string): string {
  * @param dateStr - ISO date string (YYYY-MM-DD)
  * @returns Day of week number
  */
-function getDayOfWeek(dateStr: string): number {
-  return new Date(dateStr).getDay();
-}
-
 /**
  * Generates a 3-month calendar grid of spending data.
  *
@@ -231,7 +227,7 @@ function DayCell({day, currency, locale}: {day: DayCell; currency: string; local
               <div className={styles["tooltipAmount"]}>
                 {t("amount")}: {formatAmount(day.amount)} {currency}
               </div>
-              <div className={styles["tooltipInvoices"]}>{t("invoices", {count: day.invoiceCount})}</div>
+              <div className={styles["tooltipInvoices"]}>{t("invoices", {count: String(day.invoiceCount)})}</div>
             </>
           ) : (
             <div className={styles["tooltipNoSpending"]}>{t("noSpending")}</div>
