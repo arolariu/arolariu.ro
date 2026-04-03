@@ -79,7 +79,7 @@ type SendEmailResult = Readonly<{
  * ```
  */
 export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): Promise<SendEmailResult> {
-  return withSpan("email.send.invoice-share", async () => {
+  return withSpan("api.email.send.invoice-share", async () => {
     const {toEmail, toName, invoiceId} = input;
 
     try {

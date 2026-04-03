@@ -131,7 +131,6 @@ export async function updateScan({base64Data, blobName, mimeType, metadata = {}}
           blobContentType: mimeType,
         },
         metadata: mergedMetadata,
-        overwrite: true,
       });
       addSpanEvent("azure.blob.update.complete");
 
