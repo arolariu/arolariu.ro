@@ -1733,7 +1733,8 @@
             "tooltip": {
               "invoiceCount": "{count} factures"
             },
-            "empty": "Aucune donnée de marchand disponible"
+            "empty": "Aucune donnée de marchand disponible",
+            "unknownMerchant": "Marchand inconnu"
           },
           "priceDistribution": {
             "title": "Distribution des prix",
@@ -1767,7 +1768,8 @@
             "ronEquivalent": "Équivalent RON",
             "totalAmount": "Montant total",
             "totalCurrencies": "Total des devises",
-            "totalSpending": "Dépenses totales"
+            "totalSpending": "Dépenses totales",
+            "invoiceCountLabel": "Nombre de factures"
           },
           "merchantTrends": {
             "title": "Tendances de dépenses par commerçant",

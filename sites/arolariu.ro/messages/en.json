@@ -1737,7 +1737,8 @@
             "ronEquivalent": "RON equivalent",
             "totalAmount": "Total Amount",
             "totalCurrencies": "Total Currencies",
-            "totalSpending": "Total Spending"
+            "totalSpending": "Total Spending",
+            "invoiceCountLabel": "Invoice Count"
           },
           "merchantLeaderboard": {
             "title": "Top Merchants",
@@ -1748,7 +1749,8 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             },
-            "empty": "No merchant data available yet"
+            "empty": "No merchant data available yet",
+            "unknownMerchant": "Unknown Merchant"
           },
           "merchantTrends": {
             "title": "Merchant Spending Trends",

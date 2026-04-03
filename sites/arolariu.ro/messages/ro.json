@@ -1737,7 +1737,8 @@
             "ronEquivalent": "Echivalent RON",
             "totalAmount": "Sumă Totală",
             "totalCurrencies": "Total Valute",
-            "totalSpending": "Cheltuieli Totale"
+            "totalSpending": "Cheltuieli Totale",
+            "invoiceCountLabel": "Facturi"
           },
           "merchantLeaderboard": {
             "title": "Comercianți de Top",
@@ -1748,7 +1749,8 @@
             "tooltip": {
               "invoiceCount": "{count} facturi"
             },
-            "empty": "Nu sunt date disponibile despre comercianți"
+            "empty": "Nu sunt date disponibile despre comercianți",
+            "unknownMerchant": "Comerciant necunoscut"
           },
           "merchantTrends": {
             "title": "Tendințe Cheltuieli Comercianți",
