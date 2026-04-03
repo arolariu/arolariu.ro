@@ -208,7 +208,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
     const hasCompletePayment =
       Boolean(invoice.paymentInformation.transactionDate)
       && invoice.paymentInformation.totalCostAmount > 0
-      && invoice.paymentInformation.currency.code.length > 0;
+      && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
     const paymentPoints = hasCompletePayment ? 15 : 0;
 
     // Factor 6: Categories assigned (10 points)

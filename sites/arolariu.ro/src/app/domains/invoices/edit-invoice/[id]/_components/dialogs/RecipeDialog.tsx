@@ -529,7 +529,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               {recipeDetails.ingredients.map((ingredient, idx) => (
                 <div
-                  key={ingredient}
+                  key={`${ingredient}-${idx}`}
                   className={styles["ingredientItem"]}>
                   <div className={styles["ingredientRow"]}>
                     <div className={styles["ingredientInput"]}>

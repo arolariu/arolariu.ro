@@ -41,7 +41,7 @@ export function calculateHealthScorePercentage(invoice: Invoice): number {
   const hasCompletePayment =
     Boolean(invoice.paymentInformation.transactionDate)
     && invoice.paymentInformation.totalCostAmount > 0
-    && invoice.paymentInformation.currency.code.length > 0;
+    && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
   const paymentPoints = hasCompletePayment ? 15 : 0;
 
   const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
