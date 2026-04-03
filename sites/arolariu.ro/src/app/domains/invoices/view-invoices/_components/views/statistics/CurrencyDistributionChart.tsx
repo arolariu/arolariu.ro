@@ -192,7 +192,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                     <Badge
                       variant='secondary'
                       className={styles["invoiceBadge"]}>
-                      {t("invoiceCount", {count: currency.invoiceCount})}
+                      {t("invoiceCount")}
                     </Badge>
                   </div>
                   <div className={styles["currencyAmount"]}>

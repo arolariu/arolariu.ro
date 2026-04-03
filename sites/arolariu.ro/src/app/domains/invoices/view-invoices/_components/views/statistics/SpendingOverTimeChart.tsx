@@ -15,8 +15,8 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -45,8 +45,9 @@ type CustomTooltipProps = {
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.spendingOverTime");
+  if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  if (!firstItem) return null;
   const data = firstItem.payload;
 
   return (
@@ -55,7 +56,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.amount)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
       {data.invoices && data.invoices.length > 0 && (
         <ul className={styles["tooltipInvoices"]}>
           {data.invoices.slice(0, 10).map((inv) => (
@@ -70,7 +71,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             </li>
           ))}
           {data.invoices.length > 10 && (
-            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
           )}
         </ul>
       )}
@@ -151,7 +152,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                 width={40}
                 tickFormatter={formatYAxisTick}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <ChartTooltip content={<CustomTooltip currency={currency} />} />
               <Area
                 type='monotone'
                 dataKey='amount'

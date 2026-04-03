@@ -106,7 +106,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-name",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.nameChanged"),
+        title: t("IMS--Edit.changeHistory.changes.nameChanged"),
         description: `"${invoice.name}" → "${pendingChanges.name}"`,
         timestamp: new Date(), // "Just now"
         icon: <TbFileText className={styles["timelineIcon"]} />,
@@ -119,7 +119,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-category",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.categoryUpdated"),
+        title: t("IMS--Edit.changeHistory.changes.categoryUpdated"),
         description: `${oldCategory} → ${newCategory}`,
         timestamp: new Date(),
         icon: <TbTag className={styles["timelineIcon"]} />,
@@ -130,7 +130,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-description",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.descriptionChanged"),
+        title: t("IMS--Edit.changeHistory.changes.descriptionChanged"),
         description: pendingChanges.description.length > 50 ? `${pendingChanges.description.slice(0, 50)}...` : pendingChanges.description,
         timestamp: new Date(),
         icon: <TbFileText className={styles["timelineIcon"]} />,
@@ -141,7 +141,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-payment",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.paymentTypeChanged"),
+        title: t("IMS--Edit.changeHistory.changes.paymentTypeChanged"),
         description: String(pendingChanges.paymentType),
         timestamp: new Date(),
         icon: <TbWallet className={styles["timelineIcon"]} />,
@@ -152,7 +152,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-date",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.transactionDateChanged"),
+        title: t("IMS--Edit.changeHistory.changes.transactionDateChanged"),
         description: pendingChanges.transactionDate.toLocaleDateString(),
         timestamp: new Date(),
         icon: <TbCalendar className={styles["timelineIcon"]} />,
@@ -163,10 +163,10 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "pending-important",
         type: "pending",
-        title: t("Invoices.EditInvoice.changeHistory.changes.importanceChanged"),
+        title: t("IMS--Edit.changeHistory.changes.importanceChanged"),
         description: pendingChanges.isImportant
-          ? t("Invoices.EditInvoice.changeHistory.changes.markedImportant")
-          : t("Invoices.EditInvoice.changeHistory.changes.unmarkedImportant"),
+          ? t("IMS--Edit.changeHistory.changes.markedImportant")
+          : t("IMS--Edit.changeHistory.changes.unmarkedImportant"),
         timestamp: new Date(),
         icon: <TbCheck className={styles["timelineIcon"]} />,
       });
@@ -177,7 +177,7 @@ export default function ChangeHistory(): React.JSX.Element {
       items.push({
         id: "modified",
         type: "modified",
-        title: t("Invoices.EditInvoice.changeHistory.modified"),
+        title: t("IMS--Edit.changeHistory.modified"),
         timestamp: invoice.lastUpdatedAt,
         icon: <TbClock className={styles["timelineIcon"]} />,
       });
@@ -187,7 +187,7 @@ export default function ChangeHistory(): React.JSX.Element {
     items.push({
       id: "created",
       type: "created",
-      title: t("Invoices.EditInvoice.changeHistory.created"),
+      title: t("IMS--Edit.changeHistory.created"),
       timestamp: invoice.createdAt,
       icon: <TbCircleDot className={styles["timelineIcon"]} />,
     });
@@ -198,12 +198,12 @@ export default function ChangeHistory(): React.JSX.Element {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h3 className={styles["title"]}>{t("Invoices.EditInvoice.changeHistory.title")}</h3>
+        <h3 className={styles["title"]}>{t("IMS--Edit.changeHistory.title")}</h3>
         {historyItems.some((item) => item.type === "pending") && (
           <Badge
             variant='secondary'
             className={styles["pendingBadge"]}>
-            {t("Invoices.EditInvoice.changeHistory.unsavedChanges")}
+            {t("IMS--Edit.changeHistory.unsavedChanges")}
           </Badge>
         )}
       </div>
@@ -221,7 +221,7 @@ export default function ChangeHistory(): React.JSX.Element {
               <div className={styles["changeHeader"]}>
                 <p className={styles["changeTitle"]}>{item.title}</p>
                 {item.type === "pending" && (
-                  <span className={styles["pendingIndicator"]}>{t("Invoices.EditInvoice.changeHistory.pending")}</span>
+                  <span className={styles["pendingIndicator"]}>{t("IMS--Edit.changeHistory.pending")}</span>
                 )}
               </div>
               {item.description && <p className={styles["changeDescription"]}>{item.description}</p>}
@@ -233,3 +233,4 @@ export default function ChangeHistory(): React.JSX.Element {
     </div>
   );
 }
+

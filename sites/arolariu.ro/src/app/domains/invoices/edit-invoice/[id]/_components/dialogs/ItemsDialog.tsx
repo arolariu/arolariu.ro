@@ -99,6 +99,7 @@ export default function ItemsDialog(): React.JSX.Element {
         isComplete: false,
         isEdited: false,
         isSoftDeleted: false,
+        confidence: 0,
       },
       productCode: "",
       totalPrice: 0,

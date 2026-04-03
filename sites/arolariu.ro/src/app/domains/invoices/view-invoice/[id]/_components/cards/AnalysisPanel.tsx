@@ -20,7 +20,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbBolt, TbBrain, TbCheck, TbClock, TbInfoCircle, TbRefresh, TbRefreshAlert, TbShoppingCart, TbSparkles} from "react-icons/tb";
@@ -68,11 +68,12 @@ type AnalysisOption = Readonly<{
  */
 export function AnalysisPanel(): React.JSX.Element {
   const t = useTranslations("IMS--View.analysisPanel");
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const router = useRouter();
 
   // Hide the entire card when analysis is complete (items exist)
-  if (invoice.items.length > 0) return null;
+  if (invoice.items.length > 0) return <></>;
 
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -245,13 +246,14 @@ export function AnalysisPanel(): React.JSX.Element {
                   </div>
                   <p className={styles["infoValue"]}>
                     {formatDate(invoice.lastUpdatedAt, {
+                      locale,
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}
                   </p>
                   {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
                     <div className={styles["updatesBadge"]}>
-                      <Badge variant='outline'>{t("labels.updates", {count: String(invoice.numberOfUpdates)})}</Badge>
+                      <Badge variant='outline'>{t("labels.updates", {count: invoice.numberOfUpdates})}</Badge>
                     </div>
                   )}
                 </div>

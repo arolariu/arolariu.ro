@@ -26,6 +26,6 @@ export const Default: Story = {
     onBack: noop,
     email: "",
     onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.SubmitEvent) => void,
+    onSendEmail: noop as unknown as (e: React.FormEvent) => void,
   },
 };

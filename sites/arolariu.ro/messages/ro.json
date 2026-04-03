@@ -2133,7 +2133,7 @@
         "noAllergens": "Niciun alergen detectat"
       },
       "errors": {
-        "duplicate": "Alergenul '{name}' este deja adăugat",
+        "duplicate": "Alergenul ''{name}'' este deja adăugat",
         "emptyName": "Numele alergenului nu poate fi gol",
         "missingData": "Datele produsului lipsesc",
         "saveFailed": "Eroare la salvarea alergenilor"
@@ -2934,14 +2934,14 @@
       },
       "restore": {
         "error": "Eroare la restabilirea produsului",
-        "success": "Produsul '{name}' a fost restabilit"
+        "success": "Produsul ''{name}'' a fost restabilit"
       },
       "search": {
         "placeholder": "Caută articole..."
       },
       "softDelete": {
         "error": "Eroare la eliminarea produsului",
-        "success": "Produsul '{name}' a fost eliminat"
+        "success": "Produsul ''{name}'' a fost eliminat"
       },
       "tableHeaders": {
         "item": "Articol",
@@ -3401,7 +3401,7 @@
     },
     "currencyDistribution": {
       "description": "Defalcarea cheltuielilor pe valute cu conversie în RON",
-      "invoiceCount": "{count} facturi",
+      "invoiceCount": "Facturi",
       "originalAmount": "Original",
       "ronEquivalent": "Echivalent RON",
       "showOriginal": "Arată Original",
@@ -3438,7 +3438,8 @@
       "title": "Comercianți de Top",
       "tooltip": {
         "invoiceCount": "{count} facturi"
-      }
+      },
+      "unknownMerchant": "Comerciant necunoscut"
     },
     "merchantTrends": {
       "aria": {

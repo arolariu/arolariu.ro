@@ -2129,7 +2129,7 @@
         "noAllergens": "Aucun allergène détecté"
       },
       "errors": {
-        "duplicate": "L'allergène « {name} » a déjà été ajouté",
+        "duplicate": "L''allergène « {name} » a déjà été ajouté",
         "emptyName": "Le nom de l'allergène ne peut pas être vide",
         "missingData": "Données de produit manquantes",
         "saveFailed": "Échec de l'enregistrement des allergènes"
@@ -3391,10 +3391,10 @@
     },
     "currencyDistribution": {
       "description": "Répartition des dépenses par devise avec conversion en RON",
-      "invoiceCount": "{count} factures",
+      "invoiceCount": "Factures",
       "originalAmount": "Original",
       "ronEquivalent": "Équivalent RON",
-      "showOriginal": "Afficher l'original",
+      "showOriginal": "Afficher l''original",
       "showRON": "Afficher en RON",
       "singleCurrency": "Toutes les factures en {currency} ({symbol})",
       "title": "Répartition par devise",
@@ -3428,7 +3428,8 @@
       "title": "Principaux commerçants",
       "tooltip": {
         "invoiceCount": "{count} factures"
-      }
+      },
+      "unknownMerchant": "Commerçant inconnu"
     },
     "merchantTrends": {
       "aria": {

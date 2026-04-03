@@ -62,6 +62,9 @@ function useCalendarData(): CalendarDataContextType {
   return context;
 }
 
+/** Simplified translation function type to avoid deep type instantiation with ReturnType<typeof useTranslations>. */
+type TranslationFn = (key: string, values?: Record<string, string | number>) => string;
+
 /** Props for the day tooltip content component */
 interface DayTooltipContentProps {
   readonly amount: number;
@@ -71,11 +74,11 @@ interface DayTooltipContentProps {
   readonly data: DayData | undefined;
   readonly historicalData: DayHistoricalComparison | undefined;
   readonly isCurrentInvoiceDate: boolean;
-  readonly t: ReturnType<typeof useTranslations>;
+  readonly t: TranslationFn;
 }
 
 /** Renders the invoice names list in the tooltip */
-function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: ReturnType<typeof useTranslations>}>): React.JSX.Element | null {
+function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: TranslationFn}>): React.JSX.Element | null {
   if (data.invoiceNames.length === 0) return null;
 
   return (
@@ -106,7 +109,7 @@ function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: ReturnType<type
 function HistoricalComparisonSection({
   historicalData,
   t,
-}: Readonly<{historicalData: DayHistoricalComparison; t: ReturnType<typeof useTranslations>}>): React.JSX.Element {
+}: Readonly<{historicalData: DayHistoricalComparison; t: TranslationFn}>): React.JSX.Element {
   const ArrowIcon = historicalData.isAboveAverage ? TbArrowUp : TbArrowDown;
   const colorClass = historicalData.isAboveAverage ? styles["colorRed"] : styles["colorGreen"];
 
@@ -201,7 +204,7 @@ function CustomDayButton({
         data={data}
         historicalData={historicalData}
         isCurrentInvoiceDate={isCurrentInvoiceDate}
-        t={t}
+        t={t as TranslationFn}
       />
     </Tooltip>
   );
