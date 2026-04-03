@@ -2408,7 +2408,8 @@
           "amount": "Amount"
         },
         "tooltip": {
-          "currentInvoice": "Current Invoice"
+          "currentInvoice": "Current Invoice",
+          "andMore": "and {count} more..."
         }
       },
       "shareAnalyticsDialog": {

@@ -2408,7 +2408,8 @@
           "amount": "Sumă"
         },
         "tooltip": {
-          "currentInvoice": "Factura curentă"
+          "currentInvoice": "Factura curentă",
+          "andMore": "și încă {count}..."
         }
       },
       "shareAnalyticsDialog": {
