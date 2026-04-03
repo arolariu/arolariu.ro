@@ -80,13 +80,21 @@ function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: ReturnType<type
 
   return (
     <div className={styles["tooltipBorder"]}>
-      {data.invoiceNames.slice(0, 3).map((name) => (
-        <p
-          key={name}
-          className={styles["invoiceName"]}>
-          • {name}
-        </p>
-      ))}
+      {data.invoiceNames.slice(0, 3).map((name, index) => {
+        const invoiceId = data.invoiceIds[index];
+        if (!invoiceId) return null;
+
+        return (
+          <a
+            key={invoiceId}
+            href={`/domains/invoices/view-invoice/${invoiceId}/`}
+            target='_blank'
+            rel='noopener noreferrer'
+            className={styles["invoiceLink"]}>
+            • {name}
+          </a>
+        );
+      })}
       {data.invoiceNames.length > 3 && (
         <p className={styles["moreText"]}>{t("tooltip.more", {count: String(data.invoiceNames.length - 3)})}</p>
       )}
@@ -164,7 +172,8 @@ function CustomDayButton({
   const amount = data?.amount ?? 0;
   const count = data?.count ?? 0;
   const isCurrentInvoiceDate = isSameDay(date, transactionDate);
-  const intensityClass = getSpendingIntensityClass(amount, maxDayAmount);
+  const intensityClassSuffix = getSpendingIntensityClass(amount, maxDayAmount);
+  const intensityClass = intensityClassSuffix ? styles[intensityClassSuffix] : "";
   const highlightClass = isCurrentInvoiceDate ? styles["dayButtonHighlight"] : "";
 
   const button = (

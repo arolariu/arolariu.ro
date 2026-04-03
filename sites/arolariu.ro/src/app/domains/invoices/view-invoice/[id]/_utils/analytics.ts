@@ -4,8 +4,7 @@
  */
 
 import {getTransactionYear, toRON} from "@/lib/currency";
-import {EMPTY_GUID} from "@/lib/utils.generic";
-import {formatEnum} from "@/lib/utils.generic";
+import {EMPTY_GUID, formatEnum} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
 
 // Spending by category data
@@ -136,6 +135,7 @@ export type SpendingTrendData = {
   amount: number;
   isCurrent: boolean;
   name: string;
+  invoices: ReadonlyArray<{id: string; name: string; amount: number}>;
 };
 
 /**
@@ -163,8 +163,7 @@ export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyA
     {
       amount: number;
       count: number;
-      invoiceIds: Set<string>;
-      names: string[];
+      invoiceDetails: Array<{id: string; name: string; amount: number}>;
       date: Date;
     }
   >();
@@ -180,18 +179,22 @@ export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyA
     const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
     const amountInRON = toRON(amount, currencyCode, year);
 
+    const invoiceDetail = {
+      id: inv.id,
+      name: inv.name || `Invoice ${inv.id.slice(0, 8)}`,
+      amount: Math.round(amountInRON * 100) / 100,
+    };
+
     const existing = monthlyData.get(monthKey);
     if (existing) {
       existing.amount += amountInRON;
       existing.count += 1;
-      existing.invoiceIds.add(inv.id);
-      existing.names.push(inv.name);
+      existing.invoiceDetails.push(invoiceDetail);
     } else {
       monthlyData.set(monthKey, {
         amount: amountInRON,
         count: 1,
-        invoiceIds: new Set([inv.id]),
-        names: [inv.name],
+        invoiceDetails: [invoiceDetail],
         date,
       });
     }
@@ -210,6 +213,7 @@ export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyA
       amount: Math.round(data.amount * 100) / 100,
       isCurrent: monthKey === currentMonthKey,
       name: `${data.count} invoice${data.count > 1 ? "s" : ""}`,
+      invoices: data.invoiceDetails,
     }));
 }
 
@@ -723,18 +727,26 @@ export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, target
  *
  * @param amount - The spending amount for the day
  * @param maxAmount - The maximum spending amount in the month (for relative scaling)
- * @returns CSS class string for background color intensity
+ * @returns CSS module class name suffix (1-5) for background color intensity, or empty string
+ *
+ * @remarks
+ * Returns class suffix that corresponds to SCSS module classes:
+ * - "intensity1" for 0-20% of max (lightest)
+ * - "intensity2" for 20-40%
+ * - "intensity3" for 40-60%
+ * - "intensity4" for 60-80%
+ * - "intensity5" for 80-100% (darkest)
  */
 export function getSpendingIntensityClass(amount: number, maxAmount: number): string {
   if (amount === 0 || maxAmount === 0) return "";
 
   const ratio = amount / maxAmount;
 
-  if (ratio < 0.2) return "bg-primary/20 hover:bg-primary/30 text-foreground";
-  if (ratio < 0.4) return "bg-primary/40 hover:bg-primary/50 text-foreground";
-  if (ratio < 0.6) return "bg-primary/60 hover:bg-primary/70 text-primary-foreground";
-  if (ratio < 0.8) return "bg-primary/80 hover:bg-primary/90 text-primary-foreground";
-  return "bg-primary hover:bg-primary/90 text-primary-foreground";
+  if (ratio < 0.2) return "intensity1";
+  if (ratio < 0.4) return "intensity2";
+  if (ratio < 0.6) return "intensity3";
+  if (ratio < 0.8) return "intensity4";
+  return "intensity5";
 }
 
 /**

@@ -158,6 +158,66 @@ describe("getSpendingTrend", () => {
     expect(result[1]?.date).toContain("Feb");
     expect(result[2]?.date).toContain("Mar");
   });
+
+  it("should include invoice details in the invoices array", () => {
+    const invoice1 = new InvoiceBuilder()
+      .withId("inv1")
+      .withName("Grocery Shopping")
+      .withTransactionDate(new Date("2024-01-15"))
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const invoice2 = new InvoiceBuilder()
+      .withId("inv2")
+      .withName("Pharmacy")
+      .withTransactionDate(new Date("2024-01-20"))
+      .withPaymentAmount(50)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const invoice3 = new InvoiceBuilder()
+      .withId("inv3")
+      .withName("Electronics")
+      .withTransactionDate(new Date("2024-02-10"))
+      .withPaymentAmount(200)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const result = getSpendingTrend(invoice1, [invoice1, invoice2, invoice3]);
+
+    expect(result).toHaveLength(2);
+
+    // Check January data
+    expect(result[0]?.invoices).toHaveLength(2);
+    expect(result[0]?.invoices[0]?.id).toBe("inv1");
+    expect(result[0]?.invoices[0]?.name).toBe("Grocery Shopping");
+    expect(result[0]?.invoices[0]?.amount).toBe(100);
+    expect(result[0]?.invoices[1]?.id).toBe("inv2");
+    expect(result[0]?.invoices[1]?.name).toBe("Pharmacy");
+    expect(result[0]?.invoices[1]?.amount).toBe(50);
+
+    // Check February data
+    expect(result[1]?.invoices).toHaveLength(1);
+    expect(result[1]?.invoices[0]?.id).toBe("inv3");
+    expect(result[1]?.invoices[0]?.name).toBe("Electronics");
+    expect(result[1]?.invoices[0]?.amount).toBe(200);
+  });
+
+  it("should generate fallback name for invoices without names", () => {
+    const invoice1 = new InvoiceBuilder()
+      .withId("abc12345678")
+      .withName("")
+      .withTransactionDate(new Date("2024-01-15"))
+      .withPaymentAmount(100)
+      .build();
+
+    const invoice2 = new InvoiceBuilder().withId("inv2").withTransactionDate(new Date("2024-02-15")).withPaymentAmount(200).build();
+
+    const result = getSpendingTrend(invoice1, [invoice1, invoice2]);
+
+    expect(result[0]?.invoices[0]?.name).toBe("Invoice abc12345");
+  });
 });
 
 describe("getComparisonStats", () => {
@@ -810,11 +870,11 @@ describe("getSpendingIntensityClass", () => {
   it("should return correct intensity classes", () => {
     const maxAmount = 100;
 
-    expect(getSpendingIntensityClass(10, maxAmount)).toContain("bg-primary/20");
-    expect(getSpendingIntensityClass(30, maxAmount)).toContain("bg-primary/40");
-    expect(getSpendingIntensityClass(50, maxAmount)).toContain("bg-primary/60");
-    expect(getSpendingIntensityClass(70, maxAmount)).toContain("bg-primary/80");
-    expect(getSpendingIntensityClass(90, maxAmount)).toContain("bg-primary hover");
+    expect(getSpendingIntensityClass(10, maxAmount)).toBe("intensity1");
+    expect(getSpendingIntensityClass(30, maxAmount)).toBe("intensity2");
+    expect(getSpendingIntensityClass(50, maxAmount)).toBe("intensity3");
+    expect(getSpendingIntensityClass(70, maxAmount)).toBe("intensity4");
+    expect(getSpendingIntensityClass(90, maxAmount)).toBe("intensity5");
   });
 });
 
