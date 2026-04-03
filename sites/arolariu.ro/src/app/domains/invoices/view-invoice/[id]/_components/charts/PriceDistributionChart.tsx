@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -88,7 +88,7 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
                 allowDecimals={false}
                 width={24}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

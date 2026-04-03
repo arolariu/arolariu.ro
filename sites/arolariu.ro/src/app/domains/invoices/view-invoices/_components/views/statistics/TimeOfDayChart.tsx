@@ -17,8 +17,8 @@ import {
   PolarRadiusAxis,
   Radar,
   RadarChart,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {TimeOfDaySegment} from "../../../_utils/statistics";
@@ -49,7 +49,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                 domain={[0, "auto"]}
                 tick={{fontSize: 10}}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

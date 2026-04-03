@@ -10,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -131,7 +131,7 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                 axisLine={false}
                 width={32}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

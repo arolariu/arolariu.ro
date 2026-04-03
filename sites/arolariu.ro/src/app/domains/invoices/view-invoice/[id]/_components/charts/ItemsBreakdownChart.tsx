@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -100,7 +100,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

@@ -12,8 +12,8 @@ import {
   CardTitle,
   ChartContainer,
   ReferenceDot,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -78,7 +78,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             </li>
           ))}
           {data.invoices.length > 10 ? (
-            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
           ) : null}
         </ul>
       ) : null}
@@ -147,7 +147,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                 width={32}
                 tickFormatter={tickFormatter}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

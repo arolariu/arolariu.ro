@@ -16,8 +16,8 @@ import {
   ChartLegend,
   Pie,
   PieChart,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {CategoryAggregate} from "../../../_utils/statistics";
@@ -63,7 +63,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -139,7 +139,7 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
                 paddingAngle={2}
                 className={styles["pieStroke"]}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

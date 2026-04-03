@@ -14,8 +14,8 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -52,7 +52,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipRange"]}>
         {data.range} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -107,7 +107,7 @@ export function PriceDistributionChart({data, currency}: Props): React.JSX.Eleme
                 axisLine={false}
                 width={32}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}
