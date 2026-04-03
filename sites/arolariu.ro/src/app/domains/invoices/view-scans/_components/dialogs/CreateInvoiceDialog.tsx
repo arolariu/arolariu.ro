@@ -442,7 +442,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
           {errors.length > 0 && (
             <div className={styles["completeErrorsList"]}>
-              {errors.map((error, index) => (
+              {errors.map((error, _index) => (
                 <div
                   key={error.scanId ?? error.message}
                   className={styles["completeErrorItem"]}>

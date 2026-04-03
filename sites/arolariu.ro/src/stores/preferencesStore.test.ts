@@ -788,7 +788,7 @@ describe("preferencesStore", () => {
 
       // Dispatch the event to the BroadcastChannel listener
       act(() => {
-        usePreferencesStore.setState(messageEvent.data);
+        usePreferencesStore.setState(messageEvent.data as unknown as Parameters<typeof usePreferencesStore.setState>[0]);
       });
 
       // Verify store state updated

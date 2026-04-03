@@ -546,7 +546,7 @@ describe("configProxy circuit breaker", () => {
     instrumentationMocks.injectTraceContextHeaders.mockReturnValueOnce({
       "X-Custom-Header": "custom-value",
       traceparent: "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01",
-    });
+    } as unknown as Headers);
 
     const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();

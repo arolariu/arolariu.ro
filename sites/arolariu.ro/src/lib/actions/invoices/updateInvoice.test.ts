@@ -139,6 +139,8 @@ describe("updateInvoice", () => {
           currency: {name: "Euro", symbol: "€", code: "EUR"},
           totalCostAmount: 250.99,
           totalTaxAmount: 47.69,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
       const mockUpdatedInvoice = {...mockInvoice};

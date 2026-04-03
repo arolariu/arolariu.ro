@@ -34,7 +34,7 @@ test.describe("Global Not Found (404) Tests @error @404", () => {
   });
 
   test.describe("404 Page Accessibility @a11y", () => {
-    test("should be accessible", async ({safeNavigate, page, checkA11y}) => {
+    test("should be accessible", async ({safeNavigate, checkA11y}) => {
       const navigationResult = await safeNavigate("/non-existent-route-a11y-test");
       expect(navigationResult.success).toBe(false);
       expect(navigationResult.status).toBe(404);

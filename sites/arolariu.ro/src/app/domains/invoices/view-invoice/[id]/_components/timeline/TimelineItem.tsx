@@ -36,15 +36,16 @@ function getEventTitle(event: TimelineEvent, t: ReturnType<typeof useTranslation
 }
 
 function getEventDescription(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+  const tt = t as (key: string, values?: Record<string, unknown>) => string;
   switch (event.type) {
     case TimelineEventType.CREATED:
       return t("events.created.description");
     case TimelineEventType.AI_ANALYSIS:
-      return t("events.aiAnalysis.description", {count: event.metadata?.itemCount ?? 0});
+      return tt("events.aiAnalysis.description", {count: event.metadata?.itemCount ?? 0});
     case TimelineEventType.RECIPES_GENERATED:
-      return t("events.recipesGenerated.description", {count: event.metadata?.itemCount ?? 0});
+      return tt("events.recipesGenerated.description", {count: event.metadata?.itemCount ?? 0});
     case TimelineEventType.SHARED:
-      return t("events.shared.description", {count: event.metadata?.users?.length ?? 0});
+      return tt("events.shared.description", {count: event.metadata?.users?.length ?? 0});
     case TimelineEventType.MARKED_IMPORTANT:
       return t("events.markedImportant.description");
     case TimelineEventType.CATEGORIZED:
@@ -56,24 +57,25 @@ function getEventDescription(event: TimelineEvent, t: ReturnType<typeof useTrans
 
 // eslint-disable-next-line complexity -- switch-case for event types requires enumeration
 function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+  const tt = t as (key: string, values?: Record<string, unknown>) => string;
   switch (event.type) {
     case TimelineEventType.CREATED:
-      return t("tooltips.created", {method: event.metadata?.method ?? t("fallbacks.ocr")});
+      return tt("tooltips.created", {method: event.metadata?.method ?? t("fallbacks.ocr")});
     case TimelineEventType.AI_ANALYSIS:
-      return t("tooltips.aiAnalysis", {
+      return tt("tooltips.aiAnalysis", {
         duration: event.metadata?.duration ?? "-",
         count: event.metadata?.itemCount ?? 0,
       });
     case TimelineEventType.RECIPES_GENERATED:
-      return t("tooltips.recipesGenerated", {count: event.metadata?.itemCount ?? 0});
+      return tt("tooltips.recipesGenerated", {count: event.metadata?.itemCount ?? 0});
     case TimelineEventType.SHARED:
-      return t("tooltips.shared", {count: event.metadata?.users?.length ?? 0});
+      return tt("tooltips.shared", {count: event.metadata?.users?.length ?? 0});
     case TimelineEventType.CATEGORIZED:
       return t("tooltips.categorized");
     case TimelineEventType.MARKED_IMPORTANT:
       return t("tooltips.markedImportant");
     case TimelineEventType.EXPORTED:
-      return t("tooltips.exported", {format: event.metadata?.method ?? t("fallbacks.pdf")});
+      return tt("tooltips.exported", {format: event.metadata?.method ?? t("fallbacks.pdf")});
     case TimelineEventType.EDITED:
       return t("tooltips.edited");
     default:

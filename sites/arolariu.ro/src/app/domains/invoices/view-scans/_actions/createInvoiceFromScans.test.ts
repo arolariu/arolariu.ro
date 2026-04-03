@@ -342,7 +342,7 @@ describe("createInvoiceFromScans", () => {
   describe("authentication", () => {
     it("should throw error when user is not authenticated", async () => {
       mockFetchBFFUser.mockResolvedValue({
-        userIdentifier: null,
+        userIdentifier: null as unknown as string,
         userJwt: "token",
         user: null,
       });
@@ -375,7 +375,7 @@ describe("createInvoiceFromScans", () => {
       await createInvoiceFromScans({scans, mode: "single"});
 
       const fetchCall = mockFetch.mock.calls[0];
-      expect(fetchCall?.[1]?.headers?.Authorization).toBe("Bearer mock-jwt-token");
+      expect((fetchCall?.[1]?.headers as Record<string, string> | undefined)?.["Authorization"]).toBe("Bearer mock-jwt-token");
     });
   });
 

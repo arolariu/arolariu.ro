@@ -56,7 +56,7 @@ vi.mock("@/lib/actions/storage/fetchConfig", () => ({
 // Mock storageClient — delegate to hoisted mock chain
 vi.mock("@/lib/azure/storageClient", () => ({
   createBlobClient: vi.fn(async () => ({
-    getContainerClient: (...args: unknown[]) => mockGetContainerClient(...args),
+    getContainerClient: (...args: Parameters<typeof mockGetContainerClient>) => mockGetContainerClient(...args),
   })),
 }));
 

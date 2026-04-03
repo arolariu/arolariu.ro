@@ -462,14 +462,14 @@ describe("my-profile helpers", () => {
     it("should merge nested objects", () => {
       const target = {a: {x: 1, y: 2}, b: 3};
       const source = {a: {y: 4, z: 5}};
-      const result = deepMerge(target, source);
+      const result = deepMerge(target, source as unknown as Partial<typeof target>);
       expect(result).toEqual({a: {x: 1, y: 4, z: 5}, b: 3});
     });
 
     it("should handle deeply nested objects", () => {
       const target = {a: {b: {c: {d: 1}}}};
       const source = {a: {b: {c: {e: 2}}}};
-      const result = deepMerge(target, source);
+      const result = deepMerge(target, source as unknown as Partial<typeof target>);
       expect(result).toEqual({a: {b: {c: {d: 1, e: 2}}}});
     });
 
