@@ -2129,7 +2129,7 @@
         "noAllergens": "Aucun allergène détecté"
       },
       "errors": {
-        "duplicate": "L''allergène « {name} » a déjà été ajouté",
+        "duplicate": "L''allergène {name} a déjà été ajouté",
         "emptyName": "Le nom de l'allergène ne peut pas être vide",
         "missingData": "Données de produit manquantes",
         "saveFailed": "Échec de l'enregistrement des allergènes"
@@ -2925,14 +2925,14 @@
       },
       "restore": {
         "error": "Échec de la restauration de l'article",
-        "success": "Article « {name} » restauré"
+        "success": "Article {name} restauré"
       },
       "search": {
         "placeholder": "Rechercher des articles..."
       },
       "softDelete": {
         "error": "Échec de la suppression de l'article",
-        "success": "Article « {name} » supprimé"
+        "success": "Article {name} supprimé"
       },
       "tableHeaders": {
         "item": "Article",

@@ -62,9 +62,6 @@ function useCalendarData(): CalendarDataContextType {
   return context;
 }
 
-/** Simplified translation function type to avoid deep type instantiation with ReturnType<typeof useTranslations>. */
-type TranslationFn = (key: string, values?: Record<string, string | number>) => string;
-
 /** Props for the day tooltip content component */
 interface DayTooltipContentProps {
   readonly amount: number;
@@ -74,11 +71,11 @@ interface DayTooltipContentProps {
   readonly data: DayData | undefined;
   readonly historicalData: DayHistoricalComparison | undefined;
   readonly isCurrentInvoiceDate: boolean;
-  readonly t: TranslationFn;
 }
 
 /** Renders the invoice names list in the tooltip */
-function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: TranslationFn}>): React.JSX.Element | null {
+function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element | null {
+  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   if (data.invoiceNames.length === 0) return null;
 
   return (
@@ -108,8 +105,8 @@ function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: TranslationFn}>
 /** Renders the historical comparison section in the tooltip */
 function HistoricalComparisonSection({
   historicalData,
-  t,
-}: Readonly<{historicalData: DayHistoricalComparison; t: TranslationFn}>): React.JSX.Element {
+}: Readonly<{historicalData: DayHistoricalComparison}>): React.JSX.Element {
+  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   const ArrowIcon = historicalData.isAboveAverage ? TbArrowUp : TbArrowDown;
   const colorClass = historicalData.isAboveAverage ? styles["colorRed"] : styles["colorGreen"];
 
@@ -124,7 +121,8 @@ function HistoricalComparisonSection({
 
 /** Renders the tooltip content for a day with spending data */
 function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
-  const {amount, count, locale, currency, data, historicalData, isCurrentInvoiceDate, t} = props;
+  const {amount, count, locale, currency, data, historicalData, isCurrentInvoiceDate} = props;
+  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
 
   return (
     <TooltipContent
@@ -134,18 +132,8 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
         <p className={styles["tooltipLabel"]}>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
         <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(count)})}</p>
       </div>
-      {data ? (
-        <InvoiceNamesList
-          data={data}
-          t={t}
-        />
-      ) : null}
-      {historicalData ? (
-        <HistoricalComparisonSection
-          historicalData={historicalData}
-          t={t}
-        />
-      ) : null}
+      {data ? <InvoiceNamesList data={data} /> : null}
+      {historicalData ? <HistoricalComparisonSection historicalData={historicalData} /> : null}
       {isCurrentInvoiceDate ? <Badge className={styles["badgeMt"]}>{t("tooltip.currentInvoice")}</Badge> : null}
     </TooltipContent>
   );
@@ -166,7 +154,6 @@ function CustomDayButton({
   tabIndex = 0,
 }: DayButtonProps): React.JSX.Element {
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
-  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   const {date} = day;
   const dayNum = date.getDate();
   const isCurrentMonth = date.getMonth() === month.getMonth() && date.getFullYear() === month.getFullYear();
@@ -204,7 +191,6 @@ function CustomDayButton({
         data={data}
         historicalData={historicalData}
         isCurrentInvoiceDate={isCurrentInvoiceDate}
-        t={t as TranslationFn}
       />
     </Tooltip>
   );
