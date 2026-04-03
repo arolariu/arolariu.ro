@@ -34,22 +34,25 @@ function createMockInvoice(merchantId: string, amount: number, date: Date, itemC
     paymentInformation: {
       transactionDate: date,
       totalCostAmount: amount,
+      totalTaxAmount: 0,
+      subtotalAmount: amount,
+      tipAmount: 0,
       currency: {code: "RON", symbol: "RON", name: "Romanian Leu"},
-      currencyCode: "RON",
       paymentType: 200,
-      isValid: true,
     },
     items: Array.from({length: itemCount}, (_, index) => ({
       id: `product-${invoiceId}-${index}`,
-      name: `Product ${index}`,
-      productIdentifier: `prod-${invoiceId}-${index}`,
+      rawName: `Product ${index}`,
+      genericName: `Product ${index}`,
+      productCode: `prod-${invoiceId}-${index}`,
       quantity: 1,
-      unitPrice: amount / Math.max(1, itemCount),
+      quantityUnit: "pcs",
+      price: amount / Math.max(1, itemCount),
       totalPrice: amount,
       category: null,
     })),
     possibleRecipes: [],
-  } as Invoice;
+  } as unknown as Invoice;
 }
 
 describe("Merchant Analytics", () => {

@@ -77,18 +77,19 @@ function createTestInvoice(overrides: {
     paymentInformation: {
       transactionDate: date,
       totalCostAmount: overrides.amount ?? 100,
+      totalTaxAmount: 0,
+      subtotalAmount: overrides.amount ?? 100,
+      tipAmount: 0,
       currency: {
         code: currency,
         symbol: currency === "EUR" ? "€" : currency === "USD" ? "$" : "lei",
         name: currency === "EUR" ? "Euro" : currency === "USD" ? "US Dollar" : "Romanian Leu",
       },
-      currencyCode: currency,
       paymentType: overrides.paymentType ?? 200,
-      isValid: true,
     },
     items: overrides.items ?? [],
     possibleRecipes: [],
-  } as Invoice;
+  } as unknown as Invoice;
 }
 
 /**
@@ -108,17 +109,17 @@ function createTestProduct(overrides: {
 }): Product {
   return {
     id: overrides.id ?? `product-${Math.random()}`,
-    name: overrides.name ?? "Test Product",
-    genericName: overrides.genericName ?? "Generic Product",
+    genericName: overrides.genericName ?? overrides.name ?? "Generic Product",
     rawName: overrides.rawName ?? "Raw Product Name",
-    productIdentifier: `prod-${Math.random()}`,
+    productCode: `prod-${Math.random()}`,
     quantity: overrides.quantity ?? 1,
+    quantityUnit: "pcs",
     price: overrides.price ?? 10,
     totalPrice: overrides.totalPrice ?? 10,
     category: overrides.category ?? null,
     detectedAllergens: overrides.detectedAllergens ?? [],
     metadata: overrides.isSoftDeleted ? {isSoftDeleted: true} : undefined,
-  } as Product;
+  } as unknown as Product;
 }
 
 describe("Statistics Functions", () => {

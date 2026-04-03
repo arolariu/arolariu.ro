@@ -16,6 +16,7 @@
 import type {PaymentInformation, Product} from "@/types/invoices";
 import {InvoiceCategory, InvoiceScanType, type Invoice, type InvoiceScan} from "@/types/invoices";
 import {ProductCategory} from "@/types/invoices/Product";
+import {PaymentType} from "@/types/invoices/Payment";
 
 /**
  * Creates a mock invoice with realistic data.
@@ -39,6 +40,9 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
       symbol: "lei",
       name: "Romanian Leu",
     },
+    paymentType: PaymentType.Card,
+    subtotalAmount: 81.0,
+    tipAmount: 0,
   };
 
   return {
@@ -60,7 +64,6 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
     payments: [],
     createdAt: new Date(),
     lastUpdatedAt: new Date(),
-    isDeleted: false,
     ...overrides,
   };
 }
@@ -136,6 +139,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 23.0,
       transactionDate: getRandomDateInMonth(0),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 222.5,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -145,7 +151,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 2,
         price: 6.5,
         totalPrice: 13.0,
-        detectedAllergens: [{name: "Lactose", description: "Milk sugar"}],
+        detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Bread White 500g",
@@ -154,7 +160,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 1,
         price: 4.2,
         totalPrice: 4.2,
-        detectedAllergens: [{name: "Gluten", description: "Wheat protein"}],
+        detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Chicken Breast 1kg",
@@ -172,12 +178,12 @@ export const mockInvoices: Invoice[] = [
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
-        detectedAllergens: [{name: "Eggs", description: "Chicken eggs"}],
+        detectedAllergens: [{name: "Eggs", description: "Chicken eggs", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Tomatoes 1kg",
         genericName: "Tomatoes",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 1.2,
         price: 8.5,
         totalPrice: 10.2,
@@ -207,18 +213,21 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 8.55,
       transactionDate: getRandomDateInMonth(0),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 36.45,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Big Mac Menu",
         genericName: "Big Mac Meal",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 2,
         price: 22.5,
         totalPrice: 45.0,
         detectedAllergens: [
-          {name: "Gluten", description: "Wheat protein"},
-          {name: "Lactose", description: "Milk sugar"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: ""},
         ],
       }),
     ],
@@ -237,6 +246,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 8.7,
       transactionDate: getRandomDateInMonth(1),
       currency: {code: "EUR", symbol: "€", name: "Euro"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 37.1,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -246,7 +258,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 1,
         price: 8.5,
         totalPrice: 8.5,
-        detectedAllergens: [{name: "Lactose", description: "Milk sugar"}],
+        detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Coffee Beans 250g",
@@ -260,13 +272,13 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Chocolate Bar 100g",
         genericName: "Milk Chocolate",
-        category: ProductCategory.SNACKS,
+        category: ProductCategory.OTHER,
         quantity: 3,
         price: 4.1,
         totalPrice: 12.3,
         detectedAllergens: [
-          {name: "Lactose", description: "Milk sugar"},
-          {name: "Soy", description: "Soybean derivatives"},
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: ""},
+          {name: "Soy", description: "Soybean derivatives", learnMoreAddress: ""},
         ],
       }),
     ],
@@ -284,12 +296,15 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 29.7,
       transactionDate: getRandomDateInMonth(1),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 282.7,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Apples Red 2kg",
         genericName: "Red Apples",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 2,
         price: 9.5,
         totalPrice: 19.0,
@@ -298,16 +313,16 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Pasta Penne 500g",
         genericName: "Penne Pasta",
-        category: ProductCategory.GRAINS_PASTA,
+        category: ProductCategory.BAKED_GOODS,
         quantity: 3,
         price: 5.8,
         totalPrice: 17.4,
-        detectedAllergens: [{name: "Gluten", description: "Wheat protein"}],
+        detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Olive Oil Extra Virgin 1L",
         genericName: "Extra Virgin Olive Oil",
-        category: ProductCategory.CONDIMENTS_OILS,
+        category: ProductCategory.GROCERIES,
         quantity: 1,
         price: 28.9,
         totalPrice: 28.9,
@@ -316,11 +331,11 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Salmon Fillet 400g",
         genericName: "Fresh Salmon Fillet",
-        category: ProductCategory.SEAFOOD,
+        category: ProductCategory.FISH,
         quantity: 1,
         price: 42.5,
         totalPrice: 42.5,
-        detectedAllergens: [{name: "Fish", description: "Seafood"}],
+        detectedAllergens: [{name: "Fish", description: "Seafood", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Yogurt Greek 500g",
@@ -329,7 +344,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 4,
         price: 8.2,
         totalPrice: 32.8,
-        detectedAllergens: [{name: "Lactose", description: "Milk sugar"}],
+        detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(1),
@@ -347,28 +362,31 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 2.85,
       transactionDate: getRandomDateInMonth(2),
       currency: {code: "USD", symbol: "$", name: "US Dollar"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 25.65,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Quarter Pounder Meal",
         genericName: "Quarter Pounder with Cheese Meal",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
         detectedAllergens: [
-          {name: "Gluten", description: "Wheat protein"},
-          {name: "Lactose", description: "Milk sugar"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: ""},
         ],
       }),
       createMockProduct({
         rawName: "Chicken McNuggets 20pc",
         genericName: "Chicken McNuggets",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 1,
         price: 16.0,
         totalPrice: 16.0,
-        detectedAllergens: [{name: "Gluten", description: "Wheat protein"}],
+        detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(2),
@@ -385,6 +403,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 27.68,
       transactionDate: getRandomDateInMonth(2),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 118.02,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -430,12 +451,15 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 18.8,
       transactionDate: getRandomDateInMonth(3),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 179.5,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Bananas 1kg",
         genericName: "Bananas",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 1.5,
         price: 7.5,
         totalPrice: 11.25,
@@ -444,7 +468,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Rice Basmati 1kg",
         genericName: "Basmati Rice",
-        category: ProductCategory.GRAINS_PASTA,
+        category: ProductCategory.BAKED_GOODS,
         quantity: 2,
         price: 14.2,
         totalPrice: 28.4,
@@ -453,11 +477,11 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Peanut Butter 340g",
         genericName: "Creamy Peanut Butter",
-        category: ProductCategory.CONDIMENTS_OILS,
+        category: ProductCategory.GROCERIES,
         quantity: 1,
         price: 18.5,
         totalPrice: 18.5,
-        detectedAllergens: [{name: "Peanuts", description: "Ground peanuts"}],
+        detectedAllergens: [{name: "Peanuts", description: "Ground peanuts", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Almond Milk 1L",
@@ -466,7 +490,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 2,
         price: 12.8,
         totalPrice: 25.6,
-        detectedAllergens: [{name: "Tree Nuts", description: "Almonds"}],
+        detectedAllergens: [{name: "Tree Nuts", description: "Almonds", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(3),
@@ -483,28 +507,31 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 16.91,
       transactionDate: getRandomDateInMonth(3),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 72.09,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Margherita Pizza Large",
         genericName: "Margherita Pizza",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 2,
         price: 35.0,
         totalPrice: 70.0,
         detectedAllergens: [
-          {name: "Gluten", description: "Wheat protein"},
-          {name: "Lactose", description: "Milk sugar"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: ""},
         ],
       }),
       createMockProduct({
         rawName: "Garlic Bread",
         genericName: "Garlic Bread Sticks",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 1,
         price: 19.0,
         totalPrice: 19.0,
-        detectedAllergens: [{name: "Gluten", description: "Wheat protein"}],
+        detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(3),
@@ -522,6 +549,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 40.4,
       transactionDate: getRandomDateInMonth(4),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 385.2,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -536,11 +566,11 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Shrimp Frozen 500g",
         genericName: "Frozen Shrimp",
-        category: ProductCategory.SEAFOOD,
+        category: ProductCategory.FISH,
         quantity: 2,
         price: 38.5,
         totalPrice: 77.0,
-        detectedAllergens: [{name: "Shellfish", description: "Crustaceans"}],
+        detectedAllergens: [{name: "Shellfish", description: "Crustaceans", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Wine Red Merlot 750ml",
@@ -549,7 +579,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 2,
         price: 45.0,
         totalPrice: 90.0,
-        detectedAllergens: [{name: "Sulfites", description: "Preservatives"}],
+        detectedAllergens: [{name: "Sulfites", description: "Preservatives", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Cheese Parmesan 200g",
@@ -558,7 +588,7 @@ export const mockInvoices: Invoice[] = [
         quantity: 1,
         price: 32.8,
         totalPrice: 32.8,
-        detectedAllergens: [{name: "Lactose", description: "Milk sugar"}],
+        detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(4),
@@ -575,6 +605,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 6.4,
       transactionDate: getRandomDateInMonth(4),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 61.1,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -589,7 +622,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Chips BBQ 200g",
         genericName: "BBQ Potato Chips",
-        category: ProductCategory.SNACKS,
+        category: ProductCategory.OTHER,
         quantity: 3,
         price: 8.5,
         totalPrice: 25.5,
@@ -620,6 +653,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 17.0,
       transactionDate: getRandomDateInMonth(5),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 161.9,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -629,12 +665,12 @@ export const mockInvoices: Invoice[] = [
         quantity: 2,
         price: 9.5,
         totalPrice: 19.0,
-        detectedAllergens: [{name: "Lactose", description: "Milk sugar"}],
+        detectedAllergens: [{name: "Lactose", description: "Milk sugar", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Honey 500g",
         genericName: "Wildflower Honey",
-        category: ProductCategory.CONDIMENTS_OILS,
+        category: ProductCategory.GROCERIES,
         quantity: 1,
         price: 28.5,
         totalPrice: 28.5,
@@ -643,23 +679,23 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Soy Sauce 500ml",
         genericName: "Soy Sauce",
-        category: ProductCategory.CONDIMENTS_OILS,
+        category: ProductCategory.GROCERIES,
         quantity: 1,
         price: 12.4,
         totalPrice: 12.4,
         detectedAllergens: [
-          {name: "Soy", description: "Soybean derivatives"},
-          {name: "Gluten", description: "Wheat protein"},
+          {name: "Soy", description: "Soybean derivatives", learnMoreAddress: ""},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
         ],
       }),
       createMockProduct({
         rawName: "Tuna Canned 160g",
         genericName: "Tuna in Oil",
-        category: ProductCategory.SEAFOOD,
+        category: ProductCategory.FISH,
         quantity: 6,
         price: 11.5,
         totalPrice: 69.0,
-        detectedAllergens: [{name: "Fish", description: "Seafood"}],
+        detectedAllergens: [{name: "Fish", description: "Seafood", learnMoreAddress: ""}],
       }),
     ],
     createdAt: getRandomDateInMonth(5),
@@ -676,18 +712,21 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 10.64,
       transactionDate: getRandomDateInMonth(5),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 45.36,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Bucket 8 pieces",
         genericName: "Fried Chicken Bucket",
-        category: ProductCategory.FAST_FOOD,
+        category: ProductCategory.OTHER,
         quantity: 1,
         price: 56.0,
         totalPrice: 56.0,
         detectedAllergens: [
-          {name: "Gluten", description: "Wheat protein"},
-          {name: "Eggs", description: "Chicken eggs"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
+          {name: "Eggs", description: "Chicken eggs", learnMoreAddress: ""},
         ],
       }),
     ],
@@ -706,12 +745,15 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 8.5,
       transactionDate: getRandomDateInMonth(0),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 80.8,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Lettuce 1pc",
         genericName: "Iceberg Lettuce",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 2,
         price: 5.5,
         totalPrice: 11.0,
@@ -720,7 +762,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Cucumbers 1kg",
         genericName: "Cucumbers",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 1,
         price: 6.8,
         totalPrice: 6.8,
@@ -729,7 +771,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Bell Peppers Mixed 500g",
         genericName: "Mixed Bell Peppers",
-        category: ProductCategory.FRUITS_VEGETABLES,
+        category: ProductCategory.VEGETABLES,
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
@@ -750,6 +792,9 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 23.83,
       transactionDate: getRandomDateInMonth(0),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 101.57,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
@@ -759,21 +804,21 @@ export const mockInvoices: Invoice[] = [
         quantity: 2,
         price: 22.5,
         totalPrice: 45.0,
-        detectedAllergens: [{name: "Gluten", description: "Barley"}],
+        detectedAllergens: [{name: "Gluten", description: "Barley", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Pretzels 300g",
         genericName: "Salted Pretzels",
-        category: ProductCategory.SNACKS,
+        category: ProductCategory.OTHER,
         quantity: 2,
         price: 11.2,
         totalPrice: 22.4,
-        detectedAllergens: [{name: "Gluten", description: "Wheat protein"}],
+        detectedAllergens: [{name: "Gluten", description: "Wheat protein", learnMoreAddress: ""}],
       }),
       createMockProduct({
         rawName: "Popcorn Microwave 3x100g",
         genericName: "Microwave Popcorn",
-        category: ProductCategory.SNACKS,
+        category: ProductCategory.OTHER,
         quantity: 2,
         price: 9.0,
         totalPrice: 18.0,
@@ -794,12 +839,15 @@ export const mockInvoices: Invoice[] = [
       totalTaxAmount: 9.1,
       transactionDate: getRandomDateInMonth(1),
       currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      paymentType: PaymentType.Card,
+      subtotalAmount: 86.6,
+      tipAmount: 0,
     },
     items: [
       createMockProduct({
         rawName: "Cereal Cornflakes 500g",
         genericName: "Corn Flakes",
-        category: ProductCategory.GRAINS_PASTA,
+        category: ProductCategory.BAKED_GOODS,
         quantity: 2,
         price: 15.5,
         totalPrice: 31.0,
@@ -808,7 +856,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         rawName: "Jam Strawberry 300g",
         genericName: "Strawberry Jam",
-        category: ProductCategory.CONDIMENTS_OILS,
+        category: ProductCategory.GROCERIES,
         quantity: 1,
         price: 14.2,
         totalPrice: 14.2,
@@ -822,9 +870,9 @@ export const mockInvoices: Invoice[] = [
         price: 18.5,
         totalPrice: 18.5,
         detectedAllergens: [
-          {name: "Gluten", description: "Wheat protein"},
-          {name: "Lactose", description: "Milk sugar"},
-          {name: "Eggs", description: "Chicken eggs"},
+          {name: "Gluten", description: "Wheat protein", learnMoreAddress: ""},
+          {name: "Lactose", description: "Milk sugar", learnMoreAddress: ""},
+          {name: "Eggs", description: "Chicken eggs", learnMoreAddress: ""},
         ],
       }),
     ],

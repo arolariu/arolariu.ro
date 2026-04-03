@@ -12,6 +12,7 @@ function generateMockSpendingTrend(count: number, currentIndex?: number): Spendi
     amount: faker.number.float({min: 30, max: 500, fractionDigits: 2}),
     isCurrent: i === (currentIndex ?? count - 1),
     name: faker.commerce.productName(),
+    invoices: [{id: `inv-${i}`, name: faker.commerce.productName(), amount: faker.number.float({min: 30, max: 500, fractionDigits: 2})}],
   }));
 }
 
@@ -71,6 +72,7 @@ export const UpwardTrend: Story = {
       amount: 50 + i * 40 + faker.number.float({min: 0, max: 20, fractionDigits: 2}),
       isCurrent: i === 7,
       name: `Purchase ${i + 1}`,
+      invoices: [{id: `inv-${i}`, name: `Purchase ${i + 1}`, amount: 50 + i * 40}],
     })),
     currency: "RON",
   },
@@ -86,7 +88,7 @@ export const EmptyData: Story = {
 /** Single data point — only one spending entry. */
 export const SingleDataPoint: Story = {
   args: {
-    data: [{date: "Jan 15", amount: 125.5, isCurrent: true, name: "Kaufland Groceries"}],
+    data: [{date: "Jan 15", amount: 125.5, isCurrent: true, name: "Kaufland Groceries", invoices: [{id: "inv-1", name: "Kaufland Groceries", amount: 125.5}]}],
     currency: "RON",
   },
 };
