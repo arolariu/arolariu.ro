@@ -7,7 +7,6 @@
  * and plugin configuration (e.g., next-intl).
  */
 
-import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
@@ -50,6 +49,8 @@ const nextConfig: NextConfig = {
   },
 
   logging: {
+    serverFunctions: isDebugBuild,
+    incomingRequests: isDebugBuild,
     fetches: {
       fullUrl: isDebugBuild,
     },
@@ -174,10 +175,6 @@ const nextConfig: NextConfig = {
   },
 
   typescript: {
-    // Skip TS type-checking during `next build` to avoid V8 Map limit crash.
-    // See: https://github.com/amannn/next-intl/issues/2296
-    // Type safety enforced separately via ESLint in CI.
-    ignoreBuildErrors: true,
     tsconfigPath: "tsconfig.json",
   },
 
@@ -192,11 +189,13 @@ const nextConfig: NextConfig = {
   reactProductionProfiling: isDebugBuild,
 };
 
-const withBundleAnalyzer = withBundleAnalyzerInit({
-  enabled: process.env["ANALYZE"] === "true",
+const withTranslation = createNextIntlPlugin({
+  experimental: {
+    createMessagesDeclaration: "./messages/en.json",
+  },
 });
 
-const withTranslation = createNextIntlPlugin();
+const finalConfig = withTranslation(nextConfig);
+isDebugBuild && console.debug("Final Next.js config:", finalConfig);
 
-const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;

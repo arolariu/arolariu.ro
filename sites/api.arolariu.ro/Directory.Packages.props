@@ -42,8 +42,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup Label="Azure SDK Packages">
-    <PackageVersion Include="Azure.Core" Version="1.51.1" />
-    <PackageVersion Include="Azure.Identity" Version="1.19.0" />
+    <PackageVersion Include="Azure.Core" Version="1.52.0" />
+    <PackageVersion Include="Azure.Identity" Version="1.20.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
@@ -66,29 +66,29 @@
     <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry Packages">
-    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.6.0" />
-    <PackageVersion Include="OpenTelemetry" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.14.0-beta.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
   </ItemGroup>
   <ItemGroup Label="Application Insights Packages">
-    <PackageVersion Include="Microsoft.ApplicationInsights" Version="3.0.0" />
-    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.0.0" />
+    <PackageVersion Include="Microsoft.ApplicationInsights" Version="3.1.0" />
+    <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.23.0" />
   </ItemGroup>
   <ItemGroup Label="Swagger and OpenAPI Packages">
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.5" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.1.5" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.5" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.5" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.5" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.1.7" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.7" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.7" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.16.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.17.0" />
   </ItemGroup>
   <ItemGroup Label="Serialization Packages">
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
