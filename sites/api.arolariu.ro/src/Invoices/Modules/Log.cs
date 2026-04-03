@@ -264,5 +264,17 @@ public static partial class Log
   [LoggerMessage(400_104, LogLevel.Information, "[Classifier] Starting GPT analysis with model: {ModelName}")]
   public static partial void LogGptAnalysisStarted(this ILogger logger, string modelName);
 
+  /// <summary>
+  /// Logs when a hallucinated allergen text is skipped during parsing.
+  /// </summary>
+  [LoggerMessage(400_105, LogLevel.Warning, "[Classifier] Skipping hallucinated allergen text: '{AllergenName}'")]
+  public static partial void LogAllergenHallucinationSkipped(this ILogger logger, string allergenName);
+
+  /// <summary>
+  /// Logs when an unrecognized allergen is skipped (not in EU 14 whitelist).
+  /// </summary>
+  [LoggerMessage(400_106, LogLevel.Warning, "[Classifier] Skipping unrecognized allergen '{AllergenName}' for product '{ProductName}'")]
+  public static partial void LogAllergenUnrecognizedSkipped(this ILogger logger, string allergenName, string productName);
+
   #endregion
 }

@@ -11,6 +11,8 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
+using Microsoft.Extensions.Logging;
+
 using OpenAI.Chat;
 
 public sealed partial class AzureClassifierBroker
@@ -494,15 +496,40 @@ public sealed partial class AzureClassifierBroker
         if (allergenName.Length > 20 || allergenName.Split(' ').Length > 2)
           continue;
 
+        // Filter out sentence-like outputs (hallucinations)
+        if (allergenName.Contains("NEED", StringComparison.OrdinalIgnoreCase) ||
+            allergenName.Contains("IDENTIFY", StringComparison.OrdinalIgnoreCase) ||
+            allergenName.Contains("PRODUCT", StringComparison.OrdinalIgnoreCase) ||
+            allergenName.Contains("POTENTIAL", StringComparison.OrdinalIgnoreCase))
+        {
+          logger.LogAllergenHallucinationSkipped(allergenName);
+          continue;
+        }
+
+        // Whitelist validation — only accept known EU 14 allergens
+        if (!AllergenWikipediaUrls.ContainsKey(allergenName))
+        {
+          logger.LogAllergenUnrecognizedSkipped(allergenName, product.RawName);
+          continue;
+        }
+
+        var wikiUrl = AllergenWikipediaUrls.TryGetValue(allergenName, out var url)
+          ? new Uri(url)
+          : new Uri("https://arolariu.ro");
+
         allergensList.Add(new Allergen
         {
           Name = allergenName,
           Description = allergenDescription,
-          LearnMoreAddress = AllergenWikipediaUrls.TryGetValue(allergenName, out var wikiUrl)
-            ? new Uri(wikiUrl)
-            : new Uri($"https://en.wikipedia.org/wiki/{allergenName}")  // Fallback: construct URL from name
+          LearnMoreAddress = wikiUrl,
         });
       }
+
+      // Deduplicate by allergen name (case-insensitive)
+      allergensList = allergensList
+        .GroupBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+        .Select(g => g.First())
+        .ToList();
 
       return allergensList;
     }
