@@ -386,7 +386,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 <li
                   key={idx}
                   className={styles["readText"]}>
-                  {ingredient.rawName}
+                  {ingredient}
                 </li>
               ))}
             </ul>
@@ -529,12 +529,12 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               {recipeDetails.ingredients.map((ingredient, idx) => (
                 <div
-                  key={ingredient.rawName}
+                  key={ingredient}
                   className={styles["ingredientItem"]}>
                   <div className={styles["ingredientRow"]}>
                     <div className={styles["ingredientInput"]}>
                       <Input
-                        value={ingredient.rawName}
+                        value={ingredient}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
                       />
                     </div>

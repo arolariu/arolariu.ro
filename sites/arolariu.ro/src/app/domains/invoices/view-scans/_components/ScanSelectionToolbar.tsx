@@ -66,9 +66,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
       });
 
       if (failed === 0) {
-        toast.success(t("delete.success", {count: succeeded}));
+        toast.success(t("delete.success", {count: String(succeeded)}));
       } else if (succeeded > 0) {
-        toast.warning(t("delete.partial", {success: succeeded, failed}));
+        toast.warning(t("delete.partial", {success: String(succeeded), failed: String(failed)}));
       } else {
         toast.error(t("delete.failed"));
       }
@@ -132,13 +132,13 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                         size='sm'
                         disabled={isDeleting}>
                         <TbTrash />
-                        <span className={styles["hiddenMobile"]}>{t("delete.button", {count: selectedScans.length})}</span>
+                        <span className={styles["hiddenMobile"]}>{t("delete.button", {count: String(selectedScans.length)})}</span>
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("delete.confirmDescription", {count: selectedScans.length})}</AlertDialogDescription>
+                        <AlertDialogDescription>{t("delete.confirmDescription", {count: String(selectedScans.length)})}</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
@@ -148,7 +148,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   </AlertDialog>
                 }
               />
-              <TooltipContent>{t("delete.button", {count: selectedScans.length})}</TooltipContent>
+              <TooltipContent>{t("delete.button", {count: String(selectedScans.length)})}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 

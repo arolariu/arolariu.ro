@@ -105,12 +105,12 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   }, [payload]);
 
   // Handle date filter change
-  const handleDateFilterChange = (value: string) => {
+  const handleDateFilterChange = (_value: string) => {
     // Handle date filter selection
   };
 
   // Handle sort change
-  const handleSortChange = (value: string) => {
+  const handleSortChange = (_value: string) => {
     // Handle sort option selection
     resetPagination();
   };

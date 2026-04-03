@@ -147,7 +147,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
 
   const router = useRouter();
-  const {userInformation} = useUserInformation();
+  const {userInformation: _userInformation} = useUserInformation();
 
   const {
     currentDialog: {payload},

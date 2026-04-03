@@ -134,7 +134,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const currency = useMemo(() => {
     if (invoices.length === 0) return "RON";
     const [firstInvoice] = invoices;
-    return firstInvoice?.paymentInformation.currencyCode ?? "RON";
+    return firstInvoice?.paymentInformation.currency.code ?? "RON";
   }, [invoices]);
 
   // Handle empty state

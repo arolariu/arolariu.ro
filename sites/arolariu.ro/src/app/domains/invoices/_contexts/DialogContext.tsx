@@ -170,7 +170,9 @@ export function useDialog(dialogType: Exclude<DialogType, null>, dialogMode?: Ex
     currentDialog,
     isOpen: isOpen(dialogType),
     // We make the open function easier to call for the consumer.
-    open: () => openDialog(dialogType, dialogMode, dialogPayload),
+    // Mode and payload can optionally be overridden at call time, falling back to the values provided at hook creation.
+    open: (mode?: Exclude<DialogMode, null>, payload?: DialogPayload) =>
+      openDialog(dialogType, mode ?? dialogMode, payload ?? dialogPayload),
     close: closeDialog,
   } as const;
 }

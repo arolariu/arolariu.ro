@@ -207,7 +207,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * **Performance:** Memoized with useCallback.
    */
   const handleManageSharing = useCallback((): void => {
-    openShareDialog({invoice});
+    openShareDialog("share", {invoice});
   }, [invoice, openShareDialog]);
 
   return (

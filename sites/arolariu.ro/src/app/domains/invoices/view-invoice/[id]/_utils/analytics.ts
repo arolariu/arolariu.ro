@@ -207,7 +207,7 @@ export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyA
 
   // Convert to array and sort by date
   return Array.from(monthlyData.entries())
-    .toSorted(([keyA, dataA], [keyB, dataB]) => dataA.date.getTime() - dataB.date.getTime())
+    .toSorted(([_keyA, dataA], [_keyB, dataB]) => dataA.date.getTime() - dataB.date.getTime())
     .map(([monthKey, data]) => ({
       date: data.date.toLocaleDateString("en-US", {month: "short", year: "numeric"}),
       amount: Math.round(data.amount * 100) / 100,

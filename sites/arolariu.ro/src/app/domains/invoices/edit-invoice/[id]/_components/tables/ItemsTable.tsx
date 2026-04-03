@@ -32,7 +32,7 @@ import {
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
-import {TbEdit, TbFlask, TbPlus, TbSearch, TbTag, TbTrash} from "react-icons/tb";
+import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
@@ -489,12 +489,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     // Priority 1: Incomplete products (yellow border)
     if (!item.metadata.isComplete) {
-      return styles["rowIndicatorIncomplete"];
+      return styles["rowIndicatorIncomplete"] ?? "";
     }
 
     // Priority 2: Low confidence OCR (orange border)
     if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
-      return styles["rowIndicatorLowConfidence"];
+      return styles["rowIndicatorLowConfidence"] ?? "";
     }
 
     return "";
@@ -537,7 +537,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           text: t("indicators.lowConfidence"),
           variant: "outline",
           tooltip: t("indicators.lowConfidenceTooltip", {
-            confidence: Math.round(item.metadata.confidence * 100),
+            confidence: String(Math.round(item.metadata.confidence * 100)),
           }),
         });
       }
@@ -651,7 +651,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const isEdited = item.metadata.isEdited;
               const hasAllergens = item.detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
-              const issueBadges = getProductIssueBadges(item);
+              const _issueBadges = getProductIssueBadges(item);
 
               return (
                 <motion.tr

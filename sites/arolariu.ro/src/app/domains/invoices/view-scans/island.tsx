@@ -126,7 +126,7 @@ function CreateFromAllButton(): React.JSX.Element | null {
             <TbFileInvoice className={styles["createFromAllIcon"]} />
             <div>
               <p className={styles["createFromAllTitle"]}>{t("createFromAll.title")}</p>
-              <p className={styles["createFromAllDescription"]}>{t("createFromAll.description", {count: scans.length})}</p>
+              <p className={styles["createFromAllDescription"]}>{t("createFromAll.description", {count: String(scans.length)})}</p>
             </div>
           </div>
           <Button
