@@ -1,6 +1,7 @@
 "use client";
 
-import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
+import {toRONDetailed} from "@/lib/currency";
+import {formatCurrency, formatDate, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {PaymentType, ProductCategory} from "@/types/invoices";
 import {
   Badge,
@@ -24,12 +25,27 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
-import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbHeart} from "react-icons/tb";
+import {useCallback, useMemo, useState} from "react";
+import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbFlag3, TbHeart, TbReceipt} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceDetailsCard.module.scss";
 
 const ITEMS_PER_PAGE = 5;
+
+/**
+ * Maps receipt type strings to emoji icons for visual distinction.
+ *
+ * @remarks
+ * Icons enhance the UX by providing quick visual cues for receipt categories.
+ */
+const RECEIPT_TYPE_ICONS: Record<string, string> = {
+  Itemized: "🛒",
+  Meal: "🍽️",
+  Gas: "⛽",
+  Parking: "🅿️",
+  Hotel: "🏨",
+  CreditCard: "💳",
+};
 
 export function InvoiceDetailsCard(): React.JSX.Element {
   const locale = useLocale();
@@ -40,6 +56,20 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   const totalPages = Math.ceil(invoice.items.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedItems = invoice.items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  /**
+   * Compute RON equivalent for non-RON invoices.
+   *
+   * @remarks
+   * Uses yearly average exchange rates for the transaction year.
+   * Memoized to avoid recalculation on re-renders.
+   */
+  const ronEquivalent = useMemo(() => {
+    if (invoice.paymentInformation.currency.code === "RON") return null;
+
+    const transactionYear = toSafeDate(invoice.paymentInformation.transactionDate).getFullYear();
+    return toRONDetailed(invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, transactionYear);
+  }, [invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code, invoice.paymentInformation.transactionDate]);
 
   const handlePreviousPage = useCallback(() => {
     setCurrentPage((p) => Math.max(1, p - 1));
@@ -61,7 +91,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </span>
             </CardTitle>
             <CardDescription>
-              {merchant.name} • {invoice.description}
+              {merchant?.name ?? ""} • {invoice.description}
             </CardDescription>
           </div>
         </div>
@@ -104,9 +134,145 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 })}
               </p>
             </div>
+
+            {/* Receipt Type Badge - New DI v4.0 field */}
+            {invoice.receiptType && (
+              <div className={styles["infoItem"]}>
+                <p className={styles["infoLabelPlain"]}>{t("labels.receiptType")}</p>
+                <Badge variant='secondary'>
+                  <TbReceipt className={styles["iconSm"]} />
+                  <span>
+                    <span aria-hidden='true'>{RECEIPT_TYPE_ICONS[invoice.receiptType] ?? ""}</span> {invoice.receiptType}
+                  </span>
+                </Badge>
+              </div>
+            )}
+
+            {/* Country/Region - New DI v4.0 field */}
+            {invoice.countryRegion && (
+              <div className={styles["infoItem"]}>
+                <p className={styles["infoLabelPlain"]}>{t("labels.countryRegion")}</p>
+                <Badge variant='outline'>
+                  <TbFlag3 className={styles["iconSm"]} />
+                  <span>{invoice.countryRegion}</span>
+                </Badge>
+              </div>
+            )}
+
+            {/* Subtotal Amount - New DI v4.0 field */}
+            {invoice.paymentInformation.subtotalAmount > 0 && (
+              <div className={styles["infoItem"]}>
+                <p className={styles["infoLabelPlain"]}>{t("labels.subtotal")}</p>
+                <p className={styles["infoValue"]}>
+                  {formatCurrency(invoice.paymentInformation.subtotalAmount, {
+                    currencyCode: invoice.paymentInformation.currency.code,
+                    locale,
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Tip Amount - New DI v4.0 field */}
+            {invoice.paymentInformation.tipAmount > 0 && (
+              <div className={styles["infoItem"]}>
+                <p className={styles["infoLabelPlain"]}>{t("labels.tip")}</p>
+                <p className={styles["infoValue"]}>
+                  {formatCurrency(invoice.paymentInformation.tipAmount, {
+                    currencyCode: invoice.paymentInformation.currency.code,
+                    locale,
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* RON Equivalent for non-RON currencies - Enhancement for multi-currency */}
+            {ronEquivalent && (
+              <div className={styles["infoItem"]}>
+                <p className={styles["infoLabelPlain"]}>{t("labels.ronEquivalent")}</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <p className={styles["infoValue"]}>≈ {formatCurrency(ronEquivalent.amountInRon, {currencyCode: "RON", locale})}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {t("tooltips.exchangeRate", {
+                          fromCurrency: invoice.paymentInformation.currency.code,
+                          rate: ronEquivalent.rateUsed.toFixed(4),
+                          year: ronEquivalent.rateYear.toString(),
+                        })}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </div>
 
           <Separator />
+
+          {/* Payment Methods - New DI v4.0 field */}
+          {invoice.payments && invoice.payments.length > 0 && (
+            <>
+              <div className={styles["paymentsSection"]}>
+                <h3 className={styles["sectionTitle"]}>{t("sections.paymentMethods")}</h3>
+                <div className={styles["paymentsList"]}>
+                  {invoice.payments.map((payment, index) => (
+                    <div
+                      key={`${payment.method}-${index}`}
+                      className={styles["paymentItem"]}>
+                      <Badge variant='outline'>{payment.method}</Badge>
+                      <span className={styles["paymentAmount"]}>
+                        {formatCurrency(payment.amount, {
+                          currencyCode: invoice.paymentInformation.currency.code,
+                          locale,
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Tax Details - New DI v4.0 field */}
+          {invoice.taxDetails && invoice.taxDetails.length > 0 && (
+            <>
+              <div className={styles["taxSection"]}>
+                <h3 className={styles["sectionTitle"]}>{t("sections.taxBreakdown")}</h3>
+                <div className={styles["taxTable"]}>
+                  {invoice.taxDetails.map((taxDetail, index) => (
+                    <div
+                      key={`${taxDetail.description}-${index}`}
+                      className={styles["taxRow"]}>
+                      <div className={styles["taxInfo"]}>
+                        <span className={styles["taxDescription"]}>{taxDetail.description}</span>
+                        <span className={styles["taxRate"]}>({taxDetail.rate}%)</span>
+                      </div>
+                      <div className={styles["taxAmounts"]}>
+                        <span className={styles["taxNetAmount"]}>
+                          {t("taxLabels.net")}:{" "}
+                          {formatCurrency(taxDetail.netAmount, {
+                            currencyCode: invoice.paymentInformation.currency.code,
+                            locale,
+                          })}
+                        </span>
+                        <span className={styles["taxAmount"]}>
+                          {t("taxLabels.tax")}:{" "}
+                          {formatCurrency(taxDetail.amount, {
+                            currencyCode: invoice.paymentInformation.currency.code,
+                            locale,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
 
           {/* Items Table */}
           <div className={styles["itemsSection"]}>

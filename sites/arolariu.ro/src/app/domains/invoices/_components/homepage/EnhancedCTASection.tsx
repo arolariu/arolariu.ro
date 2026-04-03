@@ -65,7 +65,6 @@ export default function EnhancedCTASection(): React.JSX.Element {
           animate={{scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3]}}
           transition={{duration: 6, repeat: Infinity, ease: "easeInOut"}}
         />
-        <div className={styles["ctaGridPattern"]} />
       </div>
 
       <div className={styles["ctaContent"]}>

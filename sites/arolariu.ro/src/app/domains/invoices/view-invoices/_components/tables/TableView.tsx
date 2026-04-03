@@ -25,7 +25,7 @@ import {
 import {useLocale, useTranslations} from "next-intl";
 import Link from "next/link";
 import {useCallback} from "react";
-import {TbArrowsUpDown, TbEye, TbReceipt} from "react-icons/tb";
+import {TbEye, TbReceipt} from "react-icons/tb";
 import EmptyState from "../../../_components/EmptyState";
 import styles from "./TableView.module.scss";
 import TableViewActions from "./TableViewActions";
@@ -38,12 +38,16 @@ type Props = Readonly<{
   handlePrevPage: () => void;
   handleNextPage: () => void;
   handlePageSizeChange: (size: number) => void;
+  sortBy: "date" | "amount" | "name" | null;
+  sortDirection: "asc" | "desc" | null;
+  onSort: (field: "date" | "amount" | "name") => void;
 }>;
 
 export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoices.tableView");
-  const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
+  const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange, sortBy, sortDirection, onSort} =
+    props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
@@ -97,6 +101,19 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const isAllSelected = invoices.length > 0 && selectedCountOnPage === invoices.length;
   const isIndeterminate = selectedCountOnPage > 0 && selectedCountOnPage < invoices.length;
 
+  /**
+   * Handle key down events for sortable headers (accessibility).
+   */
+  const handleSortKeyDown = useCallback(
+    (e: React.KeyboardEvent, field: "date" | "amount" | "name") => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSort(field);
+      }
+    },
+    [onSort],
+  );
+
   return (
     <Table>
       <TableHeader>
@@ -109,87 +126,134 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               aria-label={t("aria.selectAllInvoices")}
             />
           </TableHead>
-          <TableHead>{t("columns.invoice")}</TableHead>
-          <TableHead>{t("columns.category")}</TableHead>
-          <TableHead>
-            <Button
-              variant='ghost'
-              className={styles["sortButton"]}>
-              {t("columns.date")}
-              <TbArrowsUpDown className={styles["sortIcon"]} />
-            </Button>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("name")}
+            role='columnheader'
+            aria-sort={sortBy === "name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "name")}>
+            {t("columns.invoice")}
+            {sortBy === "name" && sortDirection && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
           </TableHead>
-          <TableHead>
-            <Button
-              variant='ghost'
-              className={styles["sortButton"]}>
-              {t("columns.amount")}
-              <TbArrowsUpDown className={styles["sortIcon"]} />
-            </Button>
+          <TableHead>{t("columns.category")}</TableHead>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("date")}
+            role='columnheader'
+            aria-sort={sortBy === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "date")}>
+            {t("columns.date")}
+            {sortBy === "date" && sortDirection && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
+          </TableHead>
+          <TableHead
+            className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
+            onClick={() => onSort("amount")}
+            role='columnheader'
+            aria-sort={sortBy === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+            tabIndex={0}
+            // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+            onKeyDown={(e) => handleSortKeyDown(e, "amount")}>
+            {t("columns.amount")}
+            {sortBy === "amount" && sortDirection && (
+              <span
+                className={styles["sortArrow"]}
+                aria-hidden='true'>
+                {sortDirection === "asc" ? " ▲" : " ▼"}
+              </span>
+            )}
           </TableHead>
           <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {invoices
-          .toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map((invoice) => (
-            <TableRow key={invoice.id}>
-              <TableCell className={styles["printHidden"]}>
-                <Checkbox
-                  checked={selectedInvoices.some((s) => s.id === invoice.id)}
-                  // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-                  onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                  aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
-                />
-              </TableCell>
-              <TableCell>
-                <span className={styles["printInline"]}>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
-                <span className={styles["printOnly"]}>{invoice.id}</span>
-              </TableCell>
-              <TableCell>
-                <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
-              </TableCell>
-              <TableCell>
+        {invoices.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableCell className={styles["printHidden"]}>
+              <Checkbox
+                checked={selectedInvoices.some((s) => s.id === invoice.id)}
+                // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+                onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
+              />
+            </TableCell>
+            <TableCell>
+              <span className={styles["printInline"]}>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
+              <span className={styles["printOnly"]}>{invoice.id}</span>
+            </TableCell>
+            <TableCell>
+              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
+            </TableCell>
+            <TableCell>
+              {invoice.paymentInformation?.transactionDate ? (
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
+                    <TooltipTrigger
+                      render={
+                        <span className={styles["cursorHelp"]}>{formatDate(invoice.paymentInformation.transactionDate, {locale})}</span>
+                      }
+                    />
                     <TooltipContent>
-                      <p>{new Date(invoice.createdAt).toUTCString()}</p>
+                      <p>{new Date(invoice.paymentInformation.transactionDate).toUTCString()}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </TableCell>
-              <TableCell>
-                {formatCurrency(invoice.paymentInformation.totalCostAmount, {
-                  locale,
-                  currencyCode: invoice.paymentInformation.currency.code,
-                })}
-              </TableCell>
-              <TableCell className={styles["actionsCell"]}>
-                <div className={styles["actionsRow"]}>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger
-                        className={styles["viewTrigger"]}
-                        render={
-                          <Link
-                            href={`/domains/invoices/view-invoice/${invoice.id}`}
-                            className={styles["viewLink"]}>
-                            <TbEye className={styles["viewIcon"]} />
-                          </Link>
-                        }
-                      />
-                      <TooltipContent>{t("viewInvoice")}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <TableViewActions invoice={invoice} />
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger render={<Badge variant='outline'>N/A</Badge>} />
+                    <TooltipContent>
+                      <p>{t("tooltips.notAnalyzed")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </TableCell>
+            <TableCell>
+              {formatCurrency(invoice.paymentInformation.totalCostAmount, {
+                locale,
+                currencyCode: invoice.paymentInformation.currency.code,
+              })}
+            </TableCell>
+            <TableCell className={styles["actionsCell"]}>
+              <div className={styles["actionsRow"]}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      className={styles["viewTrigger"]}
+                      render={
+                        <Link
+                          href={`/domains/invoices/view-invoice/${invoice.id}`}
+                          className={styles["viewLink"]}>
+                          <TbEye className={styles["viewIcon"]} />
+                        </Link>
+                      }
+                    />
+                    <TooltipContent>{t("viewInvoice")}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TableViewActions invoice={invoice} />
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
-      {invoices.length >= 6 && (
+      {totalPages > 1 && (
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>

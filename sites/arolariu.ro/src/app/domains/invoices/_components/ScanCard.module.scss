@@ -1,0 +1,486 @@
+// ===========================================
+// SCAN CARD COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// PREVIEW AREA
+// ===========================================
+.previewArea {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-color: color('muted');
+  cursor: pointer;
+  @include transition(all);
+
+  &:hover .previewOverlay {
+    opacity: 1;
+  }
+
+  &[role='button'] {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid color('primary');
+      outline-offset: 2px;
+    }
+  }
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.previewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-alpha('background', 0.6);
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+}
+
+.previewIcon {
+  height: space(8);
+  width: space(8);
+  color: white;
+  @include shadow('lg');
+}
+
+.pdfPlaceholder {
+  @include flex-center;
+  height: 100%;
+}
+
+.pdfIcon {
+  height: space(16);
+  width: space(16);
+  color: color('destructive');
+}
+
+.imagePreview {
+  object-fit: cover;
+}
+
+// ===========================================
+// SELECTION CHECKBOX
+// ===========================================
+.checkboxPosition {
+  position: absolute;
+  top: space(2);
+  left: space(2);
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    top: space(3);
+    left: space(3);
+    min-width: space(11); // 44px
+    min-height: space(11); // 44px
+  }
+}
+
+// ===========================================
+// ACTIONS MENU
+// ===========================================
+.actionsPosition {
+  position: absolute;
+  bottom: space(2);
+  right: space(2);
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    bottom: space(3);
+    right: space(3);
+  }
+
+  button {
+    // Larger touch target on mobile (min 44px)
+    @include respond-below('md') {
+      min-width: space(11); // 44px
+      min-height: space(11); // 44px
+    }
+  }
+}
+
+// ===========================================
+// LINKED BADGE
+// ===========================================
+.linkedBadgePosition {
+  position: absolute;
+  right: space(2);
+  bottom: space(2);
+}
+
+.linkedBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.9);
+  padding: space(0.5) space(2);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  color: white;
+}
+
+.linkedIcon {
+  height: space(3);
+  width: space(3);
+}
+
+// ===========================================
+// FILE INFO
+// ===========================================
+.fileInfo {
+  padding: space(3);
+
+  // Compact card layout on phones
+  @include respond-below('sm') {
+    padding: space(2);
+  }
+}
+
+.fileNameContainer {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: text;
+}
+
+.fileName {
+  flex: 1;
+  @include truncate;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+
+  @include dark {
+    color: white;
+  }
+}
+
+.editButton {
+  height: space(6);
+  width: space(6);
+  padding: 0;
+  opacity: 0;
+  @include transition(opacity);
+
+  .fileNameContainer:hover & {
+    opacity: 1;
+  }
+}
+
+.editIcon {
+  height: space(3.5);
+  width: space(3.5);
+}
+
+.fileMeta {
+  margin-top: space(1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// RENAME INPUT
+// ===========================================
+.renameContainer {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.renameInput {
+  flex: 1;
+  height: space(8);
+  font-size: font-size('sm');
+}
+
+.renameActions {
+  display: flex;
+  gap: space(1);
+}
+
+.renameSaveButton,
+.renameCancelButton {
+  height: space(7);
+  width: space(7);
+  padding: 0;
+}
+
+.renameSaveButton {
+  color: color('primary');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.1);
+  }
+}
+
+.renameCancelButton {
+  color: color('muted-foreground');
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.renameIcon {
+  height: space(4);
+  width: space(4);
+}
+
+// ===========================================
+// PREVIEW DIALOG
+// ===========================================
+.previewDialog {
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: space(6);
+}
+
+.previewImageContainer {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  border-radius: radius('lg');
+  overflow: hidden;
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.previewImage {
+  object-fit: contain;
+}
+
+.pdfPreviewContainer {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  border-radius: radius('lg');
+  overflow: hidden;
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.pdfPreview {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: radius('md');
+}
+
+// ===========================================
+// DELETE DIALOG
+// ===========================================
+// ===========================================
+// ICON STYLES
+// ===========================================
+.trashIcon {
+  @include icon-size(space(4));
+}
+
+.menuIcon {
+  @include icon-size(space(4));
+}
+
+// ===========================================
+// DELETE DIALOG
+// ===========================================
+.linkedWarning {
+  display: block;
+  margin-bottom: space(2);
+  font-weight: font-weight('medium');
+  color: color('warning');
+}
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.card {
+  overflow: hidden;
+  @include transition(all);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardSelected {
+  position: relative;
+  box-shadow: 0 0 0 3px color('primary');
+  background-color: color-alpha('primary', 0.03);
+
+  // Check badge overlay
+  &::after {
+    content: '✓';
+    position: absolute;
+    top: space(2);
+    right: space(2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: space(5);
+    width: space(5);
+    border-radius: radius('full');
+    background-color: color('primary');
+    color: white;
+    font-size: font-size('xs');
+    font-weight: font-weight('bold');
+    pointer-events: none;
+    z-index: 10;
+
+    @include dark {
+      background-color: color('primary');
+    }
+
+    // Larger badge on mobile
+    @include respond-below('md') {
+      top: space(3);
+      right: space(3);
+      height: space(6);
+      width: space(6);
+      font-size: font-size('sm');
+    }
+  }
+}
+
+.cardContentFlush {
+  padding: 0;
+}
+
+.checkbox {
+  height: space(5);
+  width: space(5);
+  border: 2px solid white;
+  background-color: rgba(255, 255, 255, 0.8);
+
+  &[data-state='checked'] {
+    background-color: color('primary');
+  }
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    height: space(6);
+    width: space(6);
+  }
+}
+
+.actionsButton {
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: radius('full');
+  background-color: rgba(255, 255, 255, 0.8);
+  color: color('muted-foreground');
+  @include shadow('sm');
+
+  &:hover {
+    background-color: white;
+  }
+
+  @include dark {
+    background-color: color-alpha('foreground', 0.8);
+    color: color('muted-foreground');
+
+    &:hover {
+      background-color: color('foreground');
+    }
+  }
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+}
+
+.deleteMenuItem {
+  color: color('destructive');
+
+  &:focus {
+    background-color: color-alpha('destructive', 0.1);
+    color: color('destructive');
+  }
+
+  @include dark {
+    color: color-alpha('destructive', 0.75);
+
+    &:focus {
+      background-color: color-alpha('destructive', 0.1);
+    }
+  }
+}
+
+.deleteButton {
+  background-color: color('destructive');
+  color: white;
+
+  &:hover {
+    background-color: color('destructive');
+    opacity: 0.9;
+  }
+}
+
+// ===========================================
+// ROTATING OVERLAY
+// ===========================================
+.rotatingOverlay {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+  flex-direction: column;
+  gap: space(2);
+  background-color: color-alpha('background', 0.95);
+  z-index: 20;
+  pointer-events: all;
+
+  @include dark {
+    background-color: color-alpha('background', 0.95);
+  }
+}
+
+.rotatingSpinner {
+  height: space(8);
+  width: space(8);
+  border: 3px solid color('muted');
+  border-top-color: color('primary');
+  border-radius: radius('full');
+  animation: spin 0.8s linear infinite;
+
+  @include dark {
+    border-color: color('muted');
+    border-top-color: color('primary');
+  }
+}
+
+.rotatingText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+
+  @include dark {
+    color: white;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+

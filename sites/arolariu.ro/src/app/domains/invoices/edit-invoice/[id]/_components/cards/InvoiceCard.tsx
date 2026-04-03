@@ -99,6 +99,16 @@ export default function InvoiceCard(): React.JSX.Element {
   const paymentTypeOptions = useMemo(() => enumToOptions(PaymentType), [enumToOptions]);
   const categoryOptions = useMemo(() => enumToOptions(InvoiceCategory), [enumToOptions]);
 
+  // Get current label for display in Select
+  const currentPaymentTypeLabel = useMemo(
+    () => paymentTypeOptions.find((opt) => opt.value === currentPaymentType)?.label ?? "",
+    [paymentTypeOptions, currentPaymentType],
+  );
+  const currentCategoryLabel = useMemo(
+    () => categoryOptions.find((opt) => opt.value === currentCategory)?.label ?? "",
+    [categoryOptions, currentCategory],
+  );
+
   /** Generic handler for enum select changes */
   const createEnumHandler = useCallback(
     <T extends number>(setter: (value: T) => void) =>
@@ -161,7 +171,9 @@ export default function InvoiceCard(): React.JSX.Element {
   );
 
   return (
-    <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
+    <motion.div
+      variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}
+      data-section='invoice-items'>
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div className={styles["headerRow"]}>
@@ -186,7 +198,7 @@ export default function InvoiceCard(): React.JSX.Element {
             </TooltipProvider>
           </div>
           <CardDescription>
-            {t("fromMerchant", {merchant: merchant.name})}
+            {t("fromMerchant", {merchant: merchant?.name ?? ""})}
             <Separator className={styles["separatorSmall"]} />
             <Textarea
               value={currentDescription}
@@ -279,7 +291,7 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
                   <SelectTrigger className={styles["categoryTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectCategory")} />
+                    <SelectValue placeholder={t("placeholders.selectCategory")}>{currentCategoryLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -303,7 +315,7 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger className={styles["paymentTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectPaymentType")} />
+                    <SelectValue placeholder={t("placeholders.selectPaymentType")}>{currentPaymentTypeLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTypeOptions.map((option) => (

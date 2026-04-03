@@ -211,55 +211,6 @@ public abstract class ApplicationOptions
   public string NoSqlConnectionString { get; set; } = string.Empty;
   #endregion
 
-  #region OpenAI configuration
-  /// <summary>
-  /// Gets or sets the endpoint URI for OpenAI services.
-  /// This endpoint provides access to large language models and AI capabilities for document processing and analysis.
-  /// </summary>
-  /// <value>
-  /// A URI string for the OpenAI service endpoint.
-  /// For cloud deployments: Azure OpenAI service endpoint (e.g., "https://myopenai.openai.azure.com/")
-  /// For local development: OpenAI API endpoint or alternative AI service provider
-  /// </value>
-  /// <remarks>
-  /// <para>
-  /// OpenAI services are used for:
-  /// - Document analysis and content extraction
-  /// - Text classification and sentiment analysis
-  /// - Automated content generation and summarization
-  /// - Intelligent search and recommendation features
-  /// </para>
-  /// <para>
-  /// Usage considerations:
-  /// - Monitor token consumption and costs
-  /// - Implement rate limiting and quota management
-  /// - Handle service availability and fallback scenarios
-  /// - Ensure data privacy and compliance with AI regulations
-  /// </para>
-  /// </remarks>
-  public string OpenAIEndpoint { get; set; } = string.Empty;
-
-  /// <summary>
-  /// Gets or sets the API key for authenticating with OpenAI services.
-  /// This key provides secure access to AI models and ensures proper billing and usage tracking.
-  /// </summary>
-  /// <value>
-  /// A string representing the OpenAI API key.
-  /// This value should be stored securely and retrieved from the secrets endpoint.
-  /// </value>
-  /// <remarks>
-  /// <para>
-  /// Security requirements for API keys:
-  /// - Store in Azure Key Vault or secure local secrets storage
-  /// - Rotate regularly according to security policies
-  /// - Monitor usage patterns for anomalies
-  /// - Never log or expose keys in error messages or responses
-  /// - Use environment-specific keys for development and production
-  /// </para>
-  /// </remarks>
-  public string OpenAIKey { get; set; } = string.Empty;
-  #endregion
-
   #region Open Telemetry configuration
   /// <summary>
   /// Gets or sets the endpoint for Application Insights telemetry collection.

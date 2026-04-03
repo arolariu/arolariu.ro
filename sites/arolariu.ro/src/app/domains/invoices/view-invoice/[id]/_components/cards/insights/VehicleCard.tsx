@@ -1,11 +1,24 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {Button, Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip, ChartTooltipContent} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbBarrel, TbBulb, TbCalendar, TbCar, TbCurrencyDollar, TbGasStation, TbGauge, TbMapPin, TbTrendingUp} from "react-icons/tb";
-import {Area, AreaChart, ResponsiveContainer, XAxis, YAxis} from "recharts";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./VehicleCard.module.scss";
 
@@ -107,7 +120,7 @@ export function VehicleCard(): React.JSX.Element {
             <h4 className={styles["chartTitle"]}>{t("chart.title")}</h4>
             <ChartContainer
               config={{
-                amount: {label: t("chart.amount"), color: "hsl(var(--chart-1))"},
+                amount: {label: t("chart.amount"), color: "var(--ac-chart-1)"},
               }}
               className={styles["chartWrapper"]}>
               <ResponsiveContainer
@@ -125,12 +138,12 @@ export function VehicleCard(): React.JSX.Element {
                       y2='1'>
                       <stop
                         offset='0%'
-                        stopColor='hsl(var(--chart-1))'
+                        stopColor='var(--ac-chart-1)'
                         stopOpacity={0.3}
                       />
                       <stop
                         offset='100%'
-                        stopColor='hsl(var(--chart-1))'
+                        stopColor='var(--ac-chart-1)'
                         stopOpacity={0.05}
                       />
                     </linearGradient>
@@ -150,7 +163,7 @@ export function VehicleCard(): React.JSX.Element {
                   <Area
                     type='monotone'
                     dataKey='amount'
-                    stroke='hsl(var(--chart-1))'
+                    stroke='var(--ac-chart-1)'
                     fill='url(#fillFuel)'
                     strokeWidth={2}
                   />

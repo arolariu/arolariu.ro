@@ -23,8 +23,6 @@ public sealed class AzureAndLocalOptionsTests
     Assert.AreEqual(string.Empty, o.StorageAccountEndpoint);
     Assert.AreEqual(string.Empty, o.SqlConnectionString);
     Assert.AreEqual(string.Empty, o.NoSqlConnectionString);
-    Assert.AreEqual(string.Empty, o.OpenAIEndpoint);
-    Assert.AreEqual(string.Empty, o.OpenAIKey);
     Assert.AreEqual(string.Empty, o.ApplicationInsightsEndpoint);
     Assert.AreEqual(string.Empty, o.CognitiveServicesEndpoint);
     Assert.AreEqual(string.Empty, o.CognitiveServicesKey);
@@ -51,8 +49,6 @@ public sealed class AzureAndLocalOptionsTests
       StorageAccountEndpoint = "https://stor.blob.core.windows.net/",
       SqlConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Test;",
       NoSqlConnectionString = "AccountEndpoint=https://cosmos/;AccountKey=key;",
-      OpenAIEndpoint = "https://openai/",
-      OpenAIKey = "k",
       ApplicationInsightsEndpoint = "InstrumentationKey=ikey",
       CognitiveServicesEndpoint = "https://cog/",
       CognitiveServicesKey = "ckey",

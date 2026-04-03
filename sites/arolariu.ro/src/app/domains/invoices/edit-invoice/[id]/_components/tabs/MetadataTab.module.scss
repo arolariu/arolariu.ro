@@ -34,6 +34,23 @@
   font-weight: font-weight('medium');
 }
 
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.fieldKey {
+  font-weight: font-weight('semibold');
+  font-size: font-size('sm');
+  color: color('foreground');
+}
+
+.fieldValue {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
 .editButton {
   position: absolute;
   top: space(2);

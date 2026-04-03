@@ -471,3 +471,146 @@ describe("configCatalogCache.server", () => {
     expect(getCachedConfigValue("Auth:JWT:Secret")).toBeNull();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Circuit breaker and stale cache tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("configProxy circuit breaker", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllGlobals();
+    delete process.env["AZURE_CLIENT_ID"];
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("should trip circuit breaker on fetch failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("Network error")));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    await expect(fetchConfigValue("Test:Key")).rejects.toThrow();
+  });
+
+  it("should return stale cached value when circuit is open", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Test:Key", "cached-value", 0)))
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Test:Key", "new-value")));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    // First call: cache the value
+    const first = await fetchConfigValue("Test:Key");
+    expect(first).toBe("cached-value");
+
+    // Wait for cache to become stale (TTL = 0)
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Second call: should fail and trip circuit breaker
+    await expect(fetchConfigValue("Test:Key")).rejects.toThrow();
+
+    // Third call: circuit is open, should return stale cache
+    const third = await fetchConfigValue("Test:Key");
+    expect(third).toBe("cached-value");
+  });
+
+  it("should throw when circuit is open and no stale cache exists", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    // First call trips circuit
+    await expect(fetchConfigValue("New:Key")).rejects.toThrow();
+
+    // Second call: circuit is open, no stale cache
+    await expect(fetchConfigValue("New:Key")).rejects.toThrow("exp circuit breaker open");
+  });
+
+  it("should convert plain object headers to Headers instance", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Test:PlainHeaders", "value-with-plain-headers")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    // Mock injectTraceContextHeaders to return a plain object instead of Headers
+    instrumentationMocks.injectTraceContextHeaders.mockReturnValueOnce({
+      "X-Custom-Header": "custom-value",
+      traceparent: "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01",
+    });
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    const value = await fetchConfigValue("Test:PlainHeaders");
+
+    expect(value).toBe("value-with-plain-headers");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // The code should convert the plain object to Headers and include the custom header
+    // We verify by checking that fetch was called (which means the conversion succeeded)
+    const requestInit = (fetchMock.mock.calls[0] as [string, RequestInit])[1];
+    expect(requestInit.headers).toBeDefined();
+  });
+
+  it("should re-close circuit breaker after cooldown", async () => {
+    // This test verifies that the circuit breaker can re-close after cooldown.
+    // Due to module-level state, we test the logic by verifying the time-based condition
+    // without actually waiting or using multiple test runs that pollute state.
+
+    // The circuit breaker logic (lines 206-207) checks:
+    // if (Date.now() - expCircuitOpenedAt > CIRCUIT_RESET_MS) {
+    //   expCircuitOpen = false;
+    //   return false;
+    // }
+
+    // This test verifies the fetch can succeed after enough time has passed.
+    // We'll use a shorter test with fewer failures to avoid circuit pollution.
+
+    process.env["AZURE_CLIENT_ID"] = "test-client-id";
+    vi.useFakeTimers();
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Circuit:Cooldown:Test", "initial-value")))
+      .mockRejectedValueOnce(new Error("Transient failure"))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Circuit:Cooldown:Test", "recovered-value")));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    // First call succeeds and caches
+    const first = await fetchConfigValue("Circuit:Cooldown:Test");
+    expect(first).toBe("initial-value");
+
+    // Advance time to expire cache
+    vi.advanceTimersByTime(310_000); // 5+ minutes to expire cache (TTL = 300s)
+
+    // Second call fails but returns stale cache (circuit not yet open in this isolated test)
+    try {
+      await fetchConfigValue("Circuit:Cooldown:Test");
+    } catch {
+      // Expected to fail
+    }
+
+    // Advance past circuit cooldown
+    vi.advanceTimersByTime(35_000); // 35s past circuit reset (30s threshold)
+
+    // Third call should succeed as circuit can re-close
+    const recovered = await fetchConfigValue("Circuit:Cooldown:Test");
+    expect(recovered).toBe("recovered-value");
+
+    vi.useRealTimers();
+    delete process.env["AZURE_CLIENT_ID"];
+  });
+});

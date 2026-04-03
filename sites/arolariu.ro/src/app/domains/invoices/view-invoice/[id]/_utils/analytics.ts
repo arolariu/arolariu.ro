@@ -3,8 +3,8 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_utils/analytics
  */
 
-import {generateRandomInvoice, generateRandomInvoices} from "@/data/mocks";
-import {formatEnum} from "@/lib/utils.generic";
+import {getTransactionYear, toRON} from "@/lib/currency";
+import {EMPTY_GUID, formatEnum} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
 
 // Spending by category data
@@ -17,16 +17,16 @@ export type CategorySpending = {
 
 // Chart color mapping
 const CATEGORY_COLORS: Record<number, string> = {
-  [ProductCategory.DAIRY]: "var(--chart-1)",
-  [ProductCategory.BAKED_GOODS]: "var(--chart-2)",
-  [ProductCategory.FRUITS]: "var(--chart-3)",
-  [ProductCategory.VEGETABLES]: "var(--chart-4)",
-  [ProductCategory.BEVERAGES]: "var(--chart-5)",
-  [ProductCategory.CLEANING_SUPPLIES]: "var(--chart-1)",
-  [ProductCategory.MEAT]: "var(--chart-2)",
-  [ProductCategory.FISH]: "var(--chart-3)",
-  [ProductCategory.GROCERIES]: "var(--chart-4)",
-  [ProductCategory.OTHER]: "var(--chart-5)",
+  [ProductCategory.DAIRY]: "var(--ac-chart-1)",
+  [ProductCategory.BAKED_GOODS]: "var(--ac-chart-2)",
+  [ProductCategory.FRUITS]: "var(--ac-chart-3)",
+  [ProductCategory.VEGETABLES]: "var(--ac-chart-4)",
+  [ProductCategory.BEVERAGES]: "var(--ac-chart-5)",
+  [ProductCategory.CLEANING_SUPPLIES]: "var(--ac-chart-1)",
+  [ProductCategory.MEAT]: "var(--ac-chart-2)",
+  [ProductCategory.FISH]: "var(--ac-chart-3)",
+  [ProductCategory.GROCERIES]: "var(--ac-chart-4)",
+  [ProductCategory.OTHER]: "var(--ac-chart-5)",
 };
 
 export function getCategorySpending(items: Product[]): CategorySpending[] {
@@ -45,7 +45,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
       category: formatEnum(ProductCategory, category),
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
-      fill: CATEGORY_COLORS[category] || "var(--chart-1)",
+      fill: CATEGORY_COLORS[category] || "var(--ac-chart-1)",
     }))
     .toSorted((a, b) => b.amount - a.amount);
 }
@@ -135,18 +135,86 @@ export type SpendingTrendData = {
   amount: number;
   isCurrent: boolean;
   name: string;
+  invoices: ReadonlyArray<{id: string; name: string; amount: number}>;
 };
 
-export function getSpendingTrend(): SpendingTrendData[] {
-  const historicalInvoices = generateRandomInvoices(20); // This would be fetched from user data
-  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
-  return allInvoices.map((inv) => ({
-    date: inv.createdAt.toLocaleDateString("en-US", {month: "short", day: "numeric"}),
-    amount: inv.paymentInformation.totalCostAmount,
-    isCurrent: inv.id === currentInvoiceSummary.id,
-    name: inv.name,
-  }));
+/**
+ * Computes spending trend data from user's invoices, grouping by month.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of monthly spending data with current month highlighted
+ *
+ * @remarks
+ * - Groups invoices by month using transactionDate (falls back to createdAt)
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Highlights the month containing the current invoice
+ * - Returns empty array if allInvoices has fewer than 2 invoices
+ */
+export function getSpendingTrend(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): SpendingTrendData[] {
+  // Need at least 2 invoices for meaningful trend data
+  if (allInvoices.length < 2) {
+    return [];
+  }
+
+  // Group invoices by month
+  const monthlyData = new Map<
+    string,
+    {
+      amount: number;
+      count: number;
+      invoiceDetails: Array<{id: string; name: string; amount: number}>;
+      date: Date;
+    }
+  >();
+
+  allInvoices.forEach((inv) => {
+    const transactionDate = inv.paymentInformation?.transactionDate ?? inv.createdAt;
+    const date = new Date(transactionDate);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+    // Normalize amount to RON
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currencyCode = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    const amountInRON = toRON(amount, currencyCode, year);
+
+    const invoiceDetail = {
+      id: inv.id,
+      name: inv.name || `Invoice ${inv.id.slice(0, 8)}`,
+      amount: Math.round(amountInRON * 100) / 100,
+    };
+
+    const existing = monthlyData.get(monthKey);
+    if (existing) {
+      existing.amount += amountInRON;
+      existing.count += 1;
+      existing.invoiceDetails.push(invoiceDetail);
+    } else {
+      monthlyData.set(monthKey, {
+        amount: amountInRON,
+        count: 1,
+        invoiceDetails: [invoiceDetail],
+        date,
+      });
+    }
+  });
+
+  // Determine which month contains the current invoice
+  const currentTransactionDate = currentInvoice.paymentInformation?.transactionDate ?? currentInvoice.createdAt;
+  const currentDate = new Date(currentTransactionDate);
+  const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
+
+  // Convert to array and sort by date
+  return Array.from(monthlyData.entries())
+    .toSorted(([keyA, dataA], [keyB, dataB]) => dataA.date.getTime() - dataB.date.getTime())
+    .map(([monthKey, data]) => ({
+      date: data.date.toLocaleDateString("en-US", {month: "short", year: "numeric"}),
+      amount: Math.round(data.amount * 100) / 100,
+      isCurrent: monthKey === currentMonthKey,
+      name: `${data.count} invoice${data.count > 1 ? "s" : ""}`,
+      invoices: data.invoiceDetails,
+    }));
 }
 
 export type ComparisonStats = {
@@ -164,35 +232,95 @@ export type ComparisonStats = {
   sameMerchantDiff: number;
 };
 
-export function getComparisonStats(): ComparisonStats {
-  const current = generateRandomInvoice(); // This would be the current invoice
-  const historical = generateRandomInvoices(20); // This would be fetched from user data
+/**
+ * Computes comparison statistics for the current invoice against all user invoices.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Comparison statistics including averages and percentage differences
+ *
+ * @remarks
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Compares against overall average and same-merchant average
+ * - Returns default values if allInvoices has fewer than 2 invoices
+ * - Handles edge cases (empty arrays, missing merchant references)
+ */
+export function getComparisonStats(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): ComparisonStats {
+  // Default stats if not enough data
+  const currentAmount = currentInvoice.paymentInformation?.totalCostAmount ?? 0;
+  const currentCurrency = currentInvoice.paymentInformation?.currency?.code ?? "RON";
+  const currentYear = getTransactionYear(currentInvoice.paymentInformation?.transactionDate, currentInvoice.createdAt);
+  const currentAmountInRON = toRON(currentAmount, currentCurrency, currentYear);
+  const currentItemCount = currentInvoice.items?.length ?? 0;
 
-  const totalAmount = historical.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0);
-  const averageAmount = totalAmount / historical.length;
-  const percentageDiff = ((current.paymentInformation.totalCostAmount - averageAmount) / averageAmount) * 100;
+  if (allInvoices.length < 2) {
+    return {
+      currentAmount: currentAmountInRON,
+      averageAmount: currentAmountInRON,
+      percentageDiff: 0,
+      isAboveAverage: false,
+      minAmount: currentAmountInRON,
+      maxAmount: currentAmountInRON,
+      totalInvoices: allInvoices.length,
+      currentItemCount,
+      averageItemCount: currentItemCount,
+      itemCountDiff: 0,
+      sameMerchantAvg: currentAmountInRON,
+      sameMerchantDiff: 0,
+    };
+  }
 
-  const totalItems = historical.reduce((sum, inv) => sum + inv.items.length, 0);
-  const averageItemCount = totalItems / historical.length;
-  const itemCountDiff = ((current.items.length - averageItemCount) / averageItemCount) * 100;
+  // Filter out current invoice to avoid self-comparison
+  const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
+
+  // Calculate overall statistics with RON normalization
+  const amounts = otherInvoices.map((inv) => {
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currency = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    return toRON(amount, currency, year);
+  });
+
+  const totalAmount = amounts.reduce((sum, amt) => sum + amt, 0);
+  const averageAmount = otherInvoices.length > 0 ? totalAmount / otherInvoices.length : currentAmountInRON;
+  const percentageDiff = averageAmount > 0 ? ((currentAmountInRON - averageAmount) / averageAmount) * 100 : 0;
+
+  const minAmount = amounts.length > 0 ? Math.min(...amounts) : currentAmountInRON;
+  const maxAmount = amounts.length > 0 ? Math.max(...amounts) : currentAmountInRON;
+
+  // Calculate item count statistics
+  const totalItems = otherInvoices.reduce((sum, inv) => sum + (inv.items?.length ?? 0), 0);
+  const averageItemCount = otherInvoices.length > 0 ? totalItems / otherInvoices.length : currentItemCount;
+  const itemCountDiff = averageItemCount > 0 ? ((currentItemCount - averageItemCount) / averageItemCount) * 100 : 0;
 
   // Same merchant comparison
-  const sameMerchant = historical.filter((inv) => inv.merchantReference === current.merchantReference);
-  const sameMerchantAvg =
-    sameMerchant.length > 0
-      ? sameMerchant.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0) / sameMerchant.length
-      : averageAmount;
-  const sameMerchantDiff = ((current.paymentInformation.totalCostAmount - sameMerchantAvg) / sameMerchantAvg) * 100;
+  const currentMerchant = currentInvoice.merchantReference;
+  const sameMerchantInvoices = otherInvoices.filter((inv) => inv.merchantReference === currentMerchant);
+
+  let sameMerchantAvg = averageAmount;
+  let sameMerchantDiff = percentageDiff;
+
+  if (sameMerchantInvoices.length > 0) {
+    const sameMerchantAmounts = sameMerchantInvoices.map((inv) => {
+      const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+      const currency = inv.paymentInformation?.currency?.code ?? "RON";
+      const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+      return toRON(amount, currency, year);
+    });
+    const sameMerchantTotal = sameMerchantAmounts.reduce((sum, amt) => sum + amt, 0);
+    sameMerchantAvg = sameMerchantTotal / sameMerchantInvoices.length;
+    sameMerchantDiff = sameMerchantAvg > 0 ? ((currentAmountInRON - sameMerchantAvg) / sameMerchantAvg) * 100 : 0;
+  }
 
   return {
-    currentAmount: current.paymentInformation.totalCostAmount,
+    currentAmount: Math.round(currentAmountInRON * 100) / 100,
     averageAmount: Math.round(averageAmount * 100) / 100,
     percentageDiff: Math.round(percentageDiff * 10) / 10,
     isAboveAverage: percentageDiff > 0,
-    minAmount: Math.min(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
-    maxAmount: Math.max(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
-    totalInvoices: historical.length,
-    currentItemCount: current.items.length,
+    minAmount: Math.round(minAmount * 100) / 100,
+    maxAmount: Math.round(maxAmount * 100) / 100,
+    totalInvoices: allInvoices.length,
+    currentItemCount,
     averageItemCount: Math.round(averageItemCount * 10) / 10,
     itemCountDiff: Math.round(itemCountDiff * 10) / 10,
     sameMerchantAvg: Math.round(sameMerchantAvg * 100) / 100,
@@ -207,19 +335,45 @@ export type MerchantBreakdown = {
   average: number;
 };
 
-export function getMerchantBreakdown(): MerchantBreakdown[] {
+/**
+ * Computes merchant spending breakdown from user's invoices.
+ *
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of merchant spending data sorted by total spend (descending)
+ *
+ * @remarks
+ * - Groups invoices by merchantReference
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Returns empty array if allInvoices is empty
+ * - Filters out invoices with empty GUID or missing merchant references
+ */
+export function getMerchantBreakdown(allInvoices: ReadonlyArray<Invoice>): MerchantBreakdown[] {
+  if (allInvoices.length === 0) {
+    return [];
+  }
+
   const merchantMap = new Map<string, {count: number; total: number}>();
 
-  const historicalInvoices = generateRandomInvoices(30); // This would be fetched from user data
-  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
-
   allInvoices.forEach((inv) => {
-    const existing = merchantMap.get(inv.merchantReference) || {count: 0, total: 0};
-    merchantMap.set(inv.merchantReference, {
-      count: existing.count + 1,
-      total: existing.total + inv.paymentInformation.totalCostAmount,
-    });
+    // Skip invoices without valid merchant reference (EMPTY_GUID or missing)
+    const merchantRef = inv.merchantReference && inv.merchantReference !== EMPTY_GUID ? inv.merchantReference : null;
+    if (!merchantRef) return;
+
+    const amount = inv.paymentInformation?.totalCostAmount ?? 0;
+    const currency = inv.paymentInformation?.currency?.code ?? "RON";
+    const year = getTransactionYear(inv.paymentInformation?.transactionDate, inv.createdAt);
+    const amountInRON = toRON(amount, currency, year);
+
+    const existing = merchantMap.get(merchantRef);
+    if (existing) {
+      existing.count += 1;
+      existing.total += amountInRON;
+    } else {
+      merchantMap.set(merchantRef, {
+        count: 1,
+        total: amountInRON,
+      });
+    }
   });
 
   return Array.from(merchantMap.entries())
@@ -239,21 +393,62 @@ export type CategoryTrendData = {
 };
 
 /**
- * Gets category comparison data for demo purposes.
- * @returns Array of category trend data comparing current to average spending.
+ * Computes category spending comparison between current invoice and all invoices.
+ *
+ * @param currentInvoice - The invoice being viewed
+ * @param allInvoices - All cached invoices from the Zustand store
+ * @returns Array of category comparison data sorted by current spending (descending)
+ *
+ * @remarks
+ * - Groups products by ProductCategory
+ * - Compares current invoice's category spending against historical averages
+ * - Normalizes all amounts to RON using yearly average exchange rates
+ * - Returns empty array if current invoice has no items
+ * - Only includes categories present in the current invoice
  */
-export function getCategoryComparison(): CategoryTrendData[] {
-  const current = generateRandomInvoice().category; // This would be the current invoice
+export function getCategoryComparison(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): CategoryTrendData[] {
+  const currentItems = currentInvoice.items ?? [];
+  if (currentItems.length === 0) {
+    return [];
+  }
 
-  return Object.entries(current)
-    .filter(([_, amount]) => amount > 0)
-    .map(([cat, amount]) => ({
-      category: formatEnum(ProductCategory, Number(cat) as ProductCategory),
-      current: Math.round(amount * 100) / 100,
-      average: 0, // Historical averages not yet implemented
-    }))
-    .filter((d) => d.current > 0)
-    .toSorted((a, b) => b.current - a.current);
+  // Calculate current invoice's spending by category
+  const currentCategoryMap = new Map<ProductCategory, number>();
+  currentItems.forEach((item) => {
+    const existing = currentCategoryMap.get(item.category) ?? 0;
+    currentCategoryMap.set(item.category, existing + item.totalPrice);
+  });
+
+  // Calculate historical average spending per category (excluding current invoice)
+  const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
+  const historicalCategoryMap = new Map<ProductCategory, {total: number; count: number}>();
+
+  otherInvoices.forEach((inv) => {
+    const items = inv.items ?? [];
+    items.forEach((item) => {
+      const existing = historicalCategoryMap.get(item.category) ?? {total: 0, count: 0};
+      historicalCategoryMap.set(item.category, {
+        total: existing.total + item.totalPrice,
+        count: existing.count + 1,
+      });
+    });
+  });
+
+  // Build comparison data
+  const result: CategoryTrendData[] = [];
+
+  currentCategoryMap.forEach((currentAmount, category) => {
+    const historical = historicalCategoryMap.get(category);
+    const averageAmount = historical ? historical.total / Math.max(historical.count, 1) : 0;
+
+    result.push({
+      category: formatEnum(ProductCategory, category),
+      current: Math.round(currentAmount * 100) / 100,
+      average: Math.round(averageAmount * 100) / 100,
+    });
+  });
+
+  return result.toSorted((a, b) => b.current - a.current);
 }
 
 // Unit price analysis
@@ -532,18 +727,26 @@ export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, target
  *
  * @param amount - The spending amount for the day
  * @param maxAmount - The maximum spending amount in the month (for relative scaling)
- * @returns CSS class string for background color intensity
+ * @returns CSS module class name suffix (1-5) for background color intensity, or empty string
+ *
+ * @remarks
+ * Returns class suffix that corresponds to SCSS module classes:
+ * - "intensity1" for 0-20% of max (lightest)
+ * - "intensity2" for 20-40%
+ * - "intensity3" for 40-60%
+ * - "intensity4" for 60-80%
+ * - "intensity5" for 80-100% (darkest)
  */
 export function getSpendingIntensityClass(amount: number, maxAmount: number): string {
   if (amount === 0 || maxAmount === 0) return "";
 
   const ratio = amount / maxAmount;
 
-  if (ratio < 0.2) return "bg-primary/20 hover:bg-primary/30 text-foreground";
-  if (ratio < 0.4) return "bg-primary/40 hover:bg-primary/50 text-foreground";
-  if (ratio < 0.6) return "bg-primary/60 hover:bg-primary/70 text-primary-foreground";
-  if (ratio < 0.8) return "bg-primary/80 hover:bg-primary/90 text-primary-foreground";
-  return "bg-primary hover:bg-primary/90 text-primary-foreground";
+  if (ratio < 0.2) return "intensity1";
+  if (ratio < 0.4) return "intensity2";
+  if (ratio < 0.6) return "intensity3";
+  if (ratio < 0.8) return "intensity4";
+  return "intensity5";
 }
 
 /**
@@ -552,58 +755,4 @@ export function getSpendingIntensityClass(amount: number, maxAmount: number): st
 export function getWeekdayName(weekday: number, locale = "en-US"): string {
   const date = new Date(2024, 0, 7 + weekday); // Jan 7, 2024 is a Sunday
   return new Intl.DateTimeFormat(locale, {weekday: "long"}).format(date);
-}
-
-// Keep the old function for backward compatibility but mark as deprecated
-/**
- * @deprecated Use computeShoppingPatterns instead
- */
-export function getShoppingPatterns(month: Date): ShoppingPatterns {
-  const year = month.getFullYear();
-  const currentMonth = month.getMonth();
-
-  // Combine all invoices including current
-  // In a real app, this would fetch from API based on the month
-  const allInvoices = generateRandomInvoices(50);
-
-  // Filter invoices for this month
-  const monthInvoices = allInvoices.filter((inv) => {
-    const invDate = new Date(inv.createdAt);
-    return invDate.getMonth() === currentMonth && invDate.getFullYear() === year;
-  });
-
-  // Create spending map by day
-  const spending: Record<number, DayData> = {};
-  for (const inv of monthInvoices) {
-    const day = new Date(inv.createdAt).getDate();
-    spending[day] ??= {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
-    const dayData = spending[day];
-    if (dayData) {
-      dayData.amount += inv.paymentInformation.totalCostAmount;
-      dayData.count += 1;
-      dayData.invoiceIds.push(inv.id);
-      dayData.invoiceNames.push(inv.name);
-    }
-  }
-
-  // Calculate average days between shopping trips
-  const shoppingDays = Object.keys(spending)
-    .map(Number)
-    .toSorted((a, b) => a - b);
-  let totalGap = 0;
-  for (let i = 1; i < shoppingDays.length; i++) {
-    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
-  }
-  const avg = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
-
-  return {
-    spendingByDay: spending,
-    avgDaysBetween: avg,
-    monthTotal: 0,
-    shoppingDaysCount: shoppingDays.length,
-    avgPerTrip: 0,
-    historicalByDay: {},
-    mostActiveWeekday: 0,
-    leastActiveWeekday: 0,
-  };
 }

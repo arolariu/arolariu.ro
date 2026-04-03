@@ -3,24 +3,35 @@
  * @module sites/arolariu.ro/src/lib/actions/storage/fetchBlob/tests
  */
 
-import {BlobServiceClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+
+const {mockDownload, mockGetBlockBlobClient, mockGetContainerClient, mockCreateBlobClient} = vi.hoisted(() => {
+  const _mockGetContainerClient = vi.fn();
+  return {
+    mockDownload: vi.fn(),
+    mockGetBlockBlobClient: vi.fn(),
+    mockGetContainerClient: _mockGetContainerClient,
+    mockCreateBlobClient: vi.fn().mockResolvedValue({getContainerClient: _mockGetContainerClient}),
+  };
+});
+
+vi.mock("@/lib/azure/storageClient", () => ({
+  createBlobClient: mockCreateBlobClient,
+  rewriteAzuriteUrl: vi.fn((url: string) => url),
+}));
+vi.mock("./fetchConfig");
+
+import {createBlobClient} from "@/lib/azure/storageClient";
 import fetchBlob from "./fetchBlob";
 import fetchConfigurationValue from "./fetchConfig";
 
-vi.mock("@azure/identity");
-vi.mock("@azure/storage-blob");
-vi.mock("./fetchConfig");
-
 describe("fetchBlob", () => {
-  const mockDownload = vi.fn();
-  const mockGetBlockBlobClient = vi.fn();
-  const mockGetContainerClient = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
 
     (fetchConfigurationValue as any).mockResolvedValue("https://test.blob.core.windows.net");
+
+    mockCreateBlobClient.mockResolvedValue({getContainerClient: mockGetContainerClient});
 
     mockDownload.mockResolvedValue({
       _response: {status: 200},
@@ -35,19 +46,13 @@ describe("fetchBlob", () => {
     mockGetContainerClient.mockReturnValue({
       getBlockBlobClient: mockGetBlockBlobClient,
     });
-
-    (BlobServiceClient as any).mockImplementation(function () {
-      return {
-        getContainerClient: mockGetContainerClient,
-      };
-    });
   });
 
   it("should fetch a blob successfully", async () => {
     const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 
     expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
-    expect(BlobServiceClient).toHaveBeenCalledWith("https://test.blob.core.windows.net", expect.any(Object));
+    expect(createBlobClient).toHaveBeenCalledWith("https://test.blob.core.windows.net");
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-blob.png");
     expect(mockDownload).toHaveBeenCalled();

@@ -106,6 +106,7 @@ export class ProductBuilder {
         isComplete: false,
         isEdited: false,
         isSoftDeleted: false,
+        confidence: faker.number.float({min: 0.7, max: 1.0, multipleOf: 0.01}),
       },
     };
   }
@@ -349,7 +350,7 @@ export class ProductBuilder {
   /**
    * Sets custom metadata flags for the product.
    *
-   * @param metadata - Flags for completion, edit status, and soft deletion
+   * @param metadata - Flags for completion, edit status, soft deletion, and OCR confidence
    * @returns The ProductBuilder instance for method chaining
    *
    * @remarks
@@ -357,6 +358,7 @@ export class ProductBuilder {
    * - `isComplete`: Product information is fully populated
    * - `isEdited`: Product has been manually modified by user
    * - `isSoftDeleted`: Product is marked for deletion but not removed
+   * - `confidence`: OCR confidence score (0.0 to 1.0)
    *
    * @example
    * ```typescript
@@ -364,12 +366,13 @@ export class ProductBuilder {
    *   .withMetadata({
    *     isComplete: true,
    *     isEdited: false,
-   *     isSoftDeleted: false
+   *     isSoftDeleted: false,
+   *     confidence: 0.95
    *   })
    *   .build();
    * ```
    */
-  withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean}): this {
+  withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean; confidence?: number}): this {
     this.product.metadata = {
       ...this.product.metadata,
       ...metadata,

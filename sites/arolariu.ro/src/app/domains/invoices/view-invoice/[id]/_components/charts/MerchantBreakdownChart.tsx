@@ -1,8 +1,21 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useMerchantsStore} from "@/stores";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MerchantBreakdown} from "../../_utils/analytics";
 import styles from "./MerchantBreakdownChart.module.scss";
 
@@ -63,16 +76,27 @@ function CustomTooltip({
 
 export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.merchantBreakdownChart");
+  const merchants = useMerchantsStore((state) => state.merchants);
+
+  // Resolve merchant names from Zustand store
+  const getMerchantName = (merchantId: string): string => {
+    const merchant = merchants.find((m) => m.id === merchantId);
+    return merchant?.name ?? t("unknownMerchant");
+  };
+
   const chartConfig = {
     total: {
       label: t("labels.totalSpent"),
-      color: "hsl(var(--chart-2))",
+      color: "var(--ac-chart-2)",
     },
   };
 
+  // Map merchant IDs to names and apply colors
   const coloredData = data.map((entry, index) => ({
     ...entry,
-    fill: entry.name === currentMerchant ? "hsl(var(--primary))" : `hsl(var(--chart-${(index % 5) + 1}))`,
+    name: getMerchantName(entry.name), // Resolve merchant ID to name
+    originalId: entry.name, // Keep original ID for comparison
+    fill: entry.name === currentMerchant ? "var(--ac-primary)" : `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   return (

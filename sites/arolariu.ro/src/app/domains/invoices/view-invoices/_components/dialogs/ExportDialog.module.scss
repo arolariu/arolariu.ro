@@ -4,63 +4,171 @@
 @use '../../../../../../styles/abstracts' as *;
 
 // ===========================================
-// SECTIONS
+// DIALOG CONTENT
+// ===========================================
+.dialogContent {
+  @include respond-to('md') {
+    max-width: 600px;
+  }
+}
+
+// ===========================================
+// BODY
 // ===========================================
 .body {
-  & > * + * {
-    margin-top: space(4);
-  }
-
+  display: flex;
+  flex-direction: column;
+  gap: space(5);
   padding-block: space(4);
 }
 
+// ===========================================
+// SECTIONS
+// ===========================================
 .section {
-  & > * + * {
-    margin-top: space(2);
-  }
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
 }
 
 .sectionTitle {
   font-size: font-size('sm');
-  font-weight: font-weight('medium');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin-bottom: space(2);
 }
 
 // ===========================================
-// ICON STYLES
+// FILENAME INPUT
 // ===========================================
-.formatIcon {
-  width: space(4);
-  height: space(4);
+.filenameInput {
+  width: 100%;
+}
+
+.hint {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  margin-top: space(1);
 }
 
 // ===========================================
-// DIALOG CONTENT
+// CARDS
 // ===========================================
-.dialogContent {
-  @include respond-to('sm') {
-    max-width: 425px;
+.formatCard,
+.optionsCard {
+  border: 1px solid color('border');
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color-alpha('muted', 0.3);
   }
 }
 
+.cardContent {
+  padding: space(4);
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+}
+
+// ===========================================
+// FORMAT OPTIONS
+// ===========================================
 .formatLabel {
   display: flex;
   align-items: center;
-  gap: space(2);
+  gap: space(3);
+  cursor: pointer;
+  flex: 1;
 }
 
-.delimiterInput {
-  width: 50%;
+.formatIcon {
+  width: space(5);
+  height: space(5);
+  color: color('primary');
+  flex-shrink: 0;
 }
 
-.exportButton {
-  gap: space(2);
+.formatName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+}
+
+.formatDesc {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  margin-top: space(0.5);
+}
+
+// ===========================================
+// CHECKBOX GROUP
+// ===========================================
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
 }
 
 .radioRow {
   display: flex;
   align-items: center;
+  gap: space(2);
+}
 
-  & > * + * {
-    margin-left: space(2);
+// ===========================================
+// FORMAT-SPECIFIC OPTIONS
+// ===========================================
+.formatOptions {
+  margin-top: space(2);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+}
+
+.delimiterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.delimiterInput {
+  width: 100px;
+}
+
+// ===========================================
+// FILE SIZE ESTIMATE
+// ===========================================
+.estimate {
+  padding: space(3);
+  border-radius: radius('md');
+  background-color: color-alpha('primary', 0.1);
+  border: 1px solid color-alpha('primary', 0.2);
+
+  @include dark {
+    background-color: color-alpha('primary', 0.15);
   }
+}
+
+.estimateText {
+  font-size: font-size('sm');
+  color: color('foreground');
+  text-align: center;
+
+  strong {
+    font-weight: font-weight('semibold');
+    color: color('primary');
+  }
+}
+
+// ===========================================
+// BUTTONS
+// ===========================================
+.exportButton,
+.copyButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
 }

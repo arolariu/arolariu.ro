@@ -47,7 +47,7 @@ interface EditInvoiceContextValue {
   /** The original invoice being edited */
   readonly invoice: Invoice;
   /** The merchant associated with the invoice */
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
   /** Current pending changes (not yet saved) */
   readonly pendingChanges: PendingChanges;
   /** Whether there are unsaved changes */
@@ -84,7 +84,7 @@ function removeFieldFromChanges<K extends keyof PendingChanges>(changes: Pending
 
 interface EditInvoiceContextProviderProps {
   readonly invoice: Invoice;
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
   readonly children: React.ReactNode;
 }
 

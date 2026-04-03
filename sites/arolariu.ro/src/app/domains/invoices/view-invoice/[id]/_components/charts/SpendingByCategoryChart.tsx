@@ -1,8 +1,19 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartLegend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
 
@@ -70,7 +81,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
       label: item.category,
-      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
@@ -81,7 +92,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   return (
@@ -118,7 +129,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                   />
                 }
               />
-              <Legend content={<CustomLegend payload={[]} />} />
+              <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>

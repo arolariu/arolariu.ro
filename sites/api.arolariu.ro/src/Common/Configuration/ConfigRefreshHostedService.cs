@@ -50,7 +50,6 @@ public sealed class ConfigRefreshHostedService(
     "Auth:JWT:Issuer",
     "Auth:JWT:Audience",
     "Identity:Tenant:Id",
-    "Endpoints:AI:OpenAI",
     "Endpoints:Database:SQL",
     "Endpoints:Database:NoSQL",
     "Endpoints:Storage:Blob",
@@ -145,7 +144,6 @@ public sealed class ConfigRefreshHostedService(
     options.JwtIssuer = values.GetValueOrDefault("Auth:JWT:Issuer", options.JwtIssuer);
     options.JwtAudience = values.GetValueOrDefault("Auth:JWT:Audience", options.JwtAudience);
     options.TenantId = values.GetValueOrDefault("Identity:Tenant:Id", options.TenantId);
-    options.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:AI:OpenAI", options.OpenAIEndpoint);
     options.SqlConnectionString = values.GetValueOrDefault("Endpoints:Database:SQL", options.SqlConnectionString);
     options.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:Database:NoSQL", options.NoSqlConnectionString);
     options.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:Storage:Blob", options.StorageAccountEndpoint);
@@ -165,8 +163,6 @@ public sealed class ConfigRefreshHostedService(
       StorageAccountEndpoint = source.StorageAccountEndpoint,
       SqlConnectionString = source.SqlConnectionString,
       NoSqlConnectionString = source.NoSqlConnectionString,
-      OpenAIEndpoint = source.OpenAIEndpoint,
-      OpenAIKey = source.OpenAIKey,
       ApplicationInsightsEndpoint = source.ApplicationInsightsEndpoint,
       CognitiveServicesEndpoint = source.CognitiveServicesEndpoint,
       CognitiveServicesKey = source.CognitiveServicesKey,

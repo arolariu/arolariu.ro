@@ -27,6 +27,8 @@ describe("ProductBuilder", () => {
       expect(product.metadata.isComplete).toBe(false);
       expect(product.metadata.isEdited).toBe(false);
       expect(product.metadata.isSoftDeleted).toBe(false);
+      expect(product.metadata.confidence).toBeGreaterThanOrEqual(0);
+      expect(product.metadata.confidence).toBeLessThanOrEqual(1);
     });
   });
 
@@ -92,9 +94,9 @@ describe("ProductBuilder", () => {
 
     it("should set metadata", () => {
       const builder = new ProductBuilder();
-      const metadata = {isComplete: true, isEdited: true, isSoftDeleted: false};
+      const metadata = {isComplete: true, isEdited: true, isSoftDeleted: false, confidence: 0.95};
       const product = builder.withMetadata(metadata).build();
-      expect(product.metadata).toEqual(metadata);
+      expect(product.metadata).toMatchObject(metadata);
     });
 
     it("should set partial metadata", () => {
@@ -104,6 +106,8 @@ describe("ProductBuilder", () => {
       expect(product.metadata.isComplete).toBe(true);
       expect(product.metadata.isEdited).toBe(false);
       expect(product.metadata.isSoftDeleted).toBe(false);
+      expect(product.metadata.confidence).toBeGreaterThanOrEqual(0);
+      expect(product.metadata.confidence).toBeLessThanOrEqual(1);
     });
 
     it("should calculate total price from price and quantity", () => {

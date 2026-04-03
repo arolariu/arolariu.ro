@@ -24,16 +24,26 @@
 
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
+import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import type {Invoice} from "@/types/invoices";
 import {MerchantCategory} from "@/types/invoices";
-import {Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components";
+import {
+  Area,
+  AreaChart,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  ResponsiveContainer,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useMemo} from "react";
 import {TbCalendar, TbChartBar, TbGlobe, TbMapPin, TbPhone, TbReceipt, TbShoppingBag} from "react-icons/tb";
-import {Area, AreaChart, ResponsiveContainer} from "recharts";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
 
@@ -93,6 +103,22 @@ export function MerchantInfoCard(): React.JSX.Element {
   const {invoices} = useInvoicesStore();
   const t = useTranslations("Invoices.ViewInvoice.merchantInfoCard");
 
+  // Early return if merchant is null
+  if (!merchant) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={styles["emptyState"]}>
+            <p className={styles["emptyStateText"]}>{t("noMerchantLinked")}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   /**
    * Filter all invoices for this merchant.
    * Memoized to prevent recalculation on every render.
@@ -111,7 +137,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     const monthlyTotals = new Map<string, number>();
     merchantInvoices.forEach((inv: Invoice) => {
-      const date = new Date(inv.paymentInformation.transactionDate);
+      const date = toSafeDate(inv.paymentInformation.transactionDate);
       const monthKey = date.toLocaleString("en-US", {month: "short", year: "numeric"});
       const currentTotal = monthlyTotals.get(monthKey) ?? 0;
       monthlyTotals.set(monthKey, currentTotal + inv.paymentInformation.totalCostAmount);
@@ -136,7 +162,7 @@ export function MerchantInfoCard(): React.JSX.Element {
     const avgSpend = count > 0 ? totalSpent / count : 0;
 
     const sortedDates = merchantInvoices
-      .map((inv: Invoice) => new Date(inv.paymentInformation.transactionDate))
+      .map((inv: Invoice) => toSafeDate(inv.paymentInformation.transactionDate))
       .sort((a, b) => b.getTime() - a.getTime());
 
     const lastVisitDate = sortedDates[0];
@@ -244,12 +270,12 @@ export function MerchantInfoCard(): React.JSX.Element {
                         y2='1'>
                         <stop
                           offset='5%'
-                          stopColor='hsl(var(--chart-1))'
+                          stopColor='var(--ac-chart-1)'
                           stopOpacity={0.3}
                         />
                         <stop
                           offset='95%'
-                          stopColor='hsl(var(--chart-1))'
+                          stopColor='var(--ac-chart-1)'
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -257,7 +283,7 @@ export function MerchantInfoCard(): React.JSX.Element {
                     <Area
                       type='monotone'
                       dataKey='amount'
-                      stroke='hsl(var(--chart-1))'
+                      stroke='var(--ac-chart-1)'
                       fill='url(#merchantSparkline)'
                       strokeWidth={2}
                     />
@@ -277,7 +303,7 @@ export function MerchantInfoCard(): React.JSX.Element {
               </div>
               <div className={styles["statBadge"]}>
                 <TbReceipt className={styles["statIcon"]} />
-                <span className={styles["statValue"]}>{visitStats.avgSpend.toFixed(2)}</span>
+                <span className={styles["statValue"]}>{formatAmount(visitStats.avgSpend)}</span>
                 <span className={styles["statLabel"]}>{t("stats.avgSpend")}</span>
               </div>
               <div className={styles["statBadge"]}>

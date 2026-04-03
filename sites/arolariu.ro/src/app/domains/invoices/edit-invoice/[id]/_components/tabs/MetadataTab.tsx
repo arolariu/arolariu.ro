@@ -110,14 +110,15 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   transition={{delay: index * 0.05}}
                   whileHover={{scale: 1.02}}
                   className={styles["metadataField"]}>
-                  <span className={styles["fieldLabel"]}>
+                  <div className={styles["fieldHeader"]}>
+                    <span className={styles["fieldKey"]}>{key}</span>
                     <Badge
                       variant='outline'
                       className={styles["readonlyBadge"]}>
                       {t("badges.readonly")}
                     </Badge>
-                  </span>
-                  <span>{value}</span>
+                  </div>
+                  <span className={styles["fieldValue"]}>{String(value)}</span>
 
                   <div className={styles["editButton"]}>
                     <DropdownMenu>

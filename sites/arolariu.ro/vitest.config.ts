@@ -22,15 +22,40 @@ export default mergeConfig(
       setupFiles: [resolve(__dirname, "./vitest.setup.ts")],
       exclude: ["**/node_modules/**", "**/tests/**"], // Exclude E2E tests directory
       coverage: {
-        exclude: ["**/instrumentation.server.ts", "**/instrumentation.ts", "**/.next/**", "**/tests/**"],
+        exclude: [
+          "**/instrumentation.server.ts",
+          "**/instrumentation.ts",
+          "**/.next/**",
+          "**/tests/**",
+          "**/export/InvoicePDF.tsx", // @react-pdf/renderer template — not unit-testable
+          "**/*.stories.tsx", // Storybook stories
+        ],
       },
     },
     resolve: {
-      alias: {
-        "@": resolve(__dirname, "./src"),
-        // Resolve to dist to avoid cross-package @/ alias issues with components source
-        "@arolariu/components": resolve(__dirname, "../../packages/components/dist/index.js"),
-      },
+      alias: [
+        // ── Stubs: server-only modules that crash in happy-dom ──
+        // These MUST come before the general `@/` alias so they take priority.
+        // See tests/README.md for the full mock architecture documentation.
+        {find: "server-only", replacement: resolve(__dirname, "./tests/stubs/server-only.ts")},
+        {find: "@/instrumentation.server", replacement: resolve(__dirname, "./tests/stubs/instrumentation.server.ts")},
+        {find: "@/lib/config/configProxy", replacement: resolve(__dirname, "./tests/stubs/lib/config/configProxy.ts")},
+        {find: "@/lib/utils.server", replacement: resolve(__dirname, "./tests/stubs/lib/utils.server.ts")},
+        {find: "@/lib/azure/storageClient", replacement: resolve(__dirname, "./tests/stubs/lib/azure/storageClient.ts")},
+        {
+          find: "@/lib/actions/storage/fetchConfig",
+          replacement: resolve(__dirname, "./tests/stubs/lib/actions/storage/fetchConfig.ts"),
+        },
+        {
+          find: "@/lib/actions/user/fetchUser",
+          replacement: resolve(__dirname, "./tests/stubs/lib/actions/user/fetchUser.ts"),
+        },
+        // ── General aliases (must come after stubs) ──
+        {find: "@", replacement: resolve(__dirname, "./src")},
+        {find: "@arolariu/components", replacement: resolve(__dirname, "../../packages/components/dist/index.js")},
+      ],
+      conditions: ["node", "default"],
+      mainFields: ["module", "jsnext:main", "jsnext"],
     },
   }),
 );

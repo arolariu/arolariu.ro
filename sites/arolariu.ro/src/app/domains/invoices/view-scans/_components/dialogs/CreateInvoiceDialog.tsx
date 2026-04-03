@@ -26,7 +26,19 @@ import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import {TbArrowRight, TbCheck, TbFileInvoice, TbFileTypePdf, TbLoader2, TbPhoto, TbSparkles, TbStack2} from "react-icons/tb";
+import {
+  TbAlertCircle,
+  TbAlertTriangle,
+  TbArrowRight,
+  TbCheck,
+  TbFileInvoice,
+  TbFileTypePdf,
+  TbLoader2,
+  TbPhoto,
+  TbSparkles,
+  TbStack2,
+  TbX,
+} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {createInvoiceFromScans} from "../../_actions/createInvoiceFromScans";
 import styles from "./CreateInvoiceDialog.module.scss";
@@ -124,6 +136,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const [step, setStep] = useState<CreationStep>("select");
   const [progress, setProgress] = useState(0);
   const [createdCount, setCreatedCount] = useState(0);
+  const [errors, setErrors] = useState<Array<{message: string; scanId?: string; scanName?: string}>>([]);
 
   // Store actions
   const archiveScans = useScansStore((state) => state.archiveScans);
@@ -135,24 +148,28 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const totalSize = selectedScans.reduce((sum, scan) => sum + scan.sizeInBytes, 0);
 
   const handleClose = useCallback((): void => {
-    if (step === "complete") {
-      router.push("/domains/invoices/view-invoices");
-    }
     close();
     // Reset state after dialog closes
     setTimeout(() => {
       setStep("select");
       setProgress(0);
       setCreatedCount(0);
+      setErrors([]);
       setMode("single");
     }, 300);
-  }, [step, router, close]);
+  }, [close]);
+
+  const handleViewInvoices = useCallback((): void => {
+    router.push("/domains/invoices/view-invoices");
+    handleClose();
+  }, [router, handleClose]);
 
   const handleCreate = async (): Promise<void> => {
     if (selectedScans.length === 0) return;
 
     setStep("creating");
     setProgress(10);
+    setErrors([]);
 
     try {
       setProgress(30);
@@ -164,6 +181,17 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       }
 
       setCreatedCount(result.invoices.length);
+      // Map errors with scan details
+      setErrors(
+        result.errors.map((err) => {
+          const scan = selectedScans.find((s) => s.id === err.scanId);
+          return {
+            message: err.error,
+            scanId: err.scanId,
+            scanName: scan?.name ?? "Unknown scan",
+          };
+        }),
+      );
       setProgress(90);
 
       // Link scans to invoices
@@ -183,14 +211,21 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       setProgress(100);
       setStep("complete");
 
-      if (result.errors.length > 0) {
-        toast.error(t("errors.partialFail", {count: String(result.errors.length)}));
+      if (result.errors.length > 0 && result.invoices.length > 0) {
+        // Show partial failure toast with first error details
+        const firstError = result.errors[0];
+        const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
+        const partialFailMessage = t("errors.partialFail", {count: String(result.errors.length)});
+        toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t("errors.unknown");
-      toast.error(t("errors.createFailed", {message: String(errorMessage)}));
-      setStep("select");
-      setProgress(0);
+      setErrors([{message: String(errorMessage), scanId: undefined, scanName: undefined}]);
+      setCreatedCount(0);
+      setProgress(100);
+      setStep("complete");
+      // Show error toast with backend details
+      toast.error(t("errors.createFailed", {message: errorMessage}));
     }
   };
 
@@ -198,12 +233,24 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     setMode(v as CreationMode);
   }, []);
 
+  const handleRetry = useCallback(() => {
+    setStep("select");
+    setProgress(0);
+    setCreatedCount(0);
+    setErrors([]);
+  }, []);
+
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (shouldOpen) open();
-      else handleClose();
+      else {
+        // Prevent closing during creation to avoid interrupting API call
+        if (step !== "creating") {
+          handleClose();
+        }
+      }
     },
-    [open, handleClose],
+    [open, handleClose, step],
   );
 
   // Render select step content
@@ -375,6 +422,108 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   // Render complete step content
   const renderCompleteStep = (): React.JSX.Element => {
     const isPlural = createdCount > 1;
+    const hasErrors = errors.length > 0;
+    const isCompleteFailure = createdCount === 0 && hasErrors;
+    const isPartialFailure = createdCount > 0 && hasErrors;
+
+    // Complete failure case
+    if (isCompleteFailure) {
+      return (
+        <motion.div
+          key='complete-failure'
+          initial={{opacity: 0, scale: 0.95}}
+          animate={{opacity: 1, scale: 1}}
+          className={styles["completeWrapper"]}>
+          <div className={`${styles["completeIconCircle"]} ${styles["completeIconCircleError"]}`}>
+            <TbAlertCircle className={styles["completeErrorIcon"]} />
+          </div>
+          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleError"]}`}>{t("complete.failureTitle")}</h3>
+          <p className={styles["completeDescription"]}>{t("complete.failureDescription")}</p>
+
+          {errors.length > 0 && (
+            <div className={styles["completeErrorsList"]}>
+              {errors.map((error, index) => (
+                <div
+                  key={error.scanId ?? error.message}
+                  className={styles["completeErrorItem"]}>
+                  <TbX className={styles["completeErrorItemIcon"]} />
+                  <div>
+                    {error.scanName && <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p>}
+                    <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter className={styles["completeFooter"]}>
+            <Button
+              variant='outline'
+              onClick={handleClose}>
+              {t("buttons.cancel")}
+            </Button>
+            <Button
+              onClick={handleRetry}
+              className={styles["retryButton"]}>
+              {t("complete.retryButton")}
+              <TbArrowRight className={styles["arrowRightIcon"]} />
+            </Button>
+          </DialogFooter>
+        </motion.div>
+      );
+    }
+
+    // Partial failure case
+    if (isPartialFailure) {
+      return (
+        <motion.div
+          key='complete-partial'
+          initial={{opacity: 0, scale: 0.95}}
+          animate={{opacity: 1, scale: 1}}
+          className={styles["completeWrapper"]}>
+          <div className={`${styles["completeIconCircle"]} ${styles["completeIconCircleWarning"]}`}>
+            <TbAlertTriangle className={styles["completeWarningIcon"]} />
+          </div>
+          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleWarning"]}`}>
+            {t("complete.partialTitle", {
+              created: String(createdCount),
+              total: String(selectedScans.length),
+            })}
+          </h3>
+          <p className={styles["completeDescription"]}>{t("complete.partialDescription")}</p>
+
+          {errors.length > 0 && (
+            <div className={styles["completeErrorsList"]}>
+              <p className={styles["completeErrorsListTitle"]}>{t("complete.errorsLabel")}</p>
+              {errors.map((error, index) => (
+                <div
+                  key={`error-${index}-${error.message?.slice(0, 30)}`}
+                  className={styles["completeErrorItem"]}>
+                  <TbX className={styles["completeErrorItemIcon"]} />
+                  <p className={styles["completeErrorItemText"]}>{error.message}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter className={styles["completeFooter"]}>
+            <Button
+              variant='outline'
+              onClick={handleClose}>
+              {t("buttons.close")}
+            </Button>
+            <Button
+              onClick={handleViewInvoices}
+              className={styles["completeButton"]}>
+              {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
+              <TbArrowRight className={styles["arrowRightIcon"]} />
+            </Button>
+          </DialogFooter>
+        </motion.div>
+      );
+    }
+
+    // Success case
     return (
       <motion.div
         key='complete'
@@ -398,7 +547,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
         <DialogFooter className={styles["completeFooter"]}>
           <Button
-            onClick={handleClose}
+            variant='outline'
+            onClick={handleClose}>
+            {t("buttons.close")}
+          </Button>
+          <Button
+            onClick={handleViewInvoices}
             className={styles["completeButton"]}>
             {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
             <TbArrowRight className={styles["arrowRightIcon"]} />

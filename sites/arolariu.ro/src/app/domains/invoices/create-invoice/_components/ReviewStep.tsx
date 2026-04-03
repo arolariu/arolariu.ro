@@ -15,7 +15,7 @@ import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useFormatter, useTranslations} from "next-intl";
-import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbPhoto, TbSparkles} from "react-icons/tb";
+import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
 
@@ -73,11 +73,17 @@ export default function ReviewStep(): React.JSX.Element {
                 key={scan.id}
                 whileHover={{scale: 1.05}}
                 className={styles["scanThumbnail"]}>
-                <img
-                  src={scan.blobUrl}
-                  alt={scan.name}
-                  className={styles["scanImage"]}
-                />
+                {scan.mimeType === "application/pdf" || scan.blobUrl?.endsWith(".pdf") ? (
+                  <div className={styles["pdfPlaceholder"]}>
+                    <TbFileTypePdf className={styles["pdfIcon"]} />
+                  </div>
+                ) : (
+                  <img
+                    src={scan.blobUrl}
+                    alt={scan.name}
+                    className={styles["scanImage"]}
+                  />
+                )}
                 <div className={styles["scanOverlay"]}>
                   <span className={styles["scanName"]}>{scan.name}</span>
                 </div>

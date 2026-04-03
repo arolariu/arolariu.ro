@@ -24,7 +24,7 @@ import {TbAlertCircle, TbArrowRight, TbBulb, TbCheck, TbPercentage, TbPigMoney, 
 import styles from "./TriviaTips.module.scss";
 
 type Props = {
-  merchant: Merchant;
+  merchant: Merchant | null;
   invoice: Invoice;
 };
 
@@ -247,7 +247,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     {
       id: 1,
       title: t("tips.loyaltyProgram.title"),
-      description: t("tips.loyaltyProgram.description", {merchantName: merchant.name}),
+      description: t("tips.loyaltyProgram.description", {merchantName: merchant?.name ?? ""}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
       difficulty: "easy",
       icon: <TbPigMoney className={styles["tipIcon"]} />,
@@ -263,7 +263,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     {
       id: 3,
       title: t("tips.digitalCoupons.title"),
-      description: t("tips.digitalCoupons.description", {merchantName: merchant.name}),
+      description: t("tips.digitalCoupons.description", {merchantName: merchant?.name ?? ""}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
       difficulty: "easy",
       icon: <TbBulb className={styles["tipIcon"]} />,
@@ -352,7 +352,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
           </div>
-          <p className={styles["savingsHint"]}>{t("banner.hint", {merchantName: merchant.name})}</p>
+          <p className={styles["savingsHint"]}>{t("banner.hint", {merchantName: merchant?.name ?? ""})}</p>
         </motion.div>
 
         <Separator />

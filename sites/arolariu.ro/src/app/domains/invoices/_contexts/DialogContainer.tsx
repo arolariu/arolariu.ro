@@ -3,7 +3,9 @@
 import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
 import ShareInvoiceDialog from "../_dialogs/ShareInvoiceDialog";
 import AddScanDialog from "../edit-invoice/[id]/_components/dialogs/AddScanDialog";
+import AllergenDialog from "../edit-invoice/[id]/_components/dialogs/AllergenDialog";
 import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
+import BulkCategoryDialog from "../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog";
 import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
 import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
 import InvoiceItemsDialog from "../edit-invoice/[id]/_components/dialogs/ItemsDialog";
@@ -12,6 +14,7 @@ import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dial
 import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
 import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
 import RemoveScanDialog from "../edit-invoice/[id]/_components/dialogs/RemoveScanDialog";
+import {ExportDialog as ViewInvoiceExportDialog} from "../view-invoice/[id]/_components/dialogs/ExportDialog";
 import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
@@ -34,6 +37,10 @@ export default function DialogContainer(): React.JSX.Element | null {
       return <AnalyzeDialog />;
     case "EDIT_INVOICE__ITEMS":
       return <InvoiceItemsDialog />;
+    case "EDIT_INVOICE__ALLERGENS":
+      return <AllergenDialog />;
+    case "EDIT_INVOICE__BULK_CATEGORY":
+      return <BulkCategoryDialog />;
     case "EDIT_INVOICE__FEEDBACK":
       return <InvoiceFeedbackDialog />;
     case "EDIT_INVOICE__MERCHANT":
@@ -52,6 +59,8 @@ export default function DialogContainer(): React.JSX.Element | null {
     // view-invoice/[id] Dialogs
     case "VIEW_INVOICE__SHARE_ANALYTICS":
       return <ShareAnalyticsDialog />;
+    case "VIEW_INVOICE__EXPORT":
+      return <ViewInvoiceExportDialog />;
     // view-invoices Dialogs
     case "VIEW_INVOICES__IMPORT":
       return <InvoicesImportDialog />;

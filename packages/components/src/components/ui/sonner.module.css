@@ -1,6 +1,6 @@
 .viewport {
   position: fixed;
-  z-index: 100;
+  z-index: 9999;
   display: flex;
   width: min(calc(100vw - 2rem), 24rem);
   flex-direction: column;

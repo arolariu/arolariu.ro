@@ -1,9 +1,21 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
 import styles from "./ItemsBreakdownChart.module.scss";
 
@@ -45,13 +57,13 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   const chartConfig = {
     price: {
       label: t("labels.price"),
-      color: "hsl(var(--chart-2))",
+      color: "var(--ac-chart-2)",
     },
   };
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   const tickFormatter = useCallback((value: number) => `${value}`, []);

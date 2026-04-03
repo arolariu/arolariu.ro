@@ -1,0 +1,158 @@
+/**
+ * Merchant Trends Chart Styles
+ */
+
+.card {
+  width: 100%;
+  height: 100%;
+}
+
+.content {
+  padding: 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--ac-border);
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--ac-muted-foreground);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.headerMerchant {
+  width: 30%;
+}
+
+.headerTotal {
+  width: 20%;
+}
+
+.headerTrend {
+  width: 50%;
+}
+
+.row {
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--ac-accent);
+    opacity: 0.5;
+  }
+}
+
+.cellMerchant {
+  font-weight: 500;
+}
+
+.merchantName {
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellTotal {
+  font-weight: 600;
+  color: var(--ac-foreground);
+}
+
+.totalAmount {
+  white-space: nowrap;
+}
+
+.cellTrend {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 48px;
+  margin-bottom: 0.25rem;
+}
+
+.bar {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--ac-chart-2) 0%, var(--ac-chart-2) 70%);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+  transition: background-color 0.15s ease;
+}
+
+.monthLabels {
+  display: flex;
+  gap: 0.25rem;
+  font-size: 0.625rem;
+  color: var(--ac-muted-foreground);
+}
+
+.monthLabel {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--ac-muted-foreground);
+  padding: 2rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.75rem;
+
+    th,
+    td {
+      padding: 0.5rem;
+    }
+  }
+
+  .merchantName {
+    max-width: 120px;
+  }
+
+  .sparkline {
+    height: 36px;
+  }
+
+  .monthLabel {
+    font-size: 0.5rem;
+  }
+}

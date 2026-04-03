@@ -1,7 +1,9 @@
 "use client";
 
+import {formatDateTime} from "@/lib/utils.generic";
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useLocale, useTranslations} from "next-intl";
 import {TbRobot, TbUser} from "react-icons/tb";
 import styles from "./MessageList.module.scss";
 
@@ -20,6 +22,9 @@ type Props = {
  * @returns The rendered message list.
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoices.messageList");
+
   return (
     <div className={styles["messageList"]}>
       {messages.map((message, index) => (
@@ -48,13 +53,13 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           </Avatar>
           <div className={styles["messageBody"]}>
             <div className={styles["messageHeader"]}>
-              <p className={styles["messageSender"]}>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
-              <span className={styles["messageTimestamp"]}>{new Date(message.timestamp).toLocaleTimeString()}</span>
+              <p className={styles["messageSender"]}>{message.role === "assistant" ? t("aiAssistant") : t("you")}</p>
+              <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>
-              {message.content.split("\n").map((line) => (
+              {message.content.split("\n").map((line, lineIndex) => (
                 <p
-                  key={line}
+                  key={`${message.id}-line-${lineIndex}`}
                   className={styles["messageLine"]}>
                   {line}
                 </p>

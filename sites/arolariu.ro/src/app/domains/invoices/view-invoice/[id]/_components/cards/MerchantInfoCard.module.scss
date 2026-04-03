@@ -126,7 +126,7 @@
 
 .categorySegment {
   height: 100%;
-  background: linear-gradient(135deg, hsl(var(--chart-1)) 0%, hsl(var(--chart-2)) 100%);
+  background: linear-gradient(135deg, var(--ac-chart-1) 0%, var(--ac-chart-2) 100%);
   border-right: 1px solid color('background');
   transition: all duration('normal') ease-out;
 

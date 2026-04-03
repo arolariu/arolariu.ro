@@ -5,9 +5,22 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/TimeOfDayChart
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {TimeOfDaySegment} from "../../../_utils/statistics";
 import styles from "./TimeOfDayChart.module.scss";
 
@@ -36,7 +49,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>
   );
 }
@@ -46,14 +59,30 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
  *
  * @param data - Time segment data with invoice counts
  * @returns Radar chart component
+ *
+ * @remarks
+ * **Important:** The `dataKey` in the Radar component MUST match the field name
+ * in TimeOfDaySegment (currently 'invoiceCount'). Mismatches will cause the chart
+ * to render with zero values.
+ *
+ * **Data Structure:**
+ * ```typescript
+ * {
+ *   segment: string;       // "Morning" | "Afternoon" | "Evening" | "Night"
+ *   invoiceCount: number;  // Used by Radar dataKey
+ *   totalAmount: number;
+ *   averageAmount: number;
+ * }
+ * ```
  */
 export function TimeOfDayChart({data}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.timeOfDay");
 
+  // IMPORTANT: This key must match the field name in TimeOfDaySegment
   const chartConfig = {
-    count: {
+    invoiceCount: {
       label: t("labels.invoiceCount"),
-      color: "hsl(var(--chart-4))",
+      color: "var(--ac-chart-4)",
     },
   };
 
@@ -80,23 +109,23 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                   y2='1'>
                   <stop
                     offset='0%'
-                    stopColor='hsl(var(--chart-4))'
+                    stopColor='var(--ac-chart-4)'
                     stopOpacity={0.8}
                   />
                   <stop
                     offset='100%'
-                    stopColor='hsl(var(--chart-4))'
+                    stopColor='var(--ac-chart-4)'
                     stopOpacity={0.2}
                   />
                 </linearGradient>
               </defs>
               <PolarGrid
-                stroke='hsl(var(--border))'
+                stroke='var(--ac-border)'
                 strokeDasharray='3 3'
               />
               <PolarAngleAxis
                 dataKey='segment'
-                tick={{fontSize: 12, fill: "hsl(var(--foreground))"}}
+                tick={{fontSize: 12, fill: "var(--ac-foreground)"}}
               />
               <PolarRadiusAxis
                 angle={90}
@@ -111,9 +140,10 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
                   />
                 }
               />
+              {/* CRITICAL: dataKey must match TimeOfDaySegment field name */}
               <Radar
-                dataKey='count'
-                stroke='hsl(var(--chart-4))'
+                dataKey='invoiceCount'
+                stroke='var(--ac-chart-4)'
                 fill='url(#colorTimeOfDay)'
                 strokeWidth={2}
               />

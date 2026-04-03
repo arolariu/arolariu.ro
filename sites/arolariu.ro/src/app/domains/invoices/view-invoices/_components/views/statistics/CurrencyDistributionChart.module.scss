@@ -1,0 +1,287 @@
+// ===========================================
+// CURRENCY DISTRIBUTION CHART STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.cardHeader {
+  padding: space(6);
+  padding-bottom: space(4);
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: space(4);
+
+  @include respond-below('md') {
+    flex-direction: column;
+    gap: space(3);
+  }
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+.cardContent {
+  padding: 0 space(6) space(6);
+}
+
+// ===========================================
+// TOGGLE BUTTON
+// ===========================================
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  padding: space(2) space(4);
+  background: color('secondary');
+  border: 1px solid color('border');
+  border-radius: space(1.5);
+  color: color('secondary-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: color-alpha('secondary', 0.8);
+    border-color: color('primary');
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+  }
+
+  @include respond-below('md') {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.toggleText {
+  white-space: nowrap;
+}
+
+// ===========================================
+// CURRENCY LIST
+// ===========================================
+.currencyList {
+  display: flex;
+  flex-direction: column;
+  gap: space(5);
+}
+
+.currencyItem {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+// ===========================================
+// CURRENCY HEADER
+// ===========================================
+.currencyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: space(4);
+
+  @include respond-below('md') {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: space(2);
+  }
+}
+
+.currencyInfo {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.currencyFlag {
+  font-size: font-size('2xl');
+  line-height: 1;
+}
+
+.currencyCode {
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  letter-spacing: 0.05em;
+}
+
+.invoiceBadge {
+  font-size: font-size('xs');
+}
+
+.currencyAmount {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+
+  @include respond-below('md') {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.amount {
+  font-size: font-size('lg');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+  white-space: nowrap;
+}
+
+.percentageBadge {
+  font-size: font-size('sm');
+  font-weight: font-weight('bold');
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+// ===========================================
+// PROGRESS BAR
+// ===========================================
+.progressBar {
+  height: 12px;
+}
+
+// ===========================================
+// SECONDARY AMOUNT
+// ===========================================
+.secondaryAmount {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: right;
+
+  @include respond-below('md') {
+    text-align: left;
+  }
+}
+
+// ===========================================
+// SINGLE CURRENCY MESSAGE
+// ===========================================
+.singleCurrency {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(4);
+  padding: space(8) space(4);
+  text-align: center;
+}
+
+.singleCurrencyIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, color-alpha('primary', 0.1), color-alpha('primary', 0.05));
+  color: color('primary');
+}
+
+.singleCurrencyFlag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: font-size('3xl');
+}
+
+.singleCurrencyText {
+  font-size: font-size('base');
+  color: color('muted-foreground');
+  max-width: 24rem;
+  line-height: 1.6;
+}
+
+.singleCurrencyStats {
+  display: flex;
+  gap: space(8);
+  margin-top: space(4);
+
+  @include respond-below('md') {
+    flex-direction: column;
+    gap: space(4);
+  }
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(2);
+}
+
+.statLabel {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+// ===========================================
+// SUMMARY SECTION
+// ===========================================
+.summarySection {
+  display: flex;
+  justify-content: space-around;
+  gap: space(6);
+  margin-top: space(6);
+  padding-top: space(6);
+  border-top: 1px solid color('border');
+
+  @include respond-below('md') {
+    flex-direction: column;
+    gap: space(4);
+  }
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(2);
+}
+
+.summaryLabel {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summaryValue {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}

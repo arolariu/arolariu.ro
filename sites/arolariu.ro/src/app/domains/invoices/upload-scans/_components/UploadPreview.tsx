@@ -11,8 +11,8 @@
 import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
-import {useCallback} from "react";
-import {TbCheck, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
+import {useCallback, useEffect, useState} from "react";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
 import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
 import styles from "./UploadPreview.module.scss";
@@ -76,7 +76,7 @@ function UploadCard({
             <div className={styles["pdfPlaceholder"]}>
               <TbFileTypePdf className={styles["pdfIcon"]} />
             </div>
-          ) : (
+          ) : preview ? (
             <Image
               src={preview}
               alt={name}
@@ -84,6 +84,10 @@ function UploadCard({
               className={styles["imagePreview"]}
               unoptimized
             />
+          ) : (
+            <div className={styles["pdfPlaceholder"]}>
+              <TbFileTypePdf className={styles["pdfIcon"]} />
+            </div>
           )}
 
           {/* Status overlay */}
@@ -106,11 +110,20 @@ function UploadCard({
           {/* Status badge */}
           <div className={styles["badgePosition"]}>
             {status === "idle" && (
-              <Badge
-                variant='secondary'
-                className={styles["badgePending"]}>
-                {t("preview.status.pending")}
-              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Badge
+                        variant='secondary'
+                        className={styles["badgePending"]}>
+                        {t("preview.status.pending")}
+                      </Badge>
+                    }
+                  />
+                  <TooltipContent side='top'>{t("preview.pendingTooltip")}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             {status === "uploading" && (
               <Badge
@@ -190,13 +203,44 @@ function UploadCard({
   );
 }
 
+/** Number of scans to display per page on mobile devices */
+const MOBILE_PAGE_SIZE = 7;
+
+/** Number of scans to display per page on desktop devices */
+const DESKTOP_PAGE_SIZE = 50;
+
 /**
  * Preview component for pending scan uploads.
  * Displays a grid of files with status indicators.
+ * Paginates uploads with different page sizes for mobile (7) and desktop (50).
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const t = useTranslations("Invoices.UploadScans");
   const {pendingUploads, removeFiles} = useScanUpload();
+  const [page, setPage] = useState(0);
+
+  // Detect mobile viewport
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = (): void => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Calculate pagination
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
+  const totalPages = Math.ceil(pendingUploads.length / pageSize);
+  const currentPageUploads = pendingUploads.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Adjust page if current page becomes empty after removal
+  useEffect(() => {
+    if (page > 0 && currentPageUploads.length === 0 && pendingUploads.length > 0) {
+      setPage((p) => Math.max(0, p - 1));
+    }
+  }, [page, currentPageUploads.length, pendingUploads.length]);
 
   if (pendingUploads.length === 0) {
     return null;
@@ -211,7 +255,7 @@ export default function UploadPreview(): React.JSX.Element | null {
       <StaggerContainer
         className={styles["grid"]}
         staggerDelay={0.05}>
-        {pendingUploads.map((upload) => (
+        {currentPageUploads.map((upload) => (
           <StaggerItem key={upload.id}>
             <UploadCard
               id={upload.id}
@@ -228,6 +272,34 @@ export default function UploadPreview(): React.JSX.Element | null {
           </StaggerItem>
         ))}
       </StaggerContainer>
+
+      {totalPages > 1 && (
+        <div className={styles["pagination"]}>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}>
+            <TbChevronLeft />
+            {t("preview.pagination.previous")}
+          </Button>
+          <span className={styles["paginationInfo"]}>
+            {t("preview.pagination.pageInfo", {
+              current: String(page + 1),
+              total: String(totalPages),
+              count: String(pendingUploads.length),
+            })}
+          </span>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}>
+            {t("preview.pagination.next")}
+            <TbChevronRight />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

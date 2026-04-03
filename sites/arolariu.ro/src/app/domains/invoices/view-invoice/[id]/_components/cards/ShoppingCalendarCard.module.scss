@@ -10,6 +10,25 @@
   @include truncate;
 }
 
+.invoiceLink {
+  display: block;
+  color: color('primary');
+  text-decoration: none;
+  @include truncate;
+  @include transition(color);
+
+  &:hover {
+    color: color('primary');
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+    border-radius: radius('sm');
+  }
+}
+
 .moreText {
   color: color('muted-foreground');
 }
@@ -50,23 +69,23 @@
 }
 
 .legendBlock1 {
-  background-color: color-alpha('muted', 0.5);
-}
-
-.legendBlock2 {
   background-color: color-alpha('primary', 0.2);
 }
 
-.legendBlock3 {
+.legendBlock2 {
   background-color: color-alpha('primary', 0.4);
 }
 
-.legendBlock4 {
+.legendBlock3 {
   background-color: color-alpha('primary', 0.6);
 }
 
-.legendBlock5 {
+.legendBlock4 {
   background-color: color-alpha('primary', 0.8);
+}
+
+.legendBlock5 {
+  background-color: color('primary');
 }
 
 .statsGrid {
@@ -154,18 +173,74 @@
 .dayButton {
   height: space(9);
   width: space(9);
+  aspect-ratio: 1;
   padding: 0;
   font-weight: font-weight('normal');
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: radius('md');
+  position: relative;
+  overflow: hidden;
   @include transition(all);
 }
 
-.dayButtonRing {
-  outline: 2px solid color('primary');
-  outline-offset: 1px;
+.dayButtonHighlight {
+  background-color: color('primary');
+  color: color('primary-foreground');
+  font-weight: font-weight('semibold');
+
+  &:hover {
+    background-color: color('primary');
+    color: color('primary-foreground');
+    opacity: 0.9;
+  }
+}
+
+// Intensity classes for spending heatmap
+.intensity1 {
+  background-color: color-alpha('primary', 0.2);
+  color: color('foreground');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.3);
+  }
+}
+
+.intensity2 {
+  background-color: color-alpha('primary', 0.4);
+  color: color('foreground');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.5);
+  }
+}
+
+.intensity3 {
+  background-color: color-alpha('primary', 0.6);
+  color: color('primary-foreground');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.7);
+  }
+}
+
+.intensity4 {
+  background-color: color-alpha('primary', 0.8);
+  color: color('primary-foreground');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.9);
+  }
+}
+
+.intensity5 {
+  background-color: color('primary');
+  color: color('primary-foreground');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.9);
+  }
 }
 
 .iconMutedShrink {
@@ -198,6 +273,7 @@
 .dayTooltip {
   max-width: 20rem;
   font-size: font-size('xs');
+  pointer-events: auto;
 
   & > * + * {
     margin-top: space(2);

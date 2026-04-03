@@ -204,7 +204,7 @@ describe("patchInvoice", () => {
 
       expect(result).toEqual({
         success: false,
-        error: "Failed to update invoice: 404 Not Found",
+        error: "Failed to update the invoice. Please check your input and try again.",
       });
     });
 
@@ -225,7 +225,7 @@ describe("patchInvoice", () => {
 
       expect(result).toEqual({
         success: false,
-        error: "Failed to update invoice: 401 Unauthorized",
+        error: "Failed to update the invoice. Please check your input and try again.",
       });
     });
 
@@ -246,7 +246,7 @@ describe("patchInvoice", () => {
 
       expect(result).toEqual({
         success: false,
-        error: "Failed to update invoice: 403 Forbidden",
+        error: "Failed to update the invoice. Please check your input and try again.",
       });
     });
 
@@ -267,7 +267,7 @@ describe("patchInvoice", () => {
 
       expect(result).toEqual({
         success: false,
-        error: "Failed to update invoice: 500 Internal Server Error",
+        error: "A server error occurred. Please try again later.",
       });
     });
   });

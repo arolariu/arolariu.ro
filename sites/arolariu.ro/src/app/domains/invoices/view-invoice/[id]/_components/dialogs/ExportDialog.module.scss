@@ -1,0 +1,84 @@
+/**
+ * Styles for the ExportDialog component.
+ *
+ * @remarks
+ * - Selection card pattern with rich visual hierarchy
+ * - Vertical stack layout (no grid) for better mobile experience
+ * - Icon, title, description, and arrow for each card
+ * - Hover and disabled states with proper accessibility
+ * - Dark mode support with proper contrast
+ */
+@use '../../../../../../../styles/abstracts' as *;
+
+.dialogContent {
+  max-width: 600px;
+  width: 90vw;
+}
+
+.exportOptions {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+  margin-top: space(4);
+}
+
+.exportCard {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  padding: space(5);
+  border: 1px solid color('border');
+  border-radius: radius('md');
+  background: color('card');
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+
+  &:hover:not(:disabled) {
+    border-color: color('primary');
+    background: color('accent');
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.exportCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: space(10);
+  height: space(10);
+  border-radius: radius('md');
+  background: color('primary');
+  color: color('primary-foreground');
+  font-size: font-size('lg');
+  flex-shrink: 0;
+}
+
+.exportCardContent {
+  flex: 1;
+
+  h3 {
+    font-size: font-size('sm');
+    font-weight: font-weight('semibold');
+    margin: 0;
+    color: color('foreground');
+  }
+
+  p {
+    font-size: font-size('xs');
+    margin: space(1) 0 0;
+    color: color('muted-foreground');
+    line-height: 1.4;
+  }
+}
+
+.exportCardArrow {
+  color: color('muted-foreground');
+  flex-shrink: 0;
+  font-size: font-size('lg');
+}

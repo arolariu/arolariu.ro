@@ -9,7 +9,6 @@ import "server-only";
 import {addSpanEvent, injectTraceContextHeaders, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
 import {fetchApiUrl} from "@/lib/config/configProxy";
 import {type JWTPayload, SignJWT, jwtVerify} from "jose";
-import {Blob} from "node:buffer";
 
 /**
  * This async function converts a base64 string to a Blob object.
@@ -208,6 +207,74 @@ export function mapHttpStatusToErrorCode(status: number): ServerActionErrorCode 
   if (status === 400 || status === 422) return "VALIDATION_ERROR";
   if (status >= 500) return "SERVER_ERROR";
   return "UNKNOWN_ERROR";
+}
+
+/**
+ * Parses backend error responses with specific status code handling.
+ * Extracts detail from JSON response body when available.
+ *
+ * @param status - HTTP status code from response
+ * @param body - Response body as string
+ * @returns Human-readable error message
+ *
+ * @remarks
+ * This function provides user-friendly messages for common HTTP status codes:
+ * - 402: Payment/subscription required
+ * - 409: Conflict (concurrent modification)
+ * - 413: Payload too large
+ * - 429: Rate limiting
+ *
+ * For other status codes, attempts to parse JSON and extract `detail` field.
+ * Falls back to raw body text if JSON parsing fails.
+ *
+ * @example
+ * ```typescript
+ * const response = await fetch('/api/invoices');
+ * if (!response.ok) {
+ *   const body = await response.text();
+ *   const message = parseBackendError(response.status, body);
+ *   console.error(message); // "Too many requests. Please wait a moment and try again."
+ * }
+ * ```
+ */
+export function parseBackendError(status: number, body: string): string {
+  switch (status) {
+    case 429:
+      return "Too many requests. Please wait a moment and try again.";
+    case 402:
+      return "This feature requires a paid subscription.";
+    case 409:
+      return "Conflict: this resource was modified by another user.";
+    case 413: {
+      // Try to parse the actual limit from the backend response
+      try {
+        const parsed = JSON.parse(body) as {detail?: string; maxSize?: string};
+        if (parsed.maxSize) {
+          return `File is too large. Maximum size is ${parsed.maxSize}.`;
+        }
+        if (parsed.detail) {
+          return parsed.detail;
+        }
+      } catch {
+        // Fallback if parsing fails
+      }
+      return "File is too large. Please check the size limit and try again.";
+    }
+    default: {
+      try {
+        const parsed = JSON.parse(body) as {detail?: string};
+        if (parsed.detail) {
+          return parsed.detail;
+        }
+      } catch {
+        // If JSON parsing fails, sanitize the raw body
+        const sanitized = body.slice(0, 200);
+        return sanitized || "An unknown error occurred.";
+      }
+      // Fallback for successful JSON parse but no detail field
+      return "An unknown error occurred.";
+    }
+  }
 }
 
 /**

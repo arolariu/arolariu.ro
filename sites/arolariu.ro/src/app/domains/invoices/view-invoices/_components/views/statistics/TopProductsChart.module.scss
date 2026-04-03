@@ -1,0 +1,227 @@
+// ===========================================
+// TOP PRODUCTS CHART STYLES
+// ===========================================
+@use '../../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.card {
+  background: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.cardHeader {
+  padding: space(6);
+  padding-bottom: space(4);
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  color: color('foreground');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+.cardContent {
+  padding: 0 space(6) space(6);
+}
+
+// ===========================================
+// TABLE
+// ===========================================
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: space(2);
+  border: 1px solid color('border');
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: font-size('sm');
+
+  thead {
+    background: color('muted');
+    border-bottom: 1px solid color('border');
+  }
+
+  th {
+    padding: space(3) space(4);
+    text-align: left;
+    font-weight: font-weight('semibold');
+    font-size: font-size('xs');
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: color('muted-foreground');
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid color('border');
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: color('muted');
+      opacity: 0.5;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    padding: space(3) space(4);
+    white-space: nowrap;
+  }
+}
+
+.headerRank {
+  width: 60px;
+}
+
+.headerProduct {
+  width: auto;
+  min-width: 200px;
+}
+
+.headerQuantity,
+.headerCount {
+  width: 100px;
+  text-align: right;
+}
+
+.headerSpent,
+.headerAverage {
+  width: 120px;
+  text-align: right;
+}
+
+.cellRank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cellProduct {
+  font-weight: font-weight('medium');
+}
+
+.cellQuantity,
+.cellCount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cellSpent,
+.cellAverage {
+  text-align: right;
+  font-weight: font-weight('semibold');
+  font-variant-numeric: tabular-nums;
+}
+
+.productName {
+  display: block;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ===========================================
+// RANK BADGES
+// ===========================================
+.rankBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: font-weight('bold');
+
+  &.gold {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #854d0e;
+  }
+
+  &.silver {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+    color: #3f3f46;
+  }
+
+  &.bronze {
+    background: linear-gradient(135deg, #cd7f32 0%, #e5a05d 100%);
+    color: #431407;
+  }
+}
+
+.rankNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color('muted');
+  color: color('muted-foreground');
+  font-weight: font-weight('semibold');
+  font-size: font-size('sm');
+}
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.emptyText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-align: center;
+}
+
+// ===========================================
+// RESPONSIVE
+// ===========================================
+@include respond-to('sm') {
+  .table {
+    font-size: font-size('xs');
+
+    th,
+    td {
+      padding: space(2) space(3);
+    }
+  }
+
+  .productName {
+    max-width: 150px;
+  }
+
+  .rankBadge {
+    width: 28px;
+    height: 28px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .rankNumber {
+    width: 28px;
+    height: 28px;
+    font-size: font-size('xs');
+  }
+}

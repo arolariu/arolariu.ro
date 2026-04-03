@@ -5,6 +5,7 @@
   border-radius: radius('lg');
   border: 1px solid color('border');
   padding: space(2) space(3);
+  pointer-events: auto;
   @include shadow('md');
 }
 
@@ -24,10 +25,39 @@
   margin-top: space(1);
 }
 
-.tooltipCurrent {
-  color: color('primary');
-  font-size: font-size('xs');
+.tooltipCurrentBadge {
   margin-top: space(1);
+}
+
+.tooltipInvoices {
+  list-style: none;
+  padding: 0;
+  margin: space(2) 0 0;
+  border-top: 1px solid color('border');
+  padding-top: space(2);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tooltipInvoiceItem {
+  padding: space(1) 0;
+  font-size: font-size('xs');
+}
+
+.tooltipInvoiceLink {
+  color: color('primary');
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.tooltipMore {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  font-style: italic;
+  padding-top: space(1);
 }
 
 .card {

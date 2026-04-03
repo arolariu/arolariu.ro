@@ -10,6 +10,7 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .section {
@@ -64,6 +65,33 @@
 
   @include respond-to('lg') {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// ===========================================
+// SECTION HEADERS
+// ===========================================
+.sectionHeader {
+  margin-bottom: space(4);
+}
+
+.sectionTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('3xl');
+  }
+}
+
+.sectionSubtitle {
+  color: color('muted-foreground');
+  margin-top: space(1);
+  font-size: font-size('sm');
+
+  @include respond-to('md') {
+    font-size: font-size('base');
   }
 }
 

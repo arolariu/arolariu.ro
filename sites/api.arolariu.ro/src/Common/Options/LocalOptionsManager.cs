@@ -63,7 +63,7 @@ using Microsoft.Extensions.Options;
 ///     "SqlConnectionString": "Server=(localdb)\\mssqllocaldb;Database=ArolariumDev;Trusted_Connection=true;",
 ///     "NoSqlConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
 ///     "StorageAccountEndpoint": "http://127.0.0.1:10000/devstoreaccount1",
-///     "OpenAIEndpoint": "https://api.openai.com/v1",
+///     "CognitiveServicesEndpoint": "https://cognitiveservices.localhost/",
 ///     "ApplicationName": "AROLARIU.RO Backend API (Development)"
 ///   }
 /// }

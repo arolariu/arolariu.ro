@@ -3,7 +3,7 @@
 import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {useWindowSize} from "@arolariu/components";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useMemo} from "react";
 import {useFilteredInvoices} from "../../_hooks/useFilteredInvoices";
 import {useInvoiceFilters} from "../../_hooks/useInvoiceFilters";
 import FilterBar from "../filters/FilterBar";
@@ -67,7 +67,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   // Pagination for filtered results
   const {paginatedItems, currentPage, totalPages, setCurrentPage, setPageSize, pageSize} = usePaginationWithSearch<Invoice>({
     items: filteredInvoices,
-    initialPageSize: 10,
+    initialPageSize: 20,
     searchQuery: "", // Search is handled by URL filters
   });
 
@@ -118,6 +118,33 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
   );
 
   /**
+   * Parse sort params into field and direction for TableView.
+   */
+  const {sortBy, sortDirection} = useMemo(() => {
+    return {sortBy: filters.sortBy, sortDirection: filters.sortOrder};
+  }, [filters.sortBy, filters.sortOrder]);
+
+  /**
+   * Handle column sort click.
+   * Toggles direction if same field, otherwise defaults to desc (or asc for name).
+   * Always sets BOTH sortBy and sortOrder together.
+   */
+  const handleSort = useCallback(
+    (field: "date" | "amount" | "name") => {
+      if (filters.sortBy === field) {
+        // Toggle direction
+        const newOrder = filters.sortOrder === "asc" ? "desc" : "asc";
+        setFilters({sortBy: field, sortOrder: newOrder});
+      } else {
+        // New field — default direction
+        setFilters({sortBy: field, sortOrder: field === "name" ? "asc" : "desc"});
+      }
+      setCurrentPage(1); // Reset to first page when sort changes
+    },
+    [filters.sortBy, filters.sortOrder, setFilters, setCurrentPage],
+  );
+
+  /**
    * Render view content based on view mode from URL.
    */
   const viewContent =
@@ -130,9 +157,20 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
         handlePrevPage={handlePrevPage}
         handleNextPage={handleNextPage}
         handlePageSizeChange={handlePageSizeChange}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
     ) : (
-      <GridView invoices={paginatedItems} />
+      <GridView
+        invoices={paginatedItems}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePrevPage={handlePrevPage}
+        handleNextPage={handleNextPage}
+        handlePageSizeChange={handlePageSizeChange}
+      />
     );
 
   return (

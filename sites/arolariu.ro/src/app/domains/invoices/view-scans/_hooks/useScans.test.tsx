@@ -3,14 +3,28 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans.test
  */
 
-import {ScanStatus, ScanType, type CachedScan} from "@/types/scans";
-import {act, renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-
 // Create mock store state and actions
 const mockStoreState = {
-  scans: [] as CachedScan[],
-  selectedScans: [] as CachedScan[],
+  scans: [] as Array<{
+    id: string;
+    userIdentifier: string;
+    name: string;
+    blobUrl: string;
+    status: number;
+    type: number;
+    createdAt: Date;
+    lastUpdatedAt: Date;
+  }>,
+  selectedScans: [] as Array<{
+    id: string;
+    userIdentifier: string;
+    name: string;
+    blobUrl: string;
+    status: number;
+    type: number;
+    createdAt: Date;
+    lastUpdatedAt: Date;
+  }>,
   hasHydrated: true,
   isSyncing: false,
   lastSyncTimestamp: null as Date | null,
@@ -23,6 +37,25 @@ const mockStoreState = {
   removeScan: vi.fn(),
 };
 
+// Mock server-only modules FIRST
+vi.mock("@/instrumentation.server", () => ({
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
+
+// Mock the fetchScans server action
+const mockFetchScans = vi.fn();
+vi.mock("@/lib/actions/scans", () => ({
+  fetchScans: () => mockFetchScans(),
+}));
+
 // Mock the scans store
 vi.mock("@/stores", () => ({
   useScansStore: vi.fn((selector: (state: typeof mockStoreState) => unknown) => selector(mockStoreState)),
@@ -33,11 +66,12 @@ vi.mock("zustand/react/shallow", () => ({
   useShallow: vi.fn((fn: unknown) => fn),
 }));
 
-// Mock the fetchScans server action
-const mockFetchScans = vi.fn();
-vi.mock("@/lib/actions/scans", () => ({
-  fetchScans: () => mockFetchScans(),
-}));
+// Import vitest functions AFTER mocks
+import {act, renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+
+// Import types
+import {ScanStatus, ScanType, type CachedScan} from "@/types/scans";
 
 // Import after mocks
 import {useScans} from "./useScans";

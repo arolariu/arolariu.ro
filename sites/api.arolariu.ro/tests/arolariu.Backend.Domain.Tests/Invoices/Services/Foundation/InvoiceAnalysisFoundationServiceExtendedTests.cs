@@ -27,7 +27,7 @@ using Xunit;
 /// </summary>
 public sealed class InvoiceAnalysisFoundationServiceExtendedTests
 {
-  private readonly Mock<IOpenAiBroker> mockOpenAiBroker;
+  private readonly Mock<IClassifierBroker> mockOpenAiBroker;
   private readonly Mock<ITranslatorBroker> mockTranslatorBroker;
   private readonly Mock<IFormRecognizerBroker> mockFormRecognizerBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
@@ -39,7 +39,7 @@ public sealed class InvoiceAnalysisFoundationServiceExtendedTests
   /// </summary>
   public InvoiceAnalysisFoundationServiceExtendedTests()
   {
-    mockOpenAiBroker = new Mock<IOpenAiBroker>();
+    mockOpenAiBroker = new Mock<IClassifierBroker>();
     mockTranslatorBroker = new Mock<ITranslatorBroker>();
     mockFormRecognizerBroker = new Mock<IFormRecognizerBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();

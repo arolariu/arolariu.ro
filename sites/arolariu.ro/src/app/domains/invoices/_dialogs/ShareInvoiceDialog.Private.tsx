@@ -18,7 +18,8 @@ export interface PrivateModeProps {
   readonly onBack: () => void;
   readonly email: string;
   readonly onEmailChange: (email: string) => void;
-  readonly onSendEmail: (e: React.SubmitEvent) => void;
+  readonly onSendEmail: (e: React.FormEvent) => void;
+  readonly isSending?: boolean;
 }
 
 // ============================================================================
@@ -33,14 +34,15 @@ export interface PrivateModeProps {
  * - Back button to return to selection
  * - Informational alert about private sharing
  * - Email input form with validation
- * - Send invitation button
+ * - Send invitation button (calls `sendInvoiceShareEmail` server action which internally calls `/api/email`)
  *
- * Email validation uses a simple regex pattern for client-side validation.
+ * Email validation uses HTML5 email input type for client-side validation.
+ * The button is disabled while sending to prevent duplicate requests.
  *
  * @param props - Component props
  * @returns The private sharing mode UI
  */
-export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: PrivateModeProps): React.JSX.Element {
+export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: PrivateModeProps): React.JSX.Element {
   const t = useTranslations("Invoices.Shared.shareInvoiceDialogPrivate");
   return (
     <div className={styles["body"]}>
@@ -73,17 +75,17 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
             value={email}
             // eslint-disable-next-line react/jsx-no-bind -- input always changes.
             onChange={(e) => onEmailChange(e.target.value)}
+            disabled={isSending}
             required
           />
           <p className={styles["emailHint"]}>{t("emailHint")}</p>
         </div>
         <Button
           type='submit'
-          // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
-          disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
+          disabled={isSending || !email}
           className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
-          {t("sendInvitation")}
+          {isSending ? t("sending") : t("sendInvitation")}
         </Button>
       </form>
     </div>

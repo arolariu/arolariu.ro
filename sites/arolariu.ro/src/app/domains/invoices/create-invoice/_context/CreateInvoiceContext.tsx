@@ -12,9 +12,10 @@
  * - Invoice creation orchestration
  */
 
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import {useScansStore} from "@/stores";
-import {InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
+import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
@@ -200,7 +201,9 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       else if (firstScan.scanType === "PNG") scanType = InvoiceScanType.PNG;
       else if (firstScan.scanType === "PDF") scanType = InvoiceScanType.PDF;
 
-      // Create invoice with first scan
+      // Create invoice with first scan and ALL invoice details in metadata
+      // Note: All form fields (name, category, paymentType, transactionDate, description)
+      // are included in metadata. Backend should extract these to populate top-level Invoice fields.
       const invoice = await createInvoice({
         initialScan: {
           scanType,
@@ -226,6 +229,11 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
 
       // Navigate to view invoice page — user can trigger analysis from there
       router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+
+      // Fire-and-forget auto-analysis after successful creation
+      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+        console.error("Background invoice analysis failed:", error);
+      });
     } catch (error) {
       console.error("Error creating invoice:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create invoice. Please try again.");

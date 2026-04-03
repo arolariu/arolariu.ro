@@ -1,5 +1,7 @@
 "use client";
 
+import {getTransactionYear, toRON} from "@/lib/currency";
+import {toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {useMemo} from "react";
 import type {FilterState} from "./useInvoiceFilters";
@@ -19,7 +21,7 @@ import type {FilterState} from "./useInvoiceFilters";
  * - Payment types: Multi-select filter (OR logic)
  *
  * **Sorting:**
- * Supports sorting by date, amount, and name in ascending/descending order.
+ * Supports sorting by date, amount, and name with separate field and direction parameters.
  *
  * @param invoices - Array of invoices to filter
  * @param filters - Filter state containing all filter criteria
@@ -35,7 +37,8 @@ import type {FilterState} from "./useInvoiceFilters";
  *   amountMax: 100,
  *   categories: [InvoiceCategory.GROCERY],
  *   paymentTypes: [PaymentType.Card],
- *   sortBy: "date-desc",
+ *   sortBy: "date",
+ *   sortOrder: "desc",
  *   view: "table"
  * });
  * ```
@@ -56,20 +59,20 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
 
     // Apply date range filter (dates come as ISO strings from URL)
     if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
+      const fromDate = toSafeDate(filters.dateFrom);
       fromDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter((invoice) => {
-        const transactionDate = new Date(invoice.paymentInformation.transactionDate);
+        const transactionDate = toSafeDate(invoice.paymentInformation.transactionDate);
         transactionDate.setHours(0, 0, 0, 0);
         return transactionDate >= fromDate;
       });
     }
 
     if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
+      const toDate = toSafeDate(filters.dateTo);
       toDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter((invoice) => {
-        const transactionDate = new Date(invoice.paymentInformation.transactionDate);
+        const transactionDate = toSafeDate(invoice.paymentInformation.transactionDate);
         return transactionDate <= toDate;
       });
     }
@@ -93,50 +96,39 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
       filtered = filtered.filter((invoice) => filters.paymentTypes.includes(invoice.paymentInformation.paymentType));
     }
 
-    // Apply sorting
+    // Apply sorting (only if both sortBy and sortOrder are set)
     const sorted = [...filtered];
-    switch (filters.sortBy) {
-      case "date-desc": {
-        sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
-          return dateB - dateA;
-        });
-        break;
-      }
-      case "date-asc": {
-        sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
-          return dateA - dateB;
-        });
-        break;
-      }
-      case "amount-desc": {
-        sorted.sort((a, b) => b.paymentInformation.totalCostAmount - a.paymentInformation.totalCostAmount);
-        break;
-      }
-      case "amount-asc": {
-        sorted.sort((a, b) => a.paymentInformation.totalCostAmount - b.paymentInformation.totalCostAmount);
-        break;
-      }
-      case "name-asc": {
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      }
-      case "name-desc": {
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      }
-      default: {
-        // Default to date descending
-        sorted.sort((a, b) => {
-          const dateA = new Date(a.paymentInformation.transactionDate).getTime();
-          const dateB = new Date(b.paymentInformation.transactionDate).getTime();
-          return dateB - dateA;
-        });
+    if (filters.sortBy !== null && filters.sortOrder !== null) {
+      const sortField = filters.sortBy; // "date" | "amount" | "name"
+      const sortOrder = filters.sortOrder; // "asc" | "desc"
+      const direction = sortOrder === "asc" ? 1 : -1;
+
+      switch (sortField) {
+        case "date": {
+          sorted.sort((a, b) => {
+            const dateA = toSafeDate(a.paymentInformation.transactionDate).getTime();
+            const dateB = toSafeDate(b.paymentInformation.transactionDate).getTime();
+            return direction * (dateA - dateB);
+          });
+          break;
+        }
+        case "amount": {
+          sorted.sort((a, b) => {
+            const yearA = getTransactionYear(a.paymentInformation?.transactionDate, a.createdAt);
+            const yearB = getTransactionYear(b.paymentInformation?.transactionDate, b.createdAt);
+            const amountA = toRON(a.paymentInformation.totalCostAmount, a.paymentInformation.currency?.code ?? "RON", yearA);
+            const amountB = toRON(b.paymentInformation.totalCostAmount, b.paymentInformation.currency?.code ?? "RON", yearB);
+            return direction * (amountA - amountB);
+          });
+          break;
+        }
+        case "name": {
+          sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
+          break;
+        }
       }
     }
+    // If no sort params, return in natural order (no sorting)
 
     return sorted;
   }, [invoices, filters]);

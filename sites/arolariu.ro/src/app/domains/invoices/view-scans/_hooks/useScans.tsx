@@ -9,7 +9,7 @@ import {fetchScans} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
 
 /**
@@ -33,7 +33,7 @@ interface UseScansOutput {
   /** Clear selection */
   clearSelection: () => void;
   /** Sync scans with Azure */
-  syncScans: () => Promise<void>;
+  syncScans: (manual?: boolean) => Promise<void>;
   /** Remove a scan from store and optionally delete from Azure */
   removeScan: (scanId: string) => void;
 }
@@ -48,6 +48,8 @@ interface UseScansOutput {
  * Authentication is handled by the server actions.
  */
 export function useScans(): UseScansOutput {
+  const isMountedRef = useRef(true);
+
   const {
     scans,
     selectedScans,
@@ -85,33 +87,45 @@ export function useScans(): UseScansOutput {
    * Sync scans with Azure Blob Storage.
    * Fetches all scans for the user and merges with local cache.
    * Authentication is handled by the server action.
+   *
+   * @param manual - If true, shows success toast. If false (auto-sync), no toast.
    */
-  const syncScans = useCallback(async (): Promise<void> => {
-    if (isSyncing) return;
+  const syncScans = useCallback(
+    async (manual = false): Promise<void> => {
+      if (isSyncing) return;
 
-    setIsSyncing(true);
+      setIsSyncing(true);
 
-    try {
-      const fetchedScans = await fetchScans({
-        includeArchived: false,
-      });
+      try {
+        const fetchedScans = await fetchScans({
+          includeArchived: false,
+        });
 
-      // Convert to cached scans with cache timestamp
-      const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
-        ...scan,
-        cachedAt: new Date(),
-      }));
+        // Convert to cached scans with cache timestamp
+        const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+          ...scan,
+          cachedAt: new Date(),
+        }));
 
-      setScans(cachedScans);
-      setLastSyncTimestamp(new Date());
-      toast.success("Scans synced successfully");
-    } catch (error) {
-      console.error("Failed to sync scans:", error);
-      toast.error("Failed to sync scans");
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp]);
+        setScans(cachedScans);
+        setLastSyncTimestamp(new Date());
+
+        // Only show success toast for manual sync
+        if (manual && isMountedRef.current) {
+          toast.success("Scans synced successfully");
+        }
+      } catch (error) {
+        console.error("Failed to sync scans:", error);
+        // Only show error toast if component is still mounted
+        if (isMountedRef.current) {
+          toast.error("Failed to sync scans");
+        }
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp],
+  );
 
   // Auto-sync on mount when hydrated
   useEffect(() => {
@@ -119,6 +133,13 @@ export function useScans(): UseScansOutput {
       syncScans();
     }
   }, [hasHydrated, lastSyncTimestamp, syncScans]);
+
+  // Cleanup: mark component as unmounted
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return {
     scans: readyScans,

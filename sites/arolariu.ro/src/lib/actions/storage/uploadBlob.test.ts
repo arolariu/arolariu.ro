@@ -3,17 +3,26 @@
  * @module sites/arolariu.ro/src/lib/actions/storage/uploadBlob/tests
  */
 
-import {BlobServiceClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-// Create hoisted mocks - must be before any imports that use the mocked modules
-const {mockConvertBase64ToBlob} = vi.hoisted(() => ({
-  mockConvertBase64ToBlob: vi.fn(),
-}));
+const {mockConvertBase64ToBlob, mockGetContainerClient, mockGetBlockBlobClient, mockUploadData, mockArrayBuffer, mockCreateBlobClient} =
+  vi.hoisted(() => {
+    const _mockGetContainerClient = vi.fn();
+    return {
+      mockConvertBase64ToBlob: vi.fn(),
+      mockGetContainerClient: _mockGetContainerClient,
+      mockGetBlockBlobClient: vi.fn(),
+      mockUploadData: vi.fn(),
+      mockArrayBuffer: vi.fn(),
+      mockCreateBlobClient: vi.fn().mockResolvedValue({getContainerClient: _mockGetContainerClient}),
+    };
+  });
 
-// Mock modules before importing the module under test
-vi.mock("@azure/identity");
-vi.mock("@azure/storage-blob");
+// Override global mock with configurable createBlobClient
+vi.mock("@/lib/azure/storageClient", () => ({
+  createBlobClient: mockCreateBlobClient,
+  rewriteAzuriteUrl: vi.fn((url: string) => url),
+}));
 vi.mock("./fetchConfig");
 vi.mock("@/lib/utils.server", () => ({
   convertBase64ToBlob: mockConvertBase64ToBlob,
@@ -23,15 +32,12 @@ import fetchConfigurationValue from "./fetchConfig";
 import uploadBlob from "./uploadBlob";
 
 describe("uploadBlob", () => {
-  const mockUploadData = vi.fn();
-  const mockGetBlockBlobClient = vi.fn();
-  const mockGetContainerClient = vi.fn();
-  const mockArrayBuffer = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
 
     (fetchConfigurationValue as any).mockResolvedValue("https://test.blob.core.windows.net");
+
+    mockCreateBlobClient.mockResolvedValue({getContainerClient: mockGetContainerClient});
 
     mockArrayBuffer.mockResolvedValue(new ArrayBuffer(8));
     mockConvertBase64ToBlob.mockResolvedValue({
@@ -51,12 +57,6 @@ describe("uploadBlob", () => {
 
     mockGetContainerClient.mockReturnValue({
       getBlockBlobClient: mockGetBlockBlobClient,
-    });
-
-    (BlobServiceClient as any).mockImplementation(function () {
-      return {
-        getContainerClient: mockGetContainerClient,
-      };
     });
 
     // Mock crypto.randomUUID

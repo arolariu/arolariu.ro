@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/KPISummaryRow
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -52,7 +53,7 @@ function KPICard({icon, label, value, subtitle, trend, index}: KPICardProps): Re
             {trend ? (
               <div className={`${styles["trend"]} ${trend.isPositive ? styles["trendUp"] : styles["trendDown"]}`}>
                 {trend.isPositive ? <TbTrendingUp size={16} /> : <TbTrendingDown size={16} />}
-                <span>{Math.abs(trend.value).toFixed(1)}%</span>
+                <span>{formatAmount(Math.abs(trend.value), "en-US", 1)}%</span>
               </div>
             ) : null}
           </div>
@@ -77,7 +78,7 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
     {
       icon: <TbCurrencyDollar size={24} />,
       label: t("totalSpending"),
-      value: `${data.totalSpending.toFixed(2)} ${currency}`,
+      value: `${formatAmount(data.totalSpending)} ${currency}`,
       subtitle: `${data.invoiceCount} invoices`,
     },
     {
@@ -85,7 +86,7 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
       label: t("invoiceCount"),
       value: data.invoiceCount.toString(),
       subtitle: t("avgPerInvoice", {
-        amount: data.invoiceCount > 0 ? (data.totalSpending / data.invoiceCount).toFixed(2) : "0.00",
+        amount: data.invoiceCount > 0 ? formatAmount(data.totalSpending / data.invoiceCount) : formatAmount(0),
       }),
     },
     {
@@ -97,7 +98,7 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
     {
       icon: <TbShoppingCart size={24} />,
       label: t("averageItems"),
-      value: data.averageItemsPerInvoice.toFixed(1),
+      value: formatAmount(data.averageItemsPerInvoice, "en-US", 1),
       subtitle: t("acrossInvoices", {count: data.invoiceCount}),
     },
   ];

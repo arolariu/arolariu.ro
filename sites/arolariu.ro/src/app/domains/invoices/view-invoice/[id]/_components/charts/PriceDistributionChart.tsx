@@ -1,8 +1,20 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {PriceRange} from "../../_utils/analytics";
 import styles from "./PriceDistributionChart.module.scss";
 
@@ -40,11 +52,11 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   const chartConfig = {
     count: {
       label: t("labels.items"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
-  const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `hsl(var(--chart-${(index % 5) + 1}))`}));
+  const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `var(--ac-chart-${(index % 5) + 1})`}));
 
   return (
     <Card className={styles["card"]}>

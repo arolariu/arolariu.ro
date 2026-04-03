@@ -197,20 +197,6 @@
       "tags": {}
     },
     {
-      "key": "Endpoints:AI:OpenAI",
-      "value": "",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Endpoints:AI:OpenAI",
-      "value": "",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
       "key": "Endpoints:AI:OCR:Key",
       "value": "",
       "label": "DEVELOPMENT",

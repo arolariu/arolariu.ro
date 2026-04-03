@@ -132,6 +132,86 @@
   gap: space(2);
 }
 
+.paymentsSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.sectionTitle {
+  font-weight: font-weight('semibold');
+  font-size: font-size('base');
+}
+
+.paymentsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.paymentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: space(2) space(3);
+  border-radius: radius('md');
+  background-color: color('muted');
+}
+
+.paymentAmount {
+  font-weight: font-weight('medium');
+}
+
+.taxSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.taxTable {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.taxRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  padding: space(2) space(3);
+  border-radius: radius('md');
+  background-color: color('muted');
+}
+
+.taxInfo {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.taxDescription {
+  font-weight: font-weight('medium');
+}
+
+.taxRate {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.taxAmounts {
+  display: flex;
+  gap: space(4);
+  font-size: font-size('sm');
+}
+
+.taxNetAmount {
+  color: color('muted-foreground');
+}
+
+.taxAmount {
+  font-weight: font-weight('medium');
+}
+
 // ===========================================
 // PRINT STYLES
 // ===========================================

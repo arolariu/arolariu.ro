@@ -27,7 +27,7 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {PaymentInformation, Product, Recipe} from "./index.ts";
+import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from "./index.ts";
 
 /**
  * Represents the AI analysis options for invoice processing.
@@ -310,6 +310,29 @@ export interface Invoice extends NamedEntity<string> {
    * Additional metadata for the invoice.
    */
   additionalMetadata: Record<string, string>;
+
+  /**
+   * Receipt type as classified by Document Intelligence.
+   * Values: "Itemized", "Meal", "Gas", "Parking", "Hotel", "CreditCard", or empty.
+   */
+  receiptType: string;
+
+  /**
+   * Country or region where the receipt was issued (ISO code).
+   */
+  countryRegion: string;
+
+  /**
+   * Structured tax breakdown extracted from the receipt.
+   * Supplements the flat totalTaxAmount with granular per-tax-line detail.
+   */
+  taxDetails: TaxDetail[];
+
+  /**
+   * Payment methods and amounts used to settle the transaction.
+   * Supports split payments (e.g., partial cash + card).
+   */
+  payments: PaymentDetail[];
 }
 
 /**

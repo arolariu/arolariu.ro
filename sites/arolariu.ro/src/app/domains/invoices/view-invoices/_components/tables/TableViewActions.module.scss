@@ -37,6 +37,7 @@
 .actionButton {
   height: space(8);
   width: space(8);
+  aspect-ratio: 1;
   background-color: color-alpha('background', 0.8);
 
   @media print {
@@ -45,14 +46,22 @@
 }
 
 .menuContent {
-  width: 10rem;
+  min-width: space(40); // 160px
 }
 
 .menuItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
   cursor: pointer;
 }
 
 .menuItemDestructive {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
   cursor: pointer;
   color: color('destructive');
 }

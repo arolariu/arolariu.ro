@@ -122,6 +122,23 @@
   object-fit: cover;
 }
 
+.pdfPlaceholder {
+  @include flex-center;
+  width: 100%;
+  height: 100%;
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.pdfIcon {
+  height: space(16);
+  width: space(16);
+  color: color('destructive');
+}
+
 .scanInfo {
   padding: space(3);
   @include flex-column;
@@ -183,4 +200,29 @@
 .emptyText {
   font-size: font-size('base');
   margin: 0;
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: space(4);
+  padding: space(4) 0;
+  border-top: 1px solid color('border');
+
+  @include respond-below('md') {
+    gap: space(2);
+  }
+}
+
+.pageInfo {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+
+  @include respond-below('md') {
+    font-size: font-size('xs');
+  }
 }

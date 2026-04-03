@@ -723,7 +723,6 @@
         "type": "Project",
         "dependencies": {
           "Azure.AI.DocumentIntelligence": "[1.0.0, )",
-          "Azure.AI.FormRecognizer": "[4.1.0, )",
           "Azure.AI.OpenAI": "[2.7.0-beta.2, )",
           "Azure.AI.OpenAI.Assistants": "[1.0.0-beta.4, )",
           "Azure.AI.Translation.Text": "[1.0.0, )",
@@ -805,15 +804,6 @@
         "dependencies": {
           "Azure.Core": "1.44.1",
           "System.ClientModel": "1.2.1"
-        }
-      },
-      "Azure.AI.FormRecognizer": {
-        "type": "CentralTransitive",
-        "requested": "[4.1.0, )",
-        "resolved": "4.1.0",
-        "contentHash": "R9mEeYFa2+EcCu5dOGOFG07nbELHY/2o6JtgJoxNTo2wtsonLnLwcKzX/sxOnYhpib4TJEBTUX0/ea0lL130Iw==",
-        "dependencies": {
-          "Azure.Core": "1.34.0"
         }
       },
       "Azure.AI.OpenAI": {

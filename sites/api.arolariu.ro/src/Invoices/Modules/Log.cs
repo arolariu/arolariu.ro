@@ -231,4 +231,50 @@ public static partial class Log
   [LoggerMessage(900_100, LogLevel.Warning, "User identifier is not set in the current context.")]
   public static partial void LogUserIdentifierNotSetWarning(this ILogger logger);
   #endregion
+
+  #region Classifier Broker Logging Methods
+
+  /// <summary>
+  /// Logs when a GPT method fails with an exception.
+  /// </summary>
+  [LoggerMessage(400_100, LogLevel.Error, "[Classifier] {MethodName} failed: {ErrorMessage}")]
+  public static partial void LogGptMethodFailed(this ILogger logger, string methodName, string errorMessage);
+
+  /// <summary>
+  /// Logs when a GPT method fails with context-specific information.
+  /// </summary>
+  [LoggerMessage(400_101, LogLevel.Error, "[Classifier] {MethodName} failed for '{Context}': {ErrorMessage}")]
+  public static partial void LogGptMethodFailedWithContext(this ILogger logger, string methodName, string context, string errorMessage);
+
+  /// <summary>
+  /// Logs when Azure OpenAI content filter triggers.
+  /// </summary>
+  [LoggerMessage(400_102, LogLevel.Warning, "[Classifier] {MethodName}: Content filter triggered")]
+  public static partial void LogContentFilterTriggered(this ILogger logger, string methodName);
+
+  /// <summary>
+  /// Logs when Azure OpenAI content filter triggers with context.
+  /// </summary>
+  [LoggerMessage(400_103, LogLevel.Warning, "[Classifier] {MethodName}: Content filter triggered for '{Context}'")]
+  public static partial void LogContentFilterTriggeredWithContext(this ILogger logger, string methodName, string context);
+
+  /// <summary>
+  /// Logs the start of GPT analysis workflow.
+  /// </summary>
+  [LoggerMessage(400_104, LogLevel.Information, "[Classifier] Starting GPT analysis with model: {ModelName}")]
+  public static partial void LogGptAnalysisStarted(this ILogger logger, string modelName);
+
+  /// <summary>
+  /// Logs when a hallucinated allergen text is skipped during parsing.
+  /// </summary>
+  [LoggerMessage(400_105, LogLevel.Warning, "[Classifier] Skipping hallucinated allergen text: '{AllergenName}'")]
+  public static partial void LogAllergenHallucinationSkipped(this ILogger logger, string allergenName);
+
+  /// <summary>
+  /// Logs when an unrecognized allergen is skipped (not in EU 14 whitelist).
+  /// </summary>
+  [LoggerMessage(400_106, LogLevel.Warning, "[Classifier] Skipping unrecognized allergen '{AllergenName}' for product '{ProductName}'")]
+  public static partial void LogAllergenUnrecognizedSkipped(this ILogger logger, string allergenName, string productName);
+
+  #endregion
 }

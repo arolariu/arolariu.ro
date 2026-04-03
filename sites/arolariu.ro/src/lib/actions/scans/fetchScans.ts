@@ -122,9 +122,18 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       })) {
         const metadata = blob.metadata ?? {};
 
+        // Support both camelCase and lowercase keys for backward compatibility
+        // Older scans might have lowercase keys from buggy registerScan
+        const scanId = metadata["scanId"] ?? metadata["scanid"];
+
+        // Skip scans that have been used by invoices
+        if (metadata["usedByInvoice"] === "true") {
+          continue;
+        }
+
         // Only process blobs with valid scan ID in metadata
-        if (metadata["scanId"]) {
-          // Parse status from metadata
+        if (scanId) {
+          // Parse status from metadata (case-insensitive)
           const statusString = metadata["status"] ?? ScanStatus.READY;
           const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
 
@@ -133,16 +142,20 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
             // Construct blob URL
             const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
 
-            // Parse upload timestamp
-            const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());
+            // Parse upload timestamp (support both camelCase and lowercase)
+            const uploadedAtString = metadata["uploadedAt"] ?? metadata["uploadedat"];
+            const uploadedAt = uploadedAtString ? new Date(uploadedAtString) : (blob.properties.createdOn ?? new Date());
 
             // Determine MIME type
             const mimeType = blob.properties.contentType ?? "application/octet-stream";
 
+            // Get original filename (support both camelCase and lowercase)
+            const originalFileName = metadata["originalFileName"] ?? metadata["originalfilename"];
+
             const scan: Scan = {
-              id: metadata["scanId"],
-              userIdentifier: metadata["userIdentifier"] ?? userIdentifier,
-              name: metadata["originalFileName"] ?? blob.name.split("/").pop() ?? "Unknown",
+              id: scanId,
+              userIdentifier: metadata["userIdentifier"] ?? metadata["useridentifier"] ?? userIdentifier,
+              name: originalFileName ?? blob.name.split("/").pop() ?? "Unknown",
               blobUrl,
               mimeType,
               sizeInBytes: blob.properties.contentLength ?? 0,
@@ -150,7 +163,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
               uploadedAt,
               status,
               metadata: {
-                originalFileName: metadata["originalFileName"] ?? "",
+                originalFileName: originalFileName ?? "",
                 ...metadata,
               },
             };

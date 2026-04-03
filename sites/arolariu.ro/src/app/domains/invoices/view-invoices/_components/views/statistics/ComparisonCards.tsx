@@ -5,6 +5,7 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/ComparisonCards
  */
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -91,8 +92,8 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     {
       icon: spendingIcon,
       label: t("spendingDelta"),
-      value: `${Math.abs(data.spendingDelta).toFixed(2)} ${currency}`,
-      delta: `${data.spendingDeltaPercent >= 0 ? "+" : ""}${data.spendingDeltaPercent.toFixed(1)}%`,
+      value: `${formatAmount(Math.abs(data.spendingDelta))} ${currency}`,
+      delta: `${data.spendingDeltaPercent >= 0 ? "+" : ""}${formatAmount(data.spendingDeltaPercent, "en-US", 1)}%`,
       isPositive: data.spendingDelta < 0, // Spending less is positive (saving)
       progressValue: Math.min(Math.abs(data.spendingDeltaPercent), 100),
     },

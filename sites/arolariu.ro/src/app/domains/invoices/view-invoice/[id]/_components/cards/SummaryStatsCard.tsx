@@ -1,7 +1,8 @@
 "use client";
 
+import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbGrid3X3, TbPackage, TbPercentage, TbReceipt, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {InvoiceSummary} from "../../_utils/analytics";
 import styles from "./SummaryStatsCard.module.scss";
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
   const t = useTranslations("Invoices.ViewInvoice.summaryStatsCard");
   const stats = [
     {
@@ -28,15 +30,15 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
     },
     {
       label: t("stats.averagePrice.label"),
-      value: `${summary.averageItemPrice.toFixed(2)}`,
+      value: `${formatAmount(summary.averageItemPrice)}`,
       icon: TbReceipt,
       description: t("stats.averagePrice.description", {currency}),
     },
     {
       label: t("stats.taxRate.label"),
-      value: `${summary.taxPercentage.toFixed(1)}%`,
+      value: `${formatAmount(summary.taxPercentage, locale, 1)}%`,
       icon: TbPercentage,
-      description: t("stats.taxRate.description", {amount: summary.taxAmount.toFixed(2), currency}),
+      description: t("stats.taxRate.description", {amount: formatAmount(summary.taxAmount), currency}),
     },
   ];
 
@@ -71,7 +73,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>
-                  {summary.highestItem.price.toFixed(2)} {currency}
+                  {formatAmount(summary.highestItem.price)} {currency}
                 </p>
                 <p className={styles["extremeName"]}>{summary.highestItem.name}</p>
               </div>
@@ -84,7 +86,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>
-                  {summary.lowestItem.price.toFixed(2)} {currency}
+                  {formatAmount(summary.lowestItem.price)} {currency}
                 </p>
                 <p className={styles["extremeName"]}>{summary.lowestItem.name}</p>
               </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -12,6 +13,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Badge,
   Button,
   Checkbox,
   Input,
@@ -30,7 +32,7 @@ import {
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
-import {TbEdit, TbPlus, TbSearch, TbTrash} from "react-icons/tb";
+import {TbEdit, TbFlask, TbPlus, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
@@ -118,6 +120,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
   const t = useTranslations("Invoices.EditInvoice.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
+  const {open: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
+  const {open: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
 
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
@@ -128,6 +132,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Filter items by search query
   const filteredItems = useMemo(() => {
@@ -166,7 +171,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     });
   }, [filteredItems, sortField, sortDirection]);
 
-  const totalAmount = localItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalAmount = localItems.filter((item) => !item.metadata.isSoftDeleted).reduce((acc, item) => acc + item.price * item.quantity, 0);
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
 
   const handleNextPage = useCallback(() => {
@@ -321,8 +326,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
   // Handle add new item
   const handleAddItem = useCallback(() => {
+    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newItem: Product = {
-      rawName: t("newItem.defaultName"),
+      rawName: `${t("newItem.defaultName")}_${uniqueSuffix}`,
       genericName: t("newItem.defaultName"),
       category: ProductCategory.NOT_DEFINED,
       quantity: 1,
@@ -335,12 +341,211 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         isEdited: true,
         isComplete: false,
         isSoftDeleted: false,
+        confidence: 0,
       },
     };
 
     setLocalItems((prev) => [...prev, newItem]);
     toast.success(t("newItem.added"));
   }, [t]);
+
+  /**
+   * Soft-deletes a product (sets metadata.isSoftDeleted = true).
+   */
+  const handleSoftDelete = useCallback(
+    async (productIndex: number) => {
+      const product = localItems[productIndex];
+      if (!product) return;
+
+      setIsSaving(true);
+
+      try {
+        const updatedItems = [...localItems];
+        updatedItems[productIndex] = {
+          ...product,
+          metadata: {
+            ...product.metadata,
+            isSoftDeleted: true,
+            isEdited: true,
+          },
+        };
+
+        const result = await patchInvoice({
+          invoiceId: invoice.id,
+          payload: {
+            items: updatedItems,
+          },
+        });
+
+        if (result.success) {
+          setLocalItems(updatedItems);
+          toast.success(t("softDelete.success", {name: product.genericName || product.rawName}));
+        } else {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error("Failed to soft-delete product:", error);
+        toast.error(t("softDelete.error"));
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [localItems, invoice.id, t],
+  );
+
+  /**
+   * Restores a soft-deleted product (sets metadata.isSoftDeleted = false).
+   */
+  const handleRestore = useCallback(
+    async (productIndex: number) => {
+      const product = localItems[productIndex];
+      if (!product) return;
+
+      setIsSaving(true);
+
+      try {
+        const updatedItems = [...localItems];
+        updatedItems[productIndex] = {
+          ...product,
+          metadata: {
+            ...product.metadata,
+            isSoftDeleted: false,
+            isEdited: true,
+          },
+        };
+
+        const result = await patchInvoice({
+          invoiceId: invoice.id,
+          payload: {
+            items: updatedItems,
+          },
+        });
+
+        if (result.success) {
+          setLocalItems(updatedItems);
+          toast.success(t("restore.success", {name: product.genericName || product.rawName}));
+        } else {
+          toast.error(result.error);
+        }
+      } catch (error) {
+        console.error("Failed to restore product:", error);
+        toast.error(t("restore.error"));
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [localItems, invoice.id, t],
+  );
+
+  /**
+   * Opens the allergen editing dialog for a product.
+   */
+  const handleEditAllergens = useCallback(
+    (productIndex: number) => {
+      const product = localItems[productIndex];
+      if (!product) return;
+
+      openAllergenDialog("edit", {
+        invoice,
+        product,
+        productIndex,
+      });
+    },
+    [localItems, invoice, openAllergenDialog],
+  );
+
+  /**
+   * Opens the bulk category dialog for selected products.
+   */
+  const handleBulkCategoryChange = useCallback(() => {
+    if (selectedIndices.size === 0) {
+      toast.warning(t("bulkCategory.noSelection"));
+      return;
+    }
+
+    const selectedProducts = Array.from(selectedIndices)
+      .map((idx) => sortedItems[idx])
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+    // Map selected indices from sorted view to actual localItems indices
+    const actualIndices = selectedProducts.map((product) => localItems.findIndex((item) => item.rawName === product.rawName));
+
+    openBulkCategoryDialog("edit", {
+      invoice,
+      selectedProducts,
+      selectedIndices: actualIndices,
+    });
+  }, [selectedIndices, sortedItems, localItems, invoice, openBulkCategoryDialog, t]);
+
+  /**
+   * Determines the visual indicator class for a product based on its completeness status.
+   *
+   * @param item - The product to analyze
+   * @returns CSS class name for the row indicator or empty string
+   */
+  const getProductIndicatorClass = useCallback((item: Product): string => {
+    // Skip soft-deleted items
+    if (item.metadata.isSoftDeleted) return "";
+
+    // Priority 1: Incomplete products (yellow border)
+    if (!item.metadata.isComplete) {
+      return styles["rowIndicatorIncomplete"];
+    }
+
+    // Priority 2: Low confidence OCR (orange border)
+    if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
+      return styles["rowIndicatorLowConfidence"];
+    }
+
+    return "";
+  }, []);
+
+  /**
+   * Builds an array of issue badges to display for a product.
+   *
+   * @param item - The product to analyze
+   * @returns Array of badge configurations
+   */
+  const getProductIssueBadges = useCallback(
+    (item: Product): Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> => {
+      const badges: Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> = [];
+
+      // Skip soft-deleted items
+      if (item.metadata.isSoftDeleted) return badges;
+
+      // Check for uncategorized
+      if (item.category === ProductCategory.NOT_DEFINED) {
+        badges.push({
+          text: t("indicators.uncategorized"),
+          variant: "secondary",
+          tooltip: t("indicators.uncategorizedTooltip"),
+        });
+      }
+
+      // Check for missing generic name
+      if (!item.genericName.trim() || item.genericName === item.rawName) {
+        badges.push({
+          text: t("indicators.missingName"),
+          variant: "secondary",
+          tooltip: t("indicators.missingNameTooltip"),
+        });
+      }
+
+      // Check for low confidence (only show if > 0 to indicate OCR was attempted)
+      if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
+        badges.push({
+          text: t("indicators.lowConfidence"),
+          variant: "outline",
+          tooltip: t("indicators.lowConfidenceTooltip", {
+            confidence: Math.round(item.metadata.confidence * 100),
+          }),
+        });
+      }
+
+      return badges;
+    },
+    [t],
+  );
 
   return (
     <div>
@@ -385,6 +590,14 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           <div className={styles["bulkToolbar"]}>
             <span className={styles["bulkToolbarText"]}>{t("bulkToolbar.selectedCount", {count: selectedIndices.size})}</span>
             <Button
+              variant='outline'
+              size='sm'
+              onClick={handleBulkCategoryChange}
+              className={styles["categoryButton"]}>
+              <TbTag className={styles["categoryIcon"]} />
+              {t("bulkToolbar.changeCategory")}
+            </Button>
+            <Button
               variant='destructive'
               size='sm'
               onClick={() => setShowDeleteDialog(true)}
@@ -427,12 +640,18 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 {sortField === "price" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("columns.total")}</TableHead>
+              <TableHead className={styles["tableHeaderCenter"]}>{t("columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className={styles["tableBody"]}>
             {paginatedItems.map((item, index) => {
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
+              const isSoftDeleted = item.metadata.isSoftDeleted;
+              const isEdited = item.metadata.isEdited;
+              const hasAllergens = item.detectedAllergens.length > 0;
+              const indicatorClass = getProductIndicatorClass(item);
+              const issueBadges = getProductIssueBadges(item);
 
               return (
                 <motion.tr
@@ -440,35 +659,81 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   initial={{opacity: 0, y: -20}}
                   animate={{opacity: 1, y: 0}}
                   transition={{delay: index * 0.05}}
-                  className={`${styles["tableRow"]} ${isSelected ? styles["tableRowSelected"] : ""}`}>
+                  className={`${styles["tableRow"]} ${isSelected ? styles["tableRowSelected"] : ""} ${
+                    isSoftDeleted ? styles["tableRowSoftDeleted"] : ""
+                  } ${indicatorClass}`}>
                   <td className={styles["tableCellCheckbox"]}>
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => handleSelectRow(index)}
                       aria-label={t("columns.selectRow", {name: item.genericName})}
                       className={styles["selectCheckbox"]}
+                      disabled={isSoftDeleted}
                     />
                   </td>
                   <td
-                    className={`${styles["tableCell"]} ${styles["tableCellEditable"]}`}
-                    onClick={() => !isEditing && handleCellClick(index, "genericName")}>
-                    {isEditing && editingCell.field === "genericName" ? (
-                      <Input
-                        type='text'
-                        value={editValues[`${index}-genericName`] ?? ""}
-                        onChange={(e) => handleEditChange(index, "genericName", e.target.value)}
-                        onBlur={handleSaveEdit}
-                        onKeyDown={handleEditKeyDown}
-                        autoFocus
-                        className={styles["editInput"]}
-                      />
-                    ) : (
-                      item.genericName
-                    )}
+                    className={`${styles["tableCell"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
+                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "genericName")}>
+                    <div className={styles["cellWithIndicators"]}>
+                      {isEditing && editingCell.field === "genericName" ? (
+                        <Input
+                          type='text'
+                          value={editValues[`${index}-genericName`] ?? ""}
+                          onChange={(e) => handleEditChange(index, "genericName", e.target.value)}
+                          onBlur={handleSaveEdit}
+                          onKeyDown={handleEditKeyDown}
+                          autoFocus
+                          aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.rawName})}
+                          className={styles["editInput"]}
+                        />
+                      ) : (
+                        <>
+                          <span>{item.genericName}</span>
+                          {isEdited && !isSoftDeleted && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <Badge
+                                      variant='outline'
+                                      className={styles["editedBadge"]}>
+                                      <TbPencil className={styles["editedIcon"]} />
+                                      {t("indicators.edited")}
+                                    </Badge>
+                                  }
+                                />
+                                <TooltipContent>
+                                  <p>{t("indicators.editedTooltip")}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                          {hasAllergens && !isSoftDeleted && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  render={
+                                    <Badge
+                                      variant='secondary'
+                                      className={styles["allergenBadge"]}>
+                                      <TbFlask className={styles["allergenIcon"]} />
+                                      {t("indicators.allergens", {count: item.detectedAllergens.length})}
+                                    </Badge>
+                                  }
+                                />
+                                <TooltipContent>
+                                  <p>{item.detectedAllergens.map((a) => a.name).join(", ")}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
                   <td
-                    className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]}`}
-                    onClick={() => !isEditing && handleCellClick(index, "quantity")}>
+                    className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
+                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "quantity")}>
                     {isEditing && editingCell.field === "quantity" ? (
                       <Input
                         type='number'
@@ -477,6 +742,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
+                        aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.rawName})}
                         className={styles["editInput"]}
                       />
                     ) : (
@@ -484,8 +750,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     )}
                   </td>
                   <td
-                    className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]}`}
-                    onClick={() => !isEditing && handleCellClick(index, "price")}>
+                    className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
+                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "price")}>
                     {isEditing && editingCell.field === "price" ? (
                       <Input
                         type='number'
@@ -495,14 +761,81 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
+                        aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.rawName})}
                         className={styles["editInput"]}
                       />
                     ) : (
                       formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})
                     )}
                   </td>
-                  <td className={styles["tableCellRightBold"]}>
+                  <td className={`${styles["tableCellRightBold"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}>
                     {formatCurrency(item.price * item.quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+                  </td>
+                  <td className={styles["tableCellActions"]}>
+                    <div className={styles["actionButtons"]}>
+                      {isSoftDeleted ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={() => handleRestore(index)}
+                                  disabled={isSaving}
+                                  className={styles["actionButton"]}>
+                                  <TbRefresh className={styles["actionIcon"]} />
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>
+                              <p>{t("actions.restore")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={() => handleEditAllergens(index)}
+                                    disabled={isSaving}
+                                    className={styles["actionButton"]}>
+                                    <TbFlask className={styles["actionIcon"]} />
+                                  </Button>
+                                }
+                              />
+                              <TooltipContent>
+                                <p>{t("actions.editAllergens")}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={() => handleSoftDelete(index)}
+                                    disabled={isSaving}
+                                    className={styles["actionButton"]}>
+                                    <TbTrash className={styles["actionIcon"]} />
+                                  </Button>
+                                }
+                              />
+                              <TooltipContent>
+                                <p>{t("actions.remove")}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </motion.tr>
               );
@@ -519,6 +852,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 <td className={styles["tableCellRight"]} />
                 <td className={styles["tableCellRight"]} />
                 <td className={styles["tableCellRight"]} />
+                <td className={styles["tableCellActions"]} />
               </motion.tr>
             ))}
           </TableBody>
@@ -533,6 +867,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               <TableHead className={styles["footerLabel"]}>
                 {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
               </TableHead>
+              <TableHead colSpan={1} />
             </TableRow>
           </TableFooter>
         </Table>

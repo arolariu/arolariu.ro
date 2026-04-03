@@ -72,7 +72,7 @@ export default function FeedbackDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__FEEDBACK");
 
-  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
+  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant | null};
   const features = [
     t("features.spendingTrends"),
     t("features.priceComparisons"),
@@ -180,7 +180,7 @@ export default function FeedbackDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
+          <DialogDescription>{t("description", {merchant: merchant?.name ?? ""})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>

@@ -1387,7 +1387,13 @@
           "failed": "Failed"
         },
         "removeTooltip": "Remove this file",
-        "retryAttempt": "Retry attempt {attempt}"
+        "retryAttempt": "Retry attempt {attempt}",
+        "pendingTooltip": "This scan will not be persisted until you click Upload",
+        "pagination": {
+          "previous": "Previous",
+          "next": "Next",
+          "pageInfo": "{current} / {total} ({count} scans)"
+        }
       },
       "postUpload": {
         "title": "Upload Complete!",
@@ -1466,9 +1472,21 @@
         "selected": "selected",
         "clearSelection": "Clear",
         "createInvoice": "Create Invoice",
-        "createInvoices": "Create Invoices"
+        "createInvoices": "Create Invoices",
+        "delete": {
+          "button": "Delete ({count})",
+          "confirmTitle": "Delete selected scans?",
+          "confirmDescription": "This will permanently delete {count} scan(s) from storage. This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "success": "{count} scan(s) deleted successfully",
+          "partial": "{success} deleted, {failed} failed",
+          "failed": "Failed to delete scans",
+          "error": "An error occurred while deleting scans"
+        }
       },
       "scanCard": {
+        "loading": "Loading...",
         "delete": "Delete scan",
         "linked": "Linked",
         "deleteDialog": {
@@ -1485,7 +1503,17 @@
         "rename": "Rename scan",
         "renamePlaceholder": "Enter new name",
         "preview": "Preview scan",
-        "previewTitle": "Scan Preview"
+        "previewTitle": "Scan Preview",
+        "actions": {
+          "rename": "Rename scan",
+          "delete": "Delete scan",
+          "rotateCW": "Rotate 90° Clockwise",
+          "rotateCCW": "Rotate 90° Counter-clockwise",
+          "rotating": "Rotating...",
+          "rotateSuccess": "Image rotated successfully",
+          "rotateError": "Failed to rotate image",
+          "rotateUnsupported": "Cannot rotate PDF files"
+        }
       },
       "createInvoiceDialog": {
         "title": "Create Invoice",
@@ -1509,7 +1537,8 @@
         "buttons": {
           "cancel": "Cancel",
           "createSingle": "Create Invoice",
-          "createMultiple": "Create {count} Invoices"
+          "createMultiple": "Create {count} Invoices",
+          "close": "Close"
         },
         "creating": {
           "title": "Creating Your Invoice",
@@ -1532,7 +1561,13 @@
           "nextStepsDescription": "Review your invoice, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
           "nextStepsDescriptionPlural": "Review your invoices, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
           "viewButton": "View Invoice",
-          "viewButtonPlural": "View Invoices"
+          "viewButtonPlural": "View Invoices",
+          "failureTitle": "Creation Failed",
+          "failureDescription": "We couldn't create any invoices. Please review the errors below and try again.",
+          "partialTitle": "{created} of {total} Invoices Created",
+          "partialDescription": "Some scans couldn't be processed. Successfully created invoices are ready for viewing.",
+          "errorsLabel": "Failed Scans:",
+          "retryButton": "Try Again"
         },
         "errors": {
           "partialFail": "Failed to create {count} invoice(s)",
@@ -1546,9 +1581,15 @@
         "description": "Create invoices from all {count} scans at once"
       },
       "groupBanner": {
-        "combine": "Create Invoice →",
-        "title": "{count} scans uploaded together — combine?",
+        "title": "These {count} scans were uploaded together",
+        "subtitle": "Create an invoice from these scans?",
+        "createInvoice": "Create Invoice",
         "dismiss": "Dismiss"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "{current} / {total} ({count} scans)"
       }
     },
     "ViewInvoices": {
@@ -1604,7 +1645,8 @@
             "amountHighToLow": "Amount (high to low)",
             "amountLowToHigh": "Amount (low to high)",
             "nameAZ": "Name (A-Z)",
-            "nameZA": "Name (Z-A)"
+            "nameZA": "Name (Z-A)",
+            "none": "No sorting (default order)"
           },
           "title": "Filters",
           "button": "Filters",
@@ -1669,7 +1711,8 @@
               "amount": "Amount"
             },
             "tooltip": {
-              "invoiceCount": "{count} invoices"
+              "invoiceCount": "{count} invoices",
+              "andMore": "and {count} more..."
             },
             "title": "Spending Over Time",
             "description": "Track your spending trends"
@@ -1682,6 +1725,20 @@
               "invoiceCount": "{count} invoices"
             }
           },
+          "currencyDistribution": {
+            "title": "Currency Distribution",
+            "description": "Spending breakdown by currency with RON conversion",
+            "toggleLabel": "Toggle currency view",
+            "showOriginal": "Show Original",
+            "showRON": "Show RON",
+            "singleCurrency": "All invoices in {currency} ({symbol})",
+            "invoiceCount": "{count} invoices",
+            "originalAmount": "Original",
+            "ronEquivalent": "RON equivalent",
+            "totalAmount": "Total Amount",
+            "totalCurrencies": "Total Currencies",
+            "totalSpending": "Total Spending"
+          },
           "merchantLeaderboard": {
             "title": "Top Merchants",
             "description": "Where you spend most",
@@ -1690,7 +1747,33 @@
             },
             "tooltip": {
               "invoiceCount": "{count} invoices"
-            }
+            },
+            "empty": "No merchant data available yet"
+          },
+          "merchantTrends": {
+            "title": "Merchant Spending Trends",
+            "description": "Monthly spending patterns for top merchants",
+            "labels": {
+              "merchant": "Merchant",
+              "totalSpend": "Total Spend",
+              "trend": "Trend (Last 6 Months)"
+            },
+            "aria": {
+              "sparkline": "Spending trend for {merchant}"
+            },
+            "empty": "No merchant data available yet"
+          },
+          "merchantVisit": {
+            "title": "Merchant Visit Patterns",
+            "description": "Shopping frequency and basket insights",
+            "metrics": {
+              "totalVisits": "Total Visits",
+              "visitsPerMonth": "Visits/Month",
+              "basketSize": "Avg Basket",
+              "preferredDay": "Preferred Day",
+              "avgSpend": "Avg Spend/Visit"
+            },
+            "empty": "No visit data available yet"
           },
           "priceDistribution": {
             "title": "Price Distribution",
@@ -1711,6 +1794,38 @@
             "tooltip": {
               "invoiceCount": "{count} invoices"
             }
+          },
+          "productCategory": {
+            "description": "Spending breakdown by product type",
+            "tooltip": {
+              "productCount": "{count} products"
+            },
+            "title": "Product Category Spending",
+            "empty": "No products to analyze yet"
+          },
+          "topProducts": {
+            "ariaLabel": "Top products leaderboard",
+            "description": "Most purchased items",
+            "headers": {
+              "rank": "#",
+              "avgPrice": "Avg Price",
+              "quantity": "Qty",
+              "purchases": "Purchases",
+              "product": "Product",
+              "totalSpent": "Total"
+            },
+            "title": "Top Products",
+            "empty": "No products purchased yet"
+          },
+          "allergenSummary": {
+            "ariaLabel": "Allergen frequency summary",
+            "description": "Allergen exposure across products",
+            "stats": {
+              "products": "products",
+              "ofTotal": "of total"
+            },
+            "title": "Allergen Summary",
+            "empty": "No allergens detected in your purchases"
           }
         },
         "kpi": {
@@ -1739,7 +1854,15 @@
           "title": "No Statistics Yet",
           "subtitle": "Upload receipts to see analytics",
           "cta": "Upload Receipt"
+        },
+        "productAnalytics": {
+          "title": "Product-Level Analytics",
+          "subtitle": "Insights into your purchased items"
         }
+      },
+      "messageList": {
+        "aiAssistant": "AI Assistant",
+        "you": "You"
       },
       "generativeView": {
         "welcomeMessage": "Hello! I'm your invoice analysis assistant. How can I help you today? Try commands like /find to search invoices.",
@@ -1786,13 +1909,18 @@
         "aria": {
           "selectAllInvoices": "Select all invoices",
           "selectInvoice": "Select invoice {name}",
-          "rowsPerPage": "Rows per page"
+          "rowsPerPage": "Rows per page",
+          "sortByDate": "Sort by date",
+          "sortByAmount": "Sort by amount"
         },
         "viewInvoice": "View Invoice",
         "rowsPerPage": "Rows per page:",
         "pageOf": "Page {current} of {total}",
         "previousPage": "Previous Page",
-        "nextPage": "Next Page"
+        "nextPage": "Next Page",
+        "tooltips": {
+          "notAnalyzed": "This invoice has not been analyzed yet"
+        }
       },
       "gridView": {
         "tooltips": {
@@ -1807,6 +1935,7 @@
           "delete": "Delete"
         },
         "tooltips": {
+          "moreActions": "More actions",
           "edit": "Edit invoice details",
           "share": "Share invoice via link or email",
           "delete": "Permanently delete this invoice"
@@ -1821,6 +1950,11 @@
             "csv": "CSV",
             "json": "JSON",
             "pdf": "PDF"
+          },
+          "descriptions": {
+            "json": "Structured data format",
+            "csv": "Spreadsheet format, compatible with Excel",
+            "pdf": "Printable document format"
           }
         },
         "options": {
@@ -1839,7 +1973,16 @@
         },
         "buttons": {
           "cancel": "Cancel",
-          "export": "Export"
+          "export": "Export",
+          "copy": "Copy to Clipboard",
+          "copied": "Copied!"
+        },
+        "filename": {
+          "hint": "The file will be saved with the extension based on format",
+          "label": "Filename"
+        },
+        "estimate": {
+          "label": "Estimated file size:"
         }
       },
       "importDialog": {
@@ -1908,6 +2051,10 @@
         "tabs": {
           "current": "This Invoice",
           "compare": "Comparison"
+        },
+        "emptyState": {
+          "title": "Not Enough Data for Comparisons",
+          "description": "Add more invoices to see spending trends, merchant breakdowns, and category comparisons."
         }
       },
       "invoiceTimeline": {
@@ -1923,7 +2070,14 @@
         "recipe": {
           "duration": "{minutes} min",
           "prepCook": "Prep: {prep}m • Cook: {cook}m",
-          "viewRecipe": "View Recipe"
+          "viewRecipe": "View Recipe",
+          "ingredients": "Ingredients",
+          "instructions": "Instructions"
+        },
+        "actions": {
+          "regenerate": "Regenerate Recipes",
+          "regenerateTooltip": "Re-analyze the invoice to generate new recipe suggestions",
+          "generate": "Generate Recipes"
         },
         "empty": {
           "recipes": "No recipe suggestions available",
@@ -2036,7 +2190,23 @@
           "dateUtc": "Date (UTC)",
           "category": "Category",
           "payment": "Payment",
-          "totalAmount": "Total Amount"
+          "totalAmount": "Total Amount",
+          "receiptType": "Receipt Type",
+          "countryRegion": "Country/Region",
+          "subtotal": "Subtotal",
+          "tip": "Tip",
+          "ronEquivalent": "RON Equivalent"
+        },
+        "tooltips": {
+          "exchangeRate": "1 {fromCurrency} = {rate} RON (avg. {year})"
+        },
+        "sections": {
+          "paymentMethods": "Payment Methods",
+          "taxBreakdown": "Tax Breakdown"
+        },
+        "taxLabels": {
+          "net": "Net",
+          "tax": "Tax"
         },
         "itemsTitle": "Items ({count})",
         "table": {
@@ -2054,6 +2224,8 @@
         }
       },
       "merchantInfoCard": {
+        "title": "Merchant Information",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "viewAllReceipts": "View All Receipts",
         "viewAllInvoices": "View All Invoices",
         "viewOnMap": "View on Map",
@@ -2088,7 +2260,8 @@
           "reset": "Reset Zoom",
           "rotate": "Rotate",
           "download": "Download",
-          "fullScreen": "Full Screen"
+          "fullScreen": "Full Screen",
+          "toggleZoom": "Click to toggle zoom"
         },
         "navigation": {
           "previous": "Previous",
@@ -2118,6 +2291,10 @@
           "normalPattern": {
             "title": "Normal Shopping Pattern",
             "description": "Your spending is within typical range"
+          },
+          "insufficientData": {
+            "title": "Building Your Spending Profile",
+            "description": "Add more invoices to see seasonal insights and spending patterns"
           }
         }
       },
@@ -2203,7 +2380,8 @@
           "total": "Total",
           "visits": "Visits",
           "averagePerVisit": "Avg/visit"
-        }
+        },
+        "unknownMerchant": "Unknown Merchant"
       },
       "priceDistributionChart": {
         "title": "Price Distribution",
@@ -2230,7 +2408,8 @@
           "amount": "Amount"
         },
         "tooltip": {
-          "currentInvoice": "Current Invoice"
+          "currentInvoice": "Current Invoice",
+          "andMore": "and {count} more..."
         }
       },
       "shareAnalyticsDialog": {
@@ -2484,33 +2663,54 @@
           "modified": "Last modified {time}",
           "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
           "today": "today"
-        }
+        },
+        "publicAccess": "Public Access",
+        "publicAccessDescription": "Anyone with the link can view this invoice",
+        "madePublic": "Invoice is now public",
+        "madePrivate": "Invoice is now private",
+        "toggleError": "Failed to update sharing settings",
+        "qrCode": "QR Code",
+        "qrCopied": "Link copied! QR code generation coming soon.",
+        "copyError": "Failed to copy link"
       },
       "healthScore": {
-        "title": "Invoice Completeness",
-        "subtitle": "How complete is your invoice data",
+        "hideDetails": "Hide factor breakdown",
+        "title": "Invoice Health Score",
+        "status": {
+          "incomplete": "Incomplete",
+          "good": "Good",
+          "needsAttention": "Needs Attention",
+          "excellent": "Excellent"
+        },
+        "suggestions": {
+          "noRecipes": "No recipes generated — run AI analysis to discover meal ideas",
+          "title": "Suggested Improvements",
+          "incompletePayment": "Incomplete payment information — add transaction date, amount, and currency",
+          "fix": "Fix",
+          "noMerchant": "No merchant linked — add merchant details for better insights",
+          "noProducts": "No products found — upload a receipt or add items manually",
+          "lowOcrConfidence": "Low OCR confidence on <strong>{count}</strong> products — review manually for accuracy",
+          "uncategorizedProducts": "<strong>{count}</strong> products uncategorized — assign categories for spending analysis",
+          "incompleteProducts": "<strong>{count}</strong> products incomplete — review and complete missing fields"
+        },
         "points": "points",
-        "showDetails": "Show details",
-        "hideDetails": "Hide details",
         "factors": {
-          "name": "Name provided",
-          "items": "Items extracted",
-          "payment": "Payment information",
-          "recipes": "Recipes generated",
-          "category": "Category set",
-          "description": "Description added",
-          "date": "Transaction date",
-          "merchant": "Merchant information"
+          "merchantLinked": "Merchant linked",
+          "ocrConfidence": "OCR confidence",
+          "recipesGenerated": "Recipes generated",
+          "paymentInfo": "Payment information",
+          "productCompleteness": "Product completeness",
+          "productsPresent": "Products extracted",
+          "categoriesAssigned": "Categories assigned"
         },
         "cta": {
-          "analyze": "Run AI Analysis",
-          "edit": "Edit Invoice"
+          "edit": "Edit Invoice",
+          "analyze": "Run AI Analysis"
         },
-        "status": {
-          "complete": "Complete",
-          "needsWork": "Needs Work",
-          "incomplete": "Incomplete"
-        }
+        "showDetails": "Show factor breakdown",
+        "subtitle": "Comprehensive data quality assessment",
+        "seeReport": "See detailed report",
+        "dialogTitle": "Invoice Health Report"
       },
       "itemAnalytics": {
         "title": "Items",
@@ -2521,6 +2721,10 @@
           "price": "Price",
           "quantity": "Qty",
           "total": "Total"
+        },
+        "confidence": {
+          "label": "OCR Confidence",
+          "lowWarning": "Low confidence — consider reviewing this item"
         },
         "summary": {
           "title": "Summary",
@@ -2534,6 +2738,90 @@
           "subtitle": "Run AI analysis to extract items from your receipt"
         },
         "totalLabel": "TOTAL"
+      },
+      "analysisPanel": {
+        "tooltips": {
+          "itemsOnly": "Re-categorize and analyze line items only",
+          "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
+          "merchantOnly": "Re-identify merchant and location data",
+          "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
+          "reanalyze": "Trigger complete re-analysis with all AI features"
+        },
+        "title": "AI Analysis",
+        "options": {
+          "itemsOnly": "Items Only",
+          "completeAnalysis": "Full Analysis",
+          "merchantOnly": "Merchant Only",
+          "invoiceOnly": "Invoice Only"
+        },
+        "steps": {
+          "processing": "Processing items...",
+          "finalizing": "Finalizing results...",
+          "preparing": "Preparing document...",
+          "complete": "Analysis complete!",
+          "analyzing": "Analyzing with AI...",
+          "extracting": "Running OCR extraction..."
+        },
+        "analyzing": {
+          "progress": "{progress}% complete",
+          "title": "Analyzing..."
+        },
+        "labels": {
+          "lastAnalyzed": "Last Analyzed",
+          "updates": "{count, plural, one {# update} other {# updates}}",
+          "granularOptions": "Or choose specific analysis",
+          "analysisComplete": "Analysis Complete — All data has been extracted"
+        },
+        "toasts": {
+          "error": {
+            "description": "Unable to analyze invoice. Please try again later.",
+            "title": "Analysis Failed"
+          },
+          "success": {
+            "description": "Invoice has been successfully re-analyzed with updated data.",
+            "title": "Analysis Complete"
+          }
+        },
+        "description": "Re-analyze this invoice with AI to extract or update data",
+        "buttons": {
+          "reanalyze": "Re-Analyze Invoice"
+        },
+        "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
+      },
+      "export": {
+        "printError": "Failed to open print dialog",
+        "printSuccess": "Print dialog opened",
+        "csv": {
+          "title": "Export as CSV",
+          "description": "Download items as spreadsheet"
+        },
+        "description": "Export your invoice data in various formats",
+        "print": {
+          "title": "Print",
+          "description": "Print invoice using browser"
+        },
+        "csvSuccess": "CSV file downloaded successfully",
+        "copyError": "Failed to copy summary",
+        "copySummary": {
+          "title": "Copy Summary",
+          "description": "Copy text summary to clipboard"
+        },
+        "copySuccess": "Summary copied to clipboard",
+        "json": {
+          "title": "Export as JSON",
+          "description": "Download complete invoice data"
+        },
+        "jsonSuccess": "JSON file downloaded successfully",
+        "jsonError": "Failed to export JSON",
+        "csvError": "Failed to export CSV",
+        "title": "Export Invoice",
+        "pdf": {
+          "title": "Export as PDF",
+          "description": "Download professional invoice document"
+        },
+        "pdfSuccess": "PDF file downloaded successfully",
+        "pdfError": "Failed to generate PDF",
+        "pdfGenerating": "Generating PDF..."
       }
     },
     "EditInvoice": {
@@ -2623,6 +2911,7 @@
       },
       "merchantCard": {
         "title": "Merchant",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "addressLabel": "Address: {address}",
         "buttons": {
           "viewMerchantDetails": "View Merchant Details",
@@ -2960,6 +3249,7 @@
       },
       "merchantDialog": {
         "title": "Merchant Details",
+        "noMerchantLinked": "No merchant linked to this invoice",
         "description": "Information about {merchantName}",
         "fields": {
           "address": "Address",
@@ -3039,7 +3329,9 @@
       "recipeDialog": {
         "create": {
           "title": "Add new recipe",
-          "description": "Fill in the details to create a recipe."
+          "description": "Fill in the details to create a recipe.",
+          "success": "Recipe created successfully",
+          "error": "Failed to create recipe"
         },
         "read": {
           "description": "Recipe details and cooking instructions",
@@ -3062,7 +3354,8 @@
           "complexity": "Complexity level",
           "instructions": "Instructions",
           "prepTime": "Prep time",
-          "cookTime": "Cook time"
+          "cookTime": "Cook time",
+          "totalDuration": "Total Duration"
         },
         "actions": {
           "generateName": "Generate name",
@@ -3089,9 +3382,11 @@
           "add": "Add",
           "cancel": "Cancel",
           "save": "Save",
+          "saving": "Saving...",
           "close": "Close",
           "delete": "Delete"
-        }
+        },
+        "minutes": "minutes"
       },
       "merchantReceiptsDialog": {
         "title": "All receipts from {merchant}",
@@ -3172,7 +3467,8 @@
           "quantity": "Quantity",
           "price": "Price",
           "unit": "Unit",
-          "total": "Total"
+          "total": "Total",
+          "actions": "Actions"
         },
         "tableHeaders": {
           "item": "Item",
@@ -3194,11 +3490,14 @@
         },
         "bulkToolbar": {
           "selectedCount": "{count, plural, one {# item selected} other {# items selected}}",
-          "deleteSelected": "Delete Selected"
+          "deleteSelected": "Delete Selected",
+          "changeCategory": "Change Category",
+          "noSelection": "No products selected"
         },
         "editing": {
           "saved": "Item updated successfully",
-          "cancel": "Edit canceled"
+          "cancel": "Edit canceled",
+          "fieldLabel": "Edit {field} for {name}"
         },
         "deleteConfirm": {
           "title": "Delete Items",
@@ -3210,6 +3509,52 @@
         "newItem": {
           "defaultName": "New Item",
           "added": "New item added"
+        },
+        "indicators": {
+          "uncategorized": "Uncategorized",
+          "uncategorizedTooltip": "This product needs a category assigned for better spending tracking",
+          "missingName": "Missing name",
+          "missingNameTooltip": "Generic name translation is missing or identical to raw OCR text",
+          "lowConfidence": "Low confidence",
+          "lowConfidenceTooltip": "OCR confidence is {confidence}% - manual review recommended",
+          "edited": "Edited",
+          "editedTooltip": "This product has been manually modified",
+          "allergens": "{count, plural, one {# allergen} other {# allergens}}"
+        },
+        "actions": {
+          "remove": "Remove item",
+          "restore": "Restore item",
+          "editAllergens": "Edit allergens"
+        },
+        "softDelete": {
+          "success": "Item '{name}' removed",
+          "error": "Failed to remove item"
+        },
+        "restore": {
+          "success": "Item '{name}' restored",
+          "error": "Failed to restore item"
+        },
+        "bulkCategory": {
+          "noSelection": "Please select at least one product"
+        }
+      },
+      "guidedEdit": {
+        "banner": {
+          "title": "{count, plural, one {# product needs review} other {# products need review}}",
+          "summary": {
+            "uncategorized": "{count, plural, one {# uncategorized} other {# uncategorized}}",
+            "lowConfidence": "{count, plural, one {# low confidence} other {# low confidence}}",
+            "missingName": "{count, plural, one {# missing name} other {# missing name}}"
+          },
+          "actions": {
+            "reviewAll": "Review All",
+            "dismiss": "Dismiss"
+          },
+          "badges": {
+            "uncategorized": "{count, plural, one {# uncategorized} other {# uncategorized}}",
+            "lowConfidence": "{count, plural, one {# low confidence} other {# low confidence}}",
+            "missingName": "{count, plural, one {# missing name} other {# missing name}}"
+          }
         }
       },
       "changeHistory": {
@@ -3235,6 +3580,67 @@
           "markedImportant": "Marked as important",
           "importanceChanged": "Importance changed"
         }
+      },
+      "allergenDialog": {
+        "labels": {
+          "currentAllergens": "Current Allergens",
+          "customAllergen": "Add Custom Allergen",
+          "quickAdd": "Quick Add Common Allergens"
+        },
+        "title": "Edit Allergens",
+        "success": {
+          "added": "Added allergen: {name}",
+          "saved": "Allergens updated successfully",
+          "removed": "Removed allergen: {name}"
+        },
+        "buttons": {
+          "save": "Save Changes",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "add": "Add"
+        },
+        "defaultDescription": "Contains {name}",
+        "aria": {
+          "removeAllergen": "Remove {name} allergen"
+        },
+        "placeholders": {
+          "customAllergen": "Enter allergen name..."
+        },
+        "empty": {
+          "noAllergens": "No allergens detected"
+        },
+        "description": "Manage allergens for {productName}",
+        "errors": {
+          "emptyName": "Allergen name cannot be empty",
+          "duplicate": "Allergen '{name}' already added",
+          "missingData": "Missing product data",
+          "saveFailed": "Failed to save allergens"
+        }
+      },
+      "bulkCategoryDialog": {
+        "errors": {
+          "saveFailed": "Failed to update categories",
+          "missingData": "Missing data",
+          "noProducts": "No products selected"
+        },
+        "success": {
+          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
+        },
+        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
+        "buttons": {
+          "save": "Apply to All",
+          "saving": "Saving...",
+          "cancel": "Cancel"
+        },
+        "labels": {
+          "andMore": "...and {count} more",
+          "newCategory": "New Category",
+          "selectedProducts": "Selected Products"
+        },
+        "placeholders": {
+          "selectCategory": "Select a category"
+        },
+        "title": "Change Category"
       }
     },
     "Shared": {
@@ -3248,7 +3654,8 @@
           "discardAllPendingChanges": "Discard all pending changes",
           "printInvoiceWithAllDetails": "Print this invoice with all details",
           "analyzeSpendingPatterns": "Analyze spending patterns for this invoice",
-          "deleteInvoicePermanently": "Delete this invoice permanently"
+          "deleteInvoicePermanently": "Delete this invoice permanently",
+          "export": "Export invoice data in various formats"
         },
         "id": "ID: {id}",
         "buttons": {
@@ -3258,7 +3665,8 @@
           "save": "Save",
           "saving": "Saving...",
           "discard": "Discard",
-          "analyzeWithAi": "Analyze with AI"
+          "analyzeWithAi": "Analyze with AI",
+          "export": "Export"
         }
       },
       "states": {
@@ -3315,7 +3723,8 @@
           "sendEmail": {
             "loading": "Sending invitation to {email}...",
             "success": "Invitation sent to {email}!",
-            "error": "Failed: {message}"
+            "error": "Failed: {message}",
+            "comingSoon": "Email sharing is coming soon"
           },
           "revoke": {
             "loading": "Sending revoke request to backend...",
@@ -3357,7 +3766,9 @@
         "emailLabel": "Recipient's email address",
         "emailPlaceholder": "name@example.com",
         "emailHint": "An email invitation will be sent to this address with a private link to view the invoice.",
-        "sendInvitation": "Send private invitation"
+        "sendInvitation": "Send private invitation",
+        "sending": "Sending invitation...",
+        "comingSoonTooltip": "Email sharing feature is coming soon"
       },
       "deleteInvoiceDialog": {
         "title": "Delete invoice",
@@ -3489,7 +3900,8 @@
         "upload": "Upload",
         "review": "Review",
         "create": "Create"
-      }
+      },
+      "unknownMerchant": "Unknown Merchant"
     },
     "CreateInvoice": {
       "metadata": {
@@ -3514,7 +3926,10 @@
       "steps": {
         "selectScans": "Select Scans",
         "details": "Invoice Details",
-        "review": "Review & Create"
+        "review": "Review & Create",
+        "selectScansDesc": "Choose receipt scans",
+        "detailsDesc": "Fill in invoice info",
+        "reviewDesc": "Confirm and create"
       },
       "scanSelector": {
         "title": "Select Scans",
@@ -3522,11 +3937,17 @@
         "selectedCount": "{count} selected",
         "clearAll": "Clear",
         "selectAll": "Select All",
-        "noScans": "No scans available"
+        "noScans": "No scans available",
+        "previous": "Previous",
+        "next": "Next",
+        "scansCount": "scans"
       },
       "detailsForm": {
         "title": "Invoice Details",
         "subtitle": "Provide the details for your new invoice",
+        "scanPreview": {
+          "title": "Scan Preview"
+        },
         "fields": {
           "name": {
             "label": "Invoice Name",

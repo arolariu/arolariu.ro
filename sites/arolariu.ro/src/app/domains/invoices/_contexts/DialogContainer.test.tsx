@@ -11,6 +11,24 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
+// Mock server-only modules that are imported by server actions
+vi.mock("@/instrumentation.server", () => ({
+  addSpanEvent: vi.fn(),
+  logWithTrace: vi.fn(),
+  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
+
+vi.mock("@/lib/utils.server", () => ({
+  fetchWithTimeout: vi.fn(),
+}));
+
+// Mock server actions
+vi.mock("@/lib/actions/invoices/patchInvoice", () => ({
+  default: vi.fn(),
+}));
+
 // Mock @arolariu/components to avoid path alias resolution issues in tests
 vi.mock("@arolariu/components", () => ({
   Dialog: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
@@ -81,6 +99,14 @@ vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
   default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
 }));
 
+vi.mock("../edit-invoice/[id]/_components/dialogs/AllergenDialog", () => ({
+  default: () => <div data-testid='allergen-dialog'>AllergenDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog", () => ({
+  default: () => <div data-testid='bulk-category-dialog'>BulkCategoryDialog</div>,
+}));
+
 vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
   default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
@@ -91,6 +117,14 @@ vi.mock("../view-invoices/_components/dialogs/ExportDialog", () => ({
 
 vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
   default: () => <div data-testid='import-dialog'>InvoicesImportDialog</div>,
+}));
+
+vi.mock("../view-scans/_components/dialogs/CreateInvoiceDialog", () => ({
+  default: () => <div data-testid='create-invoice-dialog'>CreateInvoiceDialog</div>,
+}));
+
+vi.mock("../view-invoice/[id]/_components/dialogs/ExportDialog", () => ({
+  ExportDialog: () => <div data-testid='view-invoice-export-dialog'>ViewInvoiceExportDialog</div>,
 }));
 
 // Import the component after mocks are set up
@@ -197,6 +231,24 @@ describe("DialogContainer", () => {
       expect(screen.getByTestId("recipe-dialog")).toBeInTheDocument();
       expect(screen.getByText("InvoiceRecipeDialog")).toBeInTheDocument();
     });
+
+    test("renders AllergenDialog when type is EDIT_INVOICE__ALLERGENS", () => {
+      setupMockDialogType("EDIT_INVOICE__ALLERGENS");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("allergen-dialog")).toBeInTheDocument();
+      expect(screen.getByText("AllergenDialog")).toBeInTheDocument();
+    });
+
+    test("renders BulkCategoryDialog when type is EDIT_INVOICE__BULK_CATEGORY", () => {
+      setupMockDialogType("EDIT_INVOICE__BULK_CATEGORY");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("bulk-category-dialog")).toBeInTheDocument();
+      expect(screen.getByText("BulkCategoryDialog")).toBeInTheDocument();
+    });
   });
 
   describe("view-invoice dialogs", () => {
@@ -207,6 +259,15 @@ describe("DialogContainer", () => {
 
       expect(screen.getByTestId("share-analytics-dialog")).toBeInTheDocument();
       expect(screen.getByText("ShareAnalyticsDialog")).toBeInTheDocument();
+    });
+
+    test("renders ViewInvoiceExportDialog when type is VIEW_INVOICE__EXPORT", () => {
+      setupMockDialogType("VIEW_INVOICE__EXPORT");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("view-invoice-export-dialog")).toBeInTheDocument();
+      expect(screen.getByText("ViewInvoiceExportDialog")).toBeInTheDocument();
     });
   });
 
@@ -227,6 +288,17 @@ describe("DialogContainer", () => {
 
       expect(screen.getByTestId("export-dialog")).toBeInTheDocument();
       expect(screen.getByText("InvoicesExportDialog")).toBeInTheDocument();
+    });
+  });
+
+  describe("view-scans dialogs", () => {
+    test("renders CreateInvoiceDialog when type is VIEW_SCANS__CREATE_INVOICE", () => {
+      setupMockDialogType("VIEW_SCANS__CREATE_INVOICE");
+
+      render(<DialogContainer />);
+
+      expect(screen.getByTestId("create-invoice-dialog")).toBeInTheDocument();
+      expect(screen.getByText("CreateInvoiceDialog")).toBeInTheDocument();
     });
   });
 
@@ -260,11 +332,15 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__ALLERGENS", expectedTestId: "allergen-dialog"},
+      {type: "EDIT_INVOICE__BULK_CATEGORY", expectedTestId: "bulk-category-dialog"},
       {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
       {type: "EDIT_INVOICE__SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
+      {type: "VIEW_INVOICE__EXPORT", expectedTestId: "view-invoice-export-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
+      {type: "VIEW_SCANS__CREATE_INVOICE", expectedTestId: "create-invoice-dialog"},
       {type: "SHARED__INVOICE_DELETE", expectedTestId: "delete-invoice-dialog"},
       {type: "SHARED__INVOICE_SHARE", expectedTestId: "share-invoice-dialog"},
     ];
@@ -288,10 +364,14 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
+        "EDIT_INVOICE__ALLERGENS",
+        "EDIT_INVOICE__BULK_CATEGORY",
         "EDIT_INVOICE__SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",
+        "VIEW_INVOICE__EXPORT",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",
+        "VIEW_SCANS__CREATE_INVOICE",
         "SHARED__INVOICE_DELETE",
         "SHARED__INVOICE_SHARE",
         null,

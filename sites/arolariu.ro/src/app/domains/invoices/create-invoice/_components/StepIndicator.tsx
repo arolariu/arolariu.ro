@@ -23,13 +23,14 @@ import styles from "./StepIndicator.module.scss";
 interface StepConfig {
   id: "select-scans" | "details" | "review";
   labelKey: "selectScans" | "details" | "review";
+  descriptionKey: "selectScansDesc" | "detailsDesc" | "reviewDesc";
   icon: React.ReactNode;
 }
 
 const STEPS: StepConfig[] = [
-  {id: "select-scans", labelKey: "selectScans", icon: <TbPhoto />},
-  {id: "details", labelKey: "details", icon: <TbFileInvoice />},
-  {id: "review", labelKey: "review", icon: <TbReceipt />},
+  {id: "select-scans", labelKey: "selectScans", descriptionKey: "selectScansDesc", icon: <TbPhoto />},
+  {id: "details", labelKey: "details", descriptionKey: "detailsDesc", icon: <TbFileInvoice />},
+  {id: "review", labelKey: "review", descriptionKey: "reviewDesc", icon: <TbReceipt />},
 ];
 
 /**
@@ -56,6 +57,7 @@ function StepItem({
     <div className={styles["stepItem"]}>
       <div className={circleClassName}>{isCompleted ? <TbCheck className={styles["stepCheckIcon"]} /> : step.icon}</div>
       <span className={labelClassName}>{t(step.labelKey)}</span>
+      <span className={styles["stepDescription"]}>{t(step.descriptionKey)}</span>
     </div>
   );
 }
@@ -71,7 +73,9 @@ export default function StepIndicator(): React.JSX.Element {
   const currentStepIndex = STEPS.findIndex((step) => step.id === currentStep);
 
   return (
-    <div className={styles["container"]}>
+    <nav
+      className={styles["container"]}
+      aria-label='Invoice creation steps'>
       {STEPS.map((step, index) => {
         const isActive = index === currentStepIndex;
         const isCompleted = index < currentStepIndex;
@@ -79,7 +83,8 @@ export default function StepIndicator(): React.JSX.Element {
         return (
           <div
             key={step.id}
-            className={styles["stepWrapper"]}>
+            className={styles["stepWrapper"]}
+            aria-current={isActive ? "step" : undefined}>
             <StepItem
               step={step}
               isActive={isActive}
@@ -91,6 +96,6 @@ export default function StepIndicator(): React.JSX.Element {
           </div>
         );
       })}
-    </div>
+    </nav>
   );
 }

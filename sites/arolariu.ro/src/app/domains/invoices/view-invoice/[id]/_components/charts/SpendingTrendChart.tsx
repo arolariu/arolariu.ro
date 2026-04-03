@@ -1,9 +1,25 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {formatAmount} from "@/lib/utils.generic";
+import {
+  Area,
+  AreaChart,
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import Link from "next/link";
 import {useCallback} from "react";
-import {Area, AreaChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {SpendingTrendData} from "../../_utils/analytics";
 import styles from "./SpendingTrendChart.module.scss";
 
@@ -13,7 +29,13 @@ type Props = {
 };
 
 type TooltipPayloadItem = {
-  payload: {name: string; date: string; amount: number; isCurrent?: boolean};
+  payload: {
+    name: string;
+    date: string;
+    amount: number;
+    isCurrent?: boolean;
+    invoices?: ReadonlyArray<{id: string; name: string; amount: number}>;
+  };
 };
 
 type CustomTooltipProps = {
@@ -29,12 +51,37 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   const data = firstItem.payload;
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipName"]}>{data.name}</p>
       <p className={styles["tooltipDate"]}>{data.date}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.amount.toFixed(2)} {currency}
+        {formatAmount(data.amount)} {currency}
       </p>
-      {data.isCurrent ? <p className={styles["tooltipCurrent"]}>{t("tooltip.currentInvoice")}</p> : null}
+      <p className={styles["tooltipName"]}>{data.name}</p>
+      {data.isCurrent ? (
+        <Badge
+          variant='secondary'
+          className={styles["tooltipCurrentBadge"]}>
+          {t("tooltip.currentInvoice")}
+        </Badge>
+      ) : null}
+      {data.invoices && data.invoices.length > 0 ? (
+        <ul className={styles["tooltipInvoices"]}>
+          {data.invoices.slice(0, 10).map((inv) => (
+            <li
+              key={inv.id}
+              className={styles["tooltipInvoiceItem"]}>
+              <Link
+                href={`/domains/invoices/view-invoice/${inv.id}/`}
+                target='_blank'
+                className={styles["tooltipInvoiceLink"]}>
+                • {inv.name} — {formatAmount(inv.amount)} {currency}
+              </Link>
+            </li>
+          ))}
+          {data.invoices.length > 10 ? (
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+          ) : null}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -44,7 +91,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
   const chartConfig = {
     amount: {
       label: t("labels.amount"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
@@ -76,12 +123,12 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                   y2='1'>
                   <stop
                     offset='5%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0.3}
                   />
                   <stop
                     offset='95%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -112,7 +159,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
               <Area
                 type='monotone'
                 dataKey='amount'
-                stroke='hsl(var(--chart-1))'
+                stroke='var(--ac-chart-1)'
                 strokeWidth={2}
                 fill='url(#colorAmount)'
               />
@@ -121,8 +168,8 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                   x={currentPoint.date}
                   y={currentPoint.amount}
                   r={6}
-                  fill='hsl(var(--primary))'
-                  stroke='hsl(var(--background))'
+                  fill='var(--ac-primary)'
+                  stroke='var(--ac-background)'
                   strokeWidth={2}
                 />
               ) : null}

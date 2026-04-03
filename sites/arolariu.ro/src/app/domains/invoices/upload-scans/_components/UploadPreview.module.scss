@@ -224,3 +224,23 @@
   background-color: color('primary');
   @include transition(all);
 }
+
+// ===========================================
+// PAGINATION CONTROLS
+// ===========================================
+.pagination {
+  @include flex-center;
+  gap: space(4);
+  margin-top: space(6);
+  flex-direction: row;
+}
+
+.paginationInfo {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+
+  @include dark {
+    color: color('muted');
+  }
+}

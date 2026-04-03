@@ -2,7 +2,7 @@
 
 .ctaSection {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   padding: abstracts.space(20) abstracts.space(4);
 
   @include abstracts.respond-to('sm') {
@@ -17,17 +17,6 @@
 .ctaBackground {
   position: absolute;
   inset: 0;
-}
-
-.ctaGridPattern {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: calc(-1 * abstracts.space(16));
-  left: 0;
-  background-image: linear-gradient(abstracts.color-alpha('secondary', 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, abstracts.color-alpha('tertiary', 0.18) 1px, transparent 1px);
-  background-size: 25px 25px;
 }
 
 .ctaContent {
@@ -87,7 +76,7 @@
   justify-content: center;
   gap: abstracts.space(6);
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color('foreground');
 }
 
 .ctaBadge {
@@ -150,7 +139,7 @@
 
 .badgeIcon {
   @include abstracts.icon-size(abstracts.space(4));
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color('foreground');
 }
 
 // ===========================================
@@ -175,5 +164,25 @@
 
   &:hover {
     background-color: abstracts.color-alpha('muted', 0.4);
+  }
+}
+
+// ===========================================
+// MOBILE RESPONSIVE OVERRIDES
+// ===========================================
+@include abstracts.respond-below('sm') {
+  .orbTopLeft {
+    display: none;
+  }
+
+  .orbBottomRight {
+    right: 0;
+    height: 6rem;
+    width: 6rem;
+  }
+
+  .orbCenter {
+    height: 10rem;
+    width: 10rem;
   }
 }

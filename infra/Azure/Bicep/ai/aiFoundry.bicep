@@ -91,5 +91,6 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
 
 // Output the AI Foundry instance details
 output aiFoundryId string = aiFoundry.id
+output aiFoundryName string = aiFoundry.name
 output aiFoundryEndpoint string = aiFoundry.properties.endpoint
 output aiProjectId string = aiFoundry::aiProject.id

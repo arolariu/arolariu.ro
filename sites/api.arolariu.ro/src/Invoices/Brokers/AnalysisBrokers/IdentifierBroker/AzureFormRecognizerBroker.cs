@@ -5,29 +5,28 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
-using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.AI.DocumentIntelligence;
 
 /// <summary>
-/// Azure Form Recognizer (Document Intelligence) concrete broker that performs best-effort OCR + structural extraction over invoice scans
+/// Azure Document Intelligence concrete broker that performs best-effort OCR + structural extraction over invoice scans
 /// and projects recognized signals (merchant, products, payment) into a domain aggregate.
 /// </summary>
 /// <remarks>
-/// <para><b>Role (Broker Standard):</b> Implements <see cref="IFormRecognizerBroker"/> by delegating to <see cref="DocumentAnalysisClient"/>
+/// <para><b>Role (Broker Standard):</b> Implements <see cref="IFormRecognizerBroker"/> by delegating to <see cref="DocumentIntelligenceClient"/>
 /// (prebuilt receipt model: <c>prebuilt-receipt</c>). It performs ONLY external service invocation + minimal mapping. No:
 /// domain validation, retry policy, logging, metrics, authorization, enrichment chaining, or persistence.</para>
-/// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentAnalysisClient"/> instance (thread-safe). Scoped lifetime
+/// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentIntelligenceClient"/> instance (thread-safe). Scoped lifetime
 /// registration is acceptable; underlying client could be promoted to singleton if connection reuse optimization is required.</para>
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
 /// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
-/// <para><b>Security:</b> Uses <see cref="AzureCredentialFactory"/> (managed identity in non-DEBUG) instead of API key string usage to reduce
-/// secret management risk. Environment variable <c>AZURE_CLIENT_ID</c> must be present in managed identity deployments.</para>
+/// <para><b>Security:</b> Uses <see cref="AzureKeyCredential"/> with the Cognitive Services API key from application configuration.
+/// Production deployments should rotate keys regularly and use Azure Key Vault for secret management.</para>
 /// <para><b>Output Model Fidelity:</b> Mapping intentionally narrow: only fields required for initial enrichment pipeline are projected.
 /// Backlog: field provenance (confidence, bounding boxes) exposure for advanced UI / validation workflows.</para>
 /// <para><b>Performance:</b> Dominated by service round-trip latency and image size. Caller SHOULD parallelize at orchestration layer for bulk imports
@@ -38,17 +37,17 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 {
-  private readonly DocumentAnalysisClient client;
+  private readonly DocumentIntelligenceClient client;
 
   /// <summary>
   /// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
   /// </summary>
   /// <remarks>
-  /// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="AzureCredentialFactory"/>. In non-DEBUG builds a managed identity
-  /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
+  /// <para>Builds a single <see cref="DocumentIntelligenceClient"/> using <see cref="AzureKeyCredential"/>. The API key is sourced from
+  /// application configuration via <see cref="ApplicationOptions.CognitiveServicesKey"/>. Throws fast on null dependency to fail early in composition root.</para>
   /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
   /// </remarks>
-  /// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint + key context; key unused when MI is present).</param>
+  /// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint and API key credentials).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   public AzureFormRecognizerBroker(IOptionsManager optionsManager)
   {
@@ -56,11 +55,20 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
-    var credentials = AzureCredentialFactory.CreateCredential();
+    var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
-    client = new DocumentAnalysisClient(
+    // Use AzureKeyCredential (same pattern as TranslatorBroker)
+    var credentials = new AzureKeyCredential(cognitiveServicesApiKey);
+
+    client = new DocumentIntelligenceClient(
       endpoint: new Uri(documentIntelligenceEndpoint),
-      credential: credentials);
+      credential: credentials,
+      options: new DocumentIntelligenceClientOptions
+      {
+        // Document Intelligence OCR can take 2-3 minutes for complex receipts.
+        // Default Azure SDK timeout is 100s — increase to 5 minutes.
+        Retry = { NetworkTimeout = TimeSpan.FromMinutes(5) },
+      });
   }
 
 
@@ -68,7 +76,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Executes OCR + structured field extraction against the invoice's scan URI and merges recognized data into the provided aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scans"/> contains a resolvable, accessible URI.</para>
+  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scans"/> contains a resolvable, accessible URI.</para>
   /// <para><b>Mutation:</b> Populates (or overwrites) <c>MerchantReference</c>, <c>Items</c>, and <c>PaymentInformation</c> via internal transformation helpers.
   /// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
   /// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
@@ -85,7 +93,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 
     var firstScan = invoice.Scans.First();
 
-    var operation = await client.AnalyzeDocumentFromUriAsync(
+    var operation = await client.AnalyzeDocumentAsync(
       WaitUntil.Completed,
       "prebuilt-receipt",
       firstScan.Location)
@@ -102,7 +110,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   {
     ArgumentNullException.ThrowIfNull(merchant);
 
-    var operation = await client.AnalyzeDocumentFromUriAsync(
+    var operation = await client.AnalyzeDocumentAsync(
      WaitUntil.Completed,
      "prebuilt-receipt",
      scan.Location)

@@ -5,9 +5,23 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/SpendingOverTimeChart
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {formatAmount} from "@/lib/utils.generic";
+import {
+  Area,
+  AreaChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import Link from "next/link";
 import type {MonthlySpending} from "../../../_utils/statistics";
 import styles from "./SpendingOverTimeChart.module.scss";
 
@@ -21,8 +35,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
 };
 
@@ -37,11 +51,29 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipMonth"]}>{data.monthName}</p>
+      <p className={styles["tooltipMonth"]}>{data.month}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.amount.toFixed(2)} {currency}
+        {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
+      {data.invoices && data.invoices.length > 0 && (
+        <ul className={styles["tooltipInvoices"]}>
+          {data.invoices.slice(0, 10).map((inv) => (
+            <li
+              key={inv.id}
+              className={styles["tooltipInvoiceItem"]}>
+              <Link
+                href={`/domains/invoices/view-invoice/${inv.id}/`}
+                className={styles["tooltipInvoiceLink"]}>
+                {inv.name} — {formatAmount(inv.amount)} {currency}
+              </Link>
+            </li>
+          ))}
+          {data.invoices.length > 10 && (
+            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: data.invoices.length - 10})}</li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }
@@ -50,7 +82,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  * Formats Y-axis tick values to whole numbers.
  */
 function formatYAxisTick(value: number): string {
-  return `${value.toFixed(0)}`;
+  return formatAmount(value, "en-US", 0);
 }
 
 /**
@@ -66,7 +98,7 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
   const chartConfig = {
     amount: {
       label: t("labels.amount"),
-      color: "hsl(var(--chart-1))",
+      color: "var(--ac-chart-1)",
     },
   };
 
@@ -95,18 +127,18 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                   y2='1'>
                   <stop
                     offset='5%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0.3}
                   />
                   <stop
                     offset='95%'
-                    stopColor='hsl(var(--chart-1))'
+                    stopColor='var(--ac-chart-1)'
                     stopOpacity={0}
                   />
                 </linearGradient>
               </defs>
               <XAxis
-                dataKey='monthName'
+                dataKey='month'
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}
@@ -119,19 +151,11 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
                 width={40}
                 tickFormatter={formatYAxisTick}
               />
-              <Tooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                    currency={currency}
-                  />
-                }
-              />
+              <Tooltip content={<CustomTooltip currency={currency} />} />
               <Area
                 type='monotone'
                 dataKey='amount'
-                stroke='hsl(var(--chart-1))'
+                stroke='var(--ac-chart-1)'
                 strokeWidth={2}
                 fill='url(#colorSpending)'
               />

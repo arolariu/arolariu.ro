@@ -117,8 +117,11 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
       cors: {
         corsRules: [
           {
+            // CORS: PUT is required for client-side direct blob uploads using SAS tokens.
+            // Access is gated by short-lived User Delegation SAS keys (30min TTL) with per-blob scope.
+            // See RFC 0001 and the generateSasUrl server action for the full security model.
             allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
-            allowedMethods: ['GET', 'HEAD', 'OPTIONS']
+            allowedMethods: ['GET', 'HEAD', 'PUT', 'OPTIONS']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
             maxAgeInSeconds: 3600

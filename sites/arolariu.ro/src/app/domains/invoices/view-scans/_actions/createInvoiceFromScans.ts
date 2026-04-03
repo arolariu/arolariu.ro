@@ -20,9 +20,17 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {markScansAsUsed} from "@/lib/actions/scans/markScansAsUsed";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceScanType} from "@/types/invoices";
+import {
+  type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
+  type Invoice,
+  InvoiceAnalysisOptions,
+  InvoiceScanType,
+} from "@/types/invoices";
 import {type Scan, ScanType} from "@/types/scans";
 
 /**
@@ -67,6 +75,16 @@ function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
     default:
       return InvoiceScanType.OTHER;
   }
+}
+
+/**
+ * Extracts blob name from scan's blob URL.
+ * E.g., "https://...blob.core.windows.net/invoices/scans/userId/scanId.jpg" → "scans/userId/scanId.jpg"
+ */
+function extractBlobNameFromScan(scan: Scan): string {
+  const urlParts = scan.blobUrl.split("/");
+  // Take last 3 parts: scans/userId/scanId.jpg
+  return urlParts.slice(-3).join("/");
 }
 
 /**
@@ -151,6 +169,10 @@ async function processSingleScan(
   try {
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
+    // Fire-and-forget auto-analysis after successful creation
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      console.error("Background invoice analysis failed:", error);
+    });
     return {success: true, invoice};
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -178,6 +200,15 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
     } else {
       errors.push({scanId: scan.id, error: result.error});
     }
+  }
+
+  // Mark successfully converted scans as used (best-effort)
+  if (convertedScanIds.length > 0) {
+    const blobNames = scans.filter((s) => convertedScanIds.includes(s.id)).map(extractBlobNameFromScan);
+
+    markScansAsUsed({blobNames}).catch((error) => {
+      console.warn("Failed to mark scans as used (non-critical):", error);
+    });
   }
 
   addSpanEvent("bff.invoices.create.single.complete");
@@ -239,6 +270,19 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
       {invoiceId: invoice.id, scansAttached: convertedScanIds.length + 1},
       "server",
     );
+
+    // Mark successfully converted scans as used (best-effort)
+    const allConvertedScanIds = [firstScan.id, ...convertedScanIds];
+    const blobNames = scans.filter((s) => allConvertedScanIds.includes(s.id)).map(extractBlobNameFromScan);
+
+    markScansAsUsed({blobNames}).catch((error) => {
+      console.warn("Failed to mark scans as used (non-critical):", error);
+    });
+
+    // Fire-and-forget auto-analysis after successful batch creation
+    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      console.error("Background invoice analysis failed:", error);
+    });
 
     addSpanEvent("bff.invoice.create.batch.complete");
     return {

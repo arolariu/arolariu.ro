@@ -65,7 +65,24 @@ export default function MerchantDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
-  const merchant = payload as Merchant;
+  const merchant = payload as Merchant | null;
+
+  // Early return if merchant is null
+  if (!merchant) {
+    return (
+      <Dialog
+        open={isOpen}
+        // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+        onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+        <DialogContent className={styles["dialogContent"]}>
+          <DialogHeader className={styles["dialogHeader"]}>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("noMerchantLinked")}</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const merchantCategoryKey = Object.keys(MerchantCategory)[merchant.category];
   const merchantCategoryAsString = MerchantCategory[merchantCategoryKey as keyof typeof MerchantCategory];

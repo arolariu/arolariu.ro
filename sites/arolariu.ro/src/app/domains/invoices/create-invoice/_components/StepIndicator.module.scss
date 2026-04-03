@@ -71,6 +71,18 @@
   }
 }
 
+.stepDescription {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+  white-space: nowrap;
+  margin-top: space(0.5);
+
+  @include respond-below('sm') {
+    display: none;
+  }
+}
+
 .stepLabelActive {
   color: color('foreground');
   font-weight: font-weight('medium');

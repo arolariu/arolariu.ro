@@ -16,7 +16,7 @@
 "use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";
-import {createContext, use, useMemo} from "react";
+import {createContext, use, useMemo, useState} from "react";
 
 /**
  * Context value shape for invoice and merchant data access.
@@ -25,19 +25,22 @@ import {createContext, use, useMemo} from "react";
  * **Properties:**
  * - `invoice`: The current invoice being viewed
  * - `merchant`: The merchant associated with the invoice
+ * - `setInvoice`: Function to update the invoice (for optimistic updates)
  *
  * **Type Safety:** Ensures consistent invoice data access across all consuming components.
  *
  * @example
  * ```typescript
- * const { invoice, merchant } = useInvoiceContext();
+ * const { invoice, merchant, setInvoice } = useInvoiceContext();
  * ```
  */
 interface InvoiceContextValue {
   /** The current invoice being viewed */
   readonly invoice: Invoice;
   /** The merchant associated with the invoice */
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
+  /** Function to update the invoice state */
+  readonly setInvoice: (invoice: Invoice) => void;
 }
 
 const InvoiceContext = createContext<InvoiceContextValue | undefined>(undefined);
@@ -50,7 +53,7 @@ const InvoiceContext = createContext<InvoiceContextValue | undefined>(undefined)
  */
 interface InvoiceContextProviderProps {
   readonly invoice: Invoice;
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
   readonly children: React.ReactNode;
 }
 
@@ -90,7 +93,13 @@ interface InvoiceContextProviderProps {
  *
  * @see {@link useInvoiceContext} for consuming the context
  */
-export function InvoiceContextProvider({invoice, merchant, children}: Readonly<InvoiceContextProviderProps>): React.JSX.Element {
+export function InvoiceContextProvider({
+  invoice: initialInvoice,
+  merchant,
+  children,
+}: Readonly<InvoiceContextProviderProps>): React.JSX.Element {
+  const [invoice, setInvoice] = useState<Invoice>(initialInvoice);
+
   /**
    * Memoized context value to prevent unnecessary consumer re-renders.
    *
@@ -100,15 +109,17 @@ export function InvoiceContextProvider({invoice, merchant, children}: Readonly<I
    * for the lifetime of the component.
    *
    * **Contents:**
-   * - `invoice`: The current Invoice object
+   * - `invoice`: The current Invoice object (with state management)
    * - `merchant`: The associated Merchant object
+   * - `setInvoice`: State setter for optimistic updates
    */
   const value = useMemo(
     () => ({
       invoice,
       merchant,
+      setInvoice,
     }),
-    [invoice, merchant],
+    [invoice, merchant, setInvoice],
   );
 
   return <InvoiceContext value={value}>{children}</InvoiceContext>;

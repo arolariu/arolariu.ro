@@ -280,6 +280,31 @@ describe("useScansStore", () => {
     });
   });
 
+  describe("updateScanBlobUrl", () => {
+    it("should update a scan blob URL", () => {
+      const scan = createTestScan("1", {blobUrl: "https://old.url/scan.jpg"});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().updateScanBlobUrl("1", "https://new.url/scan.jpg");
+      });
+
+      expect(useScansStore.getState().scans[0]?.blobUrl).toBe("https://new.url/scan.jpg");
+    });
+
+    it("should also update blob URL in selectedScans", () => {
+      const scan = createTestScan("1", {blobUrl: "https://old.url/scan.jpg"});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().toggleScanSelection(scan);
+        useScansStore.getState().updateScanBlobUrl("1", "https://new.url/scan.jpg");
+      });
+
+      expect(useScansStore.getState().selectedScans[0]?.blobUrl).toBe("https://new.url/scan.jpg");
+    });
+  });
+
   describe("toggleScanSelection", () => {
     it("should add scan to selectedScans when not selected", () => {
       const scan = createTestScan("1");

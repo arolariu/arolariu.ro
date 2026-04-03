@@ -5,9 +5,21 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/CategoryBreakdownChart
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {formatAmount} from "@/lib/utils.generic";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartLegend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategoryAggregate} from "../../../_utils/statistics";
 import styles from "./CategoryBreakdownChart.module.scss";
 
@@ -48,9 +60,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipCategory"]}>{data.category}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.amount.toFixed(2)} {currency}
+        {formatAmount(data.amount)} {currency}
       </p>
-      <p className={styles["tooltipPercentage"]}>{data.percentage.toFixed(1)}%</p>
+      <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.count})}</p>
     </div>
   );
@@ -91,13 +103,13 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
       label: item.category,
-      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      color: `var(--ac-chart-${(index % 5) + 1})`,
     };
   }
 
   const coloredData = data.map((item, index) => ({
     ...item,
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+    fill: `var(--ac-chart-${(index % 5) + 1})`,
   }));
 
   const total = data.reduce((sum, item) => sum + item.amount, 0);
@@ -136,13 +148,13 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
                   />
                 }
               />
-              <Legend content={<CustomLegend payload={[]} />} />
+              <ChartLegend content={<CustomLegend payload={[]} />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
         <div className={styles["totalSection"]}>
           <p className={styles["totalAmount"]}>
-            {total.toFixed(2)} {currency}
+            {formatAmount(total)} {currency}
           </p>
           <p className={styles["totalLabel"]}>{t("totalLabel")}</p>
         </div>

@@ -5,9 +5,24 @@
  * @module app/domains/invoices/view-invoices/_components/views/statistics/MerchantLeaderboard
  */
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {formatAmount} from "@/lib/utils.generic";
+import {useMerchantsStore} from "@/stores/merchantsStore";
+import {
+  Bar,
+  BarChart,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
 
@@ -21,25 +36,27 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
+  readonly getMerchantName: (id: string) => string;
 };
 
 /**
  * Custom tooltip for the merchant leaderboard.
  */
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
-  if (!active || payload.length === 0 || !firstItem) return null;
+  if (!firstItem) return null;
   const data = firstItem.payload;
 
   return (
     <div className={styles["tooltip"]}>
-      <p className={styles["tooltipMerchant"]}>{data.merchantId}</p>
+      <p className={styles["tooltipMerchant"]}>{getMerchantName(data.merchantId)}</p>
       <p className={styles["tooltipAmount"]}>
-        {data.totalSpend.toFixed(2)} {currency}
+        {formatAmount(data.totalSpend)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: data.invoiceCount})}</p>
     </div>
@@ -55,19 +72,45 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  */
 export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
+
+  // Create a function to get merchant name or fallback to ID
+  const getMerchantName = (id: string): string => {
+    const merchant = getMerchantById(id);
+    return merchant?.name ?? t("unknownMerchant");
+  };
 
   const chartConfig = {
     totalSpent: {
       label: t("labels.totalSpent"),
-      color: "hsl(var(--chart-2))",
+      color: "var(--ac-chart-2)",
     },
   };
 
-  // Truncate merchant IDs for display
-  const displayData = data.map((item) => ({
-    ...item,
-    displayName: item.merchantId.length > 20 ? `${item.merchantId.slice(0, 17)}...` : item.merchantId,
-  }));
+  // Empty state
+  if (data.length === 0) {
+    return (
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
+          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent className={styles["emptyContent"]}>
+          <TbChartBar className={styles["emptyIcon"]} />
+          <p className={styles["emptyText"]}>{t("empty")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Map data to include display names
+  const displayData = data.map((item) => {
+    const merchantName = getMerchantName(item.merchantId);
+    return {
+      ...item,
+      displayName: merchantName.length > 20 ? `${merchantName.slice(0, 17)}...` : merchantName,
+    };
+  });
 
   return (
     <Card className={styles["card"]}>
@@ -103,15 +146,14 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
               <Tooltip
                 content={
                   <CustomTooltip
-                    active={false}
-                    payload={[]}
                     currency={currency}
+                    getMerchantName={getMerchantName}
                   />
                 }
               />
               <Bar
                 dataKey='totalSpent'
-                fill='hsl(var(--chart-2))'
+                fill='var(--ac-chart-2)'
                 radius={[0, 4, 4, 0]}
               />
             </BarChart>

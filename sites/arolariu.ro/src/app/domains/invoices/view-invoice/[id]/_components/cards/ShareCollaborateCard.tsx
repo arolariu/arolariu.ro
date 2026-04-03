@@ -6,7 +6,7 @@
  * Displays invoice sharing status and provides quick actions for collaboration:
  * - Sharing status badge (Private/Shared/Public)
  * - Count of users the invoice is shared with
- * - Quick action buttons: Copy Link, Share via Email
+ * - Public/Private toggle switch
  * - Activity summary (created date, last modified)
  * - "Manage Sharing" button to open the full ShareInvoiceDialog
  *
@@ -28,12 +28,12 @@
 
 "use client";
 
-import {LAST_GUID} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, toast} from "@arolariu/components";
-import {motion} from "motion/react";
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useMemo} from "react";
-import {TbClipboard, TbLock, TbMail, TbShare, TbUsers, TbWorld} from "react-icons/tb";
+import {useCallback, useMemo, useTransition} from "react";
+import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
@@ -55,9 +55,7 @@ type SharingStatus = "private" | "public" | "shared";
  * **Features:**
  * 1. Sharing status badge with appropriate icon and color
  * 2. Count of shared users (if applicable)
- * 3. Quick action buttons:
- *    - Copy Link: Copies invoice URL to clipboard with toast feedback
- *    - Share via Email: Opens ShareInvoiceDialog in email mode
+ * 3. Public/Private toggle switch with optimistic updates
  * 4. Activity summary:
  *    - Created date (relative time)
  *    - Last modified date (relative time)
@@ -69,8 +67,8 @@ type SharingStatus = "private" | "public" | "shared";
  * - Otherwise → Shared with N people
  *
  * **User Experience:**
- * - Toast notifications for clipboard actions
- * - Animated hover effects on action buttons
+ * - Toast notifications for state changes
+ * - Optimistic UI updates for toggle switch
  * - Clear visual hierarchy with icons and badges
  *
  * @returns The share & collaborate card component
@@ -85,8 +83,9 @@ type SharingStatus = "private" | "public" | "shared";
  */
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.shareCollaborate");
-  const {invoice} = useInvoiceContext();
+  const {invoice, setInvoice} = useInvoiceContext();
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
+  const [isPending, startTransition] = useTransition();
 
   /**
    * Computes the current sharing status based on invoice.sharedWith array.
@@ -165,78 +164,51 @@ export function ShareCollaborateCard(): React.JSX.Element {
   }, [sharingStatus]);
 
   /**
-   * Computes relative time string for activity dates.
-   *
-   * @param date - The date to compute relative time for
-   * @returns Human-readable relative time string
-   *
-   * @remarks
-   * - Today → "activity.today"
-   * - Past days → "activity.daysAgo" with count
-   */
-  const getRelativeTime = useCallback(
-    (date: Date): string => {
-      const now = new Date();
-      const diffInMs = now.getTime() - date.getTime();
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-      if (diffInDays === 0) {
-        return t("activity.today");
-      }
-
-      return t("activity.daysAgo", {count: diffInDays});
-    },
-    [t],
-  );
-
-  /**
-   * Handles copying the invoice link to clipboard.
+   * Handles toggling the public/private status of the invoice.
    *
    * @remarks
    * **Behavior:**
-   * 1. Constructs full invoice URL from window.location
-   * 2. Uses Clipboard API to copy to clipboard
-   * 3. Shows success toast with feedback
-   * 4. Falls back to error toast if Clipboard API fails
-   *
-   * **Performance:** Memoized with useCallback.
+   * - If currently public (has LAST_GUID), removes it to make private
+   * - If currently private/shared, adds LAST_GUID to make public
+   * - Uses optimistic UI updates with server action
+   * - Shows toast feedback for success/failure
    */
-  const handleCopyLink = useCallback(async (): Promise<void> => {
-    try {
-      const invoiceUrl = `${window.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
-      await navigator.clipboard.writeText(invoiceUrl);
-      toast.success(t("copied"));
-    } catch (error) {
-      console.error("Failed to copy link:", error);
-      toast.error("Failed to copy link");
-    }
-  }, [invoice.id, t]);
+  const handleTogglePublic = useCallback(async (): Promise<void> => {
+    const isCurrentlyPublic = sharingStatus === "public";
+    const newSharedWith = isCurrentlyPublic ? invoice.sharedWith.filter((guid) => guid !== LAST_GUID) : [...invoice.sharedWith, LAST_GUID];
 
-  /**
-   * Handles opening the ShareInvoiceDialog for email sharing.
-   *
-   * @remarks
-   * Opens the dialog using the DialogContext. The ShareInvoiceDialog
-   * component handles the email/public/private sharing logic internally.
-   *
-   * **Performance:** Memoized with useCallback.
-   */
-  const handleShareEmail = useCallback((): void => {
-    openShareDialog();
-  }, [openShareDialog]);
+    startTransition(() => {
+      // Execute async work inside the transition without async keyword
+      patchInvoice({
+        invoiceId: invoice.id,
+        payload: {sharedWith: newSharedWith},
+      })
+        .then((result) => {
+          if (result.success) {
+            setInvoice(result.invoice);
+            toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
+          } else {
+            toast.error(t("toggleError"));
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to toggle public status:", error);
+          toast.error(t("toggleError"));
+        });
+    });
+  }, [sharingStatus, invoice, setInvoice, t]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.
    *
    * @remarks
-   * Same as handleShareEmail - opens the full ShareInvoiceDialog.
-   * Separated for semantic clarity and potential future divergence.
+   * Opens the full ShareInvoiceDialog for managing all sharing settings.
    *
    * **Performance:** Memoized with useCallback.
    */
   const handleManageSharing = useCallback((): void => {
-    openShareDialog();
-  }, [openShareDialog]);
+    openShareDialog({invoice});
+  }, [invoice, openShareDialog]);
 
   return (
     <Card>
@@ -248,6 +220,25 @@ export function ShareCollaborateCard(): React.JSX.Element {
       </CardHeader>
 
       <CardContent className={styles["cardContent"]}>
+        {/* Public Toggle Section */}
+        <div className={styles["toggleSection"]}>
+          <div className={styles["toggleRow"]}>
+            <Label
+              htmlFor='public-toggle'
+              className={styles["toggleLabel"]}>
+              <TbWorld className={styles["toggleIcon"]} />
+              {t("publicAccess")}
+            </Label>
+            <Switch
+              id='public-toggle'
+              checked={sharingStatus === "public"}
+              onCheckedChange={handleTogglePublic}
+              disabled={isPending}
+            />
+          </div>
+          <p className={styles["toggleDescription"]}>{t("publicAccessDescription")}</p>
+        </div>
+
         {/* Sharing Status Section */}
         <div className={styles["statusSection"]}>
           <div className={styles["statusRow"]}>
@@ -268,41 +259,12 @@ export function ShareCollaborateCard(): React.JSX.Element {
           )}
         </div>
 
-        {/* Quick Actions Section */}
-        <div className={styles["actionsSection"]}>
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleCopyLink}
-              className={styles["actionButton"]}>
-              <TbClipboard className={styles["buttonIcon"]} />
-              {t("copyLink")}
-            </Button>
-          </motion.div>
-
-          <motion.div
-            whileHover={{scale: 1.02}}
-            whileTap={{scale: 0.98}}>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleShareEmail}
-              className={styles["actionButton"]}>
-              <TbMail className={styles["buttonIcon"]} />
-              {t("shareEmail")}
-            </Button>
-          </motion.div>
-        </div>
-
         {/* Activity Summary Section */}
         <div className={styles["activitySection"]}>
           <h4 className={styles["activityTitle"]}>{t("activity.title")}:</h4>
           <ul className={styles["activityList"]}>
-            <li className={styles["activityItem"]}>• {t("activity.created", {time: getRelativeTime(invoice.createdAt)})}</li>
-            <li className={styles["activityItem"]}>• {t("activity.modified", {time: getRelativeTime(invoice.lastUpdatedAt)})}</li>
+            <li className={styles["activityItem"]}>• {t("activity.created", {time: formatRelativeTime(invoice.createdAt)})}</li>
+            <li className={styles["activityItem"]}>• {t("activity.modified", {time: formatRelativeTime(invoice.lastUpdatedAt)})}</li>
           </ul>
         </div>
 

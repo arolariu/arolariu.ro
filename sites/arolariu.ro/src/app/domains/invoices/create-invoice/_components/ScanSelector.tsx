@@ -15,91 +15,13 @@
 
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
-import {Badge, Button, Card, CardContent, Checkbox} from "@arolariu/components";
-import {motion} from "motion/react";
+import {Badge, Button} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {TbCheck, TbPhoto, TbX} from "react-icons/tb";
+import {useEffect, useState} from "react";
+import {TbCheck, TbChevronLeft, TbChevronRight, TbPhoto, TbX} from "react-icons/tb";
+import ScanCard from "../../_components/ScanCard";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
-
-/**
- * Individual scan card component.
- */
-function ScanCard({
-  scan,
-  isSelected,
-  onToggle,
-}: Readonly<{
-  scan: {id: string; name: string; blobUrl: string; uploadedAt: Date; sizeInBytes: number};
-  isSelected: boolean;
-  onToggle: () => void;
-}>): React.JSX.Element {
-  const cardClassName = [styles["scanCard"], isSelected && styles["scanCardSelected"]].filter(Boolean).join(" ");
-
-  const formatSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const formatDate = (date: Date): string => {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(date));
-  };
-
-  return (
-    <motion.div
-      whileHover={{scale: 1.02}}
-      whileTap={{scale: 0.98}}
-      className={styles["scanCardWrapper"]}>
-      <Card
-        className={cardClassName}
-        onClick={onToggle}>
-        {/* Selection overlay */}
-        <div className={styles["selectionOverlay"]}>
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onToggle}
-            onClick={(e) => e.stopPropagation()}
-            className={styles["checkbox"]}
-          />
-        </div>
-
-        {/* Scan preview */}
-        <div className={styles["scanPreview"]}>
-          <img
-            src={scan.blobUrl}
-            alt={scan.name}
-            className={styles["scanImage"]}
-            loading='lazy'
-          />
-        </div>
-
-        {/* Scan info */}
-        <CardContent className={styles["scanInfo"]}>
-          <p className={styles["scanName"]}>{scan.name}</p>
-          <div className={styles["scanMeta"]}>
-            <span className={styles["scanDate"]}>{formatDate(scan.uploadedAt)}</span>
-            <span className={styles["scanSize"]}>{formatSize(scan.sizeInBytes)}</span>
-          </div>
-        </CardContent>
-
-        {/* Selected badge */}
-        {isSelected && (
-          <motion.div
-            initial={{scale: 0}}
-            animate={{scale: 1}}
-            className={styles["selectedBadge"]}>
-            <TbCheck />
-          </motion.div>
-        )}
-      </Card>
-    </motion.div>
-  );
-}
 
 /**
  * Scan selector component.
@@ -111,9 +33,37 @@ export default function ScanSelector(): React.JSX.Element {
   const {scans} = useScansStore();
   const {selectedScans, toggleScan, selectAllScans, clearSelection} = useCreateInvoiceContext();
 
+  // Pagination constants
+  const MOBILE_PAGE_SIZE = 20;
+  const DESKTOP_PAGE_SIZE = 50;
+
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Responsive detection
+  useEffect(() => {
+    const checkMobile = (): void => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const readyScans = scans.filter((scan) => scan.status === ScanStatus.READY);
   const hasScans = readyScans.length > 0;
   const allSelected = hasScans && selectedScans.length === readyScans.length;
+
+  // Pagination calculations
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
+  const totalPages = Math.ceil(readyScans.length / pageSize);
+  const paginatedScans = readyScans.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Reset page when scans change
+  useEffect(() => {
+    setPage(0);
+  }, [readyScans.length]);
 
   return (
     <div className={styles["container"]}>
@@ -147,7 +97,8 @@ export default function ScanSelector(): React.JSX.Element {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={selectAllScans}>
+                  onClick={selectAllScans}
+                  disabled={readyScans.length > 5}>
                   <TbCheck />
                   {t("selectAll")}
                 </Button>
@@ -159,16 +110,43 @@ export default function ScanSelector(): React.JSX.Element {
 
       {/* Scans grid */}
       {hasScans ? (
-        <div className={styles["scansGrid"]}>
-          {readyScans.map((scan) => (
-            <ScanCard
-              key={scan.id}
-              scan={scan}
-              isSelected={selectedScans.some((s) => s.id === scan.id)}
-              onToggle={() => toggleScan(scan)}
-            />
-          ))}
-        </div>
+        <>
+          <div className={styles["scansGrid"]}>
+            {paginatedScans.map((scan) => (
+              <ScanCard
+                key={scan.id}
+                scan={scan}
+                isSelected={selectedScans.some((s) => s.id === scan.id)}
+                onToggleSelect={() => toggleScan(scan)}
+              />
+            ))}
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className={styles["pagination"]}>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}>
+                <TbChevronLeft />
+                {t("previous")}
+              </Button>
+              <span className={styles["pageInfo"]}>
+                {page + 1} / {totalPages} ({readyScans.length} {t("scansCount")})
+              </span>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}>
+                {t("next")}
+                <TbChevronRight />
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className={styles["emptyState"]}>
           <TbPhoto className={styles["emptyIcon"]} />

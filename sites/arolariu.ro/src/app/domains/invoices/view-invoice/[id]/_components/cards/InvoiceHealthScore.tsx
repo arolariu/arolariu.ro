@@ -3,33 +3,42 @@
  * @module domains/invoices/view-invoice/[id]/components/cards/InvoiceHealthScore
  *
  * @remarks
- * Displays a visual "completeness score" (0-100%) for an invoice, encouraging
- * users to fill in missing data. Includes:
+ * Displays a comprehensive "health score" (0-100) for an invoice data quality,
+ * encouraging users to improve data completeness and accuracy. Includes:
  * - Animated circular progress meter with color-coded status
- * - Checklist of completion factors (name, items, payment, etc.)
- * - CTA button to run AI analysis if score < 100%
+ * - Weighted scoring across multiple quality dimensions
+ * - Actionable improvement suggestions with direct links
+ * - Detailed factor breakdown in collapsible view
  *
- * **Score Calculation:**
- * | Factor | Points | Condition |
- * |--------|--------|-----------|
- * | Has merchant info | 15 | merchantReference is not empty GUID |
- * | Has items extracted | 20 | items.length > 0 |
- * | Has payment info | 15 | totalCostAmount > 0 |
- * | Has recipes | 10 | possibleRecipes.length > 0 |
- * | Has category set | 10 | category !== NOT_DEFINED |
- * | Has description | 10 | description.length > 0 |
- * | Has transaction date | 10 | transactionDate is valid |
- * | Has name | 10 | name.length > 0 |
+ * **Enhanced Score Calculation:**
+ * | Factor | Weight | Criteria |
+ * |--------|--------|----------|
+ * | Products present | 15% | Has at least 1 product |
+ * | Product completeness | 20% | % of products where metadata.isComplete = true |
+ * | OCR confidence | 20% | Average of products' metadata.confidence (skip 0s) |
+ * | Merchant linked | 10% | merchantReference is not empty/zero GUID |
+ * | Payment info | 15% | Has transactionDate, totalCostAmount > 0, currency set |
+ * | Categories assigned | 10% | % of products with category ≠ NOT_DEFINED |
+ * | Recipes generated | 10% | Has at least 1 recipe |
+ *
+ * **Improvement Suggestions:**
+ * Dynamically generated based on missing or incomplete data:
+ * - Low OCR confidence → Review products manually
+ * - No merchant linked → Add merchant details
+ * - Uncategorized products → Assign categories
+ * - No recipes → Run recipe analysis
  *
  * **Rendering Context:** Client Component (requires useState, useMemo).
  *
  * @see {@link useInvoiceContext} for data access
  * @see {@link InvoiceCategory} for category enum
+ * @see {@link Product} for product structure
+ * @see {@link ProductMetadata} for completeness flags
  */
 
 "use client";
 
-import {InvoiceCategory} from "@/types/invoices";
+import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -44,7 +53,7 @@ import {
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useMemo, useState} from "react";
-import {TbCheck, TbChevronDown, TbChevronUp, TbSparkles, TbX} from "react-icons/tb";
+import {TbAlertCircle, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink, TbSparkles, TbX} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceHealthScore.module.scss";
 
@@ -53,16 +62,43 @@ import styles from "./InvoiceHealthScore.module.scss";
  *
  * @remarks
  * Used internally to track which factors contribute to the total score.
+ * Enhanced to include percentage-based scoring for partial achievement.
  */
 type ScoreFactor = {
   /** i18n key for the factor label */
-  readonly key: "name" | "merchant" | "items" | "payment" | "date" | "category" | "description" | "recipes";
-  /** Points awarded if achieved */
-  readonly points: number;
-  /** Whether this factor is satisfied */
+  readonly key:
+    | "productsPresent"
+    | "productCompleteness"
+    | "ocrConfidence"
+    | "merchantLinked"
+    | "paymentInfo"
+    | "categoriesAssigned"
+    | "recipesGenerated";
+  /** Maximum points available for this factor */
+  readonly maxPoints: number;
+  /** Actual points earned (0 to maxPoints) */
+  readonly earnedPoints: number;
+  /** Whether this factor is fully achieved */
   readonly achieved: boolean;
-  /** Optional detail text (e.g., item count) */
+  /** Optional detail text (e.g., percentage, count) */
   readonly detail?: string;
+};
+
+/**
+ * Represents an actionable improvement suggestion for the user.
+ *
+ * @remarks
+ * Suggestions are dynamically generated based on incomplete factors.
+ */
+type ImprovementSuggestion = {
+  /** i18n key for the suggestion text */
+  readonly key: string;
+  /** Icon component to display */
+  readonly icon: React.ComponentType<{className?: string}>;
+  /** Optional link to navigate to for action */
+  readonly link?: string;
+  /** Optional detail parameters for i18n interpolation */
+  readonly params?: Record<string, string | number>;
 };
 
 /**
@@ -80,16 +116,26 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  * @remarks
  * **Data Source:** Invoice context via `useInvoiceContext`.
  *
+ * **Enhanced Scoring:**
+ * - Weighted scoring across 7 quality dimensions
+ * - Partial credit for incomplete factors (e.g., 50% product completeness)
+ * - OCR confidence averaging (excludes zero-confidence products)
+ *
+ * **Improvement Suggestions:**
+ * - Dynamically generated based on score gaps
+ * - Actionable links to relevant edit screens
+ * - Priority-ordered (highest impact first)
+ *
  * **Performance:**
  * - Score computation is memoized to prevent unnecessary recalculations
- * - Collapsible checklist reduces initial visual clutter
+ * - Collapsible sections reduce initial visual clutter
  *
  * **Color Coding:**
- * - Green (80-100%): Complete or nearly complete
- * - Yellow (50-79%): Needs work
- * - Red (0-49%): Incomplete
+ * - Green (80-100): Excellent data quality
+ * - Yellow (60-79): Good but needs improvement
+ * - Red (0-59): Incomplete or low quality
  *
- * @returns Card component displaying invoice completeness score
+ * @returns Card component displaying invoice health score
  *
  * @example
  * ```tsx
@@ -101,81 +147,201 @@ export function InvoiceHealthScore(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
   const t = useTranslations("Invoices.ViewInvoice.healthScore");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
 
   /**
-   * Compute score factors and total score.
+   * Compute comprehensive score factors with weighted scoring.
    *
    * @remarks
    * Memoized to prevent recalculation on every render.
    * Only recomputes when invoice reference changes.
+   *
+   * **Scoring Logic:**
+   * - Products present (15 pts): Binary - has at least 1 product
+   * - Product completeness (20 pts): Percentage of complete products
+   * - OCR confidence (20 pts): Average confidence score (0-1 scale)
+   * - Merchant linked (10 pts): Binary - has merchant reference
+   * - Payment info (15 pts): Binary - has complete payment data
+   * - Categories assigned (10 pts): Percentage of categorized products
+   * - Recipes generated (10 pts): Binary - has at least 1 recipe
    */
-  const {factors, score, maxScore} = useMemo(() => {
+  const {factors, score, maxScore, suggestions} = useMemo(() => {
+    const items = invoice.items.filter((item) => !item.metadata.isSoftDeleted);
+    const totalItems = items.length;
+
+    // Factor 1: Products present (15 points)
+    const hasProducts = totalItems > 0;
+    const productsPoints = hasProducts ? 15 : 0;
+
+    // Factor 2: Product completeness (20 points)
+    const completeProducts = items.filter((item) => item.metadata.isComplete).length;
+    const completenessRatio = totalItems > 0 ? completeProducts / totalItems : 0;
+    const completenessPoints = Math.round(completenessRatio * 20);
+
+    // Factor 3: OCR confidence (20 points)
+    const confidenceScores = items.map((item) => item.metadata.confidence).filter((c) => c > 0);
+    const avgConfidence = confidenceScores.length > 0 ? confidenceScores.reduce((sum, c) => sum + c, 0) / confidenceScores.length : 0;
+    const confidencePoints = Math.round(avgConfidence * 20);
+
+    // Factor 4: Merchant linked (10 points)
+    const hasMerchant = invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0;
+    const merchantPoints = hasMerchant ? 10 : 0;
+
+    // Factor 5: Payment info (15 points)
+    const hasCompletePayment =
+      Boolean(invoice.paymentInformation.transactionDate)
+      && invoice.paymentInformation.totalCostAmount > 0
+      && invoice.paymentInformation.currency.length > 0;
+    const paymentPoints = hasCompletePayment ? 15 : 0;
+
+    // Factor 6: Categories assigned (10 points)
+    const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
+    const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
+    const categoryPoints = Math.round(categoryRatio * 10);
+
+    // Factor 7: Recipes generated (10 points)
+    const hasRecipes = invoice.possibleRecipes.length > 0;
+    const recipesPoints = hasRecipes ? 10 : 0;
+
     const computedFactors: ScoreFactor[] = [
       {
-        key: "name",
-        points: 10,
-        achieved: invoice.name.length > 0,
+        key: "productsPresent",
+        maxPoints: 15,
+        earnedPoints: productsPoints,
+        achieved: hasProducts,
+        detail: totalItems > 0 ? String(totalItems) : undefined,
       },
       {
-        key: "merchant",
-        points: 15,
-        achieved: invoice.merchantReference !== EMPTY_GUID && invoice.merchantReference.length > 0,
+        key: "productCompleteness",
+        maxPoints: 20,
+        earnedPoints: completenessPoints,
+        achieved: completenessRatio === 1,
+        detail: totalItems > 0 ? `${Math.round(completenessRatio * 100)}%` : undefined,
       },
       {
-        key: "items",
-        points: 20,
-        achieved: invoice.items.length > 0,
-        detail: invoice.items.length > 0 ? String(invoice.items.length) : undefined,
+        key: "ocrConfidence",
+        maxPoints: 20,
+        earnedPoints: confidencePoints,
+        achieved: avgConfidence >= 0.9,
+        detail: confidenceScores.length > 0 ? `${Math.round(avgConfidence * 100)}%` : undefined,
       },
       {
-        key: "payment",
-        points: 15,
-        achieved: invoice.paymentInformation.totalCostAmount > 0,
+        key: "merchantLinked",
+        maxPoints: 10,
+        earnedPoints: merchantPoints,
+        achieved: hasMerchant,
       },
       {
-        key: "date",
-        points: 10,
-        achieved: Boolean(invoice.paymentInformation.transactionDate) && new Date(invoice.paymentInformation.transactionDate).getTime() > 0,
+        key: "paymentInfo",
+        maxPoints: 15,
+        earnedPoints: paymentPoints,
+        achieved: hasCompletePayment,
       },
       {
-        key: "category",
-        points: 10,
-        achieved: invoice.category !== InvoiceCategory.NOT_DEFINED,
+        key: "categoriesAssigned",
+        maxPoints: 10,
+        earnedPoints: categoryPoints,
+        achieved: categoryRatio === 1,
+        detail: totalItems > 0 ? `${Math.round(categoryRatio * 100)}%` : undefined,
       },
       {
-        key: "description",
-        points: 10,
-        achieved: invoice.description.length > 0,
-      },
-      {
-        key: "recipes",
-        points: 10,
-        achieved: invoice.possibleRecipes.length > 0,
+        key: "recipesGenerated",
+        maxPoints: 10,
+        earnedPoints: recipesPoints,
+        achieved: hasRecipes,
         detail: invoice.possibleRecipes.length > 0 ? String(invoice.possibleRecipes.length) : undefined,
       },
     ];
 
-    const totalScore = computedFactors.filter((f) => f.achieved).reduce((sum, f) => sum + f.points, 0);
-    const totalMaxScore = computedFactors.reduce((sum, f) => sum + f.points, 0);
+    const totalScore = computedFactors.reduce((sum, f) => sum + f.earnedPoints, 0);
+    const totalMaxScore = computedFactors.reduce((sum, f) => sum + f.maxPoints, 0);
+
+    // Generate improvement suggestions
+    const improvementSuggestions: ImprovementSuggestion[] = [];
+
+    if (!hasProducts) {
+      improvementSuggestions.push({
+        key: "noProducts",
+        icon: TbAlertCircle,
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (totalItems > 0 && completenessRatio < 1) {
+      const incompleteCount = totalItems - completeProducts;
+      improvementSuggestions.push({
+        key: "incompleteProducts",
+        icon: TbAlertCircle,
+        params: {count: incompleteCount},
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (confidenceScores.length > 0 && avgConfidence < 0.8) {
+      const lowConfidenceCount = items.filter((item) => item.metadata.confidence > 0 && item.metadata.confidence < 0.8).length;
+      improvementSuggestions.push({
+        key: "lowOcrConfidence",
+        icon: TbAlertCircle,
+        params: {count: lowConfidenceCount},
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (!hasMerchant) {
+      improvementSuggestions.push({
+        key: "noMerchant",
+        icon: TbAlertCircle,
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (!hasCompletePayment) {
+      improvementSuggestions.push({
+        key: "incompletePayment",
+        icon: TbAlertCircle,
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (totalItems > 0 && categoryRatio < 1) {
+      const uncategorizedCount = totalItems - categorizedProducts;
+      improvementSuggestions.push({
+        key: "uncategorizedProducts",
+        icon: TbAlertCircle,
+        params: {count: uncategorizedCount},
+        link: `/domains/invoices/edit-invoice/${invoice.id}`,
+      });
+    }
+
+    if (!hasRecipes) {
+      improvementSuggestions.push({
+        key: "noRecipes",
+        icon: TbSparkles,
+      });
+    }
 
     return {
       factors: computedFactors,
       score: totalScore,
       maxScore: totalMaxScore,
+      suggestions: improvementSuggestions,
     };
   }, [invoice]);
 
-  const percentage = Math.round((score / maxScore) * 100);
+  const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
   /**
    * Determine status color and label based on percentage.
    */
-  const status = useMemo((): {key: "complete" | "needsWork" | "incomplete"; color: string} => {
+  const status = useMemo((): {key: "excellent" | "good" | "needsAttention" | "incomplete"; color: string} => {
     if (percentage >= 80) {
-      return {key: "complete", color: "success"};
+      return {key: "excellent", color: "success"};
     }
-    if (percentage >= 50) {
-      return {key: "needsWork", color: "warning"};
+    if (percentage >= 60) {
+      return {key: "good", color: "warning"};
+    }
+    if (percentage > 0) {
+      return {key: "needsAttention", color: "error"};
     }
     return {key: "incomplete", color: "error"};
   }, [percentage]);
@@ -235,6 +401,51 @@ export function InvoiceHealthScore(): React.JSX.Element {
           {score} / {maxScore} {t("points")}
         </div>
 
+        {/* Improvement Suggestions */}
+        {suggestions.length > 0 && showSuggestions ? (
+          <div className={styles["suggestionsContainer"]}>
+            <div className={styles["suggestionsHeader"]}>
+              <h4 className={styles["suggestionsTitle"]}>{t("suggestions.title")}</h4>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => setShowSuggestions(false)}
+                className={styles["dismissButton"]}>
+                <TbX className={styles["dismissIcon"]} />
+              </Button>
+            </div>
+            <div className={styles["suggestionsList"]}>
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={`${suggestion.key}-${index}`}
+                  className={styles["suggestionItem"]}>
+                  <suggestion.icon className={styles["suggestionIcon"]} />
+                  <span className={styles["suggestionText"]}>
+                    {suggestion.params
+                      ? t.rich(`suggestions.${suggestion.key}`, {
+                          ...suggestion.params,
+                          strong: (chunks) => <strong>{chunks}</strong>,
+                        })
+                      : t(`suggestions.${suggestion.key}`)}
+                  </span>
+                  {suggestion.link ? (
+                    <Button
+                      asChild
+                      variant='ghost'
+                      size='sm'
+                      className={styles["suggestionAction"]}>
+                      <Link href={suggestion.link}>
+                        <TbExternalLink className={styles["actionIcon"]} />
+                        {t("suggestions.fix")}
+                      </Link>
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Collapsible factor checklist */}
         <Collapsible
           open={isExpanded}
@@ -263,7 +474,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
                       {t(`factors.${factor.key}`)}
                       {factor.detail ? <span className={styles["factorDetail"]}> ({factor.detail})</span> : null}
                     </span>
-                    <span className={styles["factorPoints"]}>{factor.achieved ? `+${factor.points}` : `${factor.points}`}</span>
+                    <span className={styles["factorPoints"]}>
+                      {factor.earnedPoints}/{factor.maxPoints}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -280,7 +493,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
               className={styles["ctaButton"]}>
               <Link href={`/domains/invoices/edit-invoice/${invoice.id}`}>
                 <TbSparkles className={styles["ctaIcon"]} />
-                {t("cta.analyze")}
+                {t("cta.edit")}
               </Link>
             </Button>
           </div>

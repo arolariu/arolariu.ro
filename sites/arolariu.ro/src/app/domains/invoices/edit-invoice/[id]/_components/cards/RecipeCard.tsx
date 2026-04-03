@@ -168,8 +168,8 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <div className={styles["ingredientsSection"]}>
           <h4 className={styles["ingredientsLabel"]}>{t("ingredients.label")}</h4>
           <ul className={styles["ingredientsList"]}>
-            {ingredients.slice(0, 3).map((ingredient) => (
-              <li key={ingredient.rawName}>{ingredient.rawName}</li>
+            {ingredients.slice(0, 3).map((ingredient, index) => (
+              <li key={`${ingredient}-${index}`}>{ingredient}</li>
             ))}
             {ingredients.length > 3 && (
               <TooltipProvider>
@@ -180,8 +180,8 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                   <TooltipContent className={styles["tooltipContent"]}>
                     <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>
                     <ul className={styles["tooltipIngredientsList"]}>
-                      {ingredients.slice(3).map((ingredient) => (
-                        <li key={ingredient.rawName}>{ingredient.rawName}</li>
+                      {ingredients.slice(3).map((ingredient, index) => (
+                        <li key={`${ingredient}-${index + 3}`}>{ingredient}</li>
                       ))}
                     </ul>
                   </TooltipContent>

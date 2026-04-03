@@ -30,6 +30,31 @@
 // ===========================================
 // TABLE CELLS
 // ===========================================
+.tableHeaderCell {
+  // Base header cell styles
+}
+
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: color('muted');
+  }
+
+  &:focus {
+    outline: 2px solid color('primary');
+    outline-offset: -2px;
+  }
+}
+
+.sortArrow {
+  font-size: font-size('xs');
+  margin-left: space(1);
+  display: inline-block;
+}
+
 .printHidden {
   @media print {
     display: none;

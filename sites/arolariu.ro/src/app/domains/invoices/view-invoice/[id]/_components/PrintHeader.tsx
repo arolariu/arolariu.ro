@@ -10,7 +10,7 @@ import styles from "./PrintHeader.module.scss";
  */
 interface PrintHeaderProps {
   readonly invoice: Invoice;
-  readonly merchant: Merchant;
+  readonly merchant: Merchant | null;
 }
 
 /**
@@ -60,7 +60,7 @@ export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Elemen
 
           <div className={styles["detailItem"]}>
             <span className={styles["detailLabel"]}>{t("labels.merchant")}:</span>
-            <span className={styles["detailValue"]}>{merchant.name}</span>
+            <span className={styles["detailValue"]}>{merchant?.name ?? ""}</span>
           </div>
 
           <div className={styles["detailItem"]}>

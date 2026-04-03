@@ -60,4 +60,33 @@ describe("featureFlags.server", () => {
     expect(flags.commanderEnabled).toBe(false);
     expect(flags.webVitalsEnabled).toBe(false);
   });
+
+  it("returns defaults when config fetch throws during parsing", async () => {
+    mockFetchConfigValue.mockImplementation(async (key: string) => {
+      if (key === "website.commander.enabled") throw new Error("Config parse error");
+      return "false";
+    });
+
+    const {getWebsiteFeatureFlags, DEFAULT_FEATURE_FLAGS} = await import("./featureFlags.server");
+    const flags = await getWebsiteFeatureFlags();
+
+    expect(flags).toEqual(DEFAULT_FEATURE_FLAGS);
+  });
+
+  it("should return default feature flags when config fetch throws in outer catch block", async () => {
+    // Arrange - Mock to throw an error that bypasses Promise.all catch handlers
+    // This tests line 59: the outer try-catch block
+    mockFetchConfigValue.mockImplementation(async () => {
+      throw new Error("Unexpected config fetch error");
+    });
+
+    // Act
+    const {getWebsiteFeatureFlags, DEFAULT_FEATURE_FLAGS} = await import("./featureFlags.server");
+    const flags = await getWebsiteFeatureFlags();
+
+    // Assert - Should return default flags without throwing (line 59)
+    expect(flags).toEqual(DEFAULT_FEATURE_FLAGS);
+    expect(flags.commanderEnabled).toBe(true);
+    expect(flags.webVitalsEnabled).toBe(false);
+  });
 });

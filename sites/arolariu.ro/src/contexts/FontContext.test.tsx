@@ -422,5 +422,19 @@ describe("FontContext", () => {
       // If it returns early, className should remain exactly as set
       expect(document.documentElement.className).toBe("caudex-font extra-class");
     });
+
+    it("should not update className when newClassName matches existing className", () => {
+      // Pre-set className to exactly what the context will try to set
+      const fontClass = "caudex-font";
+      document.documentElement.className = fontClass;
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // The className equality check should be triggered
+      // Since className already equals what's expected, no update should occur
+      expect(result.current.fontType).toBe("normal");
+      expect(document.documentElement.className).toBe(fontClass);
+    });
   });
 });

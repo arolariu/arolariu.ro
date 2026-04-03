@@ -14,6 +14,8 @@
  * - Auto-detection of scan groups based on upload timestamps
  * - Dismissible banner (persists in session storage)
  * - Quick action button to navigate to invoice creation
+ * - Displays scan thumbnails (first 3-4) in the banner
+ * - Slide-in animation from top
  *
  * @returns The ScanGroupBanner component, CSR'ed.
  */
@@ -21,10 +23,11 @@
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
 import {Button} from "@arolariu/components";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {TbArrowRight, TbLightbulb, TbX} from "react-icons/tb";
+import {TbCheck, TbFileTypePdf} from "react-icons/tb";
 import styles from "./ScanGroupBanner.module.scss";
 
 /**
@@ -65,6 +68,11 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
   const scanGroup = useMemo(() => {
     const readyScans = scans.filter((scan) => scan.status === ScanStatus.READY);
 
+    // Hide banner entirely when there are too many scans
+    if (readyScans.length > 5) {
+      return null;
+    }
+
     // Need at least 2 scans
     if (readyScans.length < 2) {
       return null;
@@ -95,7 +103,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
       }
     }
 
-    return bestGroup.length >= 2 ? bestGroup : null;
+    return bestGroup.length >= 2 && bestGroup.length <= 5 ? bestGroup : null;
   }, [scans]);
 
   /**
@@ -115,8 +123,8 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     // Select all scans in the group
     setSelectedScans(scanGroup);
 
-    // Navigate to view-scans page (which will show the create invoice dialog)
-    router.push("/domains/invoices/view-scans");
+    // Navigate to create-invoice page
+    router.push("/domains/invoices/create-invoice");
   }, [scanGroup, setSelectedScans, router]);
 
   // Don't show if dismissed or no group found
@@ -124,34 +132,59 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     return null;
   }
 
+  // Get first 4 scans for thumbnails
+  const thumbnailScans = scanGroup.slice(0, 4);
+  const remainingCount = scanGroup.length - thumbnailScans.length;
+
   return (
-    <div className={styles["banner"]}>
+    <motion.div
+      initial={{opacity: 0, y: -20}}
+      animate={{opacity: 1, y: 0}}
+      exit={{opacity: 0, y: -20}}
+      transition={{duration: 0.3, ease: "easeOut"}}
+      className={styles["banner"]}>
       <div className={styles["content"]}>
-        <div className={styles["iconWrapper"]}>
-          <TbLightbulb className={styles["icon"]} />
+        <div className={styles["thumbnails"]}>
+          {thumbnailScans.map((scan) => (
+            <div
+              key={scan.id}
+              className={styles["thumbnail"]}>
+              {scan.mimeType === "application/pdf" ? (
+                <div className={styles["pdfPlaceholder"]}>
+                  <TbFileTypePdf className={styles["pdfIcon"]} />
+                </div>
+              ) : (
+                <img
+                  src={scan.blobUrl}
+                  alt={scan.name}
+                  className={styles["thumbnailImage"]}
+                />
+              )}
+            </div>
+          ))}
+          {remainingCount > 0 && <div className={styles["thumbnailMore"]}>+{remainingCount}</div>}
         </div>
         <div className={styles["text"]}>
           <p className={styles["title"]}>{t("title", {count: String(scanGroup.length)})}</p>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </div>
       </div>
       <div className={styles["actions"]}>
         <Button
-          variant='ghost'
           size='sm'
           onClick={handleCombine}
-          className={styles["combineButton"]}>
-          {t("combine")}
-          <TbArrowRight className={styles["arrowIcon"]} />
+          className={styles["createButton"]}>
+          <TbCheck className={styles["checkIcon"]} />
+          {t("createInvoice")}
         </Button>
         <Button
           variant='ghost'
-          size='icon'
+          size='sm'
           onClick={handleDismiss}
-          aria-label={t("dismiss")}
           className={styles["dismissButton"]}>
-          <TbX className={styles["dismissIcon"]} />
+          {t("dismiss")}
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 }

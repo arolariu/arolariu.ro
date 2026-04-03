@@ -55,8 +55,6 @@ function shouldBlockShortcuts(element: Element | null): boolean {
   return isInput || isContentEditable;
 }
 
-
-
 /**
  * Registers global keyboard shortcuts for the invoice management system.
  *

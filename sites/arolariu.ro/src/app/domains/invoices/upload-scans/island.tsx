@@ -170,9 +170,12 @@ function UploadContent(): React.JSX.Element {
 
   /**
    * Effect to collect completed scans before they're removed from the queue.
+   * Use blobUrl (from Azure) if available, otherwise fallback to preview (blob URL).
    */
   useEffect(() => {
-    const completed = pendingUploads.filter((u) => u.status === "completed").map((u) => ({id: u.id, preview: u.preview, name: u.name}));
+    const completed = pendingUploads
+      .filter((u) => u.status === "completed")
+      .map((u) => ({id: u.id, preview: u.blobUrl || u.preview, name: u.name}));
     if (completed.length > 0) {
       completedScansRef.current = completed;
     }
@@ -245,26 +248,26 @@ function UploadContent(): React.JSX.Element {
               <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
               <p className={styles["headerDescription"]}>{t("header.description")}</p>
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className={styles["infoButton"]}>
-                      <TbInfoCircle className={styles["infoIcon"]} />
-                    </Button>
-                  }
-                />
-                <TooltipContent
-                  side='right'
-                  className={styles["tooltipContent"]}>
-                  <p>{t("header.tooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={styles["infoButton"]}>
+                    <TbInfoCircle className={styles["infoIcon"]} />
+                  </Button>
+                }
+              />
+              <TooltipContent
+                side='right'
+                className={styles["tooltipContent"]}>
+                <p>{t("header.tooltip")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <div className={styles["headerActions"]}>
             <TooltipProvider>

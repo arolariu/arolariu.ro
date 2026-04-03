@@ -1,5 +1,7 @@
 "use client";
 
+import {useUserInformation} from "@/hooks/useUserInformation";
+import {sendInvoiceShareEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -142,14 +144,19 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [isRevoking, setIsRevoking] = useState<boolean>(false);
+  const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
 
   const router = useRouter();
+  const {userInformation} = useUserInformation();
 
   const {
     currentDialog: {payload},
     isOpen,
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
+
+  // Null guard: return early if no payload
+  if (!payload) return <></>;
 
   const {invoice} = payload as {invoice: Invoice};
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
@@ -250,35 +257,38 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
-   * Sends an email invitation to share the invoice privately.
+   * Sends an email invitation to share the invoice privately using the sendInvoiceShareEmail server action.
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(
-    (e: React.SubmitEvent) => {
+    (e: React.FormEvent) => {
       e.preventDefault();
+      if (!email) return;
+
+      setIsSendingEmail(true);
 
       const sendEmailAction = async () => {
-        // NOTE: User email should come from auth context when available
-        const userEmail = "user@arolariu.ro";
-
-        const response = await fetch(`/api/mail/invoices/share/${invoice.id}`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({toEmail: email, fromEmail: userEmail}),
+        const result = await sendInvoiceShareEmail({
+          toEmail: email,
+          toName: email.split("@")[0] ?? "there",
+          invoiceId: invoice.id,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to send email: ${response.status}`);
+        if (!result.success) {
+          throw new Error(result.error ?? "Failed to send email");
         }
 
         setEmail("");
       };
 
-      toast.promise(sendEmailAction(), {
-        loading: t("toasts.sendEmail.loading", {email}),
-        success: t("toasts.sendEmail.success", {email}),
-        error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
-      });
+      toast.promise(
+        sendEmailAction().finally(() => setIsSendingEmail(false)),
+        {
+          loading: t("toasts.sendEmail.loading", {email}),
+          success: t("toasts.sendEmail.success", {email}),
+          error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
+        },
+      );
     },
     [email, invoice.id, t],
   );
@@ -402,6 +412,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
                 email={email}
                 onEmailChange={setEmail}
                 onSendEmail={handleSendEmail}
+                isSending={isSendingEmail}
               />
             )}
           </>

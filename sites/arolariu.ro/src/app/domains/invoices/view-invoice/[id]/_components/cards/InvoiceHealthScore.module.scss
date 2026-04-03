@@ -101,6 +101,83 @@
   font-weight: font-weight('medium');
 }
 
+// Suggestions Container
+.suggestionsContainer {
+  width: 100%;
+  margin-top: space(4);
+  padding: space(3);
+  border-radius: radius('md');
+  background-color: color-alpha('warning', 0.05);
+  border: 1px solid color-alpha('warning', 0.2);
+}
+
+.suggestionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(2);
+}
+
+.suggestionsTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.dismissButton {
+  padding: space(1);
+  @include icon-size(space(4));
+}
+
+.dismissIcon {
+  @include icon-size(space(4));
+}
+
+.suggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  padding: space(2);
+  border-radius: radius('sm');
+  background-color: color('background');
+  @include transition(background-color);
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.suggestionIcon {
+  @include icon-size(space(5));
+  color: color('warning');
+  flex-shrink: 0;
+  margin-top: space(0.5);
+}
+
+.suggestionText {
+  flex: 1;
+  font-size: font-size('sm');
+  color: color('foreground');
+  line-height: 1.5;
+}
+
+.suggestionAction {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  flex-shrink: 0;
+}
+
+.actionIcon {
+  @include icon-size(space(3.5));
+}
+
 // Toggle button
 .toggleButton {
   display: flex;

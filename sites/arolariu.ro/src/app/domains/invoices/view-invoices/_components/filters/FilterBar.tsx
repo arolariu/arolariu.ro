@@ -1,5 +1,6 @@
 "use client";
 
+import {formatDate} from "@/lib/utils.generic";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {
   Badge,
@@ -26,7 +27,7 @@ import {
   useDebounce,
   useWindowSize,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -101,6 +102,7 @@ export default function FilterBar({
   onViewModeChange,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.invoicesView");
+  const locale = useLocale();
   const {isMobile} = useWindowSize();
   const [searchInput, setSearchInput] = useState<string>(filters.search);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
@@ -136,7 +138,8 @@ export default function FilterBar({
       amountMax: null,
       categories: [],
       paymentTypes: [],
-      sortBy: "date-desc",
+      sortBy: null,
+      sortOrder: null,
     });
   }, [onFiltersChange]);
 
@@ -205,11 +208,21 @@ export default function FilterBar({
 
   /**
    * Handle sort change.
+   * Splits the combined value (e.g., "date-desc") into separate sortBy and sortOrder.
+   * Special value "none" clears sorting.
    */
   const handleSortChange = useCallback(
     (value: string) => {
+      if (value === "none") {
+        onFiltersChange({sortBy: null, sortOrder: null});
+        return;
+      }
+      const parts = value.split("-");
+      const direction = parts.pop() as "asc" | "desc";
+      const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
       onFiltersChange({
-        sortBy: value as FilterState["sortBy"],
+        sortBy: field,
+        sortOrder: direction,
       });
     },
     [onFiltersChange],
@@ -299,7 +312,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateFrom ? new Date(filters.dateFrom).toLocaleDateString() : t("filters.dateFrom")}
+                  {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
                 </Button>
               }
             />
@@ -318,7 +331,7 @@ export default function FilterBar({
                   variant='outline'
                   className={styles["dateButton"]}>
                   <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateTo ? new Date(filters.dateTo).toLocaleDateString() : t("filters.dateTo")}
+                  {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
                 </Button>
               }
             />
@@ -370,12 +383,13 @@ export default function FilterBar({
       <div className={styles["filterSection"]}>
         <Label className={styles["filterLabel"]}>{t("filters.sortBy")}</Label>
         <Select
-          value={filters.sortBy}
+          value={filters.sortBy && filters.sortOrder ? `${filters.sortBy}-${filters.sortOrder}` : "none"}
           onValueChange={handleSortChange}>
           <SelectTrigger className={styles["sortSelect"]}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value='none'>{t("filters.sortOptions.none")}</SelectItem>
             <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
             <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
             <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>

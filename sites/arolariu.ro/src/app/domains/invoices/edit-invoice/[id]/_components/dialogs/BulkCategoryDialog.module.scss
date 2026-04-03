@@ -1,0 +1,98 @@
+/**
+ * @fileoverview Styles for bulk category reassignment dialog.
+ * @module domains/invoices/edit-invoice/[id]/components/dialogs/BulkCategoryDialog.module
+ */
+
+.dialogContent {
+  max-width: 500px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionLabel {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.labelIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.productList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--muted);
+  border-radius: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.productItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background-color: var(--background);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.productName {
+  flex: 1;
+  font-weight: 500;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreText {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  padding: 0.375rem 0.5rem;
+}
+
+.categoryTrigger {
+  width: 100%;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .productList {
+    background-color: var(--muted);
+  }
+
+  .productItem {
+    background-color: var(--background);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .dialogContent {
+    max-width: 95vw;
+  }
+
+  .productList {
+    max-height: 150px;
+  }
+}

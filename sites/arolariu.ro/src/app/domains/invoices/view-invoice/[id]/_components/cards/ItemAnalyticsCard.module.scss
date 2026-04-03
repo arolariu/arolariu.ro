@@ -125,8 +125,31 @@
   }
 }
 
+.itemNameRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
 .itemName {
   font-weight: font-weight('medium');
+}
+
+.confidenceBadge {
+  font-size: font-size('xs');
+  padding: space(0.5) space(1.5);
+  cursor: help;
+}
+
+.confidenceTooltip {
+  font-weight: font-weight('medium');
+  margin-bottom: space(1);
+}
+
+.confidenceWarning {
+  color: color('destructive');
+  font-size: font-size('xs');
+  margin-top: space(1);
 }
 
 .allergenList {

@@ -1,0 +1,129 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.bannerContainer {
+  margin-bottom: space(4);
+  width: 100%;
+}
+
+.banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  padding: space(4);
+  border-radius: radius('lg');
+  border: 1px solid color('warning');
+  background-color: color-alpha('warning', 0.05);
+  box-shadow: shadow('sm');
+}
+
+.alertIcon {
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: color('warning');
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.title {
+  margin: 0;
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.dismissButton {
+  flex-shrink: 0;
+  width: space(6);
+  height: space(6);
+  padding: 0;
+  border-radius: radius('sm');
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.dismissIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.description {
+  margin: 0;
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  line-height: line-height('relaxed');
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  margin-top: space(1);
+  flex-wrap: wrap;
+}
+
+.reviewButton {
+  display: flex;
+  align-items: center;
+  gap: space(1.5);
+  height: space(8);
+  cursor: pointer;
+  font-size: font-size('sm');
+}
+
+.reviewIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  padding: space(1) space(2);
+}
+
+// Responsive adjustments
+@media (max-width: breakpoint('md')) {
+  .banner {
+    padding: space(3);
+  }
+
+  .content {
+    gap: space(1.5);
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: space(2);
+  }
+
+  .badges {
+    width: 100%;
+  }
+}

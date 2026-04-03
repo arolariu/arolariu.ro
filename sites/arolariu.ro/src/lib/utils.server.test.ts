@@ -501,6 +501,275 @@ describe("createErrorResult", () => {
   });
 });
 
+describe("parseBackendError", () => {
+  it("should return specific message for 429 rate limiting", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(429, "{}");
+
+    expect(message).toBe("Too many requests. Please wait a moment and try again.");
+  });
+
+  it("should return specific message for 402 payment required", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(402, "{}");
+
+    expect(message).toBe("This feature requires a paid subscription.");
+  });
+
+  it("should return specific message for 409 conflict", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(409, "{}");
+
+    expect(message).toBe("Conflict: this resource was modified by another user.");
+  });
+
+  it("should return specific message for 413 payload too large", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(413, "{}");
+
+    expect(message).toBe("File is too large. Please check the size limit and try again.");
+  });
+
+  it("should extract maxSize from 413 response body", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({maxSize: "10MB"});
+    const message = parseBackendError(413, body);
+
+    expect(message).toBe("File is too large. Maximum size is 10MB.");
+  });
+
+  it("should extract detail from 413 response body when no maxSize", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({detail: "File exceeds the maximum allowed size"});
+    const message = parseBackendError(413, body);
+
+    expect(message).toBe("File exceeds the maximum allowed size");
+  });
+
+  it("should handle malformed JSON in 413 response body", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(413, "not valid json {");
+
+    expect(message).toBe("File is too large. Please check the size limit and try again.");
+  });
+
+  it("should extract detail from JSON response for other status codes", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({detail: "Custom error message"});
+    const message = parseBackendError(500, body);
+
+    expect(message).toBe("Custom error message");
+  });
+
+  it("should sanitize raw body when JSON parsing fails", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const longBody = "a".repeat(300);
+    const message = parseBackendError(500, longBody);
+
+    expect(message).toHaveLength(200);
+    expect(message).toBe("a".repeat(200));
+  });
+
+  it("should handle empty body gracefully", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const message = parseBackendError(500, "");
+
+    expect(message).toBe("An unknown error occurred.");
+  });
+
+  it("should return fallback message when JSON has no detail field", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({error: "Something went wrong"});
+    const message = parseBackendError(500, body);
+
+    expect(message).toBe("An unknown error occurred.");
+  });
+
+  it("should handle 400 bad request with detail", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({detail: "Invalid input format"});
+    const message = parseBackendError(400, body);
+
+    expect(message).toBe("Invalid input format");
+  });
+
+  it("should handle 401 unauthorized with detail", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({detail: "Token expired"});
+    const message = parseBackendError(401, body);
+
+    expect(message).toBe("Token expired");
+  });
+
+  it("should handle 404 not found with detail", async () => {
+    const {parseBackendError} = await import("./utils.server");
+
+    const body = JSON.stringify({detail: "Resource not found"});
+    const message = parseBackendError(404, body);
+
+    expect(message).toBe("Resource not found");
+  });
+});
+
+describe("convertBase64ToBlob - edge cases", () => {
+  beforeEach(() => {
+    if (typeof global.atob === "undefined") {
+      global.atob = (str: string) => Buffer.from(str, "base64").toString("binary");
+    }
+  });
+
+  it("should handle base64 without data URL prefix", async () => {
+    const {convertBase64ToBlob} = await import("./utils.server");
+
+    const base64 = "SGVsbG8gV29ybGQ=";
+    const blob = await convertBase64ToBlob(base64);
+
+    expect(blob).toBeDefined();
+    expect(blob.type).toBe("application/octet-stream"); // Default MIME type
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it("should handle invalid base64 input gracefully", async () => {
+    const {convertBase64ToBlob} = await import("./utils.server");
+
+    // Invalid base64 throws DOMException in happy-dom
+    await expect(convertBase64ToBlob("invalid!!!")).rejects.toBeDefined();
+  });
+
+  it("should extract MIME type correctly from data URL", async () => {
+    const {convertBase64ToBlob} = await import("./utils.server");
+
+    const base64 = "data:application/xml;base64,PHhtbD48L3htbD4=";
+    const blob = await convertBase64ToBlob(base64);
+
+    expect(blob.type).toBe("application/xml");
+  });
+});
+
+describe("fetchWithTimeout - edge cases", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchApiUrl.mockResolvedValue("https://api.example.com");
+  });
+
+  it("should handle injectedHeaders as non-Headers object", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+
+    // Mock injectTraceContextHeaders to return a plain object
+    instrumentationMocks.injectTraceContextHeaders.mockReturnValueOnce({
+      "X-Custom-Header": "custom-value",
+      traceparent: "00-abc-def-01",
+    } as any);
+
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("https://api.example.com/data");
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(fetchOptions.headers).toMatchObject({
+      "X-Custom-Header": "custom-value",
+      traceparent: "00-abc-def-01",
+    });
+  });
+
+  it("should handle AbortError correctly", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+
+    const abortError = new Error("The operation was aborted");
+    abortError.name = "AbortError";
+    globalThis.fetch = vi.fn().mockRejectedValue(abortError);
+
+    await expect(fetchWithTimeout("https://api.example.com/data", {}, 1000)).rejects.toThrow(/timed out after 1000ms/);
+  });
+
+  it("should clear timeout on success", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response("OK"));
+
+    await fetchWithTimeout("https://api.example.com/data");
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("should clear timeout on error", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+
+    await expect(fetchWithTimeout("https://api.example.com/data")).rejects.toThrow("Network error");
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("should handle URL with query parameters", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("https://api.example.com/data?foo=bar&baz=qux");
+
+    const [fetchUrl] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe("https://api.example.com/data?foo=bar&baz=qux");
+  });
+
+  it("should handle relative path without leading slash", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("rest/v1/invoices");
+
+    expect(mockFetchApiUrl).toHaveBeenCalled();
+    const [fetchUrl] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
+  });
+
+  it("should handle empty API URL from config", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    mockFetchApiUrl.mockResolvedValueOnce("  "); // Empty/whitespace API URL
+
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("/rest/v1/invoices");
+
+    const [fetchUrl] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe("/rest/v1/invoices"); // Should use relative path as-is
+  });
+
+  it("should trim trailing slashes from API URL", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    mockFetchApiUrl.mockResolvedValueOnce("https://api.example.com///");
+
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("/rest/v1/invoices");
+
+    const [fetchUrl] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
+  });
+});
+
 describe("verifyJwtToken", () => {
   it("should return result object with valid or error property", async () => {
     const {verifyJwtToken} = await import("./utils.server");
