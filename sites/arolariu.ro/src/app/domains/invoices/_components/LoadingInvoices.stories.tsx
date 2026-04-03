@@ -11,7 +11,7 @@ import messages from "../../../../../messages/en.json";
  * using the same i18n messages and SCSS module styles.
  */
 
-const namespace = messages.Invoices.Shared.loadingInvoices;
+const namespace = messages["IMS--Common"].loadingInvoices;
 
 const meta = {
   title: "Invoices/States/LoadingInvoices",

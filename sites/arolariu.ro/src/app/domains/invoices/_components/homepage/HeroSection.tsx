@@ -19,7 +19,7 @@ interface Props {
  * @returns The hero section.
  */
 export default function HeroSection({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.Homepage");
+  const t = useTranslations("IMS--Landing");
 
   return (
     <section className={styles["heroSection"]}>

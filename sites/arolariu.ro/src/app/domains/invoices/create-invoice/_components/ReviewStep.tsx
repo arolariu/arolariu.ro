@@ -46,7 +46,7 @@ const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer"
  * @returns JSX element with review UI
  */
 export default function ReviewStep(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.reviewStep");
+  const t = useTranslations("IMS--Create.reviewStep");
   const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
   const format = useFormatter();
 

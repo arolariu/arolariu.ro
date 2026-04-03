@@ -45,7 +45,7 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
 
 export function CategorySuggestionCard(): React.JSX.Element {
   const [selected, setSelected] = useState<InvoiceCategory | string | null>(null);
-  const t = useTranslations("Invoices.ViewInvoice.categorySuggestionCard");
+  const t = useTranslations("IMS--Cards.categorySuggestionCard");
 
   // Gamification progress (mock)
   const categorizedCount = 8;

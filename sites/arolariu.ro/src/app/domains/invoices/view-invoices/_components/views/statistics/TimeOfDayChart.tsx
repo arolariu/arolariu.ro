@@ -41,7 +41,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the time-of-day radar chart.
  */
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.timeOfDay");
+  const t = useTranslations("IMS--Stats.timeOfDay");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -76,7 +76,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
  * ```
  */
 export function TimeOfDayChart({data}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.timeOfDay");
+  const t = useTranslations("IMS--Stats.timeOfDay");
 
   // IMPORTANT: This key must match the field name in TimeOfDaySegment
   const chartConfig = {

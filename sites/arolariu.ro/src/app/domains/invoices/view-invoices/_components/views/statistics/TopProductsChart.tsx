@@ -94,7 +94,7 @@ function RankBadge({rank}: {readonly rank: number}): React.JSX.Element {
  * @returns Table component with product leaderboard
  */
 export function TopProductsChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.topProducts");
+  const t = useTranslations("IMS--Stats.topProducts");
 
   // Empty state
   if (data.length === 0) {

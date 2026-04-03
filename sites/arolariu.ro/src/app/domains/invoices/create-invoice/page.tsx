@@ -12,7 +12,7 @@ import styles from "./page.module.scss";
  * @returns Promise resolving to page metadata
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.CreateInvoice.metadata");
+  const t = await getTranslations("IMS--Create.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

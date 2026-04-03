@@ -42,7 +42,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
  * Scan thumbnail preview component.
  */
 function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; scanType: string}}>): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.detailsForm");
+  const t = useTranslations("IMS--Create.detailsForm");
   const isPdf = scan.scanType === "PDF";
 
   return (
@@ -77,7 +77,7 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
  * @returns JSX element with form UI
  */
 export default function InvoiceDetailsForm(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.detailsForm");
+  const t = useTranslations("IMS--Create.detailsForm");
   const {invoiceDetails, setName, setCategory, setPaymentType, setTransactionDate, setDescription, selectedScans} =
     useCreateInvoiceContext();
 

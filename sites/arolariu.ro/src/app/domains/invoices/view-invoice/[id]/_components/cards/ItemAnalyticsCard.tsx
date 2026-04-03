@@ -137,7 +137,7 @@ const categoryColors: Record<number, "default" | "secondary" | "outline" | "dest
  */
 export function ItemAnalyticsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.itemAnalytics");
+  const t = useTranslations("IMS--View.itemAnalytics");
   const {invoice} = useInvoiceContext();
 
   const [searchQuery, setSearchQuery] = useState("");

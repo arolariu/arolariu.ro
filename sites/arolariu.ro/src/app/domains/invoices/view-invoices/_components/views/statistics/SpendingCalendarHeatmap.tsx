@@ -208,7 +208,7 @@ function generateCalendarGrid(data: DailySpending[], monthOffset: number): {week
  * Individual day cell component with tooltip.
  */
 function DayCell({day, currency, locale}: {day: DayCell; currency: string; locale: string}): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.calendarHeatmap.tooltip");
+  const t = useTranslations("IMS--Stats.calendarHeatmap.tooltip");
 
   if (!day.date) {
     return <div className={`${styles["dayCell"]} ${styles["dayCellEmpty"]}`} />;
@@ -265,7 +265,7 @@ function DayCell({day, currency, locale}: {day: DayCell; currency: string; local
  * @returns Calendar heatmap JSX element
  */
 export default function SpendingCalendarHeatmap({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.calendarHeatmap");
+  const t = useTranslations("IMS--Stats.calendarHeatmap");
   const locale = useLocale();
   const [monthOffset, setMonthOffset] = useState(0);
 

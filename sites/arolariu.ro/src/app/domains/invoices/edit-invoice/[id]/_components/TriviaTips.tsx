@@ -112,7 +112,7 @@ type ContextTip = {
  * @see {@link InvoiceHealthScore} - Reference implementation for scoring logic
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
-  const t = useTranslations("Invoices.EditInvoice.triviaTips");
+  const t = useTranslations("IMS--Edit.triviaTips");
 
   // State for dismissed tips (persisted to localStorage)
   const [dismissedTips, setDismissedTips] = useLocalStorage<string[]>("invoice-dismissed-tips", []);

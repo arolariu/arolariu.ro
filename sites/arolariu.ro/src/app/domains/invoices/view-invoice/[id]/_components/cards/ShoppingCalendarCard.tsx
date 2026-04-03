@@ -163,7 +163,7 @@ function CustomDayButton({
   tabIndex = 0,
 }: DayButtonProps): React.JSX.Element {
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
-  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
+  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   const {date} = day;
   const dayNum = date.getDate();
   const isCurrentMonth = date.getMonth() === month.getMonth() && date.getFullYear() === month.getFullYear();
@@ -209,7 +209,7 @@ function CustomDayButton({
 
 export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
+  const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   const {invoice} = useInvoiceContext();
   const transactionDate = useMemo(
     () => toSafeDate(invoice.paymentInformation.transactionDate),

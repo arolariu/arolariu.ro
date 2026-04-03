@@ -27,7 +27,7 @@ function getSupplyProgressColor(percentage: number, moduleStyles: Record<string,
 
 export function HomeInventoryCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.homeInventoryCard");
+  const t = useTranslations("IMS--Cards.homeInventoryCard");
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;

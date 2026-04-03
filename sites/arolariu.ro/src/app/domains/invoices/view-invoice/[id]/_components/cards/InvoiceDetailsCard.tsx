@@ -49,7 +49,7 @@ const RECEIPT_TYPE_ICONS: Record<string, string> = {
 
 export function InvoiceDetailsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.invoiceDetailsCard");
+  const t = useTranslations("IMS--Cards.invoiceDetailsCard");
   const {invoice, merchant} = useInvoiceContext();
   const [currentPage, setCurrentPage] = useState(1);
 

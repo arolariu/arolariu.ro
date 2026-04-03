@@ -169,7 +169,7 @@ function getInsightIconClass(type: Insight["type"]): string {
 
 export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.seasonalInsightsCard");
+  const t = useTranslations("IMS--Cards.seasonalInsightsCard");
   const {invoice} = useInvoiceContext();
   const allInvoices = useInvoicesStore((state) => state.invoices);
   const date = toSafeDate(invoice.paymentInformation.transactionDate);

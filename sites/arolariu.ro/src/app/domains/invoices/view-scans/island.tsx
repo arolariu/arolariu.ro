@@ -55,7 +55,7 @@ function StatsCard({value, label, colorClass}: Readonly<{value: number; label: s
  * Scan statistics component.
  */
 function ScanStats(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {scans, selectedScans} = useScans();
   const readyScans = scans.filter((s) => s.status === "ready").length;
 
@@ -101,7 +101,7 @@ function ScanStats(): React.JSX.Element | null {
  * Shows when all scans are ready and none are selected.
  */
 function CreateFromAllButton(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {scans, selectedScans} = useScans();
   const {openDialog} = useDialogs();
 
@@ -146,7 +146,7 @@ function CreateFromAllButton(): React.JSX.Element | null {
  * Sidebar content component (reused in both desktop sidebar and mobile Sheet).
  */
 function SidebarContent(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {selectedScans} = useScans();
 
   return (
@@ -245,7 +245,7 @@ function Sidebar(): React.JSX.Element | null {
  * Mobile tips button that opens a Sheet with sidebar content.
  */
 function MobileTipsButton(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {scans} = useScans();
   const isMobile = useIsMobile();
 
@@ -280,7 +280,7 @@ function MobileTipsButton(): React.JSX.Element | null {
  * Inner content component that uses the dialog context.
  */
 function ViewScansContent(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {scans, selectedScans} = useScans();
   const {openDialog} = useDialogs();
 

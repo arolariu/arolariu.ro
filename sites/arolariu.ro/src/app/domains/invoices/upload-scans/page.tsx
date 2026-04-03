@@ -10,7 +10,7 @@ import styles from "./page.module.scss";
  * Generates SEO metadata for the scan upload page.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.UploadScans.metadata");
+  const t = await getTranslations("IMS--UploadScans.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

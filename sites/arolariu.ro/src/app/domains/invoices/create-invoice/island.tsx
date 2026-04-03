@@ -69,7 +69,7 @@ function WizardContent(): React.JSX.Element {
  * Navigation buttons component.
  */
 function WizardNavigation(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice");
+  const t = useTranslations("IMS--Create");
   const {currentStep, canGoNext, goBack, goNext, isCreating} = useCreateInvoiceContext();
 
   const showBack = currentStep !== "select-scans";
@@ -103,7 +103,7 @@ function WizardNavigation(): React.JSX.Element {
  * Empty state component when no scans are available.
  */
 function EmptyState(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice");
+  const t = useTranslations("IMS--Create");
 
   return (
     <Card className={styles["emptyState"]}>
@@ -128,7 +128,7 @@ function EmptyState(): React.JSX.Element {
  * Main wizard component wrapped with context.
  */
 function CreateInvoiceWizard(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice");
+  const t = useTranslations("IMS--Create");
   const {hasScans} = useCreateInvoiceContext();
 
   if (!hasScans) {

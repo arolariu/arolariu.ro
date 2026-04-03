@@ -23,7 +23,7 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoices.messageList");
+  const t = useTranslations("IMS--List.messageList");
 
   return (
     <div className={styles["messageList"]}>

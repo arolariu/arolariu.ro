@@ -11,7 +11,7 @@ import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./InvoiceHeader.module.scss";
 
 export function InvoiceHeader(): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.invoiceHeader");
+  const t = useTranslations("IMS--Common.invoiceHeader");
   const {invoice} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},

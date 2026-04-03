@@ -66,3 +66,6 @@ sites/arolariu.ro/next-env.d.ts
 **/e2e-storage-state.json
 
 temp/
+
+# Backup files
+*.bak

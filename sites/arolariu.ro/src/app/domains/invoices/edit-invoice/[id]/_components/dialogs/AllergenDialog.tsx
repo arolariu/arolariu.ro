@@ -110,7 +110,7 @@ interface AllergenDialogPayload {
  * @see {@link Allergen} - Allergen type definition
  */
 export default function AllergenDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.EditInvoice.allergenDialog");
+  const t = useTranslations("IMS--Dialogs.allergenDialog");
   const {
     currentDialog: {payload},
     isOpen,

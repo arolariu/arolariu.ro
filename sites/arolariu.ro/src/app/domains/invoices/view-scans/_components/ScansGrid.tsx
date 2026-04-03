@@ -52,7 +52,7 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
  * Grid display for scans with selection support.
  */
 export default function ScansGrid(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewScans");
+  const t = useTranslations("IMS--ViewScans");
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
   const [page, setPage] = useState(0);
 

@@ -45,7 +45,7 @@ type SharingMode = "selection" | "public" | "private";
 interface SelectionModeProps {
   readonly onSelectPublic: () => void;
   readonly onSelectPrivate: () => void;
-  readonly t: ReturnType<typeof useTranslations>;
+  readonly t: ReturnType<typeof useTranslations<"IMS--Dialogs.shareInvoiceDialog">>;
 }
 
 /**
@@ -139,7 +139,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.shareInvoiceDialog");
+  const t = useTranslations("IMS--Dialogs.shareInvoiceDialog");
   const [sharingMode, setSharingMode] = useState<SharingMode>("selection");
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");

@@ -45,7 +45,7 @@ function StepItem({
   isActive: boolean;
   isCompleted: boolean;
 }>): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.steps");
+  const t = useTranslations("IMS--Create.steps");
 
   const circleClassName = [styles["stepCircle"], isActive && styles["stepCircleActive"], isCompleted && styles["stepCircleCompleted"]]
     .filter(Boolean)

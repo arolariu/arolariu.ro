@@ -38,7 +38,7 @@ function MerchantVisitCard({
   readonly merchantName: string;
   readonly locale: string;
 }): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
+  const t = useTranslations("IMS--Stats.merchantVisit");
 
   // Format day name using Intl.DateTimeFormat for i18n support
   const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(new Date(2024, 0, pattern.mostCommonDayOfWeek + 1));
@@ -133,7 +133,7 @@ function MerchantVisitCard({
  * @returns Merchant visit patterns grid component
  */
 export function MerchantVisitChart({data, currency, topN = 6}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantVisit");
+  const t = useTranslations("IMS--Stats.merchantVisit");
   const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
 

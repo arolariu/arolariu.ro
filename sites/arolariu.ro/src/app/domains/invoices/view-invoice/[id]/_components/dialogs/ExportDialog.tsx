@@ -84,7 +84,7 @@ import styles from "./ExportDialog.module.scss";
  * ```
  */
 export function ExportDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.export");
+  const t = useTranslations("IMS--View.export");
   const {invoice, merchant} = useInvoiceContext();
   const {isOpen, close} = useDialog("VIEW_INVOICE__EXPORT");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);

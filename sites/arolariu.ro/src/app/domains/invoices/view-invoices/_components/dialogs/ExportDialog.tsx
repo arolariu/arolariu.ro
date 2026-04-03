@@ -33,7 +33,7 @@ import styles from "./ExportDialog.module.scss";
  * @returns The ExportDialog component, CSR'ed.
  */
 export default function ExportDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.exportDialog");
+  const t = useTranslations("IMS--Dialogs.exportDialog");
   const [exportOptions, setExportOptions] = useState<InvoiceExportRequest>({
     format: "csv",
     includeMetadata: false,

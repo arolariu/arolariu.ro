@@ -42,7 +42,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the price distribution chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.priceDistribution");
+  const t = useTranslations("IMS--Stats.priceDistribution");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -65,7 +65,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  * @returns Bar chart component
  */
 export function PriceDistributionChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.priceDistribution");
+  const t = useTranslations("IMS--Stats.priceDistribution");
 
   const chartConfig = {
     count: {

@@ -60,7 +60,7 @@ function getDropzoneClassName(
  * @see {@link attachInvoiceScan} - Attaches scan URL to invoice
  */
 export default function AddScanDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.EditInvoice.addScanDialog");
+  const t = useTranslations("IMS--Dialogs.addScanDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},

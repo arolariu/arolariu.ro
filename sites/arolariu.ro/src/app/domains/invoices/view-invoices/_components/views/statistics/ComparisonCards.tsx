@@ -83,7 +83,7 @@ function ComparisonCard({icon, label, value, delta, isPositive, progressValue, i
  * @returns Grid of comparison cards
  */
 export function ComparisonCards({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.comparison");
+  const t = useTranslations("IMS--Stats.comparison");
 
   const spendingIcon = data.spendingDelta < 0 ? <TbArrowDown size={20} /> : <TbArrowUp size={20} />;
   const invoiceIcon = data.invoiceCountDelta < 0 ? <TbArrowDown size={20} /> : <TbArrowUp size={20} />;

@@ -14,7 +14,7 @@ type Props = {
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.summaryStatsCard");
+  const t = useTranslations("IMS--Cards.summaryStatsCard");
   const stats = [
     {
       label: t("stats.totalItems.label"),

@@ -80,7 +80,7 @@ export default function PostUploadPrompt({
   onDismiss,
   isVisible,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.UploadScans.postUpload");
+  const t = useTranslations("IMS--UploadScans.postUpload");
 
   return (
     <AnimatePresence>

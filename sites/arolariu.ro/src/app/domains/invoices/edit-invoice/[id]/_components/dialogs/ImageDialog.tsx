@@ -38,7 +38,7 @@ import styles from "./ImageDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ImageDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.EditInvoice.imageDialog");
+  const t = useTranslations("IMS--Dialogs.imageDialog");
   const {
     currentDialog: {payload},
     isOpen,

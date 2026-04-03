@@ -99,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       // 2. Parse and validate request body
       addSpanEvent("request.body.parse");
-      const body = (await request.json()) as Partial<EmailRequestBody>;
+      const body = (await request.json()) as EmailRequestBody;
       const {toEmail, toName, fromName, invoiceId} = body;
 
       if (!toEmail || !invoiceId) {

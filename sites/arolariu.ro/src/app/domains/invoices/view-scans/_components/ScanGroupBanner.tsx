@@ -49,7 +49,7 @@ interface ScanGroupBannerProps {
  * @returns The ScanGroupBanner component
  */
 export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGroupBannerProps>): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewScans.groupBanner");
+  const t = useTranslations("IMS--ViewScans.groupBanner");
   const router = useRouter();
   const {scans, setSelectedScans} = useScansStore();
   const [isDismissed, setIsDismissed] = useState<boolean>(!initialVisible);

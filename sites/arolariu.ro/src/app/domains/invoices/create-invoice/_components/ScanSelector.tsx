@@ -29,7 +29,7 @@ import styles from "./ScanSelector.module.scss";
  * @returns JSX element with scan selection UI
  */
 export default function ScanSelector(): React.JSX.Element {
-  const t = useTranslations("Invoices.CreateInvoice.scanSelector");
+  const t = useTranslations("IMS--Create.scanSelector");
   const {scans} = useScansStore();
   const {selectedScans, toggleScan, selectAllScans, clearSelection} = useCreateInvoiceContext();
 

@@ -62,7 +62,7 @@ function CustomTooltip({active, payload, currency, currentLabel, averageLabel}: 
 }
 
 export function CategoryComparisonChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.categoryComparisonChart");
+  const t = useTranslations("IMS--View.categoryComparisonChart");
   const chartConfig = {
     current: {
       label: t("labels.current"),

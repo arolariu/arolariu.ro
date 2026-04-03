@@ -85,7 +85,7 @@ function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
  * Uses native HTML5 drag-and-drop APIs for file handling.
  */
 export default function UploadArea(): React.JSX.Element {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const {pendingUploads, isUploading, addFiles, clearAll, uploadAll} = useScanUpload();
   const [isDragActive, setIsDragActive] = useState(false);
   const [dragCount, setDragCount] = useState(0);
