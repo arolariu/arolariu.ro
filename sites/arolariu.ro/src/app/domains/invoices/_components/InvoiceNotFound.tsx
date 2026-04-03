@@ -8,7 +8,7 @@ import styles from "./InvoiceNotFound.module.scss";
  * @returns The JSX for the invoice not found view.
  */
 export default function InvoiceNotFound({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const t = useTranslations("Invoices.Shared.states.notFound");
+  const t = useTranslations("IMS--Common.statesNotFound");
 
   return (
     <section className={styles["section"]}>

@@ -117,7 +117,7 @@ function ProcessStep({
  * Uses the DialogContext for state management.
  */
 export default function CreateInvoiceDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewScans.createInvoiceDialog");
+  const t = useTranslations("IMS--Dialogs.createInvoiceDialog");
   const router = useRouter();
 
   // Dialog state from context

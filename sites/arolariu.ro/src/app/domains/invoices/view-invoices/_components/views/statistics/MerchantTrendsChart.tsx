@@ -61,7 +61,7 @@ function formatMonthLabel(monthKey: string, locale: string): string {
  * @returns Merchant trends visualization component
  */
 export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantTrends");
+  const t = useTranslations("IMS--Stats.merchantTrends");
   const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
 

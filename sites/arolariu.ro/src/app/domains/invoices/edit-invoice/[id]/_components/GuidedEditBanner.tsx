@@ -63,7 +63,7 @@ type Props = Readonly<{
  * @see {@link ProductCategory} - Product category enum
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
-  const t = useTranslations("Invoices.EditInvoice.guidedEdit.banner");
+  const t = useTranslations("IMS--Edit.guidedEditBanner");
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Check localStorage on mount for dismissal state

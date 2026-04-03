@@ -43,7 +43,7 @@ export interface PrivateModeProps {
  * @returns The private sharing mode UI
  */
 export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: PrivateModeProps): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.shareInvoiceDialogPrivate");
+  const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPrivate");
   return (
     <div className={styles["body"]}>
       <Button

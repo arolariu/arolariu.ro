@@ -8,7 +8,7 @@ import styles from "./LoadingInvoice.module.scss";
  * @returns The JSX for the loading invoice view.
  */
 export default function LoadingInvoice({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const t = useTranslations("Invoices.Shared.states.loading");
+  const t = useTranslations("IMS--Common.statesLoading");
 
   return (
     <section className={styles["section"]}>

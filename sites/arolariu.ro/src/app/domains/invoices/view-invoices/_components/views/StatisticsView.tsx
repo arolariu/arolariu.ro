@@ -67,7 +67,7 @@ type Props = {
  * Empty state component when no invoices exist.
  */
 function EmptyState(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.empty");
+  const t = useTranslations("IMS--Stats.empty");
 
   return (
     <motion.div
@@ -106,7 +106,7 @@ function EmptyState(): React.JSX.Element {
  * @returns Statistics dashboard JSX element or empty state
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView");
+  const t = useTranslations("IMS--Stats");
 
   // Compute all statistics data with memoization
   const kpiData = useMemo(() => computeKPIs(invoices), [invoices]);

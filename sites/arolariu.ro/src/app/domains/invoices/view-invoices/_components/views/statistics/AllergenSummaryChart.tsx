@@ -48,7 +48,7 @@ function getWarningLevel(percentage: number): "high" | "medium" | "low" {
  * @returns Allergen card component
  */
 function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.allergenSummary");
+  const t = useTranslations("IMS--Stats.allergenSummary");
   const warningLevel = getWarningLevel(allergen.percentage);
 
   return (
@@ -105,7 +105,7 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
  * @returns Grid of allergen cards
  */
 export function AllergenSummaryChart({data}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.allergenSummary");
+  const t = useTranslations("IMS--Stats.allergenSummary");
 
   // Empty state - positive message
   if (data.length === 0) {

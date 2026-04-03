@@ -63,7 +63,7 @@ import styles from "./ShareAnalyticsDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareAnalyticsDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.shareAnalyticsDialog");
+  const t = useTranslations("IMS--Dialogs.shareAnalyticsDialog");
   const [email, setEmail] = useState<string>("");
   const {
     currentDialog: {payload},

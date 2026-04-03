@@ -92,7 +92,7 @@ interface BulkCategoryDialogPayload {
  * @see {@link ProductCategory} - Product category enum
  */
 export default function BulkCategoryDialog(): React.JSX.Element {
-  const t = useTranslations("Invoices.EditInvoice.bulkCategoryDialog");
+  const t = useTranslations("IMS--Dialogs.bulkCategoryDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},

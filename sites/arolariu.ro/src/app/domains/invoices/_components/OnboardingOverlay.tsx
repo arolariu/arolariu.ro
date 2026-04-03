@@ -46,7 +46,7 @@ type Step = {
  * @returns The OnboardingOverlay component (only visible when not completed or dismissed)
  */
 export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.Element | null {
-  const t = useTranslations("Invoices.Shared.onboarding");
+  const t = useTranslations("IMS--Common.onboarding");
   const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>("invoice-onboarding-complete", false);
   const [onboardingDismissed, setOnboardingDismissed] = useLocalStorage<boolean>("invoice-onboarding-dismissed", false);
   const [currentStep, setCurrentStep] = useState(0);

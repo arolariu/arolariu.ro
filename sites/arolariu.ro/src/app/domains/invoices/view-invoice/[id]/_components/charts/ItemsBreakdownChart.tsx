@@ -53,7 +53,7 @@ function CustomTooltip({active, payload, currency, quantityLabel}: CustomTooltip
 }
 
 export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.itemsBreakdownChart");
+  const t = useTranslations("IMS--View.itemsBreakdownChart");
   const chartConfig = {
     price: {
       label: t("labels.price"),

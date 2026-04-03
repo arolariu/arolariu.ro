@@ -61,7 +61,7 @@ interface NavItem {
  */
 export default function MobileBottomNav(): React.JSX.Element {
   const pathname = usePathname();
-  const t = useTranslations("Invoices.Shared.mobileNav");
+  const t = useTranslations("IMS--Common.mobileNav");
 
   /**
    * Navigation items configuration.

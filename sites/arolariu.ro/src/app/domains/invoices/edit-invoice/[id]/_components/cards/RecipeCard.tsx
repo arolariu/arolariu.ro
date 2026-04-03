@@ -80,7 +80,7 @@ type Props = {
  * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
 export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.EditInvoice.recipeCard");
+  const t = useTranslations("IMS--Cards.recipeCard");
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 
   const complexityLabelMap: Readonly<Record<RecipeComplexity, string>> = {

@@ -34,7 +34,7 @@ import RenderInvoiceDomainScreen from "./island";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.metadata");
+  const t = await getTranslations("IMS--UNKNOWN.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

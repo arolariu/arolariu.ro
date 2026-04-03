@@ -62,7 +62,7 @@ function UploadCard({
   error,
   onRemove,
 }: Readonly<PendingUploadCardProps>): React.JSX.Element {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const handleRemove = useCallback(() => {
     onRemove([id]);
   }, [onRemove, id]);
@@ -215,7 +215,7 @@ const DESKTOP_PAGE_SIZE = 50;
  * Paginates uploads with different page sizes for mobile (7) and desktop (50).
  */
 export default function UploadPreview(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const {pendingUploads, removeFiles} = useScanUpload();
   const [page, setPage] = useState(0);
 

@@ -71,7 +71,7 @@ function formatFileSize(bytes: number): string {
  * Individual scan card with selection checkbox, inline rename, and preview.
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewScans.scanCard");
+  const t = useTranslations("IMS--ViewScans.scanCard");
 
   // Guard against incomplete scan data
   if (!scan.blobUrl && !scan.name) {

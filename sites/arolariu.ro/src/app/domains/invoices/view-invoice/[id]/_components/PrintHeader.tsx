@@ -22,7 +22,7 @@ interface PrintHeaderProps {
  */
 export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Element {
   const {invoice, merchant} = props;
-  const t = useTranslations("Invoices.ViewInvoice.print");
+  const t = useTranslations("IMS--View.print");
   const formatter = useFormatter();
   const locale = useLocale();
 

@@ -67,7 +67,7 @@ type AnalysisOption = Readonly<{
  * @returns The AnalysisPanel component.
  */
 export function AnalysisPanel(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.analysisPanel");
+  const t = useTranslations("IMS--View.analysisPanel");
   const {invoice} = useInvoiceContext();
   const router = useRouter();
 

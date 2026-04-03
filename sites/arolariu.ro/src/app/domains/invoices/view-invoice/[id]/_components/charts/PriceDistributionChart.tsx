@@ -33,7 +33,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoice.priceDistributionChart");
+  const t = useTranslations("IMS--View.priceDistributionChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -48,7 +48,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
 }
 
 export function PriceDistributionChart({data, currency}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.priceDistributionChart");
+  const t = useTranslations("IMS--View.priceDistributionChart");
   const chartConfig = {
     count: {
       label: t("labels.items"),

@@ -57,7 +57,7 @@ import styles from "./page.module.scss";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.EditInvoice.metadata");
+  const t = await getTranslations("IMS--Edit.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

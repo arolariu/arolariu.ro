@@ -27,7 +27,7 @@ import {TimelineSharedWithList} from "./TimelineSharedWithList";
  * \`\`\`
  */
 export function InvoiceTimeline(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.invoiceTimeline");
+  const t = useTranslations("IMS--View.invoiceTimeline");
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const events = generateTimelineFromInvoice(invoice);

@@ -6,7 +6,7 @@ import styles from "./LoadingInvoices.module.scss";
  * @returns The JSX for the loading invoices view.
  */
 export default async function LoadingInvoices(): Promise<React.JSX.Element> {
-  const t = await getTranslations("Invoices.Shared.loadingInvoices");
+  const t = await getTranslations("IMS--Common.loadingInvoices");
   return (
     <section className={styles["section"]}>
       <article className={styles["article"]}>

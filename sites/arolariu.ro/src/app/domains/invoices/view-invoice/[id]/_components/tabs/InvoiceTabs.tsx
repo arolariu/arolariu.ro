@@ -65,7 +65,7 @@ function getComplexityEmoji(complexity: RecipeComplexity): string {
  */
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
-  const t = useTranslations("Invoices.ViewInvoice.invoiceTabs");
+  const t = useTranslations("IMS--View.invoiceTabs");
 
   return (
     <Card className={styles["card"]}>

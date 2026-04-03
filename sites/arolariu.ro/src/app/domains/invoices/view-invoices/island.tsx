@@ -19,7 +19,7 @@ import styles from "./island.module.scss";
  */
 export default function RenderViewInvoicesScreen(): React.JSX.Element {
   const {invoices, isLoading} = useInvoices();
-  const t = useTranslations("Invoices.ViewInvoices.viewInvoicesIsland");
+  const t = useTranslations("IMS--List.viewInvoicesIsland");
 
   if (isLoading) {
     return (

@@ -75,7 +75,7 @@ function CustomTooltip({
 }
 
 export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.merchantBreakdownChart");
+  const t = useTranslations("IMS--View.merchantBreakdownChart");
   const merchants = useMerchantsStore((state) => state.merchants);
 
   // Resolve merchant names from Zustand store

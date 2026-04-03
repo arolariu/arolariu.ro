@@ -68,7 +68,7 @@ function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
 }
 
 const CreateDialog = () => {
-  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
+  const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {invoice} = useEditInvoiceContext();
   const router = useRouter();
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
@@ -358,7 +358,7 @@ const CreateDialog = () => {
 };
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
+  const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   return (
@@ -436,7 +436,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
+  const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
@@ -663,7 +663,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
+  const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const handleDelete = useCallback(() => {}, []);
