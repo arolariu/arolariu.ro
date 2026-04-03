@@ -70,7 +70,7 @@ const DEFAULT_PREFERENCES: InvoicePreferences = {
  * @returns The InvoicePreferences component
  */
 export default function InvoicePreferences(): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.preferences");
+  const t = useTranslations("IMS--Common.preferences");
 
   const [preferences, setPreferences] = useLocalStorage<InvoicePreferences>("invoice-preferences", DEFAULT_PREFERENCES);
 

@@ -61,7 +61,7 @@ type CustomTooltipProps = {
  * in a formatted card overlay.
  */
 function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.productCategory");
+  const t = useTranslations("IMS--Stats.productCategory");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
   if (!firstItem) return null;
@@ -101,7 +101,7 @@ function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): Re
  * @returns Horizontal bar chart component
  */
 export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.productCategory");
+  const t = useTranslations("IMS--Stats.productCategory");
 
   // Empty state
   if (data.length === 0) {

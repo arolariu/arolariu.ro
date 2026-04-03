@@ -44,7 +44,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the spending chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.spendingOverTime");
+  const t = useTranslations("IMS--Stats.spendingOverTime");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -93,7 +93,7 @@ function formatYAxisTick(value: number): string {
  * @returns Area chart component
  */
 export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.spendingOverTime");
+  const t = useTranslations("IMS--Stats.spendingOverTime");
 
   const chartConfig = {
     amount: {

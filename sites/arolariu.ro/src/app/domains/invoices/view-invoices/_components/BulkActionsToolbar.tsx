@@ -78,7 +78,7 @@ import styles from "./BulkActionsToolbar.module.scss";
  * @returns The bulk actions toolbar or null if no invoices are selected
  */
 export default function BulkActionsToolbar(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.bulkActions");
+  const t = useTranslations("IMS--List.bulkActions");
   const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 
   // Use shallow selector to optimize re-renders

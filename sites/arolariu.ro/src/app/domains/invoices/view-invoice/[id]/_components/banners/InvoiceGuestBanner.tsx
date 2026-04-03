@@ -6,7 +6,7 @@ import {TbInfoCircle} from "react-icons/tb";
 import styles from "./InvoiceGuestBanner.module.scss";
 
 export function InvoiceGuestBanner(): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.invoiceGuestBanner");
+  const t = useTranslations("IMS--View.invoiceGuestBanner");
   return (
     <Alert
       variant='default'

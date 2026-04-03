@@ -12,7 +12,7 @@ import styles from "./WorkflowSection.module.scss";
  * @returns The workflow section.
  */
 export default function WorkflowSection(): React.JSX.Element {
-  const t = useTranslations("Invoices.Homepage");
+  const t = useTranslations("IMS--Landing");
 
   return (
     <section className={styles["workflowSection"]}>

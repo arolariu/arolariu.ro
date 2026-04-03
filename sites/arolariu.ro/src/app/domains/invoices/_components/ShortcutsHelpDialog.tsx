@@ -82,7 +82,7 @@ type ShortcutItem = {
  * ```
  */
 export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsHelpDialogProps>): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.shortcuts");
+  const t = useTranslations("IMS--Common.shortcuts");
 
   // Detect if user is on macOS for Cmd vs Ctrl display
   const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().includes("MAC");

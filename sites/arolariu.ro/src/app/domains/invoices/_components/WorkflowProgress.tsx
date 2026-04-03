@@ -96,7 +96,7 @@ function Connector({isCompleted}: Readonly<{isCompleted: boolean}>): React.JSX.E
  * ```
  */
 export default function WorkflowProgress({currentStep}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.Shared.workflowProgress");
+  const t = useTranslations("IMS--Common.workflowProgress");
 
   const currentOrder = STEP_ORDER[currentStep];
 

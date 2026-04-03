@@ -74,7 +74,7 @@ import styles from "./InvoiceCard.module.scss";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.EditInvoice.invoiceCard");
+  const t = useTranslations("IMS--Cards.invoiceCard");
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
     useEditInvoiceContext();
   const {paymentInformation, category, isImportant, description} = invoice;

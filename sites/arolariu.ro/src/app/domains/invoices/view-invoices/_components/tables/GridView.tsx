@@ -42,8 +42,8 @@ type Props = Readonly<{
 export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, pageSize, currentPage, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const locale = useLocale();
-  const tTableView = useTranslations("Invoices.ViewInvoices.tableView");
-  const t = useTranslations("Invoices.ViewInvoices.gridView");
+  const tTableView = useTranslations("IMS--List.tableView");
+  const t = useTranslations("IMS--List.gridView");
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 

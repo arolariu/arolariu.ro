@@ -46,7 +46,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the merchant leaderboard.
  */
 function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  const t = useTranslations("IMS--Stats.merchantLeaderboard");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
   if (!firstItem) return null;
@@ -71,7 +71,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: CustomToolt
  * @returns Horizontal bar chart component
  */
 export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.merchantLeaderboard");
+  const t = useTranslations("IMS--Stats.merchantLeaderboard");
   const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
 
   // Create a function to get merchant name or fallback to ID

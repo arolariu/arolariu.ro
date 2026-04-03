@@ -71,7 +71,7 @@ function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.E
  * Upload statistics component.
  */
 function UploadStats(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const {pendingUploads, sessionStats} = useScanUpload();
 
   // Current batch stats (from pending uploads)
@@ -160,7 +160,7 @@ function UploadStats(): React.JSX.Element | null {
  * Main upload content component (uses context).
  */
 function UploadContent(): React.JSX.Element {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const router = useRouter();
   const {pendingUploads, sessionStats} = useScanUpload();
   const [showPrompt, setShowPrompt] = useState(false);

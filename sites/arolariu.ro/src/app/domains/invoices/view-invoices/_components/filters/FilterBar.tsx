@@ -101,7 +101,7 @@ export default function FilterBar({
   viewMode,
   onViewModeChange,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.invoicesView");
+  const t = useTranslations("IMS--List.invoicesView");
   const locale = useLocale();
   const {isMobile} = useWindowSize();
   const [searchInput, setSearchInput] = useState<string>(filters.search);

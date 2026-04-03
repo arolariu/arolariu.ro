@@ -72,7 +72,7 @@ function generateSuggestion(hasVeggies: boolean, hasFruits: boolean, processedPc
 
 export function NutritionCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Invoices.ViewInvoice.nutritionCard");
+  const t = useTranslations("IMS--Cards.nutritionCard");
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;

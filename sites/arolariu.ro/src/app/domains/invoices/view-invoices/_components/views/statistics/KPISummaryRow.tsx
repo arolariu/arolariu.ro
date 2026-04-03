@@ -72,7 +72,7 @@ function KPICard({icon, label, value, subtitle, trend, index}: KPICardProps): Re
  * @returns Row of animated KPI cards
  */
 export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.kpi");
+  const t = useTranslations("IMS--Stats.kpi");
 
   const kpiCards: Omit<KPICardProps, "index">[] = [
     {

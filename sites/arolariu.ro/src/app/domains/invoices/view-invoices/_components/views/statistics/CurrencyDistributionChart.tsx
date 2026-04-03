@@ -68,7 +68,7 @@ const CURRENCY_FLAGS: Record<string, string> = {
  * Empty state component for single-currency scenario.
  */
 function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribution}): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.currencyDistribution");
+  const t = useTranslations("IMS--Stats.currencyDistribution");
   const flag = CURRENCY_FLAGS[currency.currencyCode] ?? "🌐";
 
   return (
@@ -123,7 +123,7 @@ function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribut
  * @returns Currency distribution chart JSX element
  */
 export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoices.statisticsView.charts.currencyDistribution");
+  const t = useTranslations("IMS--Stats.currencyDistribution");
   const [showRON, setShowRON] = useState(false);
 
   // Handle single currency scenario

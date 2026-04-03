@@ -37,12 +37,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
  */
 function isValidFile(file: File): boolean {
   const extension = file.name.split(".").pop()?.toLowerCase();
-  return (
-    ACCEPTED_TYPES.has(file.type)
-    && file.size <= MAX_FILE_SIZE
-    && extension !== undefined
-    && VALID_EXTENSIONS.has(extension)
-  );
+  return ACCEPTED_TYPES.has(file.type) && file.size <= MAX_FILE_SIZE && extension !== undefined && VALID_EXTENSIONS.has(extension);
 }
 
 /**
@@ -85,7 +80,7 @@ function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
  * Uses native HTML5 drag-and-drop APIs for file handling.
  */
 export default function UploadArea(): React.JSX.Element {
-  const t = useTranslations("Invoices.UploadScans");
+  const t = useTranslations("IMS--UploadScans");
   const {pendingUploads, isUploading, addFiles, clearAll, uploadAll} = useScanUpload();
   const [isDragActive, setIsDragActive] = useState(false);
   const [dragCount, setDragCount] = useState(0);

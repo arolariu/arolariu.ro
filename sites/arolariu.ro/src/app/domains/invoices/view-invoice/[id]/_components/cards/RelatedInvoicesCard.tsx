@@ -124,7 +124,7 @@ function isSimilarAmount(amount1: number, amount2: number): boolean {
  * ```
  */
 export function RelatedInvoicesCard(): React.JSX.Element | null {
-  const t = useTranslations("Invoices.ViewInvoice.relatedInvoices");
+  const t = useTranslations("IMS--View.relatedInvoices");
   const {invoice: currentInvoice} = useInvoiceContext();
   const invoices = useInvoicesStore(useShallow((state) => state.invoices));
 
@@ -262,7 +262,7 @@ interface RelatedInvoiceMiniCardProps {
  * @returns Mini invoice card component
  */
 function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoiceMiniCardProps>): React.JSX.Element {
-  const t = useTranslations("Invoices.ViewInvoice.relatedInvoices");
+  const t = useTranslations("IMS--View.relatedInvoices");
 
   const formattedDate = formatDate(invoice.createdAt, {
     locale: "en-US",

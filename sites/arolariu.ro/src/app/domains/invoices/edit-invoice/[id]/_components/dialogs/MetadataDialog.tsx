@@ -31,7 +31,7 @@ export const VALID_METADATA_KEYS = [
 ];
 
 const AddDialog = () => {
-  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
+  const t = useTranslations("IMS--Dialogs.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
@@ -107,7 +107,7 @@ const AddDialog = () => {
 };
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
+  const t = useTranslations("IMS--Dialogs.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
@@ -173,7 +173,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
+  const t = useTranslations("IMS--Dialogs.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
 
   const handleDelete = useCallback(() => {

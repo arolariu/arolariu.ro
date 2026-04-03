@@ -56,7 +56,7 @@ import pageStyles from "./page.module.scss";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.ViewInvoices.metadata");
+  const t = await getTranslations("IMS--List.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,
@@ -132,8 +132,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see RFC 1003 - Internationalization System (rich text formatting)
  */
 export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("Invoices.ViewInvoices");
-  const tCommon = await getTranslations("Invoices.ViewInvoices.viewInvoicesPage");
+  const t = await getTranslations("IMS--List");
+  const tCommon = await getTranslations("IMS--List.viewInvoicesPage");
   const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? tCommon("guestName");
 

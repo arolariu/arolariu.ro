@@ -90,9 +90,26 @@ type ScoreFactor = {
  * @remarks
  * Suggestions are dynamically generated based on incomplete factors.
  */
+/** Known suggestion key names matching `suggestions.*` in the i18n messages. */
+type SuggestionKey =
+  | "noProducts"
+  | "incompleteProducts"
+  | "lowOcrConfidence"
+  | "noMerchant"
+  | "incompletePayment"
+  | "uncategorizedProducts"
+  | "noRecipes"
+  | "productsPresent"
+  | "productCompleteness"
+  | "ocrConfidence"
+  | "merchantLinked"
+  | "paymentInfo"
+  | "categoriesAssigned"
+  | "recipesGenerated";
+
 type ImprovementSuggestion = {
-  /** i18n key for the suggestion text */
-  readonly key: string;
+  /** i18n key for the suggestion text (must match a `suggestions.*` key) */
+  readonly key: SuggestionKey;
   /** Icon component to display */
   readonly icon: React.ComponentType<{className?: string}>;
   /** Optional link to navigate to for action */
@@ -145,7 +162,7 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  */
 export function InvoiceHealthScore(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
-  const t = useTranslations("Invoices.ViewInvoice.healthScore");
+  const t = useTranslations("IMS--View.healthScore");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
 

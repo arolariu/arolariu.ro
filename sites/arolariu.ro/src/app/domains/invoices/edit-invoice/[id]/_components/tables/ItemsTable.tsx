@@ -118,7 +118,7 @@ type SortDirection = "asc" | "desc";
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
-  const t = useTranslations("Invoices.EditInvoice.itemsTable");
+  const t = useTranslations("IMS--Edit.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
   const {open: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
   const {open: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
