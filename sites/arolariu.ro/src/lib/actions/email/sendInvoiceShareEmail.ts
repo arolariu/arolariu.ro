@@ -23,7 +23,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchApiJwtSecret} from "@/lib/config/configProxy";
-import {createJwtToken} from "@/lib/utils.server";
+import {createJwtToken, fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -127,7 +127,7 @@ export async function sendInvoiceShareEmail(input: SendInvoiceShareEmailInput): 
       const apiUrl = `${process.env["SITE_URL"] ?? "http://localhost:3000"}/api/email`;
       addSpanEvent("email.api.call", {apiUrl});
 
-      const response = await fetch(apiUrl, {
+      const response = await fetchWithTimeout(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
