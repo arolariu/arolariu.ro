@@ -206,6 +206,6 @@
     "zustand": "5.0.12"
   },
   "overrides": {
-    "typescript": "$typescript"
+    "typescript": "6.0.2"
   }
 }

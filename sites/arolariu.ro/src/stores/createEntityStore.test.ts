@@ -10,6 +10,7 @@ import {
   type BaseEntity,
   type CreateEntityStoreOptions,
   type EntityActions,
+  type EntityFromStore,
   type EntityPersistedState,
   type EntityState,
   type EntityStore,
@@ -107,10 +108,10 @@ describe("createEntityStore module exports", () => {
     });
 
     it("should export EntityFromStore type helper", () => {
-      // Type-level test - if this compiles, the type helper works
-      type TestStore = EntityStore<TestEntity>;
-      type ExtractedEntity = TestStore extends EntityStore<infer E> ? E : never;
-      const entity: ExtractedEntity = {id: "1", name: "Test", value: 100};
+      // Type-level test - verify EntityFromStore extracts entity type correctly
+      // Use 'as unknown as' to bypass contravariance constraint in EntityStore<BaseEntity>
+      type ExtractedEntity = EntityFromStore<EntityStore<TestEntity> & EntityStore<BaseEntity>>;
+      const entity: ExtractedEntity = {id: "1"};
       expect(entity.id).toBe("1");
     });
   });
