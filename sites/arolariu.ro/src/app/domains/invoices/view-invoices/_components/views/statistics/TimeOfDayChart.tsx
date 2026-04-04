@@ -12,12 +12,12 @@ import {
   CardHeader,
   CardTitle,
   ChartContainer,
+  ChartTooltip,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
   Radar,
   RadarChart,
-  ChartTooltip,
   ResponsiveContainer,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
