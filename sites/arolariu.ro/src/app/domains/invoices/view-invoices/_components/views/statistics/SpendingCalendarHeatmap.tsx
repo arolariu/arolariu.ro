@@ -113,7 +113,6 @@ function formatDate(dateStr: string, locale: string): string {
   });
 }
 
-
 /**
  * Generates a 3-month calendar grid of spending data.
  *

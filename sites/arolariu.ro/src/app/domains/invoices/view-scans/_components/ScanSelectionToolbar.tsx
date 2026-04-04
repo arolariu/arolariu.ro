@@ -138,7 +138,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("delete.confirmDescription", {count: String(selectedScans.length)})}</AlertDialogDescription>
+                        <AlertDialogDescription>
+                          {t("delete.confirmDescription", {count: String(selectedScans.length)})}
+                        </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>

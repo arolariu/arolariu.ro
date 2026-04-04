@@ -674,10 +674,7 @@ describe("updateScan", () => {
       await updateScan(input);
 
       // Assert
-      expect(mockUploadData).toHaveBeenCalledWith(
-        expect.any(ArrayBuffer),
-        expect.objectContaining({}),
-      );
+      expect(mockUploadData).toHaveBeenCalledWith(expect.any(ArrayBuffer), expect.objectContaining({}));
     });
   });
 });

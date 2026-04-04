@@ -103,9 +103,7 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
 }
 
 /** Renders the historical comparison section in the tooltip */
-function HistoricalComparisonSection({
-  historicalData,
-}: Readonly<{historicalData: DayHistoricalComparison}>): React.JSX.Element {
+function HistoricalComparisonSection({historicalData}: Readonly<{historicalData: DayHistoricalComparison}>): React.JSX.Element {
   const t = useTranslations("IMS--Cards.shoppingCalendarCard");
   const ArrowIcon = historicalData.isAboveAverage ? TbArrowUp : TbArrowDown;
   const colorClass = historicalData.isAboveAverage ? styles["colorRed"] : styles["colorGreen"];

@@ -126,7 +126,11 @@ function getDefaultInsight(t: (key: string, values?: TranslationValues) => strin
   };
 }
 
-function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, t: (key: string, values?: TranslationValues) => string): Insight[] {
+function detectSeasonalInsights(
+  invoice: Invoice,
+  allInvoices: ReadonlyArray<Invoice>,
+  t: (key: string, values?: TranslationValues) => string,
+): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();

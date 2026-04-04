@@ -8,9 +8,9 @@ import {
   CardTitle,
   ChartContainer,
   ChartLegend,
+  ChartTooltip,
   Pie,
   PieChart,
-  ChartTooltip,
   ResponsiveContainer,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
