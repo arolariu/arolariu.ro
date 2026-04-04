@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 
 using arolariu.Backend.Common.Options;
+using arolariu.Backend.Core.Auth;
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
 
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 /// <summary>
@@ -141,6 +143,8 @@ public static class WebApplicationBuilderExtensions
 
           if (string.IsNullOrWhiteSpace(secret))
           {
+            var jwtLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+            jwtLogger.LogJwtSecretMissing();
             return [];
           }
 
@@ -155,11 +159,18 @@ public static class WebApplicationBuilderExtensions
           if (string.IsNullOrWhiteSpace(expectedIssuer))
           {
             expectedIssuer = "arolariu.ro";
+            var jwtLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+            jwtLogger.LogJwtIssuerFallback(expectedIssuer);
           }
 
-          return string.Equals(issuer, expectedIssuer, StringComparison.Ordinal)
-            ? issuer
-            : throw new SecurityTokenInvalidIssuerException($"Invalid issuer: '{issuer}'.");
+          if (string.Equals(issuer, expectedIssuer, StringComparison.Ordinal))
+          {
+            return issuer;
+          }
+
+          var failLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+          failLogger.LogJwtIssuerValidationFailed(issuer, expectedIssuer);
+          throw new SecurityTokenInvalidIssuerException($"Invalid issuer: '{issuer}'.");
         },
 
         AudienceValidator = (audiences, securityToken, validationParameters) =>
@@ -170,9 +181,17 @@ public static class WebApplicationBuilderExtensions
           if (string.IsNullOrWhiteSpace(expectedAudience))
           {
             expectedAudience = "arolariu.ro";
+            var jwtLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+            jwtLogger.LogJwtAudienceFallback(expectedAudience);
           }
 
-          return audiences?.Contains(expectedAudience, StringComparer.Ordinal) is true;
+          var isValid = audiences?.Contains(expectedAudience, StringComparer.Ordinal) is true;
+          if (!isValid)
+          {
+            var failLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+            failLogger.LogJwtAudienceValidationFailed(expectedAudience);
+          }
+          return isValid;
         },
       };
     });
