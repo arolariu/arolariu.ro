@@ -3,7 +3,6 @@ namespace arolariu.Backend.Common.Telemetry.Logging;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
@@ -15,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using OpenTelemetry.Logs;
-using OpenTelemetry.Resources;
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - ServiceProvider disposed after configuration
 
@@ -70,18 +68,8 @@ public static class LoggingExtensions
 
     builder.Logging.AddOpenTelemetry(otelOptions =>
     {
-      // Configure service resource information
-      otelOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
-        .AddService(
-          serviceName: "arolariu-api",
-          serviceVersion: Environment.GetEnvironmentVariable("COMMIT_SHA") ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-          serviceInstanceId: Environment.MachineName)
-        .AddAttributes([
-          new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
-          new("service.namespace", "arolariu.ro"),
-          new("cloud.role", "api"),
-          new("cloud.provider", "azure")
-        ]));
+      // Configure service resource information via shared factory
+      otelOptions.SetResourceBuilder(ResourceBuilderFactory.Create());
 
       otelOptions.IncludeFormattedMessage = true;
       otelOptions.IncludeScopes = true;

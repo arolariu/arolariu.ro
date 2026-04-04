@@ -3,7 +3,6 @@ namespace arolariu.Backend.Common.Telemetry.Tracing;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
@@ -13,7 +12,6 @@ using global::Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -71,24 +69,17 @@ public static class TracingExtensions
 
     builder.Services.AddOpenTelemetry().WithTracing(tracingOptions =>
     {
-      // Configure service resource information for proper identification in Azure Application Insights
-      tracingOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
-        .AddService(
-          serviceName: "arolariu-api",
-          serviceVersion: Environment.GetEnvironmentVariable("COMMIT_SHA") ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-          serviceInstanceId: Environment.MachineName)
-        .AddAttributes([
-          new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
-          new("service.namespace", "arolariu.ro"),
-          new("cloud.role", "api"),
-          new("cloud.provider", "azure")
-        ]));
+      // Configure service resource information via shared factory
+      tracingOptions.SetResourceBuilder(ResourceBuilderFactory.Create());
 
       // Register custom ActivitySources for domain-specific tracing
       tracingOptions.AddSource(CommonPackageTracing.Name);
       tracingOptions.AddSource(CorePackageTracing.Name);
       tracingOptions.AddSource(AuthPackageTracing.Name);
       tracingOptions.AddSource(InvoicePackageTracing.Name);
+
+      // Register Azure Cosmos DB SDK native ActivitySource for SDK-level diagnostics
+      tracingOptions.AddSource("Azure.Cosmos.Operation");
 
       // Add custom processor for span enrichment (must be added before exporters)
       tracingOptions.AddProcessor(new ActivityEnrichingProcessor());
@@ -108,6 +99,7 @@ public static class TracingExtensions
           if (!string.IsNullOrEmpty(userId))
           {
             activity?.SetTag("enduser.id", userId);
+            activity?.AddBaggage("enduser.id", userId);
           }
         };
 
