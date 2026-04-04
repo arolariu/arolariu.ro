@@ -5,7 +5,7 @@ import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {ProductCategory, type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale, useTranslations, type TranslationValues} from "next-intl";
 import {useMemo} from "react";
 import {TbBulb, TbShoppingBag, TbSparkles, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -59,7 +59,7 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
 function detectSpendingSpikes(
   categorySpending: Record<ProductCategory, number>,
   historicalAvg: Record<ProductCategory, {total: number; count: number}>,
-  t: ReturnType<typeof useTranslations>,
+  t: (key: string, values?: TranslationValues) => string,
 ): Insight[] {
   const insights: Insight[] = [];
   for (const [cat, amount] of Object.entries(categorySpending)) {
@@ -76,7 +76,7 @@ function detectSpendingSpikes(
         insights.push({
           id: `spike-${category}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: t("insights.spike.title", {category: formatEnum(ProductCategory, category)}),
+          title: t("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
           description: t("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });
@@ -89,7 +89,7 @@ function detectSpendingSpikes(
 /**
  * Get December-specific seasonal insights.
  */
-function getDecemberInsights(date: Date, t: ReturnType<typeof useTranslations>): Insight[] {
+function getDecemberInsights(date: Date, t: (key: string, values?: TranslationValues) => string): Insight[] {
   const insights: Insight[] = [
     {
       id: "holiday-season",
@@ -116,7 +116,7 @@ function getDecemberInsights(date: Date, t: ReturnType<typeof useTranslations>):
 /**
  * Get the default insight when no specific patterns are detected.
  */
-function getDefaultInsight(t: ReturnType<typeof useTranslations>): Insight {
+function getDefaultInsight(t: (key: string, values?: TranslationValues) => string): Insight {
   return {
     id: "normal-pattern",
     icon: <TbShoppingBag className={styles["iconSm"]} />,
@@ -126,7 +126,7 @@ function getDefaultInsight(t: ReturnType<typeof useTranslations>): Insight {
   };
 }
 
-function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, t: ReturnType<typeof useTranslations>): Insight[] {
+function detectSeasonalInsights(invoice: Invoice, allInvoices: ReadonlyArray<Invoice>, t: (key: string, values?: TranslationValues) => string): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
@@ -183,7 +183,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
 
     // Find invoices from the same month (any year), excluding the current invoice
     const sameMonthInvoices = allInvoices.filter((inv) => {
-      if (inv.invoiceIdentifier === invoice.invoiceIdentifier) return false;
+      if (inv.id === invoice.id) return false;
       const invDate = toSafeDate(inv.paymentInformation.transactionDate);
       return invDate.getMonth() === currentMonth && invDate.getTime() > 0;
     });
@@ -214,7 +214,8 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     };
   }, [invoice, allInvoices]);
 
-  const insights = useMemo(() => detectSeasonalInsights(invoice, allInvoices, t), [invoice, allInvoices, t]);
+  const translate = t as (key: string, values?: TranslationValues) => string;
+  const insights = useMemo(() => detectSeasonalInsights(invoice, allInvoices, translate), [invoice, allInvoices, translate]);
 
   // If we don't have enough historical data, show a placeholder
   const hasInsufficientData = allInvoices.length < 2;

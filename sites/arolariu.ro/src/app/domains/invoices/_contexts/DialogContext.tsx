@@ -169,8 +169,11 @@ export function useDialog(dialogType: Exclude<DialogType, null>, dialogMode?: Ex
   return {
     currentDialog,
     isOpen: isOpen(dialogType),
-    // We make the open function easier to call for the consumer.
+    // Zero-arg open preserves MouseEventHandler compatibility for onClick={open}.
     open: () => openDialog(dialogType, dialogMode, dialogPayload),
+    // openWith allows overriding mode and payload at call time.
+    openWith: (mode: Exclude<DialogMode, null>, payload?: DialogPayload) =>
+      openDialog(dialogType, mode, payload ?? dialogPayload),
     close: closeDialog,
   } as const;
 }

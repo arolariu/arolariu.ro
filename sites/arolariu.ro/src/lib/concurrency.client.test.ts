@@ -3,7 +3,7 @@
  * @module lib/concurrency.client.test
  */
 
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {withConcurrencyLimit, withConcurrencyLimitAndProgress} from "./concurrency.client";
 
 describe("withConcurrencyLimit", () => {

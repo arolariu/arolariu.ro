@@ -5,7 +5,7 @@ import RenderStatisticsView from "./StatisticsView";
 /**
  * StatisticsView renders a comprehensive analytics dashboard for invoices.
  * Features KPI cards, spending trends, category breakdowns, merchant leaderboards,
- * and time-based analytics. Uses the `Invoices.ViewInvoices.statisticsView` i18n namespace.
+ * and time-based analytics. Uses the `IMS--Stats` i18n namespace.
  *
  * **Components:**
  * - KPI Summary Row (total spending, invoice count, top merchant, average items)

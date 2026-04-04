@@ -326,11 +326,13 @@ describe("fetchWithTimeout", () => {
     await fetchWithTimeout(url, options, 5000);
 
     expect(mockFetch).toHaveBeenCalled();
-    const [fetchUrl, fetchOptions] = mockFetch.mock.calls[0];
+    const firstCall = mockFetch.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [fetchUrl, fetchOptions] = firstCall!;
     expect(fetchUrl).toBe(url);
-    expect(fetchOptions.method).toBe("GET");
-    expect(fetchOptions.signal).toBeDefined();
-    expect(fetchOptions.cache).toBe("no-store");
+    expect((fetchOptions as RequestInit).method).toBe("GET");
+    expect((fetchOptions as RequestInit).signal).toBeDefined();
+    expect((fetchOptions as RequestInit).cache).toBe("no-store");
   });
 
   it("should resolve API-relative paths through exp-backed API discovery", async () => {
@@ -341,7 +343,9 @@ describe("fetchWithTimeout", () => {
     await fetchWithTimeout("/rest/v1/invoices");
 
     expect(mockFetchApiUrl).toHaveBeenCalledTimes(1);
-    const [fetchUrl] = mockFetch.mock.calls[0];
+    const firstCall = mockFetch.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [fetchUrl] = firstCall!;
     expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
   });
 
@@ -455,8 +459,10 @@ describe("createErrorResult", () => {
     const result = createErrorResult<string>(error, "Default message");
 
     expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("NETWORK_ERROR");
-    expect(result.error?.message).toBe("Something went wrong");
+    if (!result.success) {
+      expect(result.error?.code).toBe("NETWORK_ERROR");
+      expect(result.error?.message).toBe("Something went wrong");
+    }
   });
 
   it("should identify timeout errors", async () => {
@@ -466,8 +472,10 @@ describe("createErrorResult", () => {
     const result = createErrorResult<string>(error, "Default message");
 
     expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("TIMEOUT_ERROR");
-    expect(result.error?.message).toContain("timed out");
+    if (!result.success) {
+      expect(result.error?.code).toBe("TIMEOUT_ERROR");
+      expect(result.error?.message).toContain("timed out");
+    }
   });
 
   it("should handle non-Error objects", async () => {
@@ -476,8 +484,10 @@ describe("createErrorResult", () => {
     const result = createErrorResult<string>("String error", "Default message");
 
     expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("UNKNOWN_ERROR");
-    expect(result.error?.message).toBe("Default message");
+    if (!result.success) {
+      expect(result.error?.code).toBe("UNKNOWN_ERROR");
+      expect(result.error?.message).toBe("Default message");
+    }
   });
 
   it("should use default message for unknown errors", async () => {
@@ -486,8 +496,10 @@ describe("createErrorResult", () => {
     const result = createErrorResult<number>(null, "An unknown error occurred");
 
     expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("UNKNOWN_ERROR");
-    expect(result.error?.message).toBe("An unknown error occurred");
+    if (!result.success) {
+      expect(result.error?.code).toBe("UNKNOWN_ERROR");
+      expect(result.error?.message).toBe("An unknown error occurred");
+    }
   });
 
   it("should handle undefined as error", async () => {
@@ -496,8 +508,10 @@ describe("createErrorResult", () => {
     const result = createErrorResult<boolean>(undefined, "Unexpected error");
 
     expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("UNKNOWN_ERROR");
-    expect(result.error?.message).toBe("Unexpected error");
+    if (!result.success) {
+      expect(result.error?.code).toBe("UNKNOWN_ERROR");
+      expect(result.error?.message).toBe("Unexpected error");
+    }
   });
 });
 
@@ -727,7 +741,9 @@ describe("fetchWithTimeout - edge cases", () => {
 
     await fetchWithTimeout("https://api.example.com/data?foo=bar&baz=qux");
 
-    const [fetchUrl] = mockFetch.mock.calls[0];
+    const firstCall = mockFetch.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [fetchUrl] = firstCall!;
     expect(fetchUrl).toBe("https://api.example.com/data?foo=bar&baz=qux");
   });
 
@@ -739,7 +755,9 @@ describe("fetchWithTimeout - edge cases", () => {
     await fetchWithTimeout("rest/v1/invoices");
 
     expect(mockFetchApiUrl).toHaveBeenCalled();
-    const [fetchUrl] = mockFetch.mock.calls[0];
+    const firstCall = mockFetch.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [fetchUrl] = firstCall!;
     expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
   });
 
@@ -752,8 +770,10 @@ describe("fetchWithTimeout - edge cases", () => {
 
     await fetchWithTimeout("/rest/v1/invoices");
 
-    const [fetchUrl] = mockFetch.mock.calls[0];
-    expect(fetchUrl).toBe("/rest/v1/invoices"); // Should use relative path as-is
+    const firstCall2 = mockFetch.mock.calls[0];
+    expect(firstCall2).toBeDefined();
+    const [fetchUrl2] = firstCall2!;
+    expect(fetchUrl2).toBe("/rest/v1/invoices"); // Should use relative path as-is
   });
 
   it("should trim trailing slashes from API URL", async () => {
@@ -765,8 +785,10 @@ describe("fetchWithTimeout - edge cases", () => {
 
     await fetchWithTimeout("/rest/v1/invoices");
 
-    const [fetchUrl] = mockFetch.mock.calls[0];
-    expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
+    const firstCall3 = mockFetch.mock.calls[0];
+    expect(firstCall3).toBeDefined();
+    const [fetchUrl3] = firstCall3!;
+    expect(fetchUrl3).toBe("https://api.example.com/rest/v1/invoices");
   });
 });
 

@@ -208,7 +208,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
     const hasCompletePayment =
       Boolean(invoice.paymentInformation.transactionDate)
       && invoice.paymentInformation.totalCostAmount > 0
-      && invoice.paymentInformation.currency.length > 0;
+      && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
     const paymentPoints = hasCompletePayment ? 15 : 0;
 
     // Factor 6: Categories assigned (10 points)
@@ -439,11 +439,11 @@ export function InvoiceHealthScore(): React.JSX.Element {
                   <suggestion.icon className={styles["suggestionIcon"]} />
                   <span className={styles["suggestionText"]}>
                     {suggestion.params
-                      ? t.rich(`suggestions.${suggestion.key}`, {
-                          ...suggestion.params,
+                      ? t.rich(`suggestions.${suggestion.key}` as "suggestions.incompleteProducts", {
+                          count: String(suggestion.params["count"] ?? ""),
                           strong: (chunks) => <strong>{chunks}</strong>,
                         })
-                      : t(`suggestions.${suggestion.key}`)}
+                      : t(`suggestions.${suggestion.key}` as "suggestions.noProducts")}
                   </span>
                   {suggestion.link ? (
                     <Button

@@ -581,9 +581,9 @@ describe("useScansStore", () => {
       });
 
       const markedScan = useScansStore.getState().scans[0];
-      expect(markedScan?.metadata.usedByInvoice).toBe("true");
-      expect(markedScan?.metadata.invoiceId).toBe("invoice-123");
-      expect(markedScan?.metadata.invoiceCreatedAt).toBeDefined();
+      expect(markedScan?.metadata["usedByInvoice"]).toBe("true");
+      expect(markedScan?.metadata["invoiceId"]).toBe("invoice-123");
+      expect(markedScan?.metadata["invoiceCreatedAt"]).toBeDefined();
     });
 
     it("should mark multiple scans as used by the same invoice", () => {
@@ -597,9 +597,9 @@ describe("useScansStore", () => {
       });
 
       const scans = useScansStore.getState().scans;
-      expect(scans.find((s) => s.id === "1")?.metadata.usedByInvoice).toBe("true");
-      expect(scans.find((s) => s.id === "2")?.metadata.usedByInvoice).toBe("true");
-      expect(scans.find((s) => s.id === "3")?.metadata.usedByInvoice).toBeUndefined();
+      expect(scans.find((s) => s.id === "1")?.metadata["usedByInvoice"]).toBe("true");
+      expect(scans.find((s) => s.id === "2")?.metadata["usedByInvoice"]).toBe("true");
+      expect(scans.find((s) => s.id === "3")?.metadata["usedByInvoice"]).toBeUndefined();
     });
 
     it("should preserve existing metadata when marking", () => {
@@ -611,8 +611,8 @@ describe("useScansStore", () => {
       });
 
       const markedScan = useScansStore.getState().scans[0];
-      expect(markedScan?.metadata.existingKey).toBe("existingValue");
-      expect(markedScan?.metadata.usedByInvoice).toBe("true");
+      expect(markedScan?.metadata["existingKey"]).toBe("existingValue");
+      expect(markedScan?.metadata["usedByInvoice"]).toBe("true");
     });
 
     it("should not affect scans not in the scanIds list", () => {
@@ -625,7 +625,7 @@ describe("useScansStore", () => {
       });
 
       const unmarkedScan = useScansStore.getState().scans.find((s) => s.id === "2");
-      expect(unmarkedScan?.metadata.usedByInvoice).toBeUndefined();
+      expect(unmarkedScan?.metadata["usedByInvoice"]).toBeUndefined();
     });
   });
 });

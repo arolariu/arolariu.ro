@@ -4,6 +4,7 @@
  */
 
 import {InvoiceBuilder} from "@/data/mocks";
+import type {Invoice} from "@/types/invoices";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {renderHook} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
@@ -36,8 +37,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 228,
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -47,8 +51,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 46,
           currency: {code: "EUR", name: "Euro", symbol: "€"},
-          transactionDate: new Date("2024-03-20").toISOString(),
+          transactionDate: new Date("2024-03-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -58,8 +65,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 100,
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-          transactionDate: new Date("2024-06-10").toISOString(),
+          transactionDate: new Date("2024-06-10"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -90,8 +100,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 500,
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -100,8 +113,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 50,
           currency: {code: "USD", name: "US Dollar", symbol: "$"},
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -110,8 +126,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 100,
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-          transactionDate: new Date("2024-03-10").toISOString(),
+          transactionDate: new Date("2024-03-10"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -138,8 +157,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 150,
           currency: undefined as any, // Simulate missing currency
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -148,8 +170,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 200,
           currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -177,8 +202,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 100,
           currency: {code: "EUR", name: "Euro", symbol: "€"},
-          transactionDate: new Date("2018-06-15").toISOString(),
+          transactionDate: new Date("2018-06-15"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -187,8 +215,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           totalCostAmount: 100,
           currency: {code: "EUR", name: "Euro", symbol: "€"},
-          transactionDate: new Date("2024-06-15").toISOString(),
+          transactionDate: new Date("2024-06-15"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
         })
         .build();
 
@@ -293,17 +324,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-01-15").toISOString(),
+          transactionDate: new Date("2023-01-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const newInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -325,17 +364,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-01-15").toISOString(),
+          transactionDate: new Date("2023-01-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const newInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -357,25 +404,37 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const invoice2023 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-06-15").toISOString(),
+          transactionDate: new Date("2023-06-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice2024Q1 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-15").toISOString(),
+          transactionDate: new Date("2024-02-15"),
           totalCostAmount: 150,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice2024Q2 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -398,17 +457,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const invoiceSameDay = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-03-15").toISOString(),
+          transactionDate: new Date("2024-03-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoiceOtherDay = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-03-16").toISOString(),
+          transactionDate: new Date("2024-03-16"),
           totalCostAmount: 150,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -434,16 +501,24 @@ describe("useFilteredInvoices", () => {
       const cheapInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 50,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const expensiveInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 200,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -466,16 +541,24 @@ describe("useFilteredInvoices", () => {
       const cheapInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 50,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const expensiveInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 200,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -498,24 +581,36 @@ describe("useFilteredInvoices", () => {
       const cheapInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 25,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const midRangeInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 75,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const expensiveInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 250,
-          transactionDate: new Date("2024-03-15").toISOString(),
+          transactionDate: new Date("2024-03-15"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -539,16 +634,24 @@ describe("useFilteredInvoices", () => {
       const freeInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 0,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const paidInvoice = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 50,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -572,16 +675,24 @@ describe("useFilteredInvoices", () => {
       const invoice50 = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 50,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice100 = new InvoiceBuilder()
         .withPaymentInformation({
           totalCostAmount: 100,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -620,7 +731,7 @@ describe("useFilteredInvoices", () => {
 
       // Assert
       expect(result.current).toHaveLength(1);
-      expect(result.current[0].category).toBe(InvoiceCategory.GROCERY);
+      expect(result.current[0]!.category).toBe(InvoiceCategory.GROCERY);
     });
 
     it("should filter by multiple categories (OR logic)", () => {
@@ -683,7 +794,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           paymentType: PaymentType.Cash,
           totalCostAmount: 100,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -691,7 +806,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           paymentType: PaymentType.Card,
           totalCostAmount: 200,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -715,7 +834,11 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           paymentType: PaymentType.Cash,
           totalCostAmount: 100,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -723,15 +846,23 @@ describe("useFilteredInvoices", () => {
         .withPaymentInformation({
           paymentType: PaymentType.Card,
           totalCostAmount: 200,
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const bankTransferInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          paymentType: PaymentType.BankTransfer,
+          paymentType: PaymentType.Transfer,
           totalCostAmount: 300,
-          transactionDate: new Date("2024-03-15").toISOString(),
+          transactionDate: new Date("2024-03-15"),
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -756,17 +887,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-01-15").toISOString(),
+          transactionDate: new Date("2023-01-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const newInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -790,17 +929,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-01-15").toISOString(),
+          transactionDate: new Date("2023-01-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const newInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -870,17 +1017,25 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const oldInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2023-01-15").toISOString(),
+          transactionDate: new Date("2023-01-15"),
           totalCostAmount: 100,
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const newInvoice = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-06-20").toISOString(),
+          transactionDate: new Date("2024-06-20"),
           totalCostAmount: 200,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -932,33 +1087,49 @@ describe("useFilteredInvoices", () => {
       // Arrange
       const invoice1 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-15").toISOString(),
+          transactionDate: new Date("2024-02-15"),
           totalCostAmount: 75,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice2 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-01-15").toISOString(), // Before date range
+          transactionDate: new Date("2024-01-15"), // Before date range
           totalCostAmount: 75,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice3 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-15").toISOString(),
+          transactionDate: new Date("2024-02-15"),
           totalCostAmount: 150, // Above amount range
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoice4 = new InvoiceBuilder()
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-15").toISOString(),
+          transactionDate: new Date("2024-02-15"),
           totalCostAmount: 75,
           paymentType: PaymentType.Cash, // Different payment type
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -986,9 +1157,13 @@ describe("useFilteredInvoices", () => {
         .withName("A Grocery")
         .withCategory(InvoiceCategory.GROCERY)
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-15").toISOString(),
+          transactionDate: new Date("2024-02-15"),
           totalCostAmount: 75,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -996,9 +1171,13 @@ describe("useFilteredInvoices", () => {
         .withName("B Grocery")
         .withCategory(InvoiceCategory.GROCERY)
         .withPaymentInformation({
-          transactionDate: new Date("2024-02-20").toISOString(),
+          transactionDate: new Date("2024-02-20"),
           totalCostAmount: 85,
           paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
@@ -1043,15 +1222,19 @@ describe("useFilteredInvoices", () => {
         .withCategory(InvoiceCategory.GROCERY)
         .withPaymentInformation({
           totalCostAmount: 100,
-          transactionDate: new Date("2024-01-15").toISOString(),
+          transactionDate: new Date("2024-01-15"),
           paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
         })
         .build();
 
       const invoices = [invoice];
       const filters: FilterState = {
         ...createDefaultFilters(),
-        categories: [InvoiceCategory.ELECTRONICS], // Won't match
+        categories: [InvoiceCategory.OTHER], // Won't match
       };
 
       // Act

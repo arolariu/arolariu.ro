@@ -10,8 +10,8 @@ import {
   ChartLegend,
   Pie,
   PieChart,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import type {CategorySpending} from "../../_utils/analytics";
@@ -120,7 +120,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                 paddingAngle={2}
                 className={styles["pieStroke"]}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

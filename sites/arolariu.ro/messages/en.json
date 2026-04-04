@@ -2133,7 +2133,7 @@
         "noAllergens": "No allergens detected"
       },
       "errors": {
-        "duplicate": "Allergen '{name}' already added",
+        "duplicate": "Allergen {name} already added",
         "emptyName": "Allergen name cannot be empty",
         "missingData": "Missing product data",
         "saveFailed": "Failed to save allergens"
@@ -2934,14 +2934,14 @@
       },
       "restore": {
         "error": "Failed to restore item",
-        "success": "Item '{name}' restored"
+        "success": "Item {name} restored"
       },
       "search": {
         "placeholder": "Search items..."
       },
       "softDelete": {
         "error": "Failed to remove item",
-        "success": "Item '{name}' removed"
+        "success": "Item {name} removed"
       },
       "tableHeaders": {
         "item": "Item",
@@ -3401,7 +3401,7 @@
     },
     "currencyDistribution": {
       "description": "Spending breakdown by currency with RON conversion",
-      "invoiceCount": "{count} invoices",
+      "invoiceCount": "Invoices",
       "originalAmount": "Original",
       "ronEquivalent": "RON equivalent",
       "showOriginal": "Show Original",
@@ -3438,7 +3438,8 @@
       "title": "Top Merchants",
       "tooltip": {
         "invoiceCount": "{count} invoices"
-      }
+      },
+      "unknownMerchant": "Unknown Merchant"
     },
     "merchantTrends": {
       "aria": {

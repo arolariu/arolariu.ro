@@ -17,7 +17,7 @@ import pageStyles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from the
- * translation key `Invoices.ViewInvoices.metadata`.
+ * translation key `IMS--List.metadata`.
  * This ensures consistent terminology for invoice listing and viewing across all locales.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility following RFC 1004
@@ -143,7 +143,7 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
         <h1 className={pageStyles["title"]}>{t("title", {name: username})}</h1>
         <article className={pageStyles["subtitleArticle"]}>
           <RichText
-            sectionKey='Invoices.ViewInvoices'
+            sectionKey='IMS--List'
             textKey='subtitle'
           />
         </article>

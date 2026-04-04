@@ -25,6 +25,8 @@ describe("useInvoicesStore", () => {
     currency: {code: "USD", name: "US Dollar", symbol: "$"},
     totalCostAmount: 42,
     totalTaxAmount: 4.2,
+    subtotalAmount: 0,
+    tipAmount: 0,
   };
 
   // Mock invoice data using builders

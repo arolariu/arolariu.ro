@@ -24,7 +24,7 @@ vi.mock("@/lib/azure/storageClient", () => ({
   }),
 }));
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
@@ -40,12 +40,9 @@ describe("registerScan", () => {
   it("should return error when user is not authenticated", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "",
-      email: "",
-      firstName: "",
-      lastName: "",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "",
     });
 
     // Act
@@ -65,12 +62,9 @@ describe("registerScan", () => {
   it("should return error when blob URL does not belong to user", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     // Act - blob URL belongs to different user
@@ -90,12 +84,9 @@ describe("registerScan", () => {
   it("should successfully register JPEG scan", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     // Act
@@ -122,12 +113,9 @@ describe("registerScan", () => {
   it("should successfully register PNG scan", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     // Act
@@ -147,12 +135,9 @@ describe("registerScan", () => {
   it("should successfully register PDF scan", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     // Act
@@ -172,12 +157,9 @@ describe("registerScan", () => {
   it("should include metadata in registered scan", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     // Act
@@ -191,8 +173,8 @@ describe("registerScan", () => {
 
     // Assert
     expect(result.scan?.metadata).toBeDefined();
-    expect(result.scan?.metadata.originalFileName).toBe("receipt.jpg");
-    expect(result.scan?.metadata.registeredAt).toBeDefined();
+    expect(result.scan?.metadata["originalFileName"]).toBe("receipt.jpg");
+    expect(result.scan?.metadata["registeredAt"]).toBeDefined();
   });
 
   it("should handle errors gracefully", async () => {
@@ -218,13 +200,10 @@ describe("registerScan", () => {
       // Arrange - testing that scan registration succeeds even if metadata fails
       // The actual setMetadata is wrapped in try-catch in the source and is non-fatal
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -250,13 +229,10 @@ describe("registerScan", () => {
       }));
 
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -284,13 +260,10 @@ describe("registerScan", () => {
       }));
 
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -310,13 +283,10 @@ describe("registerScan", () => {
     it("should handle URL with container name in path", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -335,13 +305,10 @@ describe("registerScan", () => {
     it("should handle URL without container name in expected position (fallback to slice)", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act - URL that doesn't have "/invoices/" in the expected position
       const result = await registerScan({
@@ -360,13 +327,10 @@ describe("registerScan", () => {
       // Arrange - testing that Azurite URLs are processed correctly
       // Note: rewriteAzuriteUrl is called at line 131 in source: rewriteAzuriteUrl(input.blobUrl)
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act - URL contains user_123 so validation should pass
       const result = await registerScan({
@@ -386,13 +350,10 @@ describe("registerScan", () => {
     it("should handle URL with query parameters", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -410,13 +371,10 @@ describe("registerScan", () => {
     it("should handle URL with special characters in path", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -434,13 +392,10 @@ describe("registerScan", () => {
     it("should handle very long blob URLs", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       const longFileName = "a".repeat(200) + ".jpg";
 
@@ -462,13 +417,10 @@ describe("registerScan", () => {
     it("should handle case-insensitive JPEG variants", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({
@@ -487,13 +439,10 @@ describe("registerScan", () => {
     it("should handle unknown MIME types as OTHER", async () => {
       // Arrange
       vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
-        userIdentifier: "user_123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        avatarUrl: "",
-        createdAt: new Date(),
-      });
+      user: null,
+      userIdentifier: "user_123",
+      userJwt: "mock-jwt-token",
+    });
 
       // Act
       const result = await registerScan({

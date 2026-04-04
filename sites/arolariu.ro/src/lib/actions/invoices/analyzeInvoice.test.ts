@@ -331,10 +331,10 @@ describe("analyzeInvoice", () => {
   });
 
   describe("analysis options", () => {
-    it("should handle BasicAnalysis option", async () => {
+    it("should handle InvoiceOnly option", async () => {
       // Arrange
       const mockInvoice = new InvoiceBuilder().build();
-      const analysisOptions = InvoiceAnalysisOptions.BasicAnalysis;
+      const analysisOptions = InvoiceAnalysisOptions.InvoiceOnly;
 
       (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
         userJwt: mockToken,
@@ -354,16 +354,16 @@ describe("analyzeInvoice", () => {
         expect.objectContaining({
           body: JSON.stringify({
             userIdentifier: mockUserIdentifier,
-            analysisOptions: InvoiceAnalysisOptions.BasicAnalysis,
+            analysisOptions: InvoiceAnalysisOptions.InvoiceOnly,
           }),
         }),
       );
     });
 
-    it("should handle DetailedAnalysis option", async () => {
+    it("should handle CompleteAnalysis option", async () => {
       // Arrange
       const mockInvoice = new InvoiceBuilder().build();
-      const analysisOptions = InvoiceAnalysisOptions.DetailedAnalysis;
+      const analysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
 
       (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
         userJwt: mockToken,
@@ -383,7 +383,7 @@ describe("analyzeInvoice", () => {
         expect.objectContaining({
           body: JSON.stringify({
             userIdentifier: mockUserIdentifier,
-            analysisOptions: InvoiceAnalysisOptions.DetailedAnalysis,
+            analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis,
           }),
         }),
       );

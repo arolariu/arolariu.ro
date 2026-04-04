@@ -29,12 +29,9 @@ describe("generateUploadSasUrl", () => {
   it("should return error when user is not authenticated", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "",
-      email: "",
-      firstName: "",
-      lastName: "",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "",
     });
 
     // Act
@@ -51,12 +48,9 @@ describe("generateUploadSasUrl", () => {
   it("should generate direct URL for Azurite (dev mode)", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     vi.mocked(fetchConfigurationValue).mockResolvedValue("http://localhost:10000/devstoreaccount1");
@@ -91,12 +85,9 @@ describe("generateUploadSasUrl", () => {
   it("should generate SAS URL for Azure (prod mode)", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     vi.mocked(fetchConfigurationValue).mockResolvedValue("https://storageaccount.blob.core.windows.net");
@@ -159,12 +150,9 @@ describe("generateUploadSasUrl", () => {
   it("should generate unique scan IDs for concurrent requests", async () => {
     // Arrange
     vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+      user: null,
       userIdentifier: "user_123",
-      email: "test@example.com",
-      firstName: "Test",
-      lastName: "User",
-      avatarUrl: "",
-      createdAt: new Date(),
+      userJwt: "mock-jwt-token",
     });
 
     vi.mocked(fetchConfigurationValue).mockResolvedValue("http://localhost:10000/devstoreaccount1");

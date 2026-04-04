@@ -86,7 +86,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     let bestGroup: typeof readyScans = [];
 
     for (let i = 0; i < sorted.length; i++) {
-      const group = [sorted[i]];
+      const group = [sorted[i]!];
       const startTime = new Date(sorted[i]!.uploadedAt).getTime();
 
       for (let j = i + 1; j < sorted.length; j++) {

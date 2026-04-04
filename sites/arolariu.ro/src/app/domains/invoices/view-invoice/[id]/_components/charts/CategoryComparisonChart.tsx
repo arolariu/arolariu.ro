@@ -10,8 +10,8 @@ import {
   CardTitle,
   ChartContainer,
   ChartLegend,
+  ChartTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "@arolariu/components";
@@ -105,7 +105,7 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 axisLine={false}
                 width={70}
               />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <CustomTooltip
                     active={false}

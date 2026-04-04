@@ -3,28 +3,13 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans.test
  */
 
+// Import types early for mock typing
+import {ScanStatus, ScanType, type CachedScan} from "@/types/scans";
+
 // Create mock store state and actions
 const mockStoreState = {
-  scans: [] as Array<{
-    id: string;
-    userIdentifier: string;
-    name: string;
-    blobUrl: string;
-    status: number;
-    type: number;
-    createdAt: Date;
-    lastUpdatedAt: Date;
-  }>,
-  selectedScans: [] as Array<{
-    id: string;
-    userIdentifier: string;
-    name: string;
-    blobUrl: string;
-    status: number;
-    type: number;
-    createdAt: Date;
-    lastUpdatedAt: Date;
-  }>,
+  scans: [] as Array<CachedScan>,
+  selectedScans: [] as Array<CachedScan>,
   hasHydrated: true,
   isSyncing: false,
   lastSyncTimestamp: null as Date | null,
@@ -41,7 +26,7 @@ const mockStoreState = {
 vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
-  withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
   getTraceparentHeader: vi.fn(() => ""),
   injectTraceContextHeaders: vi.fn(() => ({})),
 }));
@@ -70,8 +55,7 @@ vi.mock("zustand/react/shallow", () => ({
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-// Import types
-import {ScanStatus, ScanType, type CachedScan} from "@/types/scans";
+// Import remaining types (CachedScan already imported above for mock typing)
 
 // Import after mocks
 import {useScans} from "./useScans";
@@ -85,8 +69,9 @@ describe("useScans", () => {
     scanType: ScanType.JPEG,
     status: ScanStatus.READY,
     blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user-123/scan-001.jpg",
-    size: 1024,
+    sizeInBytes: 1024,
     uploadedAt: new Date(),
+    metadata: {},
     cachedAt: new Date(),
     ...overrides,
   });

@@ -131,7 +131,6 @@ describe("updateScan", () => {
           blobHTTPHeaders: {
             blobContentType: "image/jpeg",
           },
-          overwrite: true,
         }),
       );
     });
@@ -245,9 +244,9 @@ describe("updateScan", () => {
 
       const uploadCall = (mockUploadData as any).mock.calls[0];
       const metadata = uploadCall[1]?.metadata as Record<string, string>;
-      expect(metadata.lastModified).toBeDefined();
-      expect(metadata.lastModified >= beforeTimestamp).toBe(true);
-      expect(metadata.lastModified <= afterTimestamp).toBe(true);
+      expect(metadata["lastModified"]).toBeDefined();
+      expect(metadata["lastModified"]! >= beforeTimestamp).toBe(true);
+      expect(metadata["lastModified"]! <= afterTimestamp).toBe(true);
     });
 
     it("should use default empty metadata when not provided", async () => {
@@ -677,9 +676,7 @@ describe("updateScan", () => {
       // Assert
       expect(mockUploadData).toHaveBeenCalledWith(
         expect.any(ArrayBuffer),
-        expect.objectContaining({
-          overwrite: true,
-        }),
+        expect.objectContaining({}),
       );
     });
   });

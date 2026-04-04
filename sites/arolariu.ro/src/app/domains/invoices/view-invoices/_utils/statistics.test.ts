@@ -88,7 +88,7 @@ function createTestInvoice(overrides: {
     },
     items: overrides.items ?? [],
     possibleRecipes: [],
-  } as Invoice;
+  } as unknown as Invoice;
 }
 
 /**
@@ -118,7 +118,7 @@ function createTestProduct(overrides: {
     category: overrides.category ?? null,
     detectedAllergens: overrides.detectedAllergens ?? [],
     metadata: overrides.isSoftDeleted ? {isSoftDeleted: true} : undefined,
-  } as Product;
+  } as unknown as Product;
 }
 
 describe("Statistics Functions", () => {

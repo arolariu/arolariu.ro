@@ -63,7 +63,7 @@ export function createMockMessages(overrides: Record<string, string> = {}): Reco
  * @returns The render result from @testing-library/react
  */
 export function renderWithProviders(ui: ReactElement, options: ProviderOptions = {}): RenderResult {
-  const {messages = createMockMessages(), locale = "en", renderOptions} = options;
+  const {messages: _messages = createMockMessages(), locale: _locale = "en", renderOptions} = options;
 
   function Wrapper({children}: {readonly children: ReactNode}): ReactElement {
     // Dynamic import would be async — use the globally-mocked version instead.

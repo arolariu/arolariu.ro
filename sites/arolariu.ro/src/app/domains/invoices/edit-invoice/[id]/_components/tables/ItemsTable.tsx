@@ -32,7 +32,7 @@ import {
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
-import {TbEdit, TbFlask, TbPlus, TbSearch, TbTag, TbTrash} from "react-icons/tb";
+import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
@@ -120,8 +120,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
   const t = useTranslations("IMS--Edit.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
-  const {open: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
-  const {open: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
+  const {openWith: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
+  const {openWith: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
 
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
@@ -489,63 +489,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
     // Priority 1: Incomplete products (yellow border)
     if (!item.metadata.isComplete) {
-      return styles["rowIndicatorIncomplete"];
+      return styles["rowIndicatorIncomplete"] ?? "";
     }
 
     // Priority 2: Low confidence OCR (orange border)
     if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
-      return styles["rowIndicatorLowConfidence"];
+      return styles["rowIndicatorLowConfidence"] ?? "";
     }
 
     return "";
   }, []);
-
-  /**
-   * Builds an array of issue badges to display for a product.
-   *
-   * @param item - The product to analyze
-   * @returns Array of badge configurations
-   */
-  const getProductIssueBadges = useCallback(
-    (item: Product): Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> => {
-      const badges: Array<{text: string; variant: "secondary" | "destructive" | "outline"; tooltip?: string}> = [];
-
-      // Skip soft-deleted items
-      if (item.metadata.isSoftDeleted) return badges;
-
-      // Check for uncategorized
-      if (item.category === ProductCategory.NOT_DEFINED) {
-        badges.push({
-          text: t("indicators.uncategorized"),
-          variant: "secondary",
-          tooltip: t("indicators.uncategorizedTooltip"),
-        });
-      }
-
-      // Check for missing generic name
-      if (!item.genericName.trim() || item.genericName === item.rawName) {
-        badges.push({
-          text: t("indicators.missingName"),
-          variant: "secondary",
-          tooltip: t("indicators.missingNameTooltip"),
-        });
-      }
-
-      // Check for low confidence (only show if > 0 to indicate OCR was attempted)
-      if (item.metadata.confidence > 0 && item.metadata.confidence < 0.7) {
-        badges.push({
-          text: t("indicators.lowConfidence"),
-          variant: "outline",
-          tooltip: t("indicators.lowConfidenceTooltip", {
-            confidence: Math.round(item.metadata.confidence * 100),
-          }),
-        });
-      }
-
-      return badges;
-    },
-    [t],
-  );
 
   return (
     <div>
@@ -651,7 +604,6 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const isEdited = item.metadata.isEdited;
               const hasAllergens = item.detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
-              const issueBadges = getProductIssueBadges(item);
 
               return (
                 <motion.tr

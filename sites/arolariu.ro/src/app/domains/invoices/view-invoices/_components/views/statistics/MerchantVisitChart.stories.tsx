@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {computeMerchantVisitPatterns} from "../../../_utils/statistics";
+import {computeMerchantVisitFrequency} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {MerchantVisitChart} from "./MerchantVisitChart";
 
@@ -57,7 +57,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 6,
   },
@@ -69,7 +69,7 @@ export const Default: Story = {
  */
 export const Empty: Story = {
   args: {
-    data: computeMerchantVisitPatterns(emptyInvoices),
+    data: computeMerchantVisitFrequency(emptyInvoices),
     currency: "lei",
     topN: 6,
   },
@@ -81,7 +81,7 @@ export const Empty: Story = {
  */
 export const SingleInvoice: Story = {
   args: {
-    data: computeMerchantVisitPatterns(singleInvoice),
+    data: computeMerchantVisitFrequency(singleInvoice),
     currency: "lei",
     topN: 6,
   },
@@ -93,7 +93,7 @@ export const SingleInvoice: Story = {
  */
 export const TopThree: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 3,
   },
@@ -105,7 +105,7 @@ export const TopThree: Story = {
  */
 export const TopFour: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 4,
   },
@@ -117,7 +117,7 @@ export const TopFour: Story = {
  */
 export const TopNine: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 9,
   },
@@ -129,7 +129,7 @@ export const TopNine: Story = {
  */
 export const SingleMerchant: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices.filter((inv) => inv.merchantReference === "merchant-lidl-001")),
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.merchantReference === "merchant-lidl-001")),
     currency: "lei",
     topN: 1,
   },
@@ -141,7 +141,7 @@ export const SingleMerchant: Story = {
  */
 export const GroceryMerchantsOnly: Story = {
   args: {
-    data: computeMerchantVisitPatterns(
+    data: computeMerchantVisitFrequency(
       mockInvoices.filter((inv) => inv.category === 100), // GROCERY enum value
     ),
     currency: "lei",
@@ -155,7 +155,7 @@ export const GroceryMerchantsOnly: Story = {
  */
 export const FastFoodMerchants: Story = {
   args: {
-    data: computeMerchantVisitPatterns(
+    data: computeMerchantVisitFrequency(
       mockInvoices.filter((inv) => inv.category === 200), // FAST_FOOD enum value
     ),
     currency: "lei",
@@ -169,7 +169,7 @@ export const FastFoodMerchants: Story = {
  */
 export const HighVisitFrequency: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 3,
   },
@@ -181,7 +181,7 @@ export const HighVisitFrequency: Story = {
  */
 export const EuroCurrency: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    data: computeMerchantVisitFrequency(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
     currency: "€",
     topN: 6,
   },
@@ -193,7 +193,7 @@ export const EuroCurrency: Story = {
  */
 export const AllMerchants: Story = {
   args: {
-    data: computeMerchantVisitPatterns(mockInvoices),
+    data: computeMerchantVisitFrequency(mockInvoices),
     currency: "lei",
     topN: 20,
   },

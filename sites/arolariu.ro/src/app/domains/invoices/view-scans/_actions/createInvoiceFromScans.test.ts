@@ -26,7 +26,7 @@ vi.mock("@/lib/actions/invoices/analyzeInvoice", () => ({default: vi.fn(async ()
 
 // Mock OpenTelemetry instrumentation
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
@@ -98,11 +98,11 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-1")),
-        })
+        } as unknown as Response)
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-2")),
-        });
+        } as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "single"});
 
@@ -119,16 +119,16 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-1")),
-        })
+        } as unknown as Response)
         .mockResolvedValueOnce({
           ok: false,
           status: 500,
           text: () => Promise.resolve("Internal server error"),
-        })
+        } as unknown as Response)
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-3")),
-        });
+        } as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "single"});
 
@@ -145,7 +145,7 @@ describe("createInvoiceFromScans", () => {
         ok: false,
         status: 400,
         text: () => Promise.resolve("Bad request"),
-      });
+      } as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "single"});
 
@@ -172,9 +172,9 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
-        .mockResolvedValueOnce({ok: true}) // attach scan-2
-        .mockResolvedValueOnce({ok: true}); // attach scan-3
+        } as unknown as Response)
+        .mockResolvedValueOnce({ok: true} as unknown as Response) // attach scan-2
+        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-3
 
       const result = await createInvoiceFromScans({scans, mode: "batch"});
 
@@ -192,13 +192,13 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
+        } as unknown as Response)
         .mockResolvedValueOnce({
           ok: false,
           status: 500,
           text: () => Promise.resolve("Attachment failed"),
-        })
-        .mockResolvedValueOnce({ok: true});
+        } as unknown as Response)
+        .mockResolvedValueOnce({ok: true} as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "batch"});
 
@@ -215,7 +215,7 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
+        } as unknown as Response)
         .mockRejectedValueOnce("String error during attachment");
 
       const result = await createInvoiceFromScans({scans, mode: "batch"});
@@ -246,7 +246,7 @@ describe("createInvoiceFromScans", () => {
         ok: false,
         status: 500,
         text: () => Promise.resolve("Invoice creation failed"),
-      });
+      } as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "batch"});
 
@@ -266,7 +266,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-single-batch")),
-      });
+      } as unknown as Response);
 
       const result = await createInvoiceFromScans({scans, mode: "batch"});
 
@@ -284,7 +284,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
@@ -299,7 +299,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
@@ -314,7 +314,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
@@ -329,7 +329,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
@@ -342,7 +342,7 @@ describe("createInvoiceFromScans", () => {
   describe("authentication", () => {
     it("should throw error when user is not authenticated", async () => {
       mockFetchBFFUser.mockResolvedValue({
-        userIdentifier: null,
+        userIdentifier: null as unknown as string,
         userJwt: "token",
         user: null,
       });
@@ -370,12 +370,12 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
       const fetchCall = mockFetch.mock.calls[0];
-      expect(fetchCall?.[1]?.headers?.Authorization).toBe("Bearer mock-jwt-token");
+      expect((fetchCall?.[1]?.headers as Record<string, string> | undefined)?.["Authorization"]).toBe("Bearer mock-jwt-token");
     });
   });
 
@@ -386,7 +386,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "single"});
 
@@ -410,8 +410,8 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
-        .mockResolvedValueOnce({ok: true});
+        } as unknown as Response)
+        .mockResolvedValueOnce({ok: true} as unknown as Response);
 
       await createInvoiceFromScans({scans, mode: "batch"});
 
@@ -474,7 +474,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       // Act
       const result = await createInvoiceFromScans({scans, mode: "single"});
@@ -505,8 +505,8 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
-        .mockResolvedValueOnce({ok: true}); // attach scan-2
+        } as unknown as Response)
+        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-2
 
       // Act
       const result = await createInvoiceFromScans({scans, mode: "batch"});
@@ -537,7 +537,7 @@ describe("createInvoiceFromScans", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(createMockInvoice("invoice-1")),
-      });
+      } as unknown as Response);
 
       // Act
       const result = await createInvoiceFromScans({scans, mode: "single"});
@@ -568,8 +568,8 @@ describe("createInvoiceFromScans", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(createMockInvoice("invoice-batch")),
-        })
-        .mockResolvedValueOnce({ok: true}); // attach scan-2
+        } as unknown as Response)
+        .mockResolvedValueOnce({ok: true} as unknown as Response); // attach scan-2
 
       // Act
       const result = await createInvoiceFromScans({scans, mode: "batch"});

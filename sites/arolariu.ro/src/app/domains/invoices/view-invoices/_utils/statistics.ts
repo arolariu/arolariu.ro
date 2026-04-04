@@ -64,7 +64,7 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  * - Have a non-zero length
  */
 function isValidMerchantRef(ref: string | undefined | null): boolean {
-  return Boolean(ref) && ref !== EMPTY_GUID && ref.length > 0;
+  return ref != null && ref !== EMPTY_GUID && ref.length > 0;
 }
 
 /**
@@ -868,6 +868,7 @@ function createEmptyMonthComparison(): MonthComparison {
     monthKey: "",
     amount: 0,
     invoiceCount: 0,
+    invoices: [],
   };
   return {
     currentMonth: emptyMonth,

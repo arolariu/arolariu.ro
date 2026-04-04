@@ -111,7 +111,7 @@ describe("InvoiceBuilder", () => {
           quantityUnit: "pcs",
           totalPrice: 20,
           detectedAllergens: [],
-          metadata: {isComplete: true, isEdited: false, isSoftDeleted: false},
+          metadata: {isComplete: true, isEdited: false, isSoftDeleted: false, confidence: 0},
         },
       ];
       const invoice = builder.withItems(items).build();
@@ -126,6 +126,8 @@ describe("InvoiceBuilder", () => {
         currency: {code: "USD", name: "US Dollar", symbol: "$"},
         totalCostAmount: 100,
         totalTaxAmount: 10,
+        subtotalAmount: 0,
+        tipAmount: 0,
       };
       const invoice = builder.withPaymentInformation(paymentInfo).build();
       expect(invoice.paymentInformation).toEqual(paymentInfo);
@@ -149,6 +151,7 @@ describe("InvoiceBuilder", () => {
           cookingTime: 20,
           preparationTime: 10,
           instructions: "Test instructions",
+          approximateTotalDuration: 30,
         },
       ];
       const invoice = builder.withPossibleRecipes(recipes).build();

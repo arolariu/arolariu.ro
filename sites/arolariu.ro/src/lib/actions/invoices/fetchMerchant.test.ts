@@ -4,6 +4,7 @@
  */
 
 import {MerchantBuilder} from "@/data/mocks";
+import {MerchantCategory} from "@/types/invoices/Merchant";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchMerchant from "./fetchMerchant";
@@ -278,7 +279,7 @@ describe("fetchMerchant", () => {
   describe("successful responses", () => {
     it("should include all merchant data fields", async () => {
       // Arrange
-      const mockMerchant = new MerchantBuilder().withName("Test Store").withCategory("Grocery").build();
+      const mockMerchant = new MerchantBuilder().withName("Test Store").withCategory(MerchantCategory.SUPERMARKET).build();
 
       (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
       mockFetchWithTimeout.mockResolvedValue({
@@ -291,9 +292,11 @@ describe("fetchMerchant", () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockMerchant);
-      expect(result.data?.name).toBe("Test Store");
-      expect(result.data?.category).toBe("Grocery");
+      if (result.success) {
+        expect(result.data).toEqual(mockMerchant);
+        expect(result.data?.name).toBe("Test Store");
+        expect(result.data?.category).toBe(MerchantCategory.SUPERMARKET);
+      }
     });
 
     it("should handle merchant with minimal data", async () => {
@@ -311,7 +314,9 @@ describe("fetchMerchant", () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data).toBeDefined();
+      if (result.success) {
+        expect(result.data).toBeDefined();
+      }
     });
   });
 });

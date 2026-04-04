@@ -7,12 +7,19 @@
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import type {TranslationValues} from "next-intl";
 import {useLocale, useTranslations} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
 import {TimelineEvent, TimelineEventType} from "../../_types/timeline";
 import styles from "./TimelineItem.module.scss";
 
-function getEventTitle(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+/** Translation function accepting a message key and optional interpolation values. */
+type TranslateFn = {
+  (key: string): string;
+  (key: string, values: TranslationValues): string;
+};
+
+function getEventTitle(event: TimelineEvent, t: TranslateFn): string {
   switch (event.type) {
     case TimelineEventType.CREATED:
       return t("events.created.title");
@@ -35,7 +42,7 @@ function getEventTitle(event: TimelineEvent, t: ReturnType<typeof useTranslation
   }
 }
 
-function getEventDescription(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+function getEventDescription(event: TimelineEvent, t: TranslateFn): string {
   switch (event.type) {
     case TimelineEventType.CREATED:
       return t("events.created.description");
@@ -55,7 +62,7 @@ function getEventDescription(event: TimelineEvent, t: ReturnType<typeof useTrans
 }
 
 // eslint-disable-next-line complexity -- switch-case for event types requires enumeration
-function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+function getTooltipContent(event: TimelineEvent, t: TranslateFn): string {
   switch (event.type) {
     case TimelineEventType.CREATED:
       return t("tooltips.created", {method: event.metadata?.method ?? t("fallbacks.ocr")});
@@ -81,7 +88,7 @@ function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTransla
   }
 }
 
-function getRelativeTimeLabel(date: Date | string, locale: string, t: ReturnType<typeof useTranslations>): string {
+function getRelativeTimeLabel(date: Date | string, locale: string, t: TranslateFn): string {
   const now = new Date();
   const dateObj = date instanceof Date ? date : new Date(date);
   const diffMs = dateObj.getTime() - now.getTime();
@@ -136,10 +143,11 @@ type Props = Readonly<{
 export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--View.timelineItem");
   const locale = useLocale();
-  const tooltipContent = getTooltipContent(event, t);
-  const eventTitle = getEventTitle(event, t);
-  const eventDescription = getEventDescription(event, t);
-  const relativeTime = getRelativeTimeLabel(event.date, locale, t);
+  const tf = t as unknown as TranslateFn;
+  const tooltipContent = getTooltipContent(event, tf);
+  const eventTitle = getEventTitle(event, tf);
+  const eventDescription = getEventDescription(event, tf);
+  const relativeTime = getRelativeTimeLabel(event.date, locale, tf);
 
   return (
     <div className={`${styles["item"]} ${isLast ? styles["isLast"] : ""}`}>

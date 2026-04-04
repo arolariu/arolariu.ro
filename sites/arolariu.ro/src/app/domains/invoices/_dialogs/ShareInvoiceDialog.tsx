@@ -1,6 +1,5 @@
 "use client";
 
-import {useUserInformation} from "@/hooks/useUserInformation";
 import {sendInvoiceShareEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
@@ -147,7 +146,6 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
 
   const router = useRouter();
-  const {userInformation} = useUserInformation();
 
   const {
     currentDialog: {payload},

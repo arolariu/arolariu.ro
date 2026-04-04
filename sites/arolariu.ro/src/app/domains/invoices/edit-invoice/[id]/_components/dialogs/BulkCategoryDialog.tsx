@@ -207,8 +207,8 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       } else if (successCount > 0) {
         toast.warning(
           t("success.partialSuccess", {
-            success: successCount,
-            failed: errors.length,
+            success: String(successCount),
+            failed: String(errors.length),
           }),
         );
         console.error("Some products failed to update:", errors);
@@ -252,7 +252,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 </div>
               ))}
               {selectedProducts.length > 5 && (
-                <div className={styles["moreText"]}>{t("labels.andMore", {count: selectedProducts.length - 5})}</div>
+                <div className={styles["moreText"]}>{t("labels.andMore", {count: String(selectedProducts.length - 5)})}</div>
               )}
             </div>
           </div>
@@ -291,8 +291,8 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               <Label className={styles["sectionLabel"]}>{t("labels.progress")}</Label>
               <p className={styles["progressText"]}>
                 {t("progress.updating", {
-                  current: updateProgress.current,
-                  total: updateProgress.total,
+                  current: String(updateProgress.current),
+                  total: String(updateProgress.total),
                 })}
               </p>
             </div>
