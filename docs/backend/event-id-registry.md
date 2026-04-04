@@ -13,7 +13,7 @@ Event IDs follow the pattern `XXX_YZZ` where:
 
 ## Registry by Project
 
-### Common — Telemetry (`src/Common/Telemetry/Logging/Log.cs`)
+### Common — Key Vault and Configuration Loading (`src/Common/Log.cs`)
 
 | Event ID | Level | Message | Method |
 |----------|-------|---------|--------|
@@ -21,7 +21,7 @@ Event IDs follow the pattern `XXX_YZZ` where:
 | `1` | Information | Option loaded from Key Vault | `LogOptionValueFromKeyVault` |
 | `2` | Information | Option loaded from configuration file | `LogOptionValueFromConfiguration` |
 
-### Common — Configuration (`src/Common/Configuration/Log.cs`)
+### Common — Configuration Proxy (`src/Common/Log.cs`)
 
 | Event ID | Level | Message | Method |
 |----------|-------|---------|--------|

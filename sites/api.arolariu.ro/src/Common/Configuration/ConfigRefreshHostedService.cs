@@ -95,6 +95,7 @@ public sealed class ConfigRefreshHostedService(
           activity?.SetStatus(ActivityStatusCode.Error, "no keys returned");
           activity?.SetTag("config.resolved.count", 0);
           logger.LogBootstrapMissing();
+          CommonMetrics.ConfigRefreshFailure.Add(1);
           continue;
         }
 
@@ -109,9 +110,7 @@ public sealed class ConfigRefreshHostedService(
           optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
         }
 
-        sw.Stop();
         CommonMetrics.ConfigRefreshSuccess.Add(1);
-        CommonMetrics.ConfigRefreshDuration.Record(sw.Elapsed.TotalMilliseconds);
         logger.LogRefreshSucceeded();
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -137,6 +136,11 @@ public sealed class ConfigRefreshHostedService(
       {
         CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
+      }
+      finally
+      {
+        sw.Stop();
+        CommonMetrics.ConfigRefreshDuration.Record(sw.Elapsed.TotalMilliseconds);
       }
 
       // Wait for the configured interval before the next refresh cycle.

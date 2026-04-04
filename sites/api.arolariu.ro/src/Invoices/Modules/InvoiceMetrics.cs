@@ -35,14 +35,14 @@ public static class InvoiceMetrics
 
   /// <summary>
   /// Counts invoice and merchant operations with outcome and operation-type dimensions.
-  /// Tags: <c>operation</c> (create, read, update, delete, soft_delete), <c>entity</c> (invoice, merchant), <c>outcome</c> (success, failure).
+  /// Tags: <c>operation</c> (create, read, update, delete, soft_delete, analyze), <c>entity</c> (invoice, merchant), <c>outcome</c> (success, failure), optionally <c>failure.reason</c>.
   /// </summary>
   public static readonly Counter<long> Operations =
     Meter.CreateCounter<long>("invoices.operations", "operations", "Invoice/merchant operations with outcome.");
 
   /// <summary>
   /// Duration of invoice and merchant operations in milliseconds.
-  /// Tags: <c>operation</c>, <c>entity</c>, <c>outcome</c>.
+  /// Tags: <c>operation</c> (create, read, update, delete, soft_delete, analyze), <c>entity</c> (invoice, merchant), <c>outcome</c> (success, failure), optionally <c>failure.reason</c>.
   /// </summary>
   public static readonly Histogram<double> OperationDuration =
     Meter.CreateHistogram<double>("invoices.operations.duration", "ms", "Invoice/merchant operation duration.");

@@ -54,13 +54,22 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
     var sw = Stopwatch.StartNew();
     
-    await invoiceOrchestrationService
-      .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
-    
-    sw.Stop();
-    InvoiceMetrics.RecordOperation("analyze", "invoice", "success", sw.Elapsed.TotalMilliseconds);
-    InvoiceMetrics.RecordAnalysis("success", sw.Elapsed.TotalMilliseconds);
+    try
+    {
+      await invoiceOrchestrationService
+        .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+      
+      sw.Stop();
+      InvoiceMetrics.RecordOperation("analyze", "invoice", "success", sw.Elapsed.TotalMilliseconds);
+      InvoiceMetrics.RecordAnalysis("success", sw.Elapsed.TotalMilliseconds);
+    }
+    catch
+    {
+      sw.Stop();
+      InvoiceMetrics.RecordAnalysis("failure", sw.Elapsed.TotalMilliseconds);
+      throw;
+    }
   }).ConfigureAwait(false);
   #endregion
 
