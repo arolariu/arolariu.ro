@@ -166,7 +166,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload format result
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: format-result
           path: artifacts/hygiene/format-result.json
@@ -220,7 +220,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload lint result
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: lint-result
           path: artifacts/hygiene/lint-result.json
@@ -277,14 +277,14 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload test result
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: test-result
           path: artifacts/hygiene/test-result.json
           retention-days: 7
 
       - name: 📤 Upload test coverage & output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         if: always()
         with:
           name: test-coverage
@@ -341,7 +341,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload stats result
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: stats-result
           path: artifacts/hygiene/stats-result.json
@@ -383,7 +383,7 @@ jobs:
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: artifacts/hygiene
           pattern: "*-result"
