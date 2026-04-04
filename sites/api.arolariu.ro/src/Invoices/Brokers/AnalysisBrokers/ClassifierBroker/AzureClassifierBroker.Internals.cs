@@ -94,6 +94,7 @@ public sealed partial class AzureClassifierBroker
       if (invoiceNameCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggered(nameof(GenerateInvoiceName));
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return string.Empty;
       }
 
@@ -150,6 +151,7 @@ public sealed partial class AzureClassifierBroker
       if (invoiceDescriptionCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggered(nameof(GenerateInvoiceDescription));
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return string.Empty;
       }
 
@@ -214,6 +216,7 @@ public sealed partial class AzureClassifierBroker
       if (invoiceCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggered(nameof(GenerateInvoiceCategory));
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return InvoiceCategory.OTHER;
       }
 
@@ -392,6 +395,7 @@ public sealed partial class AzureClassifierBroker
       if (productCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductCategory), product.RawName);
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return ProductCategory.OTHER;
       }
 
@@ -471,6 +475,7 @@ public sealed partial class AzureClassifierBroker
       if (productAllergensCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductAllergens), product.RawName);
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return [];
       }
 
@@ -589,6 +594,7 @@ public sealed partial class AzureClassifierBroker
       if (merchantDescriptionCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggeredWithContext(nameof(GenerateMerchantDescription), merchant.Name);
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return string.Empty;
       }
 
@@ -654,6 +660,7 @@ public sealed partial class AzureClassifierBroker
       if (merchantCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
         logger.LogContentFilterTriggeredWithContext(nameof(GenerateMerchantCategory), merchant.Name);
+        InvoiceMetrics.ContentFilterTriggered.Add(1);
         return MerchantCategory.OTHER;
       }
 

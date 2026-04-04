@@ -76,11 +76,15 @@ public static class WebApplicationBuilderExtensions
         {
           ConnectionMode = ConnectionMode.Gateway,
           LimitToEndpoint = true,
+          CosmosClientTelemetryOptions = new() { DisableDistributedTracing = false },
         });
       }
 
       var credentials = AzureCredentialFactory.CreateCredential();
-      return new CosmosClient(connectionString, credentials);
+      return new CosmosClient(connectionString, credentials, new CosmosClientOptions
+      {
+        CosmosClientTelemetryOptions = new() { DisableDistributedTracing = false },
+      });
     });
 
     services.AddDbContext<InvoiceNoSqlBroker>(options =>

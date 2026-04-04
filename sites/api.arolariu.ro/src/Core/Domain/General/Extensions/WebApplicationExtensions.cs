@@ -12,6 +12,8 @@ using HealthChecks.UI.Client;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Provides extension methods for configuring the <see cref="WebApplication"/> request processing pipeline.
@@ -101,6 +103,9 @@ internal static class WebApplicationExtensions
   {
     ArgumentNullException.ThrowIfNull(app);
 
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core");
+    logger.LogPipelineConfigurationStarted();
+
     app.UseHttpsRedirection();
     app.UseAuthServices();
 
@@ -118,6 +123,9 @@ internal static class WebApplicationExtensions
     app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse })
        .RequireRateLimiting(RateLimitPolicies.HealthCheck);
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
+
+    logger.LogHealthChecksRegistered("/health");
+    logger.LogPipelineConfigurationCompleted();
 
     return app;
   }

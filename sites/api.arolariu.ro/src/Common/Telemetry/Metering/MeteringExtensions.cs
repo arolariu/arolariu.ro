@@ -3,7 +3,6 @@ namespace arolariu.Backend.Common.Telemetry.Metering;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
@@ -14,7 +13,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - ServiceProvider disposed after configuration
 
@@ -68,19 +66,16 @@ public static class MeteringExtensions
 
     builder.Services.AddOpenTelemetry().WithMetrics(metricsOptions =>
     {
-      // Configure service resource information
-      metricsOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
-        .AddService(
-          serviceName: "arolariu-api",
-          serviceVersion: Environment.GetEnvironmentVariable("COMMIT_SHA") ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-          serviceInstanceId: Environment.MachineName)
-        .AddAttributes([
-          new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
-          new("service.namespace", "arolariu.ro"),
-          new("cloud.role", "api"),
-          new("cloud.provider", "azure")
-        ]));
+      // Configure service resource information via shared factory
+      metricsOptions.SetResourceBuilder(ResourceBuilderFactory.Create());
 
+      // Register custom domain meters
+      metricsOptions.AddMeter(MeterGenerators.CommonMeter.Name);
+      metricsOptions.AddMeter(MeterGenerators.CoreMeter.Name);
+      metricsOptions.AddMeter(MeterGenerators.AuthMeter.Name);
+      metricsOptions.AddMeter(MeterGenerators.InvoiceMeter.Name);
+
+      // Add framework auto-instrumentation
       metricsOptions.AddAspNetCoreInstrumentation();
       metricsOptions.AddHttpClientInstrumentation();
 

@@ -5,6 +5,8 @@ using System;
 using arolariu.Backend.Core.Auth.Endpoints;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Provides extension methods for configuring authentication and authorization middleware in the request pipeline.
@@ -45,6 +47,9 @@ public static class WebApplicationExtensions
     app.MapAuthEndpoints();
     app.UseAuthN();
     app.UseAuthZ();
+
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
+    logger.LogAuthMiddlewareApplied();
   }
 
   /// <summary>

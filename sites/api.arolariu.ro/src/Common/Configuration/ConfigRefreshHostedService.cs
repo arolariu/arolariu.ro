@@ -73,6 +73,7 @@ public sealed class ConfigRefreshHostedService(
 
     while (!stoppingToken.IsCancellationRequested)
     {
+      var sw = Stopwatch.StartNew();
       try
       {
         using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.refresh-cycle");
@@ -94,6 +95,7 @@ public sealed class ConfigRefreshHostedService(
           activity?.SetStatus(ActivityStatusCode.Error, "no keys returned");
           activity?.SetTag("config.resolved.count", 0);
           logger.LogBootstrapMissing();
+          CommonMetrics.ConfigRefreshFailure.Add(1);
           continue;
         }
 
@@ -108,6 +110,7 @@ public sealed class ConfigRefreshHostedService(
           optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
         }
 
+        CommonMetrics.ConfigRefreshSuccess.Add(1);
         logger.LogRefreshSucceeded();
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -116,19 +119,28 @@ public sealed class ConfigRefreshHostedService(
       }
       catch (HttpRequestException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (JsonException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (InvalidOperationException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (TaskCanceledException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
+      }
+      finally
+      {
+        sw.Stop();
+        CommonMetrics.ConfigRefreshDuration.Record(sw.Elapsed.TotalMilliseconds);
       }
 
       // Wait for the configured interval before the next refresh cycle.
