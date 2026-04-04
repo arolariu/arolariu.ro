@@ -15,7 +15,7 @@ export default function LicenseBreakdown(): React.JSX.Element {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
-  // Calculate percentages (69 MIT out of 86 total = ~80%, 17 Apache = ~20%)
+  // TODO -- must be dynamic.
   const mitPercentage = Math.round((69 / 86) * 100);
   const apachePercentage = 100 - mitPercentage;
 

@@ -18,10 +18,10 @@ import PackagesScreen from "./_components/PackagesScreen";
 import Stats from "./_components/Stats";
 import styles from "./island.module.scss";
 
-type Props = {
+type Props = Readonly<{
   packages: NodePackagesJSON;
   lastUpdatedDate: string;
-};
+}>;
 
 /**
  * Renders the acknowledgements screen for third-party dependencies.

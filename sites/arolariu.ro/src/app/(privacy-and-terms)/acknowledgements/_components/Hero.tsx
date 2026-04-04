@@ -7,9 +7,9 @@ import {useRef} from "react";
 import {TbHeart, TbPackage} from "react-icons/tb";
 import styles from "./Hero.module.scss";
 
-type Props = {
+type Props = Readonly<{
   lastUpdatedDate: string;
-};
+}>;
 
 /**
  * Hero section for the Acknowledgements page with animated background.

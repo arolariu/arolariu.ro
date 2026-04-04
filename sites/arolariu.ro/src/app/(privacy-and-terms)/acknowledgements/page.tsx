@@ -1,5 +1,5 @@
 import licenses from "@/../licenses.json";
-import {TIMESTAMP} from "@/lib/utils.generic";
+import {formatDateTime, TIMESTAMP} from "@/lib/utils.generic";
 import type {NodePackagesJSON} from "@/types";
 import RenderAcknowledgementsScreen from "./island";
 
@@ -52,7 +52,7 @@ import RenderAcknowledgementsScreen from "./island";
  * @see {@link TIMESTAMP} - Build timestamp constant from utils.generic
  */
 export default async function AcknowledgementsHomepage(_props: Readonly<PageProps<"/acknowledgements">>): Promise<React.JSX.Element> {
-  const lastUpdatedDate = new Date(TIMESTAMP).toUTCString();
+  const lastUpdatedDate = formatDateTime(TIMESTAMP);
 
   return (
     <RenderAcknowledgementsScreen

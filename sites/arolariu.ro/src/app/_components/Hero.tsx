@@ -1,3 +1,5 @@
+"use client";
+
 import {RichText} from "@/presentation/Text";
 import {Separator} from "@arolariu/components";
 import {motion} from "motion/react";
