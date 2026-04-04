@@ -34,6 +34,7 @@ public partial class InvoiceNoSqlBroker
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "create", "invoices");
     activity?.RecordSuccess();
 
     var insertedInvoice = response.Resource;
@@ -64,6 +65,7 @@ public partial class InvoiceNoSqlBroker
       var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
+      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "invoices");
 
       var invoice = response.Resource;
       if (invoice is not null && invoice.IsSoftDeleted)
@@ -92,6 +94,7 @@ public partial class InvoiceNoSqlBroker
       var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
+      InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "query", "invoices");
 
       var invoice = response.Resource.Any() ? response.Resource.First() : null;
       if (invoice is not null && invoice.IsSoftDeleted)
@@ -135,6 +138,7 @@ public partial class InvoiceNoSqlBroker
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "invoices");
     activity?.SetTag("result.total_count", invoices.Count);
 
     var filteredInvoices = invoices.Where(invoice => invoice.IsSoftDeleted == false);
@@ -162,6 +166,7 @@ public partial class InvoiceNoSqlBroker
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
     activity?.RecordSuccess();
 
     var invoice = response.Resource;
@@ -187,6 +192,7 @@ public partial class InvoiceNoSqlBroker
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
     activity?.RecordSuccess();
 
     var invoice = response.Resource;
@@ -266,6 +272,7 @@ public partial class InvoiceNoSqlBroker
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "delete", "invoices");
     activity?.RecordSuccess();
   }
 
@@ -315,6 +322,7 @@ public partial class InvoiceNoSqlBroker
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "delete", "invoices");
     activity?.SetTag("batch.deleted_count", deletedCount);
     activity?.RecordSuccess();
   }

@@ -51,6 +51,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
+    InvoiceMetrics.AnalysesStarted.Add(1);
+    
     await invoiceOrchestrationService
       .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -63,6 +65,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
+    InvoiceMetrics.InvoicesCreated.Add(1);
+    
     await invoiceOrchestrationService
       .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -75,6 +79,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
+    InvoiceMetrics.MerchantsCreated.Add(1);
+    
     await merchantOrchestrationService
       .CreateMerchantObject(merchant, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
@@ -87,6 +93,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
+    InvoiceMetrics.InvoicesDeleted.Add(1);
+    
     await invoiceOrchestrationService
       .DeleteInvoiceObject(identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -151,6 +159,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
+    InvoiceMetrics.InvoicesUpdated.Add(1);
+    
     var newInvoice = await invoiceOrchestrationService
       .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
@@ -164,6 +174,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
+    InvoiceMetrics.MerchantsUpdated.Add(1);
+    
     var newMerchant = await merchantOrchestrationService
       .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
@@ -177,6 +189,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
+    InvoiceMetrics.MerchantsDeleted.Add(1);
+    
     await merchantOrchestrationService
       .DeleteMerchantObject(identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
