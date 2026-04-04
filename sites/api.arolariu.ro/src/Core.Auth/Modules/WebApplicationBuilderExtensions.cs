@@ -145,6 +145,7 @@ public static class WebApplicationBuilderExtensions
           {
             var jwtLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
             jwtLogger.LogJwtSecretMissing();
+            AuthMetrics.RecordJwtFailure("missing_secret");
             return [];
           }
 
@@ -170,6 +171,7 @@ public static class WebApplicationBuilderExtensions
 
           var failLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
           failLogger.LogJwtIssuerValidationFailed(issuer, expectedIssuer);
+          AuthMetrics.RecordJwtFailure("invalid_issuer");
           throw new SecurityTokenInvalidIssuerException($"Invalid issuer: '{issuer}'.");
         },
 
@@ -190,6 +192,7 @@ public static class WebApplicationBuilderExtensions
           {
             var failLogger = resolverProvider.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core.Auth");
             failLogger.LogJwtAudienceValidationFailed(expectedAudience);
+            AuthMetrics.RecordJwtFailure("invalid_audience");
           }
           return isValid;
         },

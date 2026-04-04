@@ -60,10 +60,12 @@ public static partial class AuthEndpoints
     {
       await signInManager.SignOutAsync().ConfigureAwait(false);
       logger.LogUserLoggedOut();
+      AuthMetrics.Logouts.Add(1);
       return Results.Ok();
     }
 
     logger.LogLogoutFailed();
+    AuthMetrics.LogoutFailures.Add(1);
     return Results.Unauthorized();
   }
 }

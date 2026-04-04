@@ -272,7 +272,7 @@ public partial class InvoiceNoSqlBroker
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "delete", "invoices");
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "soft_delete", "invoices");
     activity?.RecordSuccess();
   }
 
@@ -322,7 +322,7 @@ public partial class InvoiceNoSqlBroker
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "delete", "invoices");
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "soft_delete", "invoices");
     activity?.SetTag("batch.deleted_count", deletedCount);
     activity?.RecordSuccess();
   }

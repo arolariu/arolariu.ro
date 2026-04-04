@@ -121,8 +121,8 @@ public partial class InvoiceNoSqlBroker
     InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "merchants");
     activity?.SetTag("result.total_count", merchantList.Count);
 
-    var filteredMerchants = merchantList.Where(merchant => merchant.IsSoftDeleted == false);
-    activity?.SetTag("result.filtered_count", filteredMerchants.Count());
+    var filteredMerchants = merchantList.Where(merchant => merchant.IsSoftDeleted == false).ToList();
+    activity?.SetTag("result.filtered_count", filteredMerchants.Count);
     activity?.RecordSuccess();
     
     return filteredMerchants;
@@ -206,9 +206,10 @@ public partial class InvoiceNoSqlBroker
         activity?.AddCustomEvent("merchant.soft_deleted");
         
         var merchantKey = merchant.id.ToString();
-        await container
+        var replaceResponse = await container
           .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
+        if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
     else
@@ -233,14 +234,15 @@ public partial class InvoiceNoSqlBroker
         var merchantKey = merchant.id.ToString();
         var partitionKey = new PartitionKey(merchant.ParentCompanyId.ToString());
 
-        await container
+        var replaceResponse = await container
           .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
+        if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
 
     activity?.SetCosmosDbRequestCharge(totalRequestCharge);
-    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "delete", "merchants");
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "soft_delete", "merchants");
     activity?.RecordSuccess();
   }
 }

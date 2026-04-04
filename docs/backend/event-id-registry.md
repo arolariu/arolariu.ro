@@ -145,23 +145,42 @@ Event IDs follow the pattern `XXX_YZZ` where:
 
 ## Custom Metrics Registry
 
-### Invoice Meter (`arolariu.Backend.Domain.Invoices`)
+### Invoice Meter (`arolariu.Backend.Domain.Invoices`) — RED Method
 
-| Instrument | Type | Unit | Description |
-|-----------|------|------|-------------|
-| `invoices.created` | Counter | invoices | Total invoices created |
-| `invoices.deleted` | Counter | invoices | Total invoices deleted |
-| `invoices.updated` | Counter | invoices | Total invoices updated |
-| `invoices.read` | Counter | operations | Total invoice read operations |
-| `merchants.created` | Counter | merchants | Total merchants created |
-| `merchants.deleted` | Counter | merchants | Total merchants deleted |
-| `merchants.updated` | Counter | merchants | Total merchants updated |
-| `invoices.analysis.started` | Counter | analyses | Analysis operations started |
-| `invoices.analysis.completed` | Counter | analyses | Analysis operations completed |
-| `invoices.analysis.failed` | Counter | analyses | Analysis failures (tag: `reason`) |
-| `invoices.analysis.duration` | Histogram | ms | Analysis pipeline duration |
-| `invoices.analysis.content_filter.triggered` | Counter | events | AI content filter triggers |
-| `invoices.cosmosdb.request_charge` | Histogram | RU | Cosmos DB RU per operation |
+| Instrument | Type | Unit | Tags | Description |
+|-----------|------|------|------|-------------|
+| `invoices.operations` | Counter | operations | `operation`, `entity`, `outcome`, `failure.reason` | Invoice/merchant CRUD rate with outcome |
+| `invoices.operations.duration` | Histogram | ms | `operation`, `entity`, `outcome` | CRUD operation latency distribution |
+| `invoices.analysis` | Counter | analyses | `outcome`, `failure.reason` | Analysis pipeline rate with outcome |
+| `invoices.analysis.duration` | Histogram | ms | `outcome` | Analysis pipeline latency distribution |
+| `invoices.analysis.content_filter.triggered` | Counter | events | — | AI content filter triggers |
+| `invoices.cosmosdb.request_charge` | Histogram | RU | `db.operation`, `db.cosmosdb.container` | Cosmos DB RU per operation |
+
+**SLA/QoS Computation (KQL):**
+
+```kql
+// Success Rate SLI (per operation)
+customMetrics
+| where name == "invoices.operations"
+| summarize total=sum(value), success=sumif(value, customDimensions["outcome"]=="success")
+  by tostring(customDimensions["operation"]), tostring(customDimensions["entity"])
+| extend success_rate = round(100.0 * success / total, 2)
+| order by success_rate asc
+
+// Latency SLO (p99 < threshold)
+customMetrics
+| where name == "invoices.operations.duration"
+| where customDimensions["outcome"] == "success"
+| summarize p50=percentile(value, 50), p95=percentile(value, 95), p99=percentile(value, 99)
+  by tostring(customDimensions["operation"]), tostring(customDimensions["entity"])
+
+// Error Budget Burn Rate
+customMetrics
+| where name == "invoices.operations"
+| where customDimensions["outcome"] == "failure"
+| summarize failures=sum(value) by bin(timestamp, 1h), tostring(customDimensions["failure.reason"])
+| render timechart
+```
 
 ### Auth Meter (`arolariu.Backend.Auth`)
 

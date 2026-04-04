@@ -73,6 +73,7 @@ public sealed class ConfigRefreshHostedService(
 
     while (!stoppingToken.IsCancellationRequested)
     {
+      var sw = Stopwatch.StartNew();
       try
       {
         using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.refresh-cycle");
@@ -108,6 +109,9 @@ public sealed class ConfigRefreshHostedService(
           optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
         }
 
+        sw.Stop();
+        CommonMetrics.ConfigRefreshSuccess.Add(1);
+        CommonMetrics.ConfigRefreshDuration.Record(sw.Elapsed.TotalMilliseconds);
         logger.LogRefreshSucceeded();
       }
       catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -116,18 +120,22 @@ public sealed class ConfigRefreshHostedService(
       }
       catch (HttpRequestException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (JsonException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (InvalidOperationException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (TaskCanceledException ex)
       {
+        CommonMetrics.ConfigRefreshFailure.Add(1);
         logger.LogRefreshFailed(ex, refreshInterval);
       }
 

@@ -323,6 +323,7 @@ public partial class InvoiceProcessingService
     var invoiceProcessingValidationException = new InvoiceProcessingServiceValidationException(exception.Message, exception);
     var exceptionMessage = invoiceProcessingValidationException.Message;
     logger.LogInvoiceProcessingValidationException(exceptionMessage);
+    InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "validation");
     return invoiceProcessingValidationException;
   }
 
@@ -331,6 +332,7 @@ public partial class InvoiceProcessingService
     var invoiceProcessingDependencyException = new InvoiceProcessingServiceDependencyException(exception.Message, exception);
     var exceptionMessage = invoiceProcessingDependencyException.Message;
     logger.LogInvoiceProcessingDependencyException(exceptionMessage);
+    InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "dependency");
     return invoiceProcessingDependencyException;
   }
 
@@ -339,6 +341,7 @@ public partial class InvoiceProcessingService
     var invoiceProcessingDependencyValidationException = new InvoiceProcessingServiceDependencyValidationException(exception.Message, exception);
     var exceptionMessage = invoiceProcessingDependencyValidationException.Message;
     logger.LogInvoiceProcessingDependencyValidationException(exceptionMessage);
+    InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "dependency_validation");
     return invoiceProcessingDependencyValidationException;
   }
 
@@ -347,6 +350,7 @@ public partial class InvoiceProcessingService
     var invoiceProcessingServiceException = new InvoiceProcessingServiceException(exception.Message, exception);
     var exceptionMessage = invoiceProcessingServiceException.Message;
     logger.LogInvoiceProcessingServiceException(exceptionMessage);
+    InvoiceMetrics.RecordOperation("unknown", "invoice", "failure", failureReason: "service");
     return invoiceProcessingServiceException;
   }
   #endregion
