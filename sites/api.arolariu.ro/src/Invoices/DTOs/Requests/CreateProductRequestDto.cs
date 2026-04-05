@@ -22,21 +22,16 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </para>
 /// <para>
 /// <b>AI Enrichment:</b> After creation, the product may be enriched by AI analysis
-/// to populate <see cref="GenericName"/>, <see cref="Category"/>, and
-/// <see cref="DetectedAllergens"/> if not provided.
+/// to populate <see cref="Category"/> and <see cref="DetectedAllergens"/> if not provided.
 /// </para>
 /// <para>
 /// <b>Total Price:</b> The total price is computed automatically as
 /// <c>Quantity × Price</c> during conversion to the domain object.
 /// </para>
 /// </remarks>
-/// <param name="RawName">
-/// The raw name as it appears on the receipt. Required.
-/// Preserved for audit purposes even if <see cref="GenericName"/> is provided.
-/// </param>
-/// <param name="GenericName">
-/// Optional normalized semantic label (e.g., "Milk 1L" instead of "MLK 1.0L").
-/// If not provided, may be populated by AI enrichment.
+/// <param name="Name">
+/// The product name as it appears on the receipt. Required.
+/// This will be used as the product's display name.
 /// </param>
 /// <param name="Category">
 /// The product category classification. Defaults to <see cref="ProductCategory.NOT_DEFINED"/>
@@ -64,8 +59,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <example>
 /// <code>
 /// var request = new CreateProductRequestDto(
-///     RawName: "LAPTE ZUZU 1L",
-///     GenericName: "Milk 1L",
+///     Name: "Milk 1L (LAPTE ZUZU)",
 ///     Category: ProductCategory.DAIRY,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
@@ -83,8 +77,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct CreateProductRequestDto(
-  [Required] string RawName,
-  string? GenericName,
+  [Required] string Name,
   ProductCategory Category,
   decimal Quantity,
   string? QuantityUnit,
@@ -110,8 +103,7 @@ public readonly record struct CreateProductRequestDto(
   /// </returns>
   public Product ToProduct() => new()
   {
-    RawName = RawName,
-    GenericName = GenericName ?? string.Empty,
+    Name = Name,
     Category = Category,
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,

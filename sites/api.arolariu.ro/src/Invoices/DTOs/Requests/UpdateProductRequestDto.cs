@@ -31,15 +31,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// </para>
 /// </remarks>
 /// <param name="OriginalProductName">
-/// The current raw name of the product to update. Required.
+/// The current name of the product to update. Required.
 /// Used to locate the product within the invoice's item collection.
 /// </param>
-/// <param name="RawName">
-/// The new raw name for the product. Required.
+/// <param name="Name">
+/// The new name for the product. Required.
 /// May be the same as <see cref="OriginalProductName"/> if only other fields change.
-/// </param>
-/// <param name="GenericName">
-/// The new normalized semantic label. Null becomes empty string.
 /// </param>
 /// <param name="Category">
 /// The product category classification. Replaces the existing category.
@@ -64,8 +61,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// // Fix OCR error in product name and price
 /// var request = new UpdateProductRequestDto(
 ///     OriginalProductName: "LAPTE ZU2U 1L",  // OCR misread
-///     RawName: "LAPTE ZUZU 1L",              // Corrected
-///     GenericName: "Milk 1L",
+///     Name: "LAPTE ZUZU 1L",                 // Corrected
 ///     Category: ProductCategory.DAIRY,
 ///     Quantity: 2,
 ///     QuantityUnit: "buc",
@@ -83,8 +79,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [ExcludeFromCodeCoverage]
 public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
-  [Required] string RawName,
-  string? GenericName,
+  [Required] string Name,
   ProductCategory Category,
   decimal Quantity,
   string? QuantityUnit,
@@ -110,8 +105,7 @@ public readonly record struct UpdateProductRequestDto(
   /// </returns>
   public Product ToProduct() => new()
   {
-    RawName = RawName,
-    GenericName = GenericName ?? string.Empty,
+    Name = Name,
     Category = Category,
     Quantity = Quantity,
     QuantityUnit = QuantityUnit ?? string.Empty,

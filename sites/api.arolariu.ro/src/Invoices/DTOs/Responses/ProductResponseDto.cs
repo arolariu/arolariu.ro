@@ -20,9 +20,8 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Dual Names:</b> <see cref="RawName"/> preserves the OCR-extracted text exactly
-/// as it appears on the invoice, while <see cref="GenericName"/> provides a normalized
-/// semantic label useful for cross-invoice aggregation and analytics.
+/// <b>Product Name:</b> <see cref="Name"/> contains the product name as extracted
+/// from the invoice via OCR, used for display, aggregation, and analytics.
 /// </para>
 /// <para>
 /// <b>Computed Fields:</b> <see cref="TotalPrice"/> is computed as
@@ -34,13 +33,9 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// nuts, etc.
 /// </para>
 /// </remarks>
-/// <param name="RawName">
-/// Raw OCR-extracted name exactly as it appears on the invoice scan.
-/// Preserves original formatting, typos, and abbreviations for audit purposes.
-/// </param>
-/// <param name="GenericName">
-/// Normalized semantic label for the product (e.g., "Milk 1L" instead of "MLK 1.0L").
-/// Used for cross-invoice aggregation, reporting, and analytics.
+/// <param name="Name">
+/// The name of the product as extracted from the invoice via OCR.
+/// Used for display, aggregation, allergen inference heuristics and recipe matching.
 /// </param>
 /// <param name="Category">
 /// Product category classification (e.g., Dairy, Meat, Beverages).
@@ -81,7 +76,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// ProductResponseDto dto = ProductResponseDto.FromProduct(domainProduct);
 ///
 /// // Displaying product info
-/// Console.WriteLine($"{dto.GenericName}: {dto.Quantity} {dto.QuantityUnit} @ {dto.Price:C}");
+/// Console.WriteLine($"{dto.Name}: {dto.Quantity} {dto.QuantityUnit} @ {dto.Price:C}");
 /// Console.WriteLine($"Total: {dto.TotalPrice:C}");
 /// if (dto.DetectedAllergens.Any())
 ///     Console.WriteLine($"Allergens: {string.Join(", ", dto.DetectedAllergens)}");
@@ -93,8 +88,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 [Serializable]
 [ExcludeFromCodeCoverage]
 public readonly record struct ProductResponseDto(
-  string RawName,
-  string GenericName,
+  string Name,
   ProductCategory Category,
   decimal Quantity,
   string QuantityUnit,
@@ -135,8 +129,7 @@ public readonly record struct ProductResponseDto(
   {
     ArgumentNullException.ThrowIfNull(product);
     return new(
-      RawName: product.RawName,
-      GenericName: product.GenericName,
+      Name: product.Name,
       Category: product.Category,
       Quantity: product.Quantity,
       QuantityUnit: product.QuantityUnit,
