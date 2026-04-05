@@ -38,7 +38,7 @@ import styles from "./ItemsDialog.module.scss";
  * - **Pagination**: Navigate large item lists with page controls
  *
  * **Item Fields**:
- * - `rawName`: Product name as scanned/entered
+ * - `name`: Product name as scanned/entered
  * - `quantity`: Number of units purchased
  * - `quantityUnit`: Unit of measurement (e.g., "kg", "pcs")
  * - `price`: Unit price
@@ -91,8 +91,7 @@ export default function ItemsDialog(): React.JSX.Element {
 
   const handleAddNewItem = useCallback(() => {
     const newItem: Product = {
-      rawName: "",
-      genericName: "",
+      name: "",
       category: ProductCategory.NOT_DEFINED,
       detectedAllergens: [],
       metadata: {
@@ -113,7 +112,7 @@ export default function ItemsDialog(): React.JSX.Element {
   const handleDeleteItem = useCallback(
     (item: Product) => () => {
       // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
-      setEditableItems((prev) => prev.filter((i) => i.rawName !== item.rawName));
+      setEditableItems((prev) => prev.filter((i) => i.name !== item.name));
     },
     [setEditableItems],
   );
@@ -137,8 +136,8 @@ export default function ItemsDialog(): React.JSX.Element {
         // Use specific property assignments with functional approach
         const getUpdatedItem = (): Product => {
           switch (name) {
-            case "rawName":
-              return {...currentItem, rawName: value};
+            case "name":
+              return {...currentItem, name: value};
             case "quantity":
               return {...currentItem, quantity: Number.parseFloat(value)};
             case "quantityUnit":
@@ -190,13 +189,13 @@ export default function ItemsDialog(): React.JSX.Element {
               <TableBody className={styles["tableBody"]}>
                 {paginatedItems.map((item, index) => (
                   <TableRow
-                    key={item.rawName}
+                    key={item.name}
                     className={styles["dataRow"]}>
                     <TableCell className={styles["cellName"]}>
                       <Input
                         type='text'
-                        name='rawName'
-                        value={item.rawName}
+                        name='name'
+                        value={item.name}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
                         className={styles["nameInput"]}
@@ -237,7 +236,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        aria-label={t("aria.deleteItem", {name: item.rawName || t("aria.unnamedItem")})}
+                        aria-label={t("aria.deleteItem", {name: item.name || t("aria.unnamedItem")})}
                         onClick={handleDeleteItem(item)}>
                         <TbTrash className={styles["trashIcon"]} />
                       </Button>

@@ -114,7 +114,7 @@ const categoryColors: Record<number, "default" | "secondary" | "outline" | "dest
  *
  * @remarks
  * **Features:**
- * - Search input filters items by `genericName` or `rawName`
+ * - Search input filters items by `name`
  * - Sortable columns: Name, Category, Price, Quantity
  * - Total row with quantity and price aggregations
  * - Summary section with key statistics
@@ -148,7 +148,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * Filters items based on search query.
    *
    * @remarks
-   * Searches against both `genericName` and `rawName` for comprehensive matching.
+   * Searches against product name for comprehensive matching.
    * Case-insensitive search using locale-aware lowercase transformation.
    *
    * **Performance:** Memoized to recompute only when items or query change.
@@ -157,7 +157,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     if (!searchQuery.trim()) return invoice.items;
 
     const query = searchQuery.toLowerCase();
-    return invoice.items.filter((item) => item.genericName.toLowerCase().includes(query) || item.rawName.toLowerCase().includes(query));
+    return invoice.items.filter((item) => item.name.toLowerCase().includes(query));
   }, [invoice.items, searchQuery]);
 
   /**
@@ -168,7 +168,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * Implements locale-aware string comparison for names.
    *
    * **Sort Logic:**
-   * - `name`: Sorts by `genericName` using locale collation
+   * - `name`: Sorts by `name` using locale collation
    * - `category`: Sorts by `category` enum numeric value
    * - `price`: Sorts by `totalPrice` (total, not unit price)
    * - `quantity`: Sorts by `quantity`
@@ -181,7 +181,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
 
       switch (sortField) {
         case "name":
-          comparison = a.genericName.localeCompare(b.genericName, locale);
+          comparison = a.name.localeCompare(b.name, locale);
           break;
         case "category":
           comparison = a.category - b.category;
@@ -388,7 +388,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                         <TableCell>
                           <div className={styles["itemCell"]}>
                             <div className={styles["itemNameRow"]}>
-                              <div className={styles["itemName"]}>{item.genericName}</div>
+                              <div className={styles["itemName"]}>{item.name}</div>
                               {/* OCR Confidence Indicator - New DI v4.0 field */}
                               {item.metadata.confidence > 0 && (
                                 <Tooltip>
@@ -485,13 +485,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
               <ul className={styles["summaryList"]}>
                 {summary.mostExpensive ? (
                   <li className={styles["summaryItem"]}>
-                    • {t("summary.mostExpensive")}: <strong>{summary.mostExpensive.genericName}</strong> (
+                    • {t("summary.mostExpensive")}: <strong>{summary.mostExpensive.name}</strong> (
                     {summary.mostExpensive.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 {summary.cheapest ? (
                   <li className={styles["summaryItem"]}>
-                    • {t("summary.cheapest")}: <strong>{summary.cheapest.genericName}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
+                    • {t("summary.cheapest")}: <strong>{summary.cheapest.name}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 <li className={styles["summaryItem"]}>

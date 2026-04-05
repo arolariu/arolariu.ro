@@ -201,9 +201,8 @@ export default function AllergenDialog(): React.JSX.Element {
       const result = await updateProduct({
         invoiceId: invoice.id,
         payload: {
-          originalProductName: product.rawName,
-          rawName: product.rawName,
-          genericName: product.genericName,
+          originalProductName: product.name,
+          name: product.name,
           category: product.category,
           quantity: product.quantity,
           quantityUnit: product.quantityUnit,
@@ -240,7 +239,7 @@ export default function AllergenDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {productName: product.genericName || product.rawName})}</DialogDescription>
+          <DialogDescription>{t("description", {productName: product.name})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["content"]}>

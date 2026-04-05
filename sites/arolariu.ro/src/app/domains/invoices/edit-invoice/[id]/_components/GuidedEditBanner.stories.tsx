@@ -41,8 +41,7 @@ type Story = StoryObj<typeof meta>;
 
 // Mock products with various issues
 const createMockProduct = (overrides: Partial<Product>): Product => ({
-  rawName: "Product Name",
-  genericName: "Product Name",
+  name: "Product Name",
   category: ProductCategory.GROCERIES,
   quantity: 1,
   quantityUnit: "pcs",
@@ -60,14 +59,13 @@ const createMockProduct = (overrides: Partial<Product>): Product => ({
 });
 
 const completeProducts: Product[] = [
-  createMockProduct({rawName: "Complete Product 1", genericName: "Complete Product 1"}),
-  createMockProduct({rawName: "Complete Product 2", genericName: "Complete Product 2"}),
+  createMockProduct({name: "Complete Product 1"}),
+  createMockProduct({name: "Complete Product 2"}),
 ];
 
 const incompleteProducts: Product[] = [
   createMockProduct({
-    rawName: "Uncategorized Product",
-    genericName: "Uncategorized Product",
+    name: "Uncategorized Product",
     category: ProductCategory.NOT_DEFINED,
     metadata: {
       isEdited: false,
@@ -77,8 +75,7 @@ const incompleteProducts: Product[] = [
     },
   }),
   createMockProduct({
-    rawName: "Low Confidence Product",
-    genericName: "Low Confidence Product",
+    name: "Low Confidence Product",
     metadata: {
       isEdited: false,
       isComplete: false,
@@ -87,8 +84,7 @@ const incompleteProducts: Product[] = [
     },
   }),
   createMockProduct({
-    rawName: "MISSING NAME PRODUCT",
-    genericName: "MISSING NAME PRODUCT",
+    name: "MISSING NAME PRODUCT",
     metadata: {
       isEdited: false,
       isComplete: false,
@@ -102,8 +98,7 @@ const mixedProducts: Product[] = [
   ...completeProducts,
   ...incompleteProducts,
   createMockProduct({
-    rawName: "Another Incomplete",
-    genericName: "Another Incomplete",
+    name: "Another Incomplete",
     category: ProductCategory.NOT_DEFINED,
     metadata: {
       isEdited: false,
@@ -130,8 +125,7 @@ export const SingleIssue: Story = {
   args: {
     items: [
       createMockProduct({
-        rawName: "Uncategorized Product",
-        genericName: "Uncategorized Product",
+        name: "Uncategorized Product",
         category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
@@ -169,8 +163,7 @@ export const OnlyLowConfidence: Story = {
   args: {
     items: [
       createMockProduct({
-        rawName: "Low Confidence 1",
-        genericName: "Low Confidence 1",
+        name: "Low Confidence 1",
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -179,8 +172,7 @@ export const OnlyLowConfidence: Story = {
         },
       }),
       createMockProduct({
-        rawName: "Low Confidence 2",
-        genericName: "Low Confidence 2",
+        name: "Low Confidence 2",
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -199,8 +191,7 @@ export const OnlyUncategorized: Story = {
   args: {
     items: [
       createMockProduct({
-        rawName: "Uncategorized 1",
-        genericName: "Uncategorized 1",
+        name: "Uncategorized 1",
         category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
@@ -210,8 +201,7 @@ export const OnlyUncategorized: Story = {
         },
       }),
       createMockProduct({
-        rawName: "Uncategorized 2",
-        genericName: "Uncategorized 2",
+        name: "Uncategorized 2",
         category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
@@ -221,8 +211,7 @@ export const OnlyUncategorized: Story = {
         },
       }),
       createMockProduct({
-        rawName: "Uncategorized 3",
-        genericName: "Uncategorized 3",
+        name: "Uncategorized 3",
         category: ProductCategory.NOT_DEFINED,
         metadata: {
           isEdited: false,
@@ -242,8 +231,7 @@ export const OnlyMissingNames: Story = {
   args: {
     items: [
       createMockProduct({
-        rawName: "RAW OCR TEXT 1",
-        genericName: "RAW OCR TEXT 1",
+        name: "RAW OCR TEXT 1",
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -252,8 +240,7 @@ export const OnlyMissingNames: Story = {
         },
       }),
       createMockProduct({
-        rawName: "RAW OCR TEXT 2",
-        genericName: "RAW OCR TEXT 2",
+        name: "RAW OCR TEXT 2",
         metadata: {
           isEdited: false,
           isComplete: false,
@@ -273,8 +260,7 @@ export const ManyIssues: Story = {
     items: [
       ...Array.from({length: 10}, (_, i) =>
         createMockProduct({
-          rawName: `Product ${i + 1}`,
-          genericName: `Product ${i + 1}`,
+          name: `Product ${i + 1}`,
           category: ProductCategory.NOT_DEFINED,
           metadata: {
             isEdited: false,

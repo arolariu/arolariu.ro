@@ -293,7 +293,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                     <TableRow key={item.productCode}>
                       <TableCell>
                         <div className={styles["itemCell"]}>
-                          <p className={styles["itemName"]}>{item.genericName || item.rawName}</p>
+                          <p className={styles["itemName"]}>{item.name}</p>
                           {item.detectedAllergens.length > 0 && (
                             <div className={styles["allergenList"]}>
                               {item.detectedAllergens.map((allergen) => (
