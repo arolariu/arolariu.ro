@@ -80,7 +80,7 @@ describe("Mock Builders Barrel Export", () => {
     it("should export generateRandomProduct function", () => {
       expect(generateRandomProduct).toBeDefined();
       const product = generateRandomProduct();
-      expect(product).toHaveProperty("genericName");
+      expect(product).toHaveProperty("name");
       expect(product).toHaveProperty("price");
     });
 
@@ -92,7 +92,7 @@ describe("Mock Builders Barrel Export", () => {
 
     it("should export mockProduct", () => {
       expect(mockProduct).toBeDefined();
-      expect(mockProduct.genericName).toBe("Test Product");
+      expect(mockProduct.name).toBe("Test Product");
     });
 
     it("should export mockProductList", () => {

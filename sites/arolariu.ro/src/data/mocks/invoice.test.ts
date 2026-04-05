@@ -102,8 +102,7 @@ describe("InvoiceBuilder", () => {
       const builder = new InvoiceBuilder();
       const items = [
         {
-          rawName: "Test Product",
-          genericName: "Test Product",
+          name: "Test Product",
           productCode: "ABC123",
           category: 0,
           price: 10,
