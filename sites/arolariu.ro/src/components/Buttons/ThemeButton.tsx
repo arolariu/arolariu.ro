@@ -99,7 +99,12 @@ export default function ThemeButton(): React.JSX.Element {
   }, [theme]);
 
   if (!mounted) {
-    return false as unknown as React.JSX.Element;
+    return (
+      <div
+        className={styles["themeButtonPlaceholder"]}
+        aria-hidden='true'
+      />
+    );
   }
 
   return (
