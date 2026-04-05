@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Site-wide footer component with navigation, branding, and metadata.
  * @module components/Footer
@@ -11,8 +13,6 @@
  *
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl docs}
  */
-
-"use client";
 
 import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
@@ -96,7 +96,7 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
  * @see {@link TIMESTAMP} - Build timestamp for deployment tracking
  * @see {@link https://next-intl.com/docs/usage/messages | next-intl useTranslations}
  */
-function FooterComponent(): React.JSX.Element {
+function Footer(): React.JSX.Element {
   const t = useTranslations("Footer");
   const siteName = SITE_NAME.toUpperCase();
 
@@ -277,11 +277,5 @@ function FooterComponent(): React.JSX.Element {
   );
 }
 
-/**
- * Memoized Footer component to prevent unnecessary re-renders.
- * The footer content is mostly static, so memoization provides performance benefits.
- */
-const Footer = memo(FooterComponent);
-Footer.displayName = "Footer";
-
-export default Footer;
+// This component is memoized to prevent unnecessary re-renders
+export default memo(Footer);

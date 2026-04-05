@@ -12,10 +12,10 @@ import styles from "./Navigation.module.scss";
 
 /**
  * Hook to get translated navigation items.
- * @param isSignedIn - Whether the user is signed in.
  * @returns Array of navigation items with translated labels.
  */
-function useNavigationItems(isSignedIn: boolean): ReadonlyArray<NavigationItem> {
+function useNavigationItems(): ReadonlyArray<NavigationItem> {
+  const {isSignedIn} = useAuth();
   const t = useTranslations("Navigation");
 
   return useMemo(() => {
@@ -128,8 +128,7 @@ const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.
  * @returns The desktop navigation component.
  */
 function DesktopNavigationComponent(): React.JSX.Element {
-  const {isSignedIn} = useAuth();
-  const navigationItems = useNavigationItems(Boolean(isSignedIn));
+  const navigationItems = useNavigationItems();
 
   return (
     <div className='desktop-nav'>
@@ -228,8 +227,7 @@ const MobileNavigationItem = ({
  */
 function MobileNavigationComponent(): React.JSX.Element {
   const t = useTranslations("Navigation.mobile");
-  const {isSignedIn} = useAuth();
-  const navigationItems = useNavigationItems(Boolean(isSignedIn));
+  const navigationItems = useNavigationItems();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 

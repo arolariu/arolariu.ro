@@ -28,7 +28,7 @@ function __comparePackageTypes__(
   b: NodePackageInformation,
   direction: SortDirection,
   extractPackageType: (pkg: {name: string}) => PackageType,
-): number {
+): Readonly<number> {
   const typeA = extractPackageType(a);
   const typeB = extractPackageType(b);
   if (typeA === typeB) {
@@ -108,7 +108,7 @@ function __sortPackages__(
  *   filteredAndSortedPackages
  * } = usePackageFilters(nodePackages);
  */
-export function usePackageFilters(packages: HookInputType): Readonly<HookReturnType> {
+export function usePackageFilters(packages: Readonly<HookInputType>): Readonly<HookReturnType> {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");

@@ -95,11 +95,15 @@ export default function ThemeButton(): React.JSX.Element {
 
   const handleSetTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
-  }, [theme]);
+  }, [theme, setTheme]);
 
   if (!mounted) {
-    return false as unknown as React.JSX.Element;
+    return (
+      <div
+        className={styles["themeButtonPlaceholder"]}
+        aria-hidden='true'
+      />
+    );
   }
 
   return (

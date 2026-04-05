@@ -404,4 +404,5 @@ function Commander(): React.JSX.Element {
   );
 }
 
+// This component is memoized to prevent unnecessary re-renders since it relies on context and global state
 export default memo(Commander);

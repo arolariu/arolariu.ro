@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Client island for the Privacy Policy page.
  * @module app/(privacy-and-terms)/privacy-policy/island
@@ -6,8 +8,6 @@
  * Renders the privacy policy content on the client to support interactive
  * legal article behaviors such as in-page navigation and dynamic expansion.
  */
-
-"use client";
 
 import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
 

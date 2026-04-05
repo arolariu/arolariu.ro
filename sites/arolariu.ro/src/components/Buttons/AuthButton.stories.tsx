@@ -3,7 +3,7 @@ import type {Meta, StoryObj} from "@storybook/react";
 /**
  * The AuthButton adapts to the user's Clerk authentication state.
  *
- * Because Clerk components (`useAuth`, `SignedIn`, `SignedOut`, `UserButton`,
+ * Because Clerk components (`useAuth`, `Show`, `UserButton`,
  * `SignInButton`) require a live `ClerkProvider` that is impractical to supply
  * in Storybook, this story focuses on the **loading skeleton** state — the
  * pulsing circle that appears while auth state resolves.

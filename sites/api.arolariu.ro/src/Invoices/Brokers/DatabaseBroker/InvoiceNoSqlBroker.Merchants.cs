@@ -24,7 +24,7 @@ public partial class InvoiceNoSqlBroker
     activity?
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "create");
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
     var response = await container
@@ -46,14 +46,14 @@ public partial class InvoiceNoSqlBroker
     activity?
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "read", parentCompanyId?.ToString());
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
     if (parentCompanyId.HasValue)
     {
       activity?.SetTag("db.query.type", "point_read");
-      
+
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
       var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -71,7 +71,7 @@ public partial class InvoiceNoSqlBroker
     {
       activity?.SetTag("db.query.type", "cross_partition");
       activity?.SetDbStatement("SELECT * FROM c WHERE c.id = @merchantIdentifier");
-      
+
       // We don't have a partition key for the merchant, only the id, so we perform a greedy query
       var query = new QueryDefinition($"SELECT * FROM c WHERE c.id = @merchantIdentifier")
         .WithParameter("@merchantIdentifier", merchantIdentifier);
@@ -98,7 +98,7 @@ public partial class InvoiceNoSqlBroker
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "query", parentCompanyId.ToString())
       .SetDbStatement("SELECT * FROM c WHERE c.ParentCompanyId = @parentCompanyId");
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
     var merchantList = new List<Merchant>();
@@ -124,7 +124,7 @@ public partial class InvoiceNoSqlBroker
     var filteredMerchants = merchantList.Where(merchant => merchant.IsSoftDeleted == false).ToList();
     activity?.SetTag("result.filtered_count", filteredMerchants.Count);
     activity?.RecordSuccess();
-    
+
     return filteredMerchants;
   }
 
@@ -135,7 +135,7 @@ public partial class InvoiceNoSqlBroker
     activity?
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "upsert");
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
@@ -161,7 +161,7 @@ public partial class InvoiceNoSqlBroker
     activity?
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "upsert", currentMerchant?.ParentCompanyId.ToString());
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
@@ -185,7 +185,7 @@ public partial class InvoiceNoSqlBroker
     activity?
       .SetLayerContext("Broker", nameof(InvoiceNoSqlBroker))
       .SetCosmosDbContext("primary", "merchants", "soft_delete", parentCompanyId?.ToString());
-    
+
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
     var totalRequestCharge = 0.0;
@@ -193,18 +193,18 @@ public partial class InvoiceNoSqlBroker
     if (parentCompanyId.HasValue)
     {
       activity?.SetTag("db.query.type", "point_read_then_replace");
-      
+
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
       var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
-      
+
       var merchant = response.Resource;
       if (merchant is not null)
       {
         merchant.SoftDelete();
         activity?.AddCustomEvent("merchant.soft_deleted");
-        
+
         var merchantKey = merchant.id.ToString();
         var replaceResponse = await container
           .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
@@ -216,7 +216,7 @@ public partial class InvoiceNoSqlBroker
     {
       activity?.SetTag("db.query.type", "cross_partition_query_then_replace");
       activity?.SetDbStatement("SELECT * FROM c WHERE c.id = @merchantIdentifier");
-      
+
       // We do not have a partition key for the merchant, so we perform a greedy search.
       var query = new QueryDefinition($"SELECT * FROM c WHERE c.id = @merchantIdentifier")
         .WithParameter("@merchantIdentifier", merchantIdentifier);

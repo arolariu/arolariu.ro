@@ -1,6 +1,6 @@
 "use client";
 
-import {SignedIn, SignedOut, SignInButton, useAuth, UserButton} from "@clerk/nextjs";
+import {Show, SignInButton, UserButton} from "@clerk/nextjs";
 import {memo} from "react";
 import styles from "./AuthButton.module.scss";
 
@@ -10,31 +10,22 @@ import styles from "./AuthButton.module.scss";
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` required).
  *
- * **Why Client Component?**
- * - Uses Clerk's `useAuth` hook for real-time auth state
- * - Requires interactive sign-in/sign-out functionality
- * - Needs access to browser-based authentication flow
- *
- * **Authentication Provider**: Clerk (@clerk/nextjs)
+ * **Authentication Provider**: Clerk (@clerk/nextjs v7)
  * - Requires `<ClerkProvider>` in parent layout
- * - Manages authentication state and session tokens
- * - Provides secure sign-in/sign-out flows
+ * - Uses `<Show when="...">` for declarative auth-state rendering
  *
  * **Component States**:
- * 1. **Loading**: Shows animated skeleton while auth state loads
- * 2. **Signed In**: Displays Clerk's `<UserButton>` with profile/settings
- * 3. **Signed Out**: Displays `<SignInButton>` to initiate auth flow
+ * 1. **Signed In**: Displays Clerk's `<UserButton>` (with skeleton fallback while loading)
+ * 2. **Signed Out**: Displays `<SignInButton>` to initiate auth flow
  *
  * **Performance Optimization**:
  * - Wrapped with `React.memo` to prevent re-renders when parent updates
- * - Only re-renders when Clerk auth state changes
- * - Loading skeleton prevents layout shift during hydration
+ * - `<UserButton fallback>` provides a skeleton during Clerk initialization
  *
- * @returns JSX element showing sign-in button, user profile button, or loading state
+ * @returns JSX element showing sign-in button or user profile button
  *
  * @example
  * ```tsx
- * // Usage in header/navigation
  * <header>
  *   <nav>
  *     <Logo />
@@ -48,24 +39,15 @@ import styles from "./AuthButton.module.scss";
  * @see {@link https://clerk.com/docs/components/authentication/sign-in-button | Clerk SignInButton Documentation}
  */
 function AuthButton(): React.JSX.Element {
-  const {isSignedIn, isLoaded} = useAuth();
-
-  if (!isLoaded) {
-    return <div className={styles["skeleton"]} />;
-  }
-
-  if (isSignedIn) {
-    return (
-      <SignedIn>
-        <UserButton fallback={<div className={styles["skeleton"]} />} />
-      </SignedIn>
-    );
-  }
-
   return (
-    <SignedOut>
-      <SignInButton />
-    </SignedOut>
+    <>
+      <Show when='signed-in'>
+        <UserButton fallback={<div className={styles["skeleton"]} />} />
+      </Show>
+      <Show when='signed-out'>
+        <SignInButton />
+      </Show>
+    </>
   );
 }
 
