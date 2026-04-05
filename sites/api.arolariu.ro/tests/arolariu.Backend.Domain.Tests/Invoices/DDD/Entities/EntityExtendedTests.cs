@@ -62,9 +62,9 @@ public sealed class EntityExtendedTests
     invoice.Items.Clear();
 
     // Act
-    invoice.Items.Add(new Product { RawName = "Product 1" });
-    invoice.Items.Add(new Product { RawName = "Product 2" });
-    invoice.Items.Add(new Product { RawName = "Product 3" });
+    invoice.Items.Add(new Product { Name = "Product 1" });
+    invoice.Items.Add(new Product { Name = "Product 2" });
+    invoice.Items.Add(new Product { Name = "Product 3" });
 
     // Assert
     Assert.Equal(3, invoice.Items.Count);
@@ -79,8 +79,8 @@ public sealed class EntityExtendedTests
     // Arrange
     var invoice = InvoiceBuilder.CreateInvoiceWithSpecificProperties();
     invoice.Items.Clear();
-    var product1 = new Product { RawName = "Product 1" };
-    var product2 = new Product { RawName = "Product 2" };
+    var product1 = new Product { Name = "Product 1" };
+    var product2 = new Product { Name = "Product 2" };
     invoice.Items.Add(product1);
     invoice.Items.Add(product2);
 
@@ -165,7 +165,7 @@ public sealed class EntityExtendedTests
     // Act
     for (int i = 0; i < 1000; i++)
     {
-      invoice.Items.Add(new Product { RawName = $"Product {i}" });
+      invoice.Items.Add(new Product { Name = $"Product {i}" });
     }
 
     // Assert
@@ -479,10 +479,10 @@ public sealed class EntityExtendedTests
     var product = new Product();
 
     // Act
-    product.RawName = "Test Product";
+    product.Name = "Test Product";
 
     // Assert
-    Assert.Equal("Test Product", product.RawName);
+    Assert.Equal("Test Product", product.Name);
   }
 
   /// <summary>
@@ -495,10 +495,10 @@ public sealed class EntityExtendedTests
     var product = new Product();
 
     // Act
-    product.GenericName = "Generic Name";
+    product.Name = "Generic Name";
 
     // Assert
-    Assert.Equal("Generic Name", product.GenericName);
+    Assert.Equal("Generic Name", product.Name);
   }
 
   /// <summary>

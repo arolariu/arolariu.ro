@@ -488,8 +488,8 @@ public sealed class ValueObjectTests
     var product = new Product();
 
     // Assert
-    Assert.Equal(string.Empty, product.RawName);
-    Assert.Equal(string.Empty, product.GenericName);
+    Assert.Equal(string.Empty, product.Name);
+    Assert.Equal(string.Empty, product.Name);
     Assert.Equal(ProductCategory.OTHER, product.Category);
     Assert.Equal(0, product.Quantity);
     Assert.Equal(string.Empty, product.QuantityUnit);
@@ -509,8 +509,7 @@ public sealed class ValueObjectTests
     var allergens = new List<Allergen> { new Allergen { Name = "Gluten" } };
     var product = new Product
     {
-      RawName = "MONSTER ENERGY DRINK 500ML",
-      GenericName = "ENERGY DRINK",
+      Name = "MONSTER ENERGY DRINK 500ML",
       Category = ProductCategory.BEVERAGES,
       Quantity = 2,
       QuantityUnit = "pcs",
@@ -520,8 +519,8 @@ public sealed class ValueObjectTests
     };
 
     // Assert
-    Assert.Equal("MONSTER ENERGY DRINK 500ML", product.RawName);
-    Assert.Equal("ENERGY DRINK", product.GenericName);
+    Assert.Equal("MONSTER ENERGY DRINK 500ML", product.Name);
+    Assert.Equal("ENERGY DRINK", product.Name);
     Assert.Equal(ProductCategory.BEVERAGES, product.Category);
     Assert.Equal(2, product.Quantity);
     Assert.Equal("pcs", product.QuantityUnit);

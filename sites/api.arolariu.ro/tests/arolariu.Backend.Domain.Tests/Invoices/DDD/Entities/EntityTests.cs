@@ -199,8 +199,8 @@ public sealed class EntityTests
       UserIdentifier = Guid.NewGuid(),
       Items = new List<Product>
             {
-                new Product { RawName = "Item 1", Price = 10.00m, Quantity = 2 },
-                new Product { RawName = "Item 2", Price = 5.00m, Quantity = 1 }
+                new Product { Name = "Item 1", Price = 10.00m, Quantity = 2 },
+                new Product { Name = "Item 2", Price = 5.00m, Quantity = 1 }
             }
     };
 

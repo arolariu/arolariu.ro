@@ -17,79 +17,49 @@ public sealed class ProductExtendedTests
   #region Product Property Tests
 
   /// <summary>
-  /// Validates RawName property can be set.
+  /// Validates Name property can be set.
   /// </summary>
   [Fact]
-  public void Product_SetRawName_StoresValue()
+  public void Product_SetName_StoresValue()
   {
     // Arrange
     var product = new Product();
-    var rawName = "Test Product Name";
+    var name = "Test Product Name";
 
     // Act
-    product.RawName = rawName;
+    product.Name = name;
 
     // Assert
-    Assert.Equal(rawName, product.RawName);
+    Assert.Equal(name, product.Name);
   }
 
   /// <summary>
-  /// Validates GenericName property can be set.
+  /// Validates Name with empty string.
   /// </summary>
   [Fact]
-  public void Product_SetGenericName_StoresValue()
-  {
-    // Arrange
-    var product = new Product();
-    var genericName = "Generic Product";
-
-    // Act
-    product.GenericName = genericName;
-
-    // Assert
-    Assert.Equal(genericName, product.GenericName);
-  }
-
-  /// <summary>
-  /// Validates RawName with empty string.
-  /// </summary>
-  [Fact]
-  public void Product_EmptyRawName_IsAllowed()
+  public void Product_EmptyName_IsAllowed()
   {
     // Arrange & Act
-    var product = new Product { RawName = string.Empty };
+    var product = new Product { Name = string.Empty };
 
     // Assert
-    Assert.Equal(string.Empty, product.RawName);
-  }
-
-  /// <summary>
-  /// Validates GenericName with empty string.
-  /// </summary>
-  [Fact]
-  public void Product_EmptyGenericName_IsAllowed()
-  {
-    // Arrange & Act
-    var product = new Product { GenericName = string.Empty };
-
-    // Assert
-    Assert.Equal(string.Empty, product.GenericName);
+    Assert.Equal(string.Empty, product.Name);
   }
 
   /// <summary>
   /// Validates product with long name.
   /// </summary>
   [Fact]
-  public void Product_LongRawName_IsAllowed()
+  public void Product_LongName_IsAllowed()
   {
     // Arrange
     var longName = new string('A', 1000);
 
     // Act
-    var product = new Product { RawName = longName };
+    var product = new Product { Name = longName };
 
     // Assert
-    Assert.Equal(1000, product.RawName.Length);
+    Assert.Equal(1000, product.Name.Length);
   }
 
   /// <summary>
@@ -102,10 +72,10 @@ public sealed class ProductExtendedTests
     var specialName = "Product @#$%^&*()_+-=[]{}|;':\",./<>?";
 
     // Act
-    var product = new Product { RawName = specialName };
+    var product = new Product { Name = specialName };
 
     // Assert
-    Assert.Equal(specialName, product.RawName);
+    Assert.Equal(specialName, product.Name);
   }
 
   /// <summary>
@@ -118,10 +88,10 @@ public sealed class ProductExtendedTests
     var unicodeName = "Produkt äöü ñ 日本語 中文";
 
     // Act
-    var product = new Product { RawName = unicodeName };
+    var product = new Product { Name = unicodeName };
 
     // Assert
-    Assert.Equal(unicodeName, product.RawName);
+    Assert.Equal(unicodeName, product.Name);
   }
 
   /// <summary>
@@ -134,10 +104,10 @@ public sealed class ProductExtendedTests
     var emojiName = "Product 🍕🍔🌮";
 
     // Act
-    var product = new Product { RawName = emojiName };
+    var product = new Product { Name = emojiName };
 
     // Assert
-    Assert.True(product.RawName.Contains("🍕", StringComparison.Ordinal));
+    Assert.True(product.Name.Contains("🍕", StringComparison.Ordinal));
   }
 
   /// <summary>
@@ -150,10 +120,10 @@ public sealed class ProductExtendedTests
     var spaceName = "   Product   with   spaces   ";
 
     // Act
-    var product = new Product { RawName = spaceName };
+    var product = new Product { Name = spaceName };
 
     // Assert
-    Assert.Equal(spaceName, product.RawName);
+    Assert.Equal(spaceName, product.Name);
   }
 
   /// <summary>
@@ -166,10 +136,10 @@ public sealed class ProductExtendedTests
     var multilineName = "Product\nwith\nnewlines";
 
     // Act
-    var product = new Product { RawName = multilineName };
+    var product = new Product { Name = multilineName };
 
     // Assert
-    Assert.True(product.RawName.Contains('\n', StringComparison.Ordinal));
+    Assert.True(product.Name.Contains('\n', StringComparison.Ordinal));
   }
 
   /// <summary>
@@ -182,10 +152,10 @@ public sealed class ProductExtendedTests
     var tabbedName = "Product\twith\ttabs";
 
     // Act
-    var product = new Product { RawName = tabbedName };
+    var product = new Product { Name = tabbedName };
 
     // Assert
-    Assert.True(product.RawName.Contains('\t', StringComparison.Ordinal));
+    Assert.True(product.Name.Contains('\t', StringComparison.Ordinal));
   }
 
   #endregion
@@ -468,29 +438,16 @@ public sealed class ProductExtendedTests
   #region Product Default Value Tests
 
   /// <summary>
-  /// Validates new product has default RawName.
+  /// Validates new product has default Name.
   /// </summary>
   [Fact]
-  public void Product_NewProduct_HasDefaultRawName()
+  public void Product_NewProduct_HasDefaultName()
   {
     // Arrange & Act
     var product = new Product();
 
-    // Assert - RawName should be initialized to empty string
-    Assert.Equal(string.Empty, product.RawName);
-  }
-
-  /// <summary>
-  /// Validates new product has default GenericName.
-  /// </summary>
-  [Fact]
-  public void Product_NewProduct_HasDefaultGenericName()
-  {
-    // Arrange & Act
-    var product = new Product();
-
-    // Assert - GenericName should be initialized to empty string
-    Assert.Equal(string.Empty, product.GenericName);
+    // Assert - Name should be initialized to empty string
+    Assert.Equal(string.Empty, product.Name);
   }
 
   /// <summary>
@@ -553,12 +510,12 @@ public sealed class ProductExtendedTests
   {
     // Arrange & Act
     var products = Enumerable.Range(0, 100)
-        .Select(i => new Product { RawName = $"Product {i}" })
+        .Select(i => new Product { Name = $"Product {i}" })
         .ToList();
 
     // Assert
     Assert.Equal(100, products.Count);
-    Assert.All(products, p => Assert.NotNull(p.RawName));
+    Assert.All(products, p => Assert.NotNull(p.Name));
   }
 
   #endregion
@@ -717,8 +674,8 @@ public sealed class ProductExtendedTests
   public void Product_SameProperties_AreDistinctInstances()
   {
     // Arrange
-    var product1 = new Product { RawName = "Product A" };
-    var product2 = new Product { RawName = "Product A" };
+    var product1 = new Product { Name = "Product A" };
+    var product2 = new Product { Name = "Product A" };
 
     // Assert - They are different instances
     Assert.NotSame(product1, product2);
@@ -731,7 +688,7 @@ public sealed class ProductExtendedTests
   public void Product_SameReference_AreEqual()
   {
     // Arrange
-    var product1 = new Product { RawName = "Product A" };
+    var product1 = new Product { Name = "Product A" };
     var product2 = product1;
 
     // Assert
@@ -751,15 +708,14 @@ public sealed class ProductExtendedTests
     // Arrange & Act
     var product = new Product
     {
-      RawName = "Test",
-      GenericName = "Test Generic",
+      Name = "Test",
       Quantity = 5,
       Price = 2.00M
     };
 
     // Assert
-    Assert.Equal("Test", product.RawName);
-    Assert.Equal("Test Generic", product.GenericName);
+    Assert.Equal("Test", product.Name);
+    Assert.Equal("Test Generic", product.Name);
     Assert.Equal(5, product.Quantity);
     Assert.Equal(2.00M, product.Price);
     Assert.Equal(10.00M, product.TotalPrice);
@@ -772,13 +728,13 @@ public sealed class ProductExtendedTests
   public void Product_ModifyAfterCreation_Works()
   {
     // Arrange
-    var product = new Product { RawName = "Original" };
+    var product = new Product { Name = "Original" };
 
     // Act
-    product.RawName = "Modified";
+    product.Name = "Modified";
 
     // Assert
-    Assert.Equal("Modified", product.RawName);
+    Assert.Equal("Modified", product.Name);
   }
 
   /// <summary>
@@ -790,8 +746,7 @@ public sealed class ProductExtendedTests
     // Arrange & Act
     var product = new Product
     {
-      RawName = "MONSTER ENERGY 500ML",
-      GenericName = "Energy Drink",
+      Name = "MONSTER ENERGY 500ML",
       Category = ProductCategory.BEVERAGES,
       Quantity = 2,
       QuantityUnit = "pcs",
@@ -801,8 +756,8 @@ public sealed class ProductExtendedTests
     };
 
     // Assert
-    Assert.Equal("MONSTER ENERGY 500ML", product.RawName);
-    Assert.Equal("Energy Drink", product.GenericName);
+    Assert.Equal("MONSTER ENERGY 500ML", product.Name);
+    Assert.Equal("Energy Drink", product.Name);
     Assert.Equal(ProductCategory.BEVERAGES, product.Category);
     Assert.Equal(2, product.Quantity);
     Assert.Equal("pcs", product.QuantityUnit);

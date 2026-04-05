@@ -668,7 +668,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
     // Arrange
     var invoiceId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var product = new Product { RawName = "Test", Price = 10m };
+    var product = new Product { Name = "Test", Price = 10m };
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
@@ -693,7 +693,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
-    var product = new Product { RawName = "Test", Price = 10m };
+    var product = new Product { Name = "Test", Price = 10m };
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
@@ -714,7 +714,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var product = new Product { RawName = "Test", Price = 10m };
+    var product = new Product { Name = "Test", Price = 10m };
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
@@ -807,7 +807,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
     // Arrange
     var invoiceId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productPartialName = invoice.Items.First().RawName.Substring(0, 3);
+    var productPartialName = invoice.Items.First().Name.Substring(0, 3);
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
@@ -830,7 +830,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
     var invoiceId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     var product = invoice.Items.First();
-    product.GenericName = "TestGenericName";
+    product.Name = "TestGenericName";
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
