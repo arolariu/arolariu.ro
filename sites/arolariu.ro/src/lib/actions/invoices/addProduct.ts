@@ -11,8 +11,8 @@
  *
  * This action supports:
  * - Single product addition
- * - Partial product data (minimum: rawName, category, quantity, price)
- * - Optional fields (genericName, quantityUnit, productCode, detectedAllergens)
+ * - Partial product data (minimum: name, category, quantity, price)
+ * - Optional fields (quantityUnit, productCode, detectedAllergens)
  * - Automatic metadata population by the backend
  */
 
@@ -27,11 +27,10 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * Payload for adding a new product to an invoice.
  *
  * @remarks
- * Minimum required fields: rawName, category, quantity, price.
+ * Minimum required fields: name, category, quantity, price.
  * Optional fields improve data quality and enable advanced features.
  *
- * @property rawName - The raw OCR-extracted product name (required)
- * @property genericName - Normalized human-readable name (optional)
+ * @property name - The product name (required)
  * @property category - Product category classification (required)
  * @property quantity - Quantity purchased (required)
  * @property quantityUnit - Unit of measurement (optional, defaults to "pcs")
@@ -40,8 +39,7 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * @property detectedAllergens - List of allergens detected in product (optional)
  */
 type AddProductPayload = Readonly<{
-  rawName: string;
-  genericName?: string;
+  name: string;
   category: ProductCategory;
   quantity: number;
   quantityUnit?: string;
@@ -94,8 +92,7 @@ type ServerActionOutputType = Promise<AddProductResult>;
  * const result = await addProduct({
  *   invoiceId: "abc-123",
  *   payload: {
- *     rawName: "LAPTE ZUZU 2% 1L",
- *     genericName: "Zuzu Milk 2% 1 Liter",
+ *     name: "Zuzu Milk 2% 1 Liter",
  *     category: ProductCategory.DAIRY,
  *     quantity: 2,
  *     quantityUnit: "pcs",
@@ -119,8 +116,8 @@ export default async function addProduct({invoiceId, payload}: ServerActionInput
       // Step 0. Validate input is correct
       validateStringIsGuidType(invoiceId, "invoiceId");
 
-      if (!payload || !payload.rawName || !payload.category || payload.quantity === undefined || payload.price === undefined) {
-        return {success: false, error: "Product payload must include rawName, category, quantity, and price"};
+      if (!payload || !payload.name || !payload.category || payload.quantity === undefined || payload.price === undefined) {
+        return {success: false, error: "Product payload must include name, category, quantity, and price"};
       }
 
       // Step 1. Fetch user JWT for authentication

@@ -136,8 +136,7 @@ export enum ProductCategory {
  * enrichment data.
  *
  * **Naming:**
- * - `rawName`: Exact text from OCR (e.g., "MLK ZUZU 2% 1L")
- * - `genericName`: Normalized human-readable name (e.g., "Zuzu Milk 2% 1 Liter")
+ * - `name`: Human-readable product name (e.g., "Zuzu Milk 2% 1 Liter")
  *
  * **Pricing Invariant:**
  * `totalPrice` should equal `price * quantity` within rounding tolerance.
@@ -156,8 +155,7 @@ export enum ProductCategory {
  * @example
  * ```typescript
  * const product: Product = {
- *   rawName: "LAPTE ZUZU 2% 1L",
- *   genericName: "Zuzu Milk 2% 1 Liter",
+ *   name: "Zuzu Milk 2% 1 Liter",
  *   category: ProductCategory.DAIRY,
  *   quantity: 2,
  *   quantityUnit: "pcs",
@@ -165,7 +163,7 @@ export enum ProductCategory {
  *   price: 8.99,
  *   totalPrice: 17.98,
  *   detectedAllergens: [{ name: "Lactose", description: "...", learnMoreAddress: "..." }],
- *   metadata: { isEdited: false, isComplete: true, isSoftDeleted: false }
+ *   metadata: { isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95 }
  * };
  * ```
  *
@@ -174,11 +172,8 @@ export enum ProductCategory {
  * @see {@link ProductMetadata} for lifecycle state
  */
 export interface Product {
-  /** The raw name of the product. */
-  rawName: string;
-
-  /** The generic name of the product. */
-  genericName: string;
+  /** The name of the product. */
+  name: string;
 
   /** The category of the product. */
   category: ProductCategory;
@@ -214,8 +209,7 @@ export interface Product {
  * populated during AI extraction or manual entry.
  *
  * **Minimum Viable Product:**
- * For display purposes, at least `rawName` or `genericName`
- * should be provided.
+ * For display purposes, at least `name` should be provided.
  *
  * **Auto-calculation:**
  * If `price` and `quantity` are provided but `totalPrice` is not,
@@ -224,7 +218,7 @@ export interface Product {
  * @example
  * ```typescript
  * const payload: CreateProductDtoPayload = {
- *   rawName: "Apple Fuji 1kg",
+ *   name: "Apple Fuji 1kg",
  *   category: ProductCategory.FRUITS,
  *   quantity: 1,
  *   price: 12.50
@@ -250,7 +244,7 @@ export type CreateProductDtoPayload = Partial<Product>;
  * @example
  * ```typescript
  * const updatePayload: UpdateProductDtoPayload = {
- *   genericName: "Corrected Product Name",
+ *   name: "Corrected Product Name",
  *   category: ProductCategory.VEGETABLES
  * };
  * ```
@@ -265,7 +259,7 @@ export type UpdateProductDtoPayload = Partial<Product>;
  * @remarks
  * **Identification:**
  * Products can be identified by either:
- * - `rawName`: Exact match on OCR-extracted name
+ * - `name`: Exact match on product name
  * - `productCode`: Barcode identifier
  *
  * **Soft Delete:**
@@ -280,7 +274,7 @@ export type UpdateProductDtoPayload = Partial<Product>;
  * ```typescript
  * // Delete by name
  * const deleteByName: DeleteProductDtoPayload = {
- *   rawName: "Product to remove"
+ *   name: "Product to remove"
  * };
  *
  * // Delete by barcode
@@ -293,8 +287,8 @@ export type UpdateProductDtoPayload = Partial<Product>;
  */
 export type DeleteProductDtoPayload =
   | {
-      /** The raw name of the product. */
-      readonly rawName: string;
+      /** The name of the product. */
+      readonly name: string;
     }
   | {
       /** The product code of the product. */
