@@ -97,12 +97,8 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
       {
         items.ToJsonProperty("Items");
 
-        items.Property(item => item.RawName)
-        .ToJsonProperty("RawName")
-        .HasConversion<string>();
-
-        items.Property(item => item.GenericName)
-        .ToJsonProperty("GenericName")
+        items.Property(item => item.Name)
+        .ToJsonProperty("Name")
         .HasConversion<string>();
 
         items.Property(item => item.Category)
