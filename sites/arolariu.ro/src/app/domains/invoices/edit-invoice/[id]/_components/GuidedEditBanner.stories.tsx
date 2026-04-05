@@ -58,10 +58,7 @@ const createMockProduct = (overrides: Partial<Product>): Product => ({
   ...overrides,
 });
 
-const completeProducts: Product[] = [
-  createMockProduct({name: "Complete Product 1"}),
-  createMockProduct({name: "Complete Product 2"}),
-];
+const completeProducts: Product[] = [createMockProduct({name: "Complete Product 1"}), createMockProduct({name: "Complete Product 2"})];
 
 const incompleteProducts: Product[] = [
   createMockProduct({

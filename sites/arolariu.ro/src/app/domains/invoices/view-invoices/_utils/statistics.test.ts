@@ -877,10 +877,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should skip products without names", () => {
-      const products = [
-        createTestProduct({name: "Milk", totalPrice: 10}),
-        createTestProduct({name: "", totalPrice: 20}),
-      ];
+      const products = [createTestProduct({name: "Milk", totalPrice: 10}), createTestProduct({name: "", totalPrice: 20})];
 
       const invoices = [createTestInvoice({items: products})];
 
