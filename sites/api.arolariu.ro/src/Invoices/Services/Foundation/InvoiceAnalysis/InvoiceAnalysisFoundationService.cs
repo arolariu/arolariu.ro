@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
@@ -17,7 +16,6 @@ using Microsoft.Extensions.Logging;
 public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
   private readonly IClassifierBroker analysisBroker;
-  private readonly ITranslatorBroker translatorBroker;
   private readonly IFormRecognizerBroker receiptRecognizerBroker;
   private readonly ILogger<IInvoiceAnalysisFoundationService> logger;
 
@@ -25,17 +23,14 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   /// DI Constructor.
   /// </summary>
   /// <param name="analysisBroker"></param>
-  /// <param name="translatorBroker"></param>
   /// <param name="receiptRecognizerBroker"></param>
   /// <param name="loggerFactory"></param>
   public InvoiceAnalysisFoundationService(
     IClassifierBroker analysisBroker,
-    ITranslatorBroker translatorBroker,
     IFormRecognizerBroker receiptRecognizerBroker,
     ILoggerFactory loggerFactory)
   {
     this.analysisBroker = analysisBroker;
-    this.translatorBroker = translatorBroker;
     this.receiptRecognizerBroker = receiptRecognizerBroker;
     logger = loggerFactory.CreateLogger<IInvoiceAnalysisFoundationService>();
   }
@@ -45,7 +40,6 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   await TryCatchAsync(async () =>
   {
     invoice = await PerformOcrAnalysis(invoice, options).ConfigureAwait(false);
-    invoice = await PerformTranslationAnalysis(invoice).ConfigureAwait(false);
     invoice = await PerformGptAnalysis(invoice, options).ConfigureAwait(false);
 
     invoice.NumberOfUpdates++;
@@ -57,20 +51,6 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
       .PerformOcrAnalysisOnSingleInvoice(invoice, options)
       .ConfigureAwait(false);
 
-  private async Task<Invoice> PerformTranslationAnalysis(Invoice invoice)
-  {
-    // Translate all products in parallel — each call is independent
-    var translationTasks = invoice.Items.Select(async product =>
-    {
-      var translatedName = await translatorBroker
-        .Translate(product.RawName)
-        .ConfigureAwait(false);
-      product.GenericName = translatedName;
-    });
-
-    await Task.WhenAll(translationTasks).ConfigureAwait(false);
-    return invoice;
-  }
   private async Task<Invoice> PerformGptAnalysis(Invoice invoice, AnalysisOptions options) => await analysisBroker
       .PerformGptAnalysisOnSingleInvoice(invoice, options)
       .ConfigureAwait(false);
