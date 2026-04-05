@@ -53,13 +53,13 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
     var sw = Stopwatch.StartNew();
-    
+
     try
     {
       await invoiceOrchestrationService
         .AnalyzeInvoiceWithOptions(options, identifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
-      
+
       sw.Stop();
       InvoiceMetrics.RecordOperation("analyze", "invoice", "success", sw.Elapsed.TotalMilliseconds);
       InvoiceMetrics.RecordAnalysis("success", sw.Elapsed.TotalMilliseconds);
@@ -80,11 +80,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
     var sw = Stopwatch.StartNew();
-    
+
     await invoiceOrchestrationService
       .CreateInvoiceObject(invoice, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("create", "invoice", "success", sw.Elapsed.TotalMilliseconds);
   }).ConfigureAwait(false);
@@ -97,11 +97,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
     var sw = Stopwatch.StartNew();
-    
+
     await merchantOrchestrationService
       .CreateMerchantObject(merchant, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("create", "merchant", "success", sw.Elapsed.TotalMilliseconds);
   }).ConfigureAwait(false);
@@ -114,11 +114,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
     var sw = Stopwatch.StartNew();
-    
+
     await invoiceOrchestrationService
       .DeleteInvoiceObject(identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("delete", "invoice", "success", sw.Elapsed.TotalMilliseconds);
   }).ConfigureAwait(false);
@@ -131,11 +131,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
     var sw = Stopwatch.StartNew();
-    
+
     var invoices = await invoiceOrchestrationService
       .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("read", "invoice", "success", sw.Elapsed.TotalMilliseconds);
     return invoices;
@@ -149,11 +149,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
     var sw = Stopwatch.StartNew();
-    
+
     var merchants = await merchantOrchestrationService
       .ReadAllMerchantObjects(parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("read", "merchant", "success", sw.Elapsed.TotalMilliseconds);
     return merchants;
@@ -167,11 +167,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoice));
     var sw = Stopwatch.StartNew();
-    
+
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("read", "invoice", "success", sw.Elapsed.TotalMilliseconds);
     return invoice;
@@ -185,11 +185,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchant));
     var sw = Stopwatch.StartNew();
-    
+
     var merchant = await merchantOrchestrationService
       .ReadMerchantObject(identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("read", "merchant", "success", sw.Elapsed.TotalMilliseconds);
     return merchant;
@@ -203,11 +203,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
     var sw = Stopwatch.StartNew();
-    
+
     var newInvoice = await invoiceOrchestrationService
       .UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("update", "invoice", "success", sw.Elapsed.TotalMilliseconds);
     return newInvoice;
@@ -221,11 +221,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
     var sw = Stopwatch.StartNew();
-    
+
     var newMerchant = await merchantOrchestrationService
       .UpdateMerchantObject(updatedMerchant, identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("update", "merchant", "success", sw.Elapsed.TotalMilliseconds);
     return newMerchant;
@@ -239,11 +239,11 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
     var sw = Stopwatch.StartNew();
-    
+
     await merchantOrchestrationService
       .DeleteMerchantObject(identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
-    
+
     sw.Stop();
     InvoiceMetrics.RecordOperation("delete", "merchant", "success", sw.Elapsed.TotalMilliseconds);
   }).ConfigureAwait(false);
