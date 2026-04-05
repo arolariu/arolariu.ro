@@ -63,7 +63,7 @@ public sealed partial class AzureClassifierBroker
   internal async Task<string> GenerateInvoiceName(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
-    var invoiceProducts = invoice.Items.Select(item => item.RawName).ToList();
+    var invoiceProducts = invoice.Items.Select(item => item.Name).ToList();
     var productList = string.Join(", ", invoiceProducts);
 
     try
@@ -120,7 +120,7 @@ public sealed partial class AzureClassifierBroker
   internal async Task<string> GenerateInvoiceDescription(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
-    var invoiceProducts = invoice.Items.Select(item => item.RawName).ToList();
+    var invoiceProducts = invoice.Items.Select(item => item.Name).ToList();
     var productList = string.Join(", ", invoiceProducts);
 
     try
@@ -247,7 +247,7 @@ public sealed partial class AzureClassifierBroker
   internal async Task<ICollection<Recipe>> GenerateInvoiceRecipes(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
-    var invoiceProducts = invoice.Items.Select(item => item.RawName).ToList();
+    var invoiceProducts = invoice.Items.Select(item => item.Name).ToList();
     var productList = string.Join(", ", invoiceProducts);
 
     try
@@ -389,12 +389,12 @@ public sealed partial class AzureClassifierBroker
           new AssistantChatMessage("BEVERAGES"),
           new UserChatMessage("Product: domestos (domestos cleaner)"),
           new AssistantChatMessage("CLEANING_SUPPLIES"),
-          new UserChatMessage($"Product: {product.RawName} ({product.GenericName})")
+          new UserChatMessage($"Product: {product.Name}")
         }).ConfigureAwait(false);
 
       if (productCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
-        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductCategory), product.RawName);
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductCategory), product.Name);
         InvoiceMetrics.ContentFilterTriggered.Add(1);
         return ProductCategory.OTHER;
       }
@@ -405,7 +405,7 @@ public sealed partial class AzureClassifierBroker
     }
     catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
-      logger.LogGptMethodFailedWithContext(nameof(GenerateProductCategory), product.RawName, ex.Message);
+      logger.LogGptMethodFailedWithContext(nameof(GenerateProductCategory), product.Name, ex.Message);
       return ProductCategory.OTHER;
     }
   }
@@ -469,12 +469,12 @@ public sealed partial class AzureClassifierBroker
           new AssistantChatMessage("LACTOSE:A milk sugar that can cause digestive issues | DAIRY:Milk-based products that may trigger reactions | NUTS:Tree nuts that can cause severe allergic reactions"),
           new UserChatMessage("Product: biscuiti cu ciocolata (chocolate cookies)"),
           new AssistantChatMessage("GLUTEN:A protein found in wheat flour | DAIRY:Milk products in chocolate or dough | EGGS:Common baking ingredient that may cause allergies | SOY:Often present in chocolate or as lecithin"),
-          new UserChatMessage($"Product: {product.RawName} ({product.GenericName})")
+          new UserChatMessage($"Product: {product.Name}")
         }).ConfigureAwait(false);
 
       if (productAllergensCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)
       {
-        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductAllergens), product.RawName);
+        logger.LogContentFilterTriggeredWithContext(nameof(GenerateProductAllergens), product.Name);
         InvoiceMetrics.ContentFilterTriggered.Add(1);
         return [];
       }
@@ -514,7 +514,7 @@ public sealed partial class AzureClassifierBroker
         // Whitelist validation — only accept known EU 14 allergens
         if (!AllergenWikipediaUrls.ContainsKey(allergenName))
         {
-          logger.LogAllergenUnrecognizedSkipped(allergenName, product.RawName);
+          logger.LogAllergenUnrecognizedSkipped(allergenName, product.Name);
           continue;
         }
 
@@ -540,7 +540,7 @@ public sealed partial class AzureClassifierBroker
     }
     catch (ClientResultException ex) // Azure Open AI is susceptible to strict content filters.
     {
-      logger.LogGptMethodFailedWithContext(nameof(GenerateProductAllergens), product.RawName, ex.Message);
+      logger.LogGptMethodFailedWithContext(nameof(GenerateProductAllergens), product.Name, ex.Message);
       return [];
     }
   }
@@ -689,7 +689,7 @@ public sealed partial class AzureClassifierBroker
   internal async Task<string> GenerateReceiptType(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
-    var productList = string.Join(", ", invoice.Items.Select(i => i.RawName));
+    var productList = string.Join(", ", invoice.Items.Select(i => i.Name));
 
     try
     {
@@ -741,7 +741,7 @@ public sealed partial class AzureClassifierBroker
   internal async Task<string> GenerateCountryRegion(Invoice invoice)
   {
     var client = openAIClient.GetChatClient(ChatModelDeploymentName);
-    var productList = string.Join(", ", invoice.Items.Select(i => i.RawName));
+    var productList = string.Join(", ", invoice.Items.Select(i => i.Name));
     var currencyCode = invoice.PaymentInformation.Currency.Code;
 
     try
