@@ -715,7 +715,6 @@ public sealed class ProductExtendedTests
 
     // Assert
     Assert.Equal("Test", product.Name);
-    Assert.Equal("Test Generic", product.Name);
     Assert.Equal(5, product.Quantity);
     Assert.Equal(2.00M, product.Price);
     Assert.Equal(10.00M, product.TotalPrice);
@@ -757,7 +756,6 @@ public sealed class ProductExtendedTests
 
     // Assert
     Assert.Equal("MONSTER ENERGY 500ML", product.Name);
-    Assert.Equal("Energy Drink", product.Name);
     Assert.Equal(ProductCategory.BEVERAGES, product.Category);
     Assert.Equal(2, product.Quantity);
     Assert.Equal("pcs", product.QuantityUnit);

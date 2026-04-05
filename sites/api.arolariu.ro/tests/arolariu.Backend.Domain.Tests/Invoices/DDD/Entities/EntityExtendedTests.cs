@@ -470,10 +470,10 @@ public sealed class EntityExtendedTests
   }
 
   /// <summary>
-  /// Validates product raw name can be set.
+  /// Validates product name can be set.
   /// </summary>
   [Fact]
-  public void Product_SetRawName_StoresValue()
+  public void Product_SetName_StoresValue()
   {
     // Arrange
     var product = new Product();
@@ -486,10 +486,10 @@ public sealed class EntityExtendedTests
   }
 
   /// <summary>
-  /// Validates product generic name can be set.
+  /// Validates product name can be updated.
   /// </summary>
   [Fact]
-  public void Product_SetGenericName_StoresValue()
+  public void Product_SetName_UpdatesValue()
   {
     // Arrange
     var product = new Product();

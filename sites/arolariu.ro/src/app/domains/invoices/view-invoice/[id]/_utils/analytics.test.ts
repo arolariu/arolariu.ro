@@ -579,7 +579,7 @@ describe("getQuantityAnalysis", () => {
   it("should return top 5 items sorted by price", () => {
     const items = Array.from({length: 10}, (_, i) =>
       new ProductBuilder()
-        .withGenericName(`Product ${i}`)
+        .withName(`Product ${i}`)
         .withTotalPrice(100 - i * 10)
         .withQuantity(1)
         .withQuantityUnit("kg")
@@ -594,7 +594,7 @@ describe("getQuantityAnalysis", () => {
   });
 
   it("should truncate long product names", () => {
-    const items = [new ProductBuilder().withGenericName("Very Long Product Name Here").withTotalPrice(50).build()];
+    const items = [new ProductBuilder().withName("Very Long Product Name Here").withTotalPrice(50).build()];
 
     const result = getQuantityAnalysis(items);
 
@@ -603,7 +603,7 @@ describe("getQuantityAnalysis", () => {
   });
 
   it("should include quantity and unit", () => {
-    const items = [new ProductBuilder().withGenericName("Product A").withQuantity(2.5).withQuantityUnit("kg").withTotalPrice(50).build()];
+    const items = [new ProductBuilder().withName("Product A").withQuantity(2.5).withQuantityUnit("kg").withTotalPrice(50).build()];
 
     const result = getQuantityAnalysis(items);
 
@@ -615,9 +615,9 @@ describe("getQuantityAnalysis", () => {
 describe("getInvoiceSummary", () => {
   it("should compute summary statistics correctly", () => {
     const items = [
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).withGenericName("Milk").build(),
-      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).withGenericName("Beef").build(),
-      new ProductBuilder().withCategory(ProductCategory.FRUITS).withTotalPrice(30).withGenericName("Apples").build(),
+      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).withName("Milk").build(),
+      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).withName("Beef").build(),
+      new ProductBuilder().withCategory(ProductCategory.FRUITS).withTotalPrice(30).withName("Apples").build(),
     ];
 
     const invoice = new InvoiceBuilder().withItems(items).withPaymentAmount(180).build();
@@ -653,7 +653,7 @@ describe("getInvoiceSummary", () => {
   });
 
   it("should handle single item invoice", () => {
-    const items = [new ProductBuilder().withGenericName("Single Item").withTotalPrice(75).build()];
+    const items = [new ProductBuilder().withName("Single Item").withTotalPrice(75).build()];
 
     const invoice = new InvoiceBuilder().withItems(items).withPaymentAmount(75).build();
     invoice.paymentInformation.totalTaxAmount = 7.5;
@@ -674,7 +674,7 @@ describe("getUnitPriceAnalysis", () => {
   });
 
   it("should compute unit price correctly", () => {
-    const items = [new ProductBuilder().withGenericName("Product").withTotalPrice(100).withQuantity(5).withQuantityUnit("kg").build()];
+    const items = [new ProductBuilder().withName("Product").withTotalPrice(100).withQuantity(5).withQuantityUnit("kg").build()];
 
     const result = getUnitPriceAnalysis(items);
 
@@ -685,9 +685,9 @@ describe("getUnitPriceAnalysis", () => {
 
   it("should sort by unit price descending", () => {
     const items = [
-      new ProductBuilder().withGenericName("A").withTotalPrice(100).withQuantity(10).withQuantityUnit("kg").build(), // 10 per unit
-      new ProductBuilder().withGenericName("B").withTotalPrice(50).withQuantity(2).withQuantityUnit("kg").build(), // 25 per unit
-      new ProductBuilder().withGenericName("C").withTotalPrice(90).withQuantity(6).withQuantityUnit("kg").build(), // 15 per unit
+      new ProductBuilder().withName("A").withTotalPrice(100).withQuantity(10).withQuantityUnit("kg").build(), // 10 per unit
+      new ProductBuilder().withName("B").withTotalPrice(50).withQuantity(2).withQuantityUnit("kg").build(), // 25 per unit
+      new ProductBuilder().withName("C").withTotalPrice(90).withQuantity(6).withQuantityUnit("kg").build(), // 15 per unit
     ];
 
     const result = getUnitPriceAnalysis(items);
@@ -700,7 +700,7 @@ describe("getUnitPriceAnalysis", () => {
   it("should truncate long product names", () => {
     const items = [
       new ProductBuilder()
-        .withGenericName("Very Long Product Name That Exceeds Limit")
+        .withName("Very Long Product Name That Exceeds Limit")
         .withTotalPrice(50)
         .withQuantity(1)
         .withQuantityUnit("kg")

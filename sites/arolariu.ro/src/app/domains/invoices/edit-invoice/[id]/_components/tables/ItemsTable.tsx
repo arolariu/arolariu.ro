@@ -238,7 +238,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setLocalItems((prev) => {
       const newItems = [...prev];
       const actualItem = sortedItems[rowIndex];
-      const actualIndex = prev.findIndex((item) => item.name === actualItem?.name);
+      const actualIndex = actualItem ? prev.indexOf(actualItem) : -1;
 
       if (actualIndex === -1) return prev;
 

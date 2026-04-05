@@ -28,7 +28,8 @@ using System.Diagnostics.CodeAnalysis;
 /// </remarks>
 /// <param name="ProductName">
 /// The name of the product to delete. Required.
-/// Must exactly match the <c>Name</c> of an existing product in the invoice.
+/// Matched against existing product <c>Name</c> values using a case-insensitive
+/// substring comparison in the current service implementation.
 /// </param>
 /// <example>
 /// <code>

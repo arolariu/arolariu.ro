@@ -489,7 +489,6 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.Equal(string.Empty, product.Name);
-    Assert.Equal(string.Empty, product.Name);
     Assert.Equal(ProductCategory.OTHER, product.Category);
     Assert.Equal(0, product.Quantity);
     Assert.Equal(string.Empty, product.QuantityUnit);
@@ -520,7 +519,6 @@ public sealed class ValueObjectTests
 
     // Assert
     Assert.Equal("MONSTER ENERGY DRINK 500ML", product.Name);
-    Assert.Equal("ENERGY DRINK", product.Name);
     Assert.Equal(ProductCategory.BEVERAGES, product.Category);
     Assert.Equal(2, product.Quantity);
     Assert.Equal("pcs", product.QuantityUnit);

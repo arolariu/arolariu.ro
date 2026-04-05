@@ -22,9 +22,9 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
   /// <summary>
   /// DI Constructor.
   /// </summary>
-  /// <param name="analysisBroker"></param>
-  /// <param name="receiptRecognizerBroker"></param>
-  /// <param name="loggerFactory"></param>
+  /// <param name="analysisBroker">The GPT/AI classifier broker for product categorization and allergen detection.</param>
+  /// <param name="receiptRecognizerBroker">The OCR broker for extracting invoice data from images.</param>
+  /// <param name="loggerFactory">The logger factory for creating scoped loggers.</param>
   public InvoiceAnalysisFoundationService(
     IClassifierBroker analysisBroker,
     IFormRecognizerBroker receiptRecognizerBroker,
