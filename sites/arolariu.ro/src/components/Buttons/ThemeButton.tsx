@@ -16,7 +16,7 @@
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useTheme} from "next-themes";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
 import styles from "./ThemeButton.module.scss";
 
@@ -85,20 +85,15 @@ const SunIcon = (): React.JSX.Element => (
  * ```
  */
 export default function ThemeButton(): React.JSX.Element {
-  const [mounted, setMounted] = useState<boolean>(false);
-  const {theme, setTheme} = useTheme();
+  const {theme, setTheme, resolvedTheme, forcedTheme} = useTheme();
   const t = useTranslations("Common.accessibility");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleSetTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
-  if (!mounted) {
+  if (!resolvedTheme || !forcedTheme) {
     return (
       <div
         className={styles["themeButtonPlaceholder"]}
