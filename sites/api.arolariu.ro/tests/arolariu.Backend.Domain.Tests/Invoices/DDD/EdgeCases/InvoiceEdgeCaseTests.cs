@@ -308,10 +308,10 @@ public sealed class InvoiceEdgeCaseTests
   }
 
   /// <summary>
-  /// Verifies Product handles empty raw name.
+  /// Verifies Product handles empty name.
   /// </summary>
   [Fact]
-  public void Product_EmptyRawName_IsAllowed()
+  public void Product_EmptyName_IsAllowed()
   {
     // Arrange
     var product = new Product

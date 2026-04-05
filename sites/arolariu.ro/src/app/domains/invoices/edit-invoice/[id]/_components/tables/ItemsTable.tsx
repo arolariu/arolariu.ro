@@ -317,7 +317,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       .map((idx) => sortedItems[idx])
       .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
-    setLocalItems((prev) => prev.filter((item) => !itemsToDelete.some((delItem) => delItem.name === item.name)));
+    setLocalItems((prev) => prev.filter((item) => !itemsToDelete.includes(item)));
 
     setSelectedIndices(new Set());
     setShowDeleteDialog(false);
@@ -467,7 +467,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
     // Map selected indices from sorted view to actual localItems indices
-    const actualIndices = selectedProducts.map((product) => localItems.findIndex((item) => item.name === product.name));
+    const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));
 
     openBulkCategoryDialog("edit", {
       invoice,
@@ -606,7 +606,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
               return (
                 <motion.tr
-                  key={item.name}
+                  key={`${item.name}-${index}`}
                   initial={{opacity: 0, y: -20}}
                   animate={{opacity: 1, y: 0}}
                   transition={{delay: index * 0.05}}

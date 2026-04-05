@@ -116,7 +116,7 @@ export default async function addProduct({invoiceId, payload}: ServerActionInput
       // Step 0. Validate input is correct
       validateStringIsGuidType(invoiceId, "invoiceId");
 
-      if (!payload || !payload.name || !payload.category || payload.quantity === undefined || payload.price === undefined) {
+      if (!payload || !payload.name || payload.category === undefined || payload.category === null || payload.quantity === undefined || payload.price === undefined) {
         return {success: false, error: "Product payload must include name, category, quantity, and price"};
       }
 

@@ -259,7 +259,7 @@ export type UpdateProductDtoPayload = Partial<Product>;
  * @remarks
  * **Identification:**
  * Products can be identified by either:
- * - `name`: Exact match on product name
+ * - `name`: Case-insensitive substring match on product name
  * - `productCode`: Barcode identifier
  *
  * **Soft Delete:**

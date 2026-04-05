@@ -866,7 +866,7 @@ describe("Statistics Functions", () => {
       expect(result[1]?.name).toBe("Product3");
     });
 
-    it("should handle products with empty name", () => {
+    it("should handle products with a valid name", () => {
       const products = [createTestProduct({name: "Milk 2%", totalPrice: 10})];
 
       const invoices = [createTestInvoice({items: products})];
