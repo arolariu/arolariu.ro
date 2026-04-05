@@ -80,7 +80,7 @@ export default function ItemsDialog(): React.JSX.Element {
   const {items} = payload as Invoice;
 
   const [editableItems, setEditableItems] = useState<Product[]>(items || []);
-  const {currentPage, setCurrentPage, totalPages, paginatedItems} = usePaginationWithSearch<Product>({
+  const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
     items: editableItems,
   });
 
@@ -112,7 +112,7 @@ export default function ItemsDialog(): React.JSX.Element {
   const handleDeleteItem = useCallback(
     (item: Product) => () => {
       // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
-      setEditableItems((prev) => prev.filter((i) => i.name !== item.name));
+      setEditableItems((prev) => prev.filter((i) => i !== item));
     },
     [setEditableItems],
   );
@@ -187,9 +187,11 @@ export default function ItemsDialog(): React.JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody className={styles["tableBody"]}>
-                {paginatedItems.map((item, index) => (
+                {paginatedItems.map((item, index) => {
+                  const absoluteIndex = (currentPage - 1) * pageSize + index;
+                  return (
                   <TableRow
-                    key={item.name}
+                    key={`item-${absoluteIndex}`}
                     className={styles["dataRow"]}>
                     <TableCell className={styles["cellName"]}>
                       <Input
@@ -197,7 +199,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='name'
                         value={item.name}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["nameInput"]}
                       />
                     </TableCell>
@@ -207,7 +209,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='quantity'
                         value={item.quantity}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInput"]}
                       />
                     </TableCell>
@@ -217,7 +219,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='quantityUnit'
                         value={item.quantityUnit}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInput"]}
                       />
                     </TableCell>
@@ -227,7 +229,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='price'
                         value={item.price}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInputRight"]}
                       />
                     </TableCell>
@@ -242,7 +244,8 @@ export default function ItemsDialog(): React.JSX.Element {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
               <TableFooter>
                 <TableRow className={styles["headerRow"]}>

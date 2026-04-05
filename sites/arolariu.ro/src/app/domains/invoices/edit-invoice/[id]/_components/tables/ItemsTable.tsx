@@ -172,7 +172,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   }, [filteredItems, sortField, sortDirection]);
 
   const totalAmount = localItems.filter((item) => !item.metadata.isSoftDeleted).reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
+  const {paginatedItems, currentPage, setCurrentPage, totalPages, pageSize} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
 
   const handleNextPage = useCallback(() => {
     const nextPage = currentPage + 1;
@@ -596,7 +596,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             </TableRow>
           </TableHeader>
           <TableBody className={styles["tableBody"]}>
-            {paginatedItems.map((item, index) => {
+            {paginatedItems.map((item, pageIndex) => {
+              const index = (currentPage - 1) * pageSize + pageIndex;
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
               const isSoftDeleted = item.metadata.isSoftDeleted;
