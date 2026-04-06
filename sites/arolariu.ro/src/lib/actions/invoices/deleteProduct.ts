@@ -27,7 +27,7 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * @remarks
  * Products are identified by their productName field.
  *
- * @property productName - The raw name of the product to delete (required)
+ * @property productName - The name of the product to delete (required)
  */
 type DeleteProductPayload = Readonly<{
   productName: string;
@@ -63,7 +63,7 @@ type ServerActionOutputType = Promise<DeleteProductResult>;
  *
  * **Product Identification**:
  * Products are identified by their `productName` field, which should match
- * the `rawName` of the product to be deleted.
+ * the `name` of the product to be deleted.
  *
  * **Soft Delete**:
  * The backend performs a soft delete by marking the product's metadata.isSoftDeleted
@@ -83,7 +83,7 @@ type ServerActionOutputType = Promise<DeleteProductResult>;
  * const result = await deleteProduct({
  *   invoiceId: "abc-123",
  *   payload: {
- *     productName: "LAPTE ZUZU 2% 1L"
+ *     productName: "Zuzu Milk 2% 1 Liter"
  *   }
  * });
  *

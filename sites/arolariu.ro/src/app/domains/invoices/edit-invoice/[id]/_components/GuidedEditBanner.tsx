@@ -25,8 +25,7 @@ type Props = Readonly<{
  * - Products with `metadata.isComplete === false`
  * - Products with low OCR confidence (`metadata.confidence < 0.7`)
  * - Products with `category === ProductCategory.NOT_DEFINED`
- * - Products with empty `genericName` (translation didn't run)
- * - Products with empty `detectedAllergens` (allergen detection didn't run)
+ * - Products with empty `name`
  *
  * **Dismissal Behavior**:
  * - Banner can be dismissed via X button
@@ -100,8 +99,8 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
         uncategorized.push(item);
       }
 
-      // Check for missing generic name
-      if (!item.genericName.trim() || item.genericName === item.rawName) {
+      // Check for missing name
+      if (!item.name.trim()) {
         missingName.push(item);
       }
     });

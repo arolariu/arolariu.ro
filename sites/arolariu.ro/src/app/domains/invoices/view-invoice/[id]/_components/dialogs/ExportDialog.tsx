@@ -115,7 +115,7 @@ export function ExportDialog(): React.JSX.Element {
       // CSV Rows - one per product
       for (const item of invoice.items) {
         const row = [
-          `"${(item.genericName || item.rawName).replace(/"/g, '""')}"`, // Escape quotes in product name
+          `"${item.name.replace(/"/g, '""')}"`, // Escape quotes in product name
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),

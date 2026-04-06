@@ -49,13 +49,13 @@ const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item
  */
 type EditingCell = {
   rowIndex: number;
-  field: "genericName" | "price" | "quantity" | "quantityUnit";
+  field: "name" | "price" | "quantity" | "quantityUnit";
 } | null;
 
 /**
  * Sort field options for table columns.
  */
-type SortField = "genericName" | "price" | "quantity" | "category" | null;
+type SortField = "name" | "price" | "quantity" | "category" | null;
 
 /**
  * Sort direction for table columns.
@@ -140,7 +140,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       return localItems;
     }
     const query = searchQuery.toLowerCase();
-    return localItems.filter((item) => item.genericName.toLowerCase().includes(query) || item.rawName.toLowerCase().includes(query));
+    return localItems.filter((item) => item.name.toLowerCase().includes(query));
   }, [localItems, searchQuery]);
 
   // Sort filtered items
@@ -153,8 +153,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       let comparison = 0;
 
       switch (sortField) {
-        case "genericName":
-          comparison = a.genericName.localeCompare(b.genericName);
+        case "name":
+          comparison = a.name.localeCompare(b.name);
           break;
         case "price":
           comparison = a.price - b.price;
@@ -172,7 +172,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   }, [filteredItems, sortField, sortDirection]);
 
   const totalAmount = localItems.filter((item) => !item.metadata.isSoftDeleted).reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
+  const {paginatedItems, currentPage, setCurrentPage, totalPages, pageSize} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
 
   const handleNextPage = useCallback(() => {
     const nextPage = currentPage + 1;
@@ -207,7 +207,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
   // Handle cell click to start editing
   const handleCellClick = useCallback(
-    (rowIndex: number, field: "genericName" | "price" | "quantity" | "quantityUnit") => {
+    (rowIndex: number, field: "name" | "price" | "quantity" | "quantityUnit") => {
       const item = sortedItems[rowIndex];
       if (!item) return;
 
@@ -238,7 +238,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setLocalItems((prev) => {
       const newItems = [...prev];
       const actualItem = sortedItems[rowIndex];
-      const actualIndex = prev.findIndex((item) => item.rawName === actualItem?.rawName);
+      const actualIndex = actualItem ? prev.indexOf(actualItem) : -1;
 
       if (actualIndex === -1) return prev;
 
@@ -247,7 +247,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       const item = {...existingItem};
 
       // Update field based on type
-      if (field === "genericName" || field === "quantityUnit") {
+      if (field === "name" || field === "quantityUnit") {
         item[field] = value;
       } else if (field === "price" || field === "quantity") {
         const numValue = parseFloat(value);
@@ -317,7 +317,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       .map((idx) => sortedItems[idx])
       .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
-    setLocalItems((prev) => prev.filter((item) => !itemsToDelete.some((delItem) => delItem.rawName === item.rawName)));
+    setLocalItems((prev) => prev.filter((item) => !itemsToDelete.includes(item)));
 
     setSelectedIndices(new Set());
     setShowDeleteDialog(false);
@@ -328,8 +328,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const handleAddItem = useCallback(() => {
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newItem: Product = {
-      rawName: `${t("newItem.defaultName")}_${uniqueSuffix}`,
-      genericName: t("newItem.defaultName"),
+      name: `${t("newItem.defaultName")}_${uniqueSuffix}`,
       category: ProductCategory.NOT_DEFINED,
       quantity: 1,
       quantityUnit: "pcs",
@@ -379,7 +378,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         if (result.success) {
           setLocalItems(updatedItems);
-          toast.success(t("softDelete.success", {name: product.genericName || product.rawName}));
+          toast.success(t("softDelete.success", {name: product.name}));
         } else {
           toast.error(result.error);
         }
@@ -423,7 +422,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         if (result.success) {
           setLocalItems(updatedItems);
-          toast.success(t("restore.success", {name: product.genericName || product.rawName}));
+          toast.success(t("restore.success", {name: product.name}));
         } else {
           toast.error(result.error);
         }
@@ -468,7 +467,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
     // Map selected indices from sorted view to actual localItems indices
-    const actualIndices = selectedProducts.map((product) => localItems.findIndex((item) => item.rawName === product.rawName));
+    const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));
 
     openBulkCategoryDialog("edit", {
       invoice,
@@ -576,9 +575,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               </TableHead>
               <TableHead
                 className={styles["tableHeaderSortable"]}
-                onClick={() => handleSort("genericName")}>
+                onClick={() => handleSort("name")}>
                 {t("columns.name")}
-                {sortField === "genericName" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
+                {sortField === "name" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
@@ -597,7 +596,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             </TableRow>
           </TableHeader>
           <TableBody className={styles["tableBody"]}>
-            {paginatedItems.map((item, index) => {
+            {paginatedItems.map((item, pageIndex) => {
+              const index = (currentPage - 1) * pageSize + pageIndex;
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
               const isSoftDeleted = item.metadata.isSoftDeleted;
@@ -607,7 +607,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
               return (
                 <motion.tr
-                  key={item.rawName}
+                  key={`${item.name}-${index}`}
                   initial={{opacity: 0, y: -20}}
                   animate={{opacity: 1, y: 0}}
                   transition={{delay: index * 0.05}}
@@ -618,29 +618,29 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => handleSelectRow(index)}
-                      aria-label={t("columns.selectRow", {name: item.genericName})}
+                      aria-label={t("columns.selectRow", {name: item.name})}
                       className={styles["selectCheckbox"]}
                       disabled={isSoftDeleted}
                     />
                   </td>
                   <td
                     className={`${styles["tableCell"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "genericName")}>
+                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "name")}>
                     <div className={styles["cellWithIndicators"]}>
-                      {isEditing && editingCell.field === "genericName" ? (
+                      {isEditing && editingCell.field === "name" ? (
                         <Input
                           type='text'
-                          value={editValues[`${index}-genericName`] ?? ""}
-                          onChange={(e) => handleEditChange(index, "genericName", e.target.value)}
+                          value={editValues[`${index}-name`] ?? ""}
+                          onChange={(e) => handleEditChange(index, "name", e.target.value)}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
                           autoFocus
-                          aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.rawName})}
+                          aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.name})}
                           className={styles["editInput"]}
                         />
                       ) : (
                         <>
-                          <span>{item.genericName}</span>
+                          <span>{item.name}</span>
                           {isEdited && !isSoftDeleted && (
                             <TooltipProvider>
                               <Tooltip>
@@ -694,7 +694,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
-                        aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.rawName})}
+                        aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.name})}
                         className={styles["editInput"]}
                       />
                     ) : (
@@ -713,7 +713,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus
-                        aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.rawName})}
+                        aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.name})}
                         className={styles["editInput"]}
                       />
                     ) : (

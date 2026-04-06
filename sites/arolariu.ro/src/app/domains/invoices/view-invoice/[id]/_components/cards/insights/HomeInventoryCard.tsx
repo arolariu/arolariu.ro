@@ -38,7 +38,7 @@ export function HomeInventoryCard(): React.JSX.Element {
   // Estimate supply levels based on typical usage
   const supplies: SupplyItem[] = [];
   cleaningItems.forEach((item) => {
-    const name = item.genericName.toLowerCase();
+    const name = item.name.toLowerCase();
     let daysRemaining = 30;
     let icon = (
       <TbSpray
@@ -84,7 +84,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       );
       supplies.push({id: `floor-${item.productCode}`, name: t("supplyNames.floorCleaner"), icon, daysRemaining, maxDays: 90});
     } else {
-      supplies.push({id: `generic-${item.productCode}`, name: item.genericName, icon, daysRemaining, maxDays: 45});
+      supplies.push({id: `generic-${item.productCode}`, name: item.name, icon, daysRemaining, maxDays: 45});
     }
   });
 

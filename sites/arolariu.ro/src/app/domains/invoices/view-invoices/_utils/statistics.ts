@@ -1337,11 +1337,11 @@ export type ProductCategorySpending = {
  * Top product aggregate for most-purchased items analysis.
  *
  * @remarks
- * Aggregates products by genericName (or rawName as fallback) to identify
+ * Aggregates products by name to identify
  * most frequently purchased items and spending patterns.
  *
  * **Aggregation Key:**
- * Products are grouped by `genericName` if available, otherwise by `rawName`.
+ * Products are grouped by `name`.
  * This handles slight variations in OCR output for the same product.
  *
  * @example
@@ -1354,7 +1354,7 @@ export type ProductCategorySpending = {
  * ```
  */
 export type TopProduct = {
-  /** Product name (genericName or rawName) */
+  /** Product name */
   name: string;
   /** Total quantity purchased across all invoices */
   totalQuantity: number;
@@ -1525,7 +1525,7 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
  * **Performance:** O(n * m * log(n * m)) where n is invoices and m is items per invoice.
  *
  * **Product Identification:**
- * Products are grouped by `genericName` if available, falling back to `rawName`.
+ * Products are grouped by `name`.
  * This handles OCR variations for the same product.
  *
  * **Currency Normalization:**
@@ -1563,8 +1563,8 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
       // Skip soft-deleted products
       if (product.metadata?.isSoftDeleted) continue;
 
-      // Use genericName if available, fallback to rawName
-      const productName = product.genericName || product.rawName;
+      // Use product name
+      const productName = product.name;
       if (!productName) continue;
 
       const productPriceRON = toRON(product.totalPrice, currencyCode, year);

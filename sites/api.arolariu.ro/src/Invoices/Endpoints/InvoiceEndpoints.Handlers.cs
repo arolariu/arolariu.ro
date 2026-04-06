@@ -609,7 +609,7 @@ public static partial class InvoiceEndpoints
       }
 
       var productEntity = product.ToProduct();
-      activity?.SetTag("product.name", productEntity.RawName);
+      activity?.SetTag("product.name", productEntity.Name);
 
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier)
@@ -852,7 +852,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       var updatedProduct = productInformation.ToProduct();
-      activity?.SetTag("product.new_name", updatedProduct.RawName);
+      activity?.SetTag("product.new_name", updatedProduct.Name);
 
       await invoiceProcessingService
         .AddProduct(updatedProduct, id, potentialUserIdentifier)

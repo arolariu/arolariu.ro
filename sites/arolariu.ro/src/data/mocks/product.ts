@@ -47,7 +47,7 @@ import {faker} from "@faker-js/faker";
  * ```typescript
  * // Basic usage
  * const product = new ProductBuilder()
- *   .withRawName("Organic Bananas")
+ *   .withName("Organic Bananas")
  *   .withCategory(ProductCategory.FOOD)
  *   .withPrice(2.99)
  *   .withQuantity(5)
@@ -58,7 +58,7 @@ import {faker} from "@faker-js/faker";
  * ```typescript
  * // With allergens
  * const product = new ProductBuilder()
- *   .withGenericName("Peanut Butter")
+ *   .withName("Peanut Butter")
  *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
  *   .build();
  * ```
@@ -93,8 +93,7 @@ export class ProductBuilder {
     const quantity = faker.number.int({min: 1, max: 10});
 
     this.product = {
-      rawName: faker.commerce.productName(),
-      genericName: faker.commerce.productName(),
+      name: faker.commerce.productName(),
       productCode: faker.string.alphanumeric(8).toUpperCase(),
       category: faker.number.int({min: 0, max: 13}) as ProductCategory,
       price,
@@ -112,45 +111,23 @@ export class ProductBuilder {
   }
 
   /**
-   * Sets the raw product name as it appears on the receipt.
+   * Sets the product name.
    *
-   * @param rawName - Unprocessed name from OCR/receipt text
+   * @param name - Product name
    * @returns The ProductBuilder instance for method chaining
    *
    * @remarks
-   * Raw names may contain typos, formatting issues, or extra characters from OCR.
+   * Product names should be clean and human-readable for display and searching.
    *
    * @example
    * ```typescript
    * const product = new ProductBuilder()
-   *   .withRawName("ORG BANANAS 1KG")
-   *   .withGenericName("Organic Bananas")
+   *   .withName("Organic Bananas")
    *   .build();
    * ```
    */
-  withRawName(rawName: string): this {
-    this.product.rawName = rawName;
-    return this;
-  }
-
-  /**
-   * Sets the normalized/cleaned generic product name.
-   *
-   * @param genericName - Standardized, human-readable product name
-   * @returns The ProductBuilder instance for method chaining
-   *
-   * @remarks
-   * Generic names should be cleaned and normalized for display and searching.
-   *
-   * @example
-   * ```typescript
-   * const product = new ProductBuilder()
-   *   .withGenericName("Organic Milk 2%")
-   *   .build();
-   * ```
-   */
-  withGenericName(genericName: string): this {
-    this.product.genericName = genericName;
+  withName(name: string): this {
+    this.product.name = name;
     return this;
   }
 
@@ -291,7 +268,7 @@ export class ProductBuilder {
    * @example
    * ```typescript
    * const product = new ProductBuilder()
-   *   .withGenericName("Peanut Butter")
+   *   .withName("Peanut Butter")
    *   .withDetectedAllergens([Allergen.PEANUTS, Allergen.TREE_NUTS])
    *   .build();
    * ```
@@ -391,7 +368,7 @@ export class ProductBuilder {
    * @example
    * ```typescript
    * const product = new ProductBuilder()
-   *   .withGenericName("Apple Juice")
+   *   .withName("Apple Juice")
    *   .withCategory(ProductCategory.BEVERAGES)
    *   .build();
    * ```
@@ -407,7 +384,7 @@ export class ProductBuilder {
    * @returns Array of Product objects with randomized names and codes
    *
    * @remarks
-   * Each generated product has unique rawName, genericName, and productCode.
+   * Each generated product has unique name and productCode.
    * All other properties remain consistent from the builder configuration.
    *
    * @example
@@ -423,7 +400,7 @@ export class ProductBuilder {
       // Generate new unique identifiers for each instance
       const product = this.build();
       product.productCode = faker.string.alphanumeric(8).toUpperCase();
-      product.rawName = `${product.rawName} ${faker.string.nanoid(5)}`;
+      product.name = `${product.name} ${faker.string.nanoid(5)}`;
       return product;
     });
   }
@@ -440,7 +417,7 @@ export class ProductBuilder {
  * @example
  * ```typescript
  * const product = createProductBuilder()
- *   .withGenericName("Chocolate Bar")
+ *   .withName("Chocolate Bar")
  *   .build();
  * ```
  */
@@ -468,8 +445,7 @@ export function createProductBuilder(): ProductBuilder {
  * ```typescript
  * const product = generateRandomProduct();
  * // Result: {
- * //   rawName: "Ergonomic Frozen Hat",
- * //   genericName: "Tasty Steel Chips",
+ * //   name: "Ergonomic Frozen Hat",
  * //   productCode: "ABC12345",
  * //   category: ProductCategory.FOOD,
  * //   price: 12.34,
@@ -542,7 +518,7 @@ export function generateRandomProducts(count: number): Product[] {
  * });
  * ```
  */
-export const mockProduct = new ProductBuilder().withGenericName("Test Product").withPrice(9.99).withQuantity(2).build();
+export const mockProduct = new ProductBuilder().withName("Test Product").withPrice(9.99).withQuantity(2).build();
 
 /**
  * Pre-built list of 10 mock products for testing collections.

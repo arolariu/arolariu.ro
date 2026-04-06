@@ -65,7 +65,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task AddProduct_ValidProduct_AddsSuccessfully()
   {
     // Arrange
-    var product = new Product { RawName = "Test Product" };
+    var product = new Product { Name = "Test Product" };
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -91,7 +91,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task AddProduct_NullUserIdentifier_AddsSuccessfully()
   {
     // Arrange
-    var product = new Product { RawName = "Test Product" };
+    var product = new Product { Name = "Test Product" };
     var invoiceId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
@@ -165,7 +165,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     invoice.Items.Clear();
-    invoice.Items.Add(new Product { RawName = productName });
+    invoice.Items.Add(new Product { Name = productName });
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -176,7 +176,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
     // Assert
     Assert.NotNull(result);
-    Assert.Equal(productName, result.RawName);
+    Assert.Equal(productName, result.Name);
   }
 
   /// <summary>
@@ -191,7 +191,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     invoice.Items.Clear();
-    invoice.Items.Add(new Product { RawName = productName, GenericName = productName });
+    invoice.Items.Add(new Product { Name = productName });
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -214,7 +214,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task DeleteProduct_ByProductObject_DeletesSuccessfully()
   {
     // Arrange
-    var product = new Product { RawName = "Test Product", GenericName = "Test Product" };
+    var product = new Product { Name = "Test Product" };
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -242,7 +242,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task AddProduct_EmptyGuidInvoiceId_CallsOrchestration()
   {
     // Arrange
-    var product = new Product { RawName = "Test" };
+    var product = new Product { Name = "Test" };
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockInvoiceOrchestrationService
@@ -679,7 +679,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
   public async Task AddProduct_OrchestrationException_ThrowsProcessingException()
   {
     // Arrange
-    var product = new Product { RawName = "Test" };
+    var product = new Product { Name = "Test" };
     var invoiceId = Guid.NewGuid();
 
     mockInvoiceOrchestrationService
@@ -826,7 +826,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
         .ReturnsAsync(invoice);
 
     var products = Enumerable.Range(0, 5)
-        .Select(i => new Product { RawName = $"Product {i}" })
+        .Select(i => new Product { Name = $"Product {i}" })
         .ToList();
 
     // Act

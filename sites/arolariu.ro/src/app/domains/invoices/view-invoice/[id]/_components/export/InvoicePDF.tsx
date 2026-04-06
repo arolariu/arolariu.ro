@@ -360,7 +360,7 @@ export function InvoicePDF({invoice, merchant}: Readonly<InvoicePDFProps>): Reac
                 style={styles.tableRow}>
                 <Text style={[styles.tableCell, styles.tableCellNumber]}>{index + 1}</Text>
                 <View style={[styles.tableCell, styles.tableCellProduct]}>
-                  <Text style={styles.productName}>{product.genericName || product.rawName}</Text>
+                  <Text style={styles.productName}>{product.name}</Text>
                   {product.detectedAllergens && product.detectedAllergens.length > 0 && (
                     <Text style={styles.allergens}>Allergens: {product.detectedAllergens.map((a) => a.name).join(", ")}</Text>
                   )}

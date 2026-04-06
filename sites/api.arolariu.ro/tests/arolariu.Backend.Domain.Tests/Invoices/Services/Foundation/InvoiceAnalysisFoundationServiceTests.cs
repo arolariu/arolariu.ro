@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -28,7 +27,6 @@ using Xunit;
 public sealed class InvoiceAnalysisFoundationServiceTests
 {
   private readonly Mock<IClassifierBroker> mockOpenAiBroker;
-  private readonly Mock<ITranslatorBroker> mockTranslatorBroker;
   private readonly Mock<IFormRecognizerBroker> mockFormRecognizerBroker;
   private readonly Mock<ILoggerFactory> mockLoggerFactory;
   private readonly Mock<ILogger<IInvoiceAnalysisFoundationService>> mockLogger;
@@ -40,7 +38,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   public InvoiceAnalysisFoundationServiceTests()
   {
     mockOpenAiBroker = new Mock<IClassifierBroker>();
-    mockTranslatorBroker = new Mock<ITranslatorBroker>();
     mockFormRecognizerBroker = new Mock<IFormRecognizerBroker>();
     mockLoggerFactory = new Mock<ILoggerFactory>();
     mockLogger = new Mock<ILogger<IInvoiceAnalysisFoundationService>>();
@@ -51,7 +48,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
 
     service = new InvoiceAnalysisFoundationService(
         mockOpenAiBroker.Object,
-        mockTranslatorBroker.Object,
         mockFormRecognizerBroker.Object,
         mockLoggerFactory.Object);
   }
@@ -67,7 +63,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     // Arrange & Act
     var svc = new InvoiceAnalysisFoundationService(
         mockOpenAiBroker.Object,
-        mockTranslatorBroker.Object,
         mockFormRecognizerBroker.Object,
         mockLoggerFactory.Object);
 
@@ -93,10 +88,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated Product Name");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
@@ -126,10 +117,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
 
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
-
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
@@ -155,10 +142,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
 
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
-
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
@@ -171,23 +154,18 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates translation is called for each product in invoice.
+  /// Validates analysis with multiple products completes successfully.
   /// </summary>
   [Fact]
-  public async Task AnalyzeInvoiceAsync_MultipleProducts_TranslatesAllProducts()
+  public async Task AnalyzeInvoiceAsync_MultipleProducts_AnalyzesAllProducts()
   {
     // Arrange
     var options = AnalysisOptions.CompleteAnalysis;
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productCount = invoice.Items.Count;
 
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated Name");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
@@ -197,15 +175,15 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     var result = await service.AnalyzeInvoiceAsync(options, invoice);
 
     // Assert
-    mockTranslatorBroker.Verify(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(productCount));
-    Assert.All(result.Items, item => Assert.Equal("Translated Name", item.GenericName));
+    Assert.NotNull(result);
+    Assert.Equal(invoice.Items.Count, result.Items.Count);
   }
 
   /// <summary>
-  /// Validates analysis with empty products collection.
+  /// Validates analysis with empty products collection completes.
   /// </summary>
   [Fact]
-  public async Task AnalyzeInvoiceAsync_EmptyProducts_CompletesWithoutTranslation()
+  public async Task AnalyzeInvoiceAsync_EmptyProducts_CompletesSuccessfully()
   {
     // Arrange
     var options = AnalysisOptions.CompleteAnalysis;
@@ -226,7 +204,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     // Assert
     Assert.NotNull(result);
     Assert.Empty(result.Items);
-    mockTranslatorBroker.Verify(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
   }
 
   /// <summary>
@@ -243,10 +220,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
@@ -279,29 +252,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates translator broker exception is wrapped into foundation service exception.
-  /// </summary>
-  [Fact]
-  public async Task AnalyzeInvoiceAsync_TranslatorBrokerThrows_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var options = AnalysisOptions.CompleteAnalysis;
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockFormRecognizerBroker
-        .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
-        .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ThrowsAsync(new InvalidOperationException("Translation failed"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.AnalyzeInvoiceAsync(options, invoice));
-  }
-
-  /// <summary>
   /// Validates GPT broker exception is wrapped into foundation service exception.
   /// </summary>
   [Fact]
@@ -314,10 +264,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
@@ -380,10 +326,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
 
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
-
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
@@ -408,10 +350,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
@@ -440,10 +378,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
 
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
-
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(invoice, options))
         .ReturnsAsync(invoice);
@@ -469,10 +403,6 @@ public sealed class InvoiceAnalysisFoundationServiceTests
     mockFormRecognizerBroker
         .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
         .ReturnsAsync(invoice);
-
-    mockTranslatorBroker
-        .Setup(b => b.Translate(It.IsAny<string>(), It.IsAny<string>()))
-        .ReturnsAsync("Translated");
 
     mockOpenAiBroker
         .Setup(b => b.PerformGptAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))

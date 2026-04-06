@@ -33,7 +33,7 @@ public sealed class InvoiceEdgeCaseTests
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
-      Items = new List<Product>(Enumerable.Range(0, 1000).Select(i => new Product { RawName = $"Product {i}", Price = i }))
+      Items = new List<Product>(Enumerable.Range(0, 1000).Select(i => new Product { Name = $"Product {i}", Price = i }))
     };
 
     // Assert
@@ -224,7 +224,7 @@ public sealed class InvoiceEdgeCaseTests
     // Arrange
     var product = new Product
     {
-      RawName = "Free Item",
+      Name = "Free Item",
       Price = 0,
       Quantity = 1
     };
@@ -243,7 +243,7 @@ public sealed class InvoiceEdgeCaseTests
     // Arrange
     var product = new Product
     {
-      RawName = "Discount Item",
+      Name = "Discount Item",
       Price = -10.00m,
       Quantity = 1
     };
@@ -262,7 +262,7 @@ public sealed class InvoiceEdgeCaseTests
     // Arrange
     var product = new Product
     {
-      RawName = "Expensive Item",
+      Name = "Expensive Item",
       Price = 999999999.99m,
       Quantity = 1
     };
@@ -280,7 +280,7 @@ public sealed class InvoiceEdgeCaseTests
     // Arrange
     var product = new Product
     {
-      RawName = "Bulk Item",
+      Name = "Bulk Item",
       Price = 10.00m,
       Quantity = 0.5m
     };
@@ -298,7 +298,7 @@ public sealed class InvoiceEdgeCaseTests
     // Arrange
     var product = new Product
     {
-      RawName = "Precision Item",
+      Name = "Precision Item",
       Price = 0.0000000001m,
       Quantity = 1
     };
@@ -308,19 +308,19 @@ public sealed class InvoiceEdgeCaseTests
   }
 
   /// <summary>
-  /// Verifies Product handles empty raw name.
+  /// Verifies Product handles empty name.
   /// </summary>
   [Fact]
-  public void Product_EmptyRawName_IsAllowed()
+  public void Product_EmptyName_IsAllowed()
   {
     // Arrange
     var product = new Product
     {
-      RawName = string.Empty
+      Name = string.Empty
     };
 
     // Assert
-    Assert.Equal(string.Empty, product.RawName);
+    Assert.Equal(string.Empty, product.Name);
   }
 
   /// <summary>

@@ -13,8 +13,7 @@ describe("ProductBuilder", () => {
       const builder = new ProductBuilder();
       const product = builder.build();
 
-      expect(product).toHaveProperty("rawName");
-      expect(product).toHaveProperty("genericName");
+      expect(product).toHaveProperty("name");
       expect(product).toHaveProperty("productCode");
       expect(product).toHaveProperty("category");
       expect(product).toHaveProperty("price");
@@ -33,16 +32,10 @@ describe("ProductBuilder", () => {
   });
 
   describe("Builder Methods", () => {
-    it("should set rawName", () => {
+    it("should set name", () => {
       const builder = new ProductBuilder();
-      const product = builder.withRawName("Raw Product Name").build();
-      expect(product.rawName).toBe("Raw Product Name");
-    });
-
-    it("should set genericName", () => {
-      const builder = new ProductBuilder();
-      const product = builder.withGenericName("Generic Product").build();
-      expect(product.genericName).toBe("Generic Product");
+      const product = builder.withName("Product Name").build();
+      expect(product.name).toBe("Product Name");
     });
 
     it("should set productCode", () => {
@@ -138,8 +131,8 @@ describe("ProductBuilder", () => {
       expect(products[0]).not.toBe(products[1]);
       // Modify one should not affect the other
       if (products[0] && products[1]) {
-        products[0].genericName = "Modified";
-        expect(products[1].genericName).not.toBe("Modified");
+        products[0].name = "Modified";
+        expect(products[1].name).not.toBe("Modified");
       }
     });
 
@@ -163,8 +156,7 @@ describe("ProductBuilder", () => {
   describe("Chaining", () => {
     it("should support method chaining", () => {
       const product = new ProductBuilder()
-        .withRawName("Chain Raw Name")
-        .withGenericName("Chain Generic Name")
+        .withName("Chain Product Name")
         .withProductCode("CHAIN123")
         .withCategory(ProductCategory.FRUITS)
         .withPrice(15.99)
@@ -175,8 +167,7 @@ describe("ProductBuilder", () => {
         .withMetadata({isComplete: true, isEdited: false, isSoftDeleted: false})
         .build();
 
-      expect(product.rawName).toBe("Chain Raw Name");
-      expect(product.genericName).toBe("Chain Generic Name");
+      expect(product.name).toBe("Chain Product Name");
       expect(product.productCode).toBe("CHAIN123");
       expect(product.category).toBe(ProductCategory.FRUITS);
       expect(product.price).toBe(15.99);
@@ -198,8 +189,7 @@ describe("ProductBuilder", () => {
 
     it("should generate a random product", () => {
       const product = generateRandomProduct();
-      expect(product).toHaveProperty("rawName");
-      expect(product).toHaveProperty("genericName");
+      expect(product).toHaveProperty("name");
       expect(product).toHaveProperty("productCode");
       expect(product.price).toBeGreaterThan(0);
       expect(product.quantity).toBeGreaterThan(0);
@@ -209,8 +199,7 @@ describe("ProductBuilder", () => {
       const products = generateRandomProducts(5);
       expect(products).toHaveLength(5);
       products.forEach((product) => {
-        expect(product).toHaveProperty("rawName");
-        expect(product).toHaveProperty("genericName");
+        expect(product).toHaveProperty("name");
         expect(product).toHaveProperty("productCode");
       });
     });
@@ -224,7 +213,7 @@ describe("ProductBuilder", () => {
 
   describe("Mock Instances", () => {
     it("should have pre-configured mockProduct", () => {
-      expect(mockProduct.genericName).toBe("Test Product");
+      expect(mockProduct.name).toBe("Test Product");
       expect(mockProduct.price).toBe(9.99);
       expect(mockProduct.quantity).toBe(2);
       expect(mockProduct.totalPrice).toBeCloseTo(19.98);
@@ -233,8 +222,7 @@ describe("ProductBuilder", () => {
     it("should have pre-configured mockProductList", () => {
       expect(mockProductList).toHaveLength(10);
       mockProductList.forEach((product) => {
-        expect(product).toHaveProperty("rawName");
-        expect(product).toHaveProperty("genericName");
+        expect(product).toHaveProperty("name");
         expect(product).toHaveProperty("productCode");
       });
     });
@@ -252,26 +240,25 @@ describe("ProductBuilder", () => {
       const product2 = builder.build();
 
       expect(product1).not.toBe(product2);
-      product1.genericName = "Modified";
-      expect(product2.genericName).not.toBe("Modified");
+      product1.name = "Modified";
+      expect(product2.name).not.toBe("Modified");
     });
 
     it("should not mutate builder state", () => {
-      const builder = new ProductBuilder().withGenericName("Original");
+      const builder = new ProductBuilder().withName("Original");
       const product1 = builder.build();
-      product1.genericName = "Modified";
+      product1.name = "Modified";
 
       const product2 = builder.build();
-      expect(product2.genericName).toBe("Original");
+      expect(product2.name).toBe("Original");
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle empty strings", () => {
-      const product = new ProductBuilder().withRawName("").withGenericName("").withProductCode("").withQuantityUnit("").build();
+      const product = new ProductBuilder().withName("").withProductCode("").withQuantityUnit("").build();
 
-      expect(product.rawName).toBe("");
-      expect(product.genericName).toBe("");
+      expect(product.name).toBe("");
       expect(product.productCode).toBe("");
       expect(product.quantityUnit).toBe("");
     });

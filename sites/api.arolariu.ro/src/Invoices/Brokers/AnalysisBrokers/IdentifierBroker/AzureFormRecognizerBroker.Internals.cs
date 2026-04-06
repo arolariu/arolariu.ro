@@ -250,11 +250,11 @@ public sealed partial class AzureFormRecognizerBroker
   {
     var product = new Product();
 
-    // Step 1. Extract the raw name of the product (Description field in v4.0).
+    // Step 1. Extract the name of the product (Description field in v4.0).
     if (itemFields.TryGetValue("Description", out var nameField)
                   && nameField.FieldType == DocumentFieldType.String)
     {
-      product.RawName = nameField.ValueString;
+      product.Name = nameField.ValueString;
     }
 
     // Step 2. Extract the unit price of the product.

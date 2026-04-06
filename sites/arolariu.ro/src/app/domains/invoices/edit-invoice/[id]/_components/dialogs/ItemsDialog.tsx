@@ -38,7 +38,7 @@ import styles from "./ItemsDialog.module.scss";
  * - **Pagination**: Navigate large item lists with page controls
  *
  * **Item Fields**:
- * - `rawName`: Product name as scanned/entered
+ * - `name`: Product name as scanned/entered
  * - `quantity`: Number of units purchased
  * - `quantityUnit`: Unit of measurement (e.g., "kg", "pcs")
  * - `price`: Unit price
@@ -80,7 +80,7 @@ export default function ItemsDialog(): React.JSX.Element {
   const {items} = payload as Invoice;
 
   const [editableItems, setEditableItems] = useState<Product[]>(items || []);
-  const {currentPage, setCurrentPage, totalPages, paginatedItems} = usePaginationWithSearch<Product>({
+  const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
     items: editableItems,
   });
 
@@ -91,8 +91,7 @@ export default function ItemsDialog(): React.JSX.Element {
 
   const handleAddNewItem = useCallback(() => {
     const newItem: Product = {
-      rawName: "",
-      genericName: "",
+      name: "",
       category: ProductCategory.NOT_DEFINED,
       detectedAllergens: [],
       metadata: {
@@ -113,7 +112,7 @@ export default function ItemsDialog(): React.JSX.Element {
   const handleDeleteItem = useCallback(
     (item: Product) => () => {
       // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
-      setEditableItems((prev) => prev.filter((i) => i.rawName !== item.rawName));
+      setEditableItems((prev) => prev.filter((i) => i !== item));
     },
     [setEditableItems],
   );
@@ -137,8 +136,8 @@ export default function ItemsDialog(): React.JSX.Element {
         // Use specific property assignments with functional approach
         const getUpdatedItem = (): Product => {
           switch (name) {
-            case "rawName":
-              return {...currentItem, rawName: value};
+            case "name":
+              return {...currentItem, name: value};
             case "quantity":
               return {...currentItem, quantity: Number.parseFloat(value)};
             case "quantityUnit":
@@ -188,17 +187,19 @@ export default function ItemsDialog(): React.JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody className={styles["tableBody"]}>
-                {paginatedItems.map((item, index) => (
+                {paginatedItems.map((item, index) => {
+                  const absoluteIndex = (currentPage - 1) * pageSize + index;
+                  return (
                   <TableRow
-                    key={item.rawName}
+                    key={`item-${absoluteIndex}`}
                     className={styles["dataRow"]}>
                     <TableCell className={styles["cellName"]}>
                       <Input
                         type='text'
-                        name='rawName'
-                        value={item.rawName}
+                        name='name'
+                        value={item.name}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["nameInput"]}
                       />
                     </TableCell>
@@ -208,7 +209,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='quantity'
                         value={item.quantity}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInput"]}
                       />
                     </TableCell>
@@ -218,7 +219,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='quantityUnit'
                         value={item.quantityUnit}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInput"]}
                       />
                     </TableCell>
@@ -228,7 +229,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         name='price'
                         value={item.price}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, index)}
+                        onChange={(e) => handleValueChange(e, absoluteIndex)}
                         className={styles["smallInputRight"]}
                       />
                     </TableCell>
@@ -237,13 +238,14 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        aria-label={t("aria.deleteItem", {name: item.rawName || t("aria.unnamedItem")})}
+                        aria-label={t("aria.deleteItem", {name: item.name || t("aria.unnamedItem")})}
                         onClick={handleDeleteItem(item)}>
                         <TbTrash className={styles["trashIcon"]} />
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
               <TableFooter>
                 <TableRow className={styles["headerRow"]}>

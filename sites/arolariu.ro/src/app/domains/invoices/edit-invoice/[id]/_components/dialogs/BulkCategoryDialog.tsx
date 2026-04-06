@@ -176,9 +176,8 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           const result = await updateProduct({
             invoiceId: invoice.id,
             payload: {
-              originalProductName: product.rawName,
-              rawName: product.rawName,
-              genericName: product.genericName,
+              originalProductName: product.name,
+              name: product.name,
               category: selectedCategory,
               quantity: product.quantity,
               quantityUnit: product.quantityUnit,
@@ -191,11 +190,11 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           if (result.success) {
             successCount++;
           } else {
-            errors.push(`${product.genericName || product.rawName}: ${result.error}`);
+            errors.push(`${product.name}: ${result.error}`);
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          errors.push(`${product.genericName || product.rawName}: ${errorMessage}`);
+          errors.push(`${product.name}: ${errorMessage}`);
         }
       }
 
@@ -246,9 +245,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
             <div className={styles["productList"]}>
               {selectedProducts.slice(0, 5).map((product, index) => (
                 <div
-                  key={`${product.rawName}-${index}`}
+                  key={`${product.name}-${index}`}
                   className={styles["productItem"]}>
-                  <span className={styles["productName"]}>{product.genericName || product.rawName}</span>
+                  <span className={styles["productName"]}>{product.name}</span>
                 </div>
               ))}
               {selectedProducts.length > 5 && (

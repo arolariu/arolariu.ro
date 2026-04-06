@@ -27,23 +27,22 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * Payload for updating an existing product in an invoice.
  *
  * @remarks
- * The originalProductName field identifies which product to update.
- * All other fields are optional and only provided fields will be updated.
+ * This performs a **full replacement** of the product identified by `originalProductName`.
+ * All required fields must be provided as the backend replaces the entire product entry.
+ * Omitted optional fields will default to empty/zero values.
  *
- * @property originalProductName - Identifies the product to update (required)
- * @property rawName - The raw OCR-extracted product name (optional)
- * @property genericName - Normalized human-readable name (optional)
- * @property category - Product category classification (optional)
- * @property quantity - Quantity purchased (optional)
- * @property quantityUnit - Unit of measurement (optional)
- * @property productCode - Barcode/EAN code (optional)
- * @property price - Unit price (optional)
- * @property detectedAllergens - List of allergens detected in product (optional)
+ * @property originalProductName - Identifies the product to update (required, matches current name)
+ * @property name - The product name (required)
+ * @property category - Product category classification (required)
+ * @property quantity - Quantity purchased (required)
+ * @property quantityUnit - Unit of measurement (optional, defaults to empty)
+ * @property productCode - Barcode/EAN code (optional, defaults to empty)
+ * @property price - Unit price (required)
+ * @property detectedAllergens - List of allergens detected in product (optional, defaults to empty)
  */
 type UpdateProductPayload = Readonly<{
   originalProductName: string;
-  rawName: string;
-  genericName?: string;
+  name: string;
   category: ProductCategory;
   quantity: number;
   quantityUnit?: string;
@@ -83,7 +82,7 @@ type ServerActionOutputType = Promise<UpdateProductResult>;
  *
  * **Product Identification**:
  * Products are identified by their `originalProductName` field, which should match
- * the current `rawName` of the product to be updated.
+ * the current `name` of the product to be updated.
  *
  * **Partial Updates**:
  * Only provided fields are updated. The backend automatically marks the product
@@ -102,9 +101,8 @@ type ServerActionOutputType = Promise<UpdateProductResult>;
  * const result = await updateProduct({
  *   invoiceId: "abc-123",
  *   payload: {
- *     originalProductName: "LAPTE ZUZU 2% 1L",
- *     rawName: "LAPTE ZUZU 2% 1L",
- *     genericName: "Zuzu Milk 2% 1 Liter",
+ *     originalProductName: "Zuzu Milk 2% 1 Liter",
+ *     name: "Zuzu Milk 2% 1 Liter",
  *     category: ProductCategory.DAIRY,
  *     quantity: 2,
  *     price: 8.99,
@@ -125,9 +123,8 @@ type ServerActionOutputType = Promise<UpdateProductResult>;
  * const categoryResult = await updateProduct({
  *   invoiceId: "abc-123",
  *   payload: {
- *     originalProductName: "MERE GALA",
- *     rawName: "MERE GALA",
- *     genericName: "Gala Apples",
+ *     originalProductName: "Gala Apples",
+ *     name: "Gala Apples",
  *     category: ProductCategory.FRUITS,
  *     quantity: 3,
  *     price: 12.50

@@ -97,8 +97,6 @@ function createTestInvoice(overrides: {
 function createTestProduct(overrides: {
   id?: string;
   name?: string;
-  genericName?: string;
-  rawName?: string;
   quantity?: number;
   price?: number;
   totalPrice?: number;
@@ -109,8 +107,6 @@ function createTestProduct(overrides: {
   return {
     id: overrides.id ?? `product-${Math.random()}`,
     name: overrides.name ?? "Test Product",
-    genericName: overrides.genericName ?? "Generic Product",
-    rawName: overrides.rawName ?? "Raw Product Name",
     productIdentifier: `prod-${Math.random()}`,
     quantity: overrides.quantity ?? 1,
     price: overrides.price ?? 10,
@@ -838,9 +834,9 @@ describe("Statistics Functions", () => {
 
     it("should aggregate products by name", () => {
       const products = [
-        createTestProduct({genericName: "Milk", quantity: 2, totalPrice: 20, price: 10}),
-        createTestProduct({genericName: "Bread", quantity: 1, totalPrice: 5, price: 5}),
-        createTestProduct({genericName: "Milk", quantity: 1, totalPrice: 10, price: 10}),
+        createTestProduct({name: "Milk", quantity: 2, totalPrice: 20, price: 10}),
+        createTestProduct({name: "Bread", quantity: 1, totalPrice: 5, price: 5}),
+        createTestProduct({name: "Milk", quantity: 1, totalPrice: 10, price: 10}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -856,9 +852,9 @@ describe("Statistics Functions", () => {
 
     it("should return top N products", () => {
       const products = [
-        createTestProduct({genericName: "Product1", totalPrice: 100}),
-        createTestProduct({genericName: "Product2", totalPrice: 200}),
-        createTestProduct({genericName: "Product3", totalPrice: 150}),
+        createTestProduct({name: "Product1", totalPrice: 100}),
+        createTestProduct({name: "Product2", totalPrice: 200}),
+        createTestProduct({name: "Product3", totalPrice: 150}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -870,8 +866,8 @@ describe("Statistics Functions", () => {
       expect(result[1]?.name).toBe("Product3");
     });
 
-    it("should use rawName if genericName is not available", () => {
-      const products = [createTestProduct({genericName: "", rawName: "Milk 2%", totalPrice: 10})];
+    it("should handle products with a valid name", () => {
+      const products = [createTestProduct({name: "Milk 2%", totalPrice: 10})];
 
       const invoices = [createTestInvoice({items: products})];
 
@@ -881,10 +877,7 @@ describe("Statistics Functions", () => {
     });
 
     it("should skip products without names", () => {
-      const products = [
-        createTestProduct({genericName: "Milk", totalPrice: 10}),
-        createTestProduct({genericName: "", rawName: "", totalPrice: 20}),
-      ];
+      const products = [createTestProduct({name: "Milk", totalPrice: 10}), createTestProduct({name: "", totalPrice: 20})];
 
       const invoices = [createTestInvoice({items: products})];
 
@@ -896,8 +889,8 @@ describe("Statistics Functions", () => {
 
     it("should skip soft-deleted products", () => {
       const products = [
-        createTestProduct({genericName: "Milk", totalPrice: 10}),
-        createTestProduct({genericName: "Bread", totalPrice: 5, isSoftDeleted: true}),
+        createTestProduct({name: "Milk", totalPrice: 10}),
+        createTestProduct({name: "Bread", totalPrice: 5, isSoftDeleted: true}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
@@ -910,9 +903,9 @@ describe("Statistics Functions", () => {
 
     it("should sort by total spent descending", () => {
       const products = [
-        createTestProduct({genericName: "Product1", totalPrice: 100}),
-        createTestProduct({genericName: "Product2", totalPrice: 300}),
-        createTestProduct({genericName: "Product3", totalPrice: 200}),
+        createTestProduct({name: "Product1", totalPrice: 100}),
+        createTestProduct({name: "Product2", totalPrice: 300}),
+        createTestProduct({name: "Product3", totalPrice: 200}),
       ];
 
       const invoices = [createTestInvoice({items: products})];

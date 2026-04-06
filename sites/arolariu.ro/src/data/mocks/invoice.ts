@@ -497,8 +497,8 @@ export class InvoiceBuilder {
    * ```typescript
    * const invoice = new InvoiceBuilder()
    *   .withItems([
-   *     { rawName: "Milk 2%", genericName: "Milk", quantity: 2, price: 3.99, ... },
-   *     { rawName: "Bread", genericName: "Bread", quantity: 1, price: 2.50, ... },
+   *     { name: "Milk 2%", quantity: 2, price: 3.99, ... },
+   *     { name: "Bread", quantity: 1, price: 2.50, ... },
    *   ])
    *   .build();
    * ```

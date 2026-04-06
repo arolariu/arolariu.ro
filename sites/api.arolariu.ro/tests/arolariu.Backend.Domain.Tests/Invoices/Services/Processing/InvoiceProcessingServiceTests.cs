@@ -434,7 +434,7 @@ public sealed class InvoiceProcessingServiceTests
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
     var initialCount = invoice.Items.Count;
-    var product = new Product { RawName = "Test Product", GenericName = "Test", Price = 10m };
+    var product = new Product { Name = "Test Product", Price = 10m };
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -493,7 +493,7 @@ public sealed class InvoiceProcessingServiceTests
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productName = invoice.Items.First().RawName;
+    var productName = invoice.Items.First().Name;
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
@@ -542,7 +542,7 @@ public sealed class InvoiceProcessingServiceTests
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var productName = invoice.Items.First().RawName;
+    var productName = invoice.Items.First().Name;
 
     mockInvoiceOrchestrationService
         .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))

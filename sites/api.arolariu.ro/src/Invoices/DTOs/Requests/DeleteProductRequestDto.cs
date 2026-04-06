@@ -27,12 +27,13 @@ using System.Diagnostics.CodeAnalysis;
 /// </para>
 /// </remarks>
 /// <param name="ProductName">
-/// The raw name of the product to delete. Required.
-/// Must exactly match the <c>RawName</c> of an existing product in the invoice.
+/// The name of the product to delete. Required.
+/// Matched against existing product <c>Name</c> values using a case-insensitive
+/// substring comparison in the current service implementation.
 /// </param>
 /// <example>
 /// <code>
-/// // Remove a product by its raw name
+/// // Remove a product by its name
 /// var request = new DeleteProductRequestDto(ProductName: "LAPTE ZUZU 1L");
 ///
 /// // Service layer handles the actual deletion
