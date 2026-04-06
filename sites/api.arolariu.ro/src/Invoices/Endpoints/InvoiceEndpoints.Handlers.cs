@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
@@ -32,6 +33,16 @@ public static partial class InvoiceEndpoints
       activity?
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
+
+      if (invoiceDto.UserIdentifier == Guid.Empty)
+      {
+        activity?.SetTag("validation.failed", "UserIdentifier is required");
+        return TypedResults.ValidationProblem(
+          new Dictionary<string, string[]>
+          {
+            ["UserIdentifier"] = ["User identifier is required and cannot be empty."]
+          });
+      }
 
       var invoice = invoiceDto.ToInvoice();
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
@@ -161,6 +172,11 @@ public static partial class InvoiceEndpoints
     catch (InvoiceProcessingServiceValidationException exception)
     {
       Activity.Current?.RecordException(exception);
+      if (exception.GetBaseException() is InvoiceIdNotSetException)
+      {
+        return TypedResults.NotFound();
+      }
+
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
