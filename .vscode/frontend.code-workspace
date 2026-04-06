@@ -1,0 +1,136 @@
+{
+  "folders": [
+    {
+      "name": "🌐 Website (Next.js)",
+      "path": "../sites/arolariu.ro"
+    },
+    {
+      "name": "🧩 Components Library",
+      "path": "../packages/components"
+    },
+    {
+      "name": "📄 CV Site (SvelteKit)",
+      "path": "../sites/cv.arolariu.ro"
+    },
+    {
+      "name": "📚 Docs & RFCs",
+      "path": "../docs"
+    },
+    {
+      "name": "⚙️ Monorepo Root",
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.svelte-kit": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "usernamehw.errorlens",
+      "yoavbls.pretty-ts-errors",
+      "svelte.svelte-vscode",
+      "pranaygp.vscode-css-peek",
+      "graphql.vscode-graphql",
+      "graphql.vscode-graphql-syntax",
+      "ms-edgedevtools.vscode-edge-devtools",
+      "github.copilot",
+      "github.copilot-chat"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Next.js: Dev Server",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:🌐 Website (Next.js)}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"],
+        "env": { "NODE_OPTIONS": "--inspect" },
+        "sourceMaps": true,
+        "serverReadyAction": {
+          "action": "debugWithEdge",
+          "killOnServerStop": true,
+          "pattern": "- Local:.+(https?://.+)",
+          "uriFormat": "%s"
+        }
+      },
+      {
+        "name": "Storybook: Components",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:🧩 Components Library}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "storybook"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"]
+      },
+      {
+        "name": "SvelteKit: CV Dev",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:📄 CV Site (SvelteKit)}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"]
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Dev: Website",
+        "type": "shell",
+        "command": "npm run dev:website",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Dev: Components (watch)",
+        "type": "shell",
+        "command": "npm run dev:components",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Test: Website",
+        "type": "shell",
+        "command": "npm run test:website",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Lint",
+        "type": "shell",
+        "command": "npm run lint",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": []
+      }
+    ]
+  }
+}

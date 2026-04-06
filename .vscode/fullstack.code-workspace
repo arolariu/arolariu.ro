@@ -1,0 +1,214 @@
+{
+  "folders": [
+    {
+      "name": "🌐 Website (Next.js)",
+      "path": "../sites/arolariu.ro"
+    },
+    {
+      "name": "🔧 API (.NET)",
+      "path": "../sites/api.arolariu.ro"
+    },
+    {
+      "name": "🧪 exp Service (Python)",
+      "path": "../sites/exp.arolariu.ro"
+    },
+    {
+      "name": "🧩 Components Library",
+      "path": "../packages/components"
+    },
+    {
+      "name": "📄 CV Site (SvelteKit)",
+      "path": "../sites/cv.arolariu.ro"
+    },
+    {
+      "name": "🏗️ Infrastructure",
+      "path": "../infra"
+    },
+    {
+      "name": "📚 Docs & RFCs",
+      "path": "../docs"
+    },
+    {
+      "name": "⚙️ Monorepo Root",
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "dotnet.defaultSolution": "arolariu.sln",
+    "[csharp]": {
+      "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/bin": true,
+      "**/obj": true,
+      "**/__pycache__": true,
+      "**/.svelte-kit": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "usernamehw.errorlens",
+      "yoavbls.pretty-ts-errors",
+      "svelte.svelte-vscode",
+      "ms-dotnettools.csdevkit",
+      "ms-dotnettools.csharp",
+      "ms-python.python",
+      "ms-python.debugpy",
+      "charliermarsh.ruff",
+      "humao.rest-client",
+      "ms-azuretools.vscode-bicep",
+      "github.copilot",
+      "github.copilot-chat"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Next.js: Dev Server",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:🌐 Website (Next.js)}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"],
+        "env": { "NODE_OPTIONS": "--inspect" },
+        "sourceMaps": true,
+        "serverReadyAction": {
+          "action": "debugWithEdge",
+          "killOnServerStop": true,
+          "pattern": "- Local:.+(https?://.+)",
+          "uriFormat": "%s"
+        }
+      },
+      {
+        "name": ".NET API: Run with Hot Reload",
+        "type": "dotnet",
+        "request": "launch",
+        "projectPath": "${workspaceFolder:🔧 API (.NET)}/src/Core/arolariu.Backend.Core.csproj",
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development",
+          "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1"
+        }
+      },
+      {
+        "name": "Python: exp FastAPI",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "5002"],
+        "cwd": "${workspaceFolder:🧪 exp Service (Python)}",
+        "env": { "PYTHONPATH": "${workspaceFolder:🧪 exp Service (Python)}" }
+      },
+      {
+        "name": "Storybook: Components",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:🧩 Components Library}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "storybook"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"]
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Full Stack: Website + API + exp",
+        "configurations": [
+          "Next.js: Dev Server",
+          ".NET API: Run with Hot Reload",
+          "Python: exp FastAPI"
+        ],
+        "stopAll": true,
+        "presentation": {
+          "group": "fullstack",
+          "order": 1
+        }
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Dev: All Services",
+        "type": "shell",
+        "command": "npm run dev",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Dev: Website",
+        "type": "shell",
+        "command": "npm run dev:website",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Dev: API (watch)",
+        "type": "shell",
+        "command": "npm run dev:api",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Dev: exp Service",
+        "type": "shell",
+        "command": "npm run dev:exp",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Test: All",
+        "type": "shell",
+        "command": "npm run test",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Lint & Format",
+        "type": "shell",
+        "command": "npm run format && npm run lint",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Docker: Start Local Stack",
+        "type": "shell",
+        "command": "cmd /c selfhost-start.bat",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}/infra/Local" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Docker: Stop Local Stack",
+        "type": "shell",
+        "command": "cmd /c selfhost-stop.bat",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}/infra/Local" },
+        "problemMatcher": []
+      }
+    ]
+  }
+}
