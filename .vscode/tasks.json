@@ -52,7 +52,10 @@
     {
       "label": "Docker: Start Local Stack",
       "type": "shell",
-      "command": "cmd /c selfhost-start.bat",
+      "command": "./selfhost-start.sh",
+      "windows": {
+        "command": "cmd /c selfhost-start.bat"
+      },
       "options": {
         "cwd": "${workspaceFolder}/infra/Local"
       },
@@ -61,7 +64,10 @@
     {
       "label": "Docker: Stop Local Stack",
       "type": "shell",
-      "command": "cmd /c selfhost-stop.bat",
+      "command": "./selfhost-stop.sh",
+      "windows": {
+        "command": "cmd /c selfhost-stop.bat"
+      },
       "options": {
         "cwd": "${workspaceFolder}/infra/Local"
       },

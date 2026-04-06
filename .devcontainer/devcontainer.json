@@ -21,6 +21,7 @@
     3000,
     5000,
     5002,
+    5173,
     6006,
     7007,
     8080,
@@ -41,6 +42,9 @@
     },
     "5002": {
       "label": "exp Config Service"
+    },
+    "5173": {
+      "label": "CV Site (SvelteKit)"
     },
     "8080": {
       "label": "DocFX"

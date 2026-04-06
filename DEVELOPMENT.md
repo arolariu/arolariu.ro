@@ -37,8 +37,11 @@ npm run generate     # creates .env, i18n files, GraphQL types
 # 4. Start developing
 npm run dev:website  # Next.js → http://localhost:3000
 npm run dev:api      # .NET API → http://localhost:5000 (with hot reload)
-npm run dev          # all services in parallel
+npm run dev          # all services in parallel (requires Python for exp)
 ```
+
+> **Don't have Python?** That's fine — just run services individually:
+> `npm run dev:website` and `npm run dev:api`. The exp service is only needed for runtime config resolution and feature flags.
 
 ### Option B: Docker Compose (Full Stack with Infrastructure)
 
@@ -89,8 +92,10 @@ Open the workspace file that matches your role for a tailored VS Code experience
 | **Website** (Next.js) | 3000 | `npm run dev:website` | ✅ Turbopack HMR | http://localhost:3000 |
 | **API** (.NET) | 5000 | `npm run dev:api` | ✅ dotnet watch | http://localhost:5000/health |
 | **exp** (Python FastAPI) | 5002 | `npm run dev:exp` | ✅ uvicorn --reload | http://localhost:5002/api/health |
-| **Components** (Storybook) | 6006 | `npm run dev:components` | ✅ rslib watch | http://localhost:6006 |
+| **Components** (rslib) | — | `npm run dev:components` | ✅ rslib watch | _watch mode, no server_ |
 | **CV Site** (SvelteKit) | 5173 | `npm run dev:cv` | ✅ Vite HMR | http://localhost:5173 |
+
+> **Storybook** for interactive component development is available via the website workspace: `cd sites/arolariu.ro && npm run storybook` (port 6006).
 
 ### Docker Compose Services (when using Option B)
 
