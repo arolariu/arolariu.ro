@@ -294,7 +294,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
     var products = invoice.Items;
     var product = products.FirstOrDefault(
-      p => p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+      p => p.Name is not null && p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
       new Product());
 
     return product;
@@ -312,7 +312,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ConfigureAwait(false);
 
     var product = invoice.Items.FirstOrDefault(
-      p => p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+      p => p.Name is not null && p.Name.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
       new Product());
 
     var newInvoice = invoice;
@@ -335,7 +335,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
       .ConfigureAwait(false);
 
     var foundProduct = invoice.Items.FirstOrDefault(
-      p => p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase),
+      p => p.Name is not null && p.Name.Contains(product.Name, StringComparison.InvariantCultureIgnoreCase),
       new Product());
 
     var newInvoice = invoice;
