@@ -29,7 +29,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet run --project src/Core",
+        "command": "dotnet watch run --project src/Core --verbose",
         "cwd": "sites/api.arolariu.ro"
       }
     }

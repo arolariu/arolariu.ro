@@ -1,27 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "Console App": {
+    "Development": {
       "commandName": "Project",
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
       "hotReloadEnabled": true,
-      "nativeDebugging": true,
-      "use64Bit": true,
-      "useSSL": true
-    },
-    "Docker App": {
-      "commandName": "Docker",
-      "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://+:8080;https://+:8081"
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1"
       },
-      "httpPort": 8080,
-      "sslPort": 8081
+      "applicationUrl": "http://localhost:5000"
     }
   }
 }
