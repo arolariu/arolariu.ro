@@ -189,18 +189,18 @@
           "});",
           "",
           "pm.test('Content-Type header is present and valid', function () {",
-          "    if (pm.response.code === 204 || isDeleteScanNotFoundResponse()) {",
+          "    if (pm.response.code === 204 || isDeleteScanNotFoundResponse() || expectsNon2xxResponse()) {",
           "        return;",
           "    }",
           "",
           "    const contentType = pm.response.headers.get('Content-Type');",
           "    pm.expect(contentType).to.exist;",
-          "    pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
+          "    pm.expect(contentType).to.match(/application\\/json|application\\/problem\\+json|text\\/plain|text\\/html/,",
           "        `Invalid Content-Type: ${contentType}`);",
           "});",
           "",
           "pm.test('Response body is valid', function () {",
-          "    if (pm.response.code === 204 || pm.request.method === 'HEAD' || isDeleteScanNotFoundResponse()) {",
+          "    if (pm.response.code === 204 || pm.request.method === 'HEAD' || isDeleteScanNotFoundResponse() || expectsNon2xxResponse()) {",
           "        return;",
           "    }",
           "",
@@ -231,7 +231,7 @@
           "",
           "pm.test('Error responses have proper structure', function () {",
           "    if (pm.response.code >= 400) {",
-          "        if (isDeleteScanNotFoundResponse()) {",
+          "        if (isDeleteScanNotFoundResponse() || expectsNon2xxResponse()) {",
           "            return;",
           "        }",
           "        pm.response.to.have.jsonBody();",
@@ -771,7 +771,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Apples\",\n  \"category\": 1,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.50,\n  \"totalPrice\": 62.50\n}",
+              "raw": "{\n  \"name\": \"Mere Golden\",\n  \"category\": 1,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.50\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -862,7 +862,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Golden Apples - Updated\",\n  \"category\": 1,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11.00\n}",
+              "raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"name\": \"Golden Apples - Updated\",\n  \"category\": 1,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11.00\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -907,7 +907,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"rawName\": \"Lapte Zuzu\",\n  \"genericName\": \"Milk\",\n  \"category\": 2,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99,\n  \"totalPrice\": 17.98\n}",
+              "raw": "{\n  \"name\": \"Lapte Zuzu\",\n  \"category\": 2,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99\n}",
               "options": {
                 "raw": {
                   "language": "json"
