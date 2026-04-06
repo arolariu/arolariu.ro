@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
-import {Toaster, toast} from "./sonner";
+import {Toaster, toast} from "./toast";
 
 const meta = {
   title: "Components/Feedback/Toast",

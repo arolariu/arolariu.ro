@@ -3,7 +3,32 @@
 /* eslint-disable react/prop-types */
 
 import * as React from "react";
-import {Controller, FormProvider, useFormContext, type ControllerProps, type FieldPath, type FieldValues} from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useController,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useFormState,
+  useWatch,
+  type Control,
+  type ControllerFieldState,
+  type ControllerProps,
+  type ControllerRenderProps,
+  type DefaultValues,
+  type FieldError,
+  type FieldErrors,
+  type FieldPath,
+  type FieldValues,
+  type Path,
+  type RegisterOptions,
+  type Resolver,
+  type SubmitHandler,
+  type UseControllerReturn,
+  type UseFieldArrayReturn,
+  type UseFormReturn,
+} from "react-hook-form";
 
 import {cn} from "@/lib/utilities";
 
@@ -336,7 +361,23 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
 FormMessage.displayName = "FormMessage";
 FormField.displayName = "FormField";
 
-export {Controller, useController, useFieldArray, useForm, useFormContext, useFormState, useWatch} from "react-hook-form";
+export {
+  Controller,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useController,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useFormField,
+  useFormState,
+  useWatch,
+};
 export type {
   Control,
   ControllerFieldState,
@@ -347,6 +388,7 @@ export type {
   FieldErrors,
   FieldPath,
   FieldValues,
+  FormControlProps,
   Path,
   RegisterOptions,
   Resolver,
@@ -354,6 +396,4 @@ export type {
   UseControllerReturn,
   UseFieldArrayReturn,
   UseFormReturn,
-} from "react-hook-form";
-export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField};
-export type {FormControlProps};
+};

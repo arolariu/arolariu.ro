@@ -8,6 +8,38 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [2.0.0](https://www.npmjs.com/package/@arolariu/components/v/2.0.0) - 2026-04-06
+
+**💥 Breaking Changes**
+
+- 🔄 **Resizable panels upgraded to v4**: Upgraded `react-resizable-panels` from v3 to v4.
+  - `direction` prop renamed to `orientation` (e.g., `<ResizablePanelGroup orientation='horizontal'>`)
+  - Size props now use string percentages instead of numbers (`defaultSize="50%"` instead of `defaultSize={50}`)
+  - `minSize`, `maxSize`, `collapsedSize` also accept string values (`"20%"`, `"0%"`, etc.)
+  - Type `ImperativePanelGroupHandle` renamed to `GroupImperativeHandle`
+  - Type `ImperativePanelHandle` renamed to `PanelImperativeHandle`
+  - `ResizablePanelGroup` is now a function component (was `ForwardRefExoticComponent`); use the new `useGroupRef()` hook from `react-resizable-panels` for imperative access
+- 📁 **Toast module renamed**: Internal module file renamed from `sonner` to `toast` to reflect the Base UI Toast implementation adopted in v1.0.0. Exported names (`Toaster`, `toast`, `Toast`) are unchanged.
+
+**🔧 Improvements**
+
+- 🔗 **Fixed rslib bundler compatibility**: Converted all direct re-export statements (`export ... from "external-package"`) to import-then-export pattern across 6 component files (calendar, chart, form, input-otp, resizable, toast). This ensures types and values are properly included in the `/dist/` output.
+- 📖 **Storybook stories and tests**: Added comprehensive test suites and story variants for all components (1300+ tests, 439+ story variants)
+
+**📚 Migration Guide**
+
+```diff
+- import type {ImperativePanelGroupHandle} from "@arolariu/components";
++ import type {GroupImperativeHandle} from "@arolariu/components";
+
+- <ResizablePanelGroup direction='horizontal'>
+-   <ResizablePanel defaultSize={50}>
++ <ResizablePanelGroup orientation='horizontal'>
++   <ResizablePanel defaultSize='50%'>
+```
+
+---
+
 ### [1.1.0](https://www.npmjs.com/package/@arolariu/components/v/1.1.0) - 2026-03-24
 
 **✨ New Features**

@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -494,11 +494,6 @@
       "import": "./dist/components/ui/slider.js",
       "default": "./dist/components/ui/slider.js"
     },
-    "./sonner": {
-      "types": "./dist/components/ui/sonner.d.ts",
-      "import": "./dist/components/ui/sonner.js",
-      "default": "./dist/components/ui/sonner.js"
-    },
     "./spinner": {
       "types": "./dist/components/ui/spinner.d.ts",
       "import": "./dist/components/ui/spinner.js",
@@ -538,6 +533,11 @@
       "types": "./dist/components/ui/timeline.d.ts",
       "import": "./dist/components/ui/timeline.js",
       "default": "./dist/components/ui/timeline.js"
+    },
+    "./toast": {
+      "types": "./dist/components/ui/toast.d.ts",
+      "import": "./dist/components/ui/toast.js",
+      "default": "./dist/components/ui/toast.js"
     },
     "./toggle-group": {
       "types": "./dist/components/ui/toggle-group.d.ts",
