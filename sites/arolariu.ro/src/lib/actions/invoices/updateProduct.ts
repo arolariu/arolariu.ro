@@ -27,17 +27,18 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * Payload for updating an existing product in an invoice.
  *
  * @remarks
- * The originalProductName field identifies which product to update (matching current name).
- * All other fields are optional and only provided fields will be updated.
+ * This performs a **full replacement** of the product identified by `originalProductName`.
+ * All required fields must be provided as the backend replaces the entire product entry.
+ * Omitted optional fields will default to empty/zero values.
  *
  * @property originalProductName - Identifies the product to update (required, matches current name)
- * @property name - The product name (optional)
- * @property category - Product category classification (optional)
- * @property quantity - Quantity purchased (optional)
- * @property quantityUnit - Unit of measurement (optional)
- * @property productCode - Barcode/EAN code (optional)
- * @property price - Unit price (optional)
- * @property detectedAllergens - List of allergens detected in product (optional)
+ * @property name - The product name (required)
+ * @property category - Product category classification (required)
+ * @property quantity - Quantity purchased (required)
+ * @property quantityUnit - Unit of measurement (optional, defaults to empty)
+ * @property productCode - Barcode/EAN code (optional, defaults to empty)
+ * @property price - Unit price (required)
+ * @property detectedAllergens - List of allergens detected in product (optional, defaults to empty)
  */
 type UpdateProductPayload = Readonly<{
   originalProductName: string;
