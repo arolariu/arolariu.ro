@@ -784,5 +784,5 @@ toast.promise = async function promise<Value>(promiseValue: ToastPromise<Value>,
 toast.getToasts = (): ReadonlyArray<ToastSnapshot> => [...activeToasts.values()];
 toast.getHistory = (): ReadonlyArray<ToastSnapshot> => [...toastHistory];
 
-export type {Toast};
 export {toast, Toaster};
+export type {Toast};

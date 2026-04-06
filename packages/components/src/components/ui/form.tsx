@@ -361,7 +361,23 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
 FormMessage.displayName = "FormMessage";
 FormField.displayName = "FormField";
 
-export {Controller, useController, useFieldArray, useForm, useFormContext, useFormState, useWatch};
+export {
+  Controller,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useController,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useFormField,
+  useFormState,
+  useWatch,
+};
 export type {
   Control,
   ControllerFieldState,
@@ -372,6 +388,7 @@ export type {
   FieldErrors,
   FieldPath,
   FieldValues,
+  FormControlProps,
   Path,
   RegisterOptions,
   Resolver,
@@ -380,5 +397,3 @@ export type {
   UseFieldArrayReturn,
   UseFormReturn,
 };
-export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField};
-export type {FormControlProps};

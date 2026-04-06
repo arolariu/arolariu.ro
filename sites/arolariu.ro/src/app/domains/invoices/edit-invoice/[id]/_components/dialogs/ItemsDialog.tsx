@@ -190,60 +190,60 @@ export default function ItemsDialog(): React.JSX.Element {
                 {paginatedItems.map((item, index) => {
                   const absoluteIndex = (currentPage - 1) * pageSize + index;
                   return (
-                  <TableRow
-                    key={`item-${absoluteIndex}`}
-                    className={styles["dataRow"]}>
-                    <TableCell className={styles["cellName"]}>
-                      <Input
-                        type='text'
-                        name='name'
-                        value={item.name}
-                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, absoluteIndex)}
-                        className={styles["nameInput"]}
-                      />
-                    </TableCell>
-                    <TableCell className={styles["cellCenter"]}>
-                      <Input
-                        type='number'
-                        name='quantity'
-                        value={item.quantity}
-                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, absoluteIndex)}
-                        className={styles["smallInput"]}
-                      />
-                    </TableCell>
-                    <TableCell className={styles["cellCenter"]}>
-                      <Input
-                        type='text'
-                        name='quantityUnit'
-                        value={item.quantityUnit}
-                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, absoluteIndex)}
-                        className={styles["smallInput"]}
-                      />
-                    </TableCell>
-                    <TableCell className={styles["cellRight"]}>
-                      <Input
-                        type='number'
-                        name='price'
-                        value={item.price}
-                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                        onChange={(e) => handleValueChange(e, absoluteIndex)}
-                        className={styles["smallInputRight"]}
-                      />
-                    </TableCell>
-                    <TableCell className={styles["cellRightBold"]}>{item.price * item.quantity}</TableCell>
-                    <TableCell className={styles["cellCenter"]}>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        aria-label={t("aria.deleteItem", {name: item.name || t("aria.unnamedItem")})}
-                        onClick={handleDeleteItem(item)}>
-                        <TbTrash className={styles["trashIcon"]} />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    <TableRow
+                      key={`item-${absoluteIndex}`}
+                      className={styles["dataRow"]}>
+                      <TableCell className={styles["cellName"]}>
+                        <Input
+                          type='text'
+                          name='name'
+                          value={item.name}
+                          // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
+                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          className={styles["nameInput"]}
+                        />
+                      </TableCell>
+                      <TableCell className={styles["cellCenter"]}>
+                        <Input
+                          type='number'
+                          name='quantity'
+                          value={item.quantity}
+                          // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
+                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          className={styles["smallInput"]}
+                        />
+                      </TableCell>
+                      <TableCell className={styles["cellCenter"]}>
+                        <Input
+                          type='text'
+                          name='quantityUnit'
+                          value={item.quantityUnit}
+                          // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
+                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          className={styles["smallInput"]}
+                        />
+                      </TableCell>
+                      <TableCell className={styles["cellRight"]}>
+                        <Input
+                          type='number'
+                          name='price'
+                          value={item.price}
+                          // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
+                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          className={styles["smallInputRight"]}
+                        />
+                      </TableCell>
+                      <TableCell className={styles["cellRightBold"]}>{item.price * item.quantity}</TableCell>
+                      <TableCell className={styles["cellCenter"]}>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          aria-label={t("aria.deleteItem", {name: item.name || t("aria.unnamedItem")})}
+                          onClick={handleDeleteItem(item)}>
+                          <TbTrash className={styles["trashIcon"]} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>

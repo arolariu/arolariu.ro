@@ -3,7 +3,13 @@
 /* eslint-disable complexity, sonarjs/cognitive-complexity, react/no-object-type-as-default-prop, react/no-danger, react-dom/no-dangerously-set-innerhtml, unicorn/no-negated-condition */
 
 import * as React from "react";
-import type {DefaultLegendContentProps, DefaultTooltipContentProps, LegendPayload, ResponsiveContainerProps, TooltipValueType} from "recharts";
+import type {
+  DefaultLegendContentProps,
+  DefaultTooltipContentProps,
+  LegendPayload,
+  ResponsiveContainerProps,
+  TooltipValueType,
+} from "recharts";
 import * as RechartsPrimitive from "recharts";
 
 import {cn} from "@/lib/utilities";

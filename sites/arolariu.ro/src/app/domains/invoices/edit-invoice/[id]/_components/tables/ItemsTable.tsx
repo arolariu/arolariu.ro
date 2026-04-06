@@ -172,7 +172,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   }, [filteredItems, sortField, sortDirection]);
 
   const totalAmount = localItems.filter((item) => !item.metadata.isSoftDeleted).reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const {paginatedItems, currentPage, setCurrentPage, totalPages, pageSize} = usePaginationWithSearch({items: sortedItems, initialPageSize: 5});
+  const {paginatedItems, currentPage, setCurrentPage, totalPages, pageSize} = usePaginationWithSearch({
+    items: sortedItems,
+    initialPageSize: 5,
+  });
 
   const handleNextPage = useCallback(() => {
     const nextPage = currentPage + 1;

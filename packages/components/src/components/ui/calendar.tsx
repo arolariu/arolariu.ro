@@ -197,6 +197,5 @@ function CalendarDayButton({className, day, modifiers, ...props}: Readonly<React
 
 Calendar.displayName = "Calendar";
 
-export type {DateRange, DayPickerProps, Matcher};
 export {Calendar};
-export type {CalendarProps};
+export type {CalendarProps, DateRange, DayPickerProps, Matcher};
