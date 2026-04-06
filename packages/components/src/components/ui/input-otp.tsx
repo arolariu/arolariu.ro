@@ -1,6 +1,6 @@
 "use client";
 
-import {OTPInput, OTPInputContext} from "input-otp";
+import {OTPInput, OTPInputContext, REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps, type SlotProps} from "input-otp";
 import {Minus} from "lucide-react";
 import * as React from "react";
 
@@ -10,8 +10,8 @@ import styles from "./input-otp.module.css";
 
 const DEFAULT_SLOT_PLACEHOLDER_CHARACTER = "·";
 
-export {REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS} from "input-otp";
-export type {OTPInputProps, SlotProps} from "input-otp";
+export {REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS};
+export type {OTPInputProps, SlotProps};
 
 /**
  * Props for the {@link InputOTP} component.

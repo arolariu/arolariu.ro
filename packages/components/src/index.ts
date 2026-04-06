@@ -393,8 +393,8 @@ export {RadioGroup, RadioGroupItem} from "./components/ui/radio-group";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./components/ui/resizable";
 export type {
-  ImperativePanelGroupHandle,
-  ImperativePanelHandle,
+  GroupImperativeHandle,
+  PanelImperativeHandle,
   ResizableHandleProps,
   ResizablePanelGroupProps,
   ResizablePanelProps,
@@ -463,8 +463,8 @@ export {Spinner} from "./components/ui/spinner";
 
 export {Slider} from "./components/ui/slider";
 
-export {Toaster, toast} from "./components/ui/sonner";
-export type {Toast} from "./components/ui/sonner";
+export {Toaster, toast} from "./components/ui/toast";
+export type {Toast} from "./components/ui/toast";
 
 export {Switch} from "./components/ui/switch";
 

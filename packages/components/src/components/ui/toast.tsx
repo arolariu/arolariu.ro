@@ -13,7 +13,7 @@ import {AlertCircle, BellRing, CheckCircle2, Info, LoaderCircle, TriangleAlert, 
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
-import styles from "./sonner.module.css";
+import styles from "./toast.module.css";
 
 const DEFAULT_TOAST_DURATION = 5000;
 const DEFAULT_TOAST_LIMIT = 3;
@@ -784,5 +784,5 @@ toast.promise = async function promise<Value>(promiseValue: ToastPromise<Value>,
 toast.getToasts = (): ReadonlyArray<ToastSnapshot> => [...activeToasts.values()];
 toast.getHistory = (): ReadonlyArray<ToastSnapshot> => [...toastHistory];
 
-export type {Toast} from "@base-ui/react/toast";
+export type {Toast};
 export {toast, Toaster};

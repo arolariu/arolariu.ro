@@ -3,7 +3,7 @@
 /* eslint-disable complexity, sonarjs/cognitive-complexity, react/no-object-type-as-default-prop, react/no-danger, react-dom/no-dangerously-set-innerhtml, unicorn/no-negated-condition */
 
 import * as React from "react";
-import type {DefaultTooltipContentProps, LegendPayload, ResponsiveContainerProps, TooltipValueType} from "recharts";
+import type {DefaultLegendContentProps, DefaultTooltipContentProps, LegendPayload, ResponsiveContainerProps, TooltipValueType} from "recharts";
 import * as RechartsPrimitive from "recharts";
 
 import {cn} from "@/lib/utilities";
@@ -638,4 +638,4 @@ export const {useXAxisDomain} = RechartsPrimitive;
 export const {useYAxisDomain} = RechartsPrimitive;
 
 // -- Type re-exports --------------------------------------------------------
-export type {DefaultLegendContentProps, DefaultTooltipContentProps, TooltipValueType} from "recharts";
+export type {DefaultLegendContentProps, DefaultTooltipContentProps, TooltipValueType};
