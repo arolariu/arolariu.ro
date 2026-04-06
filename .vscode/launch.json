@@ -115,6 +115,37 @@
         "sites/docs.arolariu.ro/docfx.json"
       ],
       "postDebugTask": "Launch DocFX"
+    },
+    {
+      "name": ".NET API: Debug with Hot Reload",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1"
+      }
+    },
+    {
+      "name": "Python: exp FastAPI Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "5002"],
+      "cwd": "${workspaceFolder}/sites/exp.arolariu.ro",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/sites/exp.arolariu.ro"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Website + API",
+      "configurations": [
+        "Next.js: Debug Full Stack",
+        ".NET API: Debug with Hot Reload"
+      ],
+      "stopAll": true
     }
   ]
 }

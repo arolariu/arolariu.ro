@@ -7,6 +7,9 @@
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/dotnet:2": {
       "version": "10.0"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
     }
   },
   "containerEnv": {
@@ -16,6 +19,8 @@
   },
   "forwardPorts": [
     3000,
+    5000,
+    5002,
     6006,
     7007,
     8080,
@@ -31,6 +36,12 @@
     "7007": {
       "label": "Storybook Website"
     },
+    "5000": {
+      "label": ".NET API"
+    },
+    "5002": {
+      "label": "exp Config Service"
+    },
     "8080": {
       "label": "DocFX"
     }
@@ -44,7 +55,7 @@
   },
   "updateContentCommand": "corepack enable && npm ci",
   "postCreateCommand": "dotnet tool install -g docfx && npx playwright install --with-deps || true",
-  "postStartCommand": "echo 'Devcontainer ready';",
+  "postStartCommand": "npm ci --prefer-offline && npm run generate 2>/dev/null || true && echo '✅ Devcontainer ready'",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -76,6 +87,13 @@
         "bradlc.vscode-tailwindcss",
         "graphql.vscode-graphql-syntax",
         "ms-edgedevtools.vscode-edge-devtools",
+
+        // Backend support
+        "ms-dotnettools.csdevkit",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "humao.rest-client",
 
         // Backlog grooming and task tracking
         "gruntfuggly.todo-tree",

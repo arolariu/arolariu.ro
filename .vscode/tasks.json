@@ -2,22 +2,91 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Dev: Website (Next.js)",
+      "type": "shell",
+      "command": "npm run dev:website",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: API (.NET watch)",
+      "type": "shell",
+      "command": "npm run dev:api",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: exp Service (FastAPI)",
+      "type": "shell",
+      "command": "npm run dev:exp",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: Components (watch)",
+      "type": "shell",
+      "command": "npm run dev:components",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: CV Site (SvelteKit)",
+      "type": "shell",
+      "command": "npm run dev:cv",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: All Services (parallel)",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Docker: Start Local Stack",
+      "type": "shell",
+      "command": "cmd /c selfhost-start.bat",
+      "options": {
+        "cwd": "${workspaceFolder}/infra/Local"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop Local Stack",
+      "type": "shell",
+      "command": "cmd /c selfhost-stop.bat",
+      "options": {
+        "cwd": "${workspaceFolder}/infra/Local"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Tests: Unit Test All",
       "type": "shell",
       "command": "npm run test:unit",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Tests: Integration Test All",
       "type": "shell",
       "command": "npm run test:e2e",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Tests: All Tests",
       "type": "shell",
       "command": "npm run test:unit && npm run test:e2e",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Checks: Format Run",
@@ -35,6 +104,18 @@
       "label": "Checks: Code Hygiene",
       "type": "shell",
       "command": "npm run format && npm run lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Health: Doctor Check",
+      "type": "shell",
+      "command": "npm run doctor",
+      "problemMatcher": []
+    },
+    {
+      "label": "Health: Status Dashboard",
+      "type": "shell",
+      "command": "npm run status",
       "problemMatcher": []
     }
   ]
