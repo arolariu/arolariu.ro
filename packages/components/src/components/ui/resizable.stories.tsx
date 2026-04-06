@@ -19,15 +19,15 @@ type Story = StoryObj<typeof meta>;
 export const Horizontal: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='horizontal'
+      orientation='horizontal'
       className='min-h-[200px] max-w-md rounded-lg border'>
-      <ResizablePanel defaultSize={50}>
+      <ResizablePanel defaultSize='50%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Panel One</span>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={50}>
+      <ResizablePanel defaultSize='50%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Panel Two</span>
         </div>
@@ -42,15 +42,15 @@ export const Horizontal: Story = {
 export const Vertical: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='vertical'
+      orientation='vertical'
       className='min-h-[400px] max-w-md rounded-lg border'>
-      <ResizablePanel defaultSize={50}>
+      <ResizablePanel defaultSize='50%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Top Panel</span>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={50}>
+      <ResizablePanel defaultSize='50%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Bottom Panel</span>
         </div>
@@ -65,21 +65,21 @@ export const Vertical: Story = {
 export const ThreeColumn: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='horizontal'
+      orientation='horizontal'
       className='min-h-[200px] max-w-2xl rounded-lg border'>
-      <ResizablePanel defaultSize={25}>
+      <ResizablePanel defaultSize='25%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Sidebar</span>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={50}>
+      <ResizablePanel defaultSize='50%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Main Content</span>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={25}>
+      <ResizablePanel defaultSize='25%'>
         <div className='flex h-full items-center justify-center p-6'>
           <span className='font-semibold'>Details</span>
         </div>
@@ -94,12 +94,12 @@ export const ThreeColumn: Story = {
 export const WithMinMax: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='horizontal'
+      orientation='horizontal'
       className='min-h-[250px] max-w-2xl rounded-lg border'>
       <ResizablePanel
-        defaultSize={30}
-        minSize={20}
-        maxSize={40}>
+        defaultSize='30%'
+        minSize='20%'
+        maxSize='40%'>
         <div style={{height: "100%", padding: "24px", background: "#fef3c7"}}>
           <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Constrained Panel</h4>
           <p style={{fontSize: "12px", color: "#78350f"}}>Min: 20% | Max: 40%</p>
@@ -122,11 +122,11 @@ export const WithMinMax: Story = {
 export const Collapsible: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='horizontal'
+      orientation='horizontal'
       className='min-h-[250px] max-w-2xl rounded-lg border'>
       <ResizablePanel
-        defaultSize={25}
-        minSize={0}
+        defaultSize='25%'
+        minSize='0%'
         collapsible>
         <div style={{height: "100%", padding: "24px", background: "#f3e8ff"}}>
           <h4 style={{fontWeight: "600", marginBottom: "8px", color: "#6b21a8"}}>Sidebar</h4>
@@ -150,26 +150,26 @@ export const Collapsible: Story = {
 export const NestedPanels: Story = {
   render: () => (
     <ResizablePanelGroup
-      direction='horizontal'
+      orientation='horizontal'
       className='min-h-[400px] max-w-4xl rounded-lg border'>
-      <ResizablePanel defaultSize={30}>
+      <ResizablePanel defaultSize='30%'>
         <div style={{height: "100%", padding: "16px", background: "#f9fafb"}}>
           <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Left Sidebar</h4>
           <p style={{fontSize: "12px", color: "#6b7280"}}>Fixed content area</p>
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={70}>
-        <ResizablePanelGroup direction='vertical'>
-          <ResizablePanel defaultSize={60}>
+      <ResizablePanel defaultSize='70%'>
+        <ResizablePanelGroup orientation='vertical'>
+          <ResizablePanel defaultSize='60%'>
             <div style={{height: "100%", padding: "16px"}}>
               <h4 style={{fontWeight: "600", marginBottom: "8px"}}>Top Panel</h4>
               <p style={{fontSize: "12px", color: "#6b7280"}}>This is a nested vertical layout</p>
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={40}>
-            <ResizablePanelGroup direction='horizontal'>
+          <ResizablePanel defaultSize='40%'>
+            <ResizablePanelGroup orientation='horizontal'>
               <ResizablePanel>
                 <div style={{height: "100%", padding: "16px", background: "#fef2f2"}}>
                   <h4 style={{fontWeight: "600", marginBottom: "8px", fontSize: "14px"}}>Bottom Left</h4>
