@@ -134,7 +134,8 @@
       "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "5002"],
       "cwd": "${workspaceFolder}/sites/exp.arolariu.ro",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/sites/exp.arolariu.ro"
+        "PYTHONPATH": "${workspaceFolder}/sites/exp.arolariu.ro",
+        "INFRA": "local"
       }
     }
   ],
