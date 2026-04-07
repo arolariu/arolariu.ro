@@ -65,17 +65,19 @@ npm run dev:local    # ← This is what you'll use every day
 **What `npm run dev:local` does:**
 1. ✅ Checks Docker is running
 2. 🐳 Starts Traefik reverse proxy (HTTPS on `*.localhost`)
-3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite, exp config service (in Docker)
-4. ⏳ Waits for all infrastructure to be healthy
-5. 🗄️ Initializes database schemas and blob containers
-6. 🚀 Starts website and API bare-metal with hot reload (API uses `EXP_PROXY_URL` to reach Docker exp)
+3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite in Docker
+4. 🔄 Stops the Docker exp container (frees port 5002 for bare-metal exp)
+5. ⏳ Waits for databases to be healthy, initializes schemas
+6. 🚀 Starts exp, website, and API bare-metal with hot reload
+
+> **Why does exp run bare-metal?** The Docker exp serves `config.docker.json` with Docker hostnames (`cosmosdb`, `mssql`) that bare-metal services can't resolve. The bare-metal exp serves `config.json` with `localhost` URLs that work for all bare-metal services.
 
 **Profiles for different workflows:**
 ```bash
-npm run dev:local              # Full stack: website + API (bare-metal) + infra (Docker)
-npm run dev:local:frontend     # Frontend only: website (bare-metal) + infra (Docker)
+npm run dev:local              # Full stack: website + API + exp (bare-metal) + infra (Docker)
+npm run dev:local:frontend     # Frontend only: website + exp (bare-metal) + infra (Docker)
 npm run dev:local:backend      # Backend only: API + exp (bare-metal) + infra (Docker)
-npm run dev:local:infra        # Infrastructure only (start services manually)
+npm run dev:local:infra        # Infrastructure + exp only (start other services manually)
 ```
 
 **After startup, your services are at:**
@@ -83,7 +85,7 @@ npm run dev:local:infra        # Infrastructure only (start services manually)
 |---------|-----|------|
 | Website | https://localhost:3000 | ✅ Bare-metal, Turbopack hot reload |
 | API | http://localhost:5000 | ✅ Bare-metal, dotnet watch hot reload |
-| exp | http://localhost:5002 | 🐳 Docker (config service, auto-started with infra) |
+| exp | http://localhost:5002 | ✅ Bare-metal, uvicorn --reload |
 
 **Infrastructure dashboards:**
 | Service | URL |

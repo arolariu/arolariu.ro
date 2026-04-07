@@ -24,14 +24,14 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m pytest -q",
+        "command": "python -m pip install -q -r requirements-dev.txt && python -m pytest -q",
         "cwd": "sites/exp.arolariu.ro"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m ruff check .",
+        "command": "python -m pip install -q -r requirements-dev.txt && python -m ruff check .",
         "cwd": "sites/exp.arolariu.ro"
       }
     }

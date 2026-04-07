@@ -86,7 +86,7 @@ function checkDocker(): boolean {
 }
 
 function startManagement(): void {
-  logStep(1, 4, "Starting Traefik reverse proxy...");
+  logStep(1, 5, "Starting Traefik reverse proxy...");
   dockerCompose("Management/docker-compose.yml", "up -d");
   logSuccess("Traefik started");
 }
@@ -139,24 +139,29 @@ function initDatabases(): void {
     logWarning("SQL schema init skipped (may already exist or MSSQL still starting)");
   }
 
-  // CosmosDB containers
+  // CosmosDB containers — use Node fetch instead of curl for cross-platform compatibility
   try {
     const cosmosInit = [
-      {url: "http://localhost:8081/dbs", body: '{"id":"primary"}'},
+      {url: "http://localhost:8081/dbs", body: JSON.stringify({id: "primary"})},
       {
         url: "http://localhost:8081/dbs/primary/colls",
-        body: '{"id":"invoices","partitionKey":{"paths":["/UserIdentifier"],"kind":"Hash"}}',
+        body: JSON.stringify({id: "invoices", partitionKey: {paths: ["/UserIdentifier"], kind: "Hash"}}),
       },
       {
         url: "http://localhost:8081/dbs/primary/colls",
-        body: '{"id":"merchants","partitionKey":{"paths":["/parentCompanyId"],"kind":"Hash"}}',
+        body: JSON.stringify({id: "merchants", partitionKey: {paths: ["/parentCompanyId"], kind: "Hash"}}),
       },
     ];
     for (const {url, body} of cosmosInit) {
       try {
-        execSync(`curl -sf -X POST "${url}" -H "Content-Type: application/json" -d '${body}'`, {stdio: "pipe"});
+        await fetch(url, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body,
+          signal: AbortSignal.timeout(5_000),
+        });
       } catch {
-        // Already exists — fine
+        // Already exists or not ready — fine
       }
     }
     logSuccess("CosmosDB database and containers initialized");

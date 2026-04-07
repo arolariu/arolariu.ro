@@ -80,11 +80,11 @@ internal static class WebApplicationBuilderExtensions
   /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure.</param>
   /// <remarks>
   /// <para>
-  /// <strong>Endpoint selection</strong> is deterministic and based solely on <c>AZURE_CLIENT_ID</c>
-  /// environment variable presence:
-  /// <list type="bullet">
+  /// <strong>Endpoint selection priority:</strong>
+  /// <list type="number">
+  ///   <item><description><c>EXP_PROXY_URL</c> env var → explicit override (enables bare-metal dev with Docker infra, e.g. <c>http://localhost:5002</c>).</description></item>
   ///   <item><description><c>AZURE_CLIENT_ID</c> present → <c>https://exp.arolariu.ro</c> with Entra ID bearer token.</description></item>
-  ///   <item><description><c>AZURE_CLIENT_ID</c> absent → <c>http://exp</c> (Docker service-name DNS) with no auth.</description></item>
+  ///   <item><description>Default → <c>http://exp</c> (Docker service-name DNS) with no auth.</description></item>
   /// </list>
   /// </para>
   /// <para>

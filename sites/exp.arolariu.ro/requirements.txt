@@ -10,5 +10,3 @@ opentelemetry-instrumentation-fastapi==0.60b0
 opentelemetry-instrumentation-logging==0.60b0
 uvicorn==0.43.0
 httpx==0.28.1
-pytest==9.0.2
-ruff==0.15.4
