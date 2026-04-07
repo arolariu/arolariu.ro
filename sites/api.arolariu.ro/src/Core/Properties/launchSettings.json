@@ -6,7 +6,9 @@
       "hotReloadEnabled": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1"
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1",
+        "INFRA": "local",
+        "EXP_PROXY_URL": "http://localhost:5002"
       },
       "applicationUrl": "http://localhost:5000"
     }
