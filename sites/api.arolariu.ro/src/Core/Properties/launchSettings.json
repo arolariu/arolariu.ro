@@ -11,6 +11,28 @@
         "EXP_PROXY_URL": "http://localhost:5002"
       },
       "applicationUrl": "http://localhost:5000"
+    },
+    "Console App": {
+      "commandName": "Project",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "hotReloadEnabled": true,
+      "nativeDebugging": true,
+      "use64Bit": true,
+      "useSSL": true
+    },
+    "Docker App": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://+:8080;https://+:8081"
+      },
+      "httpPort": 8080,
+      "sslPort": 8081
     }
   }
 }

@@ -18,12 +18,11 @@
  */
 
 import {execSync, spawn, type ChildProcess} from "node:child_process";
-import {platform} from "node:os";
 import {join} from "node:path";
 import {styleText} from "node:util";
 
 const INFRA_DIR = join(process.cwd(), "infra", "Local");
-const isWindows = platform() === "win32";
+
 
 // ============================================================================
 // Helpers
