@@ -57,14 +57,10 @@
     },
     {
       "name": ".NET API: Debug",
-      "type": "coreclr",
+      "type": "dotnet",
       "request": "launch",
       "preLaunchTask": "Build: API for Debug",
-      "program": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/bin/Debug/net10.0/arolariu.Backend.Core.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/sites/api.arolariu.ro/src/Core",
-      "console": "integratedTerminal",
-      "stopAtEntry": false,
+      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://localhost:5000",
