@@ -57,13 +57,12 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": ".NET API: Run with Hot Reload",
+        "name": ".NET API: Debug",
         "type": "dotnet",
         "request": "launch",
         "projectPath": "${workspaceFolder:🔧 API (.NET)}/src/Core/arolariu.Backend.Core.csproj",
         "env": {
           "ASPNETCORE_ENVIRONMENT": "Development",
-          "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1",
           "INFRA": "local",
           "EXP_PROXY_URL": "http://localhost:5002"
         }

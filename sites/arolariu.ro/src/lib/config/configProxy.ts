@@ -140,7 +140,7 @@ export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8
  * Local Docker Compose exposes the service as `http://exp` (not localhost).
  */
 // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp";
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"] ?? (HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp");
 const WEBSITE_TARGET = "website" as const;
 
 /**

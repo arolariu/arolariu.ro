@@ -117,13 +117,12 @@
       "postDebugTask": "Launch DocFX"
     },
     {
-      "name": ".NET API: Debug with Hot Reload",
+      "name": ".NET API: Debug",
       "type": "dotnet",
       "request": "launch",
       "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1",
         "INFRA": "local",
         "EXP_PROXY_URL": "http://localhost:5002"
       }
@@ -146,7 +145,7 @@
       "name": "Full Stack: Website + API",
       "configurations": [
         "Next.js: Debug Full Stack",
-        ".NET API: Debug with Hot Reload"
+        ".NET API: Debug"
       ],
       "stopAll": true
     }

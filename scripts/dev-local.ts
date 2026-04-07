@@ -93,16 +93,25 @@ function startManagement(): void {
 }
 
 function startStorage(): void {
-  logStep(2, 4, "Starting databases & config service (CosmosDB, SQL, Redis, Azurite, exp)...");
+  logStep(2, 5, "Starting databases (CosmosDB, SQL, Redis, Azurite, exp)...");
   dockerCompose("Storage/docker-compose.yml", "up -d");
   logSuccess("Storage containers started");
 }
 
+function swapExpToBareMetalMode(): void {
+  logStep(3, 5, "Stopping Docker exp → starting bare-metal exp (localhost config)...");
+  try {
+    execSync("docker stop exp-arolariu-ro", {stdio: "pipe"});
+  } catch {
+    // Container may not be running
+  }
+  logSuccess("Docker exp stopped — bare-metal exp will serve localhost-friendly config");
+}
+
 async function waitForInfra(): Promise<void> {
-  logStep(3, 4, "Waiting for infrastructure to be ready...");
+  logStep(4, 5, "Waiting for databases to be ready...");
 
   const checks = [
-    waitForHealth("http://localhost:5002/api/health", "exp config service"),
     waitForHealth("http://localhost:8081/", "CosmosDB emulator"),
     waitForHealth("http://localhost:10000/devstoreaccount1?comp=list", "Azurite blob storage"),
   ];
@@ -118,7 +127,7 @@ async function waitForInfra(): Promise<void> {
 }
 
 function initDatabases(): void {
-  logStep(4, 4, "Initializing databases...");
+  logStep(5, 5, "Initializing databases...");
 
   // SQL Server schema
   try {
@@ -215,13 +224,14 @@ function parseArgs(): DevProfile {
   return "all";
 }
 
-// Bare-metal services get hot reload. All services run bare-metal by default
-// using EXP_PROXY_URL=http://localhost:5002 to reach the Docker-hosted exp.
+// All services run bare-metal with hot reload. exp runs bare-metal (not Docker)
+// so it serves config.json with localhost URLs that bare-metal services can reach.
+// Docker provides only databases (CosmosDB, SQL, Redis, Azurite) + Traefik.
 const BARE_METAL_SERVICES: Record<DevProfile, string[]> = {
-  all: ["website", "api", "exp"],
-  frontend: ["website"],
-  backend: ["api", "exp"],
-  infra: [],
+  all: ["exp", "website", "api"],
+  frontend: ["exp", "website"],
+  backend: ["exp", "api"],
+  infra: ["exp"],
 };
 
 const NEEDS_API_DOCKER: Record<DevProfile, boolean> = {
@@ -262,6 +272,7 @@ async function main(): Promise<void> {
 
   startManagement();
   startStorage();
+  swapExpToBareMetalMode();
   await waitForInfra();
   initDatabases();
 
@@ -271,10 +282,9 @@ async function main(): Promise<void> {
 
   // Step 3: Print service URLs
   console.log(styleText("gray", "  ┌──────────────────────────────────────────────────┐"));
-  console.log(styleText("gray", "  │  Infrastructure Services                         │"));
+  console.log(styleText("gray", "  │  Docker Infrastructure                           │"));
   console.log(styleText("gray", "  ├──────────────────────────────────────────────────┤"));
   console.log(styleText("gray", "  │  Traefik Dashboard   http://localhost:8080        │"));
-  console.log(styleText("gray", "  │  exp Admin           http://localhost:5002/admin   │"));
   console.log(styleText("gray", "  │  CosmosDB Explorer   http://localhost:1234         │"));
   console.log(styleText("gray", "  │  SQL Server          localhost:8082                │"));
   console.log(styleText("gray", "  │  Redis               localhost:6379                │"));

@@ -59,7 +59,7 @@
   },
   "updateContentCommand": "corepack enable && npm ci",
   "postCreateCommand": "dotnet tool install -g docfx && npx playwright install --with-deps || true",
-  "postStartCommand": "npm ci --prefer-offline && npm run generate 2>/dev/null || true && echo '✅ Devcontainer ready'",
+  "postStartCommand": "npm run generate 2>/dev/null || true && echo '✅ Devcontainer ready'",
   "customizations": {
     "vscode": {
       "extensions": [

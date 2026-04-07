@@ -20,8 +20,8 @@ import {APP_CONFIGURATION_MAPPING, isSecretKey} from "./azure/index.ts";
 import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} from "./common/index.ts";
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
-/** exp service URL — same deterministic logic as the runtime consumers. */
-const EXP_BASE_URL = process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp";
+/** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
+const EXP_BASE_URL = process.env["EXP_PROXY_URL"] ?? (process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp");
 
 /** Config label derived from SITE_ENV (matches website configProxy.ts logic). */
 const CONFIG_LABEL: string =

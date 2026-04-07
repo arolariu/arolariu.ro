@@ -139,7 +139,7 @@ For frontend-only work where you don't need databases:
 ```bash
 npm install
 npm run setup
-npm run generate /env     # creates .env with defaults
+npm run generate:env  # creates .env with sensible defaults
 npm run dev:website       # Just the website with hot reload
 ```
 
