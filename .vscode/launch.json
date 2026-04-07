@@ -17,17 +17,11 @@
       ],
       "env": {
         "NODE_OPTIONS": "--inspect",
-        "NEXT_TURBOPACK_TRACING": "1"
+        "NEXT_TURBOPACK_TRACING": "1",
+        "EXP_PROXY_URL": "http://localhost:5002"
       },
       "sourceMaps": true,
-      "timeout": 30000, // 30 seconds
-      "serverReadyAction": {
-        "action": "debugWithEdge",
-        "killOnServerStop": true,
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "webRoot": "${workspaceFolder}/sites/arolariu.ro"
-      }
+      "timeout": 30000
     },
     {
       "name": "Next.js: Debug Client-Side",
@@ -63,12 +57,17 @@
     },
     {
       "name": ".NET API: Debug",
-      "type": "dotnet",
+      "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "Infra: Setup Docker",
-      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
+      "preLaunchTask": "Build: API for Debug",
+      "program": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/bin/Debug/net10.0/arolariu.Backend.Core.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/sites/api.arolariu.ro/src/Core",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000",
         "INFRA": "local",
         "EXP_PROXY_URL": "http://localhost:5002"
       }

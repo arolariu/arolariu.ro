@@ -61,6 +61,18 @@
       }
     },
     {
+      "label": "Build: API for Debug",
+      "detail": "Starts Docker infra then builds the .NET API in Debug configuration.",
+      "type": "shell",
+      "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Debug",
+      "options": {
+        "cwd": "${workspaceFolder}/sites/api.arolariu.ro"
+      },
+      "dependsOn": ["Infra: Setup Docker"],
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
       "label": "Docker: Start Local Stack",
       "type": "shell",
       "command": "./selfhost-start.sh",

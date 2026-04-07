@@ -59,12 +59,17 @@
     "configurations": [
       {
         "name": ".NET API: Debug",
-        "type": "dotnet",
+        "type": "coreclr",
         "request": "launch",
-        "preLaunchTask": "Infra: Setup Docker",
-        "projectPath": "${workspaceFolder:🔧 API (.NET)}/src/Core/arolariu.Backend.Core.csproj",
+        "preLaunchTask": "Build: API for Debug",
+        "program": "${workspaceFolder:🔧 API (.NET)}/src/Core/bin/Debug/net10.0/arolariu.Backend.Core.dll",
+        "args": [],
+        "cwd": "${workspaceFolder:🔧 API (.NET)}/src/Core",
+        "console": "integratedTerminal",
+        "stopAtEntry": false,
         "env": {
           "ASPNETCORE_ENVIRONMENT": "Development",
+          "ASPNETCORE_URLS": "http://localhost:5000",
           "INFRA": "local",
           "EXP_PROXY_URL": "http://localhost:5002"
         }
@@ -90,6 +95,15 @@
         "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
         "problemMatcher": [],
         "presentation": { "reveal": "silent", "panel": "shared" }
+      },
+      {
+        "label": "Build: API for Debug",
+        "type": "shell",
+        "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Debug",
+        "options": { "cwd": "${workspaceFolder:🔧 API (.NET)}" },
+        "dependsOn": ["Infra: Setup Docker"],
+        "problemMatcher": "$msCompile",
+        "group": "build"
       },
       {
         "label": "Dev: API (watch)",
