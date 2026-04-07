@@ -55,66 +55,11 @@
       }
     },
     {
-      "name": "Launch Dev Website (Legacy)",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev:website"
-      ],
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
-      "name": "Launch Storybook for components",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--workspace",
-        "@arolariu/components",
-        "run",
-        "storybook"
-      ],
-      "cwd": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
-      "name": "Launch Storybook for website",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "storybook",
-        "dev",
-        "-p",
-        "7007",
-        "-c",
-        "sites/arolariu.ro/.storybook"
-      ],
-      "cwd": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
       "name": "Launch DocFX site",
-      "type": "node",
+      "type": "node-terminal",
       "request": "launch",
-      "runtimeExecutable": "docfx",
-      "runtimeArgs": [
-        "build",
-        "sites/docs.arolariu.ro/docfx.json"
-      ],
-      "postDebugTask": "Launch DocFX"
+      "command": "docfx build sites/docs.arolariu.ro/docfx.json --serve",
+      "cwd": "${workspaceFolder}"
     },
     {
       "name": ".NET API: Debug",
@@ -142,10 +87,11 @@
   ],
   "compounds": [
     {
-      "name": "Full Stack: Website + API",
+      "name": "Full Stack: Website + API + exp",
       "configurations": [
         "Next.js: Debug Full Stack",
-        ".NET API: Debug"
+        ".NET API: Debug",
+        "Python: exp FastAPI Debug"
       ],
       "stopAll": true
     }

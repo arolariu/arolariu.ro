@@ -305,24 +305,66 @@ For bare-metal local development, environment variables are set via `.env` files
 
 ## Debugging
 
-### VS Code Debug Configurations
+All services support **debugging with breakpoints** AND **hot reload simultaneously** from VS Code.
 
-The workspace files include pre-configured debug profiles:
+### Quick Start: Debug Any Service
 
-| Profile | What It Debugs | Workspace |
-|---------|---------------|-----------|
-| **Next.js: Dev Server** | Full-stack Next.js with breakpoints | Frontend, Fullstack |
-| **.NET API: Run with Hot Reload** | C# API with breakpoints + hot reload | Backend, Fullstack |
-| **Python: exp FastAPI** | Python service with breakpoints + reload | Backend, Fullstack |
-| **Full Stack: Website + API** | Both services simultaneously | Fullstack |
-| **Storybook: Components** | Component library development | Frontend |
+1. Open a `.code-workspace` file for your role (or the repo root)
+2. Go to **Run & Debug** panel (`Ctrl+Shift+D`)
+3. Select a debug profile from the dropdown
+4. Press `F5` to start debugging
+5. Set breakpoints by clicking the gutter (left of line numbers)
+
+### Debug Profiles
+
+| Profile | Service | Breakpoints | Hot Reload | Workspace |
+|---------|---------|-------------|------------|-----------|
+| **Next.js: Debug Full Stack** | Website | ✅ Server + client | ✅ Turbopack HMR | Root, Frontend, Fullstack |
+| **Next.js: Debug Client-Side** | Website (browser) | ✅ Client components | ✅ Turbopack HMR | Root |
+| **.NET API: Debug** | API | ✅ C# breakpoints | ✅ Hot Reload on save | Root, Backend, Fullstack |
+| **Python: exp FastAPI** | exp | ✅ Python breakpoints | ✅ uvicorn --reload | Root, Backend, Fullstack |
+| **SvelteKit: CV Debug** | CV site | ✅ Server-side | ✅ Vite HMR | Frontend, Fullstack |
+| **Full Stack: Website + API + exp** | All three | ✅ All | ✅ All | Root, Fullstack |
+
+### How Each Service Achieves Debug + Hot Reload
+
+**Website (Next.js):**
+- Debugger: Node.js `--inspect` flag attaches VS Code's debugger
+- Hot reload: Turbopack Fast Refresh runs independently of the debugger
+- Both work simultaneously — edit a component, see it refresh, hit breakpoints in server actions
+
+**API (.NET):**
+- Debugger: C# DevKit launches and attaches automatically
+- Hot reload: C# DevKit's built-in Hot Reload applies changes on save (no `dotnet watch` needed)
+- Setting `dotnet.hotReload.applyOnSave: true` is pre-configured in backend/fullstack workspaces
+- Edit a controller → save → changes apply without restart → breakpoints continue working
+
+**exp (Python FastAPI):**
+- Debugger: debugpy attaches to the uvicorn process
+- Hot reload: `--reload` flag makes uvicorn watch for file changes
+- Both work simultaneously — edit a route, uvicorn restarts, debugpy re-attaches
+
+**CV (SvelteKit):**
+- Debugger: Node.js `--inspect` attaches to Vite dev server
+- Hot reload: Vite HMR runs independently
+- Set breakpoints in `+page.server.ts` load functions and API routes
+
+### Compound Debug: Full Stack
+
+The **"Full Stack: Website + API + exp"** compound launches all three services with debuggers attached. You can:
+- Set a breakpoint in a Next.js server action
+- Set a breakpoint in the .NET controller it calls
+- Set a breakpoint in the exp config endpoint
+- Step through the entire request chain across all three services
+
+> **Prerequisite:** Docker infrastructure must be running for the API to start. Run `npm run dev:local:infra` first, or use the "Docker: Start Local Stack" task.
 
 ### VS Code Tasks
 
 Run tasks from the Command Palette (`Ctrl+Shift+P` → "Tasks: Run Task"):
 
-- **Dev: Website** / **Dev: API** / **Dev: exp Service** — start individual services
-- **Dev: All Services** — start everything in parallel
+- **Dev: Website** / **Dev: API** / **Dev: exp Service** — start individual services (no debugger)
+- **Dev: All Services** — start everything in parallel (no debugger)
 - **Docker: Start/Stop Local Stack** — manage Docker Compose environment
 - **Tests:** / **Checks:** — run tests and code quality tools
 - **Health: Doctor Check** — diagnose workspace issues

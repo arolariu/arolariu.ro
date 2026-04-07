@@ -95,6 +95,17 @@
         "runtimeArgs": ["run", "dev"],
         "console": "integratedTerminal",
         "skipFiles": ["<node_internals>/**"]
+      },
+      {
+        "name": "SvelteKit: CV Debug",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder:📄 CV Site (SvelteKit)}",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "dev"],
+        "console": "integratedTerminal",
+        "skipFiles": ["<node_internals>/**"],
+        "env": { "NODE_OPTIONS": "--inspect" }
       }
     ]
   },

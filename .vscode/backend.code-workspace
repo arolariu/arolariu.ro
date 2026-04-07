@@ -19,6 +19,7 @@
   ],
   "settings": {
     "editor.formatOnSave": true,
+    "dotnet.hotReload.applyOnSave": true,
     "dotnet.defaultSolution": "arolariu.sln",
     "[csharp]": {
       "editor.defaultFormatter": "ms-dotnettools.csharp"
