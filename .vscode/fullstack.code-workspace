@@ -105,6 +105,7 @@
         "name": ".NET API: Debug",
         "type": "dotnet",
         "request": "launch",
+        "preLaunchTask": "Infra: Setup Docker",
         "projectPath": "${workspaceFolder:🔧 API (.NET)}/src/Core/arolariu.Backend.Core.csproj",
         "env": {
           "ASPNETCORE_ENVIRONMENT": "Development",
@@ -162,6 +163,14 @@
   "tasks": {
     "version": "2.0.0",
     "tasks": [
+      {
+        "label": "Infra: Setup Docker",
+        "type": "shell",
+        "command": "npm run dev:local:setup",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": [],
+        "presentation": { "reveal": "silent", "panel": "shared" }
+      },
       {
         "label": "Dev: All Services",
         "type": "shell",

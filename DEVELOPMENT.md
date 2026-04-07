@@ -349,20 +349,29 @@ All services support **debugging with breakpoints** AND **hot reload simultaneou
 - Hot reload: Vite HMR runs independently
 - Set breakpoints in `+page.server.ts` load functions and API routes
 
-### Compound Debug: Full Stack
+### One-Click Full Stack Debug
 
-The **"Full Stack: Website + API + exp"** compound launches all three services with debuggers attached. You can:
+The **"Full Stack: Website + API + exp"** compound is a true one-click experience:
+
+1. **Press F5** (or select from the debug dropdown)
+2. The `preLaunchTask` automatically starts Docker infrastructure (CosmosDB, SQL, Redis, Azurite)
+3. All three services launch with debuggers attached
+4. Set breakpoints across the entire stack — Next.js → .NET API → Python exp
+
+No manual Docker setup required. If Docker infra is already running, the preLaunchTask completes in ~3 seconds.
+
+**What you can do:**
 - Set a breakpoint in a Next.js server action
 - Set a breakpoint in the .NET controller it calls
 - Set a breakpoint in the exp config endpoint
 - Step through the entire request chain across all three services
-
-> **Prerequisite:** Docker infrastructure must be running for the API to start. Run `npm run dev:local:infra` first, or use the "Docker: Start Local Stack" task.
+- Edit code → hot reload applies → breakpoints continue working
 
 ### VS Code Tasks
 
 Run tasks from the Command Palette (`Ctrl+Shift+P` → "Tasks: Run Task"):
 
+- **Infra: Setup Docker** — starts Docker infrastructure (used automatically by debug compound)
 - **Dev: Website** / **Dev: API** / **Dev: exp Service** — start individual services (no debugger)
 - **Dev: All Services** — start everything in parallel (no debugger)
 - **Docker: Start/Stop Local Stack** — manage Docker Compose environment

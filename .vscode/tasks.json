@@ -50,6 +50,17 @@
       "group": "build"
     },
     {
+      "label": "Infra: Setup Docker",
+      "detail": "Starts Docker infrastructure, stops Docker exp, waits for DBs, inits schemas. Used as preLaunchTask for one-click debugging.",
+      "type": "shell",
+      "command": "npm run dev:local:setup",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Docker: Start Local Stack",
       "type": "shell",
       "command": "./selfhost-start.sh",

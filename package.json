@@ -43,6 +43,7 @@
     "dev:local:frontend": "node scripts/dev-local.ts --frontend",
     "dev:local:backend": "node scripts/dev-local.ts --backend",
     "dev:local:infra": "node scripts/dev-local.ts --infra",
+    "dev:local:setup": "node scripts/dev-local.ts --setup-only",
     "dev:website": "nx run website:dev",
     "nx": "nx",
     "graph": "nx graph",

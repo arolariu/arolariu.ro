@@ -65,6 +65,7 @@
       "name": ".NET API: Debug",
       "type": "dotnet",
       "request": "launch",
+      "preLaunchTask": "Infra: Setup Docker",
       "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",

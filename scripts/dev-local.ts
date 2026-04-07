@@ -214,10 +214,11 @@ function startBareMetalServices(services: string[]): ChildProcess[] {
 // Main
 // ============================================================================
 
-type DevProfile = "all" | "frontend" | "backend" | "infra";
+type DevProfile = "all" | "frontend" | "backend" | "infra" | "setup-only";
 
 function parseArgs(): DevProfile {
   const args = process.argv.slice(2);
+  if (args.includes("--setup-only") || args.includes("-s")) return "setup-only";
   if (args.includes("--frontend") || args.includes("-f")) return "frontend";
   if (args.includes("--backend") || args.includes("-b")) return "backend";
   if (args.includes("--infra") || args.includes("-i")) return "infra";
@@ -232,6 +233,7 @@ const BARE_METAL_SERVICES: Record<DevProfile, string[]> = {
   frontend: ["exp", "website"],
   backend: ["exp", "api"],
   infra: ["exp"],
+  "setup-only": [],
 };
 
 const NEEDS_API_DOCKER: Record<DevProfile, boolean> = {
@@ -239,6 +241,7 @@ const NEEDS_API_DOCKER: Record<DevProfile, boolean> = {
   frontend: false,
   backend: false,
   infra: false,
+  "setup-only": false,
 };
 
 async function main(): Promise<void> {
@@ -293,10 +296,14 @@ async function main(): Promise<void> {
   console.log("");
 
   if (bareMetalServices.length === 0 && !needsApiDocker) {
-    log("ℹ️ ", "Infrastructure-only mode. Start services manually:");
-    console.log(styleText("gray", "  npm run dev:website  → https://localhost:3000  (bare-metal, hot reload)"));
-    console.log(styleText("gray", "  npm run dev:api      → http://localhost:5000   (bare-metal, hot reload)"));
-    console.log(styleText("gray", "  npm run dev:exp      → http://localhost:5002   (bare-metal, hot reload)"));
+    if (profile === "setup-only") {
+      log("✅", styleText("green", "Infrastructure setup complete. Ready for VS Code debugger launch."));
+    } else {
+      log("ℹ️ ", "Infrastructure-only mode. Start services manually:");
+      console.log(styleText("gray", "  npm run dev:website  → https://localhost:3000  (bare-metal, hot reload)"));
+      console.log(styleText("gray", "  npm run dev:api      → http://localhost:5000   (bare-metal, hot reload)"));
+      console.log(styleText("gray", "  npm run dev:exp      → http://localhost:5002   (bare-metal, hot reload)"));
+    }
     console.log("");
     return;
   }
