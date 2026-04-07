@@ -17,9 +17,42 @@
 
 ---
 
+## Choosing Your Development Medium
+
+There are three ways to develop locally. Choose based on your needs:
+
+| | Bare-Metal | Docker Compose | DevContainer / Codespaces |
+|---|---|---|---|
+| **Best for** | Day-to-day coding with fast iteration | Full-stack integration testing | Onboarding, cloud dev, consistent env |
+| **Hot reload** | ✅ All services | ❌ Production builds, no reload | ✅ All services (runs bare-metal inside container) |
+| **Infrastructure** | ❌ No databases — API can't fully start | ✅ CosmosDB, SQL, Redis, Azurite, Traefik HTTPS | ❌ Unless you run Docker Compose inside |
+| **Setup time** | ~2 min (npm install + setup) | ~5 min (Docker build + init) | ~5 min (container build) |
+| **Prerequisites** | Node, .NET, (Python optional) | Docker Desktop only | Docker + VS Code Dev Containers extension |
+| **VS Code integration** | Open folder or `.code-workspace` | Open folder (services run in containers) | Automatic — extensions + tools pre-installed |
+| **OS support** | Windows, macOS, Linux | Windows, macOS, Linux | Windows, macOS, Linux, browser (Codespaces) |
+| **When to use** | Writing code, debugging, unit tests | Testing API with real databases, E2E tests | First day setup, CI environments, Codespaces |
+
+### Recommended workflow
+
+Most developers use a **hybrid approach**:
+1. **Docker Compose** for infrastructure (databases, config service, Traefik)
+2. **Bare-metal** for the service you're actively coding (website, API, or exp)
+
+This gives you hot reload for your code AND real database connectivity.
+
+---
+
 ## Quick Start
 
-### Option A: Bare-Metal Development (Recommended)
+### Option A: Bare-Metal Development (Recommended for daily coding)
+
+**Who it's for:** Developers actively writing and debugging code. Fastest iteration cycle with full hot reload.
+
+**What you get:** Hot reload on every service, Node.js debugging, breakpoints, Turbopack fast refresh.
+
+**What you don't get:** No databases — the .NET API will build and launch but crash during initialization because it can't reach CosmosDB/SQL/Key Vault. Use Docker Compose (Option B) alongside for infrastructure, or work on frontend-only features.
+
+**VS Code integration:** Open a `.code-workspace` file for your role (see [Developer Roles](#developer-roles--workspaces)), or open the repo root folder. All debug profiles, tasks, and extensions work natively.
 
 ```bash
 # 1. Clone and install
@@ -32,20 +65,39 @@ npm run setup        # checks and installs prerequisites
 npm run doctor       # diagnoses workspace health
 
 # 3. Generate environment files
-npm run generate     # creates .env, i18n files, GraphQL types
+npm run generate /env  # creates .env with sensible defaults
 
-# 4. Start developing
-npm run dev:website  # Next.js → http://localhost:3000
-npm run dev:api      # .NET API → http://localhost:5000 (with hot reload)
+# 4. Start developing (pick one or more)
+npm run dev:website  # Next.js → https://localhost:3000 (Turbopack HMR)
+npm run dev:api      # .NET API → http://localhost:5000 (dotnet watch hot reload)
+npm run dev:exp      # exp → http://localhost:5002 (uvicorn --reload)
+npm run dev:cv       # CV site → http://localhost:5173 (Vite HMR)
+npm run dev:components  # Component library watch mode (rslib --watch)
 npm run dev          # all services in parallel (requires Python for exp)
 ```
 
 > **Don't have Python?** That's fine — just run services individually:
 > `npm run dev:website` and `npm run dev:api`. The exp service is only needed for runtime config resolution and feature flags.
 
+**Hot reload behavior per service:**
+
+| Service | Technology | What reloads instantly | What requires restart |
+|---------|------------|----------------------|---------------------|
+| Website | Next.js Turbopack | Components, pages, styles, server actions | `next.config.ts`, middleware, env vars |
+| API | `dotnet watch` | Controllers, services, DTOs | Startup config, DI registration, NuGet changes |
+| exp | `uvicorn --reload` | All Python files | `requirements.txt` changes |
+| Components | `rslib --watch` | Component source files | `rslib.config.ts` changes |
+| CV | Vite HMR | Svelte components, styles | `svelte.config.js`, `vite.config.js` |
+
 ### Option B: Docker Compose (Full Stack with Infrastructure)
 
-Runs everything in containers with real database emulators (CosmosDB, SQL Server, Redis, Azurite).
+**Who it's for:** Developers who need the full stack running — API with real databases, end-to-end testing, or integration testing.
+
+**What you get:** Complete production-like environment: CosmosDB, SQL Server, Redis, Azurite (blob storage), Traefik reverse proxy with HTTPS, all services containerized and interconnected.
+
+**What you don't get:** No hot reload — containers run production builds. Code changes require rebuilding the container (`docker compose up -d --build`). For active coding, use bare-metal (Option A) for the service you're editing and Docker for infrastructure.
+
+**VS Code integration:** Open the repo root folder. Use the "Docker: Start/Stop Local Stack" tasks from the command palette. View container logs via the Docker extension or `docker logs -f <container-name>`.
 
 ```bash
 # 1. Clone and install
@@ -63,11 +115,72 @@ cd infra/Local
 selfhost-start.bat     # Windows
 ```
 
-See [infra/Local/readme.md](infra/Local/readme.md) for full Docker setup details.
+**What starts (in order):**
+1. 🔀 Traefik reverse proxy + healthchecks dashboard
+2. 💾 SQL Server, CosmosDB emulator, Azurite, Redis, exp config service
+3. 🗄️ Database schema initialization (SQL + CosmosDB + Azurite containers)
+4. ⚙️ .NET API (production build)
+5. 🌐 Next.js website (production build)
+
+**Hybrid approach (recommended for backend developers):**
+```bash
+# Start only infrastructure (databases + config) in Docker:
+cd infra/Local
+docker compose -f Management/docker-compose.yml up -d
+docker compose -f Storage/docker-compose.yml up -d
+
+# Then run the API bare-metal with hot reload:
+cd ../..
+npm run dev:api      # dotnet watch with hot reload, connects to Docker databases
+```
+
+See [infra/Local/readme.md](infra/Local/readme.md) for full Docker setup details, HTTPS routes, and troubleshooting.
 
 ### Option C: DevContainer / GitHub Codespaces
 
-Open the repository in VS Code and select **"Reopen in Container"** (requires Docker + VS Code Dev Containers extension). The container pre-installs Node 24, .NET 10, Python 3.12, and all VS Code extensions.
+**Who it's for:** New developers on day one, developers who want a guaranteed consistent environment, or anyone developing from a browser (GitHub Codespaces).
+
+**What you get:** Pre-configured environment with Node 24, .NET 10, Python 3.12, Docker-in-Docker, Azure CLI, and 28 VS Code extensions — all installed automatically. Hot reload works because you run dev commands inside the container (same as bare-metal, but containerized).
+
+**What you don't get:** No infrastructure databases by default (same as bare-metal). To get databases, run the Docker Compose infrastructure inside the DevContainer (Docker-in-Docker is enabled).
+
+**VS Code integration:** Full automatic setup — extensions installed, formatters configured, debug profiles available, Copilot ready. Open any `.code-workspace` file inside the container for role-specific setup.
+
+**Step-by-step setup:**
+
+1. Open the repo in VS Code
+2. When prompted "Reopen in Container", click **Yes** (or use Command Palette → "Dev Containers: Reopen in Container")
+3. Wait ~5 minutes for the container to build (first time only — subsequent starts are fast)
+4. The container runs `npm ci` and `npm run generate` automatically on start
+5. Start developing with `npm run dev:website`, `npm run dev:api`, etc.
+
+**GitHub Codespaces:**
+1. Go to the [GitHub repository](https://github.com/arolariu/arolariu.ro)
+2. Click **Code** → **Codespaces** → **Create codespace on main**
+3. Wait for the environment to build
+4. All ports are automatically forwarded and accessible from your browser
+
+**Pre-installed tools:**
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | 24.x | Website, CV, components |
+| .NET SDK | 10.0 | API backend |
+| Python | 3.12 | exp config service |
+| Docker | Available | Run Docker Compose for infrastructure |
+| Azure CLI | Latest | Azure resource management |
+| Playwright | Browsers installed | E2E testing |
+
+**Forwarded ports (auto-detected):**
+| Port | Service | Label |
+|------|---------|-------|
+| 3000 | Next.js Website | Next.js Website |
+| 5000 | .NET API | .NET API |
+| 5002 | exp Config Service | exp Config Service |
+| 5173 | CV Site | CV Site (SvelteKit) |
+| 6006 | Storybook | Storybook Components |
+| 7007 | Storybook Website | Storybook Website |
+| 8080 | DocFX | DocFX |
+| 9229 | Node Debugger | (debug port) |
 
 ---
 
@@ -108,20 +221,6 @@ Open the workspace file that matches your role for a tailored VS Code experience
 | Traefik Dashboard | http://localhost:8080 | https://traefik.localhost |
 | SQL Server | localhost:8082 | — |
 | Redis | localhost:6379 | — |
-
----
-
-## Hot Reload Reference
-
-All services support hot reload in dev mode — your changes appear instantly without manual restarts.
-
-| Service | Technology | What Reloads | What Requires Restart |
-|---------|------------|--------------|----------------------|
-| **Website** | Next.js Turbopack | Components, pages, styles, server actions | `next.config.ts`, middleware, env vars |
-| **API** | `dotnet watch` | Controllers, services, DTOs, Razor | Startup config, DI registration, NuGet changes |
-| **exp** | `uvicorn --reload` | All Python files | `requirements.txt` changes |
-| **Components** | rslib watch | Component source files | `rslib.config.ts` changes |
-| **CV** | Vite HMR | Svelte components, styles | `svelte.config.js`, `vite.config.js` |
 
 ---
 
