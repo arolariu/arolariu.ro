@@ -100,9 +100,15 @@ internal static class WebApplicationBuilderExtensions
   {
     var services = builder.Services;
 
-    // Endpoint selection: deterministic, based solely on AZURE_CLIENT_ID presence.
+    // Endpoint selection priority:
+    // 1. EXP_PROXY_URL env var (explicit override — enables bare-metal dev with Docker infra)
+    // 2. AZURE_CLIENT_ID present → Azure production endpoint with Entra ID auth
+    // 3. Default → Docker DNS hostname (http://exp) for containerized environments
+    var explicitUrl = Environment.GetEnvironmentVariable("EXP_PROXY_URL");
     var isAzureEnv = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID"));
-    var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
+    var baseUrl = !string.IsNullOrEmpty(explicitUrl)
+      ? explicitUrl
+      : isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
 
     var httpClientBuilder = services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
     {

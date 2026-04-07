@@ -123,7 +123,9 @@
       "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1"
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "1",
+        "INFRA": "local",
+        "EXP_PROXY_URL": "http://localhost:5002"
       }
     },
     {

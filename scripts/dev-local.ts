@@ -192,7 +192,7 @@ function startBareMetalServices(services: string[]): ChildProcess[] {
       cwd: process.cwd(),
       stdio: "inherit",
       shell: true,
-      env: {...process.env, INFRA: "local", FORCE_COLOR: "1"},
+      env: {...process.env, INFRA: "local", EXP_PROXY_URL: "http://localhost:5002", FORCE_COLOR: "1"},
     });
 
     processes.push(child);
@@ -215,19 +215,19 @@ function parseArgs(): DevProfile {
   return "all";
 }
 
-// Bare-metal services get hot reload. API runs in Docker because it needs
-// Docker DNS to resolve "http://exp" for config proxy.
+// Bare-metal services get hot reload. All services run bare-metal by default
+// using EXP_PROXY_URL=http://localhost:5002 to reach the Docker-hosted exp.
 const BARE_METAL_SERVICES: Record<DevProfile, string[]> = {
-  all: ["website"],
+  all: ["website", "api", "exp"],
   frontend: ["website"],
-  backend: ["exp"],
+  backend: ["api", "exp"],
   infra: [],
 };
 
 const NEEDS_API_DOCKER: Record<DevProfile, boolean> = {
-  all: true,
+  all: false,
   frontend: false,
-  backend: true,
+  backend: false,
   infra: false,
 };
 

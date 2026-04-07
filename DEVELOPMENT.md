@@ -65,19 +65,16 @@ npm run dev:local    # ← This is what you'll use every day
 **What `npm run dev:local` does:**
 1. ✅ Checks Docker is running
 2. 🐳 Starts Traefik reverse proxy (HTTPS on `*.localhost`)
-3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite, exp config service
+3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite, exp config service (in Docker)
 4. ⏳ Waits for all infrastructure to be healthy
 5. 🗄️ Initializes database schemas and blob containers
-6. 🐳 Builds and starts API in Docker (needs Docker DNS to resolve config service)
-7. 🚀 Starts website bare-metal with Turbopack hot reload
-
-> **Why does the API run in Docker?** The API fetches config from the exp service at `http://exp` (Docker DNS name). Running it in Docker ensures this hostname resolves correctly. The website doesn't have this constraint — it runs bare-metal for maximum hot reload speed.
+6. 🚀 Starts website and API bare-metal with hot reload (API uses `EXP_PROXY_URL` to reach Docker exp)
 
 **Profiles for different workflows:**
 ```bash
-npm run dev:local              # Full stack: website (bare-metal) + API (Docker) + infra
-npm run dev:local:frontend     # Frontend only: website (bare-metal) + infra
-npm run dev:local:backend      # Backend only: API (Docker) + exp (bare-metal) + infra
+npm run dev:local              # Full stack: website + API (bare-metal) + infra (Docker)
+npm run dev:local:frontend     # Frontend only: website (bare-metal) + infra (Docker)
+npm run dev:local:backend      # Backend only: API + exp (bare-metal) + infra (Docker)
 npm run dev:local:infra        # Infrastructure only (start services manually)
 ```
 
@@ -85,7 +82,7 @@ npm run dev:local:infra        # Infrastructure only (start services manually)
 | Service | URL | Mode |
 |---------|-----|------|
 | Website | https://localhost:3000 | ✅ Bare-metal, Turbopack hot reload |
-| API | http://localhost:5000 | 🐳 Docker (rebuild to update: `docker compose -f infra/Local/Backend/docker-compose.yml up -d --build`) |
+| API | http://localhost:5000 | ✅ Bare-metal, dotnet watch hot reload |
 | exp | http://localhost:5002 | 🐳 Docker (config service, auto-started with infra) |
 
 **Infrastructure dashboards:**
