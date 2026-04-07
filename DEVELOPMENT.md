@@ -44,15 +44,9 @@ This gives you hot reload for your code AND real database connectivity.
 
 ## Quick Start
 
-### Option A: Bare-Metal Development (Recommended for daily coding)
+### 🏆 Recommended: Hybrid Development (Docker infra + bare-metal services)
 
-**Who it's for:** Developers actively writing and debugging code. Fastest iteration cycle with full hot reload.
-
-**What you get:** Hot reload on every service, Node.js debugging, breakpoints, Turbopack fast refresh.
-
-**What you don't get:** No databases — the .NET API will build and launch but crash during initialization because it can't reach CosmosDB/SQL/Key Vault. Use Docker Compose (Option B) alongside for infrastructure, or work on frontend-only features.
-
-**VS Code integration:** Open a `.code-workspace` file for your role (see [Developer Roles](#developer-roles--workspaces)), or open the repo root folder. All debug profiles, tasks, and extensions work natively.
+This is the primary development workflow — Docker provides real databases and infrastructure while your services run bare-metal with full hot reload.
 
 ```bash
 # 1. Clone and install
@@ -61,23 +55,96 @@ cd arolariu.ro
 npm install
 
 # 2. Validate your environment
-npm run setup        # checks and installs prerequisites
+npm run setup        # checks Node 24, .NET 10, npm 11
 npm run doctor       # diagnoses workspace health
 
-# 3. Generate environment files
-npm run generate /env  # creates .env with sensible defaults
-
-# 4. Start developing (pick one or more)
-npm run dev:website  # Next.js → https://localhost:3000 (Turbopack HMR)
-npm run dev:api      # .NET API → http://localhost:5000 (dotnet watch hot reload)
-npm run dev:exp      # exp → http://localhost:5002 (uvicorn --reload)
-npm run dev:cv       # CV site → http://localhost:5173 (Vite HMR)
-npm run dev:components  # Component library watch mode (rslib --watch)
-npm run dev          # all services in parallel (requires Python for exp)
+# 3. Start everything (Docker infra + bare-metal services)
+npm run dev:local    # ← This is what you'll use every day
 ```
 
-> **Don't have Python?** That's fine — just run services individually:
-> `npm run dev:website` and `npm run dev:api`. The exp service is only needed for runtime config resolution and feature flags.
+**What `npm run dev:local` does:**
+1. ✅ Checks Docker is running
+2. 🐳 Starts Traefik reverse proxy (HTTPS on `*.localhost`)
+3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite, exp config service
+4. ⏳ Waits for all infrastructure to be healthy
+5. 🗄️ Initializes database schemas and blob containers
+6. 🐳 Builds and starts API in Docker (needs Docker DNS to resolve config service)
+7. 🚀 Starts website bare-metal with Turbopack hot reload
+
+> **Why does the API run in Docker?** The API fetches config from the exp service at `http://exp` (Docker DNS name). Running it in Docker ensures this hostname resolves correctly. The website doesn't have this constraint — it runs bare-metal for maximum hot reload speed.
+
+**Profiles for different workflows:**
+```bash
+npm run dev:local              # Full stack: website (bare-metal) + API (Docker) + infra
+npm run dev:local:frontend     # Frontend only: website (bare-metal) + infra
+npm run dev:local:backend      # Backend only: API (Docker) + exp (bare-metal) + infra
+npm run dev:local:infra        # Infrastructure only (start services manually)
+```
+
+**After startup, your services are at:**
+| Service | URL | Mode |
+|---------|-----|------|
+| Website | https://localhost:3000 | ✅ Bare-metal, Turbopack hot reload |
+| API | http://localhost:5000 | 🐳 Docker (rebuild to update: `docker compose -f infra/Local/Backend/docker-compose.yml up -d --build`) |
+| exp | http://localhost:5002 | 🐳 Docker (config service, auto-started with infra) |
+
+**Infrastructure dashboards:**
+| Service | URL |
+|---------|-----|
+| Traefik Dashboard | http://localhost:8080 |
+| exp Admin (config editor) | http://localhost:5002/admin |
+| CosmosDB Explorer | http://localhost:1234 |
+| SQL Server | localhost:8082 (sa / qazWSXedcRFV1234!) |
+| Redis | localhost:6379 |
+| Azurite Blobs | http://localhost:10000 |
+
+**Stopping:**
+- `Ctrl+C` stops bare-metal services (Docker infra keeps running)
+- `cd infra/Local && ./selfhost-stop.sh` (or `selfhost-stop.bat`) stops Docker infra
+
+#### Validating everything works
+
+After starting, run these checks:
+
+```bash
+# Check infrastructure health
+curl http://localhost:5002/api/health     # exp: should return {"status":"Healthy"}
+curl http://localhost:5000/health          # API: should return {"status":"Healthy"}
+curl -k https://localhost:3000             # Website: should return HTML
+
+# Check Docker container status
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# Check workspace health
+npm run doctor
+```
+
+#### Troubleshooting the hybrid workflow
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `Docker is not running` | Docker Desktop not started | Start Docker Desktop, wait for it to initialize |
+| exp shows `AZURE_APPCONFIG_ENDPOINT required` | `INFRA=azure` env var leaking | The dev scripts set `INFRA=local` automatically. If running manually, prefix: `INFRA=local npm run dev:exp` |
+| API crashes on startup | Can't reach CosmosDB/SQL/exp | Ensure Docker infra is running first. Run `npm run dev:local:infra` then `npm run dev:api` |
+| Website shows blank page | Turbopack compiling | Wait 10-15s for initial compilation, then refresh |
+| Port already in use | Previous dev session didn't clean up | `npm run doctor` checks ports. Kill stale processes or restart Docker |
+| CosmosDB Explorer not loading | Emulator still initializing | Wait 60s after `docker compose up`, CosmosDB takes time to start |
+| SQL schema errors | Schema already exists | Safe to ignore "already exists" messages |
+| `npm run dev:local` fails on Windows | Long paths or permissions | Run terminal as Administrator, or use `npm run dev:local:infra` + manual service start |
+| HTTPS certificate untrusted | mkcert not installed | Run `mkcert -install` once (selfhost scripts do this automatically) |
+
+---
+
+### Alternative: Bare-Metal Only (no Docker)
+
+For frontend-only work where you don't need databases:
+
+```bash
+npm install
+npm run setup
+npm run generate /env     # creates .env with defaults
+npm run dev:website       # Just the website with hot reload
+```
 
 **Hot reload behavior per service:**
 
@@ -89,98 +156,38 @@ npm run dev          # all services in parallel (requires Python for exp)
 | Components | `rslib --watch` | Component source files | `rslib.config.ts` changes |
 | CV | Vite HMR | Svelte components, styles | `svelte.config.js`, `vite.config.js` |
 
-### Option B: Docker Compose (Full Stack with Infrastructure)
+> **Note:** Without Docker, the API will build and start but crash because it can't reach CosmosDB/SQL. This is fine for frontend-only work.
 
-**Who it's for:** Developers who need the full stack running — API with real databases, end-to-end testing, or integration testing.
+---
 
-**What you get:** Complete production-like environment: CosmosDB, SQL Server, Redis, Azurite (blob storage), Traefik reverse proxy with HTTPS, all services containerized and interconnected.
+### Alternative: Docker Compose Only (full containerized stack)
 
-**What you don't get:** No hot reload — containers run production builds. Code changes require rebuilding the container (`docker compose up -d --build`). For active coding, use bare-metal (Option A) for the service you're editing and Docker for infrastructure.
-
-**VS Code integration:** Open the repo root folder. Use the "Docker: Start/Stop Local Stack" tasks from the command palette. View container logs via the Docker extension or `docker logs -f <container-name>`.
+For integration testing or when you want a fully containerized environment:
 
 ```bash
-# 1. Clone and install
-git clone https://github.com/arolariu/arolariu.ro.git
-cd arolariu.ro
-npm install
-
-# 2. Configure secrets
-cp sites/exp.arolariu.ro/config.template.json sites/exp.arolariu.ro/config.docker.json
-# Edit config.docker.json with your Clerk keys (or use defaults for non-auth testing)
-
-# 3. Start the full stack
 cd infra/Local
 ./selfhost-start.sh    # Linux/macOS
 selfhost-start.bat     # Windows
 ```
 
-**What starts (in order):**
-1. 🔀 Traefik reverse proxy + healthchecks dashboard
-2. 💾 SQL Server, CosmosDB emulator, Azurite, Redis, exp config service
-3. 🗄️ Database schema initialization (SQL + CosmosDB + Azurite containers)
-4. ⚙️ .NET API (production build)
-5. 🌐 Next.js website (production build)
+> **Note:** Docker containers run production builds — no hot reload. For active coding, use the hybrid workflow above.
 
-**Hybrid approach (recommended for backend developers):**
-```bash
-# Start only infrastructure (databases + config) in Docker:
-cd infra/Local
-docker compose -f Management/docker-compose.yml up -d
-docker compose -f Storage/docker-compose.yml up -d
+See [infra/Local/readme.md](infra/Local/readme.md) for full details.
 
-# Then run the API bare-metal with hot reload:
-cd ../..
-npm run dev:api      # dotnet watch with hot reload, connects to Docker databases
-```
+---
 
-See [infra/Local/readme.md](infra/Local/readme.md) for full Docker setup details, HTTPS routes, and troubleshooting.
+### Alternative: DevContainer / GitHub Codespaces
 
-### Option C: DevContainer / GitHub Codespaces
+For new developers or cloud-based development:
 
-**Who it's for:** New developers on day one, developers who want a guaranteed consistent environment, or anyone developing from a browser (GitHub Codespaces).
+1. Open the repo in VS Code → "Reopen in Container"
+2. Container pre-installs Node 24, .NET 10, Python 3.12, and 28 VS Code extensions
+3. Run `npm run dev:local` inside the container (Docker-in-Docker is enabled)
 
-**What you get:** Pre-configured environment with Node 24, .NET 10, Python 3.12, Docker-in-Docker, Azure CLI, and 28 VS Code extensions — all installed automatically. Hot reload works because you run dev commands inside the container (same as bare-metal, but containerized).
+**GitHub Codespaces:** Go to the repo → Code → Codespaces → Create codespace
 
-**What you don't get:** No infrastructure databases by default (same as bare-metal). To get databases, run the Docker Compose infrastructure inside the DevContainer (Docker-in-Docker is enabled).
-
-**VS Code integration:** Full automatic setup — extensions installed, formatters configured, debug profiles available, Copilot ready. Open any `.code-workspace` file inside the container for role-specific setup.
-
-**Step-by-step setup:**
-
-1. Open the repo in VS Code
-2. When prompted "Reopen in Container", click **Yes** (or use Command Palette → "Dev Containers: Reopen in Container")
-3. Wait ~5 minutes for the container to build (first time only — subsequent starts are fast)
-4. The container runs `npm ci` and `npm run generate` automatically on start
-5. Start developing with `npm run dev:website`, `npm run dev:api`, etc.
-
-**GitHub Codespaces:**
-1. Go to the [GitHub repository](https://github.com/arolariu/arolariu.ro)
-2. Click **Code** → **Codespaces** → **Create codespace on main**
-3. Wait for the environment to build
-4. All ports are automatically forwarded and accessible from your browser
-
-**Pre-installed tools:**
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Node.js | 24.x | Website, CV, components |
-| .NET SDK | 10.0 | API backend |
-| Python | 3.12 | exp config service |
-| Docker | Available | Run Docker Compose for infrastructure |
-| Azure CLI | Latest | Azure resource management |
-| Playwright | Browsers installed | E2E testing |
-
-**Forwarded ports (auto-detected):**
-| Port | Service | Label |
-|------|---------|-------|
-| 3000 | Next.js Website | Next.js Website |
-| 5000 | .NET API | .NET API |
-| 5002 | exp Config Service | exp Config Service |
-| 5173 | CV Site | CV Site (SvelteKit) |
-| 6006 | Storybook | Storybook Components |
-| 7007 | Storybook Website | Storybook Website |
-| 8080 | DocFX | DocFX |
-| 9229 | Node Debugger | (debug port) |
+**Pre-installed:** Node 24, .NET 10, Python 3.12, Docker, Azure CLI, Playwright
+**Forwarded ports:** 3000, 5000, 5002, 5173, 6006, 7007, 8080, 9229
 
 ---
 
