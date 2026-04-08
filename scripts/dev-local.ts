@@ -54,7 +54,17 @@ function sleep(ms: number): Promise<void> {
 
 function dockerCompose(file: string, args: string): void {
   const cmd = `docker compose -f ${file} ${args}`;
-  execSync(cmd, {cwd: INFRA_DIR, stdio: "pipe"});
+  try {
+    execSync(cmd, {cwd: INFRA_DIR, stdio: "pipe"});
+  } catch (error: unknown) {
+    const execError = error as {stderr?: Buffer | string; stdout?: Buffer | string};
+    const stderr = execError.stderr?.toString().trim() ?? "";
+    const stdout = execError.stdout?.toString().trim() ?? "";
+    logError(`Docker compose failed: ${cmd}`);
+    if (stderr) console.error(stderr);
+    if (stdout) console.error(stdout);
+    throw error;
+  }
 }
 
 async function waitForHealth(url: string, label: string, timeoutMs: number = 60_000): Promise<boolean> {
@@ -140,7 +150,7 @@ function initDatabases(): void {
   }
 
   // CosmosDB containers — use Node fetch instead of curl for cross-platform compatibility
-  try {
+  {
     const cosmosInit = [
       {url: "http://localhost:8081/dbs", body: JSON.stringify({id: "primary"})},
       {
@@ -152,21 +162,31 @@ function initDatabases(): void {
         body: JSON.stringify({id: "merchants", partitionKey: {paths: ["/parentCompanyId"], kind: "Hash"}}),
       },
     ];
+    let created = false;
+    let failed = false;
     for (const {url, body} of cosmosInit) {
       try {
-        await fetch(url, {
+        const response = await fetch(url, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body,
           signal: AbortSignal.timeout(5_000),
         });
+        if (response.ok) {
+          created = true;
+        } else if (response.status !== 409) {
+          failed = true;
+          logWarning(`CosmosDB POST ${url} returned ${response.status}`);
+        }
       } catch {
-        // Already exists or not ready — fine
+        failed = true;
       }
     }
-    logSuccess("CosmosDB database and containers initialized");
-  } catch {
-    logWarning("CosmosDB init skipped (may already exist)");
+    if (!failed) {
+      logSuccess(created ? "CosmosDB database and containers initialized" : "CosmosDB containers already exist");
+    } else {
+      logWarning("CosmosDB init incomplete (emulator may still be starting)");
+    }
   }
 
   // Azurite blob containers
