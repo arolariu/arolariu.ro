@@ -93,7 +93,7 @@ npm run dev:local:infra        # Infrastructure + exp only (start other services
 | Traefik Dashboard | http://localhost:8080 |
 | exp Admin (config editor) | http://localhost:5002/admin |
 | CosmosDB Explorer | http://localhost:1234 |
-| SQL Server | localhost:8082 (sa / qazWSXedcRFV1234!) |
+| SQL Server | localhost:8082 (credentials in `infra/Local/Storage/docker-compose.yml`) |
 | Redis | localhost:6379 |
 | Azurite Blobs | http://localhost:10000 |
 
