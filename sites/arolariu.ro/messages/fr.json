@@ -2644,7 +2644,7 @@
         "instructions": "Étapes",
         "prepTime": "Temps de préparation",
         "recipeName": "Nom de la recette",
-        "totalDuration": ""
+        "totalDuration": "Durée totale"
       },
       "placeholders": {
         "cookTime": "ex. 30 minutes",
