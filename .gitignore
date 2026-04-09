@@ -45,6 +45,7 @@ nul
 # Environment variables:
 **/.env
 **/.env.*
+!**/.env.example
 
 # Python runtime artifacts:
 **/local.settings.json

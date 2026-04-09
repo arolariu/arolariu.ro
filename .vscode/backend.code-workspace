@@ -1,0 +1,136 @@
+{
+  "folders": [
+    {
+      "name": "🔧 API (.NET)",
+      "path": "../sites/api.arolariu.ro"
+    },
+    {
+      "name": "🧪 exp Service (Python)",
+      "path": "../sites/exp.arolariu.ro"
+    },
+    {
+      "name": "📚 Docs & RFCs",
+      "path": "../docs"
+    },
+    {
+      "name": "⚙️ Monorepo Root",
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "dotnet.hotReload.applyOnSave": true,
+    "dotnet.defaultSolution": "arolariu.sln",
+    "[csharp]": {
+      "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+      }
+    },
+    "python.analysis.typeCheckingMode": "basic",
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/__pycache__": true,
+      "**/node_modules": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csdevkit",
+      "ms-dotnettools.csharp",
+      "ms-python.python",
+      "ms-python.debugpy",
+      "ms-python.black-formatter",
+      "charliermarsh.ruff",
+      "humao.rest-client",
+      "ms-azuretools.vscode-bicep",
+      "ms-azuretools.vscode-azureresourcegroups",
+      "github.copilot",
+      "github.copilot-chat",
+      "usernamehw.errorlens"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": ".NET API: Debug",
+        "type": "dotnet",
+        "request": "launch",
+        "preLaunchTask": "Build: API for Debug",
+        "projectPath": "${workspaceFolder:🔧 API (.NET)}/src/Core/arolariu.Backend.Core.csproj",
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development",
+          "ASPNETCORE_URLS": "http://localhost:5000",
+          "INFRA": "local",
+          "EXP_PROXY_URL": "http://localhost:5002"
+        }
+      },
+      {
+        "name": "Python: exp FastAPI",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "5002"],
+        "cwd": "${workspaceFolder:🧪 exp Service (Python)}",
+        "env": { "PYTHONPATH": "${workspaceFolder:🧪 exp Service (Python)}", "INFRA": "local" }
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Infra: Setup Docker",
+        "type": "shell",
+        "command": "npm run dev:local:setup",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": [],
+        "presentation": { "reveal": "silent", "panel": "shared" }
+      },
+      {
+        "label": "Build: API for Debug",
+        "type": "shell",
+        "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Debug",
+        "options": { "cwd": "${workspaceFolder:🔧 API (.NET)}" },
+        "dependsOn": ["Infra: Setup Docker"],
+        "problemMatcher": "$msCompile",
+        "group": "build"
+      },
+      {
+        "label": "Dev: API (watch)",
+        "type": "shell",
+        "command": "npm run dev:api",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Dev: exp Service",
+        "type": "shell",
+        "command": "npm run dev:exp",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "isBackground": true,
+        "problemMatcher": []
+      },
+      {
+        "label": "Test: API",
+        "type": "shell",
+        "command": "npm run test:api",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Build: API",
+        "type": "shell",
+        "command": "npm run build:api",
+        "options": { "cwd": "${workspaceFolder:⚙️ Monorepo Root}" },
+        "problemMatcher": ["$msCompile"]
+      }
+    ]
+  }
+}

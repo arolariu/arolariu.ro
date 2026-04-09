@@ -1663,6 +1663,10 @@
         "stockUpTip": {
           "description": "Les prix augmentent d’environ 15% après le 15 décembre",
           "title": "Conseil de stock"
+        },
+        "insufficientData": {
+          "description": "",
+          "title": ""
         }
       },
       "month": {
@@ -2613,11 +2617,14 @@
         "cancel": "Annuler",
         "close": "Fermer",
         "delete": "Supprimer",
-        "save": "Enregistrer"
+        "save": "Enregistrer",
+        "saving": ""
       },
       "create": {
         "description": "Remplissez les détails pour créer une recette.",
-        "title": "Ajouter une nouvelle recette"
+        "title": "Ajouter une nouvelle recette",
+        "error": "",
+        "success": ""
       },
       "delete": {
         "description": "Cette action est irréversible. Cela supprimera définitivement la recette <strong>{name}</strong> et toutes ses données associées.",
@@ -2636,7 +2643,8 @@
         "ingredients": "Ingrédients",
         "instructions": "Étapes",
         "prepTime": "Temps de préparation",
-        "recipeName": "Nom de la recette"
+        "recipeName": "Nom de la recette",
+        "totalDuration": ""
       },
       "placeholders": {
         "cookTime": "ex. 30 minutes",
@@ -2658,7 +2666,8 @@
       "update": {
         "description": "Mettre à jour les détails de la recette.",
         "title": "Mettre à jour la recette"
-      }
+      },
+      "minutes": ""
     },
     "removeScanDialog": {
       "buttons": {
@@ -3250,7 +3259,8 @@
           "dateNewest": "Date (plus récente)",
           "dateOldest": "Date (plus ancienne)",
           "nameAZ": "Nom (A-Z)",
-          "nameZA": "Nom (Z-A)"
+          "nameZA": "Nom (Z-A)",
+          "none": ""
         },
         "timeOfDay": "Moment de la journée",
         "title": "Filtres"
@@ -3767,7 +3777,11 @@
         "compare": "Comparaison",
         "current": "Cette facture"
       },
-      "title": "Analyses et insights"
+      "title": "Analyses et insights",
+      "emptyState": {
+        "description": "",
+        "title": ""
+      }
     },
     "invoiceGuestBanner": {
       "description": "Vous n’êtes actuellement pas le propriétaire de cette facture. L’affichage est limité à ce que le propriétaire a défini dans les paramètres de partage.",
@@ -3847,7 +3861,8 @@
         "totalSpent": "Total dépensé",
         "visits": "Visites"
       },
-      "title": "Dépenses par magasin"
+      "title": "Dépenses par magasin",
+      "unknownMerchant": ""
     },
     "metadata": {
       "description": "Consultez les détails de votre facture, les articles et les informations du commerçant associé.",
@@ -3923,7 +3938,8 @@
       },
       "title": "Évolution des dépenses",
       "tooltip": {
-        "currentInvoice": "Facture actuelle"
+        "currentInvoice": "Facture actuelle",
+        "andMore": ""
       }
     },
     "timelineItem": {

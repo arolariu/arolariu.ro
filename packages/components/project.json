@@ -17,7 +17,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'No dev target configured for @arolariu/components (storybook script not present). Use components:build instead.'",
+        "command": "npx rslib build --watch",
         "cwd": "packages/components"
       }
     },
