@@ -301,7 +301,7 @@ For bare-metal local development, environment variables are set via `.env` files
 | `CLERK_SECRET_KEY` | Website | Clerk secret key |
 | `ASPNETCORE_ENVIRONMENT` | API | `Development` |
 
-> **Tip:** Run `npm run generate:env` to auto-create `.env` files with sensible defaults. See `sites/arolariu.ro/.env.example` for the full list.
+> **Tip:** Run `npm run generate:env` to auto-create `.env` files with sensible defaults. See `.env.example` for the monorepo-wide reference, and the per-app `.env.example` files for service-specific values.
 
 ---
 
