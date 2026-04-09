@@ -67,14 +67,9 @@
         "runtimeArgs": ["run", "dev"],
         "console": "integratedTerminal",
         "skipFiles": ["<node_internals>/**"],
-        "env": { "NODE_OPTIONS": "--inspect" },
+        "env": { "NODE_OPTIONS": "--inspect", "EXP_PROXY_URL": "http://localhost:5002" },
         "sourceMaps": true,
-        "serverReadyAction": {
-          "action": "debugWithEdge",
-          "killOnServerStop": true,
-          "pattern": "- Local:.+(https?://.+)",
-          "uriFormat": "%s"
-        }
+        "timeout": 30000
       },
       {
         "name": "Storybook: Components",

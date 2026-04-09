@@ -96,6 +96,7 @@
         "ms-dotnettools.csdevkit",
         "ms-python.python",
         "ms-python.debugpy",
+        "ms-python.black-formatter",
         "charliermarsh.ruff",
         "humao.rest-client",
 
