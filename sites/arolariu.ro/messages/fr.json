@@ -3260,7 +3260,7 @@
           "dateOldest": "Date (plus ancienne)",
           "nameAZ": "Nom (A-Z)",
           "nameZA": "Nom (Z-A)",
-          "none": ""
+          "none": "Aucun"
         },
         "timeOfDay": "Moment de la journée",
         "title": "Filtres"
