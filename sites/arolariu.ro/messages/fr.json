@@ -2623,8 +2623,8 @@
       "create": {
         "description": "Remplissez les détails pour créer une recette.",
         "title": "Ajouter une nouvelle recette",
-        "error": "",
-        "success": ""
+        "error": "Échec de la création de la recette.",
+        "success": "Recette créée avec succès."
       },
       "delete": {
         "description": "Cette action est irréversible. Cela supprimera définitivement la recette <strong>{name}</strong> et toutes ses données associées.",
