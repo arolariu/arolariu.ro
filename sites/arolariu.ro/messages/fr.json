@@ -1665,8 +1665,8 @@
           "title": "Conseil de stock"
         },
         "insufficientData": {
-          "description": "",
-          "title": ""
+          "description": "Il n’y a pas encore assez de données pour afficher des tendances saisonnières fiables.",
+          "title": "Données insuffisantes"
         }
       },
       "month": {
