@@ -143,7 +143,7 @@ const AZURE_EXP_URL = "https://exp.arolariu.ro";
  * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach bare-metal exp.
  */
 // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"] ?? (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : "http://exp");
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"]?.trim() || (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : "http://exp");
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
 const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;

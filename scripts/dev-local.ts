@@ -312,9 +312,8 @@ async function main(): Promise<void> {
   }
 
   // Start bare-metal services with hot reload
-  if (bareMetalServices.length > 0) {
-    log("🔧", styleText("bold", "Starting bare-metal services with hot reload..."));
-    console.log("");
+  log("🔧", styleText("bold", "Starting bare-metal services with hot reload..."));
+  console.log("");
 
   const processes = startBareMetalServices(bareMetalServices);
 
@@ -325,7 +324,7 @@ async function main(): Promise<void> {
       p.kill();
     }
     console.log(styleText("gray", "  Bare-metal services stopped."));
-    console.log(styleText("gray", "  Docker infrastructure (and API container) are still running."));
+    console.log(styleText("gray", "  Docker infrastructure is still running."));
     console.log(styleText("gray", "  To stop Docker: cd infra/Local && ./selfhost-stop.sh (or selfhost-stop.bat)"));
     process.exit(0);
   };
@@ -342,12 +341,6 @@ async function main(): Promise<void> {
         }),
     ),
   );
-  } else {
-    log("✅", "All services running in Docker. Use Ctrl+C to exit.");
-    log("ℹ️ ", "API logs: docker logs -f api-arolariu-ro");
-    // Keep process alive
-    await new Promise(() => {});
-  }
 }
 
 main().catch((error) => {

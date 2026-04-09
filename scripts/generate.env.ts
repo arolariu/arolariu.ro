@@ -22,7 +22,7 @@ import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
-const EXP_BASE_URL = process.env["EXP_PROXY_URL"] ?? (process.env["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
+const EXP_BASE_URL = process.env["EXP_PROXY_URL"]?.trim() || (process.env["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
 
 /** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
 const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
