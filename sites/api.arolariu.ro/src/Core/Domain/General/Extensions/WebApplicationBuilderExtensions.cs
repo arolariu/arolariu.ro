@@ -117,7 +117,10 @@ internal static class WebApplicationBuilderExtensions
       client.DefaultRequestHeaders.Add("X-Exp-Target", "api");
     });
 
-    if (isAzureEnv)
+    // Only add bearer-token auth when targeting the Azure-hosted exp service.
+    // When EXP_PROXY_URL overrides to localhost, skip Entra ID auth to avoid failures.
+    var useAzureAuth = baseUrl == ConfigProxyUrlAzure;
+    if (useAzureAuth)
     {
       httpClientBuilder.AddHttpMessageHandler(() =>
         new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));

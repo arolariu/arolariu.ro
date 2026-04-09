@@ -135,7 +135,7 @@ async function waitForInfra(): Promise<void> {
   }
 }
 
-function initDatabases(): void {
+async function initDatabases(): Promise<void> {
   logStep(5, 5, "Initializing databases...");
 
   // SQL Server schema
@@ -202,16 +202,6 @@ function initDatabases(): void {
 }
 
 // ============================================================================
-// Docker-hosted services (API needs Docker DNS to reach exp at http://exp)
-// ============================================================================
-
-function startApiInDocker(): void {
-  log("🐳", styleText("bold", "Starting API in Docker (needs Docker DNS for exp service)..."));
-  dockerCompose("Backend/docker-compose.yml", "up -d --build");
-  logSuccess("API container started on http://localhost:5000");
-}
-
-// ============================================================================
 // Bare-metal services
 // ============================================================================
 
@@ -260,14 +250,6 @@ const BARE_METAL_SERVICES: Record<DevProfile, string[]> = {
   "setup-only": [],
 };
 
-const NEEDS_API_DOCKER: Record<DevProfile, boolean> = {
-  all: false,
-  frontend: false,
-  backend: false,
-  infra: false,
-  "setup-only": false,
-};
-
 async function main(): Promise<void> {
   console.log(styleText(["bold", "magenta"], "\n╔══════════════════════════════════════════════╗"));
   console.log(styleText(["bold", "magenta"], "║   arolariu.ro Local Development Orchestrator  ║"));
@@ -275,13 +257,10 @@ async function main(): Promise<void> {
 
   const profile = parseArgs();
   const bareMetalServices = BARE_METAL_SERVICES[profile];
-  const needsApiDocker = NEEDS_API_DOCKER[profile];
 
-  const description = [
-    ...(bareMetalServices.length > 0 ? [`${bareMetalServices.join(", ")} (hot reload)`] : []),
-    ...(needsApiDocker ? ["API (Docker)"] : []),
-    ...(bareMetalServices.length === 0 && !needsApiDocker ? ["infrastructure only"] : []),
-  ].join(" + ");
+  const description = bareMetalServices.length > 0
+    ? `${bareMetalServices.join(", ")} (hot reload)`
+    : "infrastructure only";
 
   log("📋", `Profile: ${styleText("bold", profile)} — ${description}`);
   console.log("");
@@ -301,7 +280,7 @@ async function main(): Promise<void> {
   startStorage();
   swapExpToBareMetalMode();
   await waitForInfra();
-  initDatabases();
+  await initDatabases();
 
   console.log("");
   log("✅", styleText("green", "Infrastructure is ready!"));
@@ -319,7 +298,7 @@ async function main(): Promise<void> {
   console.log(styleText("gray", "  └──────────────────────────────────────────────────┘"));
   console.log("");
 
-  if (bareMetalServices.length === 0 && !needsApiDocker) {
+  if (bareMetalServices.length === 0) {
     if (profile === "setup-only") {
       log("✅", styleText("green", "Infrastructure setup complete. Ready for VS Code debugger launch."));
     } else {
@@ -332,13 +311,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Step 4: Start API in Docker (needs Docker DNS to resolve http://exp)
-  if (needsApiDocker) {
-    startApiInDocker();
-    console.log("");
-  }
-
-  // Step 5: Start bare-metal services with hot reload
+  // Start bare-metal services with hot reload
   if (bareMetalServices.length > 0) {
     log("🔧", styleText("bold", "Starting bare-metal services with hot reload..."));
     console.log("");

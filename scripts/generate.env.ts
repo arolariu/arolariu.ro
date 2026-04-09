@@ -21,7 +21,11 @@ import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} f
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
-const EXP_BASE_URL = process.env["EXP_PROXY_URL"] ?? (process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp");
+const AZURE_EXP_URL = "https://exp.arolariu.ro";
+const EXP_BASE_URL = process.env["EXP_PROXY_URL"] ?? (process.env["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
+
+/** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
+const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
 
 /** Config label derived from SITE_ENV (matches website configProxy.ts logic). */
 const CONFIG_LABEL: string =
@@ -48,8 +52,8 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
 
   const headers: Record<string, string> = {"X-Exp-Target": "website"};
 
-  // Acquire a bearer token when running with Azure identity.
-  if (process.env["AZURE_CLIENT_ID"]) {
+  // Acquire a bearer token only when targeting the Azure-hosted exp service.
+  if (USE_AZURE_AUTH) {
     try {
       // In CI (GitHub Actions), azure/login sets up AzureCliCredential via OIDC.
       // DefaultAzureCredential with AZURE_CLIENT_ID tries ManagedIdentity first,

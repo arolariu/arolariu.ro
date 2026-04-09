@@ -133,15 +133,21 @@ const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
  */
 export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default" as const;
 
+/** Azure-hosted exp service URL. */
+const AZURE_EXP_URL = "https://exp.arolariu.ro";
+
 /**
  * Base URL for the experiments / config service.
  *
- * Determined once at module load time so every fetch uses the same endpoint.
  * Priority: EXP_PROXY_URL env var > AZURE_CLIENT_ID-based selection > Docker default.
- * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach Docker-hosted or bare-metal exp.
+ * Bare-metal dev sets EXP_PROXY_URL=http://localhost:5002 to reach bare-metal exp.
  */
 // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"] ?? (HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp");
+const EXP_BASE_URL: string = process.env["EXP_PROXY_URL"] ?? (HAS_AZURE_CLIENT_ID ? AZURE_EXP_URL : "http://exp");
+
+/** Whether to acquire Azure AD tokens — only when targeting the Azure-hosted exp instance. */
+const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
+
 const WEBSITE_TARGET = "website" as const;
 
 /**
@@ -161,10 +167,10 @@ const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "
 
 /**
  * Acquires a Bearer token for the experiments service.
- * Returns an empty string when `AZURE_CLIENT_ID` is not set (local / Docker).
+ * Returns an empty string when not targeting the Azure-hosted exp instance.
  */
 async function getBearerToken(): Promise<string> {
-  if (!HAS_AZURE_CLIENT_ID) return "";
+  if (!USE_AZURE_AUTH) return "";
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
