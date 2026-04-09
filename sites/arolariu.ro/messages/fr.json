@@ -2667,7 +2667,7 @@
         "description": "Mettre à jour les détails de la recette.",
         "title": "Mettre à jour la recette"
       },
-      "minutes": ""
+      "minutes": "minutes"
     },
     "removeScanDialog": {
       "buttons": {
