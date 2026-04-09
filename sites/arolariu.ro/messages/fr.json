@@ -3779,8 +3779,8 @@
       },
       "title": "Analyses et insights",
       "emptyState": {
-        "description": "",
-        "title": ""
+        "description": "Ajoutez plus de données à cette facture pour afficher des analyses et des insights.",
+        "title": "Aucune analyse disponible"
       }
     },
     "invoiceGuestBanner": {
