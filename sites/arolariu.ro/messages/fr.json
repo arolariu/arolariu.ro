@@ -3939,7 +3939,7 @@
       "title": "Évolution des dépenses",
       "tooltip": {
         "currentInvoice": "Facture actuelle",
-        "andMore": ""
+        "andMore": "et {count} de plus…"
       }
     },
     "timelineItem": {
