@@ -3862,7 +3862,7 @@
         "visits": "Visites"
       },
       "title": "Dépenses par magasin",
-      "unknownMerchant": ""
+      "unknownMerchant": "Commerçant inconnu"
     },
     "metadata": {
       "description": "Consultez les détails de votre facture, les articles et les informations du commerçant associé.",
