@@ -2,22 +2,120 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Dev: Website (Next.js)",
+      "type": "shell",
+      "command": "npm run dev:website",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: API (.NET watch)",
+      "type": "shell",
+      "command": "npm run dev:api",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: exp Service (FastAPI)",
+      "type": "shell",
+      "command": "npm run dev:exp",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: Components (watch)",
+      "type": "shell",
+      "command": "npm run dev:components",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: CV Site (SvelteKit)",
+      "type": "shell",
+      "command": "npm run dev:cv",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Dev: All Services (parallel)",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Infra: Setup Docker",
+      "detail": "Starts Docker infrastructure, stops Docker exp, waits for DBs, inits schemas. Used as preLaunchTask for one-click debugging.",
+      "type": "shell",
+      "command": "npm run dev:local:setup",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: API for Debug",
+      "detail": "Starts Docker infra then builds the .NET API in Debug configuration.",
+      "type": "shell",
+      "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Debug",
+      "options": {
+        "cwd": "${workspaceFolder}/sites/api.arolariu.ro"
+      },
+      "dependsOn": ["Infra: Setup Docker"],
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "Docker: Start Local Stack",
+      "type": "shell",
+      "command": "./selfhost-start.sh",
+      "windows": {
+        "command": "cmd /c selfhost-start.bat"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/infra/Local"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop Local Stack",
+      "type": "shell",
+      "command": "./selfhost-stop.sh",
+      "windows": {
+        "command": "cmd /c selfhost-stop.bat"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/infra/Local"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Tests: Unit Test All",
       "type": "shell",
       "command": "npm run test:unit",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Tests: Integration Test All",
       "type": "shell",
       "command": "npm run test:e2e",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Tests: All Tests",
       "type": "shell",
       "command": "npm run test:unit && npm run test:e2e",
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "test"
     },
     {
       "label": "Checks: Format Run",
@@ -35,6 +133,18 @@
       "label": "Checks: Code Hygiene",
       "type": "shell",
       "command": "npm run format && npm run lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Health: Doctor Check",
+      "type": "shell",
+      "command": "npm run doctor",
+      "problemMatcher": []
+    },
+    {
+      "label": "Health: Status Dashboard",
+      "type": "shell",
+      "command": "npm run status",
       "problemMatcher": []
     }
   ]

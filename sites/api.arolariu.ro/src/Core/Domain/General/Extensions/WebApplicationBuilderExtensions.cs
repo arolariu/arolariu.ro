@@ -80,11 +80,11 @@ internal static class WebApplicationBuilderExtensions
   /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure.</param>
   /// <remarks>
   /// <para>
-  /// <strong>Endpoint selection</strong> is deterministic and based solely on <c>AZURE_CLIENT_ID</c>
-  /// environment variable presence:
-  /// <list type="bullet">
+  /// <strong>Endpoint selection priority:</strong>
+  /// <list type="number">
+  ///   <item><description><c>EXP_PROXY_URL</c> env var → explicit override (enables bare-metal dev with Docker infra, e.g. <c>http://localhost:5002</c>).</description></item>
   ///   <item><description><c>AZURE_CLIENT_ID</c> present → <c>https://exp.arolariu.ro</c> with Entra ID bearer token.</description></item>
-  ///   <item><description><c>AZURE_CLIENT_ID</c> absent → <c>http://exp</c> (Docker service-name DNS) with no auth.</description></item>
+  ///   <item><description>Default → <c>http://exp</c> (Docker service-name DNS) with no auth.</description></item>
   /// </list>
   /// </para>
   /// <para>
@@ -100,9 +100,15 @@ internal static class WebApplicationBuilderExtensions
   {
     var services = builder.Services;
 
-    // Endpoint selection: deterministic, based solely on AZURE_CLIENT_ID presence.
+    // Endpoint selection priority:
+    // 1. EXP_PROXY_URL env var (explicit override — enables bare-metal dev with Docker infra)
+    // 2. AZURE_CLIENT_ID present → Azure production endpoint with Entra ID auth
+    // 3. Default → Docker DNS hostname (http://exp) for containerized environments
+    var explicitUrl = Environment.GetEnvironmentVariable("EXP_PROXY_URL");
     var isAzureEnv = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID"));
-    var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
+    var baseUrl = !string.IsNullOrEmpty(explicitUrl)
+      ? explicitUrl
+      : isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
 
     var httpClientBuilder = services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
     {
@@ -111,7 +117,10 @@ internal static class WebApplicationBuilderExtensions
       client.DefaultRequestHeaders.Add("X-Exp-Target", "api");
     });
 
-    if (isAzureEnv)
+    // Only add bearer-token auth when targeting the Azure-hosted exp service.
+    // When EXP_PROXY_URL overrides to localhost, skip Entra ID auth to avoid failures.
+    var useAzureAuth = baseUrl == ConfigProxyUrlAzure;
+    if (useAzureAuth)
     {
       httpClientBuilder.AddHttpMessageHandler(() =>
         new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));

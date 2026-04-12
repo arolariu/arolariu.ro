@@ -17,17 +17,11 @@
       ],
       "env": {
         "NODE_OPTIONS": "--inspect",
-        "NEXT_TURBOPACK_TRACING": "1"
+        "NEXT_TURBOPACK_TRACING": "1",
+        "EXP_PROXY_URL": "http://localhost:5002"
       },
       "sourceMaps": true,
-      "timeout": 30000, // 30 seconds
-      "serverReadyAction": {
-        "action": "debugWithEdge",
-        "killOnServerStop": true,
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "webRoot": "${workspaceFolder}/sites/arolariu.ro"
-      }
+      "timeout": 30000
     },
     {
       "name": "Next.js: Debug Client-Side",
@@ -55,66 +49,47 @@
       }
     },
     {
-      "name": "Launch Dev Website (Legacy)",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev:website"
-      ],
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
-      "name": "Launch Storybook for components",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--workspace",
-        "@arolariu/components",
-        "run",
-        "storybook"
-      ],
-      "cwd": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
-      "name": "Launch Storybook for website",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "storybook",
-        "dev",
-        "-p",
-        "7007",
-        "-c",
-        "sites/arolariu.ro/.storybook"
-      ],
-      "cwd": "${workspaceFolder}",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
       "name": "Launch DocFX site",
-      "type": "node",
+      "type": "node-terminal",
       "request": "launch",
-      "runtimeExecutable": "docfx",
-      "runtimeArgs": [
-        "build",
-        "sites/docs.arolariu.ro/docfx.json"
+      "command": "docfx build sites/docs.arolariu.ro/docfx.json --serve",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": ".NET API: Debug",
+      "type": "dotnet",
+      "request": "launch",
+      "preLaunchTask": "Build: API for Debug",
+      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5000",
+        "INFRA": "local",
+        "EXP_PROXY_URL": "http://localhost:5002"
+      }
+    },
+    {
+      "name": "Python: exp FastAPI Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "5002"],
+      "cwd": "${workspaceFolder}/sites/exp.arolariu.ro",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/sites/exp.arolariu.ro",
+        "INFRA": "local"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Website + API + exp",
+      "configurations": [
+        "Next.js: Debug Full Stack",
+        ".NET API: Debug",
+        "Python: exp FastAPI Debug"
       ],
-      "postDebugTask": "Launch DocFX"
+      "stopAll": true
     }
   ]
 }

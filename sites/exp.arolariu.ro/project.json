@@ -1,0 +1,45 @@
+{
+  "name": "@arolariu/exp",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/exp.arolariu.ro",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m uvicorn main:app --reload --host 127.0.0.1 --port 5002",
+        "cwd": "sites/exp.arolariu.ro",
+        "env": {
+          "INFRA": "local"
+        }
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'exp is a Python service — no build step required (deployed via Docker)'",
+        "cwd": "sites/exp.arolariu.ro"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pip install -q -r requirements-dev.txt && python -m pytest -q",
+        "cwd": "sites/exp.arolariu.ro"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pip install -q -r requirements-dev.txt && python -m ruff check .",
+        "cwd": "sites/exp.arolariu.ro"
+      }
+    }
+  },
+  "tags": [
+    "domain:backend",
+    "scope:exp",
+    "type:app",
+    "platform:python"
+  ]
+}

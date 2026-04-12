@@ -29,8 +29,13 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet run --project src/Core",
-        "cwd": "sites/api.arolariu.ro"
+        "command": "dotnet watch run --project src/Core --verbose",
+        "cwd": "sites/api.arolariu.ro",
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development",
+          "INFRA": "local",
+          "EXP_PROXY_URL": "http://localhost:5002"
+        }
       }
     }
   },
