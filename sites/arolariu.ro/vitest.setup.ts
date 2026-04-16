@@ -52,10 +52,12 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next-intl", () => {
-  const mockT = (key: string) => key;
-  mockT.rich = (key: string) => key;
   return {
-    useTranslations: () => mockT,
+    useTranslations: (namespace?: string) => {
+      const mockT = (key: string) => (namespace ? `${namespace}.${key}` : key);
+      mockT.rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
+      return mockT;
+    },
     useLocale: () => "en",
     useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
     NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
