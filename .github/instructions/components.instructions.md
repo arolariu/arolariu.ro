@@ -2,7 +2,7 @@
 version: "1.0.0"
 lastUpdated: "2026-02-09"
 name: 'Component Library'
-description: 'Guidelines for the @arolariu/components shared UI library built on Radix UI, shadcn/ui, and Tailwind CSS'
+description: 'Guidelines for the @arolariu/components shared UI library built on Base UI and CSS Modules'
 applyTo: 'packages/components/**/*.tsx, packages/components/**/*.ts'
 ---
 
@@ -21,7 +21,7 @@ Applies to shared component library changes in `packages/components/`.
 ### Prohibited Actions
 - Do not import from application-specific `sites/` paths.
 - Do not ship component changes without barrel export updates.
-- Do not introduce inline styles instead of Tailwind utility classes.
+- Do not introduce inline styles instead of CSS Modules.
 
 ### Required Verification Commands
 ```bash
@@ -49,9 +49,9 @@ Guidelines for developing and maintaining the `@arolariu/components` shared UI l
 |----------|-------|
 | **Package** | `@arolariu/components` |
 | **Location** | `packages/components/` |
-| **Base** | Radix UI + shadcn/ui |
-| **Styling** | Tailwind CSS with `cn()` utility |
-| **Stories** | Storybook at `stories/` |
+| **Base** | Base UI + CSS Modules |
+| **Styling** | CSS Modules with `cn()` utility |
+| **Stories** | Colocated in `src/components/ui/` |
 | **Exports** | Barrel export via `src/index.ts` |
 
 ---
@@ -62,11 +62,10 @@ Guidelines for developing and maintaining the `@arolariu/components` shared UI l
 packages/components/
   src/
     components/
-      ui/                    # UI primitives (Button, Dialog, Card, etc.)
+      ui/                    # UI primitives + colocated stories and tests
     lib/
       utils.ts               # cn() utility for class merging
     index.ts                 # Barrel export — ALL components must be exported here
-  stories/                   # Storybook stories
 ```
 
 ---
@@ -77,8 +76,8 @@ When adding a new component:
 
 1. **Create the component** in `src/components/ui/[component-name].tsx`
 2. **Export from barrel** — Add to `src/index.ts`
-3. **Add Storybook story** in `stories/[component-name].stories.tsx`
-4. **Follow patterns**: Radix primitives, `cn()` for styling, `forwardRef` for DOM refs
+3. **Add Storybook story** in `src/components/ui/[component-name].stories.tsx` (colocated)
+4. **Follow patterns**: Base UI primitives, `cn()` for styling, `forwardRef` for DOM refs
 5. **Accessibility**: ARIA attributes, keyboard navigation, focus management
 
 ---
@@ -126,7 +125,7 @@ export type {ButtonProps};
 - **Always** set `displayName` on forwardRef components
 - **Never** add project-specific business logic to shared components
 - **Never** import from `sites/` directories — components must be standalone
-- **Never** use inline styles — use Tailwind CSS classes exclusively
+- **Never** use inline styles — use CSS Modules exclusively
 
 ---
 
@@ -162,9 +161,9 @@ export {Card, CardContent, CardHeader, CardTitle} from "./components/ui/card";
 ## Storybook Stories
 
 ```tsx
-// stories/button.stories.tsx
+// src/components/ui/button.stories.tsx
 import type {Meta, StoryObj} from "@storybook/react";
-import {Button} from "../src/components/ui/button";
+import {Button} from "./button";
 
 const meta: Meta<typeof Button> = {
   title: "UI/Button",
