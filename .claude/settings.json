@@ -31,44 +31,5 @@
     ],
     "deny": []
   },
-  "enableAllProjectMcpServers": true,
-  "enabledPlugins": {
-    "arscontexta@agenticnotetaking": true
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/session-orient.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/validate-note.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/session-capture.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  }
+  "enableAllProjectMcpServers": true
 }

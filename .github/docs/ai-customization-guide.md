@@ -8,9 +8,9 @@ This repository includes a comprehensive AI customization layer for GitHub Copil
 
 | Asset Type | Location | Count | Auto-loaded? |
 |------------|----------|-------|-------------|
-| **Instructions** | `.github/instructions/*.instructions.md` | 13 | ✅ By file pattern |
+| **Instructions** | `.github/instructions/*.instructions.md` | 12 | ✅ By file pattern |
 | **Agents** | `.github/agents/*.agent.md` | 6 | ✅ On invocation |
-| **Prompts** | `.github/prompts/*.prompt.md` | 11 | Manual (`@workspace /prompt`) |
+| **Prompts** | `.github/prompts/*.prompt.md` | 9 | Manual (`@workspace /prompt`) |
 | **Skills** | `.github/skills/*/SKILL.md` | 4 | Manual (scaffolding) |
 | **Extensions** | `.github/extensions/*/extension.mjs` | 3 | ✅ Auto on CLI start |
 | **Governance** | `.github/agent-governance/*.md` | 2 | Referenced by instructions |
@@ -34,7 +34,6 @@ Instructions are automatically loaded when you edit files matching their `applyT
 | `code-review.instructions.md` | `**` | Code review standards |
 | `python.instructions.md` | `sites/exp.arolariu.ro/**/*.py` | FastAPI, Ruff |
 | `svelte.instructions.md` | `sites/cv.arolariu.ro/**/*.svelte` | SvelteKit 2 |
-| `knowledge.instructions.md` | `knowledge/**/*.md` | Knowledge vault |
 | `agent-governance.instructions.md` | `.github/**/*.md` | AI asset governance |
 
 **You don't need to do anything** — these load automatically based on what file you're editing.
@@ -71,8 +70,6 @@ Invoke with `@workspace /prompt` in VS Code or use directly in Copilot CLI:
 | `upgrade-dependency` | Safe dependency upgrade with rollback |
 | `refactor` | Systematic refactoring with tests |
 | `migration` | Dependency/framework migration |
-| `connect` | Link knowledge vault insights |
-| `distill` | Extract insights from source documents |
 
 ---
 

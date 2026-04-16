@@ -1,7 +1,6 @@
 # Transient artifacts:
 **/tmp/**
 *.lscache
-**/ops/sessions/current.json
 **/node_modules/**
 **/_site/**
 **/obj/**
