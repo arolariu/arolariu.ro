@@ -1,6 +1,6 @@
 # Frontend Agent Guide (arolariu.ro)
 
-> Next.js 16.1.6 + React 19.2.4 + TypeScript 5.9.3
+> Next.js 16.2 + React 19.2.4 + TypeScript 6.0
 
 ## Architecture
 
@@ -41,4 +41,4 @@ npm run generate           # Generate env, i18n, GraphQL types
 
 ## RFCs
 
-Consult before architectural changes: 1001 (observability), 1002 (JSDoc), 1003 (i18n), 1004 (metadata/SEO), 1005 (Zustand), 1007 (patterns)
+Consult before architectural changes: 1001 (observability), 1002 (JSDoc), 1003 (i18n), 1004 (metadata/SEO), 1005 (Zustand), 1006 (component library), 1007 (patterns), 1008 (SCSS)

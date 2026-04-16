@@ -2,7 +2,7 @@
 version: "1.0.0"
 lastUpdated: "2026-02-09"
 name: 'Component Library'
-description: 'Guidelines for the @arolariu/components shared UI library built on Radix UI, shadcn/ui, and Tailwind CSS'
+description: 'Guidelines for the @arolariu/components shared UI library built on Base UI and CSS Modules'
 applyTo: 'packages/components/**/*.tsx, packages/components/**/*.ts'
 ---
 
@@ -21,7 +21,7 @@ Applies to shared component library changes in `packages/components/`.
 ### Prohibited Actions
 - Do not import from application-specific `sites/` paths.
 - Do not ship component changes without barrel export updates.
-- Do not introduce inline styles instead of Tailwind utility classes.
+- Do not introduce inline styles instead of CSS Modules.
 
 ### Required Verification Commands
 ```bash
@@ -49,9 +49,9 @@ Guidelines for developing and maintaining the `@arolariu/components` shared UI l
 |----------|-------|
 | **Package** | `@arolariu/components` |
 | **Location** | `packages/components/` |
-| **Base** | Radix UI + shadcn/ui |
-| **Styling** | Tailwind CSS with `cn()` utility |
-| **Stories** | Storybook at `stories/` |
+| **Base** | Base UI + CSS Modules |
+| **Styling** | CSS Modules with `cn()` utility |
+| **Stories** | Colocated in `src/components/ui/` + docs in `src/stories/` |
 | **Exports** | Barrel export via `src/index.ts` |
 
 ---
@@ -62,11 +62,12 @@ Guidelines for developing and maintaining the `@arolariu/components` shared UI l
 packages/components/
   src/
     components/
-      ui/                    # UI primitives (Button, Dialog, Card, etc.)
+      ui/                    # UI primitives + colocated stories and tests
+    hooks/                   # Shared React hooks
     lib/
-      utils.ts               # cn() utility for class merging
+      utilities.ts           # cn() utility for class merging
+    stories/                 # Storybook docs/foundations (Welcome, Typography, etc.)
     index.ts                 # Barrel export — ALL components must be exported here
-  stories/                   # Storybook stories
 ```
 
 ---
@@ -77,8 +78,8 @@ When adding a new component:
 
 1. **Create the component** in `src/components/ui/[component-name].tsx`
 2. **Export from barrel** — Add to `src/index.ts`
-3. **Add Storybook story** in `stories/[component-name].stories.tsx`
-4. **Follow patterns**: Radix primitives, `cn()` for styling, `forwardRef` for DOM refs
+3. **Add Storybook story** in `src/components/ui/[component-name].stories.tsx` (colocated)
+4. **Follow patterns**: Base UI primitives, `cn()` for styling, `forwardRef` for DOM refs
 5. **Accessibility**: ARIA attributes, keyboard navigation, focus management
 
 ---
@@ -86,23 +87,32 @@ When adding a new component:
 ## Component Pattern
 
 ```tsx
+"use client";
+
 import * as React from "react";
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
+import styles from "./button.module.css";
+
+const variantStyles: Record<string, string> = {
+  default: styles.default!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+  ghost: styles.ghost!,
+};
+
+export type ButtonVariant = "default" | "destructive" | "outline" | "ghost";
+export type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "destructive" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg" | "icon";
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({className, variant = "default", size = "default", ...props}, ref) => {
     return (
       <button
-        className={cn(
-          "inline-flex items-center justify-center rounded-md font-medium",
-          // variant styles...
-          className,
-        )}
+        className={cn(styles.base, variantStyles[variant], className)}
         ref={ref}
         {...props}
       />
@@ -119,26 +129,27 @@ export type {ButtonProps};
 
 ## Key Rules
 
-- **Always** use `cn()` from `@/lib/utils` for class merging (never manual concatenation)
+- **Always** use `cn()` from `@/lib/utilities` for class merging (never manual concatenation)
 - **Always** use `forwardRef` for components that render DOM elements
 - **Always** export both the component and its props type
 - **Always** add the component to `src/index.ts` barrel export
 - **Always** set `displayName` on forwardRef components
 - **Never** add project-specific business logic to shared components
 - **Never** import from `sites/` directories — components must be standalone
-- **Never** use inline styles — use Tailwind CSS classes exclusively
+- **Never** use inline styles — use CSS Modules exclusively
 
 ---
 
 ## Styling with cn()
 
 ```tsx
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
+import styles from "./component.module.css";
 
-// Merge base classes with conditional and user-provided classes
+// Merge CSS Module classes with conditional and user-provided classes
 <div className={cn(
-  "base-class",
-  isActive && "active-class",
+  styles.base,
+  isActive && styles.active,
   className, // Allow consumers to override
 )} />
 ```
@@ -162,9 +173,9 @@ export {Card, CardContent, CardHeader, CardTitle} from "./components/ui/card";
 ## Storybook Stories
 
 ```tsx
-// stories/button.stories.tsx
+// src/components/ui/button.stories.tsx
 import type {Meta, StoryObj} from "@storybook/react";
-import {Button} from "../src/components/ui/button";
+import {Button} from "./button";
 
 const meta: Meta<typeof Button> = {
   title: "UI/Button",

@@ -53,11 +53,4 @@ fi
 # Clean up current session
 rm -f "$CURRENT" 2>/dev/null
 
-# Auto-commit session data
-cd "$REPO_ROOT" || exit 1
-git add "$SESSION_DIR/" 2>/dev/null
-if ! git diff --cached --quiet 2>/dev/null; then
-  git commit -m "knowledge: capture session $SESSION_ID" --no-verify 2>/dev/null
-fi
-
 exit 0

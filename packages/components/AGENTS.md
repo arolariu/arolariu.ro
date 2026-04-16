@@ -30,10 +30,10 @@ npm run dev:components      # Storybook → http://localhost:6006
 ```text
 src/components/ui/[name].tsx      — Component implementation
 src/components/ui/[name].module.css — Component styles
-stories/[name].stories.tsx        — Storybook story
+src/components/ui/[name].stories.tsx — Storybook story (colocated)
 src/index.ts                      — Barrel export (MUST update)
 ```
 
 ## RFC
 
-Consult: 1006 (Component Library Architecture)
+Consult: 1006 (Component Library Architecture), 1008 (SCSS System Architecture)

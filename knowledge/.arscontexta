@@ -2,5 +2,5 @@
 # This file identifies the directory as an Ars Contexta vault.
 # Do not delete — hooks only run when this file exists.
 
-git: true
+git: false
 session_capture: true

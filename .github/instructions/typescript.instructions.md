@@ -2,7 +2,7 @@
 version: "1.1.0"
 lastUpdated: "2026-02-09"
 name: 'TypeScript Standards'
-description: 'Guidelines for TypeScript Development targeting TypeScript 5.x and ES2022 output'
+description: 'Guidelines for TypeScript Development targeting TypeScript 6.x and ES2022 output'
 applyTo: '**/*.ts'
 ---
 
@@ -39,7 +39,7 @@ npm run lint
 - Domain type location examples
 
 
-Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeScript 5.9.3 with ES2022 output.
+Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeScript 6.0 with ES2022 output.
 
 ---
 
@@ -47,7 +47,7 @@ Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeSc
 
 | Aspect | Value |
 |--------|-------|
-| **TypeScript** | 5.9.3 |
+| **TypeScript** | 6.0 |
 | **Target** | ES2022 |
 | **Module** | ESNext (bundler resolution) |
 | **Strict Mode** | All options enabled |
