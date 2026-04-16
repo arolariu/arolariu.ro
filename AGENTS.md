@@ -8,7 +8,7 @@
 
 - **Frontend**: Next.js 16.2 + React 19.2.4 (main website at `sites/arolariu.ro/`)
 - **Backend**: .NET 10 ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`)
-- **Component Library**: `@arolariu/components` — 80+ Base UI components with CSS Modules styling (at `packages/components/`)
+- **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
 - **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)
 - **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
 - **Tooling**: Nx monorepo, npm >=11, Node.js >=24, .NET 10 SDK

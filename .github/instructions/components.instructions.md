@@ -51,7 +51,7 @@ Guidelines for developing and maintaining the `@arolariu/components` shared UI l
 | **Location** | `packages/components/` |
 | **Base** | Base UI + CSS Modules |
 | **Styling** | CSS Modules with `cn()` utility |
-| **Stories** | Colocated in `src/components/ui/` |
+| **Stories** | Colocated in `src/components/ui/` + docs in `src/stories/` |
 | **Exports** | Barrel export via `src/index.ts` |
 
 ---
@@ -63,8 +63,10 @@ packages/components/
   src/
     components/
       ui/                    # UI primitives + colocated stories and tests
+    hooks/                   # Shared React hooks
     lib/
-      utils.ts               # cn() utility for class merging
+      utilities.ts           # cn() utility for class merging
+    stories/                 # Storybook docs/foundations (Welcome, Typography, etc.)
     index.ts                 # Barrel export — ALL components must be exported here
 ```
 
@@ -85,23 +87,32 @@ When adding a new component:
 ## Component Pattern
 
 ```tsx
+"use client";
+
 import * as React from "react";
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
+import styles from "./button.module.css";
+
+const variantStyles: Record<string, string> = {
+  default: styles.default!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+  ghost: styles.ghost!,
+};
+
+export type ButtonVariant = "default" | "destructive" | "outline" | "ghost";
+export type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "destructive" | "outline" | "ghost";
-  size?: "default" | "sm" | "lg" | "icon";
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({className, variant = "default", size = "default", ...props}, ref) => {
     return (
       <button
-        className={cn(
-          "inline-flex items-center justify-center rounded-md font-medium",
-          // variant styles...
-          className,
-        )}
+        className={cn(styles.base, variantStyles[variant], className)}
         ref={ref}
         {...props}
       />
@@ -118,7 +129,7 @@ export type {ButtonProps};
 
 ## Key Rules
 
-- **Always** use `cn()` from `@/lib/utils` for class merging (never manual concatenation)
+- **Always** use `cn()` from `@/lib/utilities` for class merging (never manual concatenation)
 - **Always** use `forwardRef` for components that render DOM elements
 - **Always** export both the component and its props type
 - **Always** add the component to `src/index.ts` barrel export
@@ -132,12 +143,13 @@ export type {ButtonProps};
 ## Styling with cn()
 
 ```tsx
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
+import styles from "./component.module.css";
 
-// Merge base classes with conditional and user-provided classes
+// Merge CSS Module classes with conditional and user-provided classes
 <div className={cn(
-  "base-class",
-  isActive && "active-class",
+  styles.base,
+  isActive && styles.active,
   className, // Allow consumers to override
 )} />
 ```
