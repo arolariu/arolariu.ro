@@ -196,7 +196,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       }
 
       // Map scan type to InvoiceScanType enum
-      let scanType = InvoiceScanType.UNKNOWN;
+      let scanType: InvoiceScanType = InvoiceScanType.UNKNOWN;
       if (firstScan.scanType === "JPEG") scanType = InvoiceScanType.JPEG;
       else if (firstScan.scanType === "PNG") scanType = InvoiceScanType.PNG;
       else if (firstScan.scanType === "PDF") scanType = InvoiceScanType.PDF;

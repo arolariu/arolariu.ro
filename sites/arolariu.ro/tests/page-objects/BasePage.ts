@@ -22,10 +22,17 @@ export abstract class BasePage {
   protected readonly defaultTimeout = TIMEOUTS.element;
 
   /**
+   * Playwright page instance.
+   */
+  protected readonly page: Page;
+
+  /**
    * Create a new page object.
    * @param page - Playwright page instance
    */
-  constructor(protected readonly page: Page) {}
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   /**
    * Navigate to this page's URL with retry logic.
@@ -134,10 +141,17 @@ export abstract class BaseComponent {
   protected readonly defaultTimeout = TIMEOUTS.element;
 
   /**
+   * Playwright page instance.
+   */
+  protected readonly page: Page;
+
+  /**
    * Create a new component object.
    * @param page - Playwright page instance
    */
-  constructor(protected readonly page: Page) {}
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   /**
    * Get the root locator for this component.

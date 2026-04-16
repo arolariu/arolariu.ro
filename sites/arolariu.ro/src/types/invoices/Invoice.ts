@@ -52,18 +52,19 @@ import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from
  * await submitInvoiceForAnalysis(invoice, options);
  * ```
  */
-export enum InvoiceAnalysisOptions {
+export const InvoiceAnalysisOptions = {
   /** No analysis will be performed on the invoice. */
-  NoAnalysis,
+  NoAnalysis: 0,
   /** Full analysis will be performed on the invoice. */
-  CompleteAnalysis,
+  CompleteAnalysis: 1,
   /** Only the invoice data will be analyzed. */
-  InvoiceOnly,
+  InvoiceOnly: 2,
   /** Only the items on the invoice will be analyzed. */
-  InvoiceItemsOnly,
+  InvoiceItemsOnly: 3,
   /** Only the merchant information will be analyzed. */
-  InvoiceMerchantOnly,
-}
+  InvoiceMerchantOnly: 4,
+} as const;
+export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeof InvoiceAnalysisOptions];
 
 /**
  * Represents the document format type of an invoice scan.
@@ -93,20 +94,21 @@ export enum InvoiceAnalysisOptions {
  *
  * @see {@link InvoiceScan} for the complete scan object structure
  */
-export enum InvoiceScanType {
+export const InvoiceScanType = {
+  /** JPG image format */
+  JPG: 0,
   /** JPEG image format */
-  JPG,
-  /** JPEG image format */
-  JPEG,
+  JPEG: 1,
   /** PNG image format */
-  PNG,
+  PNG: 2,
   /** PDF document format */
-  PDF,
-  /**  Other image format */
-  OTHER,
+  PDF: 3,
+  /** Other image format */
+  OTHER: 4,
   /** Unknown or unsupported format */
-  UNKNOWN,
-}
+  UNKNOWN: 5,
+} as const;
+export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanType];
 
 /**
  * Categorizes invoices by their primary business purpose.
@@ -142,20 +144,21 @@ export enum InvoiceScanType {
  * @see {@link MerchantCategory} for merchant-level categorization
  * @see {@link ProductCategory} for product-level categorization
  */
-export enum InvoiceCategory {
+export const InvoiceCategory = {
   /** Not defined category */
-  NOT_DEFINED = 0,
+  NOT_DEFINED: 0,
   /** Grocery category */
-  GROCERY = 100,
+  GROCERY: 100,
   /** Fast food category */
-  FAST_FOOD = 200,
+  FAST_FOOD: 200,
   /** Home cleaning category */
-  HOME_CLEANING = 300,
+  HOME_CLEANING: 300,
   /** Car and auto category */
-  CAR_AUTO = 400,
+  CAR_AUTO: 400,
   /** Other category */
-  OTHER = 9999,
-}
+  OTHER: 9999,
+} as const;
+export type InvoiceCategory = (typeof InvoiceCategory)[keyof typeof InvoiceCategory];
 
 /**
  * Represents a document scan (image or PDF) attached to an invoice.

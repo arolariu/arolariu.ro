@@ -54,15 +54,16 @@ import type {Currency} from "../DDD";
  *
  * @see {@link PaymentInformation} for complete payment details
  */
-export enum PaymentType {
-  Unknown = 0,
-  Cash = 100,
-  Card = 200,
-  Transfer = 300,
-  MobilePayment = 400,
-  Voucher = 500,
-  Other = 9999,
-}
+export const PaymentType = {
+  Unknown: 0,
+  Cash: 100,
+  Card: 200,
+  Transfer: 300,
+  MobilePayment: 400,
+  Voucher: 500,
+  Other: 9999,
+} as const;
+export type PaymentType = (typeof PaymentType)[keyof typeof PaymentType];
 
 /**
  * Captures the financial details of an invoice transaction.

@@ -285,7 +285,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * @returns The category name string
    */
   const getCategoryName = useCallback((category: ProductCategory): string => {
-    return ProductCategory[category] ?? "NOT_DEFINED";
+    return Object.keys(ProductCategory).find((k) => ProductCategory[k as keyof typeof ProductCategory] === category) ?? "NOT_DEFINED";
   }, []);
 
   // Empty state: no items in invoice

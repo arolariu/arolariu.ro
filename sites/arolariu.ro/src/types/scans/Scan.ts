@@ -43,16 +43,17 @@
  * };
  * ```
  */
-export enum ScanType {
+export const ScanType = {
   /** JPEG image format */
-  JPEG = "JPEG",
+  JPEG: "JPEG",
   /** PNG image format */
-  PNG = "PNG",
+  PNG: "PNG",
   /** PDF document format */
-  PDF = "PDF",
+  PDF: "PDF",
   /** Other or unsupported format */
-  OTHER = "OTHER",
-}
+  OTHER: "OTHER",
+} as const;
+export type ScanType = (typeof ScanType)[keyof typeof ScanType];
 
 /**
  * Represents the lifecycle status of a standalone scan.
@@ -81,18 +82,19 @@ export enum ScanType {
  * }
  * ```
  */
-export enum ScanStatus {
+export const ScanStatus = {
   /** Upload in progress */
-  UPLOADING = "uploading",
+  UPLOADING: "uploading",
   /** Uploaded to Azure, available for use */
-  READY = "ready",
+  READY: "ready",
   /** Upload failed */
-  FAILED = "failed",
+  FAILED: "failed",
   /** Being used to create an invoice */
-  PROCESSING = "processing",
+  PROCESSING: "processing",
   /** Invoice created, scan archived */
-  ARCHIVED = "archived",
-}
+  ARCHIVED: "archived",
+} as const;
+export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
 
 /**
  * Represents a standalone scan stored in Azure Blob Storage.

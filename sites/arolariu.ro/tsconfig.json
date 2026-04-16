@@ -3,7 +3,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "exactOptionalPropertyTypes": false,
-    "erasableSyntaxOnly": false,
+    "allowArbitraryExtensions": true,
     "paths": {
       "@/*": ["./src/*"]
     },

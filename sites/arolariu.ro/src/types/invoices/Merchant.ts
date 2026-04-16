@@ -52,14 +52,15 @@ import type {NamedEntity} from "../DDD";
  *
  * @see {@link InvoiceCategory} for invoice-level categorization
  */
-export enum MerchantCategory {
-  NOT_DEFINED = 0,
-  LOCAL_SHOP = 100,
-  SUPERMARKET = 200,
-  HYPERMARKET = 300,
-  ONLINE_SHOP = 400,
-  OTHER = 9999,
-}
+export const MerchantCategory = {
+  NOT_DEFINED: 0,
+  LOCAL_SHOP: 100,
+  SUPERMARKET: 200,
+  HYPERMARKET: 300,
+  ONLINE_SHOP: 400,
+  OTHER: 9999,
+} as const;
+export type MerchantCategory = (typeof MerchantCategory)[keyof typeof MerchantCategory];
 
 /**
  * Contact information value object matching backend's ContactInformation.

@@ -108,23 +108,24 @@ export type ProductMetadata = {
  * @see {@link InvoiceCategory} for invoice-level categorization
  * @see {@link MerchantCategory} for merchant-level categorization
  */
-export enum ProductCategory {
-  NOT_DEFINED = 0,
-  BAKED_GOODS = 100,
-  GROCERIES = 200,
-  DAIRY = 300,
-  MEAT = 400,
-  FISH = 500,
-  FRUITS = 600,
-  VEGETABLES = 700,
-  BEVERAGES = 800,
-  ALCOHOLIC_BEVERAGES = 900,
-  TOBACCO = 1000,
-  CLEANING_SUPPLIES = 1100,
-  PERSONAL_CARE = 1200,
-  MEDICINE = 1300,
-  OTHER = 9999,
-}
+export const ProductCategory = {
+  NOT_DEFINED: 0,
+  BAKED_GOODS: 100,
+  GROCERIES: 200,
+  DAIRY: 300,
+  MEAT: 400,
+  FISH: 500,
+  FRUITS: 600,
+  VEGETABLES: 700,
+  BEVERAGES: 800,
+  ALCOHOLIC_BEVERAGES: 900,
+  TOBACCO: 1000,
+  CLEANING_SUPPLIES: 1100,
+  PERSONAL_CARE: 1200,
+  MEDICINE: 1300,
+  OTHER: 9999,
+} as const;
+export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCategory];
 
 /**
  * Represents a line item product on an invoice.

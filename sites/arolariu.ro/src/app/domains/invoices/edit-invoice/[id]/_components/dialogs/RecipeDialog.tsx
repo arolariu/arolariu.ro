@@ -234,7 +234,7 @@ const CreateDialog = () => {
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
-              value={RecipeComplexity[recipe.complexity]}
+              value={Object.keys(RecipeComplexity).find((k) => RecipeComplexity[k as keyof typeof RecipeComplexity] === recipe.complexity) ?? "Unknown"}
               onValueChange={(value) => {
                 setRecipe((prev) => ({
                   ...prev,
@@ -555,7 +555,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
-              value={RecipeComplexity[recipe.complexity]}
+              value={Object.keys(RecipeComplexity).find((k) => RecipeComplexity[k as keyof typeof RecipeComplexity] === recipe.complexity) ?? "Unknown"}
               onValueChange={(value) => {
                 const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
                 setRecipeDetails((prev) => ({

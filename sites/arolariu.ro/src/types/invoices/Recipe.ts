@@ -54,19 +54,17 @@ import type {Product} from "./index.ts";
  *
  * @see {@link Recipe} for the complete recipe structure
  */
-export enum RecipeComplexity {
+export const RecipeComplexity = {
   /** Unknown complexity */
-  Unknown = 0,
-
+  Unknown: 0,
   /** Easy complexity */
-  Easy = 1,
-
+  Easy: 1,
   /** Normal complexity */
-  Normal = 2,
-
+  Normal: 2,
   /** Hard complexity */
-  Hard = 3,
-}
+  Hard: 3,
+} as const;
+export type RecipeComplexity = (typeof RecipeComplexity)[keyof typeof RecipeComplexity];
 
 /**
  * Represents an AI-generated recipe suggestion based on invoice products.

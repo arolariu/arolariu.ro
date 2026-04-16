@@ -84,8 +84,10 @@ export default function MerchantDialog(): React.JSX.Element {
     );
   }
 
-  const merchantCategoryKey = Object.keys(MerchantCategory)[merchant.category];
-  const merchantCategoryAsString = MerchantCategory[merchantCategoryKey as keyof typeof MerchantCategory];
+  const merchantCategoryAsString =
+    Object.keys(MerchantCategory).find(
+      (k) => MerchantCategory[k as keyof typeof MerchantCategory] === merchant.category,
+    ) ?? "NOT_DEFINED";
 
   return (
     <Dialog
