@@ -118,7 +118,8 @@ arolariu.ro/
 │   ├── arolariu.ro/    # Main Next.js website
 │   ├── api.arolariu.ro/ # .NET backend API
 │   ├── cv.arolariu.ro/  # SvelteKit CV site
-│   └── docs.arolariu.ro/ # DocFX documentation
+│   ├── docs.arolariu.ro/ # DocFX documentation
+│   └── exp.arolariu.ro/  # Python FastAPI experimental service
 ├── infra/              # Infrastructure as Code (Azure Bicep)
 ├── scripts/            # Build and utility scripts
 └── nx.json             # Nx workspace configuration
@@ -145,13 +146,19 @@ Copilot automatically loads specialized instructions based on the file you're ed
 
 | Instruction File | Applies To | Purpose |
 |-----------------|-----------|---------|
-| `frontend.instructions.md` | `sites/arolariu.ro/**` | Next.js App Router, RSC, observability |
+| `agent-governance.instructions.md` | `.github/agents/**` | Agent governance rules |
 | `backend.instructions.md` | `**/*.cs, **/*.csproj` | DDD, .NET architecture, XML docs |
-| `react.instructions.md` | `**/*.tsx, **/*.jsx` | React component patterns |
-| `typescript.instructions.md` | `**/*.ts` | TypeScript 5.x best practices |
 | `bicep.instructions.md` | `**/*.bicep` | Azure IaC patterns |
-| `workflows.instructions.md` | `.github/workflows/*.yml` | GitHub Actions CI/CD |
 | `code-review.instructions.md` | `**` | Code review guidelines |
+| `components.instructions.md` | `packages/components/**` | Component library patterns |
+| `csharp.instructions.md` | `**/*.cs` | C# coding standards |
+| `frontend.instructions.md` | `sites/arolariu.ro/**` | Next.js App Router, RSC, observability |
+| `knowledge.instructions.md` | `knowledge/**` | Knowledge vault guidelines |
+| `python.instructions.md` | `**/*.py` | Python coding standards |
+| `react.instructions.md` | `**/*.tsx, **/*.jsx` | React component patterns |
+| `svelte.instructions.md` | `**/*.svelte` | SvelteKit patterns |
+| `typescript.instructions.md` | `**/*.ts` | TypeScript 6.x best practices |
+| `workflows.instructions.md` | `.github/workflows/*.yml` | GitHub Actions CI/CD |
 
 **Prompts** are available in `.github/prompts/` for common tasks like documentation generation.
 
@@ -179,6 +186,7 @@ docs/
     ├── 1005-state-management-zustand.md
     ├── 1006-component-library-architecture.md
     ├── 1007-advanced-frontend-patterns.md
+    ├── 1008-scss-system-architecture.md
     ├── 2001-domain-driven-design-architecture.md
     ├── 2002-opentelemetry-backend-observability.md
     ├── 2003-the-standard-implementation.md
@@ -249,16 +257,16 @@ When making architectural changes:
 ## Technology Stack
 
 ### Frontend (sites/arolariu.ro)
-- **Framework**: Next.js 16.1.6 (App Router)
+- **Framework**: Next.js 16.2 (App Router)
 - **React**: v19.2.4 (with React Server Components)
-- **TypeScript**: v5.9.3 (strict mode)
-- **Styling**: Tailwind CSS v4.1.18 + PostCSS
-- **UI Components**: Radix UI + shadcn/ui patterns
-- **State Management**: Zustand v5.0.11 (4 stores with IndexedDB persistence)
-- **Authentication**: Clerk (@clerk/nextjs v6.37.4)
-- **Internationalization**: next-intl v4.8.3
+- **TypeScript**: v6.0 (strict mode)
+- **Styling**: Tailwind CSS v4.2 + PostCSS
+- **UI Components**: Base UI + CSS Modules
+- **State Management**: Zustand v5.0.12 (4 stores with IndexedDB persistence)
+- **Authentication**: Clerk (@clerk/nextjs v7.0)
+- **Internationalization**: next-intl v4.9.0
 - **Forms**: react-hook-form + zod validation
-- **Testing**: Vitest v4.0.18 + Playwright
+- **Testing**: Vitest v4.1.2 + Playwright
 
 ### Backend (sites/api.arolariu.ro)
 - **Framework**: .NET 10.0 (LTS)
@@ -267,12 +275,12 @@ When making architectural changes:
 - **Testing**: xUnit
 
 ### Shared Components (packages/components)
-- **Build Tool**: RSLib v0.15.0 + Rsbuild
-- **Documentation**: Storybook v8.6.14
-- **Components**: shadcn/ui + custom animated components
+- **Build Tool**: RSLib v0.20 + Rsbuild
+- **Documentation**: Storybook v10.3
+- **Components**: Base UI + CSS Modules components
 
 ### CV Site (sites/cv.arolariu.ro)
-- **Framework**: SvelteKit v2.46.2
+- **Framework**: SvelteKit v2.56
 - **Adapter**: Azure Static Web Apps
 
 ---
@@ -281,7 +289,7 @@ When making architectural changes:
 
 - **ESLint**: 20+ plugins (typescript-eslint, react, sonarjs, security, jsx-a11y, jsdoc, etc.) — see `eslint.config.ts`
 - **TypeScript**: Strictest settings (`strict`, `noImplicitAny`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
-- **Prettier**: v3.6.2 with organize-imports, svelte, tailwindcss plugins
+- **Prettier**: v3.8 with organize-imports, svelte, tailwindcss plugins
 
 > **Details**: See `typescript.instructions.md` for TypeScript configuration and `react.instructions.md` for React/JSX rules.
 
@@ -311,7 +319,7 @@ When making architectural changes:
 
 ## Shared Components Library
 
-**Package**: `@arolariu/components` — Radix UI + shadcn/ui components with Tailwind CSS, exported via barrel in `src/index.ts`. Use `cn()` for class merging, `forwardRef` for DOM refs.
+**Package**: `@arolariu/components` — Base UI components with CSS Modules, exported via barrel in `src/index.ts`. Use `cn()` for class merging, `forwardRef` for DOM refs.
 
 > **Full patterns & examples**: See `components.instructions.md` for component creation, Storybook stories, and extension patterns.
 

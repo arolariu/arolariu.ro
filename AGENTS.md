@@ -6,9 +6,9 @@
 
 **arolariu.ro** is a full-stack pet-project platform for invoice management and personal branding, built as a monorepo:
 
-- **Frontend**: Next.js 16.1.6 + React 19.2.4 (main website at `sites/arolariu.ro/`)
+- **Frontend**: Next.js 16.2 + React 19.2.4 (main website at `sites/arolariu.ro/`)
 - **Backend**: .NET 10 ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`)
-- **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
+- **Component Library**: `@arolariu/components` — 80+ Base UI components with CSS Modules styling (at `packages/components/`)
 - **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)
 - **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
 - **Tooling**: Nx monorepo, npm >=11, Node.js >=24, .NET 10 SDK
@@ -111,6 +111,7 @@ sites/
     tests/                 #   xUnit + MSTest tests
   cv.arolariu.ro/          # SvelteKit CV site (standalone)
   docs.arolariu.ro/        # DocFX documentation site
+  exp.arolariu.ro/         # Python FastAPI experimental service
 scripts/                   # Build and utility scripts
 infra/Azure/Bicep/         # Infrastructure as Code
 docs/rfc/                  # Architecture Decision Records (RFCs)
@@ -305,6 +306,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 
 | RFC | Topic |
 |-----|-------|
+| 0001 | GitHub Actions Workflows |
 | 1001 | Frontend OpenTelemetry Observability |
 | 1002 | Comprehensive JSDoc/TSDoc Documentation |
 | 1003 | Internationalization (next-intl) |
@@ -312,6 +314,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 | 1005 | State Management (Zustand) |
 | 1006 | Component Library Architecture |
 | 1007 | Advanced Frontend Patterns |
+| 1008 | SCSS System Architecture |
 | 2001 | Domain-Driven Design Architecture |
 | 2002 | OpenTelemetry Backend Observability |
 | 2003 | The Standard Implementation |
