@@ -168,7 +168,7 @@ insights/
 ├── frontend-patterns.md  — domain map: Next.js, React, Island pattern
 ├── backend-architecture.md — domain map: .NET, The Standard, DDD
 ├── infrastructure.md     — domain map: Azure, Bicep, CI/CD
-├── component-library.md  — domain map: @arolariu/components, Radix UI
+├── component-library.md  — domain map: @arolariu/components, Base UI
 ├── cv-site.md            — domain map: SvelteKit CV (standalone)
 └── cross-cutting.md      — domain map: conventions that span domains
 ```
@@ -345,7 +345,7 @@ Your system manages knowledge across multiple codebase domains within a single g
 | Frontend | docs/rfc/1001-1007, .github/instructions/frontend* | Island pattern, RSC-first, Zustand stores, next-intl |
 | Backend | docs/rfc/2001-2004, .github/instructions/backend* | The Standard, DDD, Florance Pattern, TryCatch |
 | Infrastructure | infra/Azure/Bicep/, .github/workflows/ | Azure Cloud, Bicep IaC, CI/CD |
-| Components | packages/components/ | Radix UI, shadcn, barrel exports |
+| Components | packages/components/ | Base UI, CSS Modules, barrel exports |
 | CV Site | sites/cv.arolariu.ro/ | SvelteKit 2, standalone, no cross-deps |
 | Cross-cutting | CLAUDE.md, .github/copilot-instructions.md | Git workflow, naming conventions, testing |
 
@@ -568,29 +568,6 @@ This system was seeded with a codebase-knowledge configuration derived from conv
 - Can't find what you know exists → add semantic search (install qmd)
 - Schema fields nobody queries → remove them
 - Processing feels mechanical → simplify the cycle
-
----
-
-## Recently Created Skills (Pending Activation)
-
-Skills created during /setup are listed here until confirmed loaded. After restarting Claude Code, the SessionStart hook verifies each skill is discoverable and removes confirmed entries.
-
-- /arscontexta:distill — Extract insights from source documents (RFCs, instructions, code) (created 2026-02-25)
-- /arscontexta:connect — Find connections between insights across domains (created 2026-02-25)
-- /arscontexta:refresh — Update stale insights when source docs change (created 2026-02-25)
-- /arscontexta:validate — Check insight quality (composability, description, links) (created 2026-02-25)
-- /arscontexta:audit — Check schema compliance across all insights (created 2026-02-25)
-- /arscontexta:seed — Create a new insight from scratch (created 2026-02-25)
-- /arscontexta:ralph — Orchestrated batch processing with fresh context per phase (created 2026-02-25)
-- /arscontexta:pipeline — Run full processing cycle: distill → connect → validate (created 2026-02-25)
-- /arscontexta:tasks — Manage the processing task queue (created 2026-02-25)
-- /arscontexta:stats — Vault metrics and progress visualization (created 2026-02-25)
-- /arscontexta:graph — Interactive graph analysis and queries (created 2026-02-25)
-- /arscontexta:next — Get intelligent next-action recommendations (created 2026-02-25)
-- /arscontexta:learn — Research a topic and grow the knowledge graph (created 2026-02-25)
-- /arscontexta:remember — Capture friction and methodology learnings (created 2026-02-25)
-- /arscontexta:rethink — Review accumulated observations and tensions (created 2026-02-25)
-- /arscontexta:refactor — Restructure insights or domain maps (created 2026-02-25)
 
 ---
 
