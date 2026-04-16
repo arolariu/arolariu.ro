@@ -11,10 +11,8 @@ import ContextProviders from "./providers";
 
 import Tracking from "./tracking";
 
-// @ts-ignore -- css file has no typings.
 import "@arolariu/components/styles.css";
 
-// @ts-ignore -- scss file has no typings.
 import "./globals.scss";
 
 export {metadata} from "@/metadata";
