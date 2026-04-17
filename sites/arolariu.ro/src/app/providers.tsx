@@ -3,15 +3,14 @@
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
-import {onLocaleSync} from "@/stores/preferencesStore";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {AbstractIntlMessages, Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
-import {useRouter} from "next/navigation";
 import React, {useEffect, useState} from "react";
+import PreferencesSubscriptions from "./_components/PreferencesSubscriptions";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
 const DEFAULT_TIME_ZONE = "Europe/Bucharest";
@@ -138,10 +137,6 @@ export default function ContextProviders({locale, messages, featureFlags, childr
   const commanderEnabled = featureFlags?.commanderEnabled ?? DEFAULT_FEATURE_FLAGS.commanderEnabled;
   const webVitalsEnabled = featureFlags?.webVitalsEnabled ?? DEFAULT_FEATURE_FLAGS.webVitalsEnabled;
 
-  // Register router.refresh() as the callback for locale → cookie sync.
-  // The store subscription handles setCookie(); this just triggers re-rendering.
-  const router = useRouter();
-  useEffect(() => onLocaleSync(() => router.refresh()), [router]);
   useEffect(() => {
     setResolvedMessages(messages ?? ({} satisfies AbstractIntlMessages));
   }, [messages]);
@@ -183,6 +178,7 @@ export default function ContextProviders({locale, messages, featureFlags, childr
             attribute='class'
             storageKey='arolariu-theme'
             themes={["light", "dark"]}>
+            <PreferencesSubscriptions />
             {children}
             <ToastProvider />
             {commanderEnabled ? <Commander /> : null}
