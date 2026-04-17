@@ -378,7 +378,7 @@ public partial class InvoiceNoSqlBroker
         "Cosmos DB returned HTTP 401 Unauthorized while accessing invoice data.", cosmosException),
       HttpStatusCode.Forbidden => new InvoiceForbiddenAccessException(
         "Cosmos DB returned HTTP 403 Forbidden while accessing invoice data.", cosmosException),
-      (HttpStatusCode)429 => new InvoiceCosmosDbRateLimitException(
+      HttpStatusCode.TooManyRequests => new InvoiceCosmosDbRateLimitException(
         cosmosException.RetryAfter ?? TimeSpan.FromSeconds(1), cosmosException),
       HttpStatusCode.ServiceUnavailable
         or HttpStatusCode.InternalServerError

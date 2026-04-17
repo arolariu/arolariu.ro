@@ -55,6 +55,9 @@ public sealed class ExceptionMappingHandler : IExceptionHandler
 
     httpContext.Response.Clear();
 
+    // cancellationToken is intentionally not propagated: IResult.ExecuteAsync(HttpContext) has no
+    // CancellationToken overload, and HttpContext.RequestAborted already carries the request-abort
+    // signal to downstream writers. Kestrel will abort the response write if the client has gone away.
     Activity.Current?.RecordException(exception);
     Activity.Current?.SetStatus(ActivityStatusCode.Error, exception.GetType().Name);
 
