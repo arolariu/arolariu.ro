@@ -17,7 +17,7 @@ Applies to backend .NET architecture and implementation changes under `sites/api
 - Use The Standard layer boundaries and Florance dependency limits.
 - Consult RFC 2001-2004 for architecture, observability, and XML docs before significant design changes.
 - Require XML documentation and `.ConfigureAwait(false)` where mandated by current backend standards.
-- Classify exceptions with markers from `arolariu.Backend.Common.Exceptions` and map to HTTP responses through `IExceptionToHttpResultMapper` — do not hand-roll status codes or Problem Details in endpoint handlers (see RFC 2003 §Exception → HTTP Status Mapping Contract).
+- Classify exceptions with markers from `arolariu.Backend.Common.Exceptions`; endpoints call the static `ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current)` directly, and the global `ExceptionMappingHandler` (`IExceptionHandler`) catches escapes — do not hand-roll status codes or Problem Details in endpoint handlers (see RFC 2003 §Exception → HTTP Status Mapping Contract).
 
 ### Prohibited Actions
 - Do not move business logic into Brokers.

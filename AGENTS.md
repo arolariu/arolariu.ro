@@ -244,7 +244,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 - Handle loading, error, and empty states in UI
 - Use `next-intl` for all user-facing strings
 - Run `npm run lint` and `npm run format` before committing
-- Classify exceptions with marker interfaces and route endpoint responses through `IExceptionToHttpResultMapper` (see RFC 2003)
+- Classify exceptions with marker interfaces; endpoints map to HTTP via the static `ExceptionToHttpResultMapper`, with `ExceptionMappingHandler` (`IExceptionHandler`) as defense-in-depth for pipeline escapes (see RFC 2003)
 
 ### Ask First
 - Adding new npm or NuGet dependencies
