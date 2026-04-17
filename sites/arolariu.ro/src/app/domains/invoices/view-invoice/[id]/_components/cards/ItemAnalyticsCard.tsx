@@ -42,6 +42,7 @@
 
 "use client";
 
+import {formatEnum} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";
 import {
   Badge,
@@ -278,14 +279,14 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * Retrieves the display name for a product category.
    *
    * @remarks
-   * Uses ProductCategory enum to get the category name.
+   * Uses ProductCategory const-object to get the category name.
    * Returns "NOT_DEFINED" for unknown categories.
    *
    * @param category - The category enum value
    * @returns The category name string
    */
   const getCategoryName = useCallback((category: ProductCategory): string => {
-    return ProductCategory[category] ?? "NOT_DEFINED";
+    return formatEnum(ProductCategory, category) || "NOT_DEFINED";
   }, []);
 
   // Empty state: no items in invoice

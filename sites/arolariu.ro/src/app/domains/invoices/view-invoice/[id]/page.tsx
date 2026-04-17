@@ -130,7 +130,8 @@ export default async function ViewInvoicePage(
   // By fetching straight from the server, we ensure we have the latest snapshot.
   const invoiceResult = await fetchInvoice({invoiceId: invoiceIdentifier});
   if (!invoiceResult.success) {
-    // Handle fetch error - show forbidden screen for auth errors or not found
+    // 404 → dedicated not-found boundary; other failures → forbidden.
+    if (invoiceResult.error.status === 404) notFound();
     return <RenderForbiddenScreen />;
   }
 

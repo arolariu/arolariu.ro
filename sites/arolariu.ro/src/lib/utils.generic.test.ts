@@ -436,20 +436,20 @@ describe("Environment Variables Fallback", () => {
 });
 
 describe("formatEnum", () => {
-  // Test enum for direct usage
-  enum Status {
-    Inactive = 0,
-    Active = 1,
-    Pending = 2,
-  }
+  // Test const object for direct usage
+  const Status = {
+    Inactive: 0,
+    Active: 1,
+    Pending: 2,
+  } as const;
 
-  // Test enum with non-sequential values
-  enum Priority {
-    Low = 10,
-    Medium = 20,
-    High = 30,
-    Critical = 100,
-  }
+  // Test const object with non-sequential values
+  const Priority = {
+    Low: 10,
+    Medium: 20,
+    High: 30,
+    Critical: 100,
+  } as const;
 
   describe("Direct usage (with value parameter)", () => {
     it("should return the string key for a valid enum value", async () => {
@@ -530,18 +530,18 @@ describe("formatEnum", () => {
     });
 
     it("should handle enum with large values", async () => {
-      enum LargeEnum {
-        Small = 1,
-        Large = 1000000,
-      }
+      const LargeEnum = {
+        Small: 1,
+        Large: 1000000,
+      } as const;
       const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(LargeEnum, 1000000)).toBe("Large");
     });
 
     it("should handle single-value enum", async () => {
-      enum SingleValue {
-        Only = 42,
-      }
+      const SingleValue = {
+        Only: 42,
+      } as const;
       const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(SingleValue, 42)).toBe("Only");
       expect(formatEnum(SingleValue, 0)).toBe("");

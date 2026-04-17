@@ -3,7 +3,7 @@
  * @module data/mocks/invoice.test
  */
 
-import {InvoiceCategory, InvoiceScanType, RecipeComplexity} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType, ProductCategory, RecipeComplexity} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
 
@@ -104,7 +104,7 @@ describe("InvoiceBuilder", () => {
         {
           name: "Test Product",
           productCode: "ABC123",
-          category: 0,
+          category: ProductCategory.NOT_DEFINED,
           price: 10,
           quantity: 2,
           quantityUnit: "pcs",

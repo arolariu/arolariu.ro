@@ -40,7 +40,10 @@ vi.mock("@/lib/config/configProxy", () => ({
 // Mock jose library for JWT operations
 vi.mock("jose", () => {
   class MockSignJWT {
-    constructor(public payload: Record<string, unknown>) {}
+    public payload: Record<string, unknown>;
+    constructor(payload: Record<string, unknown>) {
+      this.payload = payload;
+    }
 
     setProtectedHeader() {
       return this;

@@ -51,24 +51,25 @@ import type {ReactNode} from "react";
  * }
  * ```
  */
-export enum TimelineEventType {
+export const TimelineEventType = {
   /** Invoice was created from a receipt scan or manual entry. */
-  CREATED = "created",
+  CREATED: "created",
   /** AI analysis was performed to extract items, totals, and merchant info. */
-  AI_ANALYSIS = "ai_analysis",
+  AI_ANALYSIS: "ai_analysis",
   /** Recipe suggestions were generated based on detected food items. */
-  RECIPES_GENERATED = "recipes_generated",
+  RECIPES_GENERATED: "recipes_generated",
   /** Invoice was shared with other users via link or direct invite. */
-  SHARED = "shared",
+  SHARED: "shared",
   /** Invoice details were manually edited by the user. */
-  EDITED = "edited",
+  EDITED: "edited",
   /** Invoice was exported to PDF, CSV, or other format. */
-  EXPORTED = "exported",
+  EXPORTED: "exported",
   /** Invoice was flagged as important for quick access. */
-  MARKED_IMPORTANT = "marked_important",
+  MARKED_IMPORTANT: "marked_important",
   /** Category was assigned or changed for organization. */
-  CATEGORIZED = "categorized",
-}
+  CATEGORIZED: "categorized",
+} as const;
+export type TimelineEventType = (typeof TimelineEventType)[keyof typeof TimelineEventType];
 
 /**
  * Represents a single immutable event in the invoice timeline.
