@@ -120,6 +120,20 @@ public sealed class ExceptionMappingHandlerTests
   }
 
   /// <summary>
+  /// Rewinds the response body stream to position 0 and reads the full content as a string.
+  /// This helper prevents silent empty reads when body position is not manually reset; all
+  /// body-reading tests should call this method rather than implementing inline rewind logic.
+  /// </summary>
+  /// <param name="context">The <see cref="HttpContext"/> whose response body will be read.</param>
+  /// <returns>The response body content as a string.</returns>
+  private static async Task<string> ReadResponseBodyAsync(HttpContext context)
+  {
+    context.Response.Body.Position = 0;
+    using var reader = new StreamReader(context.Response.Body, leaveOpen: true);
+    return await reader.ReadToEndAsync();
+  }
+
+  /// <summary>
   /// Verifies that when an ambient <see cref="Activity"/> is present, the emitted
   /// ProblemDetails body includes a <c>traceId</c> extension matching
   /// <c>Activity.Current.TraceId</c>. This is the correlation hook that lets clients
@@ -148,9 +162,7 @@ public sealed class ExceptionMappingHandlerTests
     await handler.TryHandleAsync(context, new NotFoundEx("nope"), CancellationToken.None);
 
     // Assert — read response body and confirm it carries the active trace identifier.
-    context.Response.Body.Position = 0;
-    using var reader = new StreamReader(context.Response.Body);
-    var body = await reader.ReadToEndAsync();
+    var body = await ReadResponseBodyAsync(context);
 
     var expectedTraceId = activity!.TraceId.ToString();
     Assert.IsTrue(

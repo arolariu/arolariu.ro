@@ -133,11 +133,14 @@ public sealed class ExceptionHandlerPipelineTests
       // Sanity — the body should be a JSON document (RFC 7807 shape), not plain text.
       Assert.StartsWith("{", body.TrimStart(), StringComparison.Ordinal);
 
-      // Status is a 4xx or 5xx — the current mapper has no special case for
-      // BadHttpRequestException, so it lands on the 500 default. The key contract the
-      // pipeline guarantees is the ProblemDetails envelope; the specific code is a
-      // secondary signal the test pins to detect accidental success (2xx) regressions.
-      Assert.InRange((int)response.StatusCode, 400, 599);
+      // Prove the custom ExceptionMappingHandler (not the framework fallback) actually ran
+      // by asserting the body contains our custom ProblemTypeUris domain, which the default
+      // IProblemDetailsService does not emit.
+      Assert.Contains("api.arolariu.ro/problems", body, StringComparison.Ordinal);
+
+      // TODO(follow-up): expect 400 once BadHttpRequestException is mapped to its StatusCode
+      //   in ExceptionToHttpResultMapper. Currently maps to 500 (default arm).
+      Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
   }
 }
