@@ -89,7 +89,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
   public async Task ReadMerchantObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new MerchantCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new Exception()));
+      .ThrowsAsync(new MerchantCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
