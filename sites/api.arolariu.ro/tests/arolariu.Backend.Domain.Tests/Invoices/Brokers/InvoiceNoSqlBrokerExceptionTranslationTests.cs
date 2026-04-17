@@ -32,6 +32,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   private static CosmosException MakeCosmosException(HttpStatusCode code) =>
     new("cosmos failure", code, 0, "activity", 0);
 
+  /// <summary>
+  /// Verifies that a Cosmos 404 (NotFound) during read is translated into <see cref="InvoiceNotFoundException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos404_ThrowsInvoiceNotFoundException()
   {
@@ -47,6 +50,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 409 (Conflict) during create is translated into <see cref="InvoiceAlreadyExistsException"/>.
+  /// </summary>
   [Fact]
   public async Task CreateInvoiceAsync_WhenCosmos409_ThrowsInvoiceAlreadyExistsException()
   {
@@ -61,6 +67,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.CreateInvoiceAsync(invoice).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 429 (TooManyRequests) during read is translated into <see cref="InvoiceCosmosDbRateLimitException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos429_ThrowsInvoiceCosmosDbRateLimitException()
   {
@@ -76,6 +85,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 503 (ServiceUnavailable) during read is translated into <see cref="InvoiceFailedStorageException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos503_ThrowsInvoiceFailedStorageException()
   {
@@ -91,6 +103,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 401 (Unauthorized) during read is translated into <see cref="InvoiceUnauthorizedAccessException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos401_ThrowsInvoiceUnauthorizedAccessException()
   {
@@ -106,6 +121,9 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 403 (Forbidden) during read is translated into <see cref="InvoiceForbiddenAccessException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos403_ThrowsInvoiceForbiddenAccessException()
   {
@@ -121,6 +139,10 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
       async () => await broker.ReadInvoiceAsync(invoiceId, userId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a soft-deleted invoice returned by Cosmos is surfaced as <see cref="InvoiceLockedException"/>
+  /// by the broker instead of being returned to the caller as a valid resource.
+  /// </summary>
   [Fact]
   public async Task ReadInvoiceAsync_WhenInvoiceSoftDeleted_ThrowsInvoiceLockedException()
   {

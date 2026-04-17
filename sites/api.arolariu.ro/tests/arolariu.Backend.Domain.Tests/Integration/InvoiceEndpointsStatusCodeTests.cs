@@ -124,6 +124,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region GET /rest/v1/invoices/{id} status code tests
+  /// <summary>
+  /// Verifies that an <see cref="INotFoundException"/> thrown by the processing service
+  /// is mapped to a 404 Not Found <see cref="ProblemDetails"/> response by the endpoint.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsNotFound_Returns404()
   {
@@ -143,6 +147,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.Equal(ProblemTypeUris.NotFound, problem.Type);
   }
 
+  /// <summary>
+  /// Verifies that an <see cref="IAlreadyExistsException"/> thrown by the processing service
+  /// is mapped to a 409 Conflict <see cref="ProblemDetails"/> response by the endpoint.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsConflict_Returns409()
   {
@@ -158,6 +166,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.Equal(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
   }
 
+  /// <summary>
+  /// Verifies that an <see cref="ILockedException"/> thrown by the processing service
+  /// is mapped to a 423 Locked <see cref="ProblemDetails"/> response by the endpoint.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsLocked_Returns423()
   {
@@ -173,6 +185,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.Equal(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
   }
 
+  /// <summary>
+  /// Verifies that an <see cref="IRateLimitedException"/> thrown by the processing service
+  /// is mapped to a 429 Too Many Requests <see cref="ProblemDetails"/> response carrying
+  /// the retry hint on the <c>retryAfterSeconds</c> extension member.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsRateLimit_Returns429WithRetryAfterSecondsExtension()
   {
@@ -201,6 +218,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.Equal(42, Assert.IsType<int>(retryHint));
   }
 
+  /// <summary>
+  /// Verifies that an <see cref="IDependencyException"/> thrown by the processing service
+  /// is mapped to a 503 Service Unavailable <see cref="ProblemDetails"/> response by the endpoint.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsDependencyFailure_Returns503()
   {
@@ -217,6 +238,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     Assert.Equal(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
   }
 
+  /// <summary>
+  /// Verifies that an unclassified <see cref="Exception"/> (implementing none of the marker interfaces)
+  /// is mapped to a 500 Internal Server Error without leaking the exception type name or stack trace
+  /// into the <see cref="ProblemDetails"/> payload.
+  /// </summary>
   [Fact]
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsUnclassifiedException_Returns500WithoutLeakingType()
   {
@@ -245,6 +271,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region POST /rest/v1/invoices validation tests
+  /// <summary>
+  /// Verifies that the endpoint rejects a request with an empty user identifier by returning
+  /// 400 Bad Request <em>before</em> invoking the processing service (endpoint-level validation).
+  /// </summary>
   [Fact]
   public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_Returns400ValidationProblem()
   {

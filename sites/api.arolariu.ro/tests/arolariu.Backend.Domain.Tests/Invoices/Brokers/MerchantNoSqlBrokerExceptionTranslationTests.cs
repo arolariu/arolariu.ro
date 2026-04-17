@@ -32,6 +32,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   private static CosmosException MakeCosmosException(HttpStatusCode code) =>
     new("cosmos failure", code, 0, "activity", 0);
 
+  /// <summary>
+  /// Verifies that a Cosmos 404 (NotFound) during read is translated into <see cref="MerchantNotFoundException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos404_ThrowsMerchantNotFoundException()
   {
@@ -47,6 +50,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 409 (Conflict) during create is translated into <see cref="MerchantAlreadyExistsException"/>.
+  /// </summary>
   [Fact]
   public async Task CreateMerchantAsync_WhenCosmos409_ThrowsMerchantAlreadyExistsException()
   {
@@ -61,6 +67,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.CreateMerchantAsync(merchant).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 429 (TooManyRequests) during read is translated into <see cref="MerchantCosmosDbRateLimitException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos429_ThrowsMerchantCosmosDbRateLimitException()
   {
@@ -76,6 +85,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 503 (ServiceUnavailable) during read is translated into <see cref="MerchantFailedStorageException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos503_ThrowsMerchantFailedStorageException()
   {
@@ -91,6 +103,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 401 (Unauthorized) during read is translated into <see cref="MerchantUnauthorizedAccessException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos401_ThrowsMerchantUnauthorizedAccessException()
   {
@@ -106,6 +121,9 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a Cosmos 403 (Forbidden) during read is translated into <see cref="MerchantForbiddenAccessException"/>.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos403_ThrowsMerchantForbiddenAccessException()
   {
@@ -121,6 +139,10 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
       async () => await broker.ReadMerchantAsync(merchantId, parentCompanyId).ConfigureAwait(false));
   }
 
+  /// <summary>
+  /// Verifies that a soft-deleted merchant returned by Cosmos is surfaced as <see cref="MerchantLockedException"/>
+  /// by the broker instead of being returned to the caller as a valid resource.
+  /// </summary>
   [Fact]
   public async Task ReadMerchantAsync_WhenMerchantSoftDeleted_ThrowsMerchantLockedException()
   {

@@ -25,11 +25,13 @@ public class MerchantStorageFoundationServiceExceptionsTests
   private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
   private readonly MerchantStorageFoundationService _sut;
 
+  /// <summary>Initializes a new instance of the <see cref="MerchantStorageFoundationServiceExceptionsTests"/> class.</summary>
   public MerchantStorageFoundationServiceExceptionsTests()
   {
     _sut = new MerchantStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
   }
 
+  /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
   [Fact]
   public async Task ReadMerchantObject_WhenBrokerThrowsNotFound_ThrowsFoundationDependencyValidationException()
   {
@@ -42,6 +44,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
     Assert.IsType<MerchantNotFoundException>(ex.InnerException);
   }
 
+  /// <summary>Verifies that a <see cref="MerchantAlreadyExistsException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
   [Fact]
   public async Task CreateMerchantObject_WhenBrokerThrowsAlreadyExists_ThrowsFoundationDependencyValidationException()
   {
@@ -55,6 +58,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
     Assert.IsType<MerchantAlreadyExistsException>(ex.InnerException);
   }
 
+  /// <summary>Verifies that a <see cref="MerchantCosmosDbRateLimitException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyException"/>.</summary>
   [Fact]
   public async Task ReadMerchantObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyException()
   {
@@ -65,6 +69,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
   }
 
+  /// <summary>Verifies that a <see cref="MerchantFailedStorageException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyException"/>.</summary>
   [Fact]
   public async Task ReadMerchantObject_WhenBrokerThrowsFailedStorage_ThrowsFoundationDependencyException()
   {
@@ -75,6 +80,7 @@ public class MerchantStorageFoundationServiceExceptionsTests
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
   }
 
+  /// <summary>Verifies that an unclassified exception from the broker is wrapped into a <see cref="MerchantFoundationServiceException"/>.</summary>
   [Fact]
   public async Task ReadMerchantObject_WhenBrokerThrowsUnknown_ThrowsFoundationServiceException()
   {

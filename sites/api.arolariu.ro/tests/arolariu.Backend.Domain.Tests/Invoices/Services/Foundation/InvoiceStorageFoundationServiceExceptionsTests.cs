@@ -25,11 +25,13 @@ public class InvoiceStorageFoundationServiceExceptionsTests
   private readonly Mock<IInvoiceNoSqlBroker> _broker = new();
   private readonly InvoiceStorageFoundationService _sut;
 
+  /// <summary>Initializes a new instance of the <see cref="InvoiceStorageFoundationServiceExceptionsTests"/> class.</summary>
   public InvoiceStorageFoundationServiceExceptionsTests()
   {
     _sut = new InvoiceStorageFoundationService(_broker.Object, NullLoggerFactory.Instance);
   }
 
+  /// <summary>Verifies that an <see cref="InvoiceNotFoundException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>
   [Fact]
   public async Task ReadInvoiceObject_WhenBrokerThrowsNotFound_ThrowsFoundationDependencyValidationException()
   {
@@ -42,6 +44,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
     Assert.IsType<InvoiceNotFoundException>(ex.InnerException);
   }
 
+  /// <summary>Verifies that an <see cref="InvoiceAlreadyExistsException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>
   [Fact]
   public async Task CreateInvoiceObject_WhenBrokerThrowsAlreadyExists_ThrowsFoundationDependencyValidationException()
   {
@@ -55,6 +58,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
     Assert.IsType<InvoiceAlreadyExistsException>(ex.InnerException);
   }
 
+  /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyException"/>.</summary>
   [Fact]
   public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyException()
   {
@@ -65,6 +69,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
   }
 
+  /// <summary>Verifies that an <see cref="InvoiceFailedStorageException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyException"/>.</summary>
   [Fact]
   public async Task ReadInvoiceObject_WhenBrokerThrowsFailedStorage_ThrowsFoundationDependencyException()
   {
@@ -75,6 +80,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
   }
 
+  /// <summary>Verifies that an unclassified exception from the broker is wrapped into an <see cref="InvoiceFoundationServiceException"/>.</summary>
   [Fact]
   public async Task ReadInvoiceObject_WhenBrokerThrowsUnknown_ThrowsFoundationServiceException()
   {
