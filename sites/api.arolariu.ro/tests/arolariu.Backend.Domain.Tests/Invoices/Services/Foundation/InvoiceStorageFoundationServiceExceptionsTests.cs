@@ -60,7 +60,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
 
   /// <summary>Verifies that an <see cref="InvoiceUnauthorizedAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 401, not 503).</summary>
   [Fact]
-  public async Task TryCatchAsync_UnauthorizedAccess_Wraps_As_DependencyValidation()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsUnauthorized_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceUnauthorizedAccessException("unauthorized"));
@@ -73,7 +73,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
 
   /// <summary>Verifies that an <see cref="InvoiceForbiddenAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 403, not 503).</summary>
   [Fact]
-  public async Task TryCatchAsync_ForbiddenAccess_Wraps_As_DependencyValidation()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsForbidden_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
@@ -86,7 +86,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
 
   /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 429, not 503).</summary>
   [Fact]
-  public async Task TryCatchAsync_CosmosRateLimit_Wraps_As_DependencyValidation()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new Exception()));
@@ -99,7 +99,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
 
   /// <summary>Regression guard: <see cref="InvoiceFailedStorageException"/> must remain in the Dependency tier (downstream unreachable, 503).</summary>
   [Fact]
-  public async Task TryCatchAsync_FailedStorage_StaysIn_DependencyTier()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsFailedStorage_ThrowsFoundationDependencyException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFailedStorageException("down"));
