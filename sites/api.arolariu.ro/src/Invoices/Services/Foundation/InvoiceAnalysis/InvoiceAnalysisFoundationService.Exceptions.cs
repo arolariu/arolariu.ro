@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 public partial class InvoiceAnalysisFoundationService
@@ -18,9 +19,33 @@ public partial class InvoiceAnalysisFoundationService
     }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
+
+  private Exception Classify(Exception exception) => exception switch
+  {
+    InvoiceIdNotSetException
+      or InvoiceDescriptionNotSetException
+      or InvoicePaymentInformationNotCorrectException
+      or InvoiceTimeInformationNotCorrectException
+      or InvoicePhotoLocationNotCorrectException
+      => CreateAndLogValidationException(exception),
+
+    InvoiceNotFoundException
+      or InvoiceAlreadyExistsException
+      or InvoiceLockedException
+      or InvoiceCosmosDbRateLimitException
+      or InvoiceUnauthorizedAccessException
+      or InvoiceForbiddenAccessException
+      => CreateAndLogDependencyValidationException(exception),
+
+    InvoiceFailedStorageException
+      or OperationCanceledException
+      => CreateAndLogDependencyException(exception),
+
+    _ => CreateAndLogServiceException(exception),
+  };
 
   private InvoiceFoundationValidationException CreateAndLogValidationException(Exception exception)
   {
