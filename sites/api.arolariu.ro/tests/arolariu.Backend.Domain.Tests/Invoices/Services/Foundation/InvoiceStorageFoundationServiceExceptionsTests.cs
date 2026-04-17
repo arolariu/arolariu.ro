@@ -58,26 +58,56 @@ public class InvoiceStorageFoundationServiceExceptionsTests
     Assert.IsType<InvoiceAlreadyExistsException>(ex.InnerException);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyException"/>.</summary>
+  /// <summary>Verifies that an <see cref="InvoiceUnauthorizedAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 401, not 503).</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyException()
+  public async Task TryCatchAsync_UnauthorizedAccess_Wraps_As_DependencyValidation()
+  {
+    _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvoiceUnauthorizedAccessException("unauthorized"));
+
+    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+
+    Assert.IsType<InvoiceUnauthorizedAccessException>(ex.InnerException);
+  }
+
+  /// <summary>Verifies that an <see cref="InvoiceForbiddenAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 403, not 503).</summary>
+  [Fact]
+  public async Task TryCatchAsync_ForbiddenAccess_Wraps_As_DependencyValidation()
+  {
+    _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+      .ThrowsAsync(new InvoiceForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
+
+    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+      () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+
+    Assert.IsType<InvoiceForbiddenAccessException>(ex.InnerException);
+  }
+
+  /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 429, not 503).</summary>
+  [Fact]
+  public async Task TryCatchAsync_CosmosRateLimit_Wraps_As_DependencyValidation()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new Exception()));
 
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(
+    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+
+    Assert.IsType<InvoiceCosmosDbRateLimitException>(ex.InnerException);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceFailedStorageException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyException"/>.</summary>
+  /// <summary>Regression guard: <see cref="InvoiceFailedStorageException"/> must remain in the Dependency tier (downstream unreachable, 503).</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsFailedStorage_ThrowsFoundationDependencyException()
+  public async Task TryCatchAsync_FailedStorage_StaysIn_DependencyTier()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceFailedStorageException("down"));
 
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(
+    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
+
+    Assert.IsType<InvoiceFailedStorageException>(ex.InnerException);
   }
 
   /// <summary>Verifies that an unclassified exception from the broker is wrapped into an <see cref="InvoiceFoundationServiceException"/>.</summary>
