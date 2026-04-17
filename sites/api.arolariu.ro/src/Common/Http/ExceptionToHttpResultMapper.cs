@@ -30,9 +30,11 @@ public static class ExceptionToHttpResultMapper
       extensions["traceId"] = traceId;
     }
 
-    if (root is IRateLimitedException)
+    if (root is IRateLimitedException rateLimited)
     {
-      var retryAfter = TryGetRetryAfter(root);
+      var retryAfter = rateLimited.RetryAfter > TimeSpan.Zero
+        ? rateLimited.RetryAfter
+        : TimeSpan.FromSeconds(1);
       extensions["retryAfterSeconds"] = (int)Math.Ceiling(retryAfter.TotalSeconds);
     }
 
@@ -86,16 +88,6 @@ public static class ExceptionToHttpResultMapper
     IServiceException => (500, "Internal server error", ProblemTypeUris.InternalServerError),
     _ => (500, "Internal server error", ProblemTypeUris.InternalServerError),
   };
-
-  private static TimeSpan TryGetRetryAfter(Exception ex)
-  {
-    var prop = ex.GetType().GetProperty("RetryAfter", typeof(TimeSpan));
-    if (prop?.GetValue(ex) is TimeSpan span && span > TimeSpan.Zero)
-    {
-      return span;
-    }
-    return TimeSpan.FromSeconds(1);
-  }
 
   private static string BuildSafeDetail(Exception ex, int status)
   {

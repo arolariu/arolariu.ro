@@ -50,6 +50,8 @@ public sealed class ExceptionToHttpResultMapperTests
     public RateLimitEx()
     {
     }
+
+    public TimeSpan RetryAfter { get; } = TimeSpan.Zero;
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class UnauthorizedEx : Exception, IUnauthorizedException { public UnauthorizedEx(string m) : base(m) { }

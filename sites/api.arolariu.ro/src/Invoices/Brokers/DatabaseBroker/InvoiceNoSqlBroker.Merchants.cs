@@ -300,7 +300,7 @@ public partial class InvoiceNoSqlBroker
         "Cosmos DB rejected the request as unauthorized.", cosmosException),
       HttpStatusCode.Forbidden => new MerchantForbiddenAccessException(
         "Cosmos DB forbade the requested merchant operation.", cosmosException),
-      (HttpStatusCode)429 => new MerchantCosmosDbRateLimitException(
+      HttpStatusCode.TooManyRequests => new MerchantCosmosDbRateLimitException(
         cosmosException.RetryAfter ?? TimeSpan.FromSeconds(1), cosmosException),
       HttpStatusCode.ServiceUnavailable
         or HttpStatusCode.InternalServerError
