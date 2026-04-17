@@ -176,12 +176,12 @@ function handleRehydration(state: PreferencesStore | undefined) {
 }
 
 /**
- * Persist middleware configuration.
+ * Projects a full `PreferencesStore` state onto the persistable subset shared by
+ * IndexedDB persistence and cross-tab BroadcastChannel sync. Single source of truth
+ * for "what fields are tracked across sessions".
  */
-const persistConfig = {
-  name: "account-preferences",
-  storage: sharedStorage,
-  partialize: (state: PreferencesStore): PreferencesPersistedState => ({
+export function toPersistedPreferencesState(state: PreferencesStore): PreferencesPersistedState {
+  return {
     primaryColor: state.primaryColor,
     secondaryColor: state.secondaryColor,
     tertiaryColor: state.tertiaryColor,
@@ -192,7 +192,16 @@ const persistConfig = {
     animationsEnabled: state.animationsEnabled,
     themePreset: state.themePreset,
     customThemeColors: state.customThemeColors,
-  }),
+  };
+}
+
+/**
+ * Persist middleware configuration.
+ */
+const persistConfig = {
+  name: "account-preferences",
+  storage: sharedStorage,
+  partialize: toPersistedPreferencesState,
   onRehydrateStorage: () => handleRehydration,
 } as const;
 

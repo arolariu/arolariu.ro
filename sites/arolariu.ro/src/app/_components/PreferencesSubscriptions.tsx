@@ -4,6 +4,7 @@ import {useRouter} from "next/navigation";
 import {useEffect} from "react";
 import {
   THEME_CSS_PROPS,
+  toPersistedPreferencesState,
   usePreferencesStore,
   type PreferencesPersistedState,
 } from "@/stores/preferencesStore";
@@ -49,20 +50,8 @@ export default function PreferencesSubscriptions(): React.JSX.Element | null {
 
     const unsubscribe = usePreferencesStore.subscribe((state) => {
       if (isSyncing || !state.hasHydrated) return;
-      const payload: PreferencesPersistedState = {
-        primaryColor: state.primaryColor,
-        secondaryColor: state.secondaryColor,
-        tertiaryColor: state.tertiaryColor,
-        theme: state.theme,
-        fontType: state.fontType,
-        locale: state.locale,
-        compactMode: state.compactMode,
-        animationsEnabled: state.animationsEnabled,
-        themePreset: state.themePreset,
-        customThemeColors: state.customThemeColors,
-      };
       // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel has no targetOrigin parameter.
-      channel.postMessage(payload);
+      channel.postMessage(toPersistedPreferencesState(state));
     });
 
     return () => {
