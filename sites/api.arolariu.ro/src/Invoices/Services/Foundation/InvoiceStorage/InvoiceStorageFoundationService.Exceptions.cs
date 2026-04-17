@@ -7,14 +7,12 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
-
-using Microsoft.EntityFrameworkCore;
+using arolariu.Backend.Domain.Invoices.Modules;
 
 public partial class InvoiceStorageFoundationService
 {
   private delegate Task ReturningTaskFunction();
   private delegate Task<Invoice> ReturningInvoiceFunction();
-
   private delegate Task<IEnumerable<Invoice>> ReturningInvoicesFunction();
 
   private async Task TryCatchAsync(ReturningTaskFunction returningTaskFunction)
@@ -23,64 +21,21 @@ public partial class InvoiceStorageFoundationService
     {
       await returningTaskFunction().ConfigureAwait(false);
     }
-    catch (DbUpdateConcurrencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (DbUpdateException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
+
   private async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction returningInvoiceFunction)
   {
     try
     {
       return await returningInvoiceFunction().ConfigureAwait(false);
     }
-    catch (InvoiceIdNotSetException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (InvoiceDescriptionNotSetException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (InvoicePaymentInformationNotCorrectException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (InvoiceTimeInformationNotCorrectException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (InvoicePhotoLocationNotCorrectException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (DbUpdateConcurrencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (DbUpdateException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -90,49 +45,61 @@ public partial class InvoiceStorageFoundationService
     {
       return await returningInvoicesFunction().ConfigureAwait(false);
     }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (ArgumentNullException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
-  private InvoiceFoundationValidationException CreateAndLogValidationException(Exception exception)
+  private Exception Classify(Exception exception) => exception switch
   {
-    var invoiceFoundationValidationException = new InvoiceFoundationValidationException(exception);
-    var exceptionMessage = invoiceFoundationValidationException.Message;
-    logger.LogInvoiceStorageValidationException(exceptionMessage);
-    return invoiceFoundationValidationException;
+    InvoiceIdNotSetException
+      or InvoiceDescriptionNotSetException
+      or InvoicePaymentInformationNotCorrectException
+      or InvoiceTimeInformationNotCorrectException
+      or InvoicePhotoLocationNotCorrectException
+      => LogAndWrapValidation(exception),
+
+    InvoiceNotFoundException
+      or InvoiceAlreadyExistsException
+      or InvoiceLockedException
+      => LogAndWrapDependencyValidation(exception),
+
+    InvoiceCosmosDbRateLimitException
+      or InvoiceFailedStorageException
+      or InvoiceUnauthorizedAccessException
+      or InvoiceForbiddenAccessException
+      or OperationCanceledException
+      => LogAndWrapDependency(exception),
+
+    _ => LogAndWrapService(exception),
+  };
+
+  private InvoiceFoundationValidationException LogAndWrapValidation(Exception exception)
+  {
+    var outer = new InvoiceFoundationValidationException(exception);
+    logger.LogInvoiceStorageValidationException(outer.Message);
+    return outer;
   }
 
-  private InvoiceFoundationDependencyException CreateAndLogDependencyException(Exception exception)
+  private InvoiceFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
-    var invoiceFoundationDependencyException = new InvoiceFoundationDependencyException(exception);
-    var exceptionMessage = invoiceFoundationDependencyException.Message;
-    logger.LogInvoiceStorageDependencyException(exceptionMessage);
-    return invoiceFoundationDependencyException;
+    var outer = new InvoiceFoundationDependencyException(exception);
+    logger.LogInvoiceStorageDependencyException(outer.Message);
+    return outer;
   }
 
-  private InvoiceFoundationDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
+  private InvoiceFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
-    var invoiceFoundationDependencyValidationException = new InvoiceFoundationDependencyValidationException(exception);
-    var exceptionMessage = invoiceFoundationDependencyValidationException.Message;
-    logger.LogInvoiceStorageDependencyValidationException(exceptionMessage);
-    return invoiceFoundationDependencyValidationException;
+    var outer = new InvoiceFoundationDependencyValidationException(exception);
+    logger.LogInvoiceStorageDependencyValidationException(outer.Message);
+    return outer;
   }
 
-  private InvoiceFoundationServiceException CreateAndLogServiceException(Exception exception)
+  private InvoiceFoundationServiceException LogAndWrapService(Exception exception)
   {
-    var invoiceFoundationServiceException = new InvoiceFoundationServiceException(exception);
-    var exceptionMessage = invoiceFoundationServiceException.Message;
-    logger.LogInvoiceStorageServiceException(exceptionMessage);
-    return invoiceFoundationServiceException;
+    var outer = new InvoiceFoundationServiceException(exception);
+    logger.LogInvoiceStorageServiceException(outer.Message);
+    return outer;
   }
 }
