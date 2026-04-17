@@ -8,6 +8,7 @@ using System.Threading;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
@@ -19,6 +20,7 @@ using arolariu.Backend.Core.Domain.General.Services.Swagger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -324,6 +326,8 @@ internal static class WebApplicationBuilderExtensions
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
     services.AddHealthChecks();
     services.AddRateLimitingPolicies();
+
+    services.TryAddSingleton<IExceptionToHttpResultMapper, ExceptionToHttpResultMapper>();
 
     builder.AddOTelLogging();
     builder.AddOTelMetering();
