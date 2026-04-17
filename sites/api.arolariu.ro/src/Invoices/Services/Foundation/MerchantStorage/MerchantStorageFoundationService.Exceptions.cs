@@ -59,12 +59,12 @@ public partial class MerchantStorageFoundationService
     MerchantNotFoundException
       or MerchantAlreadyExistsException
       or MerchantLockedException
-      => LogAndWrapDependencyValidation(exception),
-
-    MerchantCosmosDbRateLimitException
-      or MerchantFailedStorageException
+      or MerchantCosmosDbRateLimitException
       or MerchantUnauthorizedAccessException
       or MerchantForbiddenAccessException
+      => LogAndWrapDependencyValidation(exception),
+
+    MerchantFailedStorageException
       or OperationCanceledException
       => LogAndWrapDependency(exception),
 

@@ -63,12 +63,12 @@ public partial class InvoiceStorageFoundationService
     InvoiceNotFoundException
       or InvoiceAlreadyExistsException
       or InvoiceLockedException
-      => LogAndWrapDependencyValidation(exception),
-
-    InvoiceCosmosDbRateLimitException
-      or InvoiceFailedStorageException
+      or InvoiceCosmosDbRateLimitException
       or InvoiceUnauthorizedAccessException
       or InvoiceForbiddenAccessException
+      => LogAndWrapDependencyValidation(exception),
+
+    InvoiceFailedStorageException
       or OperationCanceledException
       => LogAndWrapDependency(exception),
 

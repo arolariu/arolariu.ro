@@ -8,6 +8,7 @@ using System.Threading;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
+using arolariu.Backend.Common.Http;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
@@ -325,6 +326,9 @@ internal static class WebApplicationBuilderExtensions
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
     services.AddHealthChecks();
     services.AddRateLimitingPolicies();
+
+    services.AddExceptionHandler<ExceptionMappingHandler>();
+    services.AddProblemDetails();
 
     builder.AddOTelLogging();
     builder.AddOTelMetering();

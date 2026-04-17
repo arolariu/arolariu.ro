@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 public partial class InvoiceAnalysisFoundationService
@@ -18,11 +19,35 @@ public partial class InvoiceAnalysisFoundationService
     }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
-  private InvoiceFoundationValidationException CreateAndLogValidationException(Exception exception)
+  private Exception Classify(Exception exception) => exception switch
+  {
+    InvoiceIdNotSetException
+      or InvoiceDescriptionNotSetException
+      or InvoicePaymentInformationNotCorrectException
+      or InvoiceTimeInformationNotCorrectException
+      or InvoicePhotoLocationNotCorrectException
+      => LogAndWrapValidation(exception),
+
+    InvoiceNotFoundException
+      or InvoiceAlreadyExistsException
+      or InvoiceLockedException
+      or InvoiceCosmosDbRateLimitException
+      or InvoiceUnauthorizedAccessException
+      or InvoiceForbiddenAccessException
+      => LogAndWrapDependencyValidation(exception),
+
+    InvoiceFailedStorageException
+      or OperationCanceledException
+      => LogAndWrapDependency(exception),
+
+    _ => LogAndWrapService(exception),
+  };
+
+  private InvoiceFoundationValidationException LogAndWrapValidation(Exception exception)
   {
     var invoiceFoundationValidationException = new InvoiceFoundationValidationException(exception);
     var exceptionMessage = invoiceFoundationValidationException.Message;
@@ -30,7 +55,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationValidationException;
   }
 
-  private InvoiceFoundationDependencyException CreateAndLogDependencyException(Exception exception)
+  private InvoiceFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
     var invoiceFoundationDependencyException = new InvoiceFoundationDependencyException(exception);
     var exceptionMessage = invoiceFoundationDependencyException.Message;
@@ -38,7 +63,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationDependencyException;
   }
 
-  private InvoiceFoundationDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
+  private InvoiceFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var invoiceFoundationDependencyValidationException = new InvoiceFoundationDependencyValidationException(exception);
     var exceptionMessage = invoiceFoundationDependencyValidationException.Message;
@@ -46,7 +71,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationDependencyValidationException;
   }
 
-  private InvoiceFoundationServiceException CreateAndLogServiceException(Exception exception)
+  private InvoiceFoundationServiceException LogAndWrapService(Exception exception)
   {
     var invoiceFoundationServiceException = new InvoiceFoundationServiceException(exception);
     var exceptionMessage = invoiceFoundationServiceException.Message;

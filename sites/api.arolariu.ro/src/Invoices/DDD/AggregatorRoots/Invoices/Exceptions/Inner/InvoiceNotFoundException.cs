@@ -9,45 +9,48 @@ using arolariu.Backend.Common.Exceptions;
 /// <summary>
 /// Thrown when an invoice lookup by identifier returns no result from the data store.
 /// </summary>
+/// <remarks>
+/// Implements <see cref="INotFoundException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 404 Not Found when this exception is surfaced, whether unwrapped or wrapped by a Foundation/Orchestration/Processing outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceNotFoundException : Exception, INotFoundException
 {
-/// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class.</summary>
-public InvoiceNotFoundException() { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class.</summary>
+  public InvoiceNotFoundException() { }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with the specified invoice identifier.</summary>
-/// <param name="invoiceIdentifier">The identifier of the invoice that was not found.</param>
-public InvoiceNotFoundException(Guid invoiceIdentifier)
-: base($"Invoice with identifier '{invoiceIdentifier}' was not found.")
-{
-InvoiceIdentifier = invoiceIdentifier;
-}
+  /// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with the specified invoice identifier.</summary>
+  /// <param name="invoiceIdentifier">The identifier of the invoice that was not found.</param>
+  public InvoiceNotFoundException(Guid invoiceIdentifier)
+  : base($"Invoice with identifier '{invoiceIdentifier}' was not found.")
+  {
+    InvoiceIdentifier = invoiceIdentifier;
+  }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with the specified invoice identifier and inner exception.</summary>
-/// <param name="invoiceIdentifier">The identifier of the invoice that was not found.</param>
-/// <param name="innerException">The inner exception.</param>
-public InvoiceNotFoundException(Guid invoiceIdentifier, Exception innerException)
-: base($"Invoice with identifier '{invoiceIdentifier}' was not found.", innerException)
-{
-InvoiceIdentifier = invoiceIdentifier;
-}
+  /// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with the specified invoice identifier and inner exception.</summary>
+  /// <param name="invoiceIdentifier">The identifier of the invoice that was not found.</param>
+  /// <param name="innerException">The inner exception.</param>
+  public InvoiceNotFoundException(Guid invoiceIdentifier, Exception innerException)
+  : base($"Invoice with identifier '{invoiceIdentifier}' was not found.", innerException)
+  {
+    InvoiceIdentifier = invoiceIdentifier;
+  }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with a custom message.</summary>
-/// <param name="message">The exception message.</param>
-public InvoiceNotFoundException(string message) : base(message) { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with a custom message.</summary>
+  /// <param name="message">The exception message.</param>
+  public InvoiceNotFoundException(string message) : base(message) { }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with a custom message and inner exception.</summary>
-/// <param name="message">The exception message.</param>
-/// <param name="innerException">The inner exception.</param>
-public InvoiceNotFoundException(string message, Exception innerException)
-: base(message, innerException) { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceNotFoundException"/> class with a custom message and inner exception.</summary>
+  /// <param name="message">The exception message.</param>
+  /// <param name="innerException">The inner exception.</param>
+  public InvoiceNotFoundException(string message, Exception innerException)
+  : base(message, innerException) { }
 
 #pragma warning disable SYSLIB0051
-private InvoiceNotFoundException(SerializationInfo info, StreamingContext context)
-: base(info, context) { }
+  private InvoiceNotFoundException(SerializationInfo info, StreamingContext context)
+  : base(info, context) { }
 #pragma warning restore SYSLIB0051
 
-/// <summary>Gets the identifier of the invoice that was not found.</summary>
-public Guid InvoiceIdentifier { get; }
+  /// <summary>Gets the identifier of the invoice that was not found.</summary>
+  public Guid InvoiceIdentifier { get; }
 }
