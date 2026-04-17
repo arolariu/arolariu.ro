@@ -4,6 +4,7 @@
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
   AlertDialog,
@@ -234,7 +235,7 @@ const CreateDialog = () => {
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
-              value={Object.keys(RecipeComplexity).find((k) => RecipeComplexity[k as keyof typeof RecipeComplexity] === recipe.complexity) ?? "Unknown"}
+              value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
               onValueChange={(value) => {
                 setRecipe((prev) => ({
                   ...prev,
@@ -555,7 +556,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
-              value={Object.keys(RecipeComplexity).find((k) => RecipeComplexity[k as keyof typeof RecipeComplexity] === recipe.complexity) ?? "Unknown"}
+              value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
               onValueChange={(value) => {
                 const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
                 setRecipeDetails((prev) => ({

@@ -1,4 +1,4 @@
-import {formatCurrency, formatDate} from "@/lib/utils.generic";
+import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
@@ -197,7 +197,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <span className={styles["printOnly"]}>{invoice.id}</span>
             </TableCell>
             <TableCell>
-              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{Object.keys(InvoiceCategory).find((k) => InvoiceCategory[k as keyof typeof InvoiceCategory] === invoice.category) ?? "NOT_DEFINED"}</Badge>
+              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{formatEnum(InvoiceCategory, invoice.category) || "NOT_DEFINED"}</Badge>
             </TableCell>
             <TableCell>
               {invoice.paymentInformation?.transactionDate ? (

@@ -1,3 +1,4 @@
+import {formatEnum} from "@/lib/utils.generic";
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,
@@ -35,7 +36,7 @@ import styles from "./MerchantDialog.module.scss";
  * **Visual Design**:
  * - Profile-style header with merchant icon in primary-tinted circle
  * - Table layout for structured detail presentation
- * - Category badge derived from `MerchantCategory` enum
+ * - Category badge derived from `MerchantCategory` const-object
  *
  * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
  * Payload contains the full `Merchant` object.
@@ -54,7 +55,7 @@ import styles from "./MerchantDialog.module.scss";
  *
  * @see {@link MerchantCard} - Parent component that opens this dialog
  * @see {@link Merchant} - Merchant type definition
- * @see {@link MerchantCategory} - Category enum for badge display
+ * @see {@link MerchantCategory} - Category const-object for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.merchantDialog");
@@ -84,10 +85,7 @@ export default function MerchantDialog(): React.JSX.Element {
     );
   }
 
-  const merchantCategoryAsString =
-    Object.keys(MerchantCategory).find(
-      (k) => MerchantCategory[k as keyof typeof MerchantCategory] === merchant.category,
-    ) ?? "NOT_DEFINED";
+  const merchantCategoryAsString = formatEnum(MerchantCategory, merchant.category) || "NOT_DEFINED";
 
   return (
     <Dialog
