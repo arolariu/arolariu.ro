@@ -22,25 +22,9 @@ public partial class MerchantOrchestrationService
     {
       await callbackFunction().ConfigureAwait(false);
     }
-    catch (MerchantFoundationServiceValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -50,25 +34,9 @@ public partial class MerchantOrchestrationService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (MerchantFoundationServiceValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -78,27 +46,20 @@ public partial class MerchantOrchestrationService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (MerchantFoundationServiceValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
+
+  private Exception Classify(Exception exception) => exception switch
+  {
+    MerchantFoundationServiceValidationException => CreateAndLogValidationException(exception.InnerException ?? exception),
+    MerchantFoundationServiceDependencyValidationException => CreateAndLogDependencyValidationException(exception.InnerException ?? exception),
+    MerchantFoundationServiceDependencyException => CreateAndLogDependencyException(exception.InnerException ?? exception),
+    MerchantFoundationServiceException => CreateAndLogServiceException(exception.InnerException ?? exception),
+    _ => CreateAndLogServiceException(exception),
+  };
 
   private MerchantOrchestrationServiceValidationException CreateAndLogValidationException(Exception exception)
   {
