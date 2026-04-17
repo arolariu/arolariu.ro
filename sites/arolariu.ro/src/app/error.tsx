@@ -3,12 +3,12 @@
 import {useTranslations} from "next-intl";
 import {useEffect} from "react";
 
-type GlobalErrorProps = Readonly<{
+type AppErrorProps = Readonly<{
   error: Error & {digest?: string};
   reset: () => void;
 }>;
 
-export default function GlobalError({error, reset}: GlobalErrorProps): React.JSX.Element {
+export default function AppError({error, reset}: AppErrorProps): React.JSX.Element {
   const t = useTranslations("Errors.globalError");
 
   useEffect(() => {
