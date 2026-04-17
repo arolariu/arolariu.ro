@@ -369,10 +369,10 @@ public partial class InvoiceNoSqlBroker
     cosmosException.StatusCode switch
     {
       HttpStatusCode.NotFound => invoiceIdentifier.HasValue
-        ? new InvoiceNotFoundException(invoiceIdentifier.Value)
+        ? new InvoiceNotFoundException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceNotFoundException("Invoice not found in Cosmos DB.", cosmosException),
       HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => invoiceIdentifier.HasValue
-        ? new InvoiceAlreadyExistsException(invoiceIdentifier.Value)
+        ? new InvoiceAlreadyExistsException(invoiceIdentifier.Value, cosmosException)
         : new InvoiceAlreadyExistsException("Invoice already exists in Cosmos DB.", cosmosException),
       HttpStatusCode.Unauthorized => new InvoiceUnauthorizedAccessException(
         "Cosmos DB returned HTTP 401 Unauthorized while accessing invoice data.", cosmosException),

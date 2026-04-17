@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-using arolariu.Backend.Common.Http;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -28,7 +27,6 @@ public static partial class InvoiceEndpoints
   /// Creates a new invoice in the system.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="invoiceDto">The data transfer object containing the details of the invoice to be created.</param>
   /// <returns>A task representing the asynchronous operation, containing the result of the creation process.</returns>
@@ -50,9 +48,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateNewInvoiceAsync(
+  public static partial Task<IResult> CreateNewInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromBody, SwaggerRequestBody("The invoice DTO containing the details for the new invoice.", Required = true)] CreateInvoiceRequestDto invoiceDto);
   #endregion
@@ -62,7 +59,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves a specific invoice by its identifier.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to retrieve.</param>
   /// <returns>A task representing the asynchronous operation, containing the retrieved invoice.</returns>
@@ -82,9 +78,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
+  public static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id);
   #endregion
@@ -94,7 +89,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all invoices available to the user.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoices.</returns>
   [SwaggerOperation(
@@ -112,9 +106,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveAllInvoicesAsync(
+  public static partial Task<IResult> RetrieveAllInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext
     );
   #endregion
@@ -124,7 +117,6 @@ public static partial class InvoiceEndpoints
   /// Updates a specific invoice by replacing it entirely.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to update.</param>
   /// <param name="invoicePayload">The new invoice data that will replace the existing invoice.</param>
@@ -145,9 +137,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
+  public static partial Task<IResult> UpdateSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to update.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The invoice payload that will replace the existing invoice.", Required = true)] UpdateInvoiceRequestDto invoicePayload);
@@ -158,7 +149,6 @@ public static partial class InvoiceEndpoints
   /// Patches a specific invoice with partial updates.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to patch.</param>
   /// <param name="invoicePayload">The partial invoice data to apply as a patch.</param>
@@ -179,9 +169,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> PatchSpecificInvoiceAsync(
+  public static partial Task<IResult> PatchSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to patch.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The partial invoice payload to apply as a patch.", Required = true)] PatchInvoiceRequestDto invoicePayload);
@@ -192,7 +181,6 @@ public static partial class InvoiceEndpoints
   /// Deletes a specific invoice by its identifier.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to delete.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
@@ -212,9 +200,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceAsync(
+  public static partial Task<IResult> DeleteInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to delete.", Required = true)] Guid id);
   #endregion
@@ -224,7 +211,6 @@ public static partial class InvoiceEndpoints
   /// Deletes all invoices associated with the authenticated user.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
@@ -243,9 +229,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoicesAsync(
+  public static partial Task<IResult> DeleteInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext
     );
   #endregion
@@ -255,7 +240,6 @@ public static partial class InvoiceEndpoints
   /// Adds a product to a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to which the product will be added.</param>
   /// <param name="product">The product data to add to the invoice.</param>
@@ -278,9 +262,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddProductToInvoiceAsync(
+  public static partial Task<IResult> AddProductToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The product payload to be added to the invoice.", Required = true)] CreateProductRequestDto product);
@@ -291,7 +274,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all products from a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve products.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of products.</returns>
@@ -311,9 +293,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
+  public static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
@@ -323,7 +304,6 @@ public static partial class InvoiceEndpoints
   /// Removes a product from a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to remove the product.</param>
   /// <param name="productDto">The DTO containing the product identifier to remove.</param>
@@ -346,9 +326,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
+  public static partial Task<IResult> RemoveProductFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The product identifier to remove.", Required = true)] DeleteProductRequestDto productDto);
@@ -359,7 +338,6 @@ public static partial class InvoiceEndpoints
   /// Updates a product in a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice containing the product.</param>
   /// <param name="productInformation">The updated product DTO containing the product identifier and new data.</param>
@@ -382,9 +360,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateProductInInvoiceAsync(
+  public static partial Task<IResult> UpdateProductInInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The updated product payload.", Required = true)] UpdateProductRequestDto productInformation);
@@ -395,7 +372,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves the merchant associated with a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve the merchant.</param>
   /// <returns>A task representing the asynchronous operation, containing the merchant details.</returns>
@@ -415,9 +391,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
+  public static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
@@ -427,7 +402,6 @@ public static partial class InvoiceEndpoints
   /// Adds or updates the merchant associated with an invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to which the merchant will be added.</param>
   /// <param name="merchantDto">The merchant DTO containing the merchant data to associate with the invoice.</param>
@@ -450,9 +424,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddMerchantToInvoiceAsync(
+  public static partial Task<IResult> AddMerchantToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The merchant payload to be associated with the invoice.", Required = true)] AddMerchantToInvoiceRequestDto merchantDto);
@@ -463,7 +436,6 @@ public static partial class InvoiceEndpoints
   /// Removes the merchant associated with a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to remove the merchant.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
@@ -485,9 +457,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
+  public static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
@@ -497,7 +468,6 @@ public static partial class InvoiceEndpoints
   /// Creates a new scan for a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to which the scan will be added.</param>
   /// <param name="invoiceScanDto">The invoice scan data to be created.</param>
@@ -519,9 +489,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateInvoiceScanAsync(
+  public static partial Task<IResult> CreateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The invoice scan payload to be created.", Required = true)] CreateInvoiceScanRequestDto invoiceScanDto);
@@ -532,7 +501,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all scans associated with a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve scans.</param>
   /// <returns>A task representing the asynchronous operation, containing the list of invoice scans.</returns>
@@ -552,9 +520,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoiceScansAsync(
+  public static partial Task<IResult> RetrieveInvoiceScansAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
@@ -564,7 +531,6 @@ public static partial class InvoiceEndpoints
   /// Deletes a specific invoice scan.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice.</param>
   /// <param name="scanLocationField">The unique identifier of the scan to delete.</param>
@@ -585,9 +551,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceScanAsync(
+  public static partial Task<IResult> DeleteInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] string scanLocationField);
@@ -598,7 +563,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves the metadata associated with a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice from which to retrieve metadata.</param>
   /// <returns>A task representing the asynchronous operation, containing the invoice metadata.</returns>
@@ -618,9 +582,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
+  public static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
@@ -630,7 +593,6 @@ public static partial class InvoiceEndpoints
   /// Patches the metadata of a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice.</param>
   /// <param name="invoiceMetadataPatch">The metadata key-value pairs to add or update.</param>
@@ -651,9 +613,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> PatchInvoiceMetadataAsync(
+  public static partial Task<IResult> PatchInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The metadata key-value pairs to apply as a patch.", Required = true)] PatchMetadataRequestDto invoiceMetadataPatch);
@@ -664,7 +625,6 @@ public static partial class InvoiceEndpoints
   /// Deletes specific metadata keys from a specific invoice.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice.</param>
   /// <param name="metadataKeys">The list of metadata keys to remove.</param>
@@ -685,9 +645,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
+  public static partial Task<IResult> DeleteInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The list of metadata keys to delete.", Required = true)] DeleteMetadataRequestDto metadataKeys);
@@ -700,7 +659,6 @@ public static partial class InvoiceEndpoints
   /// Creates a new merchant in the system.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="merchantDto">The merchant data transfer object containing the details of the merchant to create.</param>
   /// <returns>A task representing the asynchronous operation, containing the created merchant identifier.</returns>
@@ -721,9 +679,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateNewMerchantAsync(
+  public static partial Task<IResult> CreateNewMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromBody, SwaggerRequestBody("The merchant data transfer object.", Required = true)] CreateMerchantRequestDto merchantDto);
   #endregion
@@ -733,7 +690,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all merchants from the system, optionally filtered by parent company.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to filter merchants by.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
@@ -751,9 +707,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveAllMerchantsAsync(
+  public static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
@@ -763,7 +718,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves a specific merchant by its identifier.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant to retrieve.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
@@ -784,9 +738,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
+  public static partial Task<IResult> RetrieveSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId);
@@ -797,7 +750,6 @@ public static partial class InvoiceEndpoints
   /// Updates a specific merchant in the system.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant to update.</param>
   /// <param name="merchantPayload">The updated merchant object.</param>
@@ -818,9 +770,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateSpecificMerchantAsync(
+  public static partial Task<IResult> UpdateSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The updated merchant object.", Required = true)] UpdateMerchantRequestDto merchantPayload);
@@ -831,7 +782,6 @@ public static partial class InvoiceEndpoints
   /// Deletes a specific merchant from the system.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant to delete.</param>
   /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
@@ -852,9 +802,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteMerchantAsync(
+  public static partial Task<IResult> DeleteMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
@@ -865,7 +814,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all invoices associated with a specific merchant.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of invoices.</returns>
@@ -885,9 +833,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
+  public static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
   #endregion
@@ -897,7 +844,6 @@ public static partial class InvoiceEndpoints
   /// Adds one or more invoices to a specific merchant.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
   /// <param name="invoiceIdentifiers">The list of invoice identifiers to add.</param>
@@ -920,9 +866,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddInvoiceToMerchantAsync(
+  public static partial Task<IResult> AddInvoiceToMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The list of invoice identifiers to associate with the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
@@ -933,7 +878,6 @@ public static partial class InvoiceEndpoints
   /// Removes one or more invoices from a specific merchant.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
   /// <param name="invoiceIdentifiers">The list of invoice identifiers to remove.</param>
@@ -956,9 +900,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
+  public static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
@@ -969,7 +912,6 @@ public static partial class InvoiceEndpoints
   /// Retrieves all products associated with a specific merchant.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the merchant.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of products.</returns>
@@ -989,9 +931,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
+  public static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
   #endregion
@@ -1001,7 +942,6 @@ public static partial class InvoiceEndpoints
   /// Analyzes a specific invoice using AI/ML services.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling analysis logic.</param>
-  /// <param name="mapper">The exception-to-HTTP result mapper used to translate caught exceptions into standardized HTTP responses.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice to analyze.</param>
   /// <param name="options">The options for the analysis (e.g., detailed, basic).</param>
@@ -1023,9 +963,8 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AnalyzeInvoiceAsync(
+  public static partial Task<IResult> AnalyzeInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IExceptionToHttpResultMapper mapper,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("The analysis options to configure the pipeline.", Required = true)] AnalyzeInvoiceRequestDto options);

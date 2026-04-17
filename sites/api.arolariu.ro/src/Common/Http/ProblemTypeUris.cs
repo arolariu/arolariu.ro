@@ -30,9 +30,6 @@ public static class ProblemTypeUris
   /// <summary>Problem type URI for forbidden requests (HTTP 403).</summary>
   public const string Forbidden           = Root + "forbidden";
 
-  /// <summary>Problem type URI for upstream dependency failures (HTTP 502).</summary>
-  public const string DependencyFailure   = Root + "dependency-failure";
-
   /// <summary>Problem type URI for unavailable services (HTTP 503).</summary>
   public const string ServiceUnavailable  = Root + "service-unavailable";
 

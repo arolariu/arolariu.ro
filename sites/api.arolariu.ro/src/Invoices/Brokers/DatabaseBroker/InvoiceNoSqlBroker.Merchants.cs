@@ -291,10 +291,10 @@ public partial class InvoiceNoSqlBroker
     cosmosException.StatusCode switch
     {
       HttpStatusCode.NotFound => merchantIdentifier.HasValue
-        ? new MerchantNotFoundException(merchantIdentifier.Value)
+        ? new MerchantNotFoundException(merchantIdentifier.Value, cosmosException)
         : new MerchantNotFoundException("Merchant not found.", cosmosException),
       HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => merchantIdentifier.HasValue
-        ? new MerchantAlreadyExistsException(merchantIdentifier.Value)
+        ? new MerchantAlreadyExistsException(merchantIdentifier.Value, cosmosException)
         : new MerchantAlreadyExistsException("Merchant already exists.", cosmosException),
       HttpStatusCode.Unauthorized => new MerchantUnauthorizedAccessException(
         "Cosmos DB rejected the request as unauthorized.", cosmosException),

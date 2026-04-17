@@ -133,12 +133,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     // Arrange
     var mockService = CreateServiceMockThatThrowsOnRead(new TestNotFoundException("invoice not found"));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     // Assert
@@ -155,11 +154,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsConflict_Returns409()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestConflictException("already exists"));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
@@ -174,11 +172,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   public async Task RetrieveSpecificInvoiceAsync_WhenServiceThrowsLocked_Returns423()
   {
     var mockService = CreateServiceMockThatThrowsOnRead(new TestLockedException("resource locked"));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
@@ -197,12 +194,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var retryAfter = TimeSpan.FromSeconds(42);
     var mockService = CreateServiceMockThatThrowsOnRead(
       new TestRateLimitedException("slow down", retryAfter));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     // Assert
@@ -227,11 +223,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     var mockService = CreateServiceMockThatThrowsOnRead(
       new TestDependencyException("upstream dependency failed"));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
@@ -250,12 +245,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // should hit the fallback branch in the mapper's switch and be reported as 500.
     const string secretDetail = "Cosmos DB connection string=AccountEndpoint=...;AccountKey=...";
     var mockService = CreateServiceMockThatThrowsOnRead(new Exception(secretDetail));
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     // Act
     var result = await InvoiceEndpoints
-      .RetrieveSpecificInvoiceAsync(mockService.Object, mapper, accessor, Guid.NewGuid())
+      .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
       .ConfigureAwait(false);
 
     // Assert
@@ -265,8 +259,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // The mapper's BuildSafeDetail surfaces Message only - it does NOT emit the
     // exception type name / namespace / stack into the ProblemDetails payload.
-    Assert.DoesNotContain("System.Exception", problem.Detail ?? string.Empty, StringComparison.Ordinal);
-    Assert.DoesNotContain("at ", problem.Detail ?? string.Empty, StringComparison.Ordinal);
+    Assert.Equal("An unexpected error occurred. Please try again later.", problem.Detail);
   }
   #endregion
 
@@ -281,7 +274,6 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Arrange - endpoint-level validation runs BEFORE any service call, so the mock
     // is never invoked. The strict mock ensures any unexpected call would fail the test.
     var mockService = new Mock<IInvoiceProcessingService>(MockBehavior.Strict);
-    var mapper = new ExceptionToHttpResultMapper();
     var accessor = CreateAuthenticatedContextAccessor();
 
     var invalidDto = new CreateInvoiceRequestDto(
@@ -291,7 +283,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     // Act
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, mapper, accessor, invalidDto)
+      .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
       .ConfigureAwait(false);
 
     // Assert

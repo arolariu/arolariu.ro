@@ -21,9 +21,8 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public static partial class InvoiceEndpoints
 {
   #region CRUD operations for the Invoice Standard Endpoints
-  internal static async partial Task<IResult> CreateNewInvoiceAsync(
+  public static async partial Task<IResult> CreateNewInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     CreateInvoiceRequestDto invoiceDto)
   {
@@ -59,13 +58,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
+  public static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -140,13 +138,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
+  public static async partial Task<IResult> RetrieveAllInvoicesAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext
     )
   {
@@ -173,13 +170,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> DeleteInvoicesAsync(
+  public static async partial Task<IResult> DeleteInvoicesAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext
     )
   {
@@ -206,13 +202,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> UpdateSpecificInvoiceAsync(
+  public static async partial Task<IResult> UpdateSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateInvoiceRequestDto invoicePayload)
@@ -257,13 +252,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> PatchSpecificInvoiceAsync(
+  public static async partial Task<IResult> PatchSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     PatchInvoiceRequestDto invoicePayload)
@@ -323,13 +317,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> DeleteInvoiceAsync(
+  public static async partial Task<IResult> DeleteInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -365,13 +358,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> AddProductToInvoiceAsync(
+  public static async partial Task<IResult> AddProductToInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateProductRequestDto product)
@@ -411,13 +403,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
+  public static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -451,13 +442,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RemoveProductFromInvoiceAsync(
+  public static async partial Task<IResult> RemoveProductFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     DeleteProductRequestDto productDto)
@@ -495,13 +485,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> UpdateProductInInvoiceAsync(
+  public static async partial Task<IResult> UpdateProductInInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateProductRequestDto productInformation)
@@ -555,13 +544,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
+  public static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -611,13 +599,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> AddMerchantToInvoiceAsync(
+  public static async partial Task<IResult> AddMerchantToInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     AddMerchantToInvoiceRequestDto merchantDto)
@@ -673,13 +660,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
+  public static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -739,13 +725,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> CreateInvoiceScanAsync(
+  public static async partial Task<IResult> CreateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     CreateInvoiceScanRequestDto invoiceScanDto)
@@ -787,13 +772,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveInvoiceScansAsync(
+  public static async partial Task<IResult> RetrieveInvoiceScansAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -827,13 +811,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> DeleteInvoiceScanAsync(
+  public static async partial Task<IResult> DeleteInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     string scanLocationField)
@@ -883,13 +866,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
+  public static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -923,13 +905,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> PatchInvoiceMetadataAsync(
+  public static async partial Task<IResult> PatchInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     PatchMetadataRequestDto invoiceMetadataPatch)
@@ -969,13 +950,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> DeleteInvoiceMetadataAsync(
+  public static async partial Task<IResult> DeleteInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     DeleteMetadataRequestDto metadataKeys)
@@ -1018,16 +998,15 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
   #endregion
 
   #region CRUD operations for the Merchant Standard Endpoints
-  internal static async partial Task<IResult> CreateNewMerchantAsync(
+  public static async partial Task<IResult> CreateNewMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     CreateMerchantRequestDto merchantDto)
   {
@@ -1057,13 +1036,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
+  public static async partial Task<IResult> RetrieveAllMerchantsAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid parentCompanyId)
   {
@@ -1093,13 +1071,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveSpecificMerchantAsync(
+  public static async partial Task<IResult> RetrieveSpecificMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     Guid? parentCompanyId)
@@ -1138,13 +1115,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> UpdateSpecificMerchantAsync(
+  public static async partial Task<IResult> UpdateSpecificMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     UpdateMerchantRequestDto merchantPayload)
@@ -1184,13 +1160,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> DeleteMerchantAsync(
+  public static async partial Task<IResult> DeleteMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     Guid parentCompanyId)
@@ -1245,13 +1220,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
+  public static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -1301,13 +1275,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> AddInvoiceToMerchantAsync(
+  public static async partial Task<IResult> AddInvoiceToMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
@@ -1365,13 +1338,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
+  public static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     MerchantInvoicesRequestDto invoiceIdentifiers)
@@ -1431,13 +1403,12 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
+  public static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id)
   {
@@ -1490,15 +1461,14 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
   #endregion
 
   #region Analysis operations
-  internal static async partial Task<IResult> AnalyzeInvoiceAsync(
+  public static async partial Task<IResult> AnalyzeInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IExceptionToHttpResultMapper mapper,
     IHttpContextAccessor httpContext,
     Guid id,
     AnalyzeInvoiceRequestDto options)
@@ -1550,7 +1520,7 @@ public static partial class InvoiceEndpoints
     {
       Activity.Current?.RecordException(ex);
       Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-      return mapper.ToHttpResult(ex, Activity.Current);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
   #endregion

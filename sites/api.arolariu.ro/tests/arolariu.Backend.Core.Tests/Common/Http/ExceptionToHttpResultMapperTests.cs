@@ -16,7 +16,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ExceptionToHttpResultMapperTests
 {
-  private readonly ExceptionToHttpResultMapper _sut = new();
 
   private sealed class ValidationEx : Exception, IValidationException { public ValidationEx(string m) : base(m) { } }
   private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { } }
@@ -43,7 +42,7 @@ public sealed class ExceptionToHttpResultMapperTests
   {
     var ex = (Exception)Activator.CreateInstance(exceptionType, "boom")!;
 
-    var result = _sut.ToHttpResult(ex, activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(ex, activity: null);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;
@@ -54,11 +53,12 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_UnknownException_MapsTo500()
   {
-    var result = _sut.ToHttpResult(new Exception("boom"), activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new Exception("boom"), activity: null);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(500, problem.StatusCode);
+    Assert.AreEqual("An unexpected error occurred. Please try again later.", problem.ProblemDetails.Detail);
   }
 
   /// <summary>Inner classifiable exception drives status when outer is unclassified.</summary>
@@ -68,7 +68,7 @@ public sealed class ExceptionToHttpResultMapperTests
     var inner = new NotFoundEx("missing");
     var outer = new Exception("outer", inner);
 
-    var result = _sut.ToHttpResult(outer, activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(outer, activity: null);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;
@@ -81,7 +81,7 @@ public sealed class ExceptionToHttpResultMapperTests
   {
     var ex = new ServiceEx("secret details about internal types") { Source = "arolariu.Backend.Invoices" };
 
-    var result = _sut.ToHttpResult(ex, activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(ex, activity: null);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;
@@ -95,7 +95,7 @@ public sealed class ExceptionToHttpResultMapperTests
   {
     using var activity = new Activity("test").Start();
 
-    var result = _sut.ToHttpResult(new ServiceEx("boom"), activity);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new ServiceEx("boom"), activity);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;
@@ -106,7 +106,7 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_RateLimited_IncludesRetryAfterExtension()
   {
-    var result = _sut.ToHttpResult(new RateLimitEx("throttled"), activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new RateLimitEx("throttled"), activity: null);
 
     Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
     var problem = (ProblemHttpResult)result;

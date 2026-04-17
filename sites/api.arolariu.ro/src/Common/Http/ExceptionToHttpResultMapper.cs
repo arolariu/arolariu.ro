@@ -9,11 +9,14 @@ using arolariu.Backend.Common.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-/// <inheritdoc />
-public sealed class ExceptionToHttpResultMapper : IExceptionToHttpResultMapper
+/// <summary>
+/// Centralized translator from exception markers to RFC 7807 ProblemDetails with proper HTTP status codes.
+/// Static because the mapping is a pure function of the exception chain and the current Activity.
+/// </summary>
+public static class ExceptionToHttpResultMapper
 {
-  /// <inheritdoc />
-  public IResult ToHttpResult(Exception exception, Activity? activity)
+  /// <summary>Maps an exception to an <see cref="IResult"/> carrying an RFC 7807 ProblemDetails payload.</summary>
+  public static IResult ToHttpResult(Exception exception, Activity? activity)
   {
     ArgumentNullException.ThrowIfNull(exception);
 
@@ -27,7 +30,6 @@ public sealed class ExceptionToHttpResultMapper : IExceptionToHttpResultMapper
       extensions["traceId"] = traceId;
     }
 
-    // Surface retry hint for rate-limited responses.
     if (root is IRateLimitedException)
     {
       var retryAfter = TryGetRetryAfter(root);
@@ -39,16 +41,13 @@ public sealed class ExceptionToHttpResultMapper : IExceptionToHttpResultMapper
       Status = status,
       Title = title,
       Type = type,
-      Detail = BuildSafeDetail(root),
+      Detail = BuildSafeDetail(root, status),
       Extensions = extensions,
     });
   }
 
   private static Exception FindClassifiableException(Exception ex)
   {
-    // Walk the chain preferring the innermost classifiable exception — refinement
-    // markers live on inner types (e.g., InvoiceNotFoundException wrapped by
-    // InvoiceFoundationDependencyValidationException).
     Exception? current = ex;
     Exception deepest = ex;
     while (current is not null)
@@ -88,7 +87,6 @@ public sealed class ExceptionToHttpResultMapper : IExceptionToHttpResultMapper
 
   private static TimeSpan TryGetRetryAfter(Exception ex)
   {
-    // Reflect over a public TimeSpan property named RetryAfter if present.
     var prop = ex.GetType().GetProperty("RetryAfter", typeof(TimeSpan));
     if (prop?.GetValue(ex) is TimeSpan span && span > TimeSpan.Zero)
     {
@@ -97,11 +95,21 @@ public sealed class ExceptionToHttpResultMapper : IExceptionToHttpResultMapper
     return TimeSpan.FromSeconds(1);
   }
 
-  private static string BuildSafeDetail(Exception ex)
+  private static string BuildSafeDetail(Exception ex, int status)
   {
-    // Only use Message — never Source, StackTrace, or type names. Truncate defensively.
-    var msg = ex.Message ?? string.Empty;
-    const int max = 512;
-    return msg.Length > max ? msg[..max] : msg;
+    // Server-side and auth responses must NOT leak internal exception messages
+    // (they can contain connection strings, identifiers, stack hints, etc.).
+    // Client-attributable responses may echo the exception message (truncated).
+    switch (status)
+    {
+      case 401: return "Authentication is required to access this resource.";
+      case 403: return "You do not have permission to access this resource.";
+      case 500: return "An unexpected error occurred. Please try again later.";
+      case 503: return "A downstream service is temporarily unavailable. Please try again later.";
+      default:
+        var msg = ex.Message ?? string.Empty;
+        const int max = 512;
+        return msg.Length > max ? msg[..max] : msg;
+    }
   }
 }
