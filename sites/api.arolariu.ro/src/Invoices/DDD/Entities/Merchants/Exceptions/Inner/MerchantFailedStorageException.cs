@@ -12,21 +12,21 @@ using System.Runtime.Serialization;
 [ExcludeFromCodeCoverage]
 public sealed class MerchantFailedStorageException : Exception
 {
-	/// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class.</summary>
-	public MerchantFailedStorageException() { }
+  /// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class.</summary>
+  public MerchantFailedStorageException() { }
 
-	/// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class with a custom message.</summary>
-	/// <param name="message">The exception message.</param>
-	public MerchantFailedStorageException(string message) : base(message) { }
+  /// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class with a custom message.</summary>
+  /// <param name="message">The exception message.</param>
+  public MerchantFailedStorageException(string message) : base(message) { }
 
-	/// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class with a custom message and inner exception.</summary>
-	/// <param name="message">The exception message.</param>
-	/// <param name="innerException">The inner exception.</param>
-	public MerchantFailedStorageException(string message, Exception innerException)
-		: base(message, innerException) { }
+  /// <summary>Initializes a new instance of the <see cref="MerchantFailedStorageException"/> class with a custom message and inner exception.</summary>
+  /// <param name="message">The exception message.</param>
+  /// <param name="innerException">The inner exception.</param>
+  public MerchantFailedStorageException(string message, Exception innerException)
+      : base(message, innerException) { }
 
 #pragma warning disable SYSLIB0051
-	private MerchantFailedStorageException(SerializationInfo info, StreamingContext context)
-		: base(info, context) { }
+  private MerchantFailedStorageException(SerializationInfo info, StreamingContext context)
+      : base(info, context) { }
 #pragma warning restore SYSLIB0051
 }

@@ -19,23 +19,68 @@ public sealed class ExceptionToHttpResultMapperTests
 {
 
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ValidationEx : Exception, IValidationException { public ValidationEx(string m) : base(m) { } }
-  private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { } }
+  private sealed class ValidationEx : Exception, IValidationException { public ValidationEx(string m) : base(m) { }
+
+    public ValidationEx()
+    {
+    }
+  }
+  private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { }
+
+    public NotFoundEx()
+    {
+    }
+  }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ConflictEx : Exception, IAlreadyExistsException { public ConflictEx(string m) : base(m) { } }
+  private sealed class ConflictEx : Exception, IAlreadyExistsException { public ConflictEx(string m) : base(m) { }
+
+    public ConflictEx()
+    {
+    }
+  }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class LockedEx : Exception, ILockedException { public LockedEx(string m) : base(m) { } }
-  private sealed class RateLimitEx : Exception, IRateLimitedException { public RateLimitEx(string m) : base(m) { } }
+  private sealed class LockedEx : Exception, ILockedException { public LockedEx(string m) : base(m) { }
+
+    public LockedEx()
+    {
+    }
+  }
+  private sealed class RateLimitEx : Exception, IRateLimitedException { public RateLimitEx(string m) : base(m) { }
+
+    public RateLimitEx()
+    {
+    }
+  }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class UnauthorizedEx : Exception, IUnauthorizedException { public UnauthorizedEx(string m) : base(m) { } }
+  private sealed class UnauthorizedEx : Exception, IUnauthorizedException { public UnauthorizedEx(string m) : base(m) { }
+
+    public UnauthorizedEx()
+    {
+    }
+  }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ForbiddenEx : Exception, IForbiddenException { public ForbiddenEx(string m) : base(m) { } }
+  private sealed class ForbiddenEx : Exception, IForbiddenException { public ForbiddenEx(string m) : base(m) { }
+
+    public ForbiddenEx()
+    {
+    }
+  }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class DependencyEx : Exception, IDependencyException { public DependencyEx(string m) : base(m) { } }
-  private sealed class ServiceEx : Exception, IServiceException { public ServiceEx(string m) : base(m) { } }
+  private sealed class DependencyEx : Exception, IDependencyException { public DependencyEx(string m) : base(m) { }
+
+    public DependencyEx()
+    {
+    }
+  }
+  private sealed class ServiceEx : Exception, IServiceException { public ServiceEx(string m) : base(m) { }
+
+    public ServiceEx()
+    {
+    }
+  }
 
   /// <summary>Ensures each marker interface maps to its canonical HTTP status.</summary>
-  [DataTestMethod]
+  [TestMethod]
   [DataRow(typeof(ValidationEx), 400)]
   [DataRow(typeof(NotFoundEx), 404)]
   [DataRow(typeof(ConflictEx), 409)]

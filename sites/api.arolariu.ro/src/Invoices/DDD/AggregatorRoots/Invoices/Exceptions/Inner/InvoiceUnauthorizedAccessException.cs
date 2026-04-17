@@ -16,21 +16,21 @@ using arolariu.Backend.Common.Exceptions;
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceUnauthorizedAccessException : Exception, IUnauthorizedException
 {
-/// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class.</summary>
-public InvoiceUnauthorizedAccessException() { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class.</summary>
+  public InvoiceUnauthorizedAccessException() { }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class with a custom message.</summary>
-/// <param name="message">The exception message.</param>
-public InvoiceUnauthorizedAccessException(string message) : base(message) { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class with a custom message.</summary>
+  /// <param name="message">The exception message.</param>
+  public InvoiceUnauthorizedAccessException(string message) : base(message) { }
 
-/// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class with a custom message and inner exception.</summary>
-/// <param name="message">The exception message.</param>
-/// <param name="innerException">The inner exception.</param>
-public InvoiceUnauthorizedAccessException(string message, Exception innerException)
-: base(message, innerException) { }
+  /// <summary>Initializes a new instance of the <see cref="InvoiceUnauthorizedAccessException"/> class with a custom message and inner exception.</summary>
+  /// <param name="message">The exception message.</param>
+  /// <param name="innerException">The inner exception.</param>
+  public InvoiceUnauthorizedAccessException(string message, Exception innerException)
+  : base(message, innerException) { }
 
 #pragma warning disable SYSLIB0051
-private InvoiceUnauthorizedAccessException(SerializationInfo info, StreamingContext context)
-: base(info, context) { }
+  private InvoiceUnauthorizedAccessException(SerializationInfo info, StreamingContext context)
+  : base(info, context) { }
 #pragma warning restore SYSLIB0051
 }

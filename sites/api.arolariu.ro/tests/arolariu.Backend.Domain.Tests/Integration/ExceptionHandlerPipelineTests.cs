@@ -113,15 +113,15 @@ public sealed class ExceptionHandlerPipelineTests
   public async Task MalformedJsonBody_ReturnsProblemDetails_NotPlainText()
   {
     // Arrange
-    var (host, client) = await CreateTestHostAsync().ConfigureAwait(false);
+    var (host, client) = await CreateTestHostAsync();
     using (host)
     using (client)
     {
       using var malformed = new StringContent("{ invalid json", System.Text.Encoding.UTF8, "application/json");
 
       // Act
-      using var response = await client.PostAsync(new Uri("/rest/v1/invoices", UriKind.Relative), malformed).ConfigureAwait(false);
-      var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+      using var response = await client.PostAsync(new Uri("/rest/v1/invoices", UriKind.Relative), malformed);
+      var body = await response.Content.ReadAsStringAsync();
       var contentTypeString = response.Content.Headers.ContentType?.ToString() ?? "(null)";
 
       // Primary contract: ProblemDetails content-type (tolerate charset suffix).

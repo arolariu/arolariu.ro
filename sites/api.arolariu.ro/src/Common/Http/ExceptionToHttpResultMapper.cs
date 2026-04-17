@@ -73,18 +73,18 @@ public static class ExceptionToHttpResultMapper
 
   private static (int Status, string Title, string Type) SelectStatus(Exception ex) => ex switch
   {
-    IUnauthorizedException         => (401, "Unauthorized",          ProblemTypeUris.Unauthorized),
-    IForbiddenException            => (403, "Forbidden",             ProblemTypeUris.Forbidden),
-    INotFoundException             => (404, "Resource not found",    ProblemTypeUris.NotFound),
-    IAlreadyExistsException        => (409, "Resource conflict",     ProblemTypeUris.Conflict),
-    ILockedException               => (423, "Resource locked",       ProblemTypeUris.Locked),
-    IRateLimitedException          => (429, "Too many requests",     ProblemTypeUris.RateLimited),
+    IUnauthorizedException => (401, "Unauthorized", ProblemTypeUris.Unauthorized),
+    IForbiddenException => (403, "Forbidden", ProblemTypeUris.Forbidden),
+    INotFoundException => (404, "Resource not found", ProblemTypeUris.NotFound),
+    IAlreadyExistsException => (409, "Resource conflict", ProblemTypeUris.Conflict),
+    ILockedException => (423, "Resource locked", ProblemTypeUris.Locked),
+    IRateLimitedException => (429, "Too many requests", ProblemTypeUris.RateLimited),
     BadHttpRequestException badReq => (badReq.StatusCode, "Bad request", ProblemTypeUris.Validation),
-    IValidationException           => (400, "Validation failed",     ProblemTypeUris.Validation),
+    IValidationException => (400, "Validation failed", ProblemTypeUris.Validation),
     IDependencyValidationException => (400, "Dependency validation", ProblemTypeUris.Validation),
-    IDependencyException           => (503, "Service unavailable",   ProblemTypeUris.ServiceUnavailable),
-    IServiceException              => (500, "Internal server error", ProblemTypeUris.InternalServerError),
-    _                              => (500, "Internal server error", ProblemTypeUris.InternalServerError),
+    IDependencyException => (503, "Service unavailable", ProblemTypeUris.ServiceUnavailable),
+    IServiceException => (500, "Internal server error", ProblemTypeUris.InternalServerError),
+    _ => (500, "Internal server error", ProblemTypeUris.InternalServerError),
   };
 
   private static TimeSpan TryGetRetryAfter(Exception ex)

@@ -56,16 +56,28 @@ public sealed class InvoiceEndpointsStatusCodeTests
   private sealed class TestNotFoundException : Exception, INotFoundException
   {
     public TestNotFoundException(string message) : base(message) { }
+
+    public TestNotFoundException()
+    {
+    }
   }
 
   private sealed class TestConflictException : Exception, IAlreadyExistsException
   {
     public TestConflictException(string message) : base(message) { }
+
+    public TestConflictException()
+    {
+    }
   }
 
   private sealed class TestLockedException : Exception, ILockedException
   {
     public TestLockedException(string message) : base(message) { }
+
+    public TestLockedException()
+    {
+    }
   }
 
   private sealed class TestRateLimitedException : Exception, IRateLimitedException
@@ -76,21 +88,37 @@ public sealed class InvoiceEndpointsStatusCodeTests
     }
 
     public TimeSpan RetryAfter { get; }
+
+    public TestRateLimitedException()
+    {
+    }
   }
 
   private sealed class TestDependencyException : Exception, IDependencyException
   {
     public TestDependencyException(string message) : base(message) { }
+
+    public TestDependencyException()
+    {
+    }
   }
 
   private sealed class TestUnauthorizedException : Exception, IUnauthorizedException
   {
     public TestUnauthorizedException(string message) : base(message) { }
+
+    public TestUnauthorizedException()
+    {
+    }
   }
 
   private sealed class TestForbiddenException : Exception, IForbiddenException
   {
     public TestForbiddenException(string message) : base(message) { }
+
+    public TestForbiddenException()
+    {
+    }
   }
   #endregion
 
@@ -158,7 +186,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Act
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     // Assert
     Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
@@ -178,7 +206,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
@@ -196,7 +224,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
@@ -219,7 +247,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Act
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     // Assert
     Assert.Equal(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
@@ -247,7 +275,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
@@ -270,7 +298,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Act
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     // Assert
     Assert.Equal(StatusCodes.Status500InternalServerError, GetStatusCode(result));
@@ -304,7 +332,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Act
     var result = await InvoiceEndpoints
       .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
-      .ConfigureAwait(false);
+;
 
     // Assert
     Assert.Equal(StatusCodes.Status400BadRequest, GetStatusCode(result));
@@ -325,7 +353,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
@@ -343,7 +371,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
@@ -369,7 +397,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.NotFound, GetProblemDetails(result).Type);
@@ -387,7 +415,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status409Conflict, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Conflict, GetProblemDetails(result).Type);
@@ -405,7 +433,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status423Locked, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Locked, GetProblemDetails(result).Type);
@@ -426,7 +454,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status429TooManyRequests, GetStatusCode(result));
     var problem = GetProblemDetails(result);
@@ -450,7 +478,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status401Unauthorized, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Unauthorized, GetProblemDetails(result).Type);
@@ -468,7 +496,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status403Forbidden, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.Forbidden, GetProblemDetails(result).Type);
@@ -487,7 +515,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     var result = await InvoiceEndpoints
       .RetrieveSpecificMerchantAsync(mockService.Object, accessor, Guid.NewGuid(), parentCompanyId: null)
-      .ConfigureAwait(false);
+;
 
     Assert.Equal(StatusCodes.Status503ServiceUnavailable, GetStatusCode(result));
     Assert.Equal(ProblemTypeUris.ServiceUnavailable, GetProblemDetails(result).Type);
@@ -528,7 +556,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Act
     var result = await InvoiceEndpoints
       .RetrieveSpecificInvoiceAsync(mockService.Object, accessor, Guid.NewGuid())
-      .ConfigureAwait(false);
+;
 
     // Assert
     Assert.Equal(StatusCodes.Status404NotFound, GetStatusCode(result));
