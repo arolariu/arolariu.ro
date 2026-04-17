@@ -22,25 +22,9 @@ public partial class InvoiceOrchestrationService
     {
       await returningAnalysisFunction().ConfigureAwait(false);
     }
-    catch (InvoiceFoundationValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -50,25 +34,9 @@ public partial class InvoiceOrchestrationService
     {
       return await returningInvoiceFunction().ConfigureAwait(false);
     }
-    catch (InvoiceFoundationValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -78,27 +46,20 @@ public partial class InvoiceOrchestrationService
     {
       return await returningInvoicesFunction().ConfigureAwait(false);
     }
-    catch (InvoiceFoundationValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceFoundationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
+
+  private Exception Classify(Exception exception) => exception switch
+  {
+    InvoiceFoundationValidationException => CreateAndLogValidationException(exception.InnerException ?? exception),
+    InvoiceFoundationDependencyValidationException => CreateAndLogDependencyValidationException(exception.InnerException ?? exception),
+    InvoiceFoundationDependencyException => CreateAndLogDependencyException(exception.InnerException ?? exception),
+    InvoiceFoundationServiceException => CreateAndLogServiceException(exception.InnerException ?? exception),
+    _ => CreateAndLogServiceException(exception),
+  };
 
   private InvoiceOrchestrationValidationException CreateAndLogValidationException(Exception exception)
   {
