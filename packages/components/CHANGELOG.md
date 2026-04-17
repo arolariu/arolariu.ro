@@ -8,6 +8,27 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [2.1.0](https://www.npmjs.com/package/@arolariu/components/v/2.1.0) - 2026-04-17
+
+**⬆️ Dependency Updates**
+
+- 🎯 **Base UI upgraded to v1.4**: Bumped `@base-ui/react` peer dependency from `^1.3` to `^1.4` ([v1.4.0 release notes](https://github.com/mui/base-ui/releases/tag/v1.4.0)).
+
+**🔧 Base UI 1.4 Highlights** (no breaking changes for consumers of `@arolariu/components`)
+
+- 🛠️ **General**: More accurate `render` prop warnings; fix for circular JSON `TypeError`; `form` prop exposed on hidden inputs; `suppressHydrationWarning` added to hidden inputs; improved outside-press dismissal in shared shadow roots; `Positioner` now correctly repositions to a different trigger when reopened with `keepMounted`; full-width anchored `modal` popups now lock scroll on touch input.
+- 🪟 **Alert Dialog / Dialog**: Fixed detached trigger HMR with recreated handles.
+- 🔎 **Autocomplete / Combobox**: Initial live region announcements fixed; iOS viewport settling fix; scroll-lock no longer triggered by controlled value re-renders; browser autofill works with object values when autofill uses the label; item taps no longer blur the input; rendered chips respected for keyboard navigation; clicks in `Chips` / `InputGroup` areas now focus the input or open the popup.
+- 🖼️ **Avatar**: No more flash when the image is cached.
+- ☑️ **Checkbox**: Uncontrolled default initialization fixed; input state changes prevented in `readOnly` mode.
+- 📂 **Collapsible**: Open state fixed when `keepMounted` has no transitions.
+- 🧾 **Drawer**: Touch scroll fixed in portaled popups; nested swipe cancel state fixed; interrupted swipe dismiss cleanup fixed; warning added when a popup is missing `Viewport`; dialogs no longer affect nested drawer stack.
+- 🏷️ **Field**: Form error matching in `<Field.Error>` fixed.
+- 📋 **Menu**: `SubmenuTrigger` now respects disabled state from `render`; dialog focus preserved on pointer leave.
+- 🧭 **Navigation Menu**: Invalid `aria-orientation` removed; generic `Value` typing added; initial trigger switch size fix.
+
+---
+
 ### [2.0.0](https://www.npmjs.com/package/@arolariu/components/v/2.0.0) - 2026-04-06
 
 **💥 Breaking Changes**
