@@ -26,4 +26,8 @@
     <ProjectReference Include="..\..\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
   </ItemGroup>
 
+  <ItemGroup Label="Framework References">
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>
