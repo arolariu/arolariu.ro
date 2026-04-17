@@ -807,7 +807,7 @@ function DropDrawerItem({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         aria-disabled={disabled}
-        {...props}>
+        {...(props as React.HTMLAttributes<HTMLDivElement>)}>
         <div className={styles.itemChildren}>{children}</div>
         {icon ? <div className={styles.itemIcon}>{icon}</div> : null}
       </div>
@@ -1249,7 +1249,7 @@ function DropDrawerSubTrigger({className, inset, children, onClick, ...props}: D
         )}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        {...props}>
+        {...(props as React.HTMLAttributes<HTMLDivElement>)}>
         <div className={styles.itemChildren}>{children}</div>
         <ChevronRightIcon className={styles.chevron} />
       </div>
