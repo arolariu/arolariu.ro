@@ -30,7 +30,7 @@ public partial class InvoiceAnalysisFoundationService
       or InvoicePaymentInformationNotCorrectException
       or InvoiceTimeInformationNotCorrectException
       or InvoicePhotoLocationNotCorrectException
-      => CreateAndLogValidationException(exception),
+      => LogAndWrapValidation(exception),
 
     InvoiceNotFoundException
       or InvoiceAlreadyExistsException
@@ -38,16 +38,16 @@ public partial class InvoiceAnalysisFoundationService
       or InvoiceCosmosDbRateLimitException
       or InvoiceUnauthorizedAccessException
       or InvoiceForbiddenAccessException
-      => CreateAndLogDependencyValidationException(exception),
+      => LogAndWrapDependencyValidation(exception),
 
     InvoiceFailedStorageException
       or OperationCanceledException
-      => CreateAndLogDependencyException(exception),
+      => LogAndWrapDependency(exception),
 
-    _ => CreateAndLogServiceException(exception),
+    _ => LogAndWrapService(exception),
   };
 
-  private InvoiceFoundationValidationException CreateAndLogValidationException(Exception exception)
+  private InvoiceFoundationValidationException LogAndWrapValidation(Exception exception)
   {
     var invoiceFoundationValidationException = new InvoiceFoundationValidationException(exception);
     var exceptionMessage = invoiceFoundationValidationException.Message;
@@ -55,7 +55,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationValidationException;
   }
 
-  private InvoiceFoundationDependencyException CreateAndLogDependencyException(Exception exception)
+  private InvoiceFoundationDependencyException LogAndWrapDependency(Exception exception)
   {
     var invoiceFoundationDependencyException = new InvoiceFoundationDependencyException(exception);
     var exceptionMessage = invoiceFoundationDependencyException.Message;
@@ -63,7 +63,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationDependencyException;
   }
 
-  private InvoiceFoundationDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
+  private InvoiceFoundationDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
     var invoiceFoundationDependencyValidationException = new InvoiceFoundationDependencyValidationException(exception);
     var exceptionMessage = invoiceFoundationDependencyValidationException.Message;
@@ -71,7 +71,7 @@ public partial class InvoiceAnalysisFoundationService
     return invoiceFoundationDependencyValidationException;
   }
 
-  private InvoiceFoundationServiceException CreateAndLogServiceException(Exception exception)
+  private InvoiceFoundationServiceException LogAndWrapService(Exception exception)
   {
     var invoiceFoundationServiceException = new InvoiceFoundationServiceException(exception);
     var exceptionMessage = invoiceFoundationServiceException.Message;
