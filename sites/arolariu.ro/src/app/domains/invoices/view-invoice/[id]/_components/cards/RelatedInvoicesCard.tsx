@@ -126,7 +126,7 @@ function isSimilarAmount(amount1: number, amount2: number): boolean {
 export function RelatedInvoicesCard(): React.JSX.Element | null {
   const t = useTranslations("IMS--View.relatedInvoices");
   const {invoice: currentInvoice} = useInvoiceContext();
-  const invoices = useInvoicesStore(useShallow((state) => state.invoices));
+  const invoices = useInvoicesStore(useShallow((state) => state.entities));
 
   // Extract values for memoization dependencies
   const currentAmount = currentInvoice.paymentInformation.totalCostAmount;

@@ -206,9 +206,9 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   const {currency} = invoice.paymentInformation;
 
   // Get cached invoices from Zustand store
-  const {invoices, hasHydrated} = useInvoicesStore(
+  const {entities: invoices, hasHydrated} = useInvoicesStore(
     useShallow((state) => ({
-      invoices: state.invoices,
+      entities: state.entities,
       hasHydrated: state.hasHydrated,
     })),
   );

@@ -142,7 +142,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const archiveScans = useScansStore((state) => state.archiveScans);
   const clearSelectedScans = useScansStore((state) => state.clearSelectedScans);
   const markScansAsUsedByInvoice = useScansStore((state) => state.markScansAsUsedByInvoice);
-  const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
+  const upsertInvoice = useInvoicesStore((state) => state.upsertEntity);
 
   // Calculate total size
   const totalSize = selectedScans.reduce((sum, scan) => sum + scan.sizeInBytes, 0);

@@ -38,7 +38,7 @@ type Props = Readonly<{
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
   const t = useTranslations("IMS--View");
-  const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
+  const upsertInvoice = useInvoicesStore((state) => state.upsertEntity);
   const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
   const {
     isLoading: isLoadingUserInformation,

@@ -40,10 +40,10 @@ describe("useInvoices", () => {
 
     // Setup default mock implementation for useInvoicesStore
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+      (selector: (state: {entities: Invoice[]; setEntities: (entities: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
-          invoices: [],
-          setInvoices: mockSetInvoices,
+          entities: [],
+          setEntities: mockSetInvoices,
           hasHydrated: false,
         };
         return selector(state);
@@ -62,10 +62,10 @@ describe("useInvoices", () => {
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+      (selector: (state: {entities: Invoice[]; setEntities: (entities: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
-          invoices: [],
-          setInvoices: mockSetInvoices,
+          entities: [],
+          setEntities: mockSetInvoices,
           hasHydrated: true,
         };
         return selector(state);
@@ -93,10 +93,10 @@ describe("useInvoices", () => {
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+      (selector: (state: {entities: Invoice[]; setEntities: (entities: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
-          invoices: [],
-          setInvoices: mockSetInvoices,
+          entities: [],
+          setEntities: mockSetInvoices,
           hasHydrated: true,
         };
         return selector(state);
@@ -130,10 +130,10 @@ describe("useInvoices", () => {
     // Start with hasHydrated false (loading state)
     let hasHydrated = false;
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+      (selector: (state: {entities: Invoice[]; setEntities: (entities: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
-          invoices: [],
-          setInvoices: mockSetInvoices,
+          entities: [],
+          setEntities: mockSetInvoices,
           hasHydrated,
         };
         return selector(state);
@@ -199,10 +199,10 @@ describe("useInvoices", () => {
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+      (selector: (state: {entities: Invoice[]; setEntities: (entities: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
-          invoices: [],
-          setInvoices: mockSetInvoices,
+          entities: [],
+          setEntities: mockSetInvoices,
           hasHydrated: true,
         };
         return selector(state);

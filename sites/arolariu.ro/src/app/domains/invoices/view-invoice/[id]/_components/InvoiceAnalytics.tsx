@@ -35,7 +35,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
   } = useUserInformation();
 
   // Get all invoices from Zustand store for comparison analytics
-  const allInvoices = useInvoicesStore((state) => state.invoices);
+  const allInvoices = useInvoicesStore((state) => state.entities);
 
   const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;

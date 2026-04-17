@@ -100,7 +100,7 @@ type CategoryDistribution = {
  */
 export function MerchantInfoCard(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
-  const {invoices} = useInvoicesStore();
+  const {entities: invoices} = useInvoicesStore();
   const t = useTranslations("IMS--Cards.merchantInfoCard");
 
   // Early return if merchant is null

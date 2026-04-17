@@ -110,13 +110,13 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
 
   // Read cached data and hydration state from Zustand store (single subscription)
   const {
-    invoices: cachedInvoices,
-    setInvoices,
+    entities: cachedInvoices,
+    setEntities: setInvoices,
     hasHydrated,
   } = useInvoicesStore(
     useShallow((state) => ({
-      invoices: state.invoices,
-      setInvoices: state.setInvoices,
+      entities: state.entities,
+      setEntities: state.setEntities,
       hasHydrated: state.hasHydrated,
     })),
   );

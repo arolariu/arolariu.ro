@@ -48,8 +48,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const t = useTranslations("IMS--List.tableView");
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange, sortBy, sortDirection, onSort} =
     props;
-  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
-  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {

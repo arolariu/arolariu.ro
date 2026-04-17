@@ -54,8 +54,8 @@ export default function ExportDialog(): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);
 
   const {isOpen, open, close} = useDialog("VIEW_INVOICES__EXPORT");
-  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
-  const allInvoices = useInvoicesStore((state) => state.invoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
+  const allInvoices = useInvoicesStore((state) => state.entities);
   const invoicesToExport = selectedInvoices.length > 0 ? selectedInvoices : allInvoices;
 
   /**

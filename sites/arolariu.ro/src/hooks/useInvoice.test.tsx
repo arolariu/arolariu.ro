@@ -5,7 +5,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoice} from "./useInvoice";
 
 // Type alias for store selector to improve readability
-type InvoicesStoreSelector = (state: {invoices: Invoice[]; upsertInvoice: (invoice: Invoice) => void; hasHydrated: boolean}) => unknown;
+type InvoicesStoreSelector = (state: {entities: Invoice[]; upsertEntity: (invoice: Invoice) => void; hasHydrated: boolean}) => unknown;
 
 // Create mock function using vi.hoisted
 const {mockFetchInvoice, mockupsertInvoice, mockUseInvoicesStore} = vi.hoisted(() => ({
@@ -45,8 +45,8 @@ describe("useInvoice", () => {
     // Setup default mock implementation for useInvoicesStore - starts with empty cache
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
-        invoices: [] as Invoice[],
-        upsertInvoice: mockupsertInvoice,
+        entities: [] as Invoice[],
+        upsertEntity: mockupsertInvoice,
         hasHydrated: false,
       };
       return selector(state);
@@ -77,13 +77,13 @@ describe("useInvoice", () => {
     mockFetchInvoice.mockResolvedValue({success: true, data: mockInvoice});
 
     // Update mock to return the invoice after fetch and set hasHydrated to true
-    let storeInvoices: Invoice[] = [];
+    let storeEntities: Invoice[] = [];
     let hasHydrated = false;
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
-        invoices: storeInvoices,
-        upsertInvoice: (invoice: Invoice) => {
-          storeInvoices = [invoice];
+        entities: storeEntities,
+        upsertEntity: (invoice: Invoice) => {
+          storeEntities = [invoice];
           hasHydrated = true;
           mockupsertInvoice(invoice);
         },
@@ -122,8 +122,8 @@ describe("useInvoice", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
-        invoices: [] as Invoice[],
-        upsertInvoice: mockupsertInvoice,
+        entities: [] as Invoice[],
+        upsertEntity: mockupsertInvoice,
         hasHydrated: true,
       };
       return selector(state);
@@ -156,8 +156,8 @@ describe("useInvoice", () => {
     let hasHydrated = false;
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
-        invoices: [] as Invoice[],
-        upsertInvoice: mockupsertInvoice,
+        entities: [] as Invoice[],
+        upsertEntity: mockupsertInvoice,
         hasHydrated,
       };
       return selector(state);
@@ -187,8 +187,8 @@ describe("useInvoice", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
-        invoices: [] as Invoice[],
-        upsertInvoice: mockupsertInvoice,
+        entities: [] as Invoice[],
+        upsertEntity: mockupsertInvoice,
         hasHydrated: true,
       };
       return selector(state);

@@ -44,8 +44,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
   const tTableView = useTranslations("IMS--List.tableView");
   const t = useTranslations("IMS--List.gridView");
-  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
-  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);
 
   // Prefetch scan images for faster card rendering
   useEffect(() => {
