@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
