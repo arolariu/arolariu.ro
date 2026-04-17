@@ -1242,3 +1242,26 @@ This RFC serves as living documentation for how The Standard is applied in pract
 **Document Version**: 1.0.0
 **Last Updated**: 2025-01-26
 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+
+## Exception → HTTP Status Mapping Contract
+
+All bounded contexts MUST classify exceptions using marker interfaces from
+`arolariu.Backend.Common.Exceptions` and delegate HTTP response construction to
+`IExceptionToHttpResultMapper`. The following mapping is authoritative:
+
+| Marker Interface                  | HTTP Status | Problem `type`                                       |
+|-----------------------------------|-------------|------------------------------------------------------|
+| `IValidationException`            | 400         | `https://api.arolariu.ro/problems/validation`        |
+| `IDependencyValidationException`  | 400         | `https://api.arolariu.ro/problems/validation`        |
+| `IUnauthorizedException`          | 401         | `https://api.arolariu.ro/problems/unauthorized`      |
+| `IForbiddenException`             | 403         | `https://api.arolariu.ro/problems/forbidden`         |
+| `INotFoundException`              | 404         | `https://api.arolariu.ro/problems/not-found`         |
+| `IAlreadyExistsException`         | 409         | `https://api.arolariu.ro/problems/conflict`          |
+| `ILockedException`                | 423         | `https://api.arolariu.ro/problems/locked`            |
+| `IRateLimitedException`           | 429         | `https://api.arolariu.ro/problems/rate-limited`      |
+| `IDependencyException`            | 503         | `https://api.arolariu.ro/problems/service-unavailable` |
+| `IServiceException`               | 500         | `https://api.arolariu.ro/problems/internal-error`    |
+
+ProblemDetails responses MUST include a `traceId` extension (correlating to the
+current `Activity.TraceId`) and MUST NOT include `exception.Source`, stack traces,
+or exception type names.
