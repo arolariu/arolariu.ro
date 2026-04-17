@@ -5,15 +5,15 @@ import {useMerchant} from "./useMerchant";
 
 // Type alias for store selector to improve readability
 type MerchantsStoreSelector = (state: {
-  merchants: Merchant[];
-  upsertMerchant: (merchant: Merchant) => void;
+  entities: Merchant[];
+  upsertEntity: (merchant: Merchant) => void;
   hasHydrated: boolean;
 }) => unknown;
 
 // Create mock function using vi.hoisted
-const {mockFetchMerchant, mockupsertMerchant, mockUseMerchantsStore} = vi.hoisted(() => ({
+const {mockFetchMerchant, mockUpsertEntity, mockUseMerchantsStore} = vi.hoisted(() => ({
   mockFetchMerchant: vi.fn(),
-  mockupsertMerchant: vi.fn(),
+  mockUpsertEntity: vi.fn(),
   mockUseMerchantsStore: vi.fn(),
 }));
 
@@ -48,8 +48,8 @@ describe("useMerchant", () => {
     // Setup default mock implementation for useMerchantsStore - starts with empty cache
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [] as Merchant[],
-        upsertMerchant: mockupsertMerchant,
+        entities: [] as Merchant[],
+        upsertEntity: mockUpsertEntity,
         hasHydrated: false,
       };
       return selector(state);
@@ -88,11 +88,11 @@ describe("useMerchant", () => {
     let hasHydrated = false;
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: storeMerchants,
-        upsertMerchant: (merchant: Merchant) => {
+        entities: storeMerchants,
+        upsertEntity: (merchant: Merchant) => {
           storeMerchants = [merchant];
           hasHydrated = true;
-          mockupsertMerchant(merchant);
+          mockUpsertEntity(merchant);
         },
         hasHydrated,
       };
@@ -129,8 +129,8 @@ describe("useMerchant", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [] as Merchant[],
-        upsertMerchant: mockupsertMerchant,
+        entities: [] as Merchant[],
+        upsertEntity: mockUpsertEntity,
         hasHydrated: true,
       };
       return selector(state);
@@ -162,8 +162,8 @@ describe("useMerchant", () => {
     let hasHydrated = false;
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [] as Merchant[],
-        upsertMerchant: mockupsertMerchant,
+        entities: [] as Merchant[],
+        upsertEntity: mockUpsertEntity,
         hasHydrated,
       };
       return selector(state);
@@ -193,8 +193,8 @@ describe("useMerchant", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [] as Merchant[],
-        upsertMerchant: mockupsertMerchant,
+        entities: [] as Merchant[],
+        upsertEntity: mockUpsertEntity,
         hasHydrated: true,
       };
       return selector(state);

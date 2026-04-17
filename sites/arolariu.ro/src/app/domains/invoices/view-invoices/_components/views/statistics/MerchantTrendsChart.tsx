@@ -63,7 +63,7 @@ function formatMonthLabel(monthKey: string, locale: string): string {
 export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("IMS--Stats.merchantTrends");
   const locale = useLocale();
-  const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
+  const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Find max monthly amount for scaling
   const maxMonthlyAmount = useMemo(() => {

@@ -5,15 +5,15 @@ import {useMerchants} from "./useMerchants";
 
 // Type alias for store selector to improve readability
 type MerchantsStoreSelector = (state: {
-  merchants: Merchant[];
-  setMerchants: (merchants: Merchant[]) => void;
+  entities: Merchant[];
+  setEntities: (merchants: Merchant[]) => void;
   hasHydrated: boolean;
 }) => unknown;
 
 // Create mock functions using vi.hoisted
-const {mockFetchMerchants, mockSetMerchants, mockUseMerchantsStore} = vi.hoisted(() => ({
+const {mockFetchMerchants, mockSetEntities, mockUseMerchantsStore} = vi.hoisted(() => ({
   mockFetchMerchants: vi.fn(),
-  mockSetMerchants: vi.fn(),
+  mockSetEntities: vi.fn(),
   mockUseMerchantsStore: vi.fn(),
 }));
 
@@ -48,8 +48,8 @@ describe("useMerchants", () => {
     // Setup default mock implementation for useMerchantsStore
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [],
-        setMerchants: mockSetMerchants,
+        entities: [],
+        setEntities: mockSetEntities,
         hasHydrated: false,
       };
       return selector(state);
@@ -68,8 +68,8 @@ describe("useMerchants", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [],
-        setMerchants: mockSetMerchants,
+        entities: [],
+        setEntities: mockSetEntities,
         hasHydrated: true,
       };
       return selector(state);
@@ -97,8 +97,8 @@ describe("useMerchants", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [],
-        setMerchants: mockSetMerchants,
+        entities: [],
+        setEntities: mockSetEntities,
         hasHydrated: true,
       };
       return selector(state);
@@ -111,7 +111,7 @@ describe("useMerchants", () => {
     });
 
     await waitFor(() => {
-      expect(mockSetMerchants).toHaveBeenCalledWith(mockMerchants);
+      expect(mockSetEntities).toHaveBeenCalledWith(mockMerchants);
     });
 
     await waitFor(() => {
@@ -131,8 +131,8 @@ describe("useMerchants", () => {
     let hasHydrated = false;
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [],
-        setMerchants: mockSetMerchants,
+        entities: [],
+        setEntities: mockSetEntities,
         hasHydrated,
       };
       return selector(state);
@@ -190,8 +190,8 @@ describe("useMerchants", () => {
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
-        merchants: [],
-        setMerchants: mockSetMerchants,
+        entities: [],
+        setEntities: mockSetEntities,
         hasHydrated: true,
       };
       return selector(state);

@@ -4,7 +4,6 @@
  * @module stores/preferencesStore
  */
 
-import {setCookie} from "@/lib/actions/cookies";
 import type {CustomThemeColors, ThemePresetName} from "@/lib/theme-presets";
 import {create} from "zustand";
 import {devtools, persist} from "zustand/middleware";
@@ -177,12 +176,12 @@ function handleRehydration(state: PreferencesStore | undefined) {
 }
 
 /**
- * Persist middleware configuration.
+ * Projects a full `PreferencesStore` state onto the persistable subset shared by
+ * IndexedDB persistence and cross-tab BroadcastChannel sync. Single source of truth
+ * for "what fields are tracked across sessions".
  */
-const persistConfig = {
-  name: "account-preferences",
-  storage: sharedStorage,
-  partialize: (state: PreferencesStore): PreferencesPersistedState => ({
+export function toPersistedPreferencesState(state: PreferencesStore): PreferencesPersistedState {
+  return {
     primaryColor: state.primaryColor,
     secondaryColor: state.secondaryColor,
     tertiaryColor: state.tertiaryColor,
@@ -193,7 +192,16 @@ const persistConfig = {
     animationsEnabled: state.animationsEnabled,
     themePreset: state.themePreset,
     customThemeColors: state.customThemeColors,
-  }),
+  };
+}
+
+/**
+ * Persist middleware configuration.
+ */
+const persistConfig = {
+  name: "account-preferences",
+  storage: sharedStorage,
+  partialize: toPersistedPreferencesState,
   onRehydrateStorage: () => handleRehydration,
 } as const;
 
@@ -276,100 +284,12 @@ const createProdStore = () => create<PreferencesStore>()(persist((set, get) => c
 export const usePreferencesStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();
 
 // ===========================================
-// BROWSER-SIDE SUBSCRIPTIONS
-// Zustand subscribe handlers for cross-tab sync, locale cookie, and theme preset DOM sync.
-// No React components needed — these run as pure store subscriptions.
-// ===========================================
-
-/**
- * Sets up cross-tab sync via BroadcastChannel.
- * Sends the full partialized state in each broadcast so receiving tabs
- * can apply it directly — avoids a race where the IndexedDB write from
- * the source tab hasn't landed before the receiver tries to rehydrate.
- */
-function setupCrossTabSync(): void {
-  if (typeof BroadcastChannel === "undefined") return;
-
-  const channel = new BroadcastChannel("zustand-preferences-sync");
-  let isSyncing = false;
-
-  // When another tab sends updated state, apply it directly (no IndexedDB read)
-  channel.addEventListener("message", (event: MessageEvent<PreferencesPersistedState>) => {
-    isSyncing = true;
-    usePreferencesStore.setState(event.data);
-    setTimeout(() => {
-      isSyncing = false;
-    }, 100);
-  });
-
-  // When this tab changes preferences, broadcast the partialized state
-  usePreferencesStore.subscribe((state) => {
-    if (isSyncing || !state.hasHydrated) return;
-    // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage has no targetOrigin parameter
-    channel.postMessage(persistConfig.partialize(state));
-  });
-}
-
-/**
- * Fallback: rehydrate when tab becomes visible.
- * Catches any updates missed by BroadcastChannel.
- */
-function setupVisibilitySync(): void {
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      void usePreferencesStore.persist.rehydrate();
-    }
-  });
-}
-
-// ===========================================
-// LOCALE → COOKIE SYNC
-// The Zustand store is the single source of truth for locale.
-// This subscription keeps the HTTP cookie (read by next-intl server-side) in sync.
-// A callback registered from React triggers router.refresh() for re-rendering.
-// ===========================================
-
-let _onLocaleSync: (() => void) | null = null;
-
-/**
- * Registers a callback invoked after locale is synced to the cookie.
- * Intended for `router.refresh()` — the only React touchpoint.
- * @returns Unsubscribe function for cleanup.
- */
-export function onLocaleSync(callback: () => void): () => void {
-  _onLocaleSync = callback;
-  return () => {
-    _onLocaleSync = null;
-  };
-}
-
-function setupLocaleCookieSync(): void {
-  let prevLocale: string | null = null;
-
-  usePreferencesStore.subscribe((state) => {
-    if (!state.hasHydrated) return;
-
-    // First run after hydration: record current value, don't sync
-    if (prevLocale === null) {
-      prevLocale = state.locale;
-      return;
-    }
-
-    if (state.locale !== prevLocale) {
-      prevLocale = state.locale;
-      void setCookie("locale", state.locale).then(() => _onLocaleSync?.());
-    }
-  });
-}
-
-// ===========================================
-// THEME PRESET → DOM SYNC
-// Applies data-theme-preset attribute and custom CSS variables on <html>.
-// Replaces the former ThemePresetApplier React component.
+// THEME PRESET CSS PROPS
+// Exported for use in PreferencesSubscriptions client component.
 // ===========================================
 
 /** CSS properties managed by the theme preset system. */
-const THEME_CSS_PROPS = [
+export const THEME_CSS_PROPS = [
   "--primary",
   "--primary-foreground",
   "--gradient-from",
@@ -378,47 +298,3 @@ const THEME_CSS_PROPS = [
   "--accent-primary",
   "--footer-bg",
 ] as const;
-
-function clearInlineThemeStyles(root: HTMLElement): void {
-  for (const prop of THEME_CSS_PROPS) {
-    root.style.removeProperty(prop);
-  }
-}
-
-function applyCustomThemeColors(root: HTMLElement, colors: CustomThemeColors): void {
-  root.style.setProperty("--gradient-from", colors.gradientFrom);
-  root.style.setProperty("--gradient-via", colors.gradientVia);
-  root.style.setProperty("--gradient-to", colors.gradientTo);
-  root.style.setProperty("--primary", colors.primary);
-  root.style.setProperty("--primary-foreground", colors.primaryForeground);
-  root.style.setProperty("--accent-primary", colors.gradientFrom);
-  root.style.setProperty("--footer-bg", colors.footerBg);
-}
-
-function setupThemePresetSync(): void {
-  usePreferencesStore.subscribe((state) => {
-    if (!state.hasHydrated) return;
-
-    const root = document.documentElement;
-
-    // Set data attribute — SCSS handles named preset variables
-    root.dataset["themePreset"] = state.themePreset;
-
-    if (state.themePreset === "custom" && state.customThemeColors) {
-      applyCustomThemeColors(root, state.customThemeColors);
-    } else {
-      clearInlineThemeStyles(root);
-    }
-  });
-}
-
-// ===========================================
-// INITIALIZATION
-// ===========================================
-
-if (typeof globalThis.window !== "undefined") {
-  setupCrossTabSync();
-  setupVisibilitySync();
-  setupLocaleCookieSync();
-  setupThemePresetSync();
-}

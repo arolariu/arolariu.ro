@@ -123,8 +123,8 @@ export function useMerchants(_void?: HookInputType): HookOutputType {
     hasHydrated,
   } = useMerchantsStore(
     useShallow((state) => ({
-      merchants: state.merchants,
-      setMerchants: state.setMerchants,
+      merchants: state.entities,
+      setMerchants: state.setEntities,
       hasHydrated: state.hasHydrated,
     })),
   );

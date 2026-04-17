@@ -73,128 +73,128 @@ describe("useInvoicesStore", () => {
     // Reset the store before each test
     const {result} = renderHook(() => useInvoicesStore);
     act(() => {
-      result.current.getState().clearInvoices();
+      result.current.getState().clearEntities();
     });
   });
 
   describe("Initial State", () => {
-    it("should initialize with empty invoices and selectedInvoices", () => {
+    it("should initialize with empty entities and selectedEntities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
-      expect(result.current.getState().invoices).toEqual([]);
-      expect(result.current.getState().selectedInvoices).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
   });
 
-  describe("setInvoices", () => {
-    it("should set all invoices", () => {
+  describe("setEntities", () => {
+    it("should set all entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
-      expect(result.current.getState().invoices[1]).toEqual(mockInvoice2);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().entities[1]).toEqual(mockInvoice2);
     });
 
-    it("should replace existing invoices when set", () => {
+    it("should replace existing entities when set", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
+        result.current.getState().setEntities([mockInvoice1]);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
+      expect(result.current.getState().entities).toHaveLength(1);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice2, mockInvoice3]);
+        result.current.getState().setEntities([mockInvoice2, mockInvoice3]);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice2);
-      expect(result.current.getState().invoices[1]).toEqual(mockInvoice3);
-    });
-  });
-
-  describe("setSelectedInvoices", () => {
-    it("should set selected invoices", () => {
-      const {result} = renderHook(() => useInvoicesStore);
-
-      act(() => {
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
-      });
-
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]).toEqual(mockInvoice1);
-    });
-
-    it("should replace existing selected invoices when set", () => {
-      const {result} = renderHook(() => useInvoicesStore);
-
-      act(() => {
-        result.current.getState().setSelectedInvoices([mockInvoice1, mockInvoice2]);
-      });
-
-      expect(result.current.getState().selectedInvoices).toHaveLength(2);
-
-      act(() => {
-        result.current.getState().setSelectedInvoices([mockInvoice3]);
-      });
-
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]).toEqual(mockInvoice3);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice2);
+      expect(result.current.getState().entities[1]).toEqual(mockInvoice3);
     });
   });
 
-  describe("upsertInvoice", () => {
-    it("should add a new invoice to the store", () => {
+  describe("setSelectedEntities", () => {
+    it("should set selected entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockInvoice1);
     });
 
-    it("should append invoice to existing invoices", () => {
+    it("should replace existing selected entities when set", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
-        result.current.getState().upsertInvoice(mockInvoice2);
+        result.current.getState().setSelectedEntities([mockInvoice1, mockInvoice2]);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
-      expect(result.current.getState().invoices[1]).toEqual(mockInvoice2);
+      expect(result.current.getState().selectedEntities).toHaveLength(2);
+
+      act(() => {
+        result.current.getState().setSelectedEntities([mockInvoice3]);
+      });
+
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockInvoice3);
+    });
+  });
+
+  describe("upsertEntity", () => {
+    it("should add a new entity to the store", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      act(() => {
+        result.current.getState().upsertEntity(mockInvoice1);
+      });
+
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
     });
 
-    it("should allow adding multiple invoices sequentially", () => {
+    it("should append entity to existing entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().upsertInvoice(mockInvoice1);
-        result.current.getState().upsertInvoice(mockInvoice2);
-        result.current.getState().upsertInvoice(mockInvoice3);
+        result.current.getState().setEntities([mockInvoice1]);
+        result.current.getState().upsertEntity(mockInvoice2);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(3);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().entities[1]).toEqual(mockInvoice2);
     });
 
-    it("should update existing invoice when upserting with same ID", () => {
+    it("should allow adding multiple entities sequentially", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
-      // Add initial invoice
       act(() => {
-        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice2);
+        result.current.getState().upsertEntity(mockInvoice3);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().invoices[0]?.name).toBe("Test Invoice 1");
+      expect(result.current.getState().entities).toHaveLength(3);
+    });
+
+    it("should update existing entity when upserting with same ID", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      // Add initial entity
+      act(() => {
+        result.current.getState().upsertEntity(mockInvoice1);
+      });
+
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.name).toBe("Test Invoice 1");
 
       // Create updated version with same ID but different data
       const updatedInvoice = new InvoiceBuilder()
@@ -212,196 +212,196 @@ describe("useInvoicesStore", () => {
 
       // Upsert should update, not duplicate
       act(() => {
-        result.current.getState().upsertInvoice(updatedInvoice);
+        result.current.getState().upsertEntity(updatedInvoice);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().invoices[0]?.name).toBe("Updated Invoice Name");
-      expect(result.current.getState().invoices[0]?.description).toBe("Updated description");
-      expect(result.current.getState().invoices[0]?.category).toBe(InvoiceCategory.CAR_AUTO);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.name).toBe("Updated Invoice Name");
+      expect(result.current.getState().entities[0]?.description).toBe("Updated description");
+      expect(result.current.getState().entities[0]?.category).toBe(InvoiceCategory.CAR_AUTO);
     });
 
-    it("should not create duplicates when upserting same invoice twice", () => {
+    it("should not create duplicates when upserting same entity twice", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().upsertInvoice(mockInvoice1);
-        result.current.getState().upsertInvoice(mockInvoice1);
-        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice1);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
-    });
-  });
-
-  describe("removeInvoice", () => {
-    it("should remove an invoice by ID", () => {
-      const {result} = renderHook(() => useInvoicesStore);
-
-      act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2, mockInvoice3]);
-        result.current.getState().removeInvoice(mockInvoice2.id);
-      });
-
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().invoices.find((inv) => inv.id === mockInvoice2.id)).toBeUndefined();
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
-      expect(result.current.getState().invoices[1]).toEqual(mockInvoice3);
-    });
-
-    it("should remove invoice from selectedInvoices when removed from invoices", () => {
-      const {result} = renderHook(() => useInvoicesStore);
-
-      act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().removeInvoice(mockInvoice1.id);
-      });
-
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]).toEqual(mockInvoice2);
-    });
-
-    it("should handle removing non-existent invoice gracefully", () => {
-      const {result} = renderHook(() => useInvoicesStore);
-
-      act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
-        result.current.getState().removeInvoice("non-existent-id");
-      });
-
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().entities).toHaveLength(1);
     });
   });
 
-  describe("updateInvoice", () => {
-    it("should update an invoice with partial data", () => {
+  describe("removeEntity", () => {
+    it("should remove an entity by ID", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().updateInvoice(mockInvoice1.id, {
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2, mockInvoice3]);
+        result.current.getState().removeEntity(mockInvoice2.id);
+      });
+
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities.find((inv) => inv.id === mockInvoice2.id)).toBeUndefined();
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().entities[1]).toEqual(mockInvoice3);
+    });
+
+    it("should remove entity from selectedEntities when removed from entities", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      act(() => {
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().removeEntity(mockInvoice1.id);
+      });
+
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockInvoice2);
+    });
+
+    it("should handle removing non-existent entity gracefully", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      act(() => {
+        result.current.getState().setEntities([mockInvoice1]);
+        result.current.getState().removeEntity("non-existent-id");
+      });
+
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
+    });
+  });
+
+  describe("updateEntity", () => {
+    it("should update an entity with partial data", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      act(() => {
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().updateEntity(mockInvoice1.id, {
           name: "Updated Invoice Name",
           category: InvoiceCategory.CAR_AUTO,
         });
       });
 
-      const updatedInvoice = result.current.getState().invoices.find((inv) => inv.id === mockInvoice1.id);
+      const updatedInvoice = result.current.getState().entities.find((inv) => inv.id === mockInvoice1.id);
       expect(updatedInvoice?.name).toBe("Updated Invoice Name");
       expect(updatedInvoice?.category).toBe(InvoiceCategory.CAR_AUTO);
       expect(updatedInvoice?.description).toBe(mockInvoice1.description); // Should remain unchanged
     });
 
-    it("should update invoice in selectedInvoices when updated in invoices", () => {
+    it("should update entity in selectedEntities when updated in entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
-        result.current.getState().updateInvoice(mockInvoice1.id, {
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
+        result.current.getState().updateEntity(mockInvoice1.id, {
           name: "Updated Name",
         });
       });
 
-      const selectedInvoice = result.current.getState().selectedInvoices[0];
+      const selectedInvoice = result.current.getState().selectedEntities[0];
       expect(selectedInvoice?.name).toBe("Updated Name");
     });
 
-    it("should handle updating non-existent invoice gracefully", () => {
+    it("should handle updating non-existent entity gracefully", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
-        result.current.getState().updateInvoice("non-existent-id", {name: "Should Not Update"});
+        result.current.getState().setEntities([mockInvoice1]);
+        result.current.getState().updateEntity("non-existent-id", {name: "Should Not Update"});
       });
 
-      expect(result.current.getState().invoices).toHaveLength(1);
-      expect(result.current.getState().invoices[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockInvoice1);
     });
   });
 
-  describe("toggleInvoiceSelection", () => {
-    it("should select an unselected invoice", () => {
+  describe("toggleEntitySelection", () => {
+    it("should select an unselected entity", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]).toEqual(mockInvoice1);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockInvoice1);
     });
 
-    it("should deselect a selected invoice", () => {
+    it("should deselect a selected entity", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(0);
+      expect(result.current.getState().selectedEntities).toHaveLength(0);
     });
 
     it("should handle multiple toggles correctly", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2, mockInvoice3]);
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
-        result.current.getState().toggleInvoiceSelection(mockInvoice2);
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
-        result.current.getState().toggleInvoiceSelection(mockInvoice3);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2, mockInvoice3]);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
+        result.current.getState().toggleEntitySelection(mockInvoice2);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
+        result.current.getState().toggleEntitySelection(mockInvoice3);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(2);
-      expect(result.current.getState().selectedInvoices).toContainEqual(mockInvoice2);
-      expect(result.current.getState().selectedInvoices).toContainEqual(mockInvoice3);
+      expect(result.current.getState().selectedEntities).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toContainEqual(mockInvoice2);
+      expect(result.current.getState().selectedEntities).toContainEqual(mockInvoice3);
     });
   });
 
-  describe("clearSelectedInvoices", () => {
-    it("should clear all selected invoices", () => {
+  describe("clearSelectedEntities", () => {
+    it("should clear all selected entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setSelectedInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().clearSelectedInvoices();
+        result.current.getState().setSelectedEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().clearSelectedEntities();
       });
 
-      expect(result.current.getState().selectedInvoices).toEqual([]);
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
 
-    it("should not affect the main invoices list", () => {
+    it("should not affect the main entities list", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
-        result.current.getState().clearSelectedInvoices();
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
+        result.current.getState().clearSelectedEntities();
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().selectedInvoices).toEqual([]);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
   });
 
-  describe("clearInvoices", () => {
-    it("should clear all invoices and selected invoices", () => {
+  describe("clearEntities", () => {
+    it("should clear all entities and selected entities", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
-        result.current.getState().clearInvoices();
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
+        result.current.getState().clearEntities();
       });
 
-      expect(result.current.getState().invoices).toEqual([]);
-      expect(result.current.getState().selectedInvoices).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
   });
 
@@ -410,59 +410,59 @@ describe("useInvoicesStore", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        // Add invoices
-        result.current.getState().upsertInvoice(mockInvoice1);
-        result.current.getState().upsertInvoice(mockInvoice2);
-        result.current.getState().upsertInvoice(mockInvoice3);
+        // Add entities
+        result.current.getState().upsertEntity(mockInvoice1);
+        result.current.getState().upsertEntity(mockInvoice2);
+        result.current.getState().upsertEntity(mockInvoice3);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(3);
+      expect(result.current.getState().entities).toHaveLength(3);
 
       act(() => {
-        // Select invoices
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
-        result.current.getState().toggleInvoiceSelection(mockInvoice2);
+        // Select entities
+        result.current.getState().toggleEntitySelection(mockInvoice1);
+        result.current.getState().toggleEntitySelection(mockInvoice2);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toHaveLength(2);
 
       act(() => {
-        // Update an invoice
-        result.current.getState().updateInvoice(mockInvoice1.id, {name: "Updated Invoice 1"});
+        // Update an entity
+        result.current.getState().updateEntity(mockInvoice1.id, {name: "Updated Invoice 1"});
       });
 
-      const updatedInvoice = result.current.getState().invoices.find((inv) => inv.id === mockInvoice1.id);
+      const updatedInvoice = result.current.getState().entities.find((inv) => inv.id === mockInvoice1.id);
       expect(updatedInvoice?.name).toBe("Updated Invoice 1");
 
       act(() => {
-        // Deselect one invoice
-        result.current.getState().toggleInvoiceSelection(mockInvoice2);
+        // Deselect one entity
+        result.current.getState().toggleEntitySelection(mockInvoice2);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
 
       act(() => {
-        // Remove an invoice
-        result.current.getState().removeInvoice(mockInvoice3.id);
+        // Remove an entity
+        result.current.getState().removeEntity(mockInvoice3.id);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
+      expect(result.current.getState().entities).toHaveLength(2);
     });
 
     it("should maintain data integrity across multiple operations", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2, mockInvoice3]);
-        result.current.getState().setSelectedInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().removeInvoice(mockInvoice1.id);
-        result.current.getState().updateInvoice(mockInvoice2.id, {name: "Modified Invoice 2"});
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2, mockInvoice3]);
+        result.current.getState().setSelectedEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().removeEntity(mockInvoice1.id);
+        result.current.getState().updateEntity(mockInvoice2.id, {name: "Modified Invoice 2"});
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]?.name).toBe("Modified Invoice 2");
-      expect(result.current.getState().invoices.find((inv) => inv.id === mockInvoice1.id)).toBeUndefined();
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]?.name).toBe("Modified Invoice 2");
+      expect(result.current.getState().entities.find((inv) => inv.id === mockInvoice1.id)).toBeUndefined();
     });
   });
 
@@ -471,141 +471,141 @@ describe("useInvoicesStore", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([]);
-        result.current.getState().setSelectedInvoices([]);
-        result.current.getState().clearInvoices();
-        result.current.getState().clearSelectedInvoices();
+        result.current.getState().setEntities([]);
+        result.current.getState().setSelectedEntities([]);
+        result.current.getState().clearEntities();
+        result.current.getState().clearSelectedEntities();
       });
 
-      expect(result.current.getState().invoices).toEqual([]);
-      expect(result.current.getState().selectedInvoices).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
 
-    it("should handle selecting invoice not in the main list", () => {
+    it("should handle selecting entity not in the main list", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
-        result.current.getState().toggleInvoiceSelection(mockInvoice2);
+        result.current.getState().setEntities([mockInvoice1]);
+        result.current.getState().toggleEntitySelection(mockInvoice2);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]).toEqual(mockInvoice2);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockInvoice2);
     });
   });
 
   describe("State Immutability", () => {
-    it("should not mutate the original invoices array when adding", () => {
+    it("should not mutate the original entities array when adding", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
+        result.current.getState().setEntities([mockInvoice1]);
       });
 
-      const originalInvoices = [...result.current.getState().invoices];
+      const originalEntities = [...result.current.getState().entities];
 
       act(() => {
-        result.current.getState().upsertInvoice(mockInvoice2);
+        result.current.getState().upsertEntity(mockInvoice2);
       });
 
-      expect(originalInvoices).toEqual([mockInvoice1]);
-      expect(result.current.getState().invoices).toHaveLength(2);
+      expect(originalEntities).toEqual([mockInvoice1]);
+      expect(result.current.getState().entities).toHaveLength(2);
     });
 
-    it("should not mutate the original selectedInvoices array when toggling", () => {
+    it("should not mutate the original selectedEntities array when toggling", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setSelectedInvoices([mockInvoice1]);
+        result.current.getState().setSelectedEntities([mockInvoice1]);
       });
 
-      const originalSelected = [...result.current.getState().selectedInvoices];
+      const originalSelected = [...result.current.getState().selectedEntities];
 
       act(() => {
-        result.current.getState().toggleInvoiceSelection(mockInvoice2);
+        result.current.getState().toggleEntitySelection(mockInvoice2);
       });
 
       expect(originalSelected).toEqual([mockInvoice1]);
-      expect(result.current.getState().selectedInvoices).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toHaveLength(2);
     });
 
     it("should create new arrays for each state update", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1]);
+        result.current.getState().setEntities([mockInvoice1]);
       });
 
-      const firstInvoicesRef = result.current.getState().invoices;
+      const firstEntitiesRef = result.current.getState().entities;
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
       });
 
-      const secondInvoicesRef = result.current.getState().invoices;
+      const secondEntitiesRef = result.current.getState().entities;
 
-      expect(firstInvoicesRef).not.toBe(secondInvoicesRef);
+      expect(firstEntitiesRef).not.toBe(secondEntitiesRef);
     });
   });
 
   describe("Action Coverage", () => {
-    it("should cover all action branches for removeInvoice", () => {
+    it("should cover all action branches for removeEntity", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2, mockInvoice3]);
-        result.current.getState().setSelectedInvoices([mockInvoice1, mockInvoice2]);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2, mockInvoice3]);
+        result.current.getState().setSelectedEntities([mockInvoice1, mockInvoice2]);
       });
 
       act(() => {
-        result.current.getState().removeInvoice(mockInvoice1.id);
+        result.current.getState().removeEntity(mockInvoice1.id);
       });
 
-      expect(result.current.getState().invoices).toHaveLength(2);
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
-      expect(result.current.getState().selectedInvoices[0]?.id).toBe(mockInvoice2.id);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]?.id).toBe(mockInvoice2.id);
     });
 
-    it("should cover all action branches for updateInvoice", () => {
+    it("should cover all action branches for updateEntity", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
-        result.current.getState().setSelectedInvoices([mockInvoice2]);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
+        result.current.getState().setSelectedEntities([mockInvoice2]);
       });
 
       act(() => {
-        result.current.getState().updateInvoice(mockInvoice2.id, {
+        result.current.getState().updateEntity(mockInvoice2.id, {
           name: "Updated Invoice",
           category: InvoiceCategory.FAST_FOOD,
         });
       });
 
-      expect(result.current.getState().invoices[1]?.name).toBe("Updated Invoice");
-      expect(result.current.getState().selectedInvoices[0]?.name).toBe("Updated Invoice");
-      expect(result.current.getState().selectedInvoices[0]?.category).toBe(InvoiceCategory.FAST_FOOD);
+      expect(result.current.getState().entities[1]?.name).toBe("Updated Invoice");
+      expect(result.current.getState().selectedEntities[0]?.name).toBe("Updated Invoice");
+      expect(result.current.getState().selectedEntities[0]?.category).toBe(InvoiceCategory.FAST_FOOD);
     });
 
-    it("should cover all action branches for toggleInvoiceSelection", () => {
+    it("should cover all action branches for toggleEntitySelection", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().setInvoices([mockInvoice1, mockInvoice2]);
+        result.current.getState().setEntities([mockInvoice1, mockInvoice2]);
       });
 
-      // Select invoice
+      // Select entity
       act(() => {
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(1);
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
 
-      // Deselect invoice
+      // Deselect entity
       act(() => {
-        result.current.getState().toggleInvoiceSelection(mockInvoice1);
+        result.current.getState().toggleEntitySelection(mockInvoice1);
       });
 
-      expect(result.current.getState().selectedInvoices).toHaveLength(0);
+      expect(result.current.getState().selectedEntities).toHaveLength(0);
     });
   });
 
@@ -622,61 +622,61 @@ describe("useInvoicesStore", () => {
 
       const {result} = renderHook(() => prodStore());
 
-      // Test setInvoices
+      // Test setEntities
       act(() => {
-        result.current.setInvoices([mockInvoice1, mockInvoice2]);
+        result.current.setEntities([mockInvoice1, mockInvoice2]);
       });
 
-      expect(result.current.invoices).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
-      // Test setSelectedInvoices
+      // Test setSelectedEntities
       act(() => {
-        result.current.setSelectedInvoices([mockInvoice1]);
+        result.current.setSelectedEntities([mockInvoice1]);
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(1);
+      expect(result.current.selectedEntities).toHaveLength(1);
 
-      // Test upsertInvoice
+      // Test upsertEntity
       act(() => {
-        result.current.upsertInvoice(mockInvoice3);
+        result.current.upsertEntity(mockInvoice3);
       });
 
-      expect(result.current.invoices).toHaveLength(3);
+      expect(result.current.entities).toHaveLength(3);
 
-      // Test removeInvoice
+      // Test removeEntity
       act(() => {
-        result.current.removeInvoice(mockInvoice2.id);
+        result.current.removeEntity(mockInvoice2.id);
       });
 
-      expect(result.current.invoices).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
-      // Test updateInvoice
+      // Test updateEntity
       act(() => {
-        result.current.updateInvoice(mockInvoice1.id, {name: "Updated in Prod"});
+        result.current.updateEntity(mockInvoice1.id, {name: "Updated in Prod"});
       });
 
-      expect(result.current.invoices[0]?.name).toBe("Updated in Prod");
+      expect(result.current.entities[0]?.name).toBe("Updated in Prod");
 
-      // Test toggleInvoiceSelection
+      // Test toggleEntitySelection
       act(() => {
-        result.current.toggleInvoiceSelection(mockInvoice3);
+        result.current.toggleEntitySelection(mockInvoice3);
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(2);
+      expect(result.current.selectedEntities).toHaveLength(2);
 
-      // Test clearSelectedInvoices
+      // Test clearSelectedEntities
       act(() => {
-        result.current.clearSelectedInvoices();
+        result.current.clearSelectedEntities();
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(0);
+      expect(result.current.selectedEntities).toHaveLength(0);
 
-      // Test clearInvoices
+      // Test clearEntities
       act(() => {
-        result.current.clearInvoices();
+        result.current.clearEntities();
       });
 
-      expect(result.current.invoices).toHaveLength(0);
+      expect(result.current.entities).toHaveLength(0);
 
       // Restore environment
       vi.unstubAllEnvs();
@@ -696,61 +696,61 @@ describe("useInvoicesStore", () => {
 
       const {result} = renderHook(() => devStore());
 
-      // Test setInvoices
+      // Test setEntities
       act(() => {
-        result.current.setInvoices([mockInvoice1, mockInvoice2]);
+        result.current.setEntities([mockInvoice1, mockInvoice2]);
       });
 
-      expect(result.current.invoices).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
-      // Test setSelectedInvoices
+      // Test setSelectedEntities
       act(() => {
-        result.current.setSelectedInvoices([mockInvoice1]);
+        result.current.setSelectedEntities([mockInvoice1]);
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(1);
+      expect(result.current.selectedEntities).toHaveLength(1);
 
-      // Test upsertInvoice
+      // Test upsertEntity
       act(() => {
-        result.current.upsertInvoice(mockInvoice3);
+        result.current.upsertEntity(mockInvoice3);
       });
 
-      expect(result.current.invoices).toHaveLength(3);
+      expect(result.current.entities).toHaveLength(3);
 
-      // Test removeInvoice
+      // Test removeEntity
       act(() => {
-        result.current.removeInvoice(mockInvoice2.id);
+        result.current.removeEntity(mockInvoice2.id);
       });
 
-      expect(result.current.invoices).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
-      // Test updateInvoice
+      // Test updateEntity
       act(() => {
-        result.current.updateInvoice(mockInvoice1.id, {name: "Updated in Dev"});
+        result.current.updateEntity(mockInvoice1.id, {name: "Updated in Dev"});
       });
 
-      expect(result.current.invoices[0]?.name).toBe("Updated in Dev");
+      expect(result.current.entities[0]?.name).toBe("Updated in Dev");
 
-      // Test toggleInvoiceSelection
+      // Test toggleEntitySelection
       act(() => {
-        result.current.toggleInvoiceSelection(mockInvoice3);
+        result.current.toggleEntitySelection(mockInvoice3);
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(2);
+      expect(result.current.selectedEntities).toHaveLength(2);
 
-      // Test clearSelectedInvoices
+      // Test clearSelectedEntities
       act(() => {
-        result.current.clearSelectedInvoices();
+        result.current.clearSelectedEntities();
       });
 
-      expect(result.current.selectedInvoices).toHaveLength(0);
+      expect(result.current.selectedEntities).toHaveLength(0);
 
-      // Test clearInvoices
+      // Test clearEntities
       act(() => {
-        result.current.clearInvoices();
+        result.current.clearEntities();
       });
 
-      expect(result.current.invoices).toHaveLength(0);
+      expect(result.current.entities).toHaveLength(0);
 
       // Restore environment
       vi.unstubAllEnvs();

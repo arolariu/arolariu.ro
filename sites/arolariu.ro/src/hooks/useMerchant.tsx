@@ -103,8 +103,8 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
   // Read cached data and hydration state from Zustand store (single subscription)
   const {cachedMerchant, upsertMerchant, hasHydrated} = useMerchantsStore(
     useShallow((state) => ({
-      cachedMerchant: state.merchants.find((m) => m.id === merchantIdentifier) ?? null,
-      upsertMerchant: state.upsertMerchant,
+      cachedMerchant: state.entities.find((m) => m.id === merchantIdentifier) ?? null,
+      upsertMerchant: state.upsertEntity,
       hasHydrated: state.hasHydrated,
     })),
   );

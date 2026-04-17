@@ -60,99 +60,105 @@ describe("useMerchantsStore", () => {
     // Reset the store before each test
     const {result} = renderHook(() => useMerchantsStore);
     act(() => {
-      result.current.getState().clearMerchants();
+      result.current.getState().clearEntities();
     });
   });
 
   describe("Initial State", () => {
-    it("should initialize with empty merchants array", () => {
+    it("should initialize with empty entities array", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
-      expect(result.current.getState().merchants).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
+    });
+
+    it("should initialize with empty selectedEntities array", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      expect(result.current.getState().selectedEntities).toEqual([]);
     });
   });
 
-  describe("setMerchants", () => {
+  describe("setEntities", () => {
     it("should set all merchants", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
-      expect(result.current.getState().merchants[1]).toEqual(mockMerchant2);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities[1]).toEqual(mockMerchant2);
     });
 
     it("should replace existing merchants when set", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
+        result.current.getState().setEntities([mockMerchant1]);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
+      expect(result.current.getState().entities).toHaveLength(1);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant2, mockMerchant3]);
+        result.current.getState().setEntities([mockMerchant2, mockMerchant3]);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant2);
-      expect(result.current.getState().merchants[1]).toEqual(mockMerchant3);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant2);
+      expect(result.current.getState().entities[1]).toEqual(mockMerchant3);
     });
 
     it("should handle setting empty array", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
-        result.current.getState().setMerchants([]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
+        result.current.getState().setEntities([]);
       });
 
-      expect(result.current.getState().merchants).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
     });
   });
 
-  describe("upsertMerchant", () => {
+  describe("upsertEntity", () => {
     it("should add a new merchant to the store", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant1);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
     });
 
     it("should append merchant to existing merchants", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().upsertMerchant(mockMerchant2);
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().upsertEntity(mockMerchant2);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
-      expect(result.current.getState().merchants[1]).toEqual(mockMerchant2);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities[1]).toEqual(mockMerchant2);
     });
 
     it("should allow adding multiple merchants sequentially", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(mockMerchant2);
-        result.current.getState().upsertMerchant(mockMerchant3);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant2);
+        result.current.getState().upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(3);
-      expect(result.current.getState().merchants).toContainEqual(mockMerchant1);
-      expect(result.current.getState().merchants).toContainEqual(mockMerchant2);
-      expect(result.current.getState().merchants).toContainEqual(mockMerchant3);
+      expect(result.current.getState().entities).toHaveLength(3);
+      expect(result.current.getState().entities).toContainEqual(mockMerchant1);
+      expect(result.current.getState().entities).toContainEqual(mockMerchant2);
+      expect(result.current.getState().entities).toContainEqual(mockMerchant3);
     });
 
     it("should update existing merchant when upserting with same ID", () => {
@@ -160,11 +166,11 @@ describe("useMerchantsStore", () => {
 
       // Add initial merchant
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant1);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]?.name).toBe("Test Merchant 1");
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.name).toBe("Test Merchant 1");
 
       // Create updated version with same ID but different data
       const updatedMerchant = new MerchantBuilder()
@@ -181,79 +187,79 @@ describe("useMerchantsStore", () => {
 
       // Upsert should update, not duplicate
       act(() => {
-        result.current.getState().upsertMerchant(updatedMerchant);
+        result.current.getState().upsertEntity(updatedMerchant);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]?.name).toBe("Updated Merchant Name");
-      expect(result.current.getState().merchants[0]?.description).toBe("Updated description");
-      expect(result.current.getState().merchants[0]?.category).toBe(MerchantCategory.HYPERMARKET);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.name).toBe("Updated Merchant Name");
+      expect(result.current.getState().entities[0]?.description).toBe("Updated description");
+      expect(result.current.getState().entities[0]?.category).toBe(MerchantCategory.HYPERMARKET);
     });
 
     it("should not create duplicates when upserting same merchant twice", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant1);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
+      expect(result.current.getState().entities).toHaveLength(1);
     });
   });
 
-  describe("removeMerchant", () => {
+  describe("removeEntity", () => {
     it("should remove a merchant by ID", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2, mockMerchant3]);
-        result.current.getState().removeMerchant(mockMerchant2.id);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2, mockMerchant3]);
+        result.current.getState().removeEntity(mockMerchant2.id);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().merchants.find((m) => m.id === mockMerchant2.id)).toBeUndefined();
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
-      expect(result.current.getState().merchants[1]).toEqual(mockMerchant3);
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().entities.find((m) => m.id === mockMerchant2.id)).toBeUndefined();
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities[1]).toEqual(mockMerchant3);
     });
 
     it("should handle removing non-existent merchant gracefully", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().removeMerchant("non-existent-id");
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().removeEntity("non-existent-id");
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
     });
 
     it("should handle removing from empty array", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().removeMerchant("any-id");
+        result.current.getState().removeEntity("any-id");
       });
 
-      expect(result.current.getState().merchants).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
     });
   });
 
-  describe("updateMerchant", () => {
+  describe("updateEntity", () => {
     it("should update a merchant with partial data", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
-        result.current.getState().updateMerchant(mockMerchant1.id, {
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
+        result.current.getState().updateEntity(mockMerchant1.id, {
           name: "Updated Merchant Name",
           category: MerchantCategory.HYPERMARKET,
         });
       });
 
-      const updatedMerchant = result.current.getState().merchants.find((m) => m.id === mockMerchant1.id);
+      const updatedMerchant = result.current.getState().entities.find((m) => m.id === mockMerchant1.id);
       expect(updatedMerchant?.name).toBe("Updated Merchant Name");
       expect(updatedMerchant?.category).toBe(MerchantCategory.HYPERMARKET);
       expect(updatedMerchant?.description).toBe(mockMerchant1.description); // Should remain unchanged
@@ -264,8 +270,8 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().updateMerchant(mockMerchant1.id, {
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().updateEntity(mockMerchant1.id, {
           name: "New Name",
           address: {
             ...mockMerchant1.address,
@@ -275,7 +281,7 @@ describe("useMerchantsStore", () => {
         });
       });
 
-      const updatedMerchant = result.current.getState().merchants[0];
+      const updatedMerchant = result.current.getState().entities[0];
       expect(updatedMerchant?.name).toBe("New Name");
       expect(updatedMerchant?.address.address).toBe("New Address");
       expect(updatedMerchant?.address.phoneNumber).toBe("+1-555-9999");
@@ -286,35 +292,35 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().updateMerchant("non-existent-id", {name: "Should Not Update"});
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().updateEntity("non-existent-id", {name: "Should Not Update"});
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
     });
 
     it("should handle empty partial updates", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().updateMerchant(mockMerchant1.id, {});
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().updateEntity(mockMerchant1.id, {});
       });
 
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant1);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant1);
     });
   });
 
-  describe("getMerchantById", () => {
+  describe("getEntityById", () => {
     it("should retrieve a merchant by ID", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2, mockMerchant3]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2, mockMerchant3]);
       });
 
-      const merchant = result.current.getState().getMerchantById(mockMerchant2.id);
+      const merchant = result.current.getState().getEntityById(mockMerchant2.id);
 
       expect(merchant).toEqual(mockMerchant2);
     });
@@ -323,18 +329,18 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
+        result.current.getState().setEntities([mockMerchant1]);
       });
 
-      const merchant = result.current.getState().getMerchantById("non-existent-id");
+      const merchant = result.current.getState().getEntityById("non-existent-id");
 
       expect(merchant).toBeUndefined();
     });
 
-    it("should return undefined when merchants array is empty", () => {
+    it("should return undefined when entities array is empty", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
-      const merchant = result.current.getState().getMerchantById(mockMerchant1.id);
+      const merchant = result.current.getState().getEntityById(mockMerchant1.id);
 
       expect(merchant).toBeUndefined();
     });
@@ -343,36 +349,98 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().updateMerchant(mockMerchant1.id, {name: "Updated Name"});
+        result.current.getState().setEntities([mockMerchant1]);
+        result.current.getState().updateEntity(mockMerchant1.id, {name: "Updated Name"});
       });
 
-      const merchant = result.current.getState().getMerchantById(mockMerchant1.id);
+      const merchant = result.current.getState().getEntityById(mockMerchant1.id);
 
       expect(merchant?.name).toBe("Updated Name");
     });
   });
 
-  describe("clearMerchants", () => {
+  describe("clearEntities", () => {
     it("should clear all merchants", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2, mockMerchant3]);
-        result.current.getState().clearMerchants();
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2, mockMerchant3]);
+        result.current.getState().clearEntities();
       });
 
-      expect(result.current.getState().merchants).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
     });
 
-    it("should handle clearing empty merchants array", () => {
+    it("should handle clearing empty entities array", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().clearMerchants();
+        result.current.getState().clearEntities();
       });
 
-      expect(result.current.getState().merchants).toEqual([]);
+      expect(result.current.getState().entities).toEqual([]);
+    });
+
+    it("should also clear selectedEntities", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
+        result.current.getState().toggleEntitySelection(mockMerchant1);
+        result.current.getState().clearEntities();
+      });
+
+      expect(result.current.getState().entities).toEqual([]);
+      expect(result.current.getState().selectedEntities).toEqual([]);
+    });
+  });
+
+  describe("Selection API", () => {
+    it("should toggle entity selection on", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
+        result.current.getState().toggleEntitySelection(mockMerchant1);
+      });
+
+      expect(result.current.getState().selectedEntities).toHaveLength(1);
+      expect(result.current.getState().selectedEntities[0]).toEqual(mockMerchant1);
+    });
+
+    it("should toggle entity selection off", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().toggleEntitySelection(mockMerchant1);
+        result.current.getState().toggleEntitySelection(mockMerchant1);
+      });
+
+      expect(result.current.getState().selectedEntities).toHaveLength(0);
+    });
+
+    it("should clear selected entities", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().toggleEntitySelection(mockMerchant1);
+        result.current.getState().toggleEntitySelection(mockMerchant2);
+        result.current.getState().clearSelectedEntities();
+      });
+
+      expect(result.current.getState().selectedEntities).toEqual([]);
+    });
+
+    it("should set selected entities directly", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().setSelectedEntities([mockMerchant1, mockMerchant3]);
+      });
+
+      expect(result.current.getState().selectedEntities).toHaveLength(2);
+      expect(result.current.getState().selectedEntities).toContainEqual(mockMerchant1);
+      expect(result.current.getState().selectedEntities).toContainEqual(mockMerchant3);
     });
   });
 
@@ -382,62 +450,62 @@ describe("useMerchantsStore", () => {
 
       act(() => {
         // Add merchants
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(mockMerchant2);
-        result.current.getState().upsertMerchant(mockMerchant3);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant2);
+        result.current.getState().upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(3);
+      expect(result.current.getState().entities).toHaveLength(3);
 
       act(() => {
         // Update a merchant
-        result.current.getState().updateMerchant(mockMerchant1.id, {
+        result.current.getState().updateEntity(mockMerchant1.id, {
           name: "Updated Merchant 1",
           category: MerchantCategory.HYPERMARKET,
         });
       });
 
       // Retrieve the updated merchant
-      const retrievedMerchant = result.current.getState().getMerchantById(mockMerchant1.id);
+      const retrievedMerchant = result.current.getState().getEntityById(mockMerchant1.id);
       expect(retrievedMerchant?.name).toBe("Updated Merchant 1");
       expect(retrievedMerchant?.category).toBe(MerchantCategory.HYPERMARKET);
 
       act(() => {
         // Remove a merchant
-        result.current.getState().removeMerchant(mockMerchant2.id);
+        result.current.getState().removeEntity(mockMerchant2.id);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().getMerchantById(mockMerchant2.id)).toBeUndefined();
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().getEntityById(mockMerchant2.id)).toBeUndefined();
     });
 
     it("should maintain data integrity across multiple operations", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2, mockMerchant3]);
-        result.current.getState().updateMerchant(mockMerchant1.id, {name: "Modified 1"});
-        result.current.getState().updateMerchant(mockMerchant2.id, {name: "Modified 2"});
-        result.current.getState().removeMerchant(mockMerchant3.id);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2, mockMerchant3]);
+        result.current.getState().updateEntity(mockMerchant1.id, {name: "Modified 1"});
+        result.current.getState().updateEntity(mockMerchant2.id, {name: "Modified 2"});
+        result.current.getState().removeEntity(mockMerchant3.id);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().getMerchantById(mockMerchant1.id)?.name).toBe("Modified 1");
-      expect(result.current.getState().getMerchantById(mockMerchant2.id)?.name).toBe("Modified 2");
-      expect(result.current.getState().getMerchantById(mockMerchant3.id)).toBeUndefined();
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().getEntityById(mockMerchant1.id)?.name).toBe("Modified 1");
+      expect(result.current.getState().getEntityById(mockMerchant2.id)?.name).toBe("Modified 2");
+      expect(result.current.getState().getEntityById(mockMerchant3.id)).toBeUndefined();
     });
 
     it("should handle set, clear, and re-add operations", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
-        result.current.getState().clearMerchants();
-        result.current.getState().upsertMerchant(mockMerchant3);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
+        result.current.getState().clearEntities();
+        result.current.getState().upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]).toEqual(mockMerchant3);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]).toEqual(mockMerchant3);
     });
   });
 
@@ -446,13 +514,13 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().removeMerchant("any-id");
-        result.current.getState().updateMerchant("any-id", {name: "New Name"});
-        result.current.getState().clearMerchants();
+        result.current.getState().removeEntity("any-id");
+        result.current.getState().updateEntity("any-id", {name: "New Name"});
+        result.current.getState().clearEntities();
       });
 
-      expect(result.current.getState().merchants).toEqual([]);
-      expect(result.current.getState().getMerchantById("any-id")).toBeUndefined();
+      expect(result.current.getState().entities).toEqual([]);
+      expect(result.current.getState().getEntityById("any-id")).toBeUndefined();
     });
 
     it("should handle duplicate merchant IDs (upsert updates existing)", () => {
@@ -464,29 +532,29 @@ describe("useMerchantsStore", () => {
       };
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(duplicateMerchant);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(duplicateMerchant);
       });
 
       // Upsert prevents duplicates - should update existing entry
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]?.name).toBe("Updated Merchant Name");
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.name).toBe("Updated Merchant Name");
     });
 
     it("should handle category changes correctly", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
+        result.current.getState().setEntities([mockMerchant1]);
       });
 
       Object.values(MerchantCategory).forEach((category) => {
         if (typeof category === "number") {
           act(() => {
-            result.current.getState().updateMerchant(mockMerchant1.id, {category});
+            result.current.getState().updateEntity(mockMerchant1.id, {category});
           });
 
-          const merchant = result.current.getState().getMerchantById(mockMerchant1.id);
+          const merchant = result.current.getState().getEntityById(mockMerchant1.id);
           expect(merchant?.category).toBe(category);
         }
       });
@@ -499,8 +567,8 @@ describe("useMerchantsStore", () => {
       const originalName = mockMerchant1.name;
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().updateMerchant(mockMerchant1.id, {name: "New Name"});
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().updateEntity(mockMerchant1.id, {name: "New Name"});
       });
 
       expect(mockMerchant1.name).toBe(originalName);
@@ -515,13 +583,13 @@ describe("useMerchantsStore", () => {
       }));
 
       act(() => {
-        result.current.getState().setMerchants(largeMerchantList);
+        result.current.getState().setEntities(largeMerchantList);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1000);
+      expect(result.current.getState().entities).toHaveLength(1000);
 
       const targetId = "merchant-500";
-      const merchant = result.current.getState().getMerchantById(targetId);
+      const merchant = result.current.getState().getEntityById(targetId);
 
       expect(merchant?.id).toBe(targetId);
     });
@@ -530,86 +598,86 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
+        result.current.getState().setEntities([mockMerchant1]);
       });
 
-      const firstMerchantsRef = result.current.getState().merchants;
+      const firstEntitiesRef = result.current.getState().entities;
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
       });
 
-      const secondMerchantsRef = result.current.getState().merchants;
+      const secondEntitiesRef = result.current.getState().entities;
 
-      expect(firstMerchantsRef).not.toBe(secondMerchantsRef);
+      expect(firstEntitiesRef).not.toBe(secondEntitiesRef);
     });
   });
 
   describe("Action Coverage", () => {
-    it("should cover all action branches for removeMerchant", () => {
+    it("should cover all action branches for removeEntity", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2, mockMerchant3]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2, mockMerchant3]);
       });
 
       act(() => {
-        result.current.getState().removeMerchant(mockMerchant1.id);
+        result.current.getState().removeEntity(mockMerchant1.id);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
-      expect(result.current.getState().getMerchantById(mockMerchant1.id)).toBeUndefined();
+      expect(result.current.getState().entities).toHaveLength(2);
+      expect(result.current.getState().getEntityById(mockMerchant1.id)).toBeUndefined();
     });
 
-    it("should cover all action branches for updateMerchant", () => {
+    it("should cover all action branches for updateEntity", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
       });
 
       act(() => {
-        result.current.getState().updateMerchant(mockMerchant2.id, {
+        result.current.getState().updateEntity(mockMerchant2.id, {
           name: "Updated Merchant",
           category: MerchantCategory.ONLINE_SHOP,
         });
       });
 
-      const updatedMerchant = result.current.getState().getMerchantById(mockMerchant2.id);
+      const updatedMerchant = result.current.getState().getEntityById(mockMerchant2.id);
       expect(updatedMerchant?.name).toBe("Updated Merchant");
       expect(updatedMerchant?.category).toBe(MerchantCategory.ONLINE_SHOP);
     });
 
-    it("should cover upsertMerchant with existing merchants", () => {
+    it("should cover upsertEntity with existing merchants", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1]);
+        result.current.getState().setEntities([mockMerchant1]);
       });
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant2);
-        result.current.getState().upsertMerchant(mockMerchant3);
+        result.current.getState().upsertEntity(mockMerchant2);
+        result.current.getState().upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(3);
+      expect(result.current.getState().entities).toHaveLength(3);
     });
 
-    it("should cover setMerchants replacing existing data", () => {
+    it("should cover setEntities replacing existing data", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.getState().setEntities([mockMerchant1, mockMerchant2]);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
+      expect(result.current.getState().entities).toHaveLength(2);
 
       act(() => {
-        result.current.getState().setMerchants([mockMerchant3]);
+        result.current.getState().setEntities([mockMerchant3]);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(1);
-      expect(result.current.getState().merchants[0]?.id).toBe(mockMerchant3.id);
+      expect(result.current.getState().entities).toHaveLength(1);
+      expect(result.current.getState().entities[0]?.id).toBe(mockMerchant3.id);
     });
   });
 
@@ -618,31 +686,31 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().upsertMerchant(mockMerchant1);
-        result.current.getState().upsertMerchant(mockMerchant2);
-        result.current.getState().upsertMerchant(mockMerchant3);
+        result.current.getState().upsertEntity(mockMerchant1);
+        result.current.getState().upsertEntity(mockMerchant2);
+        result.current.getState().upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(3);
+      expect(result.current.getState().entities).toHaveLength(3);
 
       act(() => {
-        result.current.getState().removeMerchant(mockMerchant2.id);
+        result.current.getState().removeEntity(mockMerchant2.id);
       });
 
-      expect(result.current.getState().merchants).toHaveLength(2);
+      expect(result.current.getState().entities).toHaveLength(2);
 
       act(() => {
-        result.current.getState().updateMerchant(mockMerchant1.id, {name: "Modified Merchant 1"});
+        result.current.getState().updateEntity(mockMerchant1.id, {name: "Modified Merchant 1"});
       });
 
-      const merchant = result.current.getState().getMerchantById(mockMerchant1.id);
+      const merchant = result.current.getState().getEntityById(mockMerchant1.id);
       expect(merchant?.name).toBe("Modified Merchant 1");
 
       act(() => {
-        result.current.getState().clearMerchants();
+        result.current.getState().clearEntities();
       });
 
-      expect(result.current.getState().merchants).toHaveLength(0);
+      expect(result.current.getState().entities).toHaveLength(0);
     });
   });
 
@@ -661,37 +729,37 @@ describe("useMerchantsStore", () => {
 
       // Test basic functionality
       act(() => {
-        result.current.setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.setEntities([mockMerchant1, mockMerchant2]);
       });
 
-      expect(result.current.merchants).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
       act(() => {
-        result.current.upsertMerchant(mockMerchant3);
+        result.current.upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.merchants).toHaveLength(3);
+      expect(result.current.entities).toHaveLength(3);
 
       act(() => {
-        result.current.removeMerchant(mockMerchant2.id);
+        result.current.removeEntity(mockMerchant2.id);
       });
 
-      expect(result.current.merchants).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
       act(() => {
-        result.current.updateMerchant(mockMerchant1.id, {name: "Updated in Prod"});
+        result.current.updateEntity(mockMerchant1.id, {name: "Updated in Prod"});
       });
 
-      expect(result.current.merchants[0]?.name).toBe("Updated in Prod");
+      expect(result.current.entities[0]?.name).toBe("Updated in Prod");
 
-      const merchant = result.current.getMerchantById(mockMerchant1.id);
+      const merchant = result.current.getEntityById(mockMerchant1.id);
       expect(merchant?.name).toBe("Updated in Prod");
 
       act(() => {
-        result.current.clearMerchants();
+        result.current.clearEntities();
       });
 
-      expect(result.current.merchants).toHaveLength(0);
+      expect(result.current.entities).toHaveLength(0);
 
       // Restore environment
       vi.unstubAllEnvs();
@@ -713,37 +781,37 @@ describe("useMerchantsStore", () => {
 
       // Test basic functionality
       act(() => {
-        result.current.setMerchants([mockMerchant1, mockMerchant2]);
+        result.current.setEntities([mockMerchant1, mockMerchant2]);
       });
 
-      expect(result.current.merchants).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
       act(() => {
-        result.current.upsertMerchant(mockMerchant3);
+        result.current.upsertEntity(mockMerchant3);
       });
 
-      expect(result.current.merchants).toHaveLength(3);
+      expect(result.current.entities).toHaveLength(3);
 
       act(() => {
-        result.current.removeMerchant(mockMerchant2.id);
+        result.current.removeEntity(mockMerchant2.id);
       });
 
-      expect(result.current.merchants).toHaveLength(2);
+      expect(result.current.entities).toHaveLength(2);
 
       act(() => {
-        result.current.updateMerchant(mockMerchant1.id, {name: "Updated in Dev"});
+        result.current.updateEntity(mockMerchant1.id, {name: "Updated in Dev"});
       });
 
-      expect(result.current.merchants[0]?.name).toBe("Updated in Dev");
+      expect(result.current.entities[0]?.name).toBe("Updated in Dev");
 
-      const merchant = result.current.getMerchantById(mockMerchant1.id);
+      const merchant = result.current.getEntityById(mockMerchant1.id);
       expect(merchant?.name).toBe("Updated in Dev");
 
       act(() => {
-        result.current.clearMerchants();
+        result.current.clearEntities();
       });
 
-      expect(result.current.merchants).toHaveLength(0);
+      expect(result.current.entities).toHaveLength(0);
 
       // Restore environment
       vi.unstubAllEnvs();

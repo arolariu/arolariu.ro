@@ -82,12 +82,12 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 
   // Use shallow selector to optimize re-renders
-  const {selectedInvoices, clearSelectedInvoices, removeInvoice, updateInvoice} = useInvoicesStore(
+  const {selectedEntities: selectedInvoices, clearSelectedEntities: clearSelectedInvoices, removeEntity: removeInvoice, updateEntity: updateInvoice} = useInvoicesStore(
     useShallow((state) => ({
-      selectedInvoices: state.selectedInvoices,
-      clearSelectedInvoices: state.clearSelectedInvoices,
-      removeInvoice: state.removeInvoice,
-      updateInvoice: state.updateInvoice,
+      selectedEntities: state.selectedEntities,
+      clearSelectedEntities: state.clearSelectedEntities,
+      removeEntity: state.removeEntity,
+      updateEntity: state.updateEntity,
     })),
   );
 

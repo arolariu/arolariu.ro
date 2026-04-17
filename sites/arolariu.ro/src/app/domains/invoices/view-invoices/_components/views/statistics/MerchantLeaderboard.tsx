@@ -72,7 +72,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: CustomToolt
  */
 export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
   const t = useTranslations("IMS--Stats.merchantLeaderboard");
-  const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
+  const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
   const getMerchantName = (id: string): string => {

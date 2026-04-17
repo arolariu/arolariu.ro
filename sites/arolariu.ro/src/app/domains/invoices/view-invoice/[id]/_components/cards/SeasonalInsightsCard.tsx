@@ -175,7 +175,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations("IMS--Cards.seasonalInsightsCard");
   const {invoice} = useInvoiceContext();
-  const allInvoices = useInvoicesStore((state) => state.invoices);
+  const allInvoices = useInvoicesStore((state) => state.entities);
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
   const monthName = new Intl.DateTimeFormat(locale, {month: "long"}).format(date);
   const {currency} = invoice.paymentInformation;
