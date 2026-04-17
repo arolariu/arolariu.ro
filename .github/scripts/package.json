@@ -18,7 +18,7 @@
     "@actions/cache": "6.0.0",
     "@actions/core": "3.0.0",
     "@actions/exec": "3.0.0",
-    "@actions/github": "9.0.0",
+    "@actions/github": "9.1.0",
     "@actions/glob": "0.6.1",
     "@actions/http-client": "4.0.0",
     "@actions/io": "3.0.2",
@@ -27,8 +27,8 @@
   },
   "devDependencies": {
     "@types/node": "24.12.0",
-    "@vitest/ui": "4.1.2",
-    "typescript": "6.0.2",
-    "vitest": "4.1.2"
+    "@vitest/ui": "4.1.4",
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }
