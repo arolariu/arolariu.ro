@@ -39,7 +39,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   const {invoice, merchant} = props;
   const t = useTranslations("IMS--View");
   const upsertInvoice = useInvoicesStore((state) => state.upsertEntity);
-  const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
+  const upsertMerchant = useMerchantsStore((state) => state.upsertEntity);
   const {
     isLoading: isLoadingUserInformation,
     userInformation: {userIdentifier},

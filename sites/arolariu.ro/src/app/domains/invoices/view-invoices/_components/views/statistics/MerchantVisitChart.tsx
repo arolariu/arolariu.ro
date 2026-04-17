@@ -135,7 +135,7 @@ function MerchantVisitCard({
 export function MerchantVisitChart({data, currency, topN = 6}: Props): React.JSX.Element {
   const t = useTranslations("IMS--Stats.merchantVisit");
   const locale = useLocale();
-  const getMerchantById = useMerchantsStore((state) => state.getMerchantById);
+  const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   const displayData = data.slice(0, topN);
 
