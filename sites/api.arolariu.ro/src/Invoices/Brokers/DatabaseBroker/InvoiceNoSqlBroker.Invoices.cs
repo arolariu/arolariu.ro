@@ -3,10 +3,12 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 
 using Microsoft.Azure.Cosmos;
 
@@ -29,9 +31,9 @@ public partial class InvoiceNoSqlBroker
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
-    var response = await container
-      .CreateItemAsync(invoice, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateInvoiceCosmosAsync(
+      () => container.CreateItemAsync(invoice, cancellationToken: cancellationToken),
+      invoice.id).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "create", "invoices");
@@ -62,7 +64,9 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
+        invoiceIdentifier).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "invoices");
@@ -71,7 +75,7 @@ public partial class InvoiceNoSqlBroker
       if (invoice is not null && invoice.IsSoftDeleted)
       {
         activity?.AddCustomEvent("invoice.soft_deleted", new Dictionary<string, object?> { ["invoice.id"] = invoiceIdentifier.ToString() });
-        throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} does not exist!");
+        throw new InvoiceLockedException(invoiceIdentifier);
       }
 
       activity?.RecordSuccess();
@@ -91,7 +95,9 @@ public partial class InvoiceNoSqlBroker
           .WithParameter("@invoiceIdentifier", invoiceIdentifier);
 
       var iterator = container.GetItemQueryIterator<Invoice>(query);
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        invoiceIdentifier).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "query", "invoices");
@@ -100,7 +106,7 @@ public partial class InvoiceNoSqlBroker
       if (invoice is not null && invoice.IsSoftDeleted)
       {
         activity?.AddCustomEvent("invoice.soft_deleted", new Dictionary<string, object?> { ["invoice.id"] = invoiceIdentifier.ToString() });
-        throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.");
+        throw new InvoiceLockedException(invoiceIdentifier);
       }
 
       activity?.RecordSuccess();
@@ -132,7 +138,8 @@ public partial class InvoiceNoSqlBroker
     while (iterator.HasMoreResults)
     {
       cancellationToken.ThrowIfCancellationRequested();
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken)).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
       invoices.AddRange([.. response]);
     }
@@ -161,9 +168,9 @@ public partial class InvoiceNoSqlBroker
     var container = database.GetContainer("invoices");
 
     var partitionKey = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
-    var response = await container
-      .UpsertItemAsync(updatedInvoice, partitionKey, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateInvoiceCosmosAsync(
+      () => container.UpsertItemAsync(updatedInvoice, partitionKey, cancellationToken: cancellationToken),
+      invoiceIdentifier).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
@@ -187,9 +194,9 @@ public partial class InvoiceNoSqlBroker
 
     var partitionKeyForInvoice = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
 
-    var response = await invoicesContainer
-      .UpsertItemAsync(updatedInvoice, partitionKeyForInvoice, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateInvoiceCosmosAsync(
+      () => invoicesContainer.UpsertItemAsync(updatedInvoice, partitionKeyForInvoice, cancellationToken: cancellationToken),
+      updatedInvoice?.id ?? Guid.Empty).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "invoices");
@@ -222,7 +229,9 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
+        invoiceIdentifier).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var invoice = response.Resource;
@@ -233,9 +242,9 @@ public partial class InvoiceNoSqlBroker
         activity?.AddCustomEvent("invoice.soft_deleted");
 
         // Update the invoice and the products.
-        var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
+        var replaceResponse = await TranslateInvoiceCosmosAsync(
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
@@ -252,7 +261,9 @@ public partial class InvoiceNoSqlBroker
       var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
           .WithParameter("@invoiceIdentifier", invoiceIdentifier);
       var iterator = container.GetItemQueryIterator<Invoice>(query);
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        invoiceIdentifier).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var invoice = response.Resource.Any() ? response.Resource.First() : null;
@@ -264,9 +275,9 @@ public partial class InvoiceNoSqlBroker
 
         // Update the invoice and the products.
         var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
-        var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
+        var replaceResponse = await TranslateInvoiceCosmosAsync(
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          invoiceIdentifier).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
@@ -299,7 +310,8 @@ public partial class InvoiceNoSqlBroker
     while (iterator.HasMoreResults)
     {
       cancellationToken.ThrowIfCancellationRequested();
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateInvoiceCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken)).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       foreach (var invoice in response)
@@ -313,9 +325,9 @@ public partial class InvoiceNoSqlBroker
         }
 
         // Update the invoice and the products.
-        var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
+        var replaceResponse = await TranslateInvoiceCosmosAsync(
+          () => container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken),
+          invoice.id).ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
         deletedCount++;
       }
@@ -326,4 +338,54 @@ public partial class InvoiceNoSqlBroker
     activity?.SetTag("batch.deleted_count", deletedCount);
     activity?.RecordSuccess();
   }
+
+  private static async Task<T> TranslateInvoiceCosmosAsync<T>(Func<Task<T>> operation, Guid? invoiceIdentifier = null)
+  {
+    ArgumentNullException.ThrowIfNull(operation);
+    try
+    {
+      return await operation().ConfigureAwait(false);
+    }
+    catch (CosmosException cosmosEx)
+    {
+      throw TranslateInvoiceCosmos(cosmosEx, invoiceIdentifier);
+    }
+  }
+
+  private static async Task TranslateInvoiceCosmosAsync(Func<Task> operation, Guid? invoiceIdentifier = null)
+  {
+    ArgumentNullException.ThrowIfNull(operation);
+    try
+    {
+      await operation().ConfigureAwait(false);
+    }
+    catch (CosmosException cosmosEx)
+    {
+      throw TranslateInvoiceCosmos(cosmosEx, invoiceIdentifier);
+    }
+  }
+
+  private static Exception TranslateInvoiceCosmos(CosmosException cosmosException, Guid? invoiceIdentifier) =>
+    cosmosException.StatusCode switch
+    {
+      HttpStatusCode.NotFound => invoiceIdentifier.HasValue
+        ? new InvoiceNotFoundException(invoiceIdentifier.Value)
+        : new InvoiceNotFoundException("Invoice not found in Cosmos DB.", cosmosException),
+      HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => invoiceIdentifier.HasValue
+        ? new InvoiceAlreadyExistsException(invoiceIdentifier.Value)
+        : new InvoiceAlreadyExistsException("Invoice already exists in Cosmos DB.", cosmosException),
+      HttpStatusCode.Unauthorized => new InvoiceUnauthorizedAccessException(
+        "Cosmos DB returned HTTP 401 Unauthorized while accessing invoice data.", cosmosException),
+      HttpStatusCode.Forbidden => new InvoiceForbiddenAccessException(
+        "Cosmos DB returned HTTP 403 Forbidden while accessing invoice data.", cosmosException),
+      (HttpStatusCode)429 => new InvoiceCosmosDbRateLimitException(
+        cosmosException.RetryAfter ?? TimeSpan.FromSeconds(1), cosmosException),
+      HttpStatusCode.ServiceUnavailable
+        or HttpStatusCode.InternalServerError
+        or HttpStatusCode.GatewayTimeout
+        or HttpStatusCode.RequestTimeout => new InvoiceFailedStorageException(
+          $"Cosmos DB storage unavailable (HTTP {(int)cosmosException.StatusCode}).", cosmosException),
+      _ => new InvoiceFailedStorageException(
+        $"Unexpected Cosmos DB failure (HTTP {(int)cosmosException.StatusCode}).", cosmosException),
+    };
 }
