@@ -8,6 +8,7 @@ using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Tests for <see cref="ExceptionToHttpResultMapper"/> covering marker-to-status mapping,
@@ -17,13 +18,19 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class ExceptionToHttpResultMapperTests
 {
 
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class ValidationEx : Exception, IValidationException { public ValidationEx(string m) : base(m) { } }
   private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { } }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class ConflictEx : Exception, IAlreadyExistsException { public ConflictEx(string m) : base(m) { } }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class LockedEx : Exception, ILockedException { public LockedEx(string m) : base(m) { } }
   private sealed class RateLimitEx : Exception, IRateLimitedException { public RateLimitEx(string m) : base(m) { } }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class UnauthorizedEx : Exception, IUnauthorizedException { public UnauthorizedEx(string m) : base(m) { } }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class ForbiddenEx : Exception, IForbiddenException { public ForbiddenEx(string m) : base(m) { } }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
   private sealed class DependencyEx : Exception, IDependencyException { public DependencyEx(string m) : base(m) { } }
   private sealed class ServiceEx : Exception, IServiceException { public ServiceEx(string m) : base(m) { } }
 
@@ -44,7 +51,7 @@ public sealed class ExceptionToHttpResultMapperTests
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(ex, activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(expectedStatus, problem.StatusCode);
   }
@@ -53,9 +60,9 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_UnknownException_MapsTo500()
   {
-    var result = ExceptionToHttpResultMapper.ToHttpResult(new Exception("boom"), activity: null);
+    var result = ExceptionToHttpResultMapper.ToHttpResult(new InvalidOperationException("boom"), activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(500, problem.StatusCode);
     Assert.AreEqual("An unexpected error occurred. Please try again later.", problem.ProblemDetails.Detail);
@@ -66,11 +73,11 @@ public sealed class ExceptionToHttpResultMapperTests
   public void ToHttpResult_InnerExceptionDrivesClassification()
   {
     var inner = new NotFoundEx("missing");
-    var outer = new Exception("outer", inner);
+    var outer = new InvalidOperationException("outer", inner);
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(outer, activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(404, problem.StatusCode);
   }
@@ -83,7 +90,7 @@ public sealed class ExceptionToHttpResultMapperTests
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(ex, activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     var detail = problem.ProblemDetails.Detail ?? string.Empty;
     Assert.IsFalse(detail.Contains("arolariu.Backend.Invoices", StringComparison.Ordinal));
@@ -93,11 +100,12 @@ public sealed class ExceptionToHttpResultMapperTests
   [TestMethod]
   public void ToHttpResult_IncludesTraceIdWhenActivityPresent()
   {
-    using var activity = new Activity("test").Start();
+    using var activity = new Activity("test");
+    activity.Start();
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(new ServiceEx("boom"), activity);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.IsTrue(problem.ProblemDetails.Extensions.ContainsKey("traceId"));
   }
@@ -108,7 +116,7 @@ public sealed class ExceptionToHttpResultMapperTests
   {
     var result = ExceptionToHttpResultMapper.ToHttpResult(new RateLimitEx("throttled"), activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.IsTrue(problem.ProblemDetails.Extensions.ContainsKey("retryAfterSeconds"));
   }
@@ -121,7 +129,7 @@ public sealed class ExceptionToHttpResultMapperTests
 
     var result = ExceptionToHttpResultMapper.ToHttpResult(exception, activity: null);
 
-    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(400, problem.StatusCode);
   }

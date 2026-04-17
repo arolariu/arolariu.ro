@@ -76,7 +76,7 @@ public sealed class ExceptionMappingHandlerTests
     // Arrange
     var handler = new ExceptionMappingHandler();
     var context = CreateHttpContextWithLoggingServices();
-    var exception = new Exception("surprise");
+    var exception = new InvalidOperationException("surprise");
 
     // Act
     var handled = await handler.TryHandleAsync(context, exception, CancellationToken.None);
@@ -101,7 +101,7 @@ public sealed class ExceptionMappingHandlerTests
     var handler = new ExceptionMappingHandler();
 
     await Assert.ThrowsExactlyAsync<ArgumentNullException>(
-      () => handler.TryHandleAsync(httpContext: null!, exception: new Exception(), CancellationToken.None).AsTask());
+      () => handler.TryHandleAsync(httpContext: null!, exception: new InvalidOperationException(), CancellationToken.None).AsTask());
   }
 
   /// <summary>
