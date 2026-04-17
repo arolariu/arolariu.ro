@@ -2,6 +2,17 @@
  * @fileoverview Zustand store for managing standalone scans state with IndexedDB persistence.
  * Each scan is stored as an individual row in the IndexedDB scans table.
  * @module stores/scansStore
+ *
+ * @remarks
+ * **Not migrated to `createEntityStore<Scan>()`** (deliberate).
+ *
+ * This store carries domain state (`isSyncing`, `lastSyncTimestamp`) and actions
+ * (`addScan`, `removeScans`, `updateScanStatus`, `updateScanBlobUrl`, `archiveScans`,
+ * `markScansAsUsedByInvoice`, etc.) that exceed the generic factory's scope. A future
+ * migration would require extending `createEntityStore` to support per-store domain
+ * slices, or composing factory CRUD inside a hand-rolled shell.
+ *
+ * Tracked as a follow-up to the data-layer consolidation plan.
  */
 
 import {type CachedScan, ScanStatus} from "@/types/scans";
