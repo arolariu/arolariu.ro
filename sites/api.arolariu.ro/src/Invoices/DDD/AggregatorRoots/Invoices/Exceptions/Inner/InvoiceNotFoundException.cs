@@ -9,6 +9,9 @@ using arolariu.Backend.Common.Exceptions;
 /// <summary>
 /// Thrown when an invoice lookup by identifier returns no result from the data store.
 /// </summary>
+/// <remarks>
+/// Implements <see cref="INotFoundException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 404 Not Found when this exception is surfaced, whether unwrapped or wrapped by a Foundation/Orchestration/Processing outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceNotFoundException : Exception, INotFoundException

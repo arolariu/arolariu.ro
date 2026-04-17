@@ -9,6 +9,9 @@ using arolariu.Backend.Common.Exceptions;
 /// <summary>
 /// Thrown when a merchant is soft-deleted and cannot be mutated or read through the standard read path. Maps to HTTP 423 Locked.
 /// </summary>
+/// <remarks>
+/// Implements <see cref="ILockedException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 423 Locked when this exception is surfaced, whether unwrapped or wrapped by a higher-layer outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class MerchantLockedException : Exception, ILockedException

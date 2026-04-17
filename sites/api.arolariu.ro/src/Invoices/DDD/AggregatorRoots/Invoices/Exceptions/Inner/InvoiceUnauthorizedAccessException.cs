@@ -9,6 +9,9 @@ using arolariu.Backend.Common.Exceptions;
 /// <summary>
 /// Thrown when the dependency rejects the request due to missing/invalid authentication (HTTP 401 at Cosmos or downstream boundary).
 /// </summary>
+/// <remarks>
+/// Implements <see cref="IUnauthorizedException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 401 Unauthorized when this exception is surfaced, whether unwrapped or wrapped by a higher-layer outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceUnauthorizedAccessException : Exception, IUnauthorizedException

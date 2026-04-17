@@ -10,6 +10,9 @@ using arolariu.Backend.Common.Exceptions;
 /// Thrown when Cosmos DB returns HTTP 429 (request rate too large). Carries the
 /// recommended retry-after value so the mapper can surface it as a response hint.
 /// </summary>
+/// <remarks>
+/// Implements <see cref="IRateLimitedException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 429 Too Many Requests and surfaces the <see cref="RetryAfter"/> value in the <c>retryAfterSeconds</c> ProblemDetails extension.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceCosmosDbRateLimitException : Exception, IRateLimitedException

@@ -10,6 +10,9 @@ using arolariu.Backend.Common.Exceptions;
 /// Thrown when the caller has authenticated but lacks permission for the requested
 /// invoice (e.g., cross-user access). Maps to HTTP 403 Forbidden.
 /// </summary>
+/// <remarks>
+/// Implements <see cref="IForbiddenException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 403 Forbidden when this exception is surfaced, whether unwrapped or wrapped by a higher-layer outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class InvoiceForbiddenAccessException : Exception, IForbiddenException

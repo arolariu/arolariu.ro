@@ -9,6 +9,9 @@ using arolariu.Backend.Common.Exceptions;
 /// <summary>
 /// Thrown when attempting to create a merchant with an identifier that already exists in the data store (Cosmos HTTP 409).
 /// </summary>
+/// <remarks>
+/// Implements <see cref="IAlreadyExistsException"/>; <c>ExceptionToHttpResultMapper</c> produces HTTP 409 Conflict when this exception is surfaced, whether unwrapped or wrapped by a higher-layer outer exception.
+/// </remarks>
 [Serializable]
 [ExcludeFromCodeCoverage]
 public sealed class MerchantAlreadyExistsException : Exception, IAlreadyExistsException
