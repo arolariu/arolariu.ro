@@ -10,6 +10,7 @@ using arolariu.Backend.Common.Exceptions;
 using arolariu.Backend.Common.Http;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -22,6 +23,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public sealed class ExceptionMappingHandlerTests
 {
   private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { } }
+
+  /// <summary>
+  /// A minimal <see cref="IHttpResponseFeature"/> implementation that allows setting HasStarted.
+  /// </summary>
+  private sealed class TestHttpResponseFeature : IHttpResponseFeature
+  {
+    public Stream Body { get; set; } = new MemoryStream();
+    public bool HasStarted { get; set; }
+    public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
+    public int StatusCode { get; set; } = 200;
+    public string? ReasonPhrase { get; set; }
+
+    public void OnCompleted(Func<object, Task> callback, object state) { }
+    public void OnStarting(Func<object, Task> callback, object state) { }
+  }
 
   /// <summary>
   /// Builds a <see cref="DefaultHttpContext"/> wired with a logging <see cref="IServiceProvider"/>
@@ -168,5 +184,38 @@ public sealed class ExceptionMappingHandlerTests
     Assert.IsTrue(
       body.Contains(expectedTraceId, StringComparison.Ordinal),
       $"Expected traceId '{expectedTraceId}' in ProblemDetails body but got: {body}");
+  }
+
+  /// <summary>
+  /// Verifies that <see cref="ExceptionMappingHandler.TryHandleAsync"/> returns <see langword="false"/>
+  /// when the response has already started writing (headers committed), without attempting to
+  /// overwrite the status code or write ProblemDetails. This guards against corrupted or
+  /// ill-formed responses when an exception escapes a streaming handler or middleware that
+  /// has already begun writing the response body.
+  /// </summary>
+  [TestMethod]
+  public async Task TryHandleAsync_WhenResponseHasStarted_ReturnsFalseWithoutWriting()
+  {
+    // Arrange — build a context with a response feature that reports HasStarted = true.
+    var handler = new ExceptionMappingHandler();
+    var services = new ServiceCollection()
+      .AddLogging()
+      .BuildServiceProvider();
+
+    var responseFeature = new TestHttpResponseFeature { HasStarted = true, StatusCode = 200 };
+
+    var context = new DefaultHttpContext();
+    context.Features.Set<IHttpResponseFeature>(responseFeature);
+    context.RequestServices = services;
+
+    // Act
+    var handled = await handler.TryHandleAsync(
+        context,
+        new InvalidOperationException("too late"),
+        CancellationToken.None);
+
+    // Assert — handler must return false, and the status code should remain unchanged.
+    Assert.IsFalse(handled, "TryHandleAsync should return false when response has already started.");
+    Assert.AreEqual(200, responseFeature.StatusCode, "Status code should remain unchanged when response has already started.");
   }
 }

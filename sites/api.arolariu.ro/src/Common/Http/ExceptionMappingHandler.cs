@@ -32,7 +32,12 @@ public sealed class ExceptionMappingHandler : IExceptionHandler
   /// <param name="httpContext">The current request context; must not be <see langword="null"/>.</param>
   /// <param name="exception">The caught exception; must not be <see langword="null"/>.</param>
   /// <param name="cancellationToken">Propagated cancellation token.</param>
-  /// <returns><see langword="true"/> once the exception has been mapped and written.</returns>
+  /// <returns>
+  /// <see langword="true"/> once the exception has been mapped and written; or
+  /// <see langword="false"/> if the response has already started writing and cannot be
+  /// safely replaced with a ProblemDetails payload (the framework's fallback handler
+  /// will observe the caller-provided partial response).
+  /// </returns>
   public async ValueTask<bool> TryHandleAsync(
     HttpContext httpContext,
     Exception exception,
@@ -40,6 +45,15 @@ public sealed class ExceptionMappingHandler : IExceptionHandler
   {
     ArgumentNullException.ThrowIfNull(httpContext);
     ArgumentNullException.ThrowIfNull(exception);
+
+    if (httpContext.Response.HasStarted)
+    {
+      // Response has already started writing — we cannot safely emit ProblemDetails now.
+      // Let the framework's default handler or the client observe the partial response.
+      return false;
+    }
+
+    httpContext.Response.Clear();
 
     Activity.Current?.RecordException(exception);
     Activity.Current?.SetStatus(ActivityStatusCode.Error, exception.GetType().Name);
