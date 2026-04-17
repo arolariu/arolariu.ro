@@ -3,12 +3,14 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Out
 using System;
 using System.Runtime.Serialization;
 
+using arolariu.Backend.Common.Exceptions;
+
 /// <summary>
 /// Merchant Orchestration Service Validation Exception
 /// </summary>
 [Serializable]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
-public class MerchantOrchestrationServiceValidationException : Exception
+public class MerchantOrchestrationServiceValidationException : Exception, IValidationException
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="MerchantOrchestrationServiceValidationException"/>

@@ -3,12 +3,14 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptio
 using System;
 using System.Runtime.Serialization;
 
+using arolariu.Backend.Common.Exceptions;
+
 /// <summary>
 /// Invoice processing service exception.
 /// </summary>
 [Serializable]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
-public class InvoiceProcessingServiceException : Exception
+public class InvoiceProcessingServiceException : Exception, IServiceException
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="InvoiceProcessingServiceException"/>

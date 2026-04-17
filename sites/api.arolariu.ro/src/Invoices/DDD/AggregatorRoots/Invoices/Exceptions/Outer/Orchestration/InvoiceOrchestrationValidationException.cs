@@ -3,12 +3,14 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptio
 using System;
 using System.Runtime.Serialization;
 
+using arolariu.Backend.Common.Exceptions;
+
 /// <summary>
 /// Invoice Orchestration Validation Exception
 /// </summary>
 [Serializable]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
-public class InvoiceOrchestrationValidationException : Exception
+public class InvoiceOrchestrationValidationException : Exception, IValidationException
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="InvoiceOrchestrationValidationException"/>
