@@ -22,9 +22,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ExceptionMappingHandlerTests
 {
-  private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { }
+  private sealed class NotFoundEx : Exception, INotFoundException
+  {
+    public NotFoundEx(string m) : base(m) { }
 
     public NotFoundEx()
+    {
+    }
+
+    public NotFoundEx(string message, Exception innerException) : base(message, innerException)
     {
     }
   }

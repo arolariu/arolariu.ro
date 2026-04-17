@@ -60,6 +60,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestNotFoundException()
     {
     }
+
+    public TestNotFoundException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
 
   private sealed class TestConflictException : Exception, IAlreadyExistsException
@@ -69,6 +73,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestConflictException()
     {
     }
+
+    public TestConflictException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
 
   private sealed class TestLockedException : Exception, ILockedException
@@ -76,6 +84,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestLockedException(string message) : base(message) { }
 
     public TestLockedException()
+    {
+    }
+
+    public TestLockedException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
@@ -92,6 +104,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestRateLimitedException()
     {
     }
+
+    public TestRateLimitedException(string message) : base(message)
+    {
+    }
   }
 
   private sealed class TestDependencyException : Exception, IDependencyException
@@ -99,6 +115,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestDependencyException(string message) : base(message) { }
 
     public TestDependencyException()
+    {
+    }
+
+    public TestDependencyException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
@@ -110,6 +130,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestUnauthorizedException()
     {
     }
+
+    public TestUnauthorizedException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
 
   private sealed class TestForbiddenException : Exception, IForbiddenException
@@ -117,6 +141,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestForbiddenException(string message) : base(message) { }
 
     public TestForbiddenException()
+    {
+    }
+
+    public TestForbiddenException(string message, Exception innerException) : base(message, innerException)
     {
     }
   }

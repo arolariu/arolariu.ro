@@ -19,64 +19,118 @@ public sealed class ExceptionToHttpResultMapperTests
 {
 
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ValidationEx : Exception, IValidationException { public ValidationEx(string m) : base(m) { }
+  private sealed class ValidationEx : Exception, IValidationException
+  {
+    public ValidationEx(string m) : base(m) { }
 
     public ValidationEx()
     {
     }
+
+    public ValidationEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
-  private sealed class NotFoundEx : Exception, INotFoundException { public NotFoundEx(string m) : base(m) { }
+  private sealed class NotFoundEx : Exception, INotFoundException
+  {
+    public NotFoundEx(string m) : base(m) { }
 
     public NotFoundEx()
     {
     }
+
+    public NotFoundEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ConflictEx : Exception, IAlreadyExistsException { public ConflictEx(string m) : base(m) { }
+  private sealed class ConflictEx : Exception, IAlreadyExistsException
+  {
+    public ConflictEx(string m) : base(m) { }
 
     public ConflictEx()
     {
     }
+
+    public ConflictEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class LockedEx : Exception, ILockedException { public LockedEx(string m) : base(m) { }
+  private sealed class LockedEx : Exception, ILockedException
+  {
+    public LockedEx(string m) : base(m) { }
 
     public LockedEx()
     {
     }
+
+    public LockedEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
-  private sealed class RateLimitEx : Exception, IRateLimitedException { public RateLimitEx(string m) : base(m) { }
+  private sealed class RateLimitEx : Exception, IRateLimitedException
+  {
+    public RateLimitEx(string m) : base(m) { }
 
     public RateLimitEx()
     {
     }
 
     public TimeSpan RetryAfter { get; } = TimeSpan.Zero;
+
+    public RateLimitEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class UnauthorizedEx : Exception, IUnauthorizedException { public UnauthorizedEx(string m) : base(m) { }
+  private sealed class UnauthorizedEx : Exception, IUnauthorizedException
+  {
+    public UnauthorizedEx(string m) : base(m) { }
 
     public UnauthorizedEx()
     {
     }
+
+    public UnauthorizedEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class ForbiddenEx : Exception, IForbiddenException { public ForbiddenEx(string m) : base(m) { }
+  private sealed class ForbiddenEx : Exception, IForbiddenException
+  {
+    public ForbiddenEx(string m) : base(m) { }
 
     public ForbiddenEx()
     {
     }
+
+    public ForbiddenEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
   [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via Activator.CreateInstance in data-driven test")]
-  private sealed class DependencyEx : Exception, IDependencyException { public DependencyEx(string m) : base(m) { }
+  private sealed class DependencyEx : Exception, IDependencyException
+  {
+    public DependencyEx(string m) : base(m) { }
 
     public DependencyEx()
     {
     }
+
+    public DependencyEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
-  private sealed class ServiceEx : Exception, IServiceException { public ServiceEx(string m) : base(m) { }
+  private sealed class ServiceEx : Exception, IServiceException
+  {
+    public ServiceEx(string m) : base(m) { }
 
     public ServiceEx()
+    {
+    }
+
+    public ServiceEx(string message, Exception innerException) : base(message, innerException)
     {
     }
   }
