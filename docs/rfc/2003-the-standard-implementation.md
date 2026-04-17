@@ -1184,11 +1184,11 @@ problem-type URIs are declared as constants in
 API contract (do not rename without a major version bump).
 
 The following mapping — implemented by `SelectStatus` at
-`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs:73-86` — is
+`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs:74-87` — is
 authoritative. Rows appear in the same order as the `switch` arms; the unclassified
 default arm maps to 500:
 
-| Marker Interface                  | HTTP Status | Problem Type URI constant                      |
+| Marker Interface / Type           | HTTP Status | Problem Type URI constant                      |
 |-----------------------------------|-------------|------------------------------------------------|
 | `IUnauthorizedException`          | 401         | `ProblemTypeUris.Unauthorized`                 |
 | `IForbiddenException`             | 403         | `ProblemTypeUris.Forbidden`                    |
@@ -1196,6 +1196,7 @@ default arm maps to 500:
 | `IAlreadyExistsException`         | 409         | `ProblemTypeUris.Conflict`                     |
 | `ILockedException`                | 423         | `ProblemTypeUris.Locked`                       |
 | `IRateLimitedException`           | 429         | `ProblemTypeUris.RateLimited`                  |
+| `BadHttpRequestException`         | ex.StatusCode | `ProblemTypeUris.Validation`                  |
 | `IValidationException`            | 400         | `ProblemTypeUris.Validation`                   |
 | `IDependencyValidationException`  | 400         | `ProblemTypeUris.Validation`                   |
 | `IDependencyException`            | 503         | `ProblemTypeUris.ServiceUnavailable`           |
@@ -1265,12 +1266,13 @@ On every caught exception the handler records the exception on the current `Acti
 runs the same mapping function, and writes the resulting `ProblemDetails` to the
 response.
 
-### Known Gap: `BadHttpRequestException`
+### Status of `BadHttpRequestException`
 
 `Microsoft.AspNetCore.Http.BadHttpRequestException` (thrown by the Kestrel / model
-binding layers on malformed payloads) does not currently implement any of the marker
-interfaces. It falls through to the default arm of `SelectStatus` and is therefore
-mapped to **500 Internal Server Error**, even though its own `StatusCode` property is
-typically 400. A follow-up task may add an explicit switch arm that propagates
-`ex.StatusCode` for this type; until then this remains a documented deviation from the
-otherwise-aligned status model.
+binding layers on malformed payloads) is now explicitly handled by `ExceptionToHttpResultMapper`.
+The mapper includes a dedicated switch arm that propagates its `StatusCode` property
+(typically 400) instead of defaulting to 500. The exception is also registered in
+`IsClassifiable` so that the chain-walk algorithm in `FindClassifiableException` recognizes it
+as a classifiable exception. This ensures model binding faults, JSON parsing errors, and
+similar pre-handler faults route correctly to 400 Bad Request (with `ProblemTypeUris.Validation`)
+via both the endpoint `try/catch` and the `ExceptionMappingHandler` middleware defense layer.

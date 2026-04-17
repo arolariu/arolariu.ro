@@ -138,9 +138,7 @@ public sealed class ExceptionHandlerPipelineTests
       // IProblemDetailsService does not emit.
       Assert.Contains("api.arolariu.ro/problems", body, StringComparison.Ordinal);
 
-      // TODO(follow-up): expect 400 once BadHttpRequestException is mapped to its StatusCode
-      //   in ExceptionToHttpResultMapper. Currently maps to 500 (default arm).
-      Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+      Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
   }
 }

@@ -112,4 +112,17 @@ public sealed class ExceptionToHttpResultMapperTests
     var problem = (ProblemHttpResult)result;
     Assert.IsTrue(problem.ProblemDetails.Extensions.ContainsKey("retryAfterSeconds"));
   }
+
+  /// <summary>BadHttpRequestException propagates its StatusCode instead of defaulting to 500.</summary>
+  [TestMethod]
+  public void ToHttpResult_BadHttpRequestException_PropagatesItsStatusCode()
+  {
+    var exception = new Microsoft.AspNetCore.Http.BadHttpRequestException("bad body", statusCode: 400);
+
+    var result = ExceptionToHttpResultMapper.ToHttpResult(exception, activity: null);
+
+    Assert.IsInstanceOfType(result, typeof(ProblemHttpResult));
+    var problem = (ProblemHttpResult)result;
+    Assert.AreEqual(400, problem.StatusCode);
+  }
 }
