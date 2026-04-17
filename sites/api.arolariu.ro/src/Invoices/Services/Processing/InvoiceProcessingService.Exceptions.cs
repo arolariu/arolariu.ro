@@ -51,21 +51,21 @@ public partial class InvoiceProcessingService
   private Exception Classify(Exception exception) => exception switch
   {
     InvoiceOrchestrationValidationException invoiceValidation
-      => CreateAndLogValidationException(invoiceValidation.InnerException!),
+      => CreateAndLogValidationException(invoiceValidation.InnerException ?? invoiceValidation),
     InvoiceOrchestrationDependencyValidationException invoiceDependencyValidation
-      => CreateAndLogDependencyValidationException(invoiceDependencyValidation.InnerException!),
+      => CreateAndLogDependencyValidationException(invoiceDependencyValidation.InnerException ?? invoiceDependencyValidation),
     InvoiceOrchestrationDependencyException invoiceDependency
-      => CreateAndLogDependencyException(invoiceDependency.InnerException!),
+      => CreateAndLogDependencyException(invoiceDependency.InnerException ?? invoiceDependency),
     InvoiceOrchestrationServiceException invoiceService
-      => CreateAndLogServiceException(invoiceService.InnerException!),
+      => CreateAndLogServiceException(invoiceService.InnerException ?? invoiceService),
     MerchantOrchestrationServiceValidationException merchantValidation
-      => CreateAndLogDependencyValidationException(merchantValidation.InnerException!),
+      => CreateAndLogDependencyValidationException(merchantValidation.InnerException ?? merchantValidation),
     MerchantOrchestrationServiceDependencyValidationException merchantDependencyValidation
-      => CreateAndLogDependencyValidationException(merchantDependencyValidation.InnerException!),
+      => CreateAndLogDependencyValidationException(merchantDependencyValidation.InnerException ?? merchantDependencyValidation),
     MerchantOrchestrationServiceDependencyException merchantDependency
-      => CreateAndLogDependencyException(merchantDependency.InnerException!),
+      => CreateAndLogDependencyException(merchantDependency.InnerException ?? merchantDependency),
     MerchantOrchestrationServiceException merchantService
-      => CreateAndLogServiceException(merchantService.InnerException!),
+      => CreateAndLogServiceException(merchantService.InnerException ?? merchantService),
     _ => CreateAndLogServiceException(exception),
   };
   #endregion
