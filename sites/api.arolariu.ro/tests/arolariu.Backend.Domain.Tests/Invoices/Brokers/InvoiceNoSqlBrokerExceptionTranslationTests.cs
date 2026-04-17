@@ -38,7 +38,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos404_ThrowsInvoiceNotFoundException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     mockInvoicesContainer
@@ -56,7 +56,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task CreateInvoiceAsync_WhenCosmos409_ThrowsInvoiceAlreadyExistsException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
     mockInvoicesContainer
       .Setup(c => c.CreateItemAsync(invoice, It.IsAny<PartitionKey?>(),
@@ -73,7 +73,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos429_ThrowsInvoiceCosmosDbRateLimitException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     mockInvoicesContainer
@@ -91,7 +91,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos503_ThrowsInvoiceFailedStorageException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     mockInvoicesContainer
@@ -109,7 +109,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos401_ThrowsInvoiceUnauthorizedAccessException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     mockInvoicesContainer
@@ -127,7 +127,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenCosmos403_ThrowsInvoiceForbiddenAccessException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     mockInvoicesContainer
@@ -146,7 +146,7 @@ public sealed class InvoiceNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlBr
   [Fact]
   public async Task ReadInvoiceAsync_WhenInvoiceSoftDeleted_ThrowsInvoiceLockedException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var invoiceId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var softDeleted = new Invoice { id = invoiceId, UserIdentifier = userId };

@@ -89,7 +89,7 @@ public class InvoiceStorageFoundationServiceExceptionsTests
   public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-      .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new Exception()));
+      .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));

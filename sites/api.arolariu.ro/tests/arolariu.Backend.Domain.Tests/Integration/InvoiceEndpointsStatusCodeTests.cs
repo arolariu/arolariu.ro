@@ -108,6 +108,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
     public TestRateLimitedException(string message) : base(message)
     {
     }
+
+    public TestRateLimitedException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
   }
 
   private sealed class TestDependencyException : Exception, IDependencyException
@@ -151,7 +155,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   #endregion
 
   #region Test utilities
-  private static IHttpContextAccessor CreateAuthenticatedContextAccessor(Guid? userIdentifier = null)
+  private static HttpContextAccessor CreateAuthenticatedContextAccessor(Guid? userIdentifier = null)
   {
     var effectiveUserId = userIdentifier ?? Guid.NewGuid();
     var claims = new List<Claim>
@@ -320,7 +324,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
     // Arrange - a plain Exception that implements none of the marker interfaces
     // should hit the fallback branch in the mapper's switch and be reported as 500.
     const string secretDetail = "Cosmos DB connection string=AccountEndpoint=...;AccountKey=...";
-    var mockService = CreateServiceMockThatThrowsOnRead(new Exception(secretDetail));
+    var mockService = CreateServiceMockThatThrowsOnRead(new InvalidOperationException(secretDetail));
     var accessor = CreateAuthenticatedContextAccessor();
 
     // Act

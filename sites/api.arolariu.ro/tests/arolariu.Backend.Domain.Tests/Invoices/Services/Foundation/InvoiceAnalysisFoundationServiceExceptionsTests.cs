@@ -57,7 +57,7 @@ public class InvoiceAnalysisFoundationServiceExceptionsTests
   {
     _formRecognizerBroker
       .Setup(b => b.PerformOcrAnalysisOnSingleInvoice(It.IsAny<Invoice>(), It.IsAny<AnalysisOptions>()))
-      .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(5), new Exception()));
+      .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(5), new InvalidOperationException()));
 
     var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
       () => _sut.AnalyzeInvoiceAsync(AnalysisOptions.CompleteAnalysis, new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() }));

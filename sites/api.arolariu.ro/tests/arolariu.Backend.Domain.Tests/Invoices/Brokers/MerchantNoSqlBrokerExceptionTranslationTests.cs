@@ -38,7 +38,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos404_ThrowsMerchantNotFoundException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     mockMerchantsContainer
@@ -56,7 +56,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task CreateMerchantAsync_WhenCosmos409_ThrowsMerchantAlreadyExistsException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchant = new Merchant { id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid() };
     mockMerchantsContainer
       .Setup(c => c.CreateItemAsync(merchant, It.IsAny<PartitionKey?>(),
@@ -73,7 +73,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos429_ThrowsMerchantCosmosDbRateLimitException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     mockMerchantsContainer
@@ -91,7 +91,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos503_ThrowsMerchantFailedStorageException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     mockMerchantsContainer
@@ -109,7 +109,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos401_ThrowsMerchantUnauthorizedAccessException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     mockMerchantsContainer
@@ -127,7 +127,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenCosmos403_ThrowsMerchantForbiddenAccessException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     mockMerchantsContainer
@@ -146,7 +146,7 @@ public sealed class MerchantNoSqlBrokerExceptionTranslationTests : InvoiceNoSqlB
   [Fact]
   public async Task ReadMerchantAsync_WhenMerchantSoftDeleted_ThrowsMerchantLockedException()
   {
-    var broker = BuildBroker();
+    using var broker = BuildBroker();
     var merchantId = Guid.NewGuid();
     var parentCompanyId = Guid.NewGuid();
     var softDeleted = new Merchant { id = merchantId, ParentCompanyId = parentCompanyId };
