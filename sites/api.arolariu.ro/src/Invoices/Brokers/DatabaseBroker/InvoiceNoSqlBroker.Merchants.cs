@@ -3,10 +3,12 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using Microsoft.Azure.Cosmos;
 
@@ -27,9 +29,9 @@ public partial class InvoiceNoSqlBroker
 
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
-    var response = await container
-      .CreateItemAsync(merchant, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateMerchantCosmosAsync(
+      () => container.CreateItemAsync(merchant, cancellationToken: cancellationToken),
+      merchant?.id).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "create", "merchants");
@@ -56,7 +58,9 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      var response = await TranslateMerchantCosmosAsync(
+        () => container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
+        merchantIdentifier).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "read", "merchants");
@@ -64,7 +68,7 @@ public partial class InvoiceNoSqlBroker
 
       var merchant = response.Resource;
       return merchant is not null && merchant.IsSoftDeleted
-        ? throw new InvalidOperationException($"The merchant with identifier {merchantIdentifier} does not exist!")
+        ? throw new MerchantLockedException(merchantIdentifier)
         : merchant;
     }
     else
@@ -77,7 +81,9 @@ public partial class InvoiceNoSqlBroker
         .WithParameter("@merchantIdentifier", merchantIdentifier);
 
       var iterator = container.GetItemQueryIterator<Merchant>(query);
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateMerchantCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        merchantIdentifier).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
       InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "query", "merchants");
@@ -85,7 +91,7 @@ public partial class InvoiceNoSqlBroker
 
       var merchant = response.Resource.Any() ? response.Resource.First() : null;
       return merchant is not null && merchant.IsSoftDeleted
-        ? throw new InvalidOperationException($"The merchant with identifier {merchantIdentifier} does not exist!.")
+        ? throw new MerchantLockedException(merchantIdentifier)
         : merchant;
     }
   }
@@ -112,7 +118,9 @@ public partial class InvoiceNoSqlBroker
     while (iterator.HasMoreResults)
     {
       cancellationToken.ThrowIfCancellationRequested();
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateMerchantCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        null).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
       merchantList.AddRange(response);
     }
@@ -142,9 +150,9 @@ public partial class InvoiceNoSqlBroker
     var merchant = await ReadMerchantAsync(merchantIdentifier, cancellationToken: cancellationToken).ConfigureAwait(false);
     var partitionKey = new PartitionKey(merchant?.ParentCompanyId.ToString());
 
-    var response = await container
-      .ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateMerchantCosmosAsync(
+      () => container.ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
+      merchantIdentifier).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "merchants");
@@ -166,9 +174,9 @@ public partial class InvoiceNoSqlBroker
     var container = database.GetContainer("merchants");
 
     var partitionKey = new PartitionKey(currentMerchant?.ParentCompanyId.ToString());
-    var response = await container
-      .UpsertItemAsync(updatedMerchant, partitionKey, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+    var response = await TranslateMerchantCosmosAsync(
+      () => container.UpsertItemAsync(updatedMerchant, partitionKey, cancellationToken: cancellationToken),
+      updatedMerchant?.id).ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
     InvoiceMetrics.RecordCosmosDbCharge(response.RequestCharge, "upsert", "merchants");
@@ -196,7 +204,9 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+      var response = await TranslateMerchantCosmosAsync(
+        () => container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken),
+        merchantIdentifier).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var merchant = response.Resource;
@@ -206,9 +216,9 @@ public partial class InvoiceNoSqlBroker
         activity?.AddCustomEvent("merchant.soft_deleted");
 
         var merchantKey = merchant.id.ToString();
-        var replaceResponse = await container
-          .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
+        var replaceResponse = await TranslateMerchantCosmosAsync(
+          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken),
+          merchantIdentifier).ConfigureAwait(false);
         if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
@@ -222,7 +232,9 @@ public partial class InvoiceNoSqlBroker
         .WithParameter("@merchantIdentifier", merchantIdentifier);
 
       var iterator = container.GetItemQueryIterator<Merchant>(query);
-      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
+      var response = await TranslateMerchantCosmosAsync(
+        () => iterator.ReadNextAsync(cancellationToken),
+        merchantIdentifier).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var merchant = response.Resource.Any() ? response.Resource.First() : null;
@@ -234,9 +246,9 @@ public partial class InvoiceNoSqlBroker
         var merchantKey = merchant.id.ToString();
         var partitionKey = new PartitionKey(merchant.ParentCompanyId.ToString());
 
-        var replaceResponse = await container
-          .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
-          .ConfigureAwait(false);
+        var replaceResponse = await TranslateMerchantCosmosAsync(
+          () => container.ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken),
+          merchantIdentifier).ConfigureAwait(false);
         if (replaceResponse is not null) totalRequestCharge += replaceResponse.RequestCharge;
       }
     }
@@ -245,4 +257,58 @@ public partial class InvoiceNoSqlBroker
     InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "soft_delete", "merchants");
     activity?.RecordSuccess();
   }
+
+  /// <summary>Executes a Cosmos operation returning <typeparamref name="T"/> and maps any
+  /// <see cref="CosmosException"/> onto a typed merchant inner exception.</summary>
+  private static async Task<T> TranslateMerchantCosmosAsync<T>(Func<Task<T>> operation, Guid? merchantIdentifier)
+  {
+    try
+    {
+      return await operation().ConfigureAwait(false);
+    }
+    catch (CosmosException cosmosException)
+    {
+      throw TranslateMerchantCosmos(cosmosException, merchantIdentifier);
+    }
+  }
+
+  /// <summary>Executes a Cosmos operation with no return value and maps any
+  /// <see cref="CosmosException"/> onto a typed merchant inner exception.</summary>
+  private static async Task TranslateMerchantCosmosAsync(Func<Task> operation, Guid? merchantIdentifier)
+  {
+    try
+    {
+      await operation().ConfigureAwait(false);
+    }
+    catch (CosmosException cosmosException)
+    {
+      throw TranslateMerchantCosmos(cosmosException, merchantIdentifier);
+    }
+  }
+
+  /// <summary>Maps a <see cref="CosmosException"/> status code to the corresponding merchant inner exception type.</summary>
+  private static Exception TranslateMerchantCosmos(CosmosException cosmosException, Guid? merchantIdentifier) =>
+    cosmosException.StatusCode switch
+    {
+      HttpStatusCode.NotFound => merchantIdentifier.HasValue
+        ? new MerchantNotFoundException(merchantIdentifier.Value)
+        : new MerchantNotFoundException("Merchant not found.", cosmosException),
+      HttpStatusCode.Conflict or HttpStatusCode.PreconditionFailed => merchantIdentifier.HasValue
+        ? new MerchantAlreadyExistsException(merchantIdentifier.Value)
+        : new MerchantAlreadyExistsException("Merchant already exists.", cosmosException),
+      HttpStatusCode.Unauthorized => new MerchantUnauthorizedAccessException(
+        "Cosmos DB rejected the request as unauthorized.", cosmosException),
+      HttpStatusCode.Forbidden => new MerchantForbiddenAccessException(
+        "Cosmos DB forbade the requested merchant operation.", cosmosException),
+      (HttpStatusCode)429 => new MerchantCosmosDbRateLimitException(
+        cosmosException.RetryAfter ?? TimeSpan.FromSeconds(1), cosmosException),
+      HttpStatusCode.ServiceUnavailable
+        or HttpStatusCode.InternalServerError
+        or HttpStatusCode.GatewayTimeout
+        or HttpStatusCode.RequestTimeout => new MerchantFailedStorageException(
+          "Cosmos DB dependency failed while operating on a merchant.", cosmosException),
+      _ => new MerchantFailedStorageException(
+        $"Cosmos DB returned an unexpected status code {(int)cosmosException.StatusCode} for a merchant operation.",
+        cosmosException),
+    };
 }
