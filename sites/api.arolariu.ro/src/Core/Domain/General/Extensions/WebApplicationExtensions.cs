@@ -106,6 +106,12 @@ internal static class WebApplicationExtensions
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("arolariu.Backend.Core");
     logger.LogPipelineConfigurationStarted();
 
+    // UseExceptionHandler must be the FIRST middleware so it wraps everything downstream —
+    // routing, model binding, auth, endpoint handlers. Registered via AddExceptionHandler<ExceptionMappingHandler>
+    // in WebApplicationBuilderExtensions, it routes escapes through ExceptionToHttpResultMapper and
+    // writes an RFC 7807 ProblemDetails response. See RFC 2003.
+    app.UseExceptionHandler();
+
     app.UseHttpsRedirection();
     app.UseAuthServices();
 

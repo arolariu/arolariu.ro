@@ -3,12 +3,14 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptio
 using System;
 using System.Runtime.Serialization;
 
+using arolariu.Backend.Common.Exceptions;
+
 /// <summary>
 /// Invoice Service Exception
 /// </summary>
 [Serializable]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
-public class InvoiceFoundationServiceException : Exception
+public class InvoiceFoundationServiceException : Exception, IServiceException
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="InvoiceFoundationServiceException"/>

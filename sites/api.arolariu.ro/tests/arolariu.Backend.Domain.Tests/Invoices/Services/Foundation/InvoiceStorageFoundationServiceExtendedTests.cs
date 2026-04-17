@@ -12,7 +12,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -195,24 +194,6 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
   }
 
   /// <summary>
-  /// Validates DbUpdateException during read is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task ReadInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.ReadInvoiceObject(invoiceId, null));
-  }
-
-  /// <summary>
   /// Validates generic exception during read is wrapped.
   /// </summary>
   [Fact]
@@ -316,24 +297,6 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
   }
 
   /// <summary>
-  /// Validates DbUpdateException during bulk read is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task ReadAllInvoiceObjects_DbUpdateException_ThrowsFoundationServiceException()
-  {
-    // Arrange
-    var userId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert - ReadAll uses different exception handler that wraps into ServiceException
-    await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
-        service.ReadAllInvoiceObjects(userId));
-  }
-
-  /// <summary>
   /// Validates generic exception during bulk read is wrapped.
   /// </summary>
   [Fact]
@@ -374,44 +337,6 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
 
     // Assert
     Assert.NotNull(result);
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during update is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task UpdateInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.UpdateInvoiceObject(invoice, invoiceId, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateConcurrencyException during update is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task UpdateInvoiceObject_DbUpdateConcurrencyException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, invoice))
-        .ThrowsAsync(new DbUpdateConcurrencyException("Concurrency error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.UpdateInvoiceObject(invoice, invoiceId, null));
   }
 
   /// <summary>
@@ -498,24 +423,6 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
 
     // Assert
     mockBroker.Verify(b => b.DeleteInvoiceAsync(invoiceId, userId), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during deletion is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task DeleteInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.DeleteInvoiceObject(invoiceId, null));
   }
 
   /// <summary>

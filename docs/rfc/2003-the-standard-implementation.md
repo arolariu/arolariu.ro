@@ -37,6 +37,7 @@ If any example in this RFC diverges from the live implementation, source code in
 11. [Exception Classification](#exception-classification)
 12. [Testing Approach](#testing-approach)
 13. [Future Enhancements](#future-enhancements)
+14. [Exception → HTTP Status Mapping Contract](#exception--http-status-mapping-contract)
 
 ---
 
@@ -644,16 +645,22 @@ public static partial class InvoiceEndpoints
 
 ### Handler Implementation
 
-**File**: `Endpoints/InvoiceEndpoints.Handlers.cs`
+**File**: `sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs`
+
+Handlers wrap their body in a single `try / catch (Exception ex)`. The catch delegates
+to `ExceptionToHttpResultMapper.ToHttpResult` (see
+`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs`), which walks the
+exception chain, picks the innermost classifiable marker, and emits an RFC 7807
+`ProblemDetails` with the correct HTTP status. Per-type `catch` blocks are no longer
+needed — that responsibility is centralized in the mapper.
 
 ```csharp
 public static partial class InvoiceEndpoints
 {
-  internal static async partial Task<IResult> CreateNewInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromBody] CreateInvoiceDto invoiceDto,
-    ClaimsPrincipal principal)
+  public static async partial Task<IResult> CreateNewInvoiceAsync(
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    CreateInvoiceRequestDto invoiceDto)
   {
     try
     {
@@ -667,78 +674,18 @@ public static partial class InvoiceEndpoints
         .CreateInvoice(invoice)
         .ConfigureAwait(false);
 
-      return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", invoice);
+      var responseDto = InvoiceResponseDto.FromInvoice(invoice);
+      return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
     }
-    catch (InvoiceProcessingServiceValidationException exception)
+    catch (Exception ex)
     {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service validation error.");
-    }
-    catch (InvoiceProcessingServiceDependencyException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency error.");
-    }
-    catch (InvoiceProcessingServiceDependencyValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency validation error.");
-    }
-    catch (InvoiceProcessingServiceException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service error.");
-    }
-    catch (Exception exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered an unexpected internal service error.");
+      Activity.Current?.RecordException(ex);
+      Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
+      return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
     }
   }
 
-  internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
-  {
-    try
-    {
-      using var activity = InvoicePackageTracing.StartActivity(
-        nameof(RetrieveSpecificInvoiceAsync),
-        ActivityKind.Server);
-
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-
-      return possibleInvoice is null
-        ? TypedResults.NotFound()
-        : TypedResults.Ok(possibleInvoice);
-    }
-    catch (InvoiceProcessingServiceValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service validation error.");
-    }
-    // Additional exception handlers...
-  }
-
-  // Additional handlers: UpdateInvoiceAsync, DeleteInvoiceAsync, etc.
+  // Additional handlers (Retrieve/Update/Delete) follow the same single-catch pattern.
 }
 ```
 
@@ -945,59 +892,47 @@ InvoiceOrchestrationServiceDependencyValidationException    // Processing threw 
 
 ### Exception Handling in Exposers
 
-**File**: `Endpoints/InvoiceEndpoints.Handlers.cs`
+**File**: `sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs`
+
+Endpoints do not carry a catch-per-exception-type ladder. They wrap the handler body in
+a single `try / catch (Exception ex)` and route the exception through
+`ExceptionToHttpResultMapper.ToHttpResult`, which emits an RFC 7807
+`ProblemDetails` response with the correct HTTP status:
 
 ```csharp
-internal static async partial Task<IResult> CreateNewInvoiceAsync(
-  [FromServices] IInvoiceProcessingService invoiceProcessingService,
-  [FromBody] CreateInvoiceDto invoiceDto,
-  ClaimsPrincipal principal)
+public static async partial Task<IResult> CreateNewInvoiceAsync(
+  IInvoiceProcessingService invoiceProcessingService,
+  IHttpContextAccessor httpContext,
+  CreateInvoiceRequestDto invoiceDto)
 {
   try
   {
+    using var activity = InvoicePackageTracing.StartActivity(
+      nameof(CreateNewInvoiceAsync),
+      ActivityKind.Server);
+
     var invoice = invoiceDto.ToInvoice();
-    await invoiceProcessingService.CreateInvoice(invoice);
-    return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", invoice);
+    await invoiceProcessingService.CreateInvoice(invoice).ConfigureAwait(false);
+
+    var responseDto = InvoiceResponseDto.FromInvoice(invoice);
+    return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
   }
-  catch (InvoiceProcessingServiceValidationException exception)
+  catch (Exception ex)
   {
-    // 500 Internal Server Error (service validation failed)
-    return TypedResults.Problem(
-      detail: exception.Message,
-      statusCode: StatusCodes.Status500InternalServerError,
-      title: "Processing service validation error.");
-  }
-  catch (InvoiceProcessingServiceDependencyException exception)
-  {
-    // 500 Internal Server Error (downstream service failed)
-    return TypedResults.Problem(
-      detail: exception.Message,
-      statusCode: StatusCodes.Status500InternalServerError,
-      title: "Processing service dependency error.");
-  }
-  catch (InvoiceProcessingServiceDependencyValidationException exception)
-  {
-    // 500 Internal Server Error (downstream validation failed)
-    return TypedResults.Problem(
-      detail: exception.Message,
-      statusCode: StatusCodes.Status500InternalServerError,
-      title: "Processing service dependency validation error.");
-  }
-  catch (Exception exception)
-  {
-    // 500 Internal Server Error (unexpected error)
-    return TypedResults.Problem(
-      detail: exception.Message,
-      statusCode: StatusCodes.Status500InternalServerError,
-      title: "Unexpected internal service error.");
+    Activity.Current?.RecordException(ex);
+    Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
+    return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
   }
 }
 ```
 
-**Note**: Current implementation maps all exceptions to `500 Internal Server Error`. Future enhancement should map:
-- `ValidationException` → `400 Bad Request`
-- `DependencyValidationException` → `400 Bad Request` (client's fault propagated)
-- `DependencyException` → `500 Internal Server Error` (server's fault)
+The mapper derives the HTTP status from marker interfaces on the exception chain
+(`IValidationException`, `IDependencyValidationException`, `IDependencyException`,
+`IServiceException`, plus the refinement markers `INotFoundException`,
+`IAlreadyExistsException`, `ILockedException`, `IRateLimitedException`,
+`IUnauthorizedException`, `IForbiddenException`). The full mapping is defined in the
+[Exception → HTTP Status Mapping Contract](#exception--http-status-mapping-contract)
+section below.
 
 ---
 
@@ -1089,19 +1024,14 @@ sites/api.arolariu.ro/tests/
 
 **Rationale**: Stronger alignment with The Standard's business language principle.
 
-### 2. Exception-to-HTTP-Status Mapping Refinement
+### 2. Exception-to-HTTP-Status Mapping Refinement — Shipped
 
-**Current**: All exceptions map to `500 Internal Server Error`
-
-**Target**:
-
-- `ValidationException` → `400 Bad Request`
-- `DependencyValidationException` → `400 Bad Request` (client error propagated)
-- `DependencyException` → `500 Internal Server Error` (server error)
-- `NotFoundException` → `404 Not Found`
-- `ConflictException` → `409 Conflict`
-
-**Implementation**: Middleware or exposer-level exception filter.
+Previously listed as a future enhancement. Shipped via `ExceptionToHttpResultMapper`
+(see `sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs:73-86`) and
+the belt-and-suspenders `ExceptionMappingHandler` middleware
+(`sites/api.arolariu.ro/src/Common/Http/ExceptionMappingHandler.cs`). See the
+[Exception → HTTP Status Mapping Contract](#exception--http-status-mapping-contract)
+section for the authoritative table.
 
 ### 3. Coordination/Management Services Layer
 
@@ -1242,3 +1172,107 @@ This RFC serves as living documentation for how The Standard is applied in pract
 **Document Version**: 1.0.0
 **Last Updated**: 2025-01-26
 **Maintainer**: Alexandru Olariu ([@arolariu](https://github.com/arolariu))
+
+## Exception → HTTP Status Mapping Contract
+
+All bounded contexts MUST classify exceptions using marker interfaces from
+`arolariu.Backend.Common.Exceptions` and delegate HTTP response construction to the
+static `ExceptionToHttpResultMapper` at
+`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs`. The stable
+problem-type URIs are declared as constants in
+`sites/api.arolariu.ro/src/Common/Http/ProblemTypeUris.cs` and are part of the public
+API contract (do not rename without a major version bump).
+
+The following mapping — implemented by `SelectStatus` at
+`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs:74-87` — is
+authoritative. Rows appear in the same order as the `switch` arms; the unclassified
+default arm maps to 500:
+
+| Marker Interface / Type           | HTTP Status | Problem Type URI constant                      |
+|-----------------------------------|-------------|------------------------------------------------|
+| `IUnauthorizedException`          | 401         | `ProblemTypeUris.Unauthorized`                 |
+| `IForbiddenException`             | 403         | `ProblemTypeUris.Forbidden`                    |
+| `INotFoundException`              | 404         | `ProblemTypeUris.NotFound`                     |
+| `IAlreadyExistsException`         | 409         | `ProblemTypeUris.Conflict`                     |
+| `ILockedException`                | 423         | `ProblemTypeUris.Locked`                       |
+| `IRateLimitedException`           | 429         | `ProblemTypeUris.RateLimited`                  |
+| `BadHttpRequestException`         | ex.StatusCode | `ProblemTypeUris.Validation`                  |
+| `IValidationException`            | 400         | `ProblemTypeUris.Validation`                   |
+| `IDependencyValidationException`  | 400         | `ProblemTypeUris.Validation`                   |
+| `IDependencyException`            | 503         | `ProblemTypeUris.ServiceUnavailable`           |
+| `IServiceException`               | 500         | `ProblemTypeUris.InternalServerError`          |
+| _(unclassified)_                  | 500         | `ProblemTypeUris.InternalServerError`          |
+
+ProblemDetails responses MUST include a `traceId` extension (correlating to the
+current `Activity.TraceId`) and MUST NOT include `exception.Source`, stack traces,
+or exception type names. For 401/403/500/503 responses the `detail` field is a fixed,
+non-leaking message; for client-attributable statuses it echoes the exception message
+truncated to 512 characters. For 429 responses, a `retryAfterSeconds` extension is
+emitted (sourced from a `RetryAfter` TimeSpan property on the exception, defaulting to
+one second).
+
+### Inner-exception Refinement Markers
+
+Outer exceptions thrown by Foundation / Orchestration / Processing services (e.g.
+`InvoiceStorageFoundationServiceDependencyValidationException`) carry coarse markers
+(`IDependencyValidationException`, `IDependencyException`, etc.). They wrap the
+concrete inner exception as `InnerException`, and it is the inner type that carries
+the refinement marker that decides the HTTP status.
+
+The Invoices bounded context ships 21 inner exceptions across two folders:
+
+- `sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/`
+  — 12 classes: `InvoiceAlreadyExistsException`, `InvoiceCosmosDbRateLimitException`,
+  `InvoiceDescriptionNotSetException`, `InvoiceFailedStorageException`,
+  `InvoiceForbiddenAccessException`, `InvoiceIdNotSetException`,
+  `InvoiceLockedException`, `InvoiceNotFoundException`,
+  `InvoicePaymentInformationNotCorrectException`,
+  `InvoicePhotoLocationNotCorrectException`,
+  `InvoiceTimeInformationNotCorrectException`, `InvoiceUnauthorizedAccessException`.
+- `sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/`
+  — 9 classes: `MerchantAlreadyExistsException`, `MerchantCosmosDbRateLimitException`,
+  `MerchantFailedStorageException`, `MerchantForbiddenAccessException`,
+  `MerchantIdNotSetException`, `MerchantLockedException`,
+  `MerchantNotFoundException`, `MerchantParentCompanyIdNotSetException`,
+  `MerchantUnauthorizedAccessException`.
+
+Each of these implements a refinement marker (`INotFoundException`,
+`IAlreadyExistsException`, `ILockedException`, `IRateLimitedException`,
+`IUnauthorizedException`, `IForbiddenException`, or `IValidationException`). The
+mapper's chain walk — `FindClassifiableException` at
+`sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs:49-59` — iterates
+down `InnerException` and picks the **innermost** classifiable exception. This lets
+wrapping layers stay on coarse markers (Foundation / Orchestration / Processing outer
+exceptions) while still producing the correct refined HTTP status (404, 409, 423, 429,
+401, 403, or 400) based on the root cause.
+
+### Defense-in-Depth: `ExceptionMappingHandler`
+
+Endpoint handlers wrap their body in a single `try / catch (Exception ex)` that routes
+through `ExceptionToHttpResultMapper`. As a belt-and-suspenders layer, exceptions that
+escape an endpoint (model binding faults, authentication middleware throws, routing
+faults) are caught by `ExceptionMappingHandler` — an `IExceptionHandler` registered as
+the first piece of middleware in the pipeline:
+
+- Handler: `sites/api.arolariu.ro/src/Common/Http/ExceptionMappingHandler.cs`
+- Registration: `services.AddExceptionHandler<ExceptionMappingHandler>()` followed by
+  `services.AddProblemDetails()` in
+  `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs:330-331`.
+- Pipeline slot: `app.UseExceptionHandler()` as the **first** middleware in
+  `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationExtensions.cs:109-113`,
+  so it wraps routing, model binding, auth, and endpoint handlers.
+
+On every caught exception the handler records the exception on the current `Activity`,
+runs the same mapping function, and writes the resulting `ProblemDetails` to the
+response.
+
+### Status of `BadHttpRequestException`
+
+`Microsoft.AspNetCore.Http.BadHttpRequestException` (thrown by the Kestrel / model
+binding layers on malformed payloads) is now explicitly handled by `ExceptionToHttpResultMapper`.
+The mapper includes a dedicated switch arm that propagates its `StatusCode` property
+(typically 400) instead of defaulting to 500. The exception is also registered in
+`IsClassifiable` so that the chain-walk algorithm in `FindClassifiableException` recognizes it
+as a classifiable exception. This ensures model binding faults, JSON parsing errors, and
+similar pre-handler faults route correctly to 400 Bad Request (with `ProblemTypeUris.Validation`)
+via both the endpoint `try/catch` and the `ExceptionMappingHandler` middleware defense layer.

@@ -12,7 +12,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.F
 using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -127,42 +126,6 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
         service.CreateMerchantObject(merchant, null));
   }
 
-  /// <summary>
-  /// Validates DbUpdateException during creation is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task CreateMerchantObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-
-    mockBroker
-        .Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>()))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.CreateMerchantObject(merchant, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateConcurrencyException during creation is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task CreateMerchantObject_DbUpdateConcurrencyException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-
-    mockBroker
-        .Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>()))
-        .ThrowsAsync(new DbUpdateConcurrencyException("Concurrency error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.CreateMerchantObject(merchant, null));
-  }
-
   #endregion
 
   #region ReadMerchantObject Extended Tests
@@ -210,24 +173,6 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
 
     // Assert
     Assert.NotNull(result);
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during read is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task ReadMerchantObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.ReadMerchantObject(merchantId, null));
   }
 
   /// <summary>
@@ -318,24 +263,6 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   }
 
   /// <summary>
-  /// Validates DbUpdateException during bulk read is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task ReadAllMerchantObjects_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadMerchantsAsync(parentCompanyId))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.ReadAllMerchantObjects(parentCompanyId));
-  }
-
-  /// <summary>
   /// Validates generic exception during bulk read is wrapped.
   /// </summary>
   [Fact]
@@ -384,44 +311,6 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
   }
 
   /// <summary>
-  /// Validates DbUpdateException during update is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task UpdateMerchantObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-    var merchantId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.UpdateMerchantObject(merchant, merchantId, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateConcurrencyException during update is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task UpdateMerchantObject_DbUpdateConcurrencyException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
-    var merchantId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadMerchantAsync(merchantId, null))
-        .ThrowsAsync(new DbUpdateConcurrencyException("Concurrency error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.UpdateMerchantObject(merchant, merchantId, null));
-  }
-
-  /// <summary>
   /// Validates generic exception during update is wrapped.
   /// </summary>
   [Fact]
@@ -463,25 +352,6 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
 
     // Assert
     mockBroker.Verify(b => b.DeleteMerchantAsync(merchantId, parentCompanyId), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during deletion is wrapped.
-  /// </summary>
-  [Fact]
-  public async Task DeleteMerchantObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var merchantId = Guid.NewGuid();
-    var parentCompanyId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteMerchantAsync(merchantId, parentCompanyId))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<MerchantFoundationServiceDependencyException>(() =>
-        service.DeleteMerchantObject(merchantId, parentCompanyId));
   }
 
   /// <summary>

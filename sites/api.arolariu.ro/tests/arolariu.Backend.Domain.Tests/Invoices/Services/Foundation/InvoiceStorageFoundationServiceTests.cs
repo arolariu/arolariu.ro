@@ -10,7 +10,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Tests.Builders;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -115,44 +114,6 @@ public sealed class InvoiceStorageFoundationServiceTests
 
     // Assert
     mockBroker.Verify(b => b.CreateInvoiceAsync(invoice), Times.Once);
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during creation is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task CreateInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var dbException = new DbUpdateException("Database error");
-
-    mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
-        .ThrowsAsync(dbException);
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.CreateInvoiceObject(invoice, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateConcurrencyException during creation is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task CreateInvoiceObject_DbUpdateConcurrencyException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoice = InvoiceBuilder.CreateRandomInvoice();
-    var dbException = new DbUpdateConcurrencyException("Concurrency error");
-
-    mockBroker
-        .Setup(b => b.CreateInvoiceAsync(invoice))
-        .ThrowsAsync(dbException);
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.CreateInvoiceObject(invoice, null));
   }
 
   /// <summary>
@@ -293,24 +254,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates DbUpdateException during read is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task ReadInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadInvoiceAsync(invoiceId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.ReadInvoiceObject(invoiceId, null));
-  }
-
-  /// <summary>
   /// Validates OperationCanceledException during read is wrapped into foundation dependency exception.
   /// </summary>
   [Fact]
@@ -414,24 +357,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates ArgumentNullException during bulk read is wrapped into dependency validation exception.
-  /// </summary>
-  [Fact]
-  public async Task ReadAllInvoiceObjects_ArgumentNullException_ThrowsFoundationDependencyValidationException()
-  {
-    // Arrange
-    var userId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.ReadInvoicesAsync(userId))
-        .ThrowsAsync(new ArgumentNullException("parameter"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(() =>
-        service.ReadAllInvoiceObjects(userId));
-  }
-
-  /// <summary>
   /// Validates generic exceptions during bulk read propagate as foundation service exceptions.
   /// </summary>
   [Fact]
@@ -517,44 +442,6 @@ public sealed class InvoiceStorageFoundationServiceTests
   }
 
   /// <summary>
-  /// Validates DbUpdateConcurrencyException during update is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task UpdateInvoiceObject_DbUpdateConcurrencyException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice))
-        .ThrowsAsync(new DbUpdateConcurrencyException("Concurrency error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during update is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task UpdateInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-    var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
-
-    mockBroker
-        .Setup(b => b.UpdateInvoiceAsync(invoiceId, updatedInvoice))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
-  }
-
-  /// <summary>
   /// Ensures generic exceptions during update are wrapped into foundation service exceptions.
   /// </summary>
   [Fact]
@@ -632,24 +519,6 @@ public sealed class InvoiceStorageFoundationServiceTests
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>
         service.DeleteInvoiceObject(emptyId, null));
-  }
-
-  /// <summary>
-  /// Validates DbUpdateException during delete is wrapped into foundation dependency exception.
-  /// </summary>
-  [Fact]
-  public async Task DeleteInvoiceObject_DbUpdateException_ThrowsFoundationDependencyException()
-  {
-    // Arrange
-    var invoiceId = Guid.NewGuid();
-
-    mockBroker
-        .Setup(b => b.DeleteInvoiceAsync(invoiceId, null))
-        .ThrowsAsync(new DbUpdateException("Database error"));
-
-    // Act & Assert
-    await Assert.ThrowsAsync<InvoiceFoundationDependencyException>(() =>
-        service.DeleteInvoiceObject(invoiceId, null));
   }
 
   /// <summary>

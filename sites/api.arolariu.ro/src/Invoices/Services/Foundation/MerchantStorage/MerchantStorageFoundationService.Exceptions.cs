@@ -8,129 +8,94 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 
-using Microsoft.EntityFrameworkCore;
-
 public partial class MerchantStorageFoundationService
 {
-  private delegate Task CallbackFunctionWithNoReturn();
+  private delegate Task ReturningTaskFunction();
+  private delegate Task<Merchant> ReturningMerchantFunction();
+  private delegate Task<IEnumerable<Merchant>> ReturningMerchantsFunction();
 
-  private delegate Task<Merchant> CallbackFunctionForMerchant();
-
-  private delegate Task<IEnumerable<Merchant>> CallbackFunctionForMerchantList();
-
-  private async Task TryCatchAsync(CallbackFunctionWithNoReturn callbackFunction)
+  private async Task TryCatchAsync(ReturningTaskFunction returningTaskFunction)
   {
     try
     {
-      await callbackFunction().ConfigureAwait(false);
-    }
-    catch (MerchantIdNotSetException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (MerchantParentCompanyIdNotSetException exception)
-    {
-      throw CreateAndLogValidationException(exception);
-    }
-    catch (DbUpdateConcurrencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (DbUpdateException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
+      await returningTaskFunction().ConfigureAwait(false);
     }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
-  private async Task<Merchant> TryCatchAsync(CallbackFunctionForMerchant callbackFunction)
+  private async Task<Merchant> TryCatchAsync(ReturningMerchantFunction returningMerchantFunction)
   {
     try
     {
-      return await callbackFunction().ConfigureAwait(false);
-    }
-    catch (DbUpdateConcurrencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (DbUpdateException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
+      return await returningMerchantFunction().ConfigureAwait(false);
     }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
-  private async Task<IEnumerable<Merchant>> TryCatchAsync(CallbackFunctionForMerchantList callbackFunction)
+  private async Task<IEnumerable<Merchant>> TryCatchAsync(ReturningMerchantsFunction returningMerchantsFunction)
   {
     try
     {
-      return await callbackFunction().ConfigureAwait(false);
-    }
-    catch (DbUpdateConcurrencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (DbUpdateException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (OperationCanceledException exception)
-    {
-      throw CreateAndLogDependencyException(exception);
-    }
-    catch (ArgumentNullException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception);
+      return await returningMerchantsFunction().ConfigureAwait(false);
     }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
-  private MerchantFoundationServiceValidationException CreateAndLogValidationException(Exception exception)
+  private Exception Classify(Exception exception) => exception switch
   {
-    var merchantOrchestrationServiceValidationException = new MerchantFoundationServiceValidationException(exception);
-    var exceptionMessage = merchantOrchestrationServiceValidationException.Message;
-    logger.LogMerchantStorageServiceValidationException(exceptionMessage);
-    return merchantOrchestrationServiceValidationException;
+    MerchantIdNotSetException
+      or MerchantParentCompanyIdNotSetException
+      => LogAndWrapValidation(exception),
+
+    MerchantNotFoundException
+      or MerchantAlreadyExistsException
+      or MerchantLockedException
+      or MerchantCosmosDbRateLimitException
+      or MerchantUnauthorizedAccessException
+      or MerchantForbiddenAccessException
+      => LogAndWrapDependencyValidation(exception),
+
+    MerchantFailedStorageException
+      or OperationCanceledException
+      => LogAndWrapDependency(exception),
+
+    _ => LogAndWrapService(exception),
+  };
+
+  private MerchantFoundationServiceValidationException LogAndWrapValidation(Exception exception)
+  {
+    var outer = new MerchantFoundationServiceValidationException(exception);
+    logger.LogMerchantStorageServiceValidationException(outer.Message);
+    return outer;
   }
 
-  private MerchantFoundationServiceDependencyException CreateAndLogDependencyException(Exception exception)
+  private MerchantFoundationServiceDependencyException LogAndWrapDependency(Exception exception)
   {
-    var merchantOrchestrationServiceDependencyException = new MerchantFoundationServiceDependencyException(exception);
-    var exceptionMessage = merchantOrchestrationServiceDependencyException.Message;
-    logger.LogMerchantStorageServiceDependencyException(exceptionMessage);
-    return merchantOrchestrationServiceDependencyException;
+    var outer = new MerchantFoundationServiceDependencyException(exception);
+    logger.LogMerchantStorageServiceDependencyException(outer.Message);
+    return outer;
   }
 
-  private MerchantFoundationServiceDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
+  private MerchantFoundationServiceDependencyValidationException LogAndWrapDependencyValidation(Exception exception)
   {
-    var merchantOrchestrationServiceDependencyValidationException = new MerchantFoundationServiceDependencyValidationException(exception);
-    var exceptionMessage = merchantOrchestrationServiceDependencyValidationException.Message;
-    logger.LogMerchantStorageServiceDependencyValidationException(exceptionMessage);
-    return merchantOrchestrationServiceDependencyValidationException;
+    var outer = new MerchantFoundationServiceDependencyValidationException(exception);
+    logger.LogMerchantStorageServiceDependencyValidationException(outer.Message);
+    return outer;
   }
 
-  private MerchantFoundationServiceException CreateAndLogServiceException(Exception exception)
+  private MerchantFoundationServiceException LogAndWrapService(Exception exception)
   {
-    var merchantOrchestrationServiceException = new MerchantFoundationServiceException(exception);
-    var exceptionMessage = merchantOrchestrationServiceException.Message;
-    logger.LogMerchantStorageServiceException(exceptionMessage);
-    return merchantOrchestrationServiceException;
+    var outer = new MerchantFoundationServiceException(exception);
+    logger.LogMerchantStorageServiceException(outer.Message);
+    return outer;
   }
 }

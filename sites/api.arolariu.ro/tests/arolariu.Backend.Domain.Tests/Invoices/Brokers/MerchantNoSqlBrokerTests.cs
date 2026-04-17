@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Azure.Cosmos;
@@ -98,7 +99,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
 
   /// <summary>Validates Cosmos exception surfaces when container create fails.</summary>
   [Fact]
-  public async Task ShouldThrowCosmosException_WhenCreateMerchantFails()
+  public async Task ShouldTranslateCosmosException_WhenCreateMerchantFails()
   {
     // Given
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -113,8 +114,8 @@ It.IsAny<System.Threading.CancellationToken>()
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant).AsTask());
-    Assert.Equal("Creation failed", exception.Message);
+    var exception = await Assert.ThrowsAsync<MerchantFailedStorageException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant).AsTask());
+    Assert.Same(cosmosException, exception.InnerException);
   }
 
   #endregion

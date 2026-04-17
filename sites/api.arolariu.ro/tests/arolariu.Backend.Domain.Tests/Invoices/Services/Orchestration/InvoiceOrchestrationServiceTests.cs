@@ -162,10 +162,10 @@ public sealed class InvoiceOrchestrationServiceTests
   }
 
   /// <summary>
-  /// Confirms that foundation validation exceptions are wrapped into orchestration dependency validation exceptions.
+  /// Confirms that foundation validation exceptions are surfaced as orchestration validation exceptions (no collapse).
   /// </summary>
   [Fact]
-  public async Task AnalyzeInvoiceWithOptions_FoundationValidationException_ThrowsOrchestrationDependencyValidationException()
+  public async Task AnalyzeInvoiceWithOptions_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -177,7 +177,7 @@ public sealed class InvoiceOrchestrationServiceTests
    .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
       orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.NoAnalysis, invoiceId, null));
   }
 
@@ -310,7 +310,7 @@ public sealed class InvoiceOrchestrationServiceTests
   /// Confirms foundation validation exceptions propagate as orchestration dependency validation exceptions during creation.
   /// </summary>
   [Fact]
-  public async Task CreateInvoiceObject_FoundationValidationException_ThrowsOrchestrationDependencyValidationException()
+  public async Task CreateInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
     var invoice = InvoiceBuilder.CreateRandomInvoice();
@@ -322,7 +322,7 @@ public sealed class InvoiceOrchestrationServiceTests
          .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
       orchestrationService.CreateInvoiceObject(invoice, null));
   }
 
@@ -419,7 +419,7 @@ public sealed class InvoiceOrchestrationServiceTests
   /// Confirms foundation validation exceptions during read are wrapped appropriately.
   /// </summary>
   [Fact]
-  public async Task ReadInvoiceObject_FoundationValidationException_ThrowsOrchestrationDependencyValidationException()
+  public async Task ReadInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -431,7 +431,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
       orchestrationService.ReadInvoiceObject(invoiceId, null));
   }
 
@@ -597,7 +597,7 @@ public sealed class InvoiceOrchestrationServiceTests
   /// Confirms foundation validation exceptions during update are wrapped appropriately.
   /// </summary>
   [Fact]
-  public async Task UpdateInvoiceObject_FoundationValidationException_ThrowsOrchestrationDependencyValidationException()
+  public async Task UpdateInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -610,7 +610,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
       orchestrationService.UpdateInvoiceObject(updatedInvoice, invoiceId, null));
   }
 
@@ -704,7 +704,7 @@ public sealed class InvoiceOrchestrationServiceTests
   /// Confirms foundation validation exceptions during delete are wrapped appropriately.
   /// </summary>
   [Fact]
-  public async Task DeleteInvoiceObject_FoundationValidationException_ThrowsOrchestrationDependencyValidationException()
+  public async Task DeleteInvoiceObject_FoundationValidationException_ThrowsOrchestrationValidationException()
   {
     // Arrange
     var invoiceId = Guid.NewGuid();
@@ -716,7 +716,7 @@ public sealed class InvoiceOrchestrationServiceTests
        .ThrowsAsync(foundationException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceOrchestrationDependencyValidationException>(() =>
+    await Assert.ThrowsAsync<InvoiceOrchestrationValidationException>(() =>
       orchestrationService.DeleteInvoiceObject(invoiceId, null));
   }
 

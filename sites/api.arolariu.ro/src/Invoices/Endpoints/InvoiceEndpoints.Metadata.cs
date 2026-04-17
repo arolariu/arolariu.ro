@@ -48,7 +48,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateNewInvoiceAsync(
+  public static partial Task<IResult> CreateNewInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromBody, SwaggerRequestBody("The invoice DTO containing the details for the new invoice.", Required = true)] CreateInvoiceRequestDto invoiceDto);
@@ -78,7 +78,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
+  public static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id);
@@ -106,7 +106,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveAllInvoicesAsync(
+  public static partial Task<IResult> RetrieveAllInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext
     );
@@ -137,7 +137,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
+  public static partial Task<IResult> UpdateSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to update.", Required = true)] Guid id,
@@ -169,7 +169,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> PatchSpecificInvoiceAsync(
+  public static partial Task<IResult> PatchSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to patch.", Required = true)] Guid id,
@@ -200,7 +200,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceAsync(
+  public static partial Task<IResult> DeleteInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to delete.", Required = true)] Guid id);
@@ -229,7 +229,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoicesAsync(
+  public static partial Task<IResult> DeleteInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext
     );
@@ -262,7 +262,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddProductToInvoiceAsync(
+  public static partial Task<IResult> AddProductToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -293,7 +293,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
+  public static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
@@ -326,7 +326,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
+  public static partial Task<IResult> RemoveProductFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -360,7 +360,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateProductInInvoiceAsync(
+  public static partial Task<IResult> UpdateProductInInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -391,7 +391,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
+  public static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
@@ -424,7 +424,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddMerchantToInvoiceAsync(
+  public static partial Task<IResult> AddMerchantToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -457,7 +457,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
+  public static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
@@ -489,7 +489,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateInvoiceScanAsync(
+  public static partial Task<IResult> CreateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -520,7 +520,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoiceScansAsync(
+  public static partial Task<IResult> RetrieveInvoiceScansAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
@@ -551,7 +551,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceScanAsync(
+  public static partial Task<IResult> DeleteInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -582,7 +582,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
+  public static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
@@ -613,7 +613,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> PatchInvoiceMetadataAsync(
+  public static partial Task<IResult> PatchInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -645,7 +645,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
+  public static partial Task<IResult> DeleteInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
@@ -679,7 +679,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> CreateNewMerchantAsync(
+  public static partial Task<IResult> CreateNewMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromBody, SwaggerRequestBody("The merchant data transfer object.", Required = true)] CreateMerchantRequestDto merchantDto);
@@ -707,7 +707,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveAllMerchantsAsync(
+  public static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
@@ -738,7 +738,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
+  public static partial Task<IResult> RetrieveSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
@@ -770,7 +770,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> UpdateSpecificMerchantAsync(
+  public static partial Task<IResult> UpdateSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
@@ -802,7 +802,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> DeleteMerchantAsync(
+  public static partial Task<IResult> DeleteMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
@@ -833,7 +833,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
+  public static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
@@ -866,7 +866,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AddInvoiceToMerchantAsync(
+  public static partial Task<IResult> AddInvoiceToMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
@@ -900,7 +900,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
+  public static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
@@ -931,7 +931,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
+  public static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
@@ -963,7 +963,7 @@ public static partial class InvoiceEndpoints
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> AnalyzeInvoiceAsync(
+  public static partial Task<IResult> AnalyzeInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,

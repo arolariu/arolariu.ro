@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Tests.Builders;
 
 using Microsoft.Azure.Cosmos;
@@ -103,9 +104,10 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
+    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
 
-    Assert.Equal("Creation failed", exception.Message);
+    Assert.NotNull(exception.InnerException);
+    Assert.Contains("Creation failed", exception.InnerException.Message, StringComparison.Ordinal);
   }
 
   #endregion
@@ -374,7 +376,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+    var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
       () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id, deletedInvoice.UserIdentifier).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
@@ -410,7 +412,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .Returns(mockFeedIterator.Object);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+    var exception = await Assert.ThrowsAsync<InvoiceLockedException>(
       () => invoiceNoSqlBroker.ReadInvoiceAsync(deletedInvoice.id).AsTask());
 
     Assert.Contains(deletedInvoice.id.ToString(), exception.Message, StringComparison.Ordinal);
@@ -551,10 +553,11 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(
+    var exception = await Assert.ThrowsAsync<InvoiceFailedStorageException>(
       () => invoiceNoSqlBroker.UpdateInvoiceAsync(invoice.id, invoice).AsTask());
 
-    Assert.Equal("Update failed", exception.Message);
+    Assert.NotNull(exception.InnerException);
+    Assert.Contains("Update failed", exception.InnerException.Message, StringComparison.Ordinal);
   }
 
   #endregion

@@ -3,12 +3,14 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Out
 using System;
 using System.Runtime.Serialization;
 
+using arolariu.Backend.Common.Exceptions;
+
 /// <summary>
 /// Merchant Foundation Service Exception
 /// </summary>
 [Serializable]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
-public class MerchantFoundationServiceException : Exception
+public class MerchantFoundationServiceException : Exception, IServiceException
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="MerchantFoundationServiceException"/>
