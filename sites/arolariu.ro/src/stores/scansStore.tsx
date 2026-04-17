@@ -4,7 +4,8 @@
  * @module stores/scansStore
  *
  * @remarks
- * **Not migrated to `createEntityStore<Scan>()`** (deliberate).
+ * **Not migrated to `createEntityStore<CachedScan>()`** (deliberate — the store
+ * operates on cached scan records, not the `Scan` domain entity).
  *
  * This store carries domain state (`isSyncing`, `lastSyncTimestamp`) and actions
  * (`addScan`, `removeScans`, `updateScanStatus`, `updateScanBlobUrl`, `archiveScans`,

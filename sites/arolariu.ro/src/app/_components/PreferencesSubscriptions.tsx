@@ -89,7 +89,10 @@ export default function PreferencesSubscriptions(): React.JSX.Element | null {
   //    After setting the cookie, router.refresh() triggers a server re-render so next-intl
   //    picks up the new locale value from the cookie.
   useEffect(() => {
-    let prevLocale: string | null = null;
+    // Seed prevLocale from the current store state if it's already hydrated — otherwise
+    // the first locale change after mount would be swallowed by the null-init branch.
+    const initialState = usePreferencesStore.getState();
+    let prevLocale: string | null = initialState.hasHydrated ? initialState.locale : null;
 
     const unsubscribe = usePreferencesStore.subscribe((state) => {
       if (!state.hasHydrated) return;
@@ -99,9 +102,12 @@ export default function PreferencesSubscriptions(): React.JSX.Element | null {
       }
       if (state.locale !== prevLocale) {
         prevLocale = state.locale;
-        void import("@/lib/actions/cookies").then(({setCookie}) =>
-          setCookie("locale", state.locale).then(() => router.refresh()),
-        );
+        void import("@/lib/actions/cookies")
+          .then(({setCookie}) => setCookie("locale", state.locale))
+          .then(() => router.refresh())
+          .catch((error: unknown) => {
+            console.error("[PreferencesSubscriptions] locale sync failed", error);
+          });
       }
     });
 
