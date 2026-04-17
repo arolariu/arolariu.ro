@@ -867,10 +867,11 @@ public sealed class InvoiceProcessingServiceExtendedTests
 
   /// <summary>
   /// Validates merchant orchestration validation exception wrapping.
-  /// Note: CreateMerchant uses generic TryCatch that wraps merchant exceptions as ServiceException.
+  /// Merchant validation failures are treated as dependency-validation failures from the
+  /// invoice processing tier's perspective (merchant orchestration is a downstream dependency).
   /// </summary>
   [Fact]
-  public async Task CreateMerchant_OrchestrationValidationException_ThrowsProcessingServiceException()
+  public async Task CreateMerchant_OrchestrationValidationException_ThrowsProcessingDependencyValidationException()
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -882,16 +883,16 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ThrowsAsync(orchException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
         processingService.CreateMerchant(merchant, null));
   }
 
   /// <summary>
   /// Validates merchant orchestration dependency exception wrapping.
-  /// Note: CreateMerchant uses generic TryCatch that wraps merchant exceptions as ServiceException.
+  /// Merchant dependency failures surface as processing-tier dependency exceptions.
   /// </summary>
   [Fact]
-  public async Task CreateMerchant_OrchestrationDependencyException_ThrowsProcessingServiceException()
+  public async Task CreateMerchant_OrchestrationDependencyException_ThrowsProcessingDependencyException()
   {
     // Arrange
     var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
@@ -903,7 +904,7 @@ public sealed class InvoiceProcessingServiceExtendedTests
         .ThrowsAsync(orchException);
 
     // Act & Assert
-    await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
+    await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
         processingService.CreateMerchant(merchant, null));
   }
 

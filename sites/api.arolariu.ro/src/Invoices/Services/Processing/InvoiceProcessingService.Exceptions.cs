@@ -35,6 +35,41 @@ public partial class InvoiceProcessingService
   private delegate Task<IEnumerable<InvoiceScan>> CallbackFunctionForTasksWithInvoiceScanListReturn();
   #endregion
 
+  #region Unified Classify
+  /// <summary>
+  /// Translates any upstream orchestration-tier exception (invoice or merchant) into the
+  /// matching processing-tier outer exception while preserving OTel metric recording and
+  /// structured logging via the <c>CreateAndLog*</c> builder methods. Unknown exceptions
+  /// fall through to the service tier (catch-all).
+  /// </summary>
+  /// <remarks>
+  /// Merchant orchestration validation errors are intentionally collapsed to
+  /// <see cref="InvoiceProcessingServiceDependencyValidationException"/> because, from the
+  /// invoice bounded context's perspective, the merchant orchestration service is a downstream
+  /// dependency — its input validation failures classify as dependency-validation failures here.
+  /// </remarks>
+  private Exception Classify(Exception exception) => exception switch
+  {
+    InvoiceOrchestrationValidationException invoiceValidation
+      => CreateAndLogValidationException(invoiceValidation.InnerException!),
+    InvoiceOrchestrationDependencyValidationException invoiceDependencyValidation
+      => CreateAndLogDependencyValidationException(invoiceDependencyValidation.InnerException!),
+    InvoiceOrchestrationDependencyException invoiceDependency
+      => CreateAndLogDependencyException(invoiceDependency.InnerException!),
+    InvoiceOrchestrationServiceException invoiceService
+      => CreateAndLogServiceException(invoiceService.InnerException!),
+    MerchantOrchestrationServiceValidationException merchantValidation
+      => CreateAndLogDependencyValidationException(merchantValidation.InnerException!),
+    MerchantOrchestrationServiceDependencyValidationException merchantDependencyValidation
+      => CreateAndLogDependencyValidationException(merchantDependencyValidation.InnerException!),
+    MerchantOrchestrationServiceDependencyException merchantDependency
+      => CreateAndLogDependencyException(merchantDependency.InnerException!),
+    MerchantOrchestrationServiceException merchantService
+      => CreateAndLogServiceException(merchantService.InnerException!),
+    _ => CreateAndLogServiceException(exception),
+  };
+  #endregion
+
   #region TryCatchAync method
   private async Task TryCatchAsync(CallbackFunctionForTasksWithNoReturn callbackFunction)
   {
@@ -42,25 +77,9 @@ public partial class InvoiceProcessingService
     {
       await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -70,25 +89,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -98,25 +101,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -126,25 +113,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -154,25 +125,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -182,25 +137,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (MerchantOrchestrationServiceValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -210,25 +149,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (MerchantOrchestrationServiceValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (MerchantOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -238,25 +161,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -266,25 +173,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
 
@@ -294,25 +185,9 @@ public partial class InvoiceProcessingService
     {
       return await callbackFunction().ConfigureAwait(false);
     }
-    catch (InvoiceOrchestrationValidationException exception)
-    {
-      throw CreateAndLogValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyException exception)
-    {
-      throw CreateAndLogDependencyException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationDependencyValidationException exception)
-    {
-      throw CreateAndLogDependencyValidationException(exception.InnerException!);
-    }
-    catch (InvoiceOrchestrationServiceException exception)
-    {
-      throw CreateAndLogServiceException(exception.InnerException!);
-    }
     catch (Exception exception)
     {
-      throw CreateAndLogServiceException(exception);
+      throw Classify(exception);
     }
   }
   #endregion
