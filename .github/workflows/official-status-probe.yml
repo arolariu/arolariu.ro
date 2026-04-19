@@ -1,0 +1,87 @@
+# =============================================================================
+# Status Probe Cron — polls /health endpoints every 30 min, commits aggregates
+# to the `status-data` orphan branch. Data is served to the status SWA via
+# raw.githubusercontent.com at runtime; no SWA rebuild is needed per probe.
+# =============================================================================
+
+name: "official-status-probe"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: status-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.repository == 'arolariu/arolariu.ro'
+    name: 📡 Probe services and publish status data
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 🛫 Checkout main (site code + scripts)
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: 📦 Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: 📦 Install status workspace deps
+        run: npm ci --workspace=sites/status.arolariu.ro
+
+      - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
+        run: |
+          set -e
+          if git fetch origin status-data 2>/dev/null; then
+            git worktree add ../data-wt status-data
+          else
+            echo "status-data branch does not exist; bootstrapping as orphan"
+            git worktree add --detach ../data-wt HEAD
+            cd ../data-wt
+            git checkout --orphan status-data
+            git rm -rf . 2>/dev/null || true
+            mkdir -p data
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --allow-empty -m "init status-data branch"
+            cd -
+          fi
+
+      - name: 📡 Run probe + aggregate + detect incidents
+        run: npm run probe:all --workspace=sites/status.arolariu.ro
+        env:
+          DATA_DIR: ${{ github.workspace }}/../data-wt/data
+
+      - name: 📝 Commit + push data (with retry on race)
+        working-directory: ../data-wt
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/
+          if git diff --cached --quiet; then
+            echo "no data changes — skipping commit"
+            exit 0
+          fi
+          git commit -m "data: probe @ $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for i in 1 2 3; do
+            if git push origin status-data; then
+              echo "pushed successfully"
+              exit 0
+            fi
+            echo "push race detected — rebasing and retrying ($i/3)"
+            git pull --rebase origin status-data || true
+            sleep $((i*i*5))
+          done
+          echo "push failed after 3 retries"
+          exit 1
