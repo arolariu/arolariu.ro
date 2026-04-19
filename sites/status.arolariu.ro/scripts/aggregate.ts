@@ -1,4 +1,4 @@
-import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync} from "node:fs";
+import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {SERVICE_IDS, type AggregateFile, type Bucket, type BucketSize,
   type HealthStatus, type ProbeResult, type ServiceId, type ServiceSeries,
@@ -149,6 +149,20 @@ export function rebuildFine(probes: readonly ProbeResult[], now: Date): Aggregat
   };
 }
 
+function pruneRawFiles(dataDir: string, now: Date): void {
+  const rawDir = join(dataDir, "raw");
+  if (!existsSync(rawDir)) return;
+  const cutoffMs = now.getTime() - 14 * MS_PER_DAY;
+  for (const f of readdirSync(rawDir)) {
+    if (!f.endsWith(".jsonl")) continue;
+    const day = f.slice(0, 10);
+    const dayMs = Date.parse(`${day}T00:00:00Z`);
+    if (Number.isFinite(dayMs) && dayMs < cutoffMs) {
+      unlinkSync(join(rawDir, f));
+    }
+  }
+}
+
 function readRawProbes(dataDir: string): ProbeResult[] {
   const rawDir = join(dataDir, "raw");
   if (!existsSync(rawDir)) return [];
@@ -272,6 +286,8 @@ export async function runAggregate(opts: RunAggregateOptions): Promise<void> {
   const prevDaily = readPrevious(opts.dataDir, "daily.json");
   const daily = mergeAggregate(probes, prevDaily, now, "1d", 365);
   writeFileSync(join(opts.dataDir, "daily.json"), JSON.stringify(daily), "utf8");
+
+  pruneRawFiles(opts.dataDir, now);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

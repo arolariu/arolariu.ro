@@ -1,6 +1,6 @@
 // @vitest-environment node
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
-import {mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync} from "node:fs";
+import {mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, readdirSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import type {ProbeResult, AggregateFile} from "../src/lib/types/status";
@@ -169,6 +169,20 @@ describe("mergeHourly", () => {
     const hourly = JSON.parse(readFileSync(join(tempDir, "hourly.json"), "utf8")) as AggregateFile;
     const arolariu = hourly.services.find(s => s.service === "arolariu.ro");
     expect(arolariu?.buckets.find(b => b.t === "2025-12-01T00:00:00.000Z")).toBeUndefined();
+    rmSync(tempDir, {recursive: true, force: true});
+  });
+});
+
+describe("prune raw files older than 14 days", () => {
+  it("deletes raw JSONL files with date >14 days old", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "status-prune-"));
+    mkdirSync(join(tempDir, "raw"), {recursive: true});
+    writeFileSync(join(tempDir, "raw", "2026-04-01.jsonl"), "");
+    writeFileSync(join(tempDir, "raw", "2026-04-10.jsonl"), "");
+    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T00:00:00Z")});
+    const remaining = readdirSync(join(tempDir, "raw"));
+    expect(remaining).not.toContain("2026-04-01.jsonl");
+    expect(remaining).toContain("2026-04-10.jsonl");
     rmSync(tempDir, {recursive: true, force: true});
   });
 });
