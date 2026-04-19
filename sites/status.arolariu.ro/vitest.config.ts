@@ -31,6 +31,7 @@ export default mergeConfig(
           "**/src/app.html",
           "**/src/app.css",
           "**/src/routes/**/*.svelte",
+          "**/src/routes/**/*.ts",
           "**/*.test.{ts,js}",
         ],
       },

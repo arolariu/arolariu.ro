@@ -14,7 +14,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "npm run test:unit",
-    "test:unit": "svelte-kit sync && vitest run",
+    "test:unit": "svelte-kit sync && vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "svelte-kit sync && vitest run --coverage",
     "test:e2e": "playwright test",

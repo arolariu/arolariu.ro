@@ -1,0 +1,39 @@
+{
+  "name": "@arolariu/status",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/status.arolariu.ro",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run build", "cwd": "sites/status.arolariu.ro"},
+      "outputs": ["{projectRoot}/build"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run dev", "cwd": "sites/status.arolariu.ro"}
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run preview", "cwd": "sites/status.arolariu.ro"}
+    },
+    "prepare": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run prepare", "cwd": "sites/status.arolariu.ro"}
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run check", "cwd": "sites/status.arolariu.ro"}
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run test", "cwd": "sites/status.arolariu.ro"},
+      "configurations": {"unit": {"command": "npm run test:unit"}}
+    },
+    "probe": {
+      "executor": "nx:run-commands",
+      "options": {"command": "npm run probe:all", "cwd": "sites/status.arolariu.ro"}
+    }
+  },
+  "tags": ["domain:frontend", "scope:status", "type:app"]
+}
