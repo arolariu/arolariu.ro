@@ -8,6 +8,7 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   ...(isCI ? {workers: 2} : {}),
+  outputDir: "test-results/artifacts",
   reporter: [["html", {outputFolder: "test-results/html-report"}], ["list"]],
   use: {
     baseURL: "http://localhost:4175",
