@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": [
+    "../../tsconfig.json",
+    "./.svelte-kit/tsconfig.json"
+  ],
+  "compilerOptions": {
+    "allowArbitraryExtensions": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules"],
+  "include": [
+    "**/*.d.ts",
+    "**/*.ts",
+    "**/*.svelte",
+    "scripts/**/*.ts"
+  ]
+}

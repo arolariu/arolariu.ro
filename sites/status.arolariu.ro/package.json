@@ -1,0 +1,43 @@
+{
+  "name": "@arolariu/status",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview --port 4175",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "npm run test:unit",
+    "test:unit": "svelte-kit sync && vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "svelte-kit sync && vitest run --coverage",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.svelte",
+    "probe": "tsx scripts/probe.ts",
+    "probe:all": "tsx scripts/probe.ts && tsx scripts/aggregate.ts && tsx scripts/detectIncidents.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "*",
+    "@sveltejs/kit": "*",
+    "@sveltejs/vite-plugin-svelte": "*",
+    "@tailwindcss/vite": "*",
+    "@testing-library/jest-dom": "*",
+    "@testing-library/svelte": "*",
+    "@types/node": "*",
+    "jsdom": "*",
+    "svelte": "*",
+    "svelte-adapter-azure-swa": "*",
+    "svelte-check": "*",
+    "tailwindcss": "*",
+    "tsx": "*",
+    "typescript": "*",
+    "vite": "*",
+    "vitest": "*"
+  }
+}
