@@ -5,8 +5,7 @@ export function computeUptime(buckets: readonly Bucket[]): number {
   let healthy = 0;
   let total = 0;
   for (const b of buckets) {
-    if (b.status === "Healthy") continue;
-    healthy += b.status === "Unhealthy" ? 0 : b.probes.healthy;
+    healthy += b.probes.healthy;
     total += b.probes.total;
   }
   if (total === 0) return 100;

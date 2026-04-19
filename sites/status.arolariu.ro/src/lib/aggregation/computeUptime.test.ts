@@ -2,7 +2,12 @@ import {describe, it, expect} from "vitest";
 import type {Bucket} from "../types/status";
 import {computeUptime, computeAvgLatency} from "./computeUptime";
 
-function mkBucket(status: "Healthy" | "Degraded" | "Unhealthy", p50 = 100, healthy = 1, total = 1): Bucket {
+function mkBucket(
+  status: "Healthy" | "Degraded" | "Unhealthy",
+  p50 = 100,
+  healthy = status === "Healthy" ? 1 : 0,
+  total = 1,
+): Bucket {
   return {
     t: "2026-04-19T14:00:00Z", status,
     probes: {healthy, total},
@@ -17,8 +22,9 @@ describe("computeUptime", () => {
   it("returns 0 when all unhealthy", () => {
     expect(computeUptime([mkBucket("Unhealthy"), mkBucket("Unhealthy")])).toBe(0);
   });
-  it("counts Degraded as partial (probes.healthy/total)", () => {
-    const buckets = [mkBucket("Healthy"), mkBucket("Degraded", 100, 1, 2)];
+  it("counts Degraded probes: total healthy / total probes across all buckets", () => {
+    // Healthy (1/1) + Degraded (0/1) = 1 of 2 healthy = 50%
+    const buckets = [mkBucket("Healthy"), mkBucket("Degraded")];
     expect(computeUptime(buckets)).toBe(50);
   });
   it("returns 100 when empty (no data = assume healthy)", () => {
