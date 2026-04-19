@@ -2,7 +2,21 @@
 
 :root {
   --bg: #0a0d12;
+  --surface: rgba(255, 255, 255, 0.015);
+  --surface-hover: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
   --text: #e6edf3;
+  --text-muted: #8b949e;
+  --status-up: #3fb950;
+  --status-up-bg: rgba(63, 185, 80, 0.12);
+  --status-up-border: rgba(63, 185, 80, 0.3);
+  --status-deg: #d29922;
+  --status-deg-bg: rgba(210, 153, 34, 0.12);
+  --status-deg-border: rgba(210, 153, 34, 0.3);
+  --status-down: #f85149;
+  --status-down-bg: rgba(248, 81, 73, 0.12);
+  --status-missing: rgba(255, 255, 255, 0.05);
 }
 
 html, body {
@@ -11,4 +25,21 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
