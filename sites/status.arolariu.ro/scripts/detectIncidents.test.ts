@@ -129,4 +129,34 @@ describe("runDetectIncidents (CLI-style)", () => {
     expect(file.incidents).toHaveLength(1);
     expect(file.incidents[0].status).toBe("open");
   });
+
+  it("re-running against the same raw probes does not inflate probeCount (regression: reviewer C1)", async () => {
+    const {writeFileSync, mkdirSync} = await import("node:fs");
+    mkdirSync(join(dataDir, "raw"), {recursive: true});
+    const probes = [
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Degraded"),
+      mkProbe("arolariu.ro", "2026-04-19T14:30:00Z", "Degraded"),
+    ];
+    writeFileSync(join(dataDir, "raw", "2026-04-19.jsonl"),
+      probes.map(p => JSON.stringify(p)).join("\n") + "\n");
+
+    await runDetectIncidents({dataDir, now: new Date("2026-04-19T15:00:00Z")});
+    const first = JSON.parse(readFileSync(join(dataDir, "incidents.json"), "utf8"));
+    expect(first.incidents[0].probeCount).toBe(2);
+
+    // Second run, same raw probes, no new data appended — probeCount must stay 2.
+    await runDetectIncidents({dataDir, now: new Date("2026-04-19T15:30:00Z")});
+    const second = JSON.parse(readFileSync(join(dataDir, "incidents.json"), "utf8"));
+    expect(second.incidents[0].probeCount).toBe(2);
+    expect(second.incidents[0].severity).toBe("Degraded");
+
+    // Appending an NEW failing probe should increment exactly once.
+    writeFileSync(join(dataDir, "raw", "2026-04-19.jsonl"),
+      [...probes, mkProbe("arolariu.ro", "2026-04-19T16:00:00Z", "Unhealthy")]
+        .map(p => JSON.stringify(p)).join("\n") + "\n");
+    await runDetectIncidents({dataDir, now: new Date("2026-04-19T16:30:00Z")});
+    const third = JSON.parse(readFileSync(join(dataDir, "incidents.json"), "utf8"));
+    expect(third.incidents[0].probeCount).toBe(3);
+    expect(third.incidents[0].severity).toBe("Unhealthy");
+  });
 });

@@ -175,9 +175,17 @@ export interface RunDetectIncidentsOptions {
 export async function runDetectIncidents(opts: RunDetectIncidentsOptions): Promise<void> {
   const now = opts.now ?? new Date();
   const previous = readPreviousIncidents(opts.dataDir);
-  const probes = readRawProbes(opts.dataDir);
 
-  const updated = updateIncidentState(previous, probes);
+  // Only feed probes newer than the last run through the state machine —
+  // otherwise every cron re-processes 14 days of raw probes and ratchets
+  // probeCount/severity on already-counted incidents (reviewer C1).
+  const cursorMs = Date.parse(previous.generatedAt);
+  const allProbes = readRawProbes(opts.dataDir);
+  const fresh = Number.isFinite(cursorMs)
+    ? allProbes.filter(p => Date.parse(p.timestamp) > cursorMs)
+    : allProbes;
+
+  const updated = updateIncidentState(previous, fresh);
   const pruned = pruneResolved(updated, now);
   const final: IncidentsFile = {...pruned, generatedAt: now.toISOString()};
 
