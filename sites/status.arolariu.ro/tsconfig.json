@@ -5,10 +5,7 @@
     "./.svelte-kit/tsconfig.json"
   ],
   "compilerOptions": {
-    "allowArbitraryExtensions": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "allowArbitraryExtensions": true
   },
   "exclude": ["node_modules"],
   "include": [
