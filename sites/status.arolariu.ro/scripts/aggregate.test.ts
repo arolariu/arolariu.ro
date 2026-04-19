@@ -102,3 +102,87 @@ describe("runAggregate (fine.json path)", () => {
     expect(fine.services.find(s => s.service === "arolariu.ro")!.buckets).toHaveLength(1);
   });
 });
+
+describe("mergeHourly", () => {
+  it("creates hourly buckets from today+yesterday probes", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "status-hourly-"));
+    mkdirSync(join(tempDir, "raw"), {recursive: true});
+    const probes = [
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", 100),
+      mkProbe("arolariu.ro", "2026-04-19T14:30:00Z", "Healthy", 200),
+      mkProbe("arolariu.ro", "2026-04-18T10:00:00Z", "Degraded", 300),
+    ];
+    writeFileSync(join(tempDir, "raw", "2026-04-19.jsonl"),
+      probes.filter(p => p.timestamp.startsWith("2026-04-19")).map(p => JSON.stringify(p)).join("\n") + "\n");
+    writeFileSync(join(tempDir, "raw", "2026-04-18.jsonl"),
+      probes.filter(p => p.timestamp.startsWith("2026-04-18")).map(p => JSON.stringify(p)).join("\n") + "\n");
+
+    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T15:00:00Z")});
+    const hourly = JSON.parse(readFileSync(join(tempDir, "hourly.json"), "utf8")) as AggregateFile;
+    const arolariu = hourly.services.find(s => s.service === "arolariu.ro")!;
+    expect(arolariu.buckets.find(b => b.t === "2026-04-19T14:00:00.000Z")).toBeDefined();
+    expect(arolariu.buckets.find(b => b.t === "2026-04-19T14:00:00.000Z")!.probes.total).toBe(2);
+    rmSync(tempDir, {recursive: true, force: true});
+  });
+
+  it("preserves previous hourly buckets older than yesterday", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "status-hourly-"));
+    mkdirSync(join(tempDir, "raw"), {recursive: true});
+    const prev: AggregateFile = {
+      generatedAt: "2026-04-18T00:00:00.000Z",
+      bucketSize: "1h", windowDays: 90,
+      services: [{
+        service: "arolariu.ro",
+        buckets: [{
+          t: "2026-04-10T10:00:00.000Z", status: "Healthy",
+          probes: {healthy: 2, total: 2}, latency: {p50: 100, p99: 100},
+        }],
+      }],
+    };
+    writeFileSync(join(tempDir, "hourly.json"), JSON.stringify(prev));
+    writeFileSync(join(tempDir, "raw", "2026-04-19.jsonl"),
+      JSON.stringify(mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy")) + "\n");
+
+    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T15:00:00Z")});
+    const hourly = JSON.parse(readFileSync(join(tempDir, "hourly.json"), "utf8")) as AggregateFile;
+    const arolariu = hourly.services.find(s => s.service === "arolariu.ro")!;
+    expect(arolariu.buckets.find(b => b.t === "2026-04-10T10:00:00.000Z")).toBeDefined();
+    rmSync(tempDir, {recursive: true, force: true});
+  });
+
+  it("drops hourly buckets older than 90 days", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "status-hourly-"));
+    mkdirSync(join(tempDir, "raw"), {recursive: true});
+    const prev: AggregateFile = {
+      generatedAt: "2026-04-18T00:00:00.000Z",
+      bucketSize: "1h", windowDays: 90,
+      services: [{
+        service: "arolariu.ro",
+        buckets: [{
+          t: "2025-12-01T00:00:00.000Z", status: "Healthy",
+          probes: {healthy: 1, total: 1}, latency: {p50: 100, p99: 100},
+        }],
+      }],
+    };
+    writeFileSync(join(tempDir, "hourly.json"), JSON.stringify(prev));
+    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T00:00:00Z")});
+    const hourly = JSON.parse(readFileSync(join(tempDir, "hourly.json"), "utf8")) as AggregateFile;
+    const arolariu = hourly.services.find(s => s.service === "arolariu.ro");
+    expect(arolariu?.buckets.find(b => b.t === "2025-12-01T00:00:00.000Z")).toBeUndefined();
+    rmSync(tempDir, {recursive: true, force: true});
+  });
+});
+
+describe("mergeDaily", () => {
+  it("creates daily buckets from today+yesterday probes and writes daily.json", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "status-daily-"));
+    mkdirSync(join(tempDir, "raw"), {recursive: true});
+    writeFileSync(join(tempDir, "raw", "2026-04-19.jsonl"),
+      JSON.stringify(mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy")) + "\n");
+    await runAggregate({dataDir: tempDir, now: new Date("2026-04-19T15:00:00Z")});
+    const daily = JSON.parse(readFileSync(join(tempDir, "daily.json"), "utf8")) as AggregateFile;
+    expect(daily.bucketSize).toBe("1d");
+    expect(daily.windowDays).toBe(365);
+    rmSync(tempDir, {recursive: true, force: true});
+  });
+});

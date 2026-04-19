@@ -3,6 +3,7 @@ import {join} from "node:path";
 import {SERVICE_IDS, type AggregateFile, type Bucket, type BucketSize,
   type HealthStatus, type ProbeResult, type ServiceId, type ServiceSeries,
   type SubCheckSummary} from "../src/lib/types/status";
+import {isAggregateFile} from "../src/lib/types/guards";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -167,6 +168,89 @@ function readRawProbes(dataDir: string): ProbeResult[] {
   return probes;
 }
 
+function mergeAggregate(
+  probes: readonly ProbeResult[],
+  previous: AggregateFile | undefined,
+  now: Date,
+  size: BucketSize,
+  windowDays: 90 | 365,
+): AggregateFile {
+  const cutoffMs = now.getTime() - windowDays * MS_PER_DAY;
+  const today = bucketStart(now, "1d");
+  const yesterday = bucketStart(new Date(now.getTime() - MS_PER_DAY), "1d");
+
+  const freshProbes = probes.filter(p => {
+    const bd = bucketStart(new Date(p.timestamp), "1d");
+    return bd === today || bd === yesterday;
+  });
+  const freshMain = groupProbes(freshProbes, size);
+  const freshSub = groupSubChecks(freshProbes, size);
+
+  const merged: ServiceSeries[] = [];
+  for (const service of SERVICE_IDS) {
+    const prevSeries = previous?.services.find(s => s.service === service);
+    const keptPrevBuckets: Bucket[] = prevSeries?.buckets.filter(b => {
+      if (Date.parse(b.t) < cutoffMs) return false;
+      const day = bucketStart(new Date(b.t), "1d");
+      return day !== today && day !== yesterday;
+    }) ?? [];
+
+    const freshBuckets: Bucket[] = freshMain.has(service)
+      ? [...freshMain.get(service)!.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([t, acc]) => makeBucket(t, acc))
+      : [];
+
+    const combinedBuckets = [...keptPrevBuckets, ...freshBuckets].sort((a, b) => a.t.localeCompare(b.t));
+
+    const series: ServiceSeries = {service, buckets: combinedBuckets};
+
+    const freshSubForService = freshSub.get(service);
+    const prevSubSeries = prevSeries?.subSeries;
+    if ((freshSubForService && freshSubForService.size > 0) || (prevSubSeries && Object.keys(prevSubSeries).length > 0)) {
+      const subNames = new Set<string>();
+      if (prevSubSeries) for (const n of Object.keys(prevSubSeries)) subNames.add(n);
+      if (freshSubForService) for (const n of freshSubForService.keys()) subNames.add(n);
+
+      const subSeriesOut: Record<string, readonly Bucket[]> = {};
+      for (const subName of subNames) {
+        const keptPrev = (prevSubSeries?.[subName] ?? []).filter(b => {
+          if (Date.parse(b.t) < cutoffMs) return false;
+          const day = bucketStart(new Date(b.t), "1d");
+          return day !== today && day !== yesterday;
+        });
+        const freshSubBuckets = freshSubForService?.get(subName)
+          ? [...freshSubForService.get(subName)!.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([t, acc]) => makeBucket(t, acc))
+          : [];
+        subSeriesOut[subName] = [...keptPrev, ...freshSubBuckets].sort((a, b) => a.t.localeCompare(b.t));
+      }
+      (series as Record<string, unknown>)["subSeries"] = subSeriesOut;
+    }
+
+    if (combinedBuckets.length > 0 || series.subSeries) merged.push(series);
+  }
+
+  return {
+    generatedAt: now.toISOString(),
+    bucketSize: size,
+    windowDays,
+    services: merged,
+  };
+}
+
+function readPrevious(dataDir: string, name: string): AggregateFile | undefined {
+  const path = join(dataDir, name);
+  if (!existsSync(path)) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+    return isAggregateFile(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export interface RunAggregateOptions {
   readonly dataDir: string;
   readonly now?: Date;
@@ -177,8 +261,17 @@ export async function runAggregate(opts: RunAggregateOptions): Promise<void> {
   const probes = readRawProbes(opts.dataDir);
 
   mkdirSync(opts.dataDir, {recursive: true});
+
   const fine = rebuildFine(probes, now);
   writeFileSync(join(opts.dataDir, "fine.json"), JSON.stringify(fine), "utf8");
+
+  const prevHourly = readPrevious(opts.dataDir, "hourly.json");
+  const hourly = mergeAggregate(probes, prevHourly, now, "1h", 90);
+  writeFileSync(join(opts.dataDir, "hourly.json"), JSON.stringify(hourly), "utf8");
+
+  const prevDaily = readPrevious(opts.dataDir, "daily.json");
+  const daily = mergeAggregate(probes, prevDaily, now, "1d", 365);
+  writeFileSync(join(opts.dataDir, "daily.json"), JSON.stringify(daily), "utf8");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
