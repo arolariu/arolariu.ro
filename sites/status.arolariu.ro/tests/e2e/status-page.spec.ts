@@ -31,20 +31,23 @@ test.describe("status page", () => {
   test("shows skeleton then data", async ({page}) => {
     await page.goto("/?mocks=off");
     await expect(page.getByText("arolariu.ro", {exact: true}).first()).toBeVisible();
-    await expect(page.getByText("api.arolariu.ro", {exact: true})).toBeVisible();
+    // Service name appears both in the service table row and (when an
+    // incident exists for it) as a filter chip in the IncidentList.
+    // Use .first() to match the table row unambiguously.
+    await expect(page.getByText("api.arolariu.ro", {exact: true}).first()).toBeVisible();
   });
 
   test("filter pill click loads different granularity", async ({page}) => {
     await page.goto("/?mocks=off");
-    await expect(page.getByText("api.arolariu.ro")).toBeVisible();
-    await page.getByRole("tab", {name: "90d"}).click();
+    await expect(page.getByText("api.arolariu.ro").first()).toBeVisible();
+    await page.getByRole("radio", {name: "90d"}).click();
     await expect(page.getByRole("button").first()).toBeVisible();
   });
 
   test("hover on degraded segment shows tooltip", async ({page}) => {
     await page.goto("/?mocks=off");
     // Switch to 14d window to ensure all degraded buckets are in view
-    await page.getByRole("tab", {name: "14d"}).click();
+    await page.getByRole("radio", {name: "14d"}).click();
     await expect(page.getByText("api.arolariu.ro", {exact: true}).first()).toBeVisible();
     // Wait for segments to render, then locate degraded ones
     await expect(page.locator(".seg-degraded").first()).toBeVisible({timeout: 10000});
@@ -56,9 +59,12 @@ test.describe("status page", () => {
 
   test("expand api.arolariu.ro reveals mssql/cosmosdb sub-rows", async ({page}) => {
     await page.goto("/?mocks=off");
-    await expect(page.getByText("api.arolariu.ro")).toBeVisible();
-    const toggle = page.getByRole("button", {name: /Expand sub-checks/});
-    await toggle.click();
+    await expect(page.getByText("api.arolariu.ro").first()).toBeVisible();
+    // The service row itself is role="button" with the service name in its
+    // accessible name. Click that row (restrict to the first such match to
+    // avoid collision with any other role="button" on the page).
+    const row = page.getByRole("button", {name: /api\.arolariu\.ro/}).first();
+    await row.click();
     await expect(page.getByText("↳ mssql")).toBeVisible();
     await expect(page.getByText("↳ cosmosdb")).toBeVisible();
   });
@@ -93,5 +99,64 @@ test.describe("status page", () => {
     // click via .click({trial: true}) asserts the button is interactive,
     // which would fail if disabled. Instead, check the disabled attribute.
     await expect(btn).toBeDisabled();
+  });
+
+  test("shows summary stats with correct values", async ({page}) => {
+    await page.goto("/?mocks=off");
+    const stats = page.getByTestId("summary-stats");
+    await expect(stats).toBeVisible();
+    // All 4 cards present as <dl> elements with non-empty visible text.
+    const cards = stats.locator("dl.card");
+    await expect(cards).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await expect(cards.nth(i)).not.toBeEmpty();
+    }
+    // Incidents card value must be a non-negative integer.
+    const incidentsValue = cards.nth(2).locator(".value");
+    await expect(incidentsValue).toBeVisible();
+    const text = (await incidentsValue.textContent())?.trim() ?? "";
+    expect(text).toMatch(/^\d+$/);
+  });
+
+  test("clicking a service row expands the latency chart", async ({page}) => {
+    await page.goto("/?mocks=off");
+    await expect(page.getByText("arolariu.ro").first()).toBeVisible();
+    // Pick the first collapsed service row and expand it.
+    const collapsedRow = page.locator('[role="button"][aria-expanded="false"]').first();
+    await expect(collapsedRow).toBeVisible();
+    await collapsedRow.click();
+    // The detail panel uses role="region"; it should contain a latency chart
+    // <svg> with at least one <polyline>. Polylines with axis-aligned points
+    // have zero bounding-box height in Chromium's visibility heuristic, so use
+    // toBeAttached rather than toBeVisible on the polyline itself.
+    const detailPanel = page.locator('[role="region"]').filter({hasText: /Latency trend/i}).first();
+    await expect(detailPanel).toBeVisible();
+    await expect(detailPanel.locator("svg polyline").first()).toBeAttached();
+    // Press Escape to collapse — this also verifies the keyboard shortcut wiring.
+    await page.keyboard.press("Escape");
+    await expect(detailPanel).toBeHidden();
+  });
+
+  test("incident filter chip narrows the list", async ({page}) => {
+    await page.goto("/?mocks=off");
+    // The fixture incident is 2 days old, so widen the window to 7d to make
+    // sure at least one card shows up before we measure narrowing.
+    await page.getByRole("radio", {name: "7d"}).click();
+    // Make sure incidents are loaded before we measure the baseline count.
+    const chipGroup = page.getByRole("radiogroup", {name: /Filter incidents by service/});
+    await expect(chipGroup).toBeVisible();
+    const cards = page.locator(".incidents .item");
+    await expect(cards.first()).toBeVisible();
+    const baseline = await cards.count();
+    expect(baseline).toBeGreaterThan(0);
+    // Click the first non-"All" chip (index 1) and verify narrowing + aria-checked.
+    const serviceChip = chipGroup.getByRole("radio").nth(1);
+    await serviceChip.click();
+    await expect(serviceChip).toHaveAttribute("aria-checked", "true");
+    const filteredCount = await cards.count();
+    expect(filteredCount).toBeLessThanOrEqual(baseline);
+    // Click "All" to reset.
+    await chipGroup.getByRole("radio", {name: "All"}).click();
+    await expect(cards).toHaveCount(baseline);
   });
 });

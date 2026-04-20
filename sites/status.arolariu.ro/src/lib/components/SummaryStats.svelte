@@ -71,7 +71,7 @@
   );
 </script>
 
-<section class="summary-stats" aria-label="Summary statistics">
+<section class="summary-stats" data-testid="summary-stats" aria-label="Summary statistics">
   <dl class="card">
     <dt>Overall uptime</dt>
     <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(1)}%</dd>
