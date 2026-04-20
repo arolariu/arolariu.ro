@@ -37,9 +37,12 @@ const SERVICES: readonly ServiceConfig[] = [
 async function singleFetch(cfg: ServiceConfig, nowIso: string): Promise<ProbeResult> {
   const start = performance.now();
   try {
+    // Follow redirects by default: cv.arolariu.ro (Azure Static Web Apps)
+    // issues canonicalization redirects (trailing-slash, hostname) that
+    // `redirect: "manual"` surfaced as opaqueredirect responses with
+    // `status === 0`, causing false "transport error" Unhealthy reports.
     const response = await fetch(cfg.url, {
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-      redirect: "manual",
       headers: {"user-agent": "status.arolariu.ro-probe/1.0"},
     });
     const latencyMs = Math.round(performance.now() - start);
