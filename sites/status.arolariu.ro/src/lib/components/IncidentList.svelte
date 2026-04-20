@@ -2,6 +2,7 @@
   import {onMount} from "svelte";
   import type {Incident, IncidentsFile, FilterWindow} from "../types/status";
   import {WINDOW_TO_DAYS} from "../types/status";
+  import {formatDuration} from "../aggregation/formatDuration";
 
   interface Props {
     incidents: IncidentsFile | null;
@@ -35,15 +36,6 @@
     if (hr < 24) return RTF.format(sign * hr, "hour");
     const day = Math.round(abs / 86_400_000);
     return RTF.format(sign * day, "day");
-  }
-
-  function formatDuration(ms: number | undefined): string {
-    if (!ms || !Number.isFinite(ms)) return "—";
-    const min = Math.round(ms / 60_000);
-    if (min < 60) return `${min} min`;
-    const hr = Math.floor(min / 60);
-    const rem = min % 60;
-    return rem === 0 ? `${hr} h` : `${hr} h ${rem} min`;
   }
 
   // All unique services appearing in the current incident set (regardless of window).
