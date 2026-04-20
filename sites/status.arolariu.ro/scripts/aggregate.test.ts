@@ -90,6 +90,37 @@ describe("rebuildFine", () => {
     expect(agg.services[0].buckets).toHaveLength(1);
     expect(agg.services[0].buckets[0].t).toBe("2026-04-18T14:00:00.000Z");
   });
+
+  it("emits p75 and p95 alongside p50/p99 on every bucket", () => {
+    const probes: ProbeResult[] = Array.from({length: 10}, (_, i) => (
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", (i + 1) * 10)
+    ));
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const bucket = agg.services[0].buckets[0];
+    expect(bucket.latency.p50).toBeDefined();
+    expect(bucket.latency.p75).toBeDefined();
+    expect(bucket.latency.p95).toBeDefined();
+    expect(bucket.latency.p99).toBeDefined();
+  });
+
+  it("computes expected 4 percentiles for a known input sequence", () => {
+    // latencies = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    // linear interpolation between ranks (note: floating-point arithmetic
+    // means 0.95*9 evaluates to 8.5499… not 8.55, so p95 rounds *down* to 95):
+    //   p50 → rank 4.5  → (50+60)/2 = 55
+    //   p75 → rank 6.75 → 70 + 0.75 * 10 = 77.5 → rounded to 78
+    //   p95 → rank 8.55 → 95.4999… → rounded to 95
+    //   p99 → rank 8.91 → 99.0999… → rounded to 99
+    const probes: ProbeResult[] = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v =>
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", v),
+    );
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const {p50, p75, p95, p99} = agg.services[0].buckets[0].latency;
+    expect(p50).toBe(55);
+    expect(p75).toBe(78);
+    expect(p95).toBe(95);
+    expect(p99).toBe(99);
+  });
 });
 
 describe("runAggregate (fine.json path)", () => {

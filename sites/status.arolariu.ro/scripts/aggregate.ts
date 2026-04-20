@@ -59,7 +59,12 @@ function makeBucket(t: string, acc: BucketAccumulator): Bucket {
     t,
     status: worstOverall,
     probes: {healthy: acc.healthySamples, total: acc.sampleCount},
-    latency: {p50: percentile(acc.latencies, 50), p99: percentile(acc.latencies, 99)},
+    latency: {
+      p50: percentile(acc.latencies, 50),
+      p75: percentile(acc.latencies, 75),
+      p95: percentile(acc.latencies, 95),
+      p99: percentile(acc.latencies, 99),
+    },
   };
   const result: Record<string, unknown> = {...bucket};
   if (httpMode !== undefined) result["httpStatus"] = httpMode;
