@@ -57,14 +57,7 @@ export function showWeekdayChart(windowFilter: FilterWindow): boolean {
   return WINDOW_CONFIGS[windowFilter].showWeekday;
 }
 
-/**
- * Short-circuit keyboard shortcuts when focus is in an editable element,
- * or when any modifier is held (so we don't steal Ctrl+R / Cmd+L / etc).
- */
-export function shouldIgnoreKeydown(event: KeyboardEvent): boolean {
-  if (event.ctrlKey || event.metaKey || event.altKey) return true;
-  const target = event.target;
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.matches("input, textarea, select, [contenteditable=\"true\"]")) return true;
-  return false;
-}
+// `shouldIgnoreKeydown` previously lived here. It moved to
+// `keyboardShortcuts.ts` — its real use site — and the re-export below
+// keeps existing call sites (tests, for now) compiling while we migrate.
+export {shouldIgnoreKeydown} from "./keyboardShortcuts";

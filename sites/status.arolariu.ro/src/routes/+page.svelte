@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile} from "$lib/types/status";
-  import {FILTER_WINDOWS, WINDOW_CONFIGS} from "$lib/types/status";
+  import {WINDOW_CONFIGS} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
   import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
@@ -9,9 +9,9 @@
   import {
     bucketDurationMsFor,
     orderedServices,
-    shouldIgnoreKeydown,
     showWeekdayChart,
   } from "$lib/routes/pageLogic";
+  import {createKeyboardHandler} from "$lib/routes/keyboardShortcuts";
   import FilterPills from "$lib/components/FilterPills.svelte";
   import StatusBanner from "$lib/components/StatusBanner.svelte";
   import ServiceRow from "$lib/components/ServiceRow.svelte";
@@ -74,62 +74,14 @@
 
   $effect(() => { void loadAggregate(granularity); });
 
-  function handleGlobalKeydown(event: KeyboardEvent) {
-    if (shouldIgnoreKeydown(event)) return;
-    // Defer to child handlers (e.g. FilterPills arrow-key navigation) that
-    // already consumed the event. Without this, ArrowLeft/ArrowRight on a
-    // focused filter pill would advance the window twice.
-    if (event.defaultPrevented) return;
-
-    if (event.key === "?") {
-      event.preventDefault();
-      helpOpen = !helpOpen;
-      return;
-    }
-
-    const currentIdx = FILTER_WINDOWS.indexOf(activeWindow);
-    const total = FILTER_WINDOWS.length;
-
-    switch (event.key) {
-      case "ArrowLeft": {
-        const next = FILTER_WINDOWS[(currentIdx - 1 + total) % total];
-        if (next) activeWindow = next;
-        event.preventDefault();
-        return;
-      }
-      case "ArrowRight": {
-        const next = FILTER_WINDOWS[(currentIdx + 1) % total];
-        if (next) activeWindow = next;
-        event.preventDefault();
-        return;
-      }
-      case "Escape": {
-        if (expandedService !== null) {
-          expandedService = null;
-          event.preventDefault();
-        }
-        return;
-      }
-      case "r":
-      case "R": {
-        void handleRefresh();
-        event.preventDefault();
-        return;
-      }
-      default:
-        break;
-    }
-
-    // Digits 1..9 — jump directly to FILTER_WINDOWS[digit - 1].
-    if (event.key >= "1" && event.key <= "9") {
-      const idx = Number(event.key) - 1;
-      const next = FILTER_WINDOWS[idx];
-      if (next) {
-        activeWindow = next;
-        event.preventDefault();
-      }
-    }
-  }
+  const handleGlobalKeydown = createKeyboardHandler({
+    getActiveWindow: () => activeWindow,
+    setActiveWindow: (w) => { activeWindow = w; },
+    getExpandedService: () => expandedService,
+    setExpandedService: (s) => { expandedService = s; },
+    toggleHelp: () => { helpOpen = !helpOpen; },
+    refresh: () => { void handleRefresh(); },
+  });
 
   onMount(() => {
     void loadIncidents();
