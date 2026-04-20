@@ -85,7 +85,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: var(--surface);
+    background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -93,7 +93,11 @@
     min-width: 320px;
     max-width: 90vw;
     z-index: 101;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  :global(:root[data-theme="light"]) .dialog {
+    background: #ffffff;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
   }
   .dialog:focus-visible {
     outline: none;
