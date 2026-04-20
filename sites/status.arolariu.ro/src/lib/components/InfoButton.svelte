@@ -6,6 +6,7 @@
   let {text}: Props = $props();
   let open = $state(false);
   let buttonEl: HTMLButtonElement | undefined = $state(undefined);
+  let popoverEl: HTMLSpanElement | undefined = $state(undefined);
   const id = `info-${Math.random().toString(36).slice(2, 10)}`;
 
   function toggle() {
@@ -13,12 +14,21 @@
   }
 
   function handleDocClick(e: MouseEvent) {
-    if (!buttonEl) return;
-    if (e.target instanceof Node && !buttonEl.contains(e.target)) open = false;
+    if (!(e.target instanceof Node)) return;
+    // Close only when the click is outside BOTH the button and the popover.
+    // Previously the popover's sibling position meant any in-popover click
+    // (e.g. selecting the text) dismissed it instantly.
+    const inButton = buttonEl?.contains(e.target) ?? false;
+    const inPopover = popoverEl?.contains(e.target) ?? false;
+    if (!inButton && !inPopover) open = false;
   }
 
   $effect(() => {
-    if (open) document.addEventListener("click", handleDocClick, {once: true});
+    if (!open) return;
+    // Persistent listener while open — cannot use {once:true} because an
+    // in-popover click must NOT close and must NOT consume the listener.
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
   });
 </script>
 
@@ -38,7 +48,7 @@
     <span aria-hidden="true">i</span>
   </button>
   {#if open}
-    <span {id} role="tooltip" class="popover">{text}</span>
+    <span bind:this={popoverEl} {id} role="tooltip" class="popover">{text}</span>
   {/if}
 </span>
 
