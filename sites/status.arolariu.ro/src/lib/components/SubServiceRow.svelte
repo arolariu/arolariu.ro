@@ -26,7 +26,7 @@
     <span class="dot dot-{latest.toLowerCase()}"></span>
     <span class="name">↳ {name}</span>
   </div>
-  <UptimeBar {buckets} variant="sub" onSegmentHover={onHover} />
+  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency">{avgLatency} ms</div>
 </div>
@@ -34,26 +34,51 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: 1.4fr 2.2fr 80px 100px;
-    gap: 14px;
+    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-areas: "name bar uptime latency";
+    gap: var(--sp-sm);
     align-items: center;
-    padding: 10px 14px 10px 40px;
+    padding: var(--sp-xs) var(--sp-md) var(--sp-xs) 40px;
     border-bottom: 1px solid var(--border);
-    font-size: 12.5px;
+    font-size: var(--fs-sm);
     background: var(--surface);
     opacity: 0.9;
+    container-type: inline-size;
+    container-name: subServiceRow;
   }
   .row > * { min-width: 0; }
-  .name-col { display: flex; align-items: center; gap: 8px; }
+  .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bar-cell { grid-area: bar; min-width: 0; }
+  .uptime { grid-area: uptime; text-align: right; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+  .latency { grid-area: latency; text-align: right; font-size: var(--fs-xs); opacity: 0.85; font-variant-numeric: tabular-nums; }
+
   .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     display: inline-block;
+    flex-shrink: 0;
   }
   .dot-healthy { background: var(--status-up); }
   .dot-degraded { background: var(--status-deg); }
   .dot-unhealthy { background: var(--status-down); }
-  .uptime { text-align: right; font-size: 12px; }
-  .latency { text-align: right; font-size: 12px; opacity: 0.85; }
+  .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @container subServiceRow (max-width: 640px) {
+    .row {
+      grid-template-columns: 1fr auto auto;
+      grid-template-areas:
+        "name uptime latency"
+        "bar  bar    bar";
+      gap: var(--sp-xs) var(--sp-sm);
+      padding-block: var(--sp-sm);
+      padding-left: var(--sp-md);
+    }
+    .uptime { font-weight: 600; justify-self: end; }
+    .latency { justify-self: end; }
+  }
 </style>

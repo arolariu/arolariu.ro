@@ -36,10 +36,10 @@
         aria-expanded={expanded}
         aria-label={expanded ? "Collapse sub-checks" : "Expand sub-checks"}
         onclick={onToggle}
-      >{expanded ? "▾" : "▸"}</button>
+      >▸</button>
     {/if}
   </div>
-  <UptimeBar buckets={series.buckets} onSegmentHover={onHover} />
+  <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency">{avgLatency} ms</div>
 </div>
@@ -53,35 +53,58 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: 1.4fr 2.2fr 80px 100px;
-    gap: 14px;
+    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-areas: "name bar uptime latency";
+    gap: var(--sp-sm);
     align-items: center;
-    padding: 14px 16px;
+    padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    font-size: var(--fs-body);
+    container-type: inline-size;
+    container-name: serviceRow;
   }
-  /* Allow grid cells to shrink below content size — otherwise the flex
-     inside UptimeBar would expand its cell and push the row wider than
-     the parent table at larger filter windows. */
   .row > * { min-width: 0; }
-  .name-col { display: flex; align-items: center; gap: 8px; }
+  .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bar-cell { grid-area: bar; min-width: 0; }
+  .uptime { grid-area: uptime; text-align: right; font-variant-numeric: tabular-nums; }
+  .latency { grid-area: latency; text-align: right; font-variant-numeric: tabular-nums; opacity: 0.85; }
+
   .dot {
     width: 8px; height: 8px;
     border-radius: 50%;
     display: inline-block;
+    flex-shrink: 0;
   }
   .dot-healthy { background: var(--status-up); box-shadow: 0 0 8px rgba(63,185,80,0.5); }
   .dot-degraded { background: var(--status-deg); box-shadow: 0 0 8px rgba(210,153,34,0.5); }
-  .dot-unhealthy { background: var(--status-down); }
-  .name { font-weight: 500; }
+  .dot-unhealthy { background: var(--status-down); box-shadow: 0 0 8px rgba(248,81,73,0.5); }
+  .name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .toggle {
     background: transparent;
     border: 0;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     padding: 2px 4px;
+    transition: transform .15s;
   }
-  .uptime { text-align: right; }
-  .latency { text-align: right; opacity: 0.85; }
+  .toggle[aria-expanded="true"] { transform: rotate(90deg); }
+
+  @container serviceRow (max-width: 640px) {
+    .row {
+      grid-template-columns: 1fr auto auto;
+      grid-template-areas:
+        "name uptime latency"
+        "bar  bar    bar";
+      gap: var(--sp-xs) var(--sp-sm);
+      padding-block: var(--sp-md);
+    }
+    .uptime { font-weight: 600; justify-self: end; }
+    .latency { justify-self: end; }
+  }
 </style>

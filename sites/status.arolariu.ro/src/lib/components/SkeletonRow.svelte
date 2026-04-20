@@ -9,10 +9,12 @@
 
 <div class="skeleton-row" class:indent data-testid="skeleton-row">
   <div class="shimmer name"></div>
-  <div class="bar">
-    {#each segments as i (i)}
-      <div class="shimmer seg"></div>
-    {/each}
+  <div class="bar-cell">
+    <div class="bar">
+      {#each segments as i (i)}
+        <div class="shimmer seg"></div>
+      {/each}
+    </div>
   </div>
   <div class="shimmer uptime"></div>
   <div class="shimmer latency"></div>
@@ -21,13 +23,20 @@
 <style>
   .skeleton-row {
     display: grid;
-    grid-template-columns: 1.4fr 2.2fr 80px 100px;
-    gap: 14px;
+    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-areas: "name bar uptime latency";
+    gap: var(--sp-sm);
     align-items: center;
-    padding: 14px 16px;
+    padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
+    container-type: inline-size;
+    container-name: skeletonRow;
   }
   .skeleton-row > * { min-width: 0; }
+  .skeleton-row .name { grid-area: name; }
+  .skeleton-row .bar-cell { grid-area: bar; min-width: 0; }
+  .skeleton-row .uptime { grid-area: uptime; }
+  .skeleton-row .latency { grid-area: latency; }
   .skeleton-row.indent { padding-left: 40px; }
   .shimmer {
     background: linear-gradient(
@@ -43,6 +52,17 @@
   .name   { height: 14px; width: 60%; }
   .uptime { height: 14px; width: 100%; }
   .latency{ height: 14px; width: 100%; }
-  .bar { display: flex; gap: 1px; height: 24px; min-width: 0; }
+  .bar { display: flex; gap: 1px; height: 24px; min-width: 0; width: 100%; }
   .seg { flex: 1 1 0; min-width: 0; height: 100%; }
+
+  @container skeletonRow (max-width: 640px) {
+    .skeleton-row {
+      grid-template-columns: 1fr auto auto;
+      grid-template-areas:
+        "name uptime latency"
+        "bar  bar    bar";
+      gap: var(--sp-xs) var(--sp-sm);
+      padding-block: var(--sp-md);
+    }
+  }
 </style>
