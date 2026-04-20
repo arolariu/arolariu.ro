@@ -42,10 +42,6 @@
     return new Date(iso).toISOString().slice(0, 16).replace("T", " · ") + " UTC";
   }
 
-  function formatRelativeAge(iso: string): string {
-    return formatRelativeTime(iso);
-  }
-
   // Latency visualization scale: clamp at max(500, p99)
   const scale = $derived(bucket ? Math.max(500, bucket.latency.p99) : 500);
   const p50Pct = $derived(bucket ? Math.min(100, (bucket.latency.p50 / scale) * 100) : 0);
@@ -69,7 +65,7 @@
       <span class="badge badge-{bucket.status.toLowerCase()}">{bucket.status}</span>
     </header>
 
-    <div class="rel-age">{formatRelativeAge(bucket.t)}</div>
+    <div class="rel-age">{formatRelativeTime(bucket.t)}</div>
 
     <dl class="tip-grid">
       <dt>HTTP</dt>

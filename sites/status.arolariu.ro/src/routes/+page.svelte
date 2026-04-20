@@ -47,6 +47,8 @@
 
   const bucketDurationMs = $derived(bucketDurationMsFor(sliced?.bucketSize));
 
+  const ordered = $derived.by(() => (sliced ? orderedServices(sliced) : null));
+
   const overallStatus = $derived.by(() =>
     sliced ? deriveOverallStatus(sliced.services) : "loading" as const
   );
@@ -175,7 +177,7 @@
     {:else}
       {#key activeWindow}
         <div class="status-rows-slot">
-          {#each orderedServices(sliced) as series (series.service)}
+          {#each ordered ?? [] as series (series.service)}
             <ServiceRow
               {series}
               expanded={expandedService === series.service}
@@ -191,8 +193,8 @@
     {/if}
   </section>
 
-  {#if sliced?.services.length && showWeekday}
-    <WeekdayUptimeChart services={orderedServices(sliced)} />
+  {#if sliced?.services.length && showWeekday && ordered}
+    <WeekdayUptimeChart services={ordered} />
   {/if}
 
   <IncidentList {incidents} windowFilter={activeWindow}/>

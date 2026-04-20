@@ -300,12 +300,11 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
     now,
   );
 
-  const series: ServiceSeries = {service: story.service, buckets: mainBuckets};
-
+  let subSeriesObj: Record<string, readonly Bucket[]> | null = null;
   if (story.subChecks) {
-    const subSeries: Record<string, readonly Bucket[]> = {};
+    subSeriesObj = {};
     for (const [name, sub] of Object.entries(story.subChecks)) {
-      subSeries[name] = generateBucketsFor(
+      subSeriesObj[name] = generateBucketsFor(
         sub.baselineP50,
         sub.blips,
         sub.cyclicHiccup,
@@ -314,8 +313,13 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
         now,
       );
     }
-    (series as Record<string, unknown>)["subSeries"] = subSeries;
   }
+
+  const series: ServiceSeries = {
+    service: story.service,
+    buckets: mainBuckets,
+    ...(subSeriesObj ? {subSeries: subSeriesObj} : {}),
+  };
 
   return series;
 }
