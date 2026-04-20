@@ -93,6 +93,31 @@ describe("updateIncidentState (state machine)", () => {
     expect(open[0].subCheck).toBe("mssql");
   });
 
+  it("reason is refreshed when severity escalates from Degraded to Unhealthy", () => {
+    const state = updateIncidentState({incidents: []}, [
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Degraded", "slow response"),
+      mkProbe("arolariu.ro", "2026-04-19T14:30:00Z", "Degraded", "still slow"),
+      mkProbe("arolariu.ro", "2026-04-19T15:00:00Z", "Unhealthy", "connection refused"),
+    ]);
+    const open = state.incidents.filter(i => i.status === "open");
+    expect(open).toHaveLength(1);
+    expect(open[0].severity).toBe("Unhealthy");
+    // Reason should reflect the escalation, not the initial Degraded signature.
+    expect(open[0].reason).toBe("connection refused");
+  });
+
+  it("reason stays put when severity does not change", () => {
+    const state = updateIncidentState({incidents: []}, [
+      mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Degraded", "initial reason"),
+      mkProbe("arolariu.ro", "2026-04-19T14:30:00Z", "Degraded", "later reason"),
+      mkProbe("arolariu.ro", "2026-04-19T15:00:00Z", "Degraded", "yet another reason"),
+    ]);
+    const open = state.incidents.filter(i => i.status === "open");
+    expect(open).toHaveLength(1);
+    // Severity never changed, so reason stays at the incident's initial signature.
+    expect(open[0].reason).toBe("initial reason");
+  });
+
   it("same service failing after resolve creates a new incident with new id", () => {
     const first = updateIncidentState({incidents: []}, [
       mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Degraded", "x"),

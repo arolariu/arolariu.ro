@@ -103,10 +103,17 @@ export function updateIncidentState(
       const newStreak = state.streak + 1;
       if (openIdx !== undefined) {
         const open = incidents[openIdx];
+        const nextSeverity = worstSeverity(open.severity, toSeverity(sig.status));
+        // If severity escalated (e.g. Degraded → Unhealthy), refresh `reason`
+        // to reflect the new signature. A stale "slow response" reason on an
+        // incident that has since escalated to a full outage is misleading in
+        // post-mortems.
+        const escalated = nextSeverity !== open.severity;
         incidents[openIdx] = {
           ...open,
           probeCount: open.probeCount + 1,
-          severity: worstSeverity(open.severity, toSeverity(sig.status)),
+          severity: nextSeverity,
+          ...(escalated ? {reason: sig.reason} : {}),
         };
         tracks.set(sig.key, {streak: newStreak});
       } else if (newStreak === 1) {
