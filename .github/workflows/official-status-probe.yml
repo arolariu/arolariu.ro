@@ -24,6 +24,14 @@ jobs:
     name: 📡 Probe services and publish status data
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Setting git identity via env vars once at the job level — every git
+    # subcommand in the job inherits these, so we avoid repeating
+    # `git config user.name/email` across steps. Runners do not auto-assign.
+    env:
+      GIT_AUTHOR_NAME: "github-actions[bot]"
+      GIT_AUTHOR_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+      GIT_COMMITTER_NAME: "github-actions[bot]"
+      GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
     steps:
       - name: 🛫 Checkout main (site code + scripts)
         uses: actions/checkout@v6
@@ -51,8 +59,6 @@ jobs:
             git checkout --orphan status-data
             git rm -rf . 2>/dev/null || true
             mkdir -p data
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git commit --allow-empty -m "init status-data branch"
             cd -
           fi
@@ -66,8 +72,6 @@ jobs:
         working-directory: ../data-wt
         run: |
           set -e
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/
           if git diff --cached --quiet; then
             echo "no data changes — skipping commit"
