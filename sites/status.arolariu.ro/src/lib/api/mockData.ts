@@ -46,7 +46,14 @@ const CONFIGS: Record<Granularity, GranularityConfig> = {
   daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: MS_PER_DAY,      bucketCount: 365,     cronsPerBucket: 48},
 };
 
-const SAMPLES_PER_CRON = 3;
+/**
+ * Samples per cron run. Must match `DEFAULT_SAMPLE_DELAYS_MS.length` in
+ * `scripts/probe.ts` — the real probe takes 10 measurements over 180s per
+ * cron, and mock bucket `probes.total` values need to reflect the same
+ * arithmetic (cronsPerBucket × samples) so "N / N probes" tooltips
+ * read the same in local-mock dev as in production.
+ */
+const SAMPLES_PER_CRON = 10;
 
 /**
  * A single incident-worthy event on a service (or sub-check). Anchored by
