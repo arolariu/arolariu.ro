@@ -8,6 +8,11 @@ import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile,
  * streak-counting, open/resolve, and severity-escalation logic is here.
  */
 
+/**
+ * Opaque identifier for a "track" — the logical failure stream that the
+ * state machine follows independently of others. There is one track per
+ * main service and one per (service, sub-check) pair.
+ */
 export type TrackKey = string;
 
 /** Stable key for the state-machine tracks — one per (service, subCheck?). */
@@ -38,16 +43,29 @@ export function buildIncidentId(startedAt: string, service: ServiceId, subCheck?
  * present/absent.
  */
 export interface TrackSignal {
+  /** Track identifier returned by {@link trackKey}; groups signals into per-track streams. */
   readonly key: TrackKey;
+  /** Service this signal belongs to (persisted on the resulting incident). */
   readonly service: ServiceId;
+  /** Sub-check name when this is a sub-check-level signal; absent for main-service signals. */
   readonly subCheck?: string;
+  /** ISO timestamp of the originating probe. */
   readonly timestamp: string;
+  /** Health outcome for this tick. */
   readonly status: HealthStatus;
+  /** Human-readable explanation surfaced on the incident when it opens (or when severity escalates). */
   readonly reason: string;
 }
 
+/**
+ * Internal per-track bookkeeping. Tracks the consecutive-failure streak and
+ * remembers the first failure signal so we can backdate `startedAt` to it
+ * once we hit the 2-failure open threshold.
+ */
 interface TrackState {
+  /** First failure in the current streak; discarded as soon as an incident opens or the streak resets. */
   previousFailure?: TrackSignal;
+  /** Number of consecutive non-Healthy signals observed on this track. */
   streak: number;
 }
 
@@ -56,6 +74,19 @@ interface TrackState {
  * previous incident log, opening new incidents after 2 consecutive
  * failures, resolving them on the first healthy signal, and escalating
  * severity when worse statuses arrive mid-incident. Pure function.
+ *
+ * Invariants:
+ *  - Signals must arrive in chronological order per track (caller sorts).
+ *  - An incident opens only after two failures in a row; singleton
+ *    failures never produce an open incident on their own.
+ *  - Already-open incidents from `prev` are resumed, not duplicated — their
+ *    `probeCount` becomes the initial streak count.
+ *  - Severity is monotonic mid-incident: it can escalate Degraded→Unhealthy
+ *    but never relax back down until the incident resolves.
+ *
+ * @param prev            - Prior incidents to extend; `incidents` array is cloned, not mutated.
+ * @param signalsInOrder  - Time-sorted signals to apply.
+ * @returns The updated `IncidentsFile` with a fresh `generatedAt`.
  */
 export function applyTrackSignals(
   prev: IncidentsFile | {incidents: Incident[]},

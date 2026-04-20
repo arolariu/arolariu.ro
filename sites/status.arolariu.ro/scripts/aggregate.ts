@@ -1,3 +1,14 @@
+/**
+ * Aggregation pipeline. Rolls the append-only `raw/*.jsonl` probe stream
+ * into three retention-sized JSON files consumed by the frontend:
+ *   - `fine.json`    — 30-minute buckets, rebuilt from scratch every run (14 days).
+ *   - `hourly.json`  — 1-hour buckets, merge-updated (90 days).
+ *   - `daily.json`   — 1-day buckets,  merge-updated (365 days).
+ *
+ * Merge semantics: only "today" and "yesterday" are recomputed from raw
+ * probes; older buckets in the previous file are preserved untouched, so
+ * long-retention tiers don't get truncated when the raw window slides.
+ */
 import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {SERVICE_IDS, type AggregateFile, type Bucket,
@@ -13,6 +24,11 @@ export {bucketStart};
 
 const MS_PER_DAY = 86_400_000;
 
+/**
+ * Fold the per-bucket accumulators for a single service into a sorted
+ * `ServiceSeries`. If the service has sub-check data, each sub-check gets
+ * its own time-sorted bucket array under `subSeries[name]`.
+ */
 function toSeries(
   service: ServiceId,
   mainBuckets: Map<string, BucketAccumulator>,
@@ -33,6 +49,14 @@ function toSeries(
   return {service, buckets};
 }
 
+/**
+ * Build the 14-day, 30-minute-bucket aggregate from scratch. Safe to
+ * regenerate on every run because the raw JSONL window is also 14 days —
+ * the two retentions are intentionally matched.
+ *
+ * @param probes - All raw probes currently on disk.
+ * @param now    - Wall clock used to compute the 14-day cutoff.
+ */
 export function rebuildFine(probes: readonly ProbeResult[], now: Date): AggregateFile {
   const cutoff = now.getTime() - 14 * MS_PER_DAY;
   const recent = probes.filter(p => Date.parse(p.timestamp) >= cutoff);
@@ -49,6 +73,10 @@ export function rebuildFine(probes: readonly ProbeResult[], now: Date): Aggregat
   };
 }
 
+/**
+ * Delete raw JSONL files older than the 14-day fine-tier window. Called at
+ * the end of every aggregate run so the working set stays bounded.
+ */
 function pruneRawFiles(dataDir: string, now: Date): void {
   const rawDir = join(dataDir, "raw");
   if (!existsSync(rawDir)) return;
@@ -63,9 +91,22 @@ function pruneRawFiles(dataDir: string, now: Date): void {
   }
 }
 
+/** Bucket granularities supported by the merge path (fine uses a separate rebuild path). */
 type MergeBucketSize = "1h" | "1d";
+/** Retention window tied to bucket size: 90d for hourly, 365d for daily. */
 type MergeWindowDays<S extends MergeBucketSize> = S extends "1h" ? 90 : 365;
 
+/**
+ * Merge freshly computed today+yesterday buckets into the previous aggregate
+ * file while preserving older buckets verbatim. This is what lets hourly
+ * (90d) and daily (365d) retention exceed the 14-day raw-probe window.
+ *
+ * @param probes     - All available raw probes (will be filtered to today/yesterday internally).
+ * @param previous   - The prior `AggregateFile` to inherit old buckets from; `undefined` on first run.
+ * @param now        - Wall clock for bucket alignment and windowing.
+ * @param size       - `"1h"` for hourly, `"1d"` for daily.
+ * @param windowDays - Retention in days; must be paired with `size` per {@link MergeWindowDays}.
+ */
 function mergeAggregate<S extends MergeBucketSize>(
   probes: readonly ProbeResult[],
   previous: AggregateFile | undefined,
@@ -153,6 +194,12 @@ function mergeAggregate<S extends MergeBucketSize>(
   };
 }
 
+/**
+ * Read and validate the previous aggregate file. Missing file → `undefined`
+ * (first-run). An existing-but-corrupt file throws — silent recovery would
+ * silently overwrite 15–365 days of retained buckets with only the last 14
+ * days of raw data, which is worse than forcing a human to intervene.
+ */
 function readPrevious(dataDir: string, name: string): AggregateFile | undefined {
   const path = join(dataDir, name);
   if (!existsSync(path)) return undefined;
@@ -178,11 +225,20 @@ function readPrevious(dataDir: string, name: string): AggregateFile | undefined 
   return parsed;
 }
 
+/** Options accepted by {@link runAggregate}. */
 export interface RunAggregateOptions {
+  /** Base directory containing `raw/*.jsonl` input and where `*.json` outputs are written. */
   readonly dataDir: string;
+  /** Clock override for deterministic tests; defaults to `new Date()`. */
   readonly now?: Date;
 }
 
+/**
+ * Cron entry point: rebuild `fine.json`, merge-update `hourly.json` and
+ * `daily.json`, then prune raw JSONL files older than 14 days. All work is
+ * performed in-memory against the full raw stream; output files are
+ * atomically `writeFileSync`'d (single buffer write).
+ */
 export async function runAggregate(opts: RunAggregateOptions): Promise<void> {
   const now = opts.now ?? new Date();
   const probes = readRawProbes(opts.dataDir);

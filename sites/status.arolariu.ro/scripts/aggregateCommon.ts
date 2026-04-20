@@ -48,16 +48,22 @@ export function mode(values: readonly number[]): number | undefined {
 
 /**
  * Accumulator shape collected per bucket by grouping passes, then folded
- * into a `Bucket` by `makeBucket`.
+ * into a `Bucket` by `makeBucket`. Mutable by design — grouping passes
+ * stream probes in and push into the arrays directly rather than
+ * rebuilding on every probe.
  */
 export interface BucketAccumulator {
+  /** All `overall` (or sub-check) statuses seen in this bucket, in probe order. */
   statuses: HealthStatus[];
+  /** All probe/sub-check latencies in ms, fed into `percentile`. */
   latencies: number[];
+  /** Per-probe HTTP status codes; `mode` picks the most common for the bucket. */
   httpStatuses: number[];
-  /** sum of sampleCount across all probes in this bucket (defaults 1 per probe when legacy) */
+  /** Sum of `sampleCount` across all probes in this bucket (defaults to 1 per probe for legacy single-sample probes). */
   sampleCount: number;
-  /** count of fully-healthy samples; see sampleCount math below */
+  /** Count of fully-Healthy samples within `sampleCount`; drives the uptime ratio. */
   healthySamples: number;
+  /** Snapshot of the worst non-Healthy sub-check seen during the bucket; surfaced as the bucket's `worstSubCheck`. */
   worstSub?: {name: string; status: HealthStatus; description?: string};
 }
 
