@@ -28,6 +28,8 @@ export interface ProbeResult {
   readonly overall: HealthStatus;
   readonly subChecks?: readonly SubCheck[];
   readonly error?: string;
+  /** Number of HTTP samples aggregated into this result. Defaults to 1 when absent (legacy). */
+  readonly sampleCount?: number;
 }
 
 export type BucketSize = "30m" | "1h" | "1d";

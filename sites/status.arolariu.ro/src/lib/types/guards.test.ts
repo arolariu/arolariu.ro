@@ -51,6 +51,15 @@ describe("isProbeResult", () => {
   it("rejects invalid subChecks array", () => {
     expect(isProbeResult({...valid, subChecks: [{name: "x"}]})).toBe(false);
   });
+  it("accepts valid sampleCount", () => {
+    expect(isProbeResult({...valid, sampleCount: 3})).toBe(true);
+  });
+  it("rejects non-numeric sampleCount", () => {
+    expect(isProbeResult({...valid, sampleCount: "3"})).toBe(false);
+  });
+  it("rejects sampleCount < 1", () => {
+    expect(isProbeResult({...valid, sampleCount: 0})).toBe(false);
+  });
 });
 
 describe("isBucket", () => {

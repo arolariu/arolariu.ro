@@ -84,6 +84,7 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
     latencyMs: median,
     httpStatus: worst.httpStatus,
     overall: worst.overall,
+    sampleCount: samples.length,
   };
   if (worst.subChecks !== undefined) (out as Record<string, unknown>)["subChecks"] = worst.subChecks;
   if (worst.error !== undefined) (out as Record<string, unknown>)["error"] = worst.error;

@@ -44,17 +44,20 @@ interface BucketAccumulator {
   statuses: HealthStatus[];
   latencies: number[];
   httpStatuses: number[];
+  /** sum of sampleCount across all probes in this bucket (defaults 1 per probe when legacy) */
+  sampleCount: number;
+  /** count of fully-healthy samples; see sampleCount math below */
+  healthySamples: number;
   worstSub?: {name: string; status: HealthStatus; description?: string};
 }
 
 function makeBucket(t: string, acc: BucketAccumulator): Bucket {
   const worstOverall = acc.statuses.reduce(worstStatus, "Healthy" as HealthStatus);
-  const healthy = acc.statuses.filter(s => s === "Healthy").length;
   const httpMode = mode(acc.httpStatuses);
   const bucket: Bucket = {
     t,
     status: worstOverall,
-    probes: {healthy, total: acc.statuses.length},
+    probes: {healthy: acc.healthySamples, total: acc.sampleCount},
     latency: {p50: percentile(acc.latencies, 50), p99: percentile(acc.latencies, 99)},
   };
   const result: Record<string, unknown> = {...bucket};
@@ -75,10 +78,13 @@ function groupProbes(probes: readonly ProbeResult[], size: BucketSize):
     let perService = byService.get(p.service);
     if (!perService) {perService = new Map(); byService.set(p.service, perService);}
     let acc = perService.get(bucket);
-    if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: []}; perService.set(bucket, acc);}
+    if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perService.set(bucket, acc);}
+    const samples = p.sampleCount ?? 1;
     acc.statuses.push(p.overall);
     acc.latencies.push(p.latencyMs);
     acc.httpStatuses.push(p.httpStatus);
+    acc.sampleCount += samples;
+    if (p.overall === "Healthy") acc.healthySamples += samples;
     if (p.subChecks) {
       for (const sc of p.subChecks) {
         if (sc.status !== "Healthy") {
@@ -100,13 +106,16 @@ function groupSubChecks(probes: readonly ProbeResult[], size: BucketSize):
     const bucket = bucketStart(new Date(p.timestamp), size);
     let perService = byService.get(p.service);
     if (!perService) {perService = new Map(); byService.set(p.service, perService);}
+    const samples = p.sampleCount ?? 1;
     for (const sc of p.subChecks) {
       let perSub = perService.get(sc.name);
       if (!perSub) {perSub = new Map(); perService.set(sc.name, perSub);}
       let acc = perSub.get(bucket);
-      if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: []}; perSub.set(bucket, acc);}
+      if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perSub.set(bucket, acc);}
       acc.statuses.push(sc.status);
       acc.latencies.push(sc.durationMs);
+      acc.sampleCount += samples;
+      if (sc.status === "Healthy") acc.healthySamples += samples;
     }
   }
   return byService;

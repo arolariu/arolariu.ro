@@ -42,6 +42,9 @@ export function isProbeResult(v: unknown): v is ProbeResult {
     if (!Array.isArray(subs)) return false;
     if (!subs.every(isSubCheck)) return false;
   }
+  if (v["sampleCount"] !== undefined) {
+    if (typeof v["sampleCount"] !== "number" || !Number.isFinite(v["sampleCount"]) || v["sampleCount"] < 1) return false;
+  }
   return true;
 }
 

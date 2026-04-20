@@ -71,6 +71,16 @@ describe("rebuildFine", () => {
     expect(api.subSeries!.cosmosdb[0].status).toBe("Healthy");
   });
 
+  it("sums sampleCount across probes in a bucket", () => {
+    const probes: ProbeResult[] = [
+      {service: "arolariu.ro", timestamp: "2026-04-19T14:00:00Z", latencyMs: 100, httpStatus: 200, overall: "Healthy", sampleCount: 3},
+      {service: "arolariu.ro", timestamp: "2026-04-19T14:15:00Z", latencyMs: 100, httpStatus: 200, overall: "Healthy", sampleCount: 3},
+    ];
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const bucket = agg.services[0].buckets[0];
+    expect(bucket.probes).toEqual({healthy: 6, total: 6});
+  });
+
   it("drops probes older than 14 days", () => {
     const probes: ProbeResult[] = [
       mkProbe("arolariu.ro", "2026-04-01T00:00:00Z", "Healthy"),
