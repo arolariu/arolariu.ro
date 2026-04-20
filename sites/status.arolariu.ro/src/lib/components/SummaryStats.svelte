@@ -4,6 +4,7 @@
   import {computeOverallUptime, computeAvgLatency, computeIncidentCount, computeMttr} from "../aggregation/summaryStats";
   import {computeWorstUptime} from "../aggregation/worstUptime";
   import {formatDuration} from "../aggregation/formatDuration";
+  import InfoButton from "./InfoButton.svelte";
 
   interface Props {
     services: readonly ServiceSeries[];
@@ -90,7 +91,10 @@
 
 <section class="summary-stats" data-testid="summary-stats" aria-label="Summary statistics">
   <dl class="card">
-    <dt>Overall uptime</dt>
+    <dt>
+      <span>Overall uptime</span>
+      <InfoButton text="Probe-weighted average across all monitored services over the selected window. Worst-service uptime shown below." />
+    </dt>
     <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(1)}%</dd>
     <dd class="sub">weighted · last {windowFilter}</dd>
     {#if worst.service && worst.uptime < uptime}
@@ -98,17 +102,26 @@
     {/if}
   </dl>
   <dl class="card">
-    <dt>Avg latency</dt>
+    <dt>
+      <span>Avg latency</span>
+      <InfoButton text="Unweighted mean of bucket p50 latencies across services." />
+    </dt>
     <dd class="value tier-{latencyTier}">{Math.round(displayLatency)} ms</dd>
     <dd class="sub">p50 across all</dd>
   </dl>
   <dl class="card">
-    <dt>Incidents</dt>
+    <dt>
+      <span>Incidents</span>
+      <InfoButton text="Count of incidents whose start timestamp falls in the window." />
+    </dt>
     <dd class="value tier-{incidentsTier}">{Math.round(displayIncidents)}</dd>
     <dd class="sub">{incCount.open} ongoing · {incCount.resolved} resolved</dd>
   </dl>
   <dl class="card">
-    <dt>MTTR</dt>
+    <dt>
+      <span>MTTR</span>
+      <InfoButton text="Mean duration of resolved incidents in the window." />
+    </dt>
     <dd class="value">{formatDuration(displayMttr)}</dd>
     <dd class="sub">mean time to resolve</dd>
   </dl>
@@ -127,6 +140,7 @@
     border-radius: var(--radius-md);
     padding: var(--sp-sm) var(--sp-md);
     margin: 0;
+    position: relative;
   }
   dt {
     font-size: 9px;
@@ -134,6 +148,8 @@
     letter-spacing: 0.08em;
     opacity: 0.5;
     margin-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
   }
   .value {
     margin: 0;
