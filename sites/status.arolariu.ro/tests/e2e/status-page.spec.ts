@@ -29,20 +29,20 @@ test.describe("status page", () => {
   });
 
   test("shows skeleton then data", async ({page}) => {
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByText("arolariu.ro", {exact: true}).first()).toBeVisible();
     await expect(page.getByText("api.arolariu.ro", {exact: true})).toBeVisible();
   });
 
   test("filter pill click loads different granularity", async ({page}) => {
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByText("api.arolariu.ro")).toBeVisible();
     await page.getByRole("tab", {name: "90d"}).click();
     await expect(page.getByRole("button").first()).toBeVisible();
   });
 
   test("hover on degraded segment shows tooltip", async ({page}) => {
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     // Switch to 14d window to ensure all degraded buckets are in view
     await page.getByRole("tab", {name: "14d"}).click();
     await expect(page.getByText("api.arolariu.ro", {exact: true}).first()).toBeVisible();
@@ -55,7 +55,7 @@ test.describe("status page", () => {
   });
 
   test("expand api.arolariu.ro reveals mssql/cosmosdb sub-rows", async ({page}) => {
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByText("api.arolariu.ro")).toBeVisible();
     const toggle = page.getByRole("button", {name: /Expand sub-checks/});
     await toggle.click();
@@ -69,7 +69,7 @@ test.describe("status page", () => {
       fetchCount++;
       route.fulfill({status: 200, contentType: "application/json", body: fixtures.fine});
     });
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByText("arolariu.ro").first()).toBeVisible();
     const before = fetchCount;
     await page.getByLabel("Refresh status data").click();
@@ -80,12 +80,12 @@ test.describe("status page", () => {
   test("network error shows retry button", async ({page}) => {
     await page.route(/raw\.githubusercontent\.com.+fine\.json/, (route) =>
       route.fulfill({status: 500, body: ""}));
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByRole("alert")).toContainText("unreachable");
   });
 
   test("refresh button is disabled during in-flight refresh (double-click safe)", async ({page}) => {
-    await page.goto("/");
+    await page.goto("/?mocks=off");
     await expect(page.getByText("arolariu.ro").first()).toBeVisible();
     const btn = page.getByLabel("Refresh status data");
     await btn.click();

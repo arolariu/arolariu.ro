@@ -1,5 +1,6 @@
 import {isAggregateFile, isIncidentsFile} from "../types/guards";
 import type {AggregateFile, IncidentsFile} from "../types/status";
+import {generateMockAggregate, generateMockIncidents, isLocalHost} from "./mockData";
 
 const DATA_BASE = "https://raw.githubusercontent.com/arolariu/arolariu.ro/status-data/data";
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -42,6 +43,11 @@ if (typeof window !== "undefined" && isHardReload()) {
 }
 
 export async function fetchAggregate(granularity: Granularity): Promise<AggregateFile> {
+  // Local dev / preview shortcut: synthesize data relative to Date.now() so
+  // the UI always shows "recent" timestamps without hitting the network.
+  // The production Azure SWA hostname never matches isLocalHost().
+  if (isLocalHost()) return generateMockAggregate(granularity);
+
   const mem = memory.get(granularity);
   if (mem && Date.now() - mem.fetchedAt < CACHE_TTL_MS) return mem.data;
 
@@ -74,6 +80,8 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
 }
 
 export async function fetchIncidents(): Promise<IncidentsFile> {
+  if (isLocalHost()) return generateMockIncidents();
+
   if (incidentsMemory && Date.now() - incidentsMemory.fetchedAt < CACHE_TTL_MS) {
     return incidentsMemory.data;
   }

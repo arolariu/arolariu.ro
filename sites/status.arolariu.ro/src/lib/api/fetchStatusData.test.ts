@@ -1,6 +1,15 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import type {AggregateFile} from "../types/status";
 
+// jsdom's default hostname is "localhost", which would otherwise route
+// every fetch through the mock generator. These tests exercise the real
+// network + cache code paths, so we pin isLocalHost() to false.
+vi.mock("./mockData", () => ({
+  isLocalHost: () => false,
+  generateMockAggregate: vi.fn(),
+  generateMockIncidents: vi.fn(),
+}));
+
 const validAggregate: AggregateFile = {
   generatedAt: "2026-04-19T14:00:00Z",
   bucketSize: "30m", windowDays: 14,

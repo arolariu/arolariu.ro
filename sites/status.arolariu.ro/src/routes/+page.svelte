@@ -3,6 +3,7 @@
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile, ServiceSeries} from "$lib/types/status";
   import {WINDOW_TO_GRANULARITY} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
+  import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
   import {deriveOverallStatus} from "$lib/aggregation/deriveParentStatus";
   import FilterPills from "$lib/components/FilterPills.svelte";
@@ -138,7 +139,12 @@
   <IncidentList {incidents} windowFilter={activeWindow}/>
 
   <footer class="footer">
-    Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
+    {#if isLocalHost()}
+      <span class="local-badge">LOCAL MOCKS</span>
+      Synthetic data generated in-browser — run on status.arolariu.ro to see live probes
+    {:else}
+      Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
+    {/if}
   </footer>
 
   <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor}/>
@@ -220,6 +226,18 @@
     font-size: 10.5px;
     opacity: 0.4;
     text-align: center;
+  }
+  .local-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    margin-right: 6px;
+    border-radius: 3px;
+    background: var(--status-deg-bg);
+    color: var(--status-deg);
+    border: 1px solid var(--status-deg-border);
+    font-weight: 600;
+    font-size: 9px;
+    letter-spacing: 0.08em;
   }
   @media (max-width: 768px) {
     .row.header { grid-template-columns: 1fr 1.5fr 60px; }
