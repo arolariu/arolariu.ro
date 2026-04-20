@@ -27,6 +27,14 @@
 
   const granularity = $derived(WINDOW_TO_GRANULARITY[activeWindow]);
 
+  const bucketDurationMs = $derived.by(() => {
+    const size = sliced?.bucketSize;
+    if (size === "30m") return 30 * 60_000;
+    if (size === "1h") return 60 * 60_000;
+    if (size === "1d") return 24 * 60 * 60_000;
+    return 30 * 60_000;
+  });
+
   const sliced = $derived.by<AggregateFile | null>(() => {
     const file = cache[granularity];
     return file ? sliceWindow(file, activeWindow) : null;
@@ -153,7 +161,7 @@
     Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
   </footer>
 
-  <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID}/>
+  <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID} {bucketDurationMs}/>
 </main>
 
 <style>
