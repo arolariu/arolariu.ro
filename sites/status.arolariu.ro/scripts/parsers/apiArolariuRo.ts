@@ -1,6 +1,7 @@
 import type {HealthStatus, ProbeResult, SubCheck} from "../../src/lib/types/status";
 import {sanitizeDescription} from "../sanitize";
 import type {ProbeContext, RawResponse} from "./arolariuRo";
+import {reconcileBodyVsHttp} from "./shared";
 
 interface UiEntry {
   readonly status?: string;
@@ -72,7 +73,10 @@ export function parseApiArolariuRo(raw: RawResponse, ctx: ProbeContext): ProbeRe
   }
 
   const subChecks = parseEntries(body.entries);
-  const overall: HealthStatus = isHealthStatusValue(body.status) ? body.status : "Degraded";
-  const result: ProbeResult = {...base, overall};
+  const bodyOverall: HealthStatus = isHealthStatusValue(body.status) ? body.status : "Degraded";
+  const {status: overall, error: overrideError} = reconcileBodyVsHttp(bodyOverall, status);
+  const result: ProbeResult = overrideError
+    ? {...base, overall, error: overrideError}
+    : {...base, overall};
   return subChecks.length > 0 ? {...result, subChecks} : result;
 }

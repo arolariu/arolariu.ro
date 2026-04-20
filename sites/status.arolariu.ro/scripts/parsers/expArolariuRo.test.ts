@@ -30,4 +30,10 @@ describe("parseExpArolariuRo", () => {
     const r = parseExpArolariuRo({status: 200, body: "not an object"}, ctx);
     expect(r.overall).toBe("Degraded");
   });
+
+  it("overrides Healthy body to Unhealthy when HTTP is 5xx", () => {
+    const r = parseExpArolariuRo({status: 502, body: {status: "Healthy"}}, ctx);
+    expect(r.overall).toBe("Unhealthy");
+    expect(r.error).toBe("HTTP 502");
+  });
 });

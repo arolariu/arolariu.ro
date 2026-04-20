@@ -1,4 +1,5 @@
 import type {HealthStatus, ProbeResult} from "../../src/lib/types/status";
+import {reconcileBodyVsHttp} from "./shared";
 
 export interface RawResponse {
   readonly status: number;
@@ -35,10 +36,10 @@ export function parseArolariuRo(raw: RawResponse, ctx: ProbeContext): ProbeResul
 
   const bodyStatus = coerceOverallFromBody(body);
   if (bodyStatus !== null) {
-    if (bodyStatus === "Healthy" && status >= 500) {
-      return {...base, overall: "Unhealthy", error: `HTTP ${status}`};
-    }
-    return {...base, overall: bodyStatus};
+    const {status: overall, error: overrideError} = reconcileBodyVsHttp(bodyStatus, status);
+    return overrideError
+      ? {...base, overall, error: overrideError}
+      : {...base, overall};
   }
 
   if (status >= 200 && status < 300) {

@@ -82,4 +82,12 @@ describe("parseApiArolariuRo", () => {
     const r = parseApiArolariuRo({status: 200, body: {foo: "bar"}}, ctx);
     expect(r.overall).toBe("Degraded");
   });
+
+  it("overrides Healthy body to Unhealthy when HTTP is 5xx", () => {
+    // Some Kestrel/middleware edge cases return 503 with the last-known-good
+    // Healthy payload still attached. Trust the HTTP layer.
+    const r = parseApiArolariuRo({status: 503, body: canonicalBody}, ctx);
+    expect(r.overall).toBe("Unhealthy");
+    expect(r.error).toBe("HTTP 503");
+  });
 });

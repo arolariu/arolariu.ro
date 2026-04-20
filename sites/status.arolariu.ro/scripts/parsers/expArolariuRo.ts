@@ -1,5 +1,6 @@
 import type {HealthStatus, ProbeResult} from "../../src/lib/types/status";
 import type {ProbeContext, RawResponse} from "./arolariuRo";
+import {reconcileBodyVsHttp} from "./shared";
 
 function coerceOverall(body: unknown): HealthStatus | null {
   if (body && typeof body === "object" && "status" in body) {
@@ -26,7 +27,12 @@ export function parseExpArolariuRo(raw: RawResponse, ctx: ProbeContext): ProbeRe
   }
 
   const bodyStatus = coerceOverall(body);
-  if (bodyStatus !== null) return {...base, overall: bodyStatus};
+  if (bodyStatus !== null) {
+    const {status: overall, error: overrideError} = reconcileBodyVsHttp(bodyStatus, status);
+    return overrideError
+      ? {...base, overall, error: overrideError}
+      : {...base, overall};
+  }
 
   if (status >= 200 && status < 300) {
     return {...base, overall: "Degraded", error: "unrecognized response shape"};
