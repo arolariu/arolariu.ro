@@ -16,7 +16,6 @@
   import SummaryStats from "$lib/components/SummaryStats.svelte";
   import LightModeToggle from "$lib/components/LightModeToggle.svelte";
   import KeyboardHelpOverlay from "$lib/components/KeyboardHelpOverlay.svelte";
-  import LatencyHeatstrip from "$lib/components/LatencyHeatstrip.svelte";
   import WeekdayUptimeChart from "$lib/components/WeekdayUptimeChart.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
@@ -249,10 +248,6 @@
       {/key}
     {/if}
   </section>
-
-  {#if sliced?.services.length}
-    <LatencyHeatstrip services={orderedServices(sliced)} />
-  {/if}
 
   {#if sliced?.services.length && showWeekday}
     <WeekdayUptimeChart services={orderedServices(sliced)} />

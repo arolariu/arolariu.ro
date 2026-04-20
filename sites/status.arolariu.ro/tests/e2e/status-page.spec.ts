@@ -157,14 +157,6 @@ test.describe("status page", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
-  test("LatencyHeatstrip renders one row per service", async ({page}) => {
-    await page.goto("/?mocks=off");
-    const strip = page.getByRole("region", {name: /latency heatstrip/i});
-    await expect(strip).toBeVisible();
-    const rows = strip.locator(".row");
-    await expect(rows).toHaveCount(4);
-  });
-
   test("incident filter chip narrows the list", async ({page}) => {
     await page.goto("/?mocks=off");
     // The fixture incident is 2 days old, so widen the window to 7d to make
