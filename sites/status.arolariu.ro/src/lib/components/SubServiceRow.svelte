@@ -36,7 +36,7 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
     grid-template-areas: "name bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
@@ -45,8 +45,6 @@
     font-size: var(--fs-sm);
     background: var(--surface);
     opacity: 0.9;
-    container-type: inline-size;
-    container-name: subServiceRow;
   }
   .row > * { min-width: 0; }
   .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -70,7 +68,7 @@
     text-overflow: ellipsis;
   }
 
-  @container subServiceRow (max-width: 640px) {
+  @container statusPage (max-width: 640px) {
     .row {
       grid-template-columns: 1fr auto auto;
       grid-template-areas:

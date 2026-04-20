@@ -23,14 +23,12 @@
 <style>
   .skeleton-row {
     display: grid;
-    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
     grid-template-areas: "name bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
     padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
-    container-type: inline-size;
-    container-name: skeletonRow;
   }
   .skeleton-row > * { min-width: 0; }
   .skeleton-row .name { grid-area: name; }
@@ -55,7 +53,7 @@
   .bar { display: flex; gap: 1px; height: 24px; min-width: 0; width: 100%; }
   .seg { flex: 1 1 0; min-width: 0; height: 100%; }
 
-  @container skeletonRow (max-width: 640px) {
+  @container statusPage (max-width: 640px) {
     .skeleton-row {
       grid-template-columns: 1fr auto auto;
       grid-template-areas:

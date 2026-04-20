@@ -222,9 +222,10 @@
   }
   .status-table__header {
     display: grid;
-    grid-template-columns: 1.4fr 2.2fr 80px 100px;
-    gap: 14px;
-    padding: 10px 16px;
+    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-areas: "name bar uptime latency";
+    gap: var(--sp-sm);
+    padding: 10px var(--sp-md);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -233,6 +234,15 @@
     border-bottom: 1px solid var(--border-strong);
   }
   .status-table__header > * { min-width: 0; }
+  .status-table__header > :nth-child(1) { grid-area: name; }
+  .status-table__header > :nth-child(2) { grid-area: bar; }
+  .status-table__header > :nth-child(3) { grid-area: uptime; text-align: right; }
+  .status-table__header > :nth-child(4) { grid-area: latency; text-align: right; }
+  @container statusPage (max-width: 640px) {
+    /* Card layout labels service/uptime/latency inline; the grid header
+       is redundant and would overflow the narrow page. Hide it. */
+    .status-table__header { display: none; }
+  }
   .empty {
     padding: 24px;
     text-align: center;

@@ -55,15 +55,13 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: minmax(10rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
+    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
     grid-template-areas: "name bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
     padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
     font-size: var(--fs-body);
-    container-type: inline-size;
-    container-name: serviceRow;
   }
   .row > * { min-width: 0; }
   .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -97,7 +95,10 @@
   }
   .toggle[aria-expanded="true"] { transform: rotate(90deg); }
 
-  @container serviceRow (max-width: 640px) {
+  /* Stack on narrow page: driven by the .page container (statusPage) so
+     it fires based on the page width rather than the row's own
+     min-content width (which is larger than 640px). */
+  @container statusPage (max-width: 640px) {
     .row {
       grid-template-columns: 1fr auto auto;
       grid-template-areas:
