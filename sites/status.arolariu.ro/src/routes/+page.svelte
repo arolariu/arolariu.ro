@@ -16,6 +16,7 @@
   import SummaryStats from "$lib/components/SummaryStats.svelte";
   import LightModeToggle from "$lib/components/LightModeToggle.svelte";
   import KeyboardHelpOverlay from "$lib/components/KeyboardHelpOverlay.svelte";
+  import LatencyHeatstrip from "$lib/components/LatencyHeatstrip.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 
@@ -242,6 +243,10 @@
       {/key}
     {/if}
   </section>
+
+  {#if sliced?.services.length}
+    <LatencyHeatstrip services={orderedServices(sliced)} />
+  {/if}
 
   <IncidentList {incidents} windowFilter={activeWindow}/>
 
