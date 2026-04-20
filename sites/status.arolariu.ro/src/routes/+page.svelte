@@ -213,6 +213,7 @@
     background: var(--surface-hover);
     border-bottom: 1px solid var(--border-strong);
   }
+  .row.header > * { min-width: 0; }
   .empty {
     padding: 24px;
     text-align: center;

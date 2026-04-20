@@ -27,6 +27,7 @@
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
   }
+  .skeleton-row > * { min-width: 0; }
   .skeleton-row.indent { padding-left: 40px; }
   .shimmer {
     background: linear-gradient(
@@ -42,6 +43,6 @@
   .name   { height: 14px; width: 60%; }
   .uptime { height: 14px; width: 100%; }
   .latency{ height: 14px; width: 100%; }
-  .bar { display: flex; gap: 1px; height: 24px; }
-  .seg { flex: 1; min-width: 3px; height: 100%; }
+  .bar { display: flex; gap: 1px; height: 24px; min-width: 0; }
+  .seg { flex: 1 1 0; min-width: 0; height: 100%; }
 </style>

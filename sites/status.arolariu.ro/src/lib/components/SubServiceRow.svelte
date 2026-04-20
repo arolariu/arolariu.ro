@@ -43,6 +43,7 @@
     background: var(--surface);
     opacity: 0.9;
   }
+  .row > * { min-width: 0; }
   .name-col { display: flex; align-items: center; gap: 8px; }
   .dot {
     width: 6px;

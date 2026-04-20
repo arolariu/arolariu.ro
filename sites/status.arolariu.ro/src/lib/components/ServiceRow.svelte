@@ -60,6 +60,10 @@
     border-bottom: 1px solid var(--border);
     font-size: 13px;
   }
+  /* Allow grid cells to shrink below content size — otherwise the flex
+     inside UptimeBar would expand its cell and push the row wider than
+     the parent table at larger filter windows. */
+  .row > * { min-width: 0; }
   .name-col { display: flex; align-items: center; gap: 8px; }
   .dot {
     width: 8px; height: 8px;
