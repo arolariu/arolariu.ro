@@ -17,6 +17,7 @@
   import LightModeToggle from "$lib/components/LightModeToggle.svelte";
   import KeyboardHelpOverlay from "$lib/components/KeyboardHelpOverlay.svelte";
   import LatencyHeatstrip from "$lib/components/LatencyHeatstrip.svelte";
+  import WeekdayUptimeChart from "$lib/components/WeekdayUptimeChart.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 
@@ -29,6 +30,11 @@
   let hoveredBucket: Bucket | null = $state(null);
   let hoveredAnchor: HTMLElement | null = $state(null);
   let helpOpen = $state(false);
+
+  const WEEKDAY_WINDOWS: ReadonlySet<FilterWindow> = new Set<FilterWindow>([
+    "14d", "30d", "60d", "90d", "180d", "365d",
+  ]);
+  const showWeekday = $derived(WEEKDAY_WINDOWS.has(activeWindow));
 
   const granularity = $derived(WINDOW_TO_GRANULARITY[activeWindow]);
 
@@ -246,6 +252,10 @@
 
   {#if sliced?.services.length}
     <LatencyHeatstrip services={orderedServices(sliced)} />
+  {/if}
+
+  {#if sliced?.services.length && showWeekday}
+    <WeekdayUptimeChart services={orderedServices(sliced)} />
   {/if}
 
   <IncidentList {incidents} windowFilter={activeWindow}/>
