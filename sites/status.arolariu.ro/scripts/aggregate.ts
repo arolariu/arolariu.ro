@@ -1,6 +1,6 @@
 import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync} from "node:fs";
 import {join} from "node:path";
-import {SERVICE_IDS, type AggregateFile, type Bucket, type BucketSize,
+import {SERVICE_IDS, type AggregateFile, type Bucket,
   type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status";
 import {isAggregateFile} from "../src/lib/types/guards";
 import {readRawProbes} from "./rawProbes";
@@ -21,7 +21,6 @@ function toSeries(
   const buckets: Bucket[] = [...mainBuckets.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([t, acc]) => makeBucket(t, acc));
-  const series: ServiceSeries = {service, buckets};
   if (subs && subs.size > 0) {
     const subSeries: Record<string, readonly Bucket[]> = {};
     for (const [name, accMap] of subs) {
@@ -29,9 +28,9 @@ function toSeries(
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([t, acc]) => makeBucket(t, acc));
     }
-    (series as Record<string, unknown>)["subSeries"] = subSeries;
+    return {service, buckets, subSeries};
   }
-  return series;
+  return {service, buckets};
 }
 
 export function rebuildFine(probes: readonly ProbeResult[], now: Date): AggregateFile {
@@ -64,12 +63,15 @@ function pruneRawFiles(dataDir: string, now: Date): void {
   }
 }
 
-function mergeAggregate(
+type MergeBucketSize = "1h" | "1d";
+type MergeWindowDays<S extends MergeBucketSize> = S extends "1h" ? 90 : 365;
+
+function mergeAggregate<S extends MergeBucketSize>(
   probes: readonly ProbeResult[],
   previous: AggregateFile | undefined,
   now: Date,
-  size: BucketSize,
-  windowDays: 90 | 365,
+  size: S,
+  windowDays: MergeWindowDays<S>,
 ): AggregateFile {
   const cutoffMs = now.getTime() - windowDays * MS_PER_DAY;
   const today = bucketStart(now, "1d");
@@ -99,16 +101,15 @@ function mergeAggregate(
 
     const combinedBuckets = [...keptPrevBuckets, ...freshBuckets].sort((a, b) => a.t.localeCompare(b.t));
 
-    const series: ServiceSeries = {service, buckets: combinedBuckets};
-
     const freshSubForService = freshSub.get(service);
     const prevSubSeries = prevSeries?.subSeries;
+    let subSeriesOut: Record<string, readonly Bucket[]> | undefined;
     if ((freshSubForService && freshSubForService.size > 0) || (prevSubSeries && Object.keys(prevSubSeries).length > 0)) {
       const subNames = new Set<string>();
       if (prevSubSeries) for (const n of Object.keys(prevSubSeries)) subNames.add(n);
       if (freshSubForService) for (const n of freshSubForService.keys()) subNames.add(n);
 
-      const subSeriesOut: Record<string, readonly Bucket[]> = {};
+      const built: Record<string, readonly Bucket[]> = {};
       for (const subName of subNames) {
         const keptPrev = (prevSubSeries?.[subName] ?? []).filter(b => {
           if (Date.parse(b.t) < cutoffMs) return false;
@@ -120,18 +121,34 @@ function mergeAggregate(
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([t, acc]) => makeBucket(t, acc))
           : [];
-        subSeriesOut[subName] = [...keptPrev, ...freshSubBuckets].sort((a, b) => a.t.localeCompare(b.t));
+        built[subName] = [...keptPrev, ...freshSubBuckets].sort((a, b) => a.t.localeCompare(b.t));
       }
-      (series as Record<string, unknown>)["subSeries"] = subSeriesOut;
+      subSeriesOut = built;
     }
+
+    const series: ServiceSeries = subSeriesOut !== undefined
+      ? {service, buckets: combinedBuckets, subSeries: subSeriesOut}
+      : {service, buckets: combinedBuckets};
 
     if (combinedBuckets.length > 0 || series.subSeries) merged.push(series);
   }
 
+  // AggregateFile is discriminated on (bucketSize, windowDays); the generic
+  // `MergeBucketSize`/`MergeWindowDays` constraints keep the pair valid but
+  // TS can't narrow the runtime pair back into the discriminated union, so
+  // we branch explicitly.
+  if (size === "1h") {
+    return {
+      generatedAt: now.toISOString(),
+      bucketSize: "1h",
+      windowDays: 90,
+      services: merged,
+    };
+  }
   return {
     generatedAt: now.toISOString(),
-    bucketSize: size,
-    windowDays,
+    bucketSize: "1d",
+    windowDays: 365,
     services: merged,
   };
 }

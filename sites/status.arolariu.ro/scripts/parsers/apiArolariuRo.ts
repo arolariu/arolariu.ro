@@ -26,9 +26,9 @@ function timeSpanToMs(input: string | undefined): number {
   const [, h, m, s, fracRaw] = match;
   const frac = (fracRaw ?? "0").padEnd(7, "0").slice(0, 7);
   const subMs = Number.parseInt(frac, 10) / 10_000;
-  return Number.parseInt(h, 10) * 3_600_000
-    + Number.parseInt(m, 10) * 60_000
-    + Number.parseInt(s, 10) * 1_000
+  return Number.parseInt(h ?? "0", 10) * 3_600_000
+    + Number.parseInt(m ?? "0", 10) * 60_000
+    + Number.parseInt(s ?? "0", 10) * 1_000
     + subMs;
 }
 

@@ -65,7 +65,7 @@ export interface BucketAccumulator {
 export function makeBucket(t: string, acc: BucketAccumulator): Bucket {
   const worstOverall = acc.statuses.reduce(worstStatus, "Healthy" as HealthStatus);
   const httpMode = mode(acc.httpStatuses);
-  const bucket: Bucket = {
+  const base: Bucket = {
     t,
     status: worstOverall,
     probes: {healthy: acc.healthySamples, total: acc.sampleCount},
@@ -76,12 +76,15 @@ export function makeBucket(t: string, acc: BucketAccumulator): Bucket {
       p99: percentile(acc.latencies, 99),
     },
   };
-  const result: Record<string, unknown> = {...bucket};
-  if (httpMode !== undefined) result["httpStatus"] = httpMode;
+  let worstSubCheck: SubCheckSummary | undefined;
   if (acc.worstSub !== undefined) {
-    const summary: SubCheckSummary = {name: acc.worstSub.name, status: acc.worstSub.status};
-    if (acc.worstSub.description !== undefined) (summary as Record<string, unknown>)["description"] = acc.worstSub.description;
-    result["worstSubCheck"] = summary;
+    worstSubCheck = acc.worstSub.description !== undefined
+      ? {name: acc.worstSub.name, status: acc.worstSub.status, description: acc.worstSub.description}
+      : {name: acc.worstSub.name, status: acc.worstSub.status};
   }
-  return result as Bucket;
+  return {
+    ...base,
+    ...(httpMode !== undefined && {httpStatus: httpMode}),
+    ...(worstSubCheck !== undefined && {worstSubCheck}),
+  };
 }

@@ -66,7 +66,7 @@ export function applyTrackSignals(
   const openByKey = new Map<TrackKey, number>();
 
   for (let i = 0; i < incidents.length; i++) {
-    const inc = incidents[i];
+    const inc = incidents[i]!;
     if (inc.status === "open") {
       openByKey.set(trackKey(inc.service, inc.subCheck), i);
       tracks.set(trackKey(inc.service, inc.subCheck), {streak: inc.probeCount});
@@ -79,7 +79,7 @@ export function applyTrackSignals(
 
     if (sig.status === "Healthy") {
       if (openIdx !== undefined) {
-        const open = incidents[openIdx];
+        const open = incidents[openIdx]!;
         incidents[openIdx] = {
           ...open, status: "resolved",
           resolvedAt: sig.timestamp,
@@ -93,7 +93,7 @@ export function applyTrackSignals(
 
     const newStreak = state.streak + 1;
     if (openIdx !== undefined) {
-      const open = incidents[openIdx];
+      const open = incidents[openIdx]!;
       const nextSeverity = worstSeverity(open.severity, toSeverity(sig.status));
       // If severity escalated (e.g. Degraded → Unhealthy), refresh `reason`
       // to reflect the new signature. A stale "slow response" reason on an

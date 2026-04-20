@@ -84,21 +84,27 @@ async function singleFetch(cfg: ServiceConfig, nowIso: string): Promise<ProbeRes
  *     sample was fastest/slowest.
  */
 function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
-  if (samples.length === 0) throw new Error("aggregateSamples requires at least one sample");
-  const worst = samples.reduce((w, s) => STATUS_ORDER[s.overall] > STATUS_ORDER[w.overall] ? s : w, samples[0]);
+  const first = samples[0];
+  if (first === undefined) throw new Error("aggregateSamples requires at least one sample");
+  const worst = samples.reduce<ProbeResult>(
+    (w, s) => STATUS_ORDER[s.overall] > STATUS_ORDER[w.overall] ? s : w,
+    first,
+  );
   const sortedLatencies = [...samples.map(s => s.latencyMs)].sort((a, b) => a - b);
-  const median = sortedLatencies[Math.floor(samples.length / 2)];
-  const out: ProbeResult = {
+  const median = sortedLatencies[Math.floor(samples.length / 2)] ?? first.latencyMs;
+  const base: ProbeResult = {
     service: worst.service,
-    timestamp: samples[0].timestamp,
+    timestamp: first.timestamp,
     latencyMs: median,
     httpStatus: worst.httpStatus,
     overall: worst.overall,
     sampleCount: samples.length,
   };
-  if (worst.subChecks !== undefined) (out as Record<string, unknown>)["subChecks"] = worst.subChecks;
-  if (worst.error !== undefined) (out as Record<string, unknown>)["error"] = worst.error;
-  return out;
+  return {
+    ...base,
+    ...(worst.subChecks !== undefined && {subChecks: worst.subChecks}),
+    ...(worst.error !== undefined && {error: worst.error}),
+  };
 }
 
 async function probeOne(
@@ -108,7 +114,7 @@ async function probeOne(
 ): Promise<ProbeResult> {
   const samples: ProbeResult[] = [];
   for (let i = 0; i < delaysMs.length; i++) {
-    const delay = delaysMs[i];
+    const delay = delaysMs[i] ?? 0;
     if (delay > 0) await sleep(delay);
     samples.push(await singleFetch(cfg, nowIso));
   }

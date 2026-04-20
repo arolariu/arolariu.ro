@@ -27,7 +27,9 @@ export function groupProbes(
       for (const sc of p.subChecks) {
         if (sc.status !== "Healthy") {
           if (!acc.worstSub || worstStatus(acc.worstSub.status, sc.status) === sc.status) {
-            acc.worstSub = {name: sc.name, status: sc.status, description: sc.description};
+            acc.worstSub = sc.description !== undefined
+              ? {name: sc.name, status: sc.status, description: sc.description}
+              : {name: sc.name, status: sc.status};
           }
         }
       }
