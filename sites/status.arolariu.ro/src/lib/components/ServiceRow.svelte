@@ -3,8 +3,8 @@
   import {computeUptime, computeAvgLatency} from "../aggregation/computeUptime";
   import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
-  import SubServiceRow from "./SubServiceRow.svelte";
   import LatencySparkline from "./LatencySparkline.svelte";
+  import ServiceDetailPanel from "./ServiceDetailPanel.svelte";
 
   interface Props {
     series: ServiceSeries;
@@ -13,34 +13,28 @@
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
     tooltipId?: string;
     hoveredBucketT?: string | null;
+    bucketDurationMs: number;
   }
 
-  let {series, expanded, onToggle, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
+  let {series, expanded, onToggle, onHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
 
   const latest = $derived(deriveLatestStatus(series));
   const uptime = $derived(computeUptime(series.buckets));
   const avgLatency = $derived(computeAvgLatency(series.buckets));
-  const hasSubs = $derived(
-    series.subSeries !== undefined && Object.keys(series.subSeries).length > 0
-  );
-  const subEntries = $derived(
-    series.subSeries ? Object.entries(series.subSeries) : []
-  );
 </script>
 
-<div class="row">
+<div
+  class="row"
+  role="button"
+  tabindex="0"
+  aria-expanded={expanded}
+  onclick={onToggle}
+  onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+>
   <div class="name-col">
     <span class="dot dot-{latest.toLowerCase()}" class:pulse={latest !== "Healthy"}></span>
     <span class="name">{series.service}</span>
-    {#if hasSubs}
-      <button
-        type="button"
-        class="toggle"
-        aria-expanded={expanded}
-        aria-label={expanded ? "Collapse sub-checks" : "Expand sub-checks"}
-        onclick={onToggle}
-      >▸</button>
-    {/if}
+    <span class="caret" aria-hidden="true">{expanded ? "▾" : "▸"}</span>
   </div>
   <div class="spark-cell"><LatencySparkline buckets={series.buckets} /></div>
   <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
@@ -48,10 +42,8 @@
   <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
 </div>
 
-{#if expanded && hasSubs}
-  {#each subEntries as [name, buckets] (name)}
-    <SubServiceRow {name} {buckets} {onHover} {tooltipId} {hoveredBucketT} />
-  {/each}
+{#if expanded}
+  <ServiceDetailPanel {series} {bucketDurationMs} {onHover} {tooltipId} {hoveredBucketT}/>
 {/if}
 
 <style>
@@ -64,6 +56,13 @@
     padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
     font-size: var(--fs-body);
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .row:hover { background: rgba(255,255,255,0.015); }
+  .row:focus-visible {
+    outline: 2px solid var(--status-up);
+    outline-offset: -2px;
   }
   .row > * { min-width: 0; }
   .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -102,16 +101,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .toggle {
-    background: transparent;
-    border: 0;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: var(--fs-xs);
-    padding: 2px 4px;
+  .caret {
+    font-size: 10px;
+    opacity: 0.4;
     transition: transform .15s;
+    margin-left: auto;
   }
-  .toggle[aria-expanded="true"] { transform: rotate(90deg); }
+  .row[aria-expanded="true"] .caret { transform: rotate(90deg); }
 
   /* Stack on narrow page: driven by the .page container (statusPage) so
      it fires based on the page width rather than the row's own

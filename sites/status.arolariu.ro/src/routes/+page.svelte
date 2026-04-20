@@ -22,7 +22,7 @@
   let incidents: IncidentsFile | null = $state(null);
   let loadError: string | null = $state(null);
   let refreshing: boolean = $state(false);
-  let expanded: Record<string, boolean> = $state({});
+  let expandedService: string | null = $state(null);
   let hoveredBucket: Bucket | null = $state(null);
   let hoveredAnchor: HTMLElement | null = $state(null);
 
@@ -86,7 +86,7 @@
   }
 
   function toggleExpand(service: string) {
-    expanded = {...expanded, [service]: !expanded[service]};
+    expandedService = expandedService === service ? null : service;
   }
 
   function onHover(bucket: Bucket | null, anchor: HTMLElement | null) {
@@ -153,11 +153,12 @@
           {#each orderedServices(sliced) as series (series.service)}
             <ServiceRow
               {series}
-              expanded={expanded[series.service] ?? false}
+              expanded={expandedService === series.service}
               onToggle={() => toggleExpand(series.service)}
               {onHover}
               tooltipId={TOOLTIP_ID}
               hoveredBucketT={hoveredBucket?.t ?? null}
+              {bucketDurationMs}
             />
           {/each}
         </div>
