@@ -10,9 +10,11 @@
     expanded: boolean;
     onToggle: () => void;
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
+    tooltipId?: string;
+    hoveredBucketT?: string | null;
   }
 
-  let {series, expanded, onToggle, onHover}: Props = $props();
+  let {series, expanded, onToggle, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
 
   const latest = $derived(deriveLatestStatus(series));
   const uptime = $derived(computeUptime(series.buckets));
@@ -39,14 +41,14 @@
       >▸</button>
     {/if}
   </div>
-  <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} /></div>
+  <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency">{avgLatency} ms</div>
 </div>
 
 {#if expanded && hasSubs}
   {#each subEntries as [name, buckets] (name)}
-    <SubServiceRow {name} {buckets} {onHover} />
+    <SubServiceRow {name} {buckets} {onHover} {tooltipId} {hoveredBucketT} />
   {/each}
 {/if}
 

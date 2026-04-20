@@ -1,22 +1,45 @@
 <script lang="ts">
+  import {onMount} from "svelte";
   import type {Bucket, HealthStatus} from "../types/status";
 
   interface Props {
     buckets: readonly Bucket[];
     variant?: "primary" | "sub";
     onSegmentHover: (bucket: Bucket | null, target: HTMLElement | null) => void;
-    maxSegments?: number;
+    tooltipId?: string;
+    hoveredBucketT?: string | null;
   }
 
-  let {buckets, variant = "primary", onSegmentHover, maxSegments = 180}: Props = $props();
+  let {buckets, variant = "primary", onSegmentHover, tooltipId, hoveredBucketT = null}: Props = $props();
 
   const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
 
-  /**
-   * Merges an array of buckets into a single bucket whose status is the worst
-   * of the group, probes are summed, and latencies are averaged. Preserves
-   * worstSubCheck from whichever child had the worst status.
-   */
+  let barEl: HTMLDivElement;
+  let containerWidth = $state(900); // sensible initial so SSR isn't empty
+
+  onMount(() => {
+    if (typeof ResizeObserver === "undefined" || !barEl) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0 && Math.abs(w - containerWidth) > 1) {
+          containerWidth = w;
+        }
+      }
+    });
+    ro.observe(barEl);
+    return () => ro.disconnect();
+  });
+
+  const targetPx = $derived.by(() => {
+    if (typeof document === "undefined") return 6;
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--segment-target-px").trim();
+    const n = Number.parseFloat(raw);
+    return Number.isFinite(n) && n > 0 ? n : 6;
+  });
+
+  const maxSegments = $derived(Math.max(12, Math.floor(containerWidth / Math.max(3, targetPx))));
+
   function mergeBuckets(chunk: readonly Bucket[]): Bucket {
     const worst = chunk.reduce((w, b) => STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w, chunk[0]);
     const healthy = chunk.reduce((s, b) => s + b.probes.healthy, 0);
@@ -34,12 +57,6 @@
     return merged;
   }
 
-  /**
-   * Cap visible segments at maxSegments by chunking adjacent buckets. Keeps
-   * the timeline end-aligned on "now" — the last chunk may be smaller than
-   * earlier chunks so the rightmost segment always represents the most
-   * recent data.
-   */
   function downsample(input: readonly Bucket[], limit: number): readonly Bucket[] {
     if (input.length <= limit) return input;
     const chunkSize = Math.ceil(input.length / limit);
@@ -68,12 +85,13 @@
   }
 </script>
 
-<div class="bar" data-variant={variant}>
+<div class="bar" data-variant={variant} bind:this={barEl}>
   {#each visibleBuckets as bucket (bucket.t)}
     <button
       type="button"
       class="seg seg-{bucket.status.toLowerCase()}"
       aria-label={buildAriaLabel(bucket)}
+      aria-describedby={tooltipId && hoveredBucketT === bucket.t ? tooltipId : undefined}
       onmouseenter={(e) => handleEnter(bucket, e)}
       onmouseleave={handleLeave}
       onfocus={(e) => handleEnter(bucket, e)}
@@ -100,11 +118,13 @@
     padding: 0;
     border-radius: 1px;
     cursor: pointer;
-    transition: transform .12s;
+    transition: transform .12s, filter .12s;
   }
   .seg:hover, .seg:focus-visible {
     transform: scaleY(1.15);
+    filter: brightness(1.15);
     outline: none;
+    z-index: 1;
   }
   .seg-healthy { background: var(--status-up); }
   .seg-degraded { background: var(--status-deg); }

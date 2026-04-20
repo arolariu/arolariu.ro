@@ -8,9 +8,11 @@
     name: string;
     buckets: readonly Bucket[];
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
+    tooltipId?: string;
+    hoveredBucketT?: string | null;
   }
 
-  let {name, buckets, onHover}: Props = $props();
+  let {name, buckets, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
 
   const latest = $derived(
     buckets.length === 0
@@ -26,7 +28,7 @@
     <span class="dot dot-{latest.toLowerCase()}"></span>
     <span class="name">↳ {name}</span>
   </div>
-  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} /></div>
+  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency">{avgLatency} ms</div>
 </div>

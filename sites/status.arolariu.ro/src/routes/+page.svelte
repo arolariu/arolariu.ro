@@ -14,6 +14,8 @@
   import SegmentTooltip from "$lib/components/SegmentTooltip.svelte";
   import RefreshButton from "$lib/components/RefreshButton.svelte";
 
+  const TOOLTIP_ID = "status-segment-tooltip";
+
   let activeWindow: FilterWindow = $state("1d");
   let cache: Partial<Record<"fine" | "hourly" | "daily", AggregateFile>> = $state({});
   let incidents: IncidentsFile | null = $state(null);
@@ -138,6 +140,8 @@
           expanded={expanded[series.service] ?? false}
           onToggle={() => toggleExpand(series.service)}
           {onHover}
+          tooltipId={TOOLTIP_ID}
+          hoveredBucketT={hoveredBucket?.t ?? null}
         />
       {/each}
     {/if}
@@ -149,7 +153,7 @@
     Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
   </footer>
 
-  <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor}/>
+  <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID}/>
 </main>
 
 <style>
