@@ -100,7 +100,7 @@ describe("runProbe", () => {
     expect(existsSync(file)).toBe(true);
   });
 
-  it("takes 3 samples per service per run", async () => {
+  it("takes N samples per service per run (one fetch per delay)", async () => {
     const calls = new Map<string, number>();
     globalThis.fetch = vi.fn(async (url: string | URL) => {
       const u = String(url);
@@ -111,22 +111,23 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const delays = [0, 0, 0, 0, 0];  // five samples, zero wait in-test
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
 
-    // Four unique URLs, three fetches each → 12 total calls
+    // Four unique URLs, one fetch per delay entry
     expect(calls.size).toBe(4);
     for (const [url, count] of calls.entries()) {
-      expect(count, `${url} should be probed 3 times`).toBe(3);
+      expect(count, `${url} should be probed ${delays.length} times`).toBe(delays.length);
     }
   });
 
-  it("one transient failure among 3 samples still records Unhealthy (worst-wins aggregation)", async () => {
+  it("one transient failure among samples still records Unhealthy (worst-wins aggregation)", async () => {
     let apiCalls = 0;
     globalThis.fetch = vi.fn(async (url: string | URL) => {
       const u = String(url);
       if (u.includes("api.arolariu.ro/health")) {
         apiCalls++;
-        // Fail only the middle sample, succeed on the 1st and 3rd
+        // Fail only the middle sample, succeed on the surrounding ones
         if (apiCalls === 2) throw new Error("ECONNREFUSED");
         return new Response(JSON.stringify({status: "Healthy", entries: {}}), {status: 200});
       }
@@ -139,7 +140,7 @@ describe("runProbe", () => {
     expect(api.error).toContain("ECONNREFUSED");
   });
 
-  it("all 3 samples healthy → aggregated result is Healthy with median latency", async () => {
+  it("all samples healthy → aggregated result is Healthy with median latency", async () => {
     globalThis.fetch = vi.fn(async () =>
       new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 

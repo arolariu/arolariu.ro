@@ -12,11 +12,18 @@ import {parseExpArolariuRo} from "./parsers/expArolariuRo";
 const PROBE_TIMEOUT_MS = 10_000;
 
 /**
- * Delay BEFORE each sample fetch. Three samples per service per 30-min cron:
- * immediate, +15s, +30s. Total wall-clock per service ≤ 45s + fetch time.
- * Overridable in tests via `RunProbeOptions.sampleDelaysMs`.
+ * Delay BEFORE each sample fetch. Ten samples per service per 30-min cron,
+ * spread over 3 minutes (immediate, +20s, +40s, …, +180s). The longer
+ * window smooths out per-sample noise so bucket-level p95/p99 signal
+ * becomes meaningful at the 30-minute fine tier.
+ *
+ * Total wall-clock per service ≤ 180s + fetch time (≈190s worst case with
+ * PROBE_TIMEOUT_MS=10s on the final sample). Still well under the 30-min
+ * cron interval. Overridable in tests via `RunProbeOptions.sampleDelaysMs`.
  */
-const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 15_000, 30_000];
+const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [
+  0, 20_000, 40_000, 60_000, 80_000, 100_000, 120_000, 140_000, 160_000, 180_000,
+];
 
 const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
 
