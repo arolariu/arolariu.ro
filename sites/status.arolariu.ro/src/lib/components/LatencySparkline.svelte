@@ -27,11 +27,39 @@
     const last = buckets[buckets.length - 1].latency.p50;
     return last < 200 ? "fast" : last < 500 ? "ok" : "slow";
   });
+
+  // Rough polyline length estimate — summed Euclidean distance between
+  // successive points parsed from the points string. Good enough to seed
+  // stroke-dasharray / stroke-dashoffset so the path draws from start to end;
+  // we don't need sub-pixel accuracy for the dashoffset animation to look right.
+  const pathLength = $derived.by(() => {
+    if (!points) return 0;
+    const coords = points.split(" ").map(pair => {
+      const [x, y] = pair.split(",").map(Number);
+      return {x, y};
+    });
+    let len = 0;
+    for (let i = 1; i < coords.length; i++) {
+      const dx = coords[i].x - coords[i - 1].x;
+      const dy = coords[i].y - coords[i - 1].y;
+      len += Math.hypot(dx, dy);
+    }
+    // Small nudge so paths with length 0 still trigger the animation safely.
+    return Math.max(len, 1);
+  });
 </script>
 
 <svg class="sparkline" viewBox="0 0 {width} {height}" preserveAspectRatio="none" aria-hidden="true">
   {#if points}
-    <polyline class="path tier-{tier}" fill="none" stroke-width="1.2" points={points}/>
+    {#key buckets}
+      <polyline
+        class="path tier-{tier}"
+        fill="none"
+        stroke-width="1.2"
+        points={points}
+        style="stroke-dasharray: {pathLength}; stroke-dashoffset: {pathLength};"
+      />
+    {/key}
   {/if}
 </svg>
 
@@ -44,4 +72,16 @@
   .path.tier-fast { stroke: var(--status-up); }
   .path.tier-ok   { stroke: var(--text-muted); }
   .path.tier-slow { stroke: var(--status-deg); }
+  .path {
+    animation: drawPath 300ms ease-out forwards;
+  }
+  @keyframes drawPath {
+    to { stroke-dashoffset: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .path {
+      animation: none;
+      stroke-dashoffset: 0 !important;
+    }
+  }
 </style>

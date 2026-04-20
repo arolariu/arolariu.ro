@@ -86,10 +86,11 @@
 </script>
 
 <div class="bar" data-variant={variant} bind:this={barEl}>
-  {#each visibleBuckets as bucket (bucket.t)}
+  {#each visibleBuckets as bucket, i (bucket.t)}
     <button
       type="button"
       class="seg seg-{bucket.status.toLowerCase()}"
+      style="--idx: {i};"
       aria-label={buildAriaLabel(bucket)}
       aria-describedby={tooltipId && hoveredBucketT === bucket.t ? tooltipId : undefined}
       onmouseenter={(e) => handleEnter(bucket, e)}
@@ -119,6 +120,15 @@
     border-radius: 1px;
     cursor: pointer;
     transition: transform .12s, filter .12s;
+    animation: segStaggerIn 120ms ease-out backwards;
+    animation-delay: calc(min(var(--idx, 0) * 3ms, 180ms));
+  }
+  @keyframes segStaggerIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seg { animation: none; }
   }
   .seg:hover, .seg:focus-visible {
     transform: scaleY(1.15);
