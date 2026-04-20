@@ -29,17 +29,26 @@ const MS_PER_MIN = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
+/** Which aggregate file is being mocked (matches the production `Granularity`). */
 type Granularity = "fine" | "hourly" | "daily";
 
+/** Per-granularity constants used by the bucket-generation loop. */
 interface GranularityConfig {
   readonly bucketSize: "30m" | "1h" | "1d";
   readonly windowDays: 14 | 90 | 365;
+  /** Wall-clock span of one bucket, in milliseconds. */
   readonly bucketMs: number;
+  /** Total number of buckets in the output file (windowDays × buckets-per-day). */
   readonly bucketCount: number;
   /** How many 30-min cron runs are aggregated into one bucket at this granularity. */
   readonly cronsPerBucket: number;
 }
 
+/**
+ * Canonical (bucketSize, windowDays) pairings. Mirrors the `AggregateWindow`
+ * discriminated union — any change here must also happen in `types/status.ts`
+ * or the mock will produce unvalidatable files.
+ */
 const CONFIGS: Record<Granularity, GranularityConfig> = {
   fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * MS_PER_MIN, bucketCount: 14 * 48, cronsPerBucket: 1},
   hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: MS_PER_HOUR,     bucketCount: 90 * 24, cronsPerBucket: 2},
@@ -79,6 +88,11 @@ interface Blip {
   readonly open?: boolean;
 }
 
+/**
+ * Per-sub-check narrative. Sub-checks carry their own baseline p50 and blip
+ * list so a sub-check outage can be simulated without affecting the parent
+ * service's bucket series.
+ */
 interface SubCheckStoryline {
   readonly baselineP50: number;
   readonly blips: readonly Blip[];
@@ -87,9 +101,19 @@ interface SubCheckStoryline {
   readonly cyclicHiccup?: {readonly everyNBuckets: number; readonly atOffset: number; readonly p50: number; readonly healthyPerCron: number};
 }
 
+/**
+ * Full narrative for one service: baseline p50, optional latency drift
+ * ramp, list of blips (incident events), and optional per-sub-check sub-storylines.
+ */
 interface ServiceStoryline {
   readonly service: ServiceId;
+  /** "Normal day" p50 latency in ms, used when no blip or drift is active. */
   readonly baselineP50: number;
+  /**
+   * Optional linear latency creep. Between `startAgoHours` and `endAgoHours`
+   * the main p50 ramps from `baseline - 30` to `endP50`, then snaps back.
+   * Emulates e.g. connection-pool degradation leading into a deploy.
+   */
   readonly latencyDrift?: {
     readonly startAgoHours: number;
     readonly endAgoHours: number;
@@ -207,7 +231,11 @@ const STORYLINES: readonly ServiceStoryline[] = [
   },
 ];
 
-/** Derived p99/p75/p95 fan around p50 — matches the old p99 ≈ p50 * 2.1 contract. */
+/**
+ * Derived p99/p75/p95 fan around p50 — matches the old p99 ≈ p50 * 2.1 contract.
+ * Ratios picked to roughly track production observations:
+ *   p75 ≈ 1.35× p50, p95 ≈ 1.80× p50, p99 ≈ 2.10× p50.
+ */
 function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99: number} {
   return {
     p50,
@@ -217,6 +245,12 @@ function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99
   };
 }
 
+/**
+ * Build one `Bucket` from primitive inputs. `probes.total` is always
+ * `SAMPLES_PER_CRON * cronsPerBucket`; `probes.healthy` is
+ * `healthyPerCron * cronsPerBucket`. `httpStatus` is set to 503 for
+ * `Unhealthy` and 200 otherwise (we don't model 5xx variety in mocks).
+ */
 function mkBucket(
   t: string,
   status: HealthStatus,
@@ -245,12 +279,19 @@ function bucketOverlaps(bucketT: number, bucketMs: number, start: number, end: n
   return bucketT + bucketMs > start && bucketT < end;
 }
 
+/** Start/end wall-clock range (ms) of a blip, computed from `now` and `ageHours`. */
 function blipWindow(blip: Blip, now: number): {start: number; end: number} {
   const end = now - blip.ageHours * MS_PER_HOUR + blip.durationHours * MS_PER_HOUR;
   const start = now - blip.ageHours * MS_PER_HOUR;
   return {start, end};
 }
 
+/**
+ * Compute the effective p50 at a given wall-clock time, accounting for the
+ * storyline's optional latency-drift window. Outside the drift window (or
+ * when no drift is configured) returns `story.baselineP50`; inside the
+ * window ramps linearly from `baseline - 30` to `latencyDrift.endP50`.
+ */
 function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number): number {
   if (!story.latencyDrift) return story.baselineP50;
   const creepStart = now - story.latencyDrift.startAgoHours * MS_PER_HOUR;
@@ -260,6 +301,15 @@ function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number)
   return Math.round(story.baselineP50 - 30 + progress * (story.latencyDrift.endP50 - (story.baselineP50 - 30)));
 }
 
+/**
+ * Generate the full bucket sequence for one series (main or sub-check).
+ *
+ * For each bucket (walking backwards from `now`), evaluate in order:
+ *  1. Is an active blip (non-`open`) overlapping this bucket? → emit a
+ *     blip bucket (status = blip.status, p50 scaled by `latencyFactor`).
+ *  2. Is this a cyclic-hiccup bucket? → emit a small Degraded spike.
+ *  3. Otherwise → emit a Healthy bucket at baseline/drifted p50.
+ */
 function generateBucketsFor(
   baselineP50: number,
   blips: readonly Blip[],
@@ -297,6 +347,10 @@ function generateBucketsFor(
   });
 }
 
+/**
+ * Fold one storyline into a `ServiceSeries` (main bucket list + optional
+ * sub-series map) at the requested granularity.
+ */
 function generateServiceSeries(story: ServiceStoryline, config: GranularityConfig, now: number): ServiceSeries {
   const mainBuckets = generateBucketsFor(
     story.baselineP50,
@@ -331,6 +385,11 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
   return series;
 }
 
+/**
+ * Build a full mock `AggregateFile` for the requested granularity by folding
+ * every storyline into its bucket series. Relative to `Date.now()`, so the
+ * produced timestamps always feel "recent" regardless of when dev started.
+ */
 export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const now = Date.now();
   const config = CONFIGS[granularity];
@@ -346,6 +405,12 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
   }
 }
 
+/**
+ * Convert a blip to its corresponding `Incident`. Open blips become
+ * `{status: "open"}` incidents (no `resolvedAt` / `durationMs`); past blips
+ * become `{status: "resolved"}` incidents with those fields computed from
+ * the blip duration.
+ */
 function blipToIncident(
   story: ServiceStoryline,
   blip: Blip,
@@ -376,6 +441,12 @@ function blipToIncident(
   };
 }
 
+/**
+ * Build a full mock `IncidentsFile`. Derived directly from the storyline
+ * blip lists — one incident per blip (main or sub-check), sorted newest-first
+ * (lowest `ageHours` first). Keeps the mock narrative in a single source:
+ * editing a blip in `STORYLINES` updates both bucket math and incident log.
+ */
 export function generateMockIncidents(): IncidentsFile {
   const now = Date.now();
 

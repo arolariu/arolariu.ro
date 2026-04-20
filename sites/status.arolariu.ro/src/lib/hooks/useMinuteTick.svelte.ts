@@ -12,6 +12,11 @@
  * from an `$effect.root` scope in unit tests, matching the pattern
  * established by useCountTween. The effect body is client-only, so it's
  * SSR-safe.
+ *
+ * @returns `() => number` — accessor returning the last tick's `Date.now()` value.
+ *
+ * Side effects: schedules a `setInterval(..., 60_000)`, cleaned up via the
+ * `$effect` teardown return when the scope (component or effect.root) is destroyed.
  */
 export function useMinuteTick(): () => number {
   let nowTick = $state(Date.now());

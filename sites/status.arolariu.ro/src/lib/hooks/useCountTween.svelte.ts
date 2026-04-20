@@ -22,6 +22,21 @@ export interface UseCountTweenOptions {
   readonly durationMs?: number;
 }
 
+/**
+ * @param target Reactive getter for the target number (read inside an `$effect`).
+ * @param opts   Optional `{durationMs}` override (default 400ms).
+ * @returns A `$state`-backed accessor (`() => number`) that lerps toward `target()`
+ *          on each change, easing with `easeOutCubic`.
+ *
+ * Side effects: creates two `$effect`s — one drives the animation, one handles
+ * `cancelAnimationFrame` teardown on scope exit.
+ *
+ * SSR-safe: `window`/`matchMedia` access is guarded; `$effect` bodies only run
+ * client-side.
+ *
+ * Reduced motion: if `prefers-reduced-motion: reduce` is set at hook creation,
+ * the display value snaps to the target without animation.
+ */
 export function useCountTween(
   target: () => number,
   opts?: UseCountTweenOptions,

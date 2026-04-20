@@ -1,7 +1,18 @@
+/**
+ * Summary-row statistics shared across the top-of-page "SummaryStats" cards.
+ *
+ * These are services-level computations (take `readonly ServiceSeries[]`
+ * or an `IncidentsFile`), distinct from the row-level helpers in
+ * `computeAvgLatency.ts` / `weightedUptime.ts` which take a single bucket
+ * array. Kept as parallel implementations so each call site reads the
+ * shape it naturally holds.
+ */
+
 import type {FilterWindow, Incident, IncidentsFile, ServiceSeries} from "../types/status";
 import {WINDOW_CONFIGS} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
 
+/** Narrow alias for incidents that carry `resolvedAt` + `durationMs`. */
 type ResolvedIncident = Extract<Incident, {readonly status: "resolved"}>;
 
 const MS_PER_DAY = 86_400_000;
@@ -41,6 +52,7 @@ export function computeAvgLatency(services: readonly ServiceSeries[]): number {
   return Math.round(sum / count);
 }
 
+/** Breakdown of incidents scoped to a filter window. `total = open + resolved`. */
 export interface IncidentCounts {
   readonly total: number;
   readonly open: number;

@@ -20,12 +20,17 @@
  * contract. The hook keeps the bespoke math unit-testable.
  */
 
+/** Resolved positioning state for a popover surface. */
 export interface PopoverPosition {
+  /** Page-relative y (document coords). Caller stacks via `translateY(-100%)`. */
   readonly top: number;
+  /** Page-relative x at the tooltip's horizontal centre (after clamp). */
   readonly left: number;
+  /** True when the right-edge clamp kicked in (caller can flip the arrow). */
   readonly flipHoriz: boolean;
 }
 
+/** Subset of `window` geometry the positioning math needs. Passed in for testability. */
 export interface ViewportGeometry {
   readonly scrollX: number;
   readonly scrollY: number;
@@ -68,6 +73,17 @@ export function computePopoverPosition(
  * Reactive popover position hook. Tracks scroll+resize for as long as
  * `active()` returns true, recomputes the position, and exposes it as a
  * `$state`-style accessor.
+ *
+ * @param anchor        Getter for the anchor element (e.g. the hovered segment).
+ * @param tooltipEl     Getter for the tooltip element (measured on recompute).
+ * @param active        Getter for "is the tooltip visible right now" — when it
+ *                      returns false, no listeners are registered.
+ * @param fallbackWidth Width used when `tooltipEl()` is not yet bound (default 280).
+ * @returns Accessor returning the latest `PopoverPosition`.
+ *
+ * Side effects: registers passive `scroll` + `resize` listeners on the window
+ * while active; listeners are torn down automatically on scope teardown or
+ * when `active()` flips to false (effect re-runs).
  */
 export function usePopoverPosition(
   anchor: () => HTMLElement | null,
