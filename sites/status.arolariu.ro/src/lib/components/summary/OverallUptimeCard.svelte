@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type {FilterWindow, ServiceSeries} from "../types/status";
-  import {computeOverallUptime} from "../aggregation/summaryStats";
-  import {computeWorstUptime} from "../aggregation/worstUptime";
-  import {useCountTween} from "../hooks/useCountTween.svelte";
-  import InfoButton from "./InfoButton.svelte";
+  import type {FilterWindow, ServiceSeries} from "../../types/status";
+  import {computeOverallUptime} from "../../aggregation/summaryStats";
+  import {computeWorstUptime} from "../../aggregation/worstUptime";
+  import {useCountTween} from "../../hooks/useCountTween.svelte";
+  import InfoButton from "../chrome/InfoButton.svelte";
 
   interface Props {
     services: readonly ServiceSeries[];

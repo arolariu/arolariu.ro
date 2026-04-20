@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import type {Incident, IncidentsFile, FilterWindow} from "../types/status";
-  import {WINDOW_CONFIGS} from "../types/status";
+  import type {Incident, IncidentsFile, FilterWindow} from "../../types/status";
+  import {WINDOW_CONFIGS} from "../../types/status";
   import IncidentCard from "./IncidentCard.svelte";
   import IncidentFilterChips from "./IncidentFilterChips.svelte";
 

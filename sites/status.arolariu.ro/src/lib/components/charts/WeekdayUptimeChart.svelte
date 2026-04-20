@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type {ServiceSeries} from "../types/status";
-  import {computeWeekdayUptime} from "../aggregation/weekdayUptime";
+  import type {ServiceSeries} from "../../types/status";
+  import {computeWeekdayUptime} from "../../aggregation/weekdayUptime";
 
   interface Props {
     services: readonly ServiceSeries[];

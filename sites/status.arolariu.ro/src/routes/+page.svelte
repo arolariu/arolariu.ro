@@ -12,17 +12,17 @@
     showWeekdayChart,
   } from "$lib/routes/pageLogic";
   import {createKeyboardHandler} from "$lib/routes/keyboardShortcuts";
-  import FilterPills from "$lib/components/FilterPills.svelte";
-  import StatusBanner from "$lib/components/StatusBanner.svelte";
-  import ServiceRow from "$lib/components/ServiceRow.svelte";
-  import IncidentList from "$lib/components/IncidentList.svelte";
-  import SkeletonRow from "$lib/components/SkeletonRow.svelte";
-  import SegmentTooltip from "$lib/components/SegmentTooltip.svelte";
-  import RefreshButton from "$lib/components/RefreshButton.svelte";
-  import SummaryStats from "$lib/components/SummaryStats.svelte";
-  import LightModeToggle from "$lib/components/LightModeToggle.svelte";
-  import KeyboardHelpOverlay from "$lib/components/KeyboardHelpOverlay.svelte";
-  import WeekdayUptimeChart from "$lib/components/WeekdayUptimeChart.svelte";
+  import FilterPills from "$lib/components/chrome/FilterPills.svelte";
+  import StatusBanner from "$lib/components/summary/StatusBanner.svelte";
+  import ServiceRow from "$lib/components/table/ServiceRow.svelte";
+  import IncidentList from "$lib/components/incidents/IncidentList.svelte";
+  import SkeletonRow from "$lib/components/table/SkeletonRow.svelte";
+  import SegmentTooltip from "$lib/components/table/SegmentTooltip.svelte";
+  import RefreshButton from "$lib/components/chrome/RefreshButton.svelte";
+  import SummaryStats from "$lib/components/summary/SummaryStats.svelte";
+  import LightModeToggle from "$lib/components/chrome/LightModeToggle.svelte";
+  import KeyboardHelpOverlay from "$lib/components/chrome/KeyboardHelpOverlay.svelte";
+  import WeekdayUptimeChart from "$lib/components/charts/WeekdayUptimeChart.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 

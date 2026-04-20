@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, fireEvent, screen} from "@testing-library/svelte";
-import type {Bucket} from "../types/status";
+import type {Bucket} from "../../types/status";
 import UptimeBar from "./UptimeBar.svelte";
 
 function mkBucket(t: string, status: "Healthy" | "Degraded" | "Unhealthy"): Bucket {

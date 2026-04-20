@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type {Bucket, ServiceId} from "../types/status";
-  import {computeUptime} from "../aggregation/computeUptime";
-  import {computeAvgLatency} from "../aggregation/computeAvgLatency";
-  import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
+  import type {Bucket, ServiceId} from "../../types/status";
+  import {computeUptime} from "../../aggregation/computeUptime";
+  import {computeAvgLatency} from "../../aggregation/computeAvgLatency";
+  import {deriveLatestStatus} from "../../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
 
   interface Props {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
+  import type {FilterWindow, IncidentsFile, ServiceSeries} from "../../types/status";
   import OverallUptimeCard from "./OverallUptimeCard.svelte";
   import AvgLatencyCard from "./AvgLatencyCard.svelte";
   import IncidentsCard from "./IncidentsCard.svelte";

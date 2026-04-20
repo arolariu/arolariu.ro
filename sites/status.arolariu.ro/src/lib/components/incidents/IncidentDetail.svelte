@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type {Incident} from "../types/status";
-  import {formatDuration} from "../aggregation/formatDuration";
+  import type {Incident} from "../../types/status";
+  import {formatDuration} from "../../aggregation/formatDuration";
 
   interface Props {
     incident: Incident;

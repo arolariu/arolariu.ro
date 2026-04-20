@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type {FilterWindow, IncidentsFile} from "../types/status";
-  import {computeIncidentCount} from "../aggregation/summaryStats";
-  import {useCountTween} from "../hooks/useCountTween.svelte";
-  import InfoButton from "./InfoButton.svelte";
+  import type {FilterWindow, IncidentsFile} from "../../types/status";
+  import {computeIncidentCount} from "../../aggregation/summaryStats";
+  import {useCountTween} from "../../hooks/useCountTween.svelte";
+  import InfoButton from "../chrome/InfoButton.svelte";
 
   interface Props {
     incidents: IncidentsFile | null;

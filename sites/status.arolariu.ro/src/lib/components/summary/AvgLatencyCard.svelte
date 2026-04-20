@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type {ServiceSeries} from "../types/status";
-  import {computeAvgLatency} from "../aggregation/summaryStats";
-  import {useCountTween} from "../hooks/useCountTween.svelte";
-  import InfoButton from "./InfoButton.svelte";
+  import type {ServiceSeries} from "../../types/status";
+  import {computeAvgLatency} from "../../aggregation/summaryStats";
+  import {useCountTween} from "../../hooks/useCountTween.svelte";
+  import InfoButton from "../chrome/InfoButton.svelte";
 
   interface Props {
     services: readonly ServiceSeries[];

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FilterChip from "./FilterChip.svelte";
+  import FilterChip from "../chrome/FilterChip.svelte";
 
   interface Props {
     /** Ordered list of chip values — `null` represents the "All" chip. */

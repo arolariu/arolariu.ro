@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {FILTER_WINDOWS, type FilterWindow} from "../types/status";
+  import {FILTER_WINDOWS, type FilterWindow} from "../../types/status";
   import FilterChip from "./FilterChip.svelte";
 
   interface Props {

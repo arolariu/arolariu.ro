@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type {Bucket} from "../types/status";
-  import {formatRelativeTime} from "../aggregation/formatRelativeTime";
-  import {usePopoverPosition} from "../hooks/usePopoverPosition.svelte";
+  import type {Bucket} from "../../types/status";
+  import {formatRelativeTime} from "../../aggregation/formatRelativeTime";
+  import {usePopoverPosition} from "../../hooks/usePopoverPosition.svelte";
 
   interface Props {
     bucket: Bucket | null;

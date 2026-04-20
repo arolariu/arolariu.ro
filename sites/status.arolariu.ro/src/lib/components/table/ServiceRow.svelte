@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type {Bucket, ServiceSeries} from "../types/status";
-  import {computeUptime} from "../aggregation/computeUptime";
-  import {computeAvgLatency} from "../aggregation/computeAvgLatency";
-  import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
+  import type {Bucket, ServiceSeries} from "../../types/status";
+  import {computeUptime} from "../../aggregation/computeUptime";
+  import {computeAvgLatency} from "../../aggregation/computeAvgLatency";
+  import {deriveLatestStatus} from "../../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
   import LatencySparkline from "./LatencySparkline.svelte";
   import ServiceDetailPanel from "./ServiceDetailPanel.svelte";

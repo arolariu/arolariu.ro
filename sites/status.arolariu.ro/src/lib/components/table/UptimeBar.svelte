@@ -1,6 +1,6 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import type {Bucket, HealthStatus} from "../types/status";
+  import type {Bucket, HealthStatus} from "../../types/status";
 
   interface Props {
     buckets: readonly Bucket[];

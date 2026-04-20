@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import type {HealthStatus} from "../types/status";
-  import {formatRelativeTime} from "../aggregation/formatRelativeTime";
+  import type {HealthStatus} from "../../types/status";
+  import {formatRelativeTime} from "../../aggregation/formatRelativeTime";
 
   interface Props {
     overallStatus: HealthStatus | "loading";

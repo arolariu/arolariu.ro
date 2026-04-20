@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {Bucket} from "../types/status";
+  import type {Bucket} from "../../types/status";
 
   interface Props {
     buckets: readonly Bucket[];

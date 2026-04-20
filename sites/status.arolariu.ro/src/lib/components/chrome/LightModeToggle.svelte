@@ -1,6 +1,6 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import {applyTheme, getTheme, setTheme, type Theme} from "../stores/themeStore.svelte";
+  import {applyTheme, getTheme, setTheme, type Theme} from "../../stores/themeStore.svelte";
 
   let theme: Theme = $state("auto");
 

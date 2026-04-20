@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type {FilterWindow, IncidentsFile} from "../types/status";
-  import {computeMttr} from "../aggregation/summaryStats";
-  import {formatDuration} from "../aggregation/formatDuration";
-  import InfoButton from "./InfoButton.svelte";
+  import type {FilterWindow, IncidentsFile} from "../../types/status";
+  import {computeMttr} from "../../aggregation/summaryStats";
+  import {formatDuration} from "../../aggregation/formatDuration";
+  import InfoButton from "../chrome/InfoButton.svelte";
 
   interface Props {
     incidents: IncidentsFile | null;

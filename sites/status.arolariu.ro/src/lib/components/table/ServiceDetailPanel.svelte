@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type {Bucket, ServiceSeries} from "../types/status";
-  import LatencyChart from "./LatencyChart.svelte";
+  import type {Bucket, ServiceSeries} from "../../types/status";
+  import LatencyChart from "../charts/LatencyChart.svelte";
   import SubServiceRow from "./SubServiceRow.svelte";
 
   interface Props {
