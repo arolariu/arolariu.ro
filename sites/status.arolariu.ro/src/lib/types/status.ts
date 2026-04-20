@@ -132,18 +132,36 @@ export interface IncidentsFile {
 export type FilterWindow =
   | "1d" | "3d" | "7d" | "14d" | "30d" | "60d" | "90d" | "180d" | "365d";
 
-export const FILTER_WINDOWS: readonly FilterWindow[] = [
-  "1d", "3d", "7d", "14d", "30d", "60d", "90d", "180d", "365d",
-];
+/**
+ * Per-window configuration. Single source of truth for anything the UI / logic
+ * needs to know about a given `FilterWindow`:
+ *
+ * - `days` — duration of the window in days (cutoff math, axis labels).
+ * - `granularity` — which aggregate file this window reads from
+ *   (`fine` → 30m buckets / 14d file, `hourly` → 1h / 90d, `daily` → 1d / 365d).
+ * - `showWeekday` — whether the weekday-uptime chart is meaningful at this
+ *   zoom (≥14 days of history; shorter windows are too coarse).
+ *
+ * Iteration order of the record keys is the UI's canonical filter order
+ * (1d → 365d), driving `FILTER_WINDOWS`.
+ */
+export interface WindowConfig {
+  readonly days: number;
+  readonly granularity: "fine" | "hourly" | "daily";
+  readonly showWeekday: boolean;
+}
 
-export const WINDOW_TO_GRANULARITY: Record<FilterWindow, "fine" | "hourly" | "daily"> = {
-  "1d": "fine", "3d": "fine", "7d": "fine", "14d": "fine",
-  "30d": "hourly", "60d": "hourly", "90d": "hourly",
-  "180d": "daily", "365d": "daily",
+export const WINDOW_CONFIGS: Record<FilterWindow, WindowConfig> = {
+  "1d":   {days: 1,   granularity: "fine",   showWeekday: false},
+  "3d":   {days: 3,   granularity: "fine",   showWeekday: false},
+  "7d":   {days: 7,   granularity: "fine",   showWeekday: false},
+  "14d":  {days: 14,  granularity: "fine",   showWeekday: true},
+  "30d":  {days: 30,  granularity: "hourly", showWeekday: true},
+  "60d":  {days: 60,  granularity: "hourly", showWeekday: true},
+  "90d":  {days: 90,  granularity: "hourly", showWeekday: true},
+  "180d": {days: 180, granularity: "daily",  showWeekday: true},
+  "365d": {days: 365, granularity: "daily",  showWeekday: true},
 };
 
-export const WINDOW_TO_DAYS: Record<FilterWindow, number> = {
-  "1d": 1, "3d": 3, "7d": 7, "14d": 14,
-  "30d": 30, "60d": 60, "90d": 90,
-  "180d": 180, "365d": 365,
-};
+/** Canonical filter-window order for UI iteration and keyboard `1..9` jumps. */
+export const FILTER_WINDOWS = Object.keys(WINDOW_CONFIGS) as readonly FilterWindow[];

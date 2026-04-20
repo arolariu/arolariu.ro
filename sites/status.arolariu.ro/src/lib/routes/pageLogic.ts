@@ -9,6 +9,7 @@
 
 import {
   BUCKET_SIZE_TO_MS,
+  WINDOW_CONFIGS,
   type AggregateFile,
   type BucketSize,
   type FilterWindow,
@@ -23,11 +24,6 @@ export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = [
   "exp.arolariu.ro",
   "cv.arolariu.ro",
 ];
-
-/** Windows for which the weekday-uptime chart renders (≥14 days of history). */
-export const WEEKDAY_CHART_WINDOWS: ReadonlySet<FilterWindow> = new Set<FilterWindow>([
-  "14d", "30d", "60d", "90d", "180d", "365d",
-]);
 
 /**
  * Returns services sorted by the canonical display order. Unknown service
@@ -58,7 +54,7 @@ export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number 
  * windows where the 7-day breakdown would just be two samples per bar.
  */
 export function showWeekdayChart(windowFilter: FilterWindow): boolean {
-  return WEEKDAY_CHART_WINDOWS.has(windowFilter);
+  return WINDOW_CONFIGS[windowFilter].showWeekday;
 }
 
 /**

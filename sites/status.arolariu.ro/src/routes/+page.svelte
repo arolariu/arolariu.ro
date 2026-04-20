@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile} from "$lib/types/status";
-  import {FILTER_WINDOWS, WINDOW_TO_GRANULARITY} from "$lib/types/status";
+  import {FILTER_WINDOWS, WINDOW_CONFIGS} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
   import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
@@ -38,7 +38,7 @@
 
   const showWeekday = $derived(showWeekdayChart(activeWindow));
 
-  const granularity = $derived(WINDOW_TO_GRANULARITY[activeWindow]);
+  const granularity = $derived(WINDOW_CONFIGS[activeWindow].granularity);
 
   const sliced = $derived.by<AggregateFile | null>(() => {
     const file = cache[granularity];

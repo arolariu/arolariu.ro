@@ -1,4 +1,4 @@
-import {WINDOW_TO_DAYS, type AggregateFile, type Bucket, type FilterWindow} from "../types/status";
+import {WINDOW_CONFIGS, type AggregateFile, type Bucket, type FilterWindow} from "../types/status";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -11,7 +11,7 @@ function filterBuckets(buckets: readonly Bucket[], cutoffMs: number, nowMs: numb
 
 export function sliceWindow(file: AggregateFile, window: FilterWindow): AggregateFile {
   const nowMs = Date.now();
-  const cutoffMs = nowMs - WINDOW_TO_DAYS[window] * MS_PER_DAY;
+  const cutoffMs = nowMs - WINDOW_CONFIGS[window].days * MS_PER_DAY;
   return {
     ...file,
     services: file.services.map(s => {

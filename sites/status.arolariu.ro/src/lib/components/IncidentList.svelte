@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import type {Incident, IncidentsFile, FilterWindow} from "../types/status";
-  import {WINDOW_TO_DAYS} from "../types/status";
+  import {WINDOW_CONFIGS} from "../types/status";
   import {formatDuration} from "../aggregation/formatDuration";
   import IncidentDetail from "./IncidentDetail.svelte";
 
@@ -62,7 +62,7 @@
 
   const filtered = $derived.by<readonly Incident[]>(() => {
     if (!incidents) return [];
-    const cutoffMs = Date.now() - WINDOW_TO_DAYS[windowFilter] * 86_400_000;
+    const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * 86_400_000;
     return incidents.incidents
       .filter(inc =>
         Date.parse(inc.startedAt) >= cutoffMs

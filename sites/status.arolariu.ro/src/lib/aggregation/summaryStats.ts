@@ -1,5 +1,5 @@
 import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
-import {WINDOW_TO_DAYS} from "../types/status";
+import {WINDOW_CONFIGS} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
 
 const MS_PER_DAY = 86_400_000;
@@ -46,11 +46,11 @@ export interface IncidentCounts {
 }
 
 /**
- * Incident counts scoped to a window. `startedAt` within `WINDOW_TO_DAYS[windowFilter]` days.
+ * Incident counts scoped to a window. `startedAt` within `WINDOW_CONFIGS[windowFilter].days` days.
  */
 export function computeIncidentCount(incidents: IncidentsFile | null, windowFilter: FilterWindow): IncidentCounts {
   if (!incidents) return {total: 0, open: 0, resolved: 0};
-  const cutoffMs = Date.now() - WINDOW_TO_DAYS[windowFilter] * MS_PER_DAY;
+  const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const scoped = incidents.incidents.filter(inc => Date.parse(inc.startedAt) >= cutoffMs);
   const open = scoped.filter(i => i.status === "open").length;
   const resolved = scoped.filter(i => i.status === "resolved").length;
@@ -64,7 +64,7 @@ export function computeIncidentCount(incidents: IncidentsFile | null, windowFilt
  */
 export function computeMttr(incidents: IncidentsFile | null, windowFilter: FilterWindow): number | undefined {
   if (!incidents) return undefined;
-  const cutoffMs = Date.now() - WINDOW_TO_DAYS[windowFilter] * MS_PER_DAY;
+  const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const resolved = incidents.incidents.filter(
     inc => inc.status === "resolved"
       && Date.parse(inc.startedAt) >= cutoffMs
