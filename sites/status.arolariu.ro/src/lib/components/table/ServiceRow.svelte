@@ -1,4 +1,16 @@
 <script lang="ts">
+  /**
+   * ServiceRow
+   * ----------
+   * A single grid row in the main status table. Renders: status dot (latest
+   * state, pulses when non-healthy), service name with caret, p50 sparkline,
+   * the full UptimeBar, uptime %, and tier-colored avg latency.
+   *
+   * Expansion ARIA contract: the name cell is a `role="button"` with
+   * `aria-expanded`, focusable via `tabindex="0"`, and toggles on click or
+   * Enter/Space keypress (matching the button affordance). When expanded,
+   * the {@link ServiceDetailPanel} slides in directly below the row.
+   */
   import type {Bucket, ServiceSeries} from "../../types/status";
   import {computeUptime} from "../../aggregation/computeUptime";
   import {computeAvgLatency} from "../../aggregation/computeAvgLatency";
@@ -8,18 +20,29 @@
   import LatencySparkline from "./LatencySparkline.svelte";
   import ServiceDetailPanel from "./ServiceDetailPanel.svelte";
 
+  /** Props for the {@link ServiceRow} component. */
   interface Props {
+    /** Windowed service series with buckets + sub-series metadata. */
     series: ServiceSeries;
+    /** Whether the detail panel below this row is open. */
     expanded: boolean;
+    /** Invoked on click/Enter/Space on the name cell. */
     onToggle: () => void;
+    /** Hover/focus callback forwarded to the segment-tooltip anchor. */
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
+    /** Stable id for `aria-describedby` wiring from hovered segments. */
     tooltipId?: string | undefined;
+    /** Timestamp of the currently-hovered bucket (route state — pass-through). */
     hoveredBucketT?: string | null;
+    /** Bucket span in ms — forwarded to UptimeBar + LatencyChart for accurate ranges. */
     bucketDurationMs: number;
   }
 
   let {series, expanded, onToggle, onHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
 
+  // `latest` = most recent bucket status; `uptime` / `avgLatency` span the
+  // whole visible window. Splitting these matters because a healthy-today
+  // service can still show a window-level uptime dip.
   const latest = $derived(deriveLatestStatus(series));
   const uptime = $derived(computeUptime(series.buckets));
   const avgLatency = $derived(computeAvgLatency(series.buckets));
@@ -118,9 +141,10 @@
   }
   .name-col[aria-expanded="true"] .caret { transform: rotate(90deg); }
 
-  /* Stack on narrow page: driven by the .page container (statusPage) so
-     it fires based on the page width rather than the row's own
-     min-content width (which is larger than 640px). */
+  /* Section: narrow-viewport stacking.
+     Driven by the .page container (statusPage) so it fires based on the
+     page width rather than the row's own min-content width (which is
+     larger than 640px). */
   @container statusPage (max-width: 640px) {
     .row {
       grid-template-columns: 1fr auto auto;

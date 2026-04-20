@@ -1,6 +1,19 @@
 <script lang="ts">
+  /**
+   * SkeletonRow
+   * -----------
+   * Shimmer placeholder that mirrors the {@link ServiceRow} grid layout
+   * while data is loading. Matches the real row's `grid-template-areas` so
+   * column widths stay stable when the skeletons are swapped out for
+   * populated rows (no layout shift on load).
+   *
+   * Shimmer animates a moving-gradient background; suppressed under
+   * `prefers-reduced-motion` via the shared `.shimmer` utility.
+   */
   interface Props {
+    /** Number of pseudo-segments in the uptime-bar slot. 48 ≈ a 1-day fine grid. */
     segmentCount?: number;
+    /** Indent to match a sub-service row. */
     indent?: boolean;
   }
   let {segmentCount = 48, indent = false}: Props = $props();

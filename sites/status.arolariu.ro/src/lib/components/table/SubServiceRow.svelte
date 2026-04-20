@@ -1,4 +1,16 @@
 <script lang="ts">
+  /**
+   * SubServiceRow
+   * -------------
+   * Indented row rendered inside {@link ServiceDetailPanel}, one per
+   * sub-check (dependency, TLS, DNS, etc.). Shares the table grid layout
+   * with {@link ServiceRow} so columns align visually, but uses a
+   * smaller-height `variant="sub"` UptimeBar and a dimmer opacity.
+   *
+   * Not itself expandable — the sub-row is purely a readout; hover/focus on
+   * its segments forwards up to the same shared tooltip channel as the
+   * parent row.
+   */
   import type {Bucket, ServiceId} from "../../types/status";
   import {computeUptime} from "../../aggregation/computeUptime";
   import {computeAvgLatency} from "../../aggregation/computeAvgLatency";
@@ -6,18 +18,28 @@
   import {latencyTier} from "../../aggregation/latencyTier";
   import UptimeBar from "./UptimeBar.svelte";
 
+  /** Props for the {@link SubServiceRow} component. */
   interface Props {
+    /** Parent service id — used to synthesize a series object for the status derivation helper. */
     service: ServiceId;
+    /** Display name of the sub-check. */
     name: string;
+    /** Windowed buckets for this sub-check. */
     buckets: readonly Bucket[];
+    /** Hover/focus callback forwarded to the segment-tooltip anchor. */
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
+    /** Stable tooltip id for `aria-describedby` wiring. */
     tooltipId?: string | undefined;
+    /** Timestamp of the currently-hovered bucket (route state — pass-through). */
     hoveredBucketT?: string | null;
+    /** Base bucket span in ms — forwarded to UptimeBar for merged-bucket range math. */
     bucketDurationMs?: number | undefined;
   }
 
   let {service, name, buckets, onHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
 
+  // Empty-buckets short-circuit avoids running `deriveLatestStatus` on an
+  // empty array (its contract requires at least one bucket).
   const latest = $derived(
     buckets.length === 0
       ? "Healthy" as const

@@ -1,12 +1,37 @@
 <script lang="ts">
+  /**
+   * UptimeBar
+   * ---------
+   * Dense horizontal strip of flex-sized segments, one per visible bucket,
+   * colored by {@link HealthStatus} (up / degraded / down). The bar is the
+   * primary visualization of service health across the window.
+   *
+   * **Responsive downsampling.** A ResizeObserver tracks container width
+   * and derives `maxSegments = floor(containerWidth / segmentTargetPx)`.
+   * When there are more buckets than segments, consecutive chunks are
+   * merged via {@link mergeBuckets} (worst-wins status, summed probes,
+   * averaged latency). Merged buckets carry `spanMs` so the tooltip can
+   * show the true end-of-range rather than a single-bucket duration.
+   *
+   * **Interaction.** Each segment is a focusable `<button>` with an aria
+   * label describing the time, status, and worst sub-check. Mouse and
+   * keyboard focus both emit `onSegmentHover`, driving the route-level
+   * SegmentTooltip.
+   */
   import {onMount} from "svelte";
   import type {Bucket, HealthStatus} from "../../types/status";
 
+  /** Props for the {@link UptimeBar} component. */
   interface Props {
+    /** Windowed buckets in chronological order. */
     buckets: readonly Bucket[];
+    /** `primary` (regular height) or `sub` (reduced height + faded opacity) — used inside ServiceDetailPanel. */
     variant?: "primary" | "sub";
+    /** Fired on mouseenter/focus (with the bucket + target) and mouseleave/blur (with nulls). */
     onSegmentHover: (bucket: Bucket | null, target: HTMLElement | null) => void;
+    /** Stable id of the shared tooltip element for `aria-describedby`. */
     tooltipId?: string | undefined;
+    /** Timestamp of the currently-hovered bucket — used to gate `aria-describedby` to just the active segment. */
     hoveredBucketT?: string | null;
     /**
      * Base bucket duration (ms). When the bar downsamples (merges) buckets to
@@ -37,6 +62,9 @@
     return () => ro.disconnect();
   });
 
+  // Segment target width in px lives in a CSS custom property so theme
+  // tweaks can re-tune segment density without touching TS. SSR fallback
+  // 6px keeps the shape reasonable when there's no document yet.
   const targetPx = $derived.by(() => {
     if (typeof document === "undefined") return 6;
     const raw = getComputedStyle(document.documentElement).getPropertyValue("--segment-target-px").trim();
@@ -44,6 +72,7 @@
     return Number.isFinite(n) && n > 0 ? n : 6;
   });
 
+  // Floor 12 segments so very narrow containers still show a readable strip.
   const maxSegments = $derived(Math.max(12, Math.floor(containerWidth / Math.max(3, targetPx))));
 
   function mergeBuckets(chunk: readonly Bucket[], baseDurationMs: number | undefined): Bucket {

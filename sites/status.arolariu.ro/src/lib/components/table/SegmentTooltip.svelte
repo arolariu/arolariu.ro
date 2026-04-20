@@ -1,12 +1,34 @@
 <script lang="ts">
+  /**
+   * SegmentTooltip
+   * --------------
+   * Absolutely-positioned popover that renders details for a hovered /
+   * focused uptime-bar segment: time range, HTTP status, probe counts, a
+   * stacked latency bar (p50 indicator + p99 fill), the full p50/p75/p95/p99
+   * table, and the worst sub-check reason when one exists.
+   *
+   * Positioning is delegated to {@link usePopoverPosition} which centers the
+   * tooltip above the anchor by default and flips below / clamps
+   * horizontally when it would overflow the viewport. The hook re-evaluates
+   * on scroll + resize so the tooltip tracks its anchor. `pointer-events:
+   * none` — the tooltip is purely decorative, never takes focus.
+   *
+   * Rendered once at the route level (not per-segment) — pass the hovered
+   * bucket + anchor in and only the last hover survives.
+   */
   import type {Bucket} from "../../types/status";
   import {formatRelativeTime} from "../../aggregation/formatRelativeTime";
   import {usePopoverPosition} from "../../hooks/usePopoverPosition.svelte";
 
+  /** Props for the {@link SegmentTooltip} component. */
   interface Props {
+    /** Bucket to render. When `null` the tooltip does not render at all. */
     bucket: Bucket | null;
+    /** DOM element the tooltip centers above. Typically a segment button from UptimeBar. */
     anchor: HTMLElement | null;
+    /** Stable id for `aria-describedby` wiring from the segment button. */
     id?: string;
+    /** Base bucket span in ms; used as a fallback when `bucket.spanMs` is absent (un-merged buckets). */
     bucketDurationMs?: number;
   }
 
@@ -42,7 +64,9 @@
     return new Date(iso).toISOString().slice(0, 16).replace("T", " · ") + " UTC";
   }
 
-  // Latency visualization scale: clamp at max(500, p99)
+  // Latency visualization scale: clamp at max(500, p99) so fast services
+  // still look fast (500ms floor prevents microsecond services from showing
+  // a misleadingly full bar).
   const scale = $derived(bucket ? Math.max(500, bucket.latency.p99) : 500);
   const p50Pct = $derived(bucket ? Math.min(100, (bucket.latency.p50 / scale) * 100) : 0);
   const p99Pct = $derived(bucket ? Math.min(100, (bucket.latency.p99 / scale) * 100) : 0);
@@ -119,6 +143,7 @@
 {/if}
 
 <style>
+  /* Section: popover shell + arrow */
   .tooltip {
     position: absolute;
     transform: translate(-50%, -100%);
@@ -145,6 +170,7 @@
     transform: translateX(-50%) rotate(45deg);
   }
 
+  /* Section: header — time range + status badge */
   .tip-head {
     display: flex;
     align-items: flex-start;
@@ -186,6 +212,7 @@
     margin-bottom: var(--sp-xs);
   }
 
+  /* Section: HTTP + probe counts grid */
   .tip-grid {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -199,6 +226,7 @@
   .faint { opacity: 0.5; }
   .detail { opacity: 0.6; font-size: 10px; }
 
+  /* Section: latency visualization — bar, percentile grid, worst sub-check reason */
   .latency-viz {
     margin: var(--sp-xs) 0;
     padding: var(--sp-xs) 0;

@@ -1,11 +1,28 @@
 <script lang="ts">
+  /**
+   * IncidentCard
+   * ------------
+   * Single card in the incident timeline. The head is a real `<button>`
+   * (resetting all native styles via `all: unset`) so Space/Enter toggle
+   * expansion "for free" without a manual keydown handler. `aria-expanded`
+   * and `aria-controls` wire the head to the detail region for screen
+   * readers.
+   *
+   * A left color rail indicates severity: down-red for open incidents,
+   * amber (degraded) for resolved ones. Clicking anywhere on the head
+   * (service name, pill, severity, meta) toggles.
+   */
   import type {Incident} from "../../types/status";
   import {formatDuration} from "../../aggregation/formatDuration";
   import IncidentDetail from "./IncidentDetail.svelte";
 
+  /** Props for the {@link IncidentCard} component. */
   interface Props {
+    /** Incident record (open or resolved). */
     incident: Incident;
+    /** Whether the card's detail region is open. */
     expanded: boolean;
+    /** Invoked when the head is clicked or Enter/Space is pressed. */
     onToggle: () => void;
     /** Caller-supplied relative-time formatter so the nowTick reactive
      *  dependency lives with the list, not per-card. */

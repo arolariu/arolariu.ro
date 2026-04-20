@@ -1,4 +1,11 @@
 <script lang="ts">
+  /**
+   * Global +error boundary
+   * ----------------------
+   * SvelteKit renders this component whenever a route load or render
+   * throws — shows the status code + message in a minimal layout. No
+   * retry affordance; SvelteKit's built-in navigation reloads the app.
+   */
   import {page} from "$app/stores";
 </script>
 

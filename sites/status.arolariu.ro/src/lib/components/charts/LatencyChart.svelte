@@ -1,9 +1,32 @@
 <script lang="ts">
+  /**
+   * LatencyChart
+   * ------------
+   * Fan chart with a p50 centerline and three alpha-varied bands — outer
+   * (p95↔p99), middle (p75↔p95), inner (p50↔p75) — painted back-to-front
+   * so the darkest band sits visually in front. All bands share the
+   * `--status-up` accent; only alpha changes so the chart stays
+   * colorblind-safe (legend + p50 line carry the semantic load).
+   *
+   * **Degraded fallback.** Pre-upgrade aggregates lack p75/p95. When any
+   * bucket is missing either percentile, `hasFan` goes false and the chart
+   * falls back to the older look: p50 line + p99 envelope polygon down to
+   * the x-axis using a vertical gradient.
+   *
+   * **Interaction.** A pointermove handler snaps to the nearest bucket and
+   * renders a crosshair line + p50/p99 dots; a floating percentile card
+   * (positioned by percentage) shows exact values. An `aria-label` + live
+   * `<desc>` give screen readers a prose summary.
+   */
   import type {Bucket} from "../../types/status";
 
+  /** Props for the {@link LatencyChart} component. */
   interface Props {
+    /** Windowed buckets in chronological order; drives both the geometry and the axis auto-scale. */
     buckets: readonly Bucket[];
+    /** Service id — appended to the SVG gradient id so multiple charts on one page don't collide. */
     service: string;
+    /** Bucket span in ms — shown in the legend hint ("N buckets · M min each"). */
     bucketDurationMs: number;
   }
 
@@ -27,6 +50,9 @@
     )
   );
 
+  // yMax clamp: `p50Max * 2` keeps fast services from having their p99 spike
+  // completely dominate the chart; 200 is a visual floor so the axis never
+  // collapses when every probe is sub-10ms.
   const p50Max = $derived(Math.max(...buckets.map(b => b.latency.p50), 100));
   const p99Max = $derived(Math.max(...buckets.map(b => b.latency.p99), 200));
   const yMax = $derived(Math.max(p99Max, p50Max * 2, 200));
@@ -73,6 +99,9 @@
   } | null>(null);
   let svgEl = $state<SVGSVGElement | null>(null);
 
+  // Convert pointer-x to viewBox-x, snap to nearest bucket index, then
+  // recompute both p50 and p99 pixel coords so the crosshair dots sit on
+  // the actual data points (not interpolated).
   function onPointerMove(e: PointerEvent) {
     if (!svgEl || buckets.length === 0) return;
     const rect = svgEl.getBoundingClientRect();

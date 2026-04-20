@@ -1,8 +1,18 @@
 <script lang="ts">
+  /**
+   * IncidentDetail
+   * --------------
+   * Structured readout of an incident (rendered inside an expanded
+   * {@link IncidentCard}). Two-column grid: a `<dl>` of timestamps +
+   * metadata on the left, the full reason/stacktrace pre-block on the
+   * right. Collapses to a single column on narrow viewports.
+   */
   import type {Incident} from "../../types/status";
   import {formatDuration} from "../../aggregation/formatDuration";
 
+  /** Props for the {@link IncidentDetail} component. */
   interface Props {
+    /** Incident to render. Resolved incidents gain the "Resolved" + concrete duration rows. */
     incident: Incident;
   }
 
@@ -12,6 +22,8 @@
   const resolvedAt = $derived(
     incident.status === "resolved" ? new Date(incident.resolvedAt) : null,
   );
+  // "ongoing" when open so the duration column still renders a meaningful
+  // value rather than an em-dash.
   const durationText = $derived(
     incident.status === "resolved" ? formatDuration(incident.durationMs) : "ongoing",
   );

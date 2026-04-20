@@ -1,18 +1,38 @@
 <script lang="ts">
+  /**
+   * ServiceDetailPanel
+   * ------------------
+   * Expansion panel slotted beneath an expanded {@link ServiceRow}. Renders
+   * one `SubServiceRow` per sub-check (dependency health, TLS, DNS, etc.)
+   * plus a full-resolution {@link LatencyChart} for the parent's buckets.
+   *
+   * Slides in on mount; animation is suppressed under
+   * `prefers-reduced-motion`. Hover/focus handlers are forwarded through to
+   * the shared tooltip anchor so nested sub-rows participate in the same
+   * tooltip channel as the parent row.
+   */
   import type {Bucket, ServiceSeries} from "../../types/status";
   import LatencyChart from "../charts/LatencyChart.svelte";
   import SubServiceRow from "./SubServiceRow.svelte";
 
+  /** Props for the {@link ServiceDetailPanel} component. */
   interface Props {
+    /** Parent service series; sub-series (if any) render as nested rows. */
     series: ServiceSeries;
+    /** Bucket span in ms — forwarded to the latency chart + nested rows. */
     bucketDurationMs: number;
+    /** Hover/focus callback forwarded from the route-level tooltip orchestrator. */
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
+    /** Stable tooltip id for `aria-describedby`. */
     tooltipId?: string | undefined;
+    /** Timestamp of the currently-hovered bucket for aria wiring parity across rows. */
     hoveredBucketT?: string | null;
   }
 
   let {series, bucketDurationMs, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
 
+  // Object.entries gives a stable-enough iteration order for the sub-series
+  // map. Empty when the service has no sub-checks.
   const subEntries = $derived(
     series.subSeries ? Object.entries(series.subSeries) : []
   );

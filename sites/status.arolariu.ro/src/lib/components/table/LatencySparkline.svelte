@@ -1,15 +1,33 @@
 <script lang="ts">
+  /**
+   * LatencySparkline
+   * ----------------
+   * Compact inline SVG polyline of per-bucket p50 latency, sized to fit the
+   * table cell via `preserveAspectRatio="none"`. Color is driven by the tier
+   * of the most recent bucket (fast / ok / slow) and the line animates in
+   * using an SVG stroke-dashoffset reveal. `aria-hidden` — this is a
+   * decorative companion to the numeric latency column, not a primary signal.
+   *
+   * No interaction: hover/tooltip belongs to the adjacent UptimeBar.
+   */
   import type {Bucket} from "../../types/status";
   import {latencyTier} from "../../aggregation/latencyTier";
 
+  /** Props for the {@link LatencySparkline} component. */
   interface Props {
+    /** Buckets for the currently-selected window. Rendered in chronological order. */
     buckets: readonly Bucket[];
+    /** SVG viewBox width in arbitrary units (stretched to the cell). */
     width?: number;
+    /** SVG viewBox height in arbitrary units (stretched to the cell). */
     height?: number;
   }
 
   let {buckets, width = 60, height = 16}: Props = $props();
 
+  // Self-normalizing polyline: rescale y to each window's own [min, max] so
+  // the shape stays readable regardless of absolute magnitude. The 5%/5% top
+  // and bottom padding prevents the line from kissing the edges.
   const points = $derived.by(() => {
     if (buckets.length === 0) return "";
     const p50s = buckets.map(b => b.latency.p50);
@@ -23,6 +41,8 @@
     }).join(" ");
   });
 
+  // Tier is taken from the *last* bucket — the sparkline's color should
+  // reflect current state, not aggregate behavior across the window.
   const tier = $derived.by(() => {
     const last = buckets[buckets.length - 1];
     return last === undefined ? "fast" : latencyTier(last.latency.p50);

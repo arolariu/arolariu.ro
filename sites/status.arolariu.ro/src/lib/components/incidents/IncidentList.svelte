@@ -1,12 +1,31 @@
 <script lang="ts">
+  /**
+   * IncidentList
+   * ------------
+   * Top-level incidents section. Responsibilities:
+   *
+   * - Window-filter the incident set (cutoff = now - window.days).
+   * - Service chip filter (with `null` == "All") — state resets when the
+   *   outer window changes to avoid silent empty lists.
+   * - Group surviving incidents by month ("April 2026") with inline
+   *   headers.
+   * - Delegate relative-time formatting to a local `useMinuteTick`
+   *   subscription so cards don't each re-subscribe, keeping the ticking
+   *   reactive dependency in one place.
+   * - Render a loading placeholder, a friendly empty state, or the
+   *   grouped {@link IncidentCard} list.
+   */
   import type {Incident, IncidentsFile, FilterWindow} from "../../types/status";
   import {WINDOW_CONFIGS} from "../../types/status";
   import {useMinuteTick} from "../../hooks/useMinuteTick.svelte";
   import IncidentCard from "./IncidentCard.svelte";
   import IncidentFilterChips from "./IncidentFilterChips.svelte";
 
+  /** Props for the {@link IncidentList} component. */
   interface Props {
+    /** The full fetched incidents file (all time) or `null` while loading. */
     incidents: IncidentsFile | null;
+    /** Active window filter — drives the cutoff used when filtering. */
     windowFilter: FilterWindow;
   }
 

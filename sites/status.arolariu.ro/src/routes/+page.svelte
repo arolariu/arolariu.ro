@@ -1,4 +1,25 @@
 <script lang="ts">
+  /**
+   * Route: / (status dashboard)
+   * --------------------------
+   * Orchestrates the whole status page. Responsibilities:
+   *
+   * - State: `activeWindow` (1d/14d/30d/…), granularity cache (fine/hourly/daily),
+   *   incidents, expansion, hovered bucket, help-overlay visibility.
+   * - Data fetch: one `loadAggregate(granularity)` per unique granularity,
+   *   cached; triggered via `$effect` whenever the derived granularity changes.
+   * - Derived pipeline: granularity → sliced AggregateFile → ordered services
+   *   + bucket duration + overall status + weekday-chart visibility.
+   * - Keyboard wiring: global keydown handler (from `createKeyboardHandler`)
+   *   registered onMount; wired to window changes, row expand/collapse,
+   *   refresh, and help toggle.
+   * - Layout (top → bottom): masthead, StatusBanner, SummaryStats,
+   *   FilterPills, optional error banner, the service table, optional
+   *   WeekdayUptimeChart, IncidentList, footer, SegmentTooltip overlay,
+   *   KeyboardHelpOverlay. The `.page` element declares `container-type:
+   *   inline-size` + `container-name: statusPage` so child components can
+   *   target `@container statusPage (max-width: 640px)`.
+   */
   import {onMount} from "svelte";
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile} from "$lib/types/status";
   import {WINDOW_CONFIGS} from "$lib/types/status";
@@ -36,10 +57,15 @@
   let hoveredAnchor: HTMLElement | null = $state(null);
   let helpOpen = $state(false);
 
+  // Weekday chart only makes sense across multiple days of data.
   const showWeekday = $derived(showWeekdayChart(activeWindow));
 
+  // Granularity (fine/hourly/daily) decides which cached aggregate file the
+  // rest of the pipeline reads. Shorter windows → finer granularity.
   const granularity = $derived(WINDOW_CONFIGS[activeWindow].granularity);
 
+  // Cache is per-granularity, but presentation is per-window; `sliceWindow`
+  // trims the cached file down to just the visible range.
   const sliced = $derived.by<AggregateFile | null>(() => {
     const file = cache[granularity];
     return file ? sliceWindow(file, activeWindow) : null;
@@ -49,6 +75,8 @@
 
   const ordered = $derived.by(() => (sliced ? orderedServices(sliced) : null));
 
+  // "loading" sentinel (not HealthStatus) so the banner can distinguish
+  // pre-data from healthy.
   const overallStatus = $derived.by(() =>
     sliced ? deriveOverallStatus(sliced.services) : "loading" as const
   );
@@ -74,6 +102,8 @@
     }
   }
 
+  // Re-runs whenever the derived `granularity` changes (i.e. when the user
+  // picks a window that maps to a granularity we haven't loaded yet).
   $effect(() => { void loadAggregate(granularity); });
 
   const handleGlobalKeydown = createKeyboardHandler({
@@ -166,6 +196,9 @@
     </div>
 
     {#if !sliced}
+      <!-- Skeleton shape mirrors a typical expanded-row layout
+           (2 rows, 2 indented sub-rows, 2 more rows) so the transition
+           into real data feels continuous rather than popping. -->
       <SkeletonRow/>
       <SkeletonRow/>
       <SkeletonRow indent/>
@@ -175,6 +208,9 @@
     {:else if sliced.services.length === 0}
       <div class="empty">No probes recorded yet — first data in ≤30 min.</div>
     {:else}
+      <!-- {#key activeWindow} forces a remount on window change so the
+           row stagger + fade-in animation replays — the visible buckets
+           genuinely change, so the replay reinforces the update. -->
       {#key activeWindow}
         <div class="status-rows-slot">
           {#each ordered ?? [] as series (series.service)}
@@ -203,12 +239,16 @@
     Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
   </footer>
 
+  <!-- Single route-level tooltip instance; every UptimeBar segment updates
+       the shared `hoveredBucket` / `hoveredAnchor` rather than instantiating
+       its own tooltip, which keeps the DOM flat. -->
   <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID} {bucketDurationMs}/>
 
   <KeyboardHelpOverlay open={helpOpen} onClose={() => (helpOpen = false)} />
 </main>
 
 <style>
+  /* Section: page shell + container query host */
   .page {
     width: min(var(--page-max), 100% - 2 * var(--gutter));
     margin-inline: auto;
@@ -216,6 +256,7 @@
     container-type: inline-size;
     container-name: statusPage;
   }
+  /* Section: masthead — terminal-styled wordmark + right-side controls */
   .masthead {
     display: flex;
     align-items: flex-end;
@@ -274,12 +315,14 @@
     .masthead { flex-direction: column; align-items: flex-start; }
     .masthead-right { padding-bottom: 0; align-self: stretch; justify-content: flex-end; }
   }
+  /* Section: window filter pill strip */
   .controls {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--sp-md);
   }
+  /* Section: fetch-failure banner (only renders when loadError is set) */
   .error {
     padding: 12px 14px;
     background: var(--status-down-bg);
@@ -297,6 +340,7 @@
     cursor: pointer;
     margin-left: 6px;
   }
+  /* Section: main status table — header + rows slot */
   .status-table {
     background: transparent;
     border-top: 1px solid var(--border-strong);
@@ -341,6 +385,7 @@
     color: var(--text-muted);
     font-size: 13px;
   }
+  /* Section: footer + misc chrome */
   .footer {
     font-family: var(--font-mono);
     font-weight: 400;

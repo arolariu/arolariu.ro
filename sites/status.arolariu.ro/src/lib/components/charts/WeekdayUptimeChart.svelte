@@ -1,8 +1,22 @@
 <script lang="ts">
+  /**
+   * WeekdayUptimeChart
+   * ------------------
+   * Seven-bar vertical chart showing aggregate uptime per weekday across
+   * all services in the current window. Bars are tier-colored (green ≥
+   * 99.9%, amber ≥ 99%, red otherwise) and carry a `<title>` tooltip with
+   * the exact percentage.
+   *
+   * Shown only for wider windows (decision lives in `showWeekdayChart` —
+   * the chart doesn't render itself conditionally). A live `<desc>` gives
+   * a screen-reader-friendly prose readout of all seven values.
+   */
   import type {ServiceSeries} from "../../types/status";
   import {computeWeekdayUptime} from "../../aggregation/weekdayUptime";
 
+  /** Props for the {@link WeekdayUptimeChart} component. */
   interface Props {
+    /** Service series in the active window — aggregated by weekday inside `computeWeekdayUptime`. */
     services: readonly ServiceSeries[];
   }
 
