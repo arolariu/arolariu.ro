@@ -11,9 +11,9 @@
     name: string;
     buckets: readonly Bucket[];
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
-    tooltipId?: string;
+    tooltipId?: string | undefined;
     hoveredBucketT?: string | null;
-    bucketDurationMs?: number;
+    bucketDurationMs?: number | undefined;
   }
 
   let {service, name, buckets, onHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();

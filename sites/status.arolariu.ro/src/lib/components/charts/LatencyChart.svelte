@@ -81,6 +81,7 @@
     const i = Math.round(((xPx - PAD_L) / INNER_W) * (buckets.length - 1));
     const clamped = Math.max(0, Math.min(buckets.length - 1, i));
     const b = buckets[clamped];
+    if (b === undefined) { hovered = null; return; }
     hovered = {i: clamped, x: xFor(clamped), y50: yFor(b.latency.p50), y99: yFor(b.latency.p99), bucket: b};
   }
   function onPointerLeave() { hovered = null; }

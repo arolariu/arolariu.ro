@@ -30,7 +30,7 @@
         return; // Let Space/Enter bubble naturally
     }
     event.preventDefault();
-    onChange(FILTER_WINDOWS[newIndex]);
+    onChange(FILTER_WINDOWS[newIndex]!);
     // Focus the newly-selected pill for keyboard users
     const container = (event.currentTarget as HTMLElement).parentElement;
     const target = container?.children[newIndex] as HTMLElement | undefined;

@@ -6,14 +6,14 @@
     buckets: readonly Bucket[];
     variant?: "primary" | "sub";
     onSegmentHover: (bucket: Bucket | null, target: HTMLElement | null) => void;
-    tooltipId?: string;
+    tooltipId?: string | undefined;
     hoveredBucketT?: string | null;
     /**
      * Base bucket duration (ms). When the bar downsamples (merges) buckets to
      * fit available width, the merged bucket carries `spanMs = chunk.length *
      * bucketDurationMs` so the tooltip can render the real end-of-range.
      */
-    bucketDurationMs?: number;
+    bucketDurationMs?: number | undefined;
   }
 
   let {buckets, variant = "primary", onSegmentHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
@@ -47,13 +47,17 @@
   const maxSegments = $derived(Math.max(12, Math.floor(containerWidth / Math.max(3, targetPx))));
 
   function mergeBuckets(chunk: readonly Bucket[], baseDurationMs: number | undefined): Bucket {
-    const worst = chunk.reduce((w, b) => STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w, chunk[0]);
+    // Caller (downsample) never passes an empty chunk — slice(i, i + chunkSize)
+    // on a non-empty input always yields at least one element. Non-null
+    // assertion pins the invariant for noUncheckedIndexedAccess.
+    const first = chunk[0]!;
+    const worst = chunk.reduce<Bucket>((w, b) => STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w, first);
     const healthy = chunk.reduce((s, b) => s + b.probes.healthy, 0);
     const total = chunk.reduce((s, b) => s + b.probes.total, 0);
     const avgP50 = Math.round(chunk.reduce((s, b) => s + b.latency.p50, 0) / chunk.length);
     const avgP99 = Math.round(chunk.reduce((s, b) => s + b.latency.p99, 0) / chunk.length);
     const merged: Bucket = {
-      t: chunk[0].t,
+      t: first.t,
       status: worst.status,
       probes: {healthy, total},
       latency: {p50: avgP50, p99: avgP99},

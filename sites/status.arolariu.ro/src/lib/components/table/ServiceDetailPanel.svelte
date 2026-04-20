@@ -7,7 +7,7 @@
     series: ServiceSeries;
     bucketDurationMs: number;
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
-    tooltipId?: string;
+    tooltipId?: string | undefined;
     hoveredBucketT?: string | null;
   }
 
@@ -18,7 +18,7 @@
   );
 </script>
 
-<section class="detail" role="region" aria-label={`Detail for ${series.service}`}>
+<section class="detail" aria-label={`Detail for ${series.service}`}>
   {#if subEntries.length > 0}
     <div class="subchecks">
       {#each subEntries as [name, buckets] (name)}

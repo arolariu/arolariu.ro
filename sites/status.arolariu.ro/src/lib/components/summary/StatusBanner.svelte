@@ -5,7 +5,7 @@
 
   interface Props {
     overallStatus: HealthStatus | "loading";
-    lastProbeAt?: string;
+    lastProbeAt?: string | undefined;
   }
 
   let {overallStatus, lastProbeAt}: Props = $props();

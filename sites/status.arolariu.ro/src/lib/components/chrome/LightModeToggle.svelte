@@ -2,7 +2,7 @@
   import {onMount} from "svelte";
   import {applyTheme, getTheme, setTheme, type Theme} from "../../stores/themeStore.svelte";
 
-  let theme: Theme = $state("auto");
+  let theme = $state<Theme>("auto");
 
   onMount(() => {
     theme = getTheme();

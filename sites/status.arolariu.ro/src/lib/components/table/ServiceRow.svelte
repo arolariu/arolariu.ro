@@ -13,7 +13,7 @@
     expanded: boolean;
     onToggle: () => void;
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
-    tooltipId?: string;
+    tooltipId?: string | undefined;
     hoveredBucketT?: string | null;
     bucketDurationMs: number;
   }

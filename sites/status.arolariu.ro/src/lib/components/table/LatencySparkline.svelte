@@ -24,8 +24,8 @@
   });
 
   const tier = $derived.by(() => {
-    if (buckets.length === 0) return "fast";
-    return latencyTier(buckets[buckets.length - 1].latency.p50);
+    const last = buckets[buckets.length - 1];
+    return last === undefined ? "fast" : latencyTier(last.latency.p50);
   });
 
   // Rough polyline length estimate — summed Euclidean distance between
@@ -35,13 +35,15 @@
   const pathLength = $derived.by(() => {
     if (!points) return 0;
     const coords = points.split(" ").map(pair => {
-      const [x, y] = pair.split(",").map(Number);
-      return {x, y};
+      const parts = pair.split(",");
+      return {x: Number(parts[0] ?? 0), y: Number(parts[1] ?? 0)};
     });
     let len = 0;
     for (let i = 1; i < coords.length; i++) {
-      const dx = coords[i].x - coords[i - 1].x;
-      const dy = coords[i].y - coords[i - 1].y;
+      const cur = coords[i]!;
+      const prev = coords[i - 1]!;
+      const dx = cur.x - prev.x;
+      const dy = cur.y - prev.y;
       len += Math.hypot(dx, dy);
     }
     // Small nudge so paths with length 0 still trigger the animation safely.
