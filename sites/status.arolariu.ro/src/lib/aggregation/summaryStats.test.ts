@@ -18,13 +18,26 @@ describe("computeOverallUptime", () => {
   it("returns 100 for empty services", () => {
     expect(computeOverallUptime([])).toBe(100);
   });
-  it("weighted by probe counts across services+buckets", () => {
+  it("weighted by probe counts across services+buckets, 3-decimal precision", () => {
     const s = [
       mkSeries("arolariu.ro", [{healthy: 3, total: 3, p50: 100}, {healthy: 2, total: 3, p50: 200}]),
       mkSeries("cv.arolariu.ro", [{healthy: 6, total: 6, p50: 30}]),
     ];
-    // (3+2+6) / (3+3+6) = 11/12 = 91.666..., rounded to 91.7
-    expect(computeOverallUptime(s)).toBe(91.7);
+    // (3+2+6) / (3+3+6) = 11/12 = 91.6666… → rounded to 91.667 at 3 decimals
+    expect(computeOverallUptime(s)).toBe(91.667);
+  });
+  it("returns 3-decimal precision on tricky fractions", () => {
+    // 1/3 healthy → 33.3333…% → 33.333
+    const s = [mkSeries("arolariu.ro", [{healthy: 1, total: 3, p50: 100}])];
+    expect(computeOverallUptime(s)).toBe(33.333);
+  });
+  it("rounds near-100 uptime to the 5-nines tier", () => {
+    // 999_999 / 1_000_000 = 99.9999% → Math.round(99.9999 * 1000) / 1000 = 100
+    const s = [mkSeries("arolariu.ro", [{healthy: 999_999, total: 1_000_000, p50: 100}])];
+    expect(computeOverallUptime(s)).toBe(100);
+    // 999_994 / 1_000_000 = 99.9994% → 99.999 (five nines)
+    const s2 = [mkSeries("arolariu.ro", [{healthy: 999_994, total: 1_000_000, p50: 100}])];
+    expect(computeOverallUptime(s2)).toBe(99.999);
   });
 });
 

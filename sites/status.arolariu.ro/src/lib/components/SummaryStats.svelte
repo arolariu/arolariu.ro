@@ -95,7 +95,7 @@
       <span>Overall uptime</span>
       <InfoButton text="Probe-weighted average across all monitored services over the selected window. Worst-service uptime shown below." />
     </dt>
-    <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(1)}%</dd>
+    <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(3)}%</dd>
     <dd class="sub">weighted · last {windowFilter}</dd>
     {#if worst.service && worst.uptime < uptime}
       <dd class="worst">worst: <strong>{worst.service}</strong> · {worst.uptime}%</dd>
