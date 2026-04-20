@@ -1,5 +1,6 @@
 <script lang="ts">
   import type {Bucket} from "../../types/status";
+  import {latencyTier} from "../../aggregation/latencyTier";
 
   interface Props {
     buckets: readonly Bucket[];
@@ -24,8 +25,7 @@
 
   const tier = $derived.by(() => {
     if (buckets.length === 0) return "fast";
-    const last = buckets[buckets.length - 1].latency.p50;
-    return last < 200 ? "fast" : last < 500 ? "ok" : "slow";
+    return latencyTier(buckets[buckets.length - 1].latency.p50);
   });
 
   // Rough polyline length estimate — summed Euclidean distance between

@@ -3,6 +3,7 @@
   import {computeUptime} from "../../aggregation/computeUptime";
   import {computeAvgLatency} from "../../aggregation/computeAvgLatency";
   import {deriveLatestStatus} from "../../aggregation/deriveParentStatus";
+  import {latencyTier} from "../../aggregation/latencyTier";
   import UptimeBar from "./UptimeBar.svelte";
   import LatencySparkline from "./LatencySparkline.svelte";
   import ServiceDetailPanel from "./ServiceDetailPanel.svelte";
@@ -40,7 +41,7 @@
   <div class="spark-cell"><LatencySparkline buckets={series.buckets} /></div>
   <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs} /></div>
   <div class="uptime">{uptime.toFixed(3)}%</div>
-  <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
+  <div class="latency" data-tier={latencyTier(avgLatency)}>{avgLatency} ms</div>
 </div>
 
 {#if expanded}

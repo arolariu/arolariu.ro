@@ -1,6 +1,7 @@
 <script lang="ts">
   import type {ServiceSeries} from "../../types/status";
   import {computeAvgLatency} from "../../aggregation/summaryStats";
+  import {latencyTier} from "../../aggregation/latencyTier";
   import {useCountTween} from "../../hooks/useCountTween.svelte";
   import InfoButton from "../chrome/InfoButton.svelte";
 
@@ -12,7 +13,7 @@
 
   const avgLatency = $derived(computeAvgLatency(services));
   const displayLatency = useCountTween(() => avgLatency);
-  const tier = $derived(avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow");
+  const tier = $derived(latencyTier(avgLatency));
 </script>
 
 <dl class="card">
