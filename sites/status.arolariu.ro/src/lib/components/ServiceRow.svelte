@@ -4,6 +4,7 @@
   import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
   import SubServiceRow from "./SubServiceRow.svelte";
+  import LatencySparkline from "./LatencySparkline.svelte";
 
   interface Props {
     series: ServiceSeries;
@@ -41,6 +42,7 @@
       >▸</button>
     {/if}
   </div>
+  <div class="spark-cell"><LatencySparkline buckets={series.buckets} /></div>
   <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
@@ -55,8 +57,8 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
-    grid-template-areas: "name bar uptime latency";
+    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
+    grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
     padding: var(--sp-sm) var(--sp-md);
@@ -65,6 +67,7 @@
   }
   .row > * { min-width: 0; }
   .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .spark-cell { grid-area: sparkline; min-width: 0; display: block; }
   .bar-cell { grid-area: bar; min-width: 0; }
   .uptime { grid-area: uptime; text-align: right; font-variant-numeric: tabular-nums; }
   .latency { grid-area: latency; text-align: right; font-variant-numeric: tabular-nums; opacity: 0.85; }
@@ -122,6 +125,7 @@
       gap: var(--sp-xs) var(--sp-sm);
       padding-block: var(--sp-md);
     }
+    .spark-cell { display: none; }
     .uptime { font-weight: 600; justify-self: end; }
     .latency { justify-self: end; }
   }

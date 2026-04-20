@@ -132,6 +132,7 @@
   <section class="status-table" aria-label="Service uptime table">
     <div class="status-table__header">
       <div>Service</div>
+      <div>p50 trend</div>
       <div>Uptime timeline</div>
       <div>Uptime</div>
       <div>Avg latency</div>
@@ -239,8 +240,8 @@
   }
   .status-table__header {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
-    grid-template-areas: "name bar uptime latency";
+    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
+    grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     padding: 10px var(--sp-md);
     font-size: 10px;
@@ -252,9 +253,10 @@
   }
   .status-table__header > * { min-width: 0; }
   .status-table__header > :nth-child(1) { grid-area: name; }
-  .status-table__header > :nth-child(2) { grid-area: bar; }
-  .status-table__header > :nth-child(3) { grid-area: uptime; text-align: right; }
-  .status-table__header > :nth-child(4) { grid-area: latency; text-align: right; }
+  .status-table__header > :nth-child(2) { grid-area: sparkline; text-align: center; }
+  .status-table__header > :nth-child(3) { grid-area: bar; }
+  .status-table__header > :nth-child(4) { grid-area: uptime; text-align: right; }
+  .status-table__header > :nth-child(5) { grid-area: latency; text-align: right; }
   @container statusPage (max-width: 640px) {
     /* Card layout labels service/uptime/latency inline; the grid header
        is redundant and would overflow the narrow page. Hide it. */
@@ -297,6 +299,7 @@
   }
   @media (max-width: 768px) {
     .status-table__header { grid-template-columns: 1fr 1.5fr 60px; }
-    .status-table__header > :nth-child(4) { display: none; }
+    .status-table__header > :nth-child(2) { display: none; }
+    .status-table__header > :nth-child(5) { display: none; }
   }
 </style>

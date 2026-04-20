@@ -9,6 +9,7 @@
 
 <div class="skeleton-row" class:indent data-testid="skeleton-row">
   <div class="shimmer name"></div>
+  <div class="shimmer sparkline"></div>
   <div class="bar-cell">
     <div class="bar">
       {#each segments as i (i)}
@@ -23,8 +24,8 @@
 <style>
   .skeleton-row {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
-    grid-template-areas: "name bar uptime latency";
+    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
+    grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
     padding: var(--sp-sm) var(--sp-md);
@@ -32,6 +33,7 @@
   }
   .skeleton-row > * { min-width: 0; }
   .skeleton-row .name { grid-area: name; }
+  .skeleton-row .sparkline { grid-area: sparkline; height: 14px; width: 100%; }
   .skeleton-row .bar-cell { grid-area: bar; min-width: 0; }
   .skeleton-row .uptime { grid-area: uptime; }
   .skeleton-row .latency { grid-area: latency; }
@@ -62,5 +64,6 @@
       gap: var(--sp-xs) var(--sp-sm);
       padding-block: var(--sp-md);
     }
+    .skeleton-row .sparkline { display: none; }
   }
 </style>

@@ -28,6 +28,7 @@
     <span class="dot dot-{latest.toLowerCase()}"></span>
     <span class="name">↳ {name}</span>
   </div>
+  <div class="spark-cell"></div>
   <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
@@ -36,8 +37,8 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) minmax(0, 2.2fr) 6ch 7ch;
-    grid-template-areas: "name bar uptime latency";
+    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
+    grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;
     padding: var(--sp-xs) var(--sp-md) var(--sp-xs) 40px;
@@ -48,6 +49,7 @@
   }
   .row > * { min-width: 0; }
   .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .spark-cell { grid-area: sparkline; min-width: 0; }
   .bar-cell { grid-area: bar; min-width: 0; }
   .uptime { grid-area: uptime; text-align: right; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
   .latency { grid-area: latency; text-align: right; font-size: var(--fs-xs); opacity: 0.85; font-variant-numeric: tabular-nums; }
@@ -81,6 +83,7 @@
       padding-block: var(--sp-sm);
       padding-left: var(--sp-md);
     }
+    .spark-cell { display: none; }
     .uptime { font-weight: 600; justify-self: end; }
     .latency { justify-self: end; }
   }
