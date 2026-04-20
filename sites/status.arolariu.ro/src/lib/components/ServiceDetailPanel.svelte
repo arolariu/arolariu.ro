@@ -35,7 +35,7 @@
 <style>
   .detail {
     padding: var(--sp-sm) var(--sp-md);
-    background: rgba(255, 255, 255, 0.01);
+    background: var(--surface-hover);
     border-bottom: 1px solid var(--border);
     animation: slideIn 200ms ease-out;
   }

@@ -52,9 +52,42 @@
   /* UptimeBar target density — referenced by JS ResizeObserver math */
   --segment-target-px: 6;
 
+  /* Accent — used for focus rings, theme toggle */
+  --accent: #2f81f7;
+  --surface-raised: rgba(255, 255, 255, 0.05);
+
   /* Z-stack */
   --z-tooltip: 20;
   --z-dropdown: 30;
+}
+
+:root[data-theme="light"] {
+  /* Surfaces / borders / text — GitHub Primer light palette */
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface-hover: #f0f3f6;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+  --text: #1f2328;
+  --text-muted: #57606a;
+  --text-faint: rgba(31, 35, 40, 0.55);
+
+  /* Status palette — darker hues for WCAG AA on white */
+  --status-up: #1a7f37;
+  --status-up-bg: rgba(26, 127, 55, 0.1);
+  --status-up-border: rgba(26, 127, 55, 0.35);
+  --status-deg: #9a6700;
+  --status-deg-bg: rgba(154, 103, 0, 0.1);
+  --status-deg-border: rgba(154, 103, 0, 0.35);
+  --status-down: #cf222e;
+  --status-down-bg: rgba(207, 34, 46, 0.1);
+  --status-down-border: rgba(207, 34, 46, 0.4);
+  --status-missing: rgba(0, 0, 0, 0.06);
+
+  --shadow-tooltip: 0 8px 24px rgba(31, 35, 40, 0.15), 0 0 0 1px rgba(31, 35, 40, 0.08);
+
+  --accent: #0969da;
+  --surface-raised: rgba(0, 0, 0, 0.04);
 }
 
 html, body {

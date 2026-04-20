@@ -59,7 +59,7 @@
     cursor: pointer;
     transition: background .12s;
   }
-  .row:hover { background: rgba(255,255,255,0.015); }
+  .row:hover { background: var(--surface-hover); }
   .row:focus-visible {
     outline: 2px solid var(--status-up);
     outline-offset: -2px;

@@ -14,6 +14,7 @@
   import SegmentTooltip from "$lib/components/SegmentTooltip.svelte";
   import RefreshButton from "$lib/components/RefreshButton.svelte";
   import SummaryStats from "$lib/components/SummaryStats.svelte";
+  import LightModeToggle from "$lib/components/LightModeToggle.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 
@@ -176,6 +177,7 @@
       {#if isLocalHost()}
         <span class="local-badge">LOCAL MOCKS</span>
       {/if}
+      <LightModeToggle />
       <RefreshButton {refreshing} onClick={handleRefresh}/>
     </div>
   </header>
