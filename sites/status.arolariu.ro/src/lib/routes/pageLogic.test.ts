@@ -5,9 +5,9 @@ import {
   SERVICE_DISPLAY_ORDER,
   bucketDurationMsFor,
   orderedServices,
-  shouldIgnoreKeydown,
   showWeekdayChart,
 } from "./pageLogic";
+import {shouldIgnoreKeydown} from "./keyboardShortcuts";
 
 function mkSeries(service: ServiceSeries["service"]): ServiceSeries {
   return {service, buckets: []};

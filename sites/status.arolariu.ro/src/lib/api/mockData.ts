@@ -25,10 +25,6 @@ import type {
   ServiceId, ServiceSeries,
 } from "../types/status";
 
-const SERVICES: readonly ServiceId[] = [
-  "arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro",
-];
-
 const MS_PER_MIN = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
@@ -325,9 +321,7 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
 export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const now = Date.now();
   const config = CONFIGS[granularity];
-  const services: ServiceSeries[] = STORYLINES
-    .filter(s => SERVICES.includes(s.service))
-    .map(story => generateServiceSeries(story, config, now));
+  const services: ServiceSeries[] = STORYLINES.map(story => generateServiceSeries(story, config, now));
 
   // Intentionally construct via explicit discriminated-union literal so TS
   // verifies the (bucketSize, windowDays) pair is valid.

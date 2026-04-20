@@ -56,8 +56,3 @@ export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number 
 export function showWeekdayChart(windowFilter: FilterWindow): boolean {
   return WINDOW_CONFIGS[windowFilter].showWeekday;
 }
-
-// `shouldIgnoreKeydown` previously lived here. It moved to
-// `keyboardShortcuts.ts` — its real use site — and the re-export below
-// keeps existing call sites (tests, for now) compiling while we migrate.
-export {shouldIgnoreKeydown} from "./keyboardShortcuts";

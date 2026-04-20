@@ -283,7 +283,6 @@
     z-index: 5;
   }
   .crosshair-label strong { font-size: 10.5px; }
-  .row-h { display: flex; align-items: center; }
   .xh-pcts {
     margin: 2px 0 0 0;
     padding: 0;

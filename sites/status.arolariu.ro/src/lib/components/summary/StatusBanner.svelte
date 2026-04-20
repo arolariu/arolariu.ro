@@ -6,10 +6,9 @@
   interface Props {
     overallStatus: HealthStatus | "loading";
     lastProbeAt?: string;
-    affectedServices?: readonly string[];
   }
 
-  let {overallStatus, lastProbeAt, affectedServices = []}: Props = $props();
+  let {overallStatus, lastProbeAt}: Props = $props();
 
   let nowTick = $state(Date.now());
 
@@ -59,9 +58,7 @@
   </span>
   <div class="body">
     <div class="title">{title}</div>
-    {#if overallStatus !== "Healthy" && affectedServices.length > 0}
-      <div class="meta label-comment">Affected: {affectedServices.join(", ")}</div>
-    {:else if lastProbeAgo}
+    {#if lastProbeAgo}
       <div class="meta label-comment">Last probe · {lastProbeAgo}</div>
     {/if}
   </div>
