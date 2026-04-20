@@ -31,15 +31,15 @@ describe("sliceWindow", () => {
       "2026-04-19T12:00:00Z",
     ]);
     const out = sliceWindow(file, "1d");
-    expect(out.services[0].buckets).toHaveLength(2);
-    expect(out.services[0].buckets.some(b => b.t === "2026-04-17T14:00:00Z")).toBe(false);
+    expect(out.services[0]!.buckets).toHaveLength(2);
+    expect(out.services[0]!.buckets.some(b => b.t === "2026-04-17T14:00:00Z")).toBe(false);
   });
 
   it("drops future buckets (clock skew guard)", () => {
     const file = mkFile(["2030-01-01T00:00:00Z", "2026-04-19T12:00:00Z"]);
     const out = sliceWindow(file, "1d");
-    expect(out.services[0].buckets).toHaveLength(1);
-    expect(out.services[0].buckets[0].t).toBe("2026-04-19T12:00:00Z");
+    expect(out.services[0]!.buckets).toHaveLength(1);
+    expect(out.services[0]!.buckets[0]!.t).toBe("2026-04-19T12:00:00Z");
   });
 
   it("slices subSeries in parallel", () => {
@@ -57,6 +57,6 @@ describe("sliceWindow", () => {
       }],
     };
     const out = sliceWindow(inFile, "1d");
-    expect(out.services[0].subSeries!.mssql).toHaveLength(1);
+    expect(out.services[0]!.subSeries!["mssql"]).toHaveLength(1);
   });
 });

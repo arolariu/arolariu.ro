@@ -1,6 +1,5 @@
 // @vitest-environment node
 import {describe, it, expect} from "vitest";
-import type {ProbeResult} from "../src/lib/types/status";
 import {subCheckSignals} from "./detectIncidentsSubChecks";
 
 describe("subCheckSignals", () => {
@@ -22,10 +21,10 @@ describe("subCheckSignals", () => {
       ],
     });
     expect(sigs).toHaveLength(2);
-    expect(sigs[0].key).toBe("api.arolariu.ro::mssql");
-    expect(sigs[0].reason).toBe("slow");
-    expect(sigs[1].key).toBe("api.arolariu.ro::cosmosdb");
+    expect(sigs[0]!.key).toBe("api.arolariu.ro::mssql");
+    expect(sigs[0]!.reason).toBe("slow");
+    expect(sigs[1]!.key).toBe("api.arolariu.ro::cosmosdb");
     // Fallback reason when no description: "<name> <status>".
-    expect(sigs[1].reason).toBe("cosmosdb Healthy");
+    expect(sigs[1]!.reason).toBe("cosmosdb Healthy");
   });
 });

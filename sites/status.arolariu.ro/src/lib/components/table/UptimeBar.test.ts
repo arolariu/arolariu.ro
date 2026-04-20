@@ -22,7 +22,7 @@ describe("UptimeBar", () => {
     const buckets = [mkBucket("2026-04-19T14:00:00Z", "Degraded")];
     render(UptimeBar, {props: {buckets, onSegmentHover}});
     const segs = screen.getAllByRole("button");
-    await fireEvent.mouseEnter(segs[0]);
+    await fireEvent.mouseEnter(segs[0]!);
     expect(onSegmentHover).toHaveBeenCalledWith(buckets[0], expect.any(HTMLElement));
   });
 

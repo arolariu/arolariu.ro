@@ -7,11 +7,11 @@ import type {ProbeResult} from "../src/lib/types/status";
 import {runDetectIncidents, updateIncidentState} from "./detectIncidents";
 
 function mkProbe(service: string, ts: string, overall: "Healthy" | "Degraded" | "Unhealthy", error?: string): ProbeResult {
-  return {
+  const base: ProbeResult = {
     service: service as ProbeResult["service"], timestamp: ts,
     latencyMs: 100, httpStatus: overall === "Healthy" ? 200 : 503, overall,
-    error,
   };
+  return error !== undefined ? {...base, error} : base;
 }
 
 describe("updateIncidentState (state machine)", () => {
@@ -28,10 +28,10 @@ describe("updateIncidentState (state machine)", () => {
     ]);
     const open = state.incidents.filter(i => i.status === "open");
     expect(open).toHaveLength(1);
-    expect(open[0].service).toBe("arolariu.ro");
-    expect(open[0].severity).toBe("Degraded");
-    expect(open[0].startedAt).toBe("2026-04-19T14:00:00Z");
-    expect(open[0].probeCount).toBe(2);
+    expect(open[0]!.service).toBe("arolariu.ro");
+    expect(open[0]!.severity).toBe("Degraded");
+    expect(open[0]!.startedAt).toBe("2026-04-19T14:00:00Z");
+    expect(open[0]!.probeCount).toBe(2);
   });
 
   it("3rd failure increments probeCount, does not open second incident", () => {
@@ -42,8 +42,8 @@ describe("updateIncidentState (state machine)", () => {
     ]);
     const open = state.incidents.filter(i => i.status === "open");
     expect(open).toHaveLength(1);
-    expect(open[0].probeCount).toBe(3);
-    expect(open[0].severity).toBe("Unhealthy");
+    expect(open[0]!.probeCount).toBe(3);
+    expect(open[0]!.severity).toBe("Unhealthy");
   });
 
   it("Healthy probe closes the open incident", () => {
@@ -90,7 +90,7 @@ describe("updateIncidentState (state machine)", () => {
     const state = updateIncidentState({incidents: []}, withSubs);
     const open = state.incidents.filter(i => i.status === "open");
     expect(open).toHaveLength(1);
-    expect(open[0].subCheck).toBe("mssql");
+    expect(open[0]!.subCheck).toBe("mssql");
   });
 
   it("reason is refreshed when severity escalates from Degraded to Unhealthy", () => {
@@ -101,9 +101,9 @@ describe("updateIncidentState (state machine)", () => {
     ]);
     const open = state.incidents.filter(i => i.status === "open");
     expect(open).toHaveLength(1);
-    expect(open[0].severity).toBe("Unhealthy");
+    expect(open[0]!.severity).toBe("Unhealthy");
     // Reason should reflect the escalation, not the initial Degraded signature.
-    expect(open[0].reason).toBe("connection refused");
+    expect(open[0]!.reason).toBe("connection refused");
   });
 
   it("reason stays put when severity does not change", () => {
@@ -115,7 +115,7 @@ describe("updateIncidentState (state machine)", () => {
     const open = state.incidents.filter(i => i.status === "open");
     expect(open).toHaveLength(1);
     // Severity never changed, so reason stays at the incident's initial signature.
-    expect(open[0].reason).toBe("initial reason");
+    expect(open[0]!.reason).toBe("initial reason");
   });
 
   it("same service failing after resolve creates a new incident with new id", () => {
@@ -129,7 +129,7 @@ describe("updateIncidentState (state machine)", () => {
       mkProbe("arolariu.ro", "2026-04-20T14:30:00Z", "Degraded", "y"),
     ]);
     expect(second.incidents).toHaveLength(2);
-    expect(second.incidents[0].id).not.toBe(second.incidents[1].id);
+    expect(second.incidents[0]!.id).not.toBe(second.incidents[1]!.id);
   });
 });
 

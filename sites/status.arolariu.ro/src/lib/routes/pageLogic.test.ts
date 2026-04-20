@@ -39,7 +39,7 @@ describe("orderedServices", () => {
     const file = mkFile(original);
     orderedServices(file);
     // Original array retains its shuffled order — sort was on a copy.
-    expect(file.services[0].service).toBe("cv.arolariu.ro");
+    expect(file.services[0]!.service).toBe("cv.arolariu.ro");
   });
 });
 

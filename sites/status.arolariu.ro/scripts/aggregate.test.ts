@@ -38,10 +38,10 @@ describe("rebuildFine", () => {
     expect(agg.windowDays).toBe(14);
     const arolariu = agg.services.find(s => s.service === "arolariu.ro")!;
     expect(arolariu.buckets).toHaveLength(2);
-    expect(arolariu.buckets[0].t).toBe("2026-04-19T14:00:00.000Z");
-    expect(arolariu.buckets[0].probes).toEqual({healthy: 2, total: 2});
-    expect(arolariu.buckets[0].latency.p50).toBe(150);
-    expect(arolariu.buckets[1].status).toBe("Degraded");
+    expect(arolariu.buckets[0]!.t).toBe("2026-04-19T14:00:00.000Z");
+    expect(arolariu.buckets[0]!.probes).toEqual({healthy: 2, total: 2});
+    expect(arolariu.buckets[0]!.latency.p50).toBe(150);
+    expect(arolariu.buckets[1]!.status).toBe("Degraded");
   });
 
   it("picks worst status when bucket has mixed health", () => {
@@ -50,8 +50,8 @@ describe("rebuildFine", () => {
       mkProbe("arolariu.ro", "2026-04-19T14:15:00Z", "Unhealthy"),
     ];
     const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
-    expect(agg.services[0].buckets[0].status).toBe("Unhealthy");
-    expect(agg.services[0].buckets[0].probes).toEqual({healthy: 1, total: 2});
+    expect(agg.services[0]!.buckets[0]!.status).toBe("Unhealthy");
+    expect(agg.services[0]!.buckets[0]!.probes).toEqual({healthy: 1, total: 2});
   });
 
   it("computes sub-series for api.arolariu.ro when subChecks present", () => {
@@ -66,9 +66,9 @@ describe("rebuildFine", () => {
     const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
     const api = agg.services.find(s => s.service === "api.arolariu.ro")!;
     expect(api.subSeries).toBeDefined();
-    expect(api.subSeries!.mssql).toHaveLength(1);
-    expect(api.subSeries!.mssql[0].status).toBe("Degraded");
-    expect(api.subSeries!.cosmosdb[0].status).toBe("Healthy");
+    expect(api.subSeries!["mssql"]).toHaveLength(1);
+    expect(api.subSeries!["mssql"]![0]!.status).toBe("Degraded");
+    expect(api.subSeries!["cosmosdb"]![0]!.status).toBe("Healthy");
   });
 
   it("sums sampleCount across probes in a bucket", () => {
@@ -77,7 +77,7 @@ describe("rebuildFine", () => {
       {service: "arolariu.ro", timestamp: "2026-04-19T14:15:00Z", latencyMs: 100, httpStatus: 200, overall: "Healthy", sampleCount: 3},
     ];
     const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
-    const bucket = agg.services[0].buckets[0];
+    const bucket = agg.services[0]!.buckets[0]!;
     expect(bucket.probes).toEqual({healthy: 6, total: 6});
   });
 
@@ -87,8 +87,8 @@ describe("rebuildFine", () => {
       mkProbe("arolariu.ro", "2026-04-18T14:00:00Z", "Healthy"),
     ];
     const agg = rebuildFine(probes, new Date("2026-04-19T00:00:00Z"));
-    expect(agg.services[0].buckets).toHaveLength(1);
-    expect(agg.services[0].buckets[0].t).toBe("2026-04-18T14:00:00.000Z");
+    expect(agg.services[0]!.buckets).toHaveLength(1);
+    expect(agg.services[0]!.buckets[0]!.t).toBe("2026-04-18T14:00:00.000Z");
   });
 
   it("emits p75 and p95 alongside p50/p99 on every bucket", () => {
@@ -96,7 +96,7 @@ describe("rebuildFine", () => {
       mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", (i + 1) * 10)
     ));
     const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
-    const bucket = agg.services[0].buckets[0];
+    const bucket = agg.services[0]!.buckets[0]!;
     expect(bucket.latency.p50).toBeDefined();
     expect(bucket.latency.p75).toBeDefined();
     expect(bucket.latency.p95).toBeDefined();
@@ -115,7 +115,7 @@ describe("rebuildFine", () => {
       mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", v),
     );
     const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
-    const {p50, p75, p95, p99} = agg.services[0].buckets[0].latency;
+    const {p50, p75, p95, p99} = agg.services[0]!.buckets[0]!.latency;
     expect(p50).toBe(55);
     expect(p75).toBe(78);
     expect(p95).toBe(95);
