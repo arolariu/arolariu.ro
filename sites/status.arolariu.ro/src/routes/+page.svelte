@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import type {AggregateFile, Bucket, FilterWindow, IncidentsFile, ServiceSeries} from "$lib/types/status";
-  import {WINDOW_TO_GRANULARITY} from "$lib/types/status";
+  import {FILTER_WINDOWS, WINDOW_TO_GRANULARITY} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
   import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
@@ -74,7 +74,70 @@
 
   $effect(() => { void loadAggregate(granularity); });
 
-  onMount(() => { void loadIncidents(); });
+  /**
+   * Short-circuit keyboard shortcuts when focus is in an editable element,
+   * or when any modifier is held (so we don't steal Ctrl+R / Cmd+L / etc).
+   */
+  function shouldIgnoreKeydown(event: KeyboardEvent): boolean {
+    if (event.ctrlKey || event.metaKey || event.altKey) return true;
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.matches("input, textarea, select, [contenteditable=\"true\"]")) return true;
+    return false;
+  }
+
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    if (shouldIgnoreKeydown(event)) return;
+
+    const currentIdx = FILTER_WINDOWS.indexOf(activeWindow);
+    const total = FILTER_WINDOWS.length;
+
+    switch (event.key) {
+      case "ArrowLeft": {
+        const next = FILTER_WINDOWS[(currentIdx - 1 + total) % total];
+        if (next) activeWindow = next;
+        event.preventDefault();
+        return;
+      }
+      case "ArrowRight": {
+        const next = FILTER_WINDOWS[(currentIdx + 1) % total];
+        if (next) activeWindow = next;
+        event.preventDefault();
+        return;
+      }
+      case "Escape": {
+        if (expandedService !== null) {
+          expandedService = null;
+          event.preventDefault();
+        }
+        return;
+      }
+      case "r":
+      case "R": {
+        void handleRefresh();
+        event.preventDefault();
+        return;
+      }
+      default:
+        break;
+    }
+
+    // Digits 1..9 — jump directly to FILTER_WINDOWS[digit - 1].
+    if (event.key >= "1" && event.key <= "9") {
+      const idx = Number(event.key) - 1;
+      const next = FILTER_WINDOWS[idx];
+      if (next) {
+        activeWindow = next;
+        event.preventDefault();
+      }
+    }
+  }
+
+  onMount(() => {
+    void loadIncidents();
+    window.addEventListener("keydown", handleGlobalKeydown);
+    return () => { window.removeEventListener("keydown", handleGlobalKeydown); };
+  });
 
   async function handleRefresh() {
     refreshing = true;
