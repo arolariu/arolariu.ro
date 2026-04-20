@@ -1,15 +1,16 @@
 /**
  * Format a duration in milliseconds as a human-readable string.
- * Returns "—" for undefined/null/NaN inputs.
+ * Returns "—" for undefined/null/NaN inputs. 0 ms renders as "0 min".
  *
  * Examples:
  *   formatDuration(undefined)   === "—"
+ *   formatDuration(0)           === "0 min"
  *   formatDuration(45_000)      === "1 min"
  *   formatDuration(60 * 60_000) === "1 h"
  *   formatDuration(90 * 60_000) === "1 h 30 min"
  */
 export function formatDuration(ms: number | undefined): string {
-  if (!ms || !Number.isFinite(ms)) return "—";
+  if (ms == null || !Number.isFinite(ms)) return "—";
   const min = Math.round(ms / 60_000);
   if (min < 60) return `${min} min`;
   const hr = Math.floor(min / 60);
