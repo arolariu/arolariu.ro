@@ -88,6 +88,10 @@
 
   function handleGlobalKeydown(event: KeyboardEvent) {
     if (shouldIgnoreKeydown(event)) return;
+    // Defer to child handlers (e.g. FilterPills arrow-key navigation) that
+    // already consumed the event. Without this, ArrowLeft/ArrowRight on a
+    // focused filter pill would advance the window twice.
+    if (event.defaultPrevented) return;
 
     const currentIdx = FILTER_WINDOWS.indexOf(activeWindow);
     const total = FILTER_WINDOWS.length;
