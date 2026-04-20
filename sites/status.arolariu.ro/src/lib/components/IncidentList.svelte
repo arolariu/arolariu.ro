@@ -38,6 +38,14 @@
     return RTF.format(sign * day, "day");
   }
 
+  // When the window changes, reset the chip selection. Keeping it around can
+  // show a misleadingly empty list if the previously-selected service has no
+  // incidents inside the new window.
+  $effect(() => {
+    windowFilter; // track
+    selectedService = null;
+  });
+
   // All unique services appearing in the current incident set (regardless of window).
   // Stable alphabetical order so the chip strip doesn't reshuffle between renders.
   const serviceChips = $derived.by<readonly string[]>(() => {
@@ -53,10 +61,14 @@
   const filtered = $derived.by<readonly Incident[]>(() => {
     if (!incidents) return [];
     const cutoffMs = Date.now() - WINDOW_TO_DAYS[windowFilter] * 86_400_000;
-    return incidents.incidents.filter(inc =>
-      Date.parse(inc.startedAt) >= cutoffMs
-      && (selectedService === null || inc.service === selectedService),
-    );
+    return incidents.incidents
+      .filter(inc =>
+        Date.parse(inc.startedAt) >= cutoffMs
+        && (selectedService === null || inc.service === selectedService),
+      )
+      // Defensive sort so month grouping stays correct even if upstream (e.g.
+      // dev-mode mocks) forgets to sort by startedAt descending.
+      .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
   });
 
   // Group incidents by month label ("April 2026"). Preserves existing ordering of `filtered`
