@@ -178,8 +178,20 @@
   {#if hovered}
     <div class="crosshair-label" style="left: {(hovered.x / CHART_W) * 100}%;">
       <strong>{formatTooltipTime(hovered.bucket.t)}</strong>
-      <span class="row-h"><span class="swatch p50"></span>p50 {hovered.bucket.latency.p50} ms</span>
-      <span class="row-h"><span class="swatch p99"></span>p99 {hovered.bucket.latency.p99} ms</span>
+      <dl class="xh-pcts">
+        <div class="xh-row xh-emph">
+          <dt>p50</dt><dd>{hovered.bucket.latency.p50} ms</dd>
+        </div>
+        <div class="xh-row xh-mid">
+          <dt>p75</dt><dd>{hovered.bucket.latency.p75 !== undefined ? `${hovered.bucket.latency.p75} ms` : "—"}</dd>
+        </div>
+        <div class="xh-row xh-mid">
+          <dt>p95</dt><dd>{hovered.bucket.latency.p95 !== undefined ? `${hovered.bucket.latency.p95} ms` : "—"}</dd>
+        </div>
+        <div class="xh-row xh-emph">
+          <dt>p99</dt><dd>{hovered.bucket.latency.p99} ms</dd>
+        </div>
+      </dl>
     </div>
   {/if}
   <div class="legend">
@@ -272,4 +284,21 @@
   }
   .crosshair-label strong { font-size: 10.5px; }
   .row-h { display: flex; align-items: center; }
+  .xh-pcts {
+    margin: 2px 0 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 8px;
+    row-gap: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .xh-row {
+    display: contents;
+  }
+  .xh-row dt { opacity: 0.55; }
+  .xh-row dd { margin: 0; text-align: right; }
+  .xh-emph dt, .xh-emph dd { opacity: 1; font-weight: 500; }
+  .xh-mid dt { opacity: 0.55; }
+  .xh-mid dd { opacity: 0.8; }
 </style>

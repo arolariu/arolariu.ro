@@ -120,10 +120,24 @@
         <div class="latency-p99" style="width: {p99Pct}%"></div>
         <div class="latency-p50" style="left: {p50Pct}%"></div>
       </div>
-      <div class="latency-numbers">
-        <span class="mono">{bucket.latency.p50}</span>
-        <span class="faint"> · {bucket.latency.p99} ms</span>
-      </div>
+      <dl class="latency-percentiles">
+        <div class="pct pct-emph">
+          <dt>p50</dt>
+          <dd class="mono">{bucket.latency.p50} ms</dd>
+        </div>
+        <div class="pct pct-mid">
+          <dt>p75</dt>
+          <dd class="mono">{bucket.latency.p75 !== undefined ? `${bucket.latency.p75} ms` : "—"}</dd>
+        </div>
+        <div class="pct pct-mid">
+          <dt>p95</dt>
+          <dd class="mono">{bucket.latency.p95 !== undefined ? `${bucket.latency.p95} ms` : "—"}</dd>
+        </div>
+        <div class="pct pct-emph">
+          <dt>p99</dt>
+          <dd class="mono">{bucket.latency.p99} ms</dd>
+        </div>
+      </dl>
     </div>
 
     {#if bucket.worstSubCheck}
@@ -256,12 +270,29 @@
     border-radius: 2px;
     transform: translateX(-50%);
   }
-  .latency-numbers {
-    margin-top: 3px;
+  .latency-percentiles {
+    margin: 4px 0 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px 6px;
     font-size: 10px;
-    display: flex;
-    gap: 2px;
   }
+  .latency-percentiles .pct { margin: 0; }
+  .latency-percentiles dt {
+    font-size: 9px;
+    opacity: 0.55;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1px;
+  }
+  .latency-percentiles dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .pct-emph dt { opacity: 0.7; }
+  .pct-emph dd { font-weight: 500; }
+  .pct-mid dd { opacity: 0.75; }
 
   .reason {
     margin-top: var(--sp-xs);
