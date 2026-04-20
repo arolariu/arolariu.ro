@@ -1,13 +1,23 @@
 <script lang="ts">
+  /**
+   * Modal "keyboard shortcuts" cheat-sheet shown when the user presses `?`.
+   * Rendered through the shared Popover primitive in modal mode, which
+   * handles backdrop click, Escape-to-close, focus trap, and focus
+   * restoration to the trigger on close. This component only owns layout
+   * and the shortcut list — all dismissal semantics live in Popover.
+   */
   import Popover from "./Popover.svelte";
 
   interface Props {
+    /** When true the dialog is rendered; when false nothing mounts. */
     open: boolean;
+    /** Invoked by Popover on Escape, outside click, or the Close button. */
     onClose: () => void;
   }
 
   let {open, onClose}: Props = $props();
 
+  /** Static shortcut rows — keys column + description column. */
   const shortcuts = [
     {keys: "← →", action: "Previous / next filter window"},
     {keys: "1 – 9", action: "Jump directly to a window"},

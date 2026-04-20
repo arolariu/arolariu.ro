@@ -1,4 +1,13 @@
 <script lang="ts">
+  /**
+   * Four-up summary grid (Overall uptime · Avg latency · Incidents · MTTR)
+   * shown below the StatusBanner. This component is purely a layout shell:
+   * it fans the three data inputs into the four card children and owns the
+   * shared `.card` / `dt` / `.value` / `.sub` / `.worst` styling via
+   * `:global()` selectors scoped under `.summary-stats`, so the child
+   * components can each render a plain `<dl class="card">` without
+   * duplicating CSS. Collapses from 4 columns to 2 at ≤640px container width.
+   */
   import type {FilterWindow, IncidentsFile, ServiceSeries} from "../../types/status";
   import OverallUptimeCard from "./OverallUptimeCard.svelte";
   import AvgLatencyCard from "./AvgLatencyCard.svelte";
@@ -6,8 +15,11 @@
   import MttrCard from "./MttrCard.svelte";
 
   interface Props {
+    /** Per-service probe series already filtered to the active time window. */
     services: readonly ServiceSeries[];
+    /** Parsed incidents feed, or null while loading / if the feed failed. */
     incidents: IncidentsFile | null;
+    /** Active time window — forwarded to every card that needs it. */
     windowFilter: FilterWindow;
   }
 
@@ -22,6 +34,7 @@
 </section>
 
 <style>
+  /* Grid shell: 4-up row with top/bottom rules framing the band. */
   .summary-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -106,6 +119,7 @@
     font-size: 11px;
   }
 
+  /* Responsive collapse: 4-up → 2-up at narrow container widths, re-laying the inter-card rules. */
   @container statusPage (max-width: 640px) {
     .summary-stats {
       grid-template-columns: repeat(2, 1fr);

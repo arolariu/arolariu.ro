@@ -1,13 +1,24 @@
 <script lang="ts">
+  /**
+   * Tiny "i" trigger + anchored Popover used beside summary-card titles to
+   * surface the formula/definition behind the metric. Click (or Enter/Space)
+   * toggles open; the shared Popover primitive handles outside-click and
+   * Escape dismissal. The trigger carries `aria-describedby` only while
+   * open so AT consumers hear the tooltip text on demand, not on every focus.
+   */
   import Popover from "./Popover.svelte";
 
   interface Props {
+    /** The tooltip copy shown inside the popover. */
     text: string;
   }
 
   let {text}: Props = $props();
+  /** Open/closed state of the anchored popover. */
   let open = $state(false);
+  /** DOM ref for the trigger — passed to Popover so clicks on it don't count as "outside". */
   let buttonEl: HTMLButtonElement | undefined = $state(undefined);
+  /** Unique id wired through `aria-describedby` → Popover's `surfaceId` for AT. */
   const id = `info-${Math.random().toString(36).slice(2, 10)}`;
 
   function toggle() {

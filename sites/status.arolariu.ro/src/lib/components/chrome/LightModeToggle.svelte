@@ -1,7 +1,15 @@
 <script lang="ts">
+  /**
+   * Three-state theme toggle chip (dark → light → auto → dark …) shown in
+   * the masthead. The initial state is read from `themeStore` (persisted in
+   * localStorage with SSR-safe guards), and when in "auto" we subscribe to
+   * the OS `prefers-color-scheme` media query so the page re-themes live
+   * as the user flips their system appearance. Takes no props.
+   */
   import {onMount} from "svelte";
   import {applyTheme, getTheme, setTheme, type Theme} from "../../stores/themeStore.svelte";
 
+  /** Currently-selected theme token; mirrored from the store on mount. */
   let theme = $state<Theme>("auto");
 
   onMount(() => {
@@ -21,13 +29,16 @@
     return;
   });
 
+  /** Advance through the dark → light → auto cycle and persist via the store. */
   function cycle() {
     const next: Theme = theme === "dark" ? "light" : theme === "light" ? "auto" : "dark";
     theme = next;
     setTheme(next);
   }
 
+  /** Visible text label for the current theme. */
   const label = $derived(theme === "dark" ? "dark" : theme === "light" ? "light" : "auto");
+  /** Decorative glyph mirroring the theme state (filled / outline / half). */
   const icon = $derived(theme === "dark" ? "●" : theme === "light" ? "○" : "◐");
 </script>
 

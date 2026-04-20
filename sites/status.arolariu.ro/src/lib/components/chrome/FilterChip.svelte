@@ -11,9 +11,13 @@
    */
 
   interface Props {
+    /** Visible text of the chip (also the only accessible name). */
     label: string;
+    /** Whether this chip is the currently-selected option in its radiogroup. */
     active: boolean;
+    /** Click handler — fires on mouse click as well as native Enter/Space activation. */
     onClick: () => void;
+    /** Optional keydown hook so the parent radiogroup can implement arrow-key roving focus. */
     onKeydown?: (event: KeyboardEvent) => void;
     /** "bracket" → `[label]` treatment (FilterPills). "underline" → bottom-border accent (IncidentList). */
     variant?: "bracket" | "underline";
@@ -36,6 +40,7 @@
 </button>
 
 <style>
+  /* Base chip: transparent, mono, roving-tabindex friendly. Variants layer on top. */
   .chip {
     border: 0;
     border-radius: 0;

@@ -1,14 +1,30 @@
 <script lang="ts">
+  /**
+   * Time-window radiogroup ("1h / 24h / 7d / 30d / 90d" etc.) rendered as
+   * horizontally-scrollable bracket-variant FilterChips. Implements the
+   * WAI-ARIA radiogroup pattern: arrow keys rove focus, Home/End jump to
+   * ends, Space/Enter commit (handled natively by the underlying buttons).
+   * Selection is committed via `onChange` whenever focus moves by arrow key,
+   * matching the "selection follows focus" radiogroup convention.
+   */
   import {FILTER_WINDOWS, type FilterWindow} from "../../types/status";
   import FilterChip from "./FilterChip.svelte";
 
   interface Props {
+    /** The currently-selected time window. */
     activeWindow: FilterWindow;
+    /** Invoked whenever the user picks a new window (click, or arrow-key navigation). */
     onChange: (w: FilterWindow) => void;
   }
 
   let {activeWindow, onChange}: Props = $props();
 
+  /**
+   * Arrow/Home/End handler that implements the roving-tabindex radiogroup
+   * pattern: computes the next index, commits selection via `onChange`, then
+   * explicitly focuses the sibling chip so the visual focus ring tracks.
+   * Returns early for non-arrow keys so Space/Enter keep their native meaning.
+   */
   function handleKeydown(event: KeyboardEvent, index: number) {
     let newIndex = index;
     switch (event.key) {

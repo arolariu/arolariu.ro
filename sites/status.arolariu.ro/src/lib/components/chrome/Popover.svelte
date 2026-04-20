@@ -19,7 +19,9 @@
   import type {Snippet} from "svelte";
 
   interface Props {
+    /** When true the surface (and backdrop in modal mode) is rendered; when false nothing mounts. */
     open: boolean;
+    /** Invoked for every dismiss path — Escape, backdrop click, outside click. */
     onClose: () => void;
     /** Caller-supplied class applied to the surface — carries positioning, radius, border. */
     surfaceClass: string;
@@ -37,6 +39,7 @@
     surfaceId?: string;
     /** Optional `aria-labelledby` / `aria-modal` / etc. */
     ariaLabelledBy?: string;
+    /** Mirrors the HTML `aria-modal` attribute on the surface. */
     ariaModal?: boolean;
     /** Rendered content of the surface. */
     children: Snippet;
@@ -57,9 +60,17 @@
     children,
   }: Props = $props();
 
+  /** DOM ref for the rendered surface. Used by outside-click and focus-trap logic. */
   let surfaceEl: HTMLDivElement | undefined = $state(undefined);
+  /** Captured `document.activeElement` at open time so we can restore focus on close (modal only). */
   let previousActive: Element | null = null;
 
+  /**
+   * Outside-click dismissal: clicks inside the surface OR inside the caller-
+   * supplied `anchorEl` (typically the trigger button) do NOT count as outside.
+   * This is what lets the InfoButton trigger toggle without the same click
+   * immediately re-closing the popover via this handler.
+   */
   function handleDocClick(event: MouseEvent) {
     if (!(event.target instanceof Node)) return;
     const inSurface = surfaceEl?.contains(event.target) ?? false;
@@ -67,6 +78,11 @@
     if (!inSurface && !inAnchor) onClose();
   }
 
+  /**
+   * Surface keydown handler: Escape dismisses (when enabled), and in modal
+   * mode Tab/Shift+Tab wrap focus between the first and last focusable
+   * descendants to form a simple focus trap.
+   */
   function handleKeydown(event: KeyboardEvent) {
     if (closeOnEscape && event.key === "Escape") {
       event.preventDefault();
@@ -90,6 +106,10 @@
     }
   }
 
+  // Lifecycle effect: wires document-level listeners and focus management only
+  // while `open` is true, and tears them back down on close so inert popovers
+  // carry zero global footprint. queueMicrotask defers the initial focus call
+  // until after the surface is actually in the DOM for modal usage.
   $effect(() => {
     if (!open) return;
     if (closeOnOutsideClick) {

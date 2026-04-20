@@ -1,6 +1,15 @@
 <script lang="ts">
+  /**
+   * Small icon-only button in the masthead that re-triggers the probe
+   * pipeline. While `refreshing` is true the SVG spins (via CSS keyframes),
+   * the button is disabled, and `aria-busy` is set so AT users are told the
+   * action is in flight. All interaction state lives upstream — this
+   * component is purely presentational.
+   */
   interface Props {
+    /** When true, show spinner, disable the button, and announce `aria-busy`. */
     refreshing: boolean;
+    /** Invoked when the user clicks (or activates via keyboard). */
     onClick: () => void;
   }
   let {refreshing, onClick}: Props = $props();
