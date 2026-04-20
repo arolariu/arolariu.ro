@@ -11,9 +11,10 @@
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
     tooltipId?: string;
     hoveredBucketT?: string | null;
+    bucketDurationMs?: number;
   }
 
-  let {service, name, buckets, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
+  let {service, name, buckets, onHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
 
   const latest = $derived(
     buckets.length === 0
@@ -30,7 +31,7 @@
     <span class="name">↳ {name}</span>
   </div>
   <div class="spark-cell"></div>
-  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
+  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs} /></div>
   <div class="uptime">{uptime}%</div>
   <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
 </div>

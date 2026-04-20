@@ -59,7 +59,10 @@
 
   const endISO = $derived.by(() => {
     if (!bucket) return "";
-    return new Date(Date.parse(bucket.t) + bucketDurationMs).toISOString();
+    // Merged (downsampled) buckets carry `spanMs`; prefer that over the base
+    // bucketDurationMs so the tooltip shows the true end-of-range.
+    const span = bucket.spanMs ?? bucketDurationMs;
+    return new Date(Date.parse(bucket.t) + span).toISOString();
   });
 
   function formatTime(iso: string): string {

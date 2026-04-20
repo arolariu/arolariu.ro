@@ -8,9 +8,15 @@
     onSegmentHover: (bucket: Bucket | null, target: HTMLElement | null) => void;
     tooltipId?: string;
     hoveredBucketT?: string | null;
+    /**
+     * Base bucket duration (ms). When the bar downsamples (merges) buckets to
+     * fit available width, the merged bucket carries `spanMs = chunk.length *
+     * bucketDurationMs` so the tooltip can render the real end-of-range.
+     */
+    bucketDurationMs?: number;
   }
 
-  let {buckets, variant = "primary", onSegmentHover, tooltipId, hoveredBucketT = null}: Props = $props();
+  let {buckets, variant = "primary", onSegmentHover, tooltipId, hoveredBucketT = null, bucketDurationMs}: Props = $props();
 
   const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
 
@@ -40,7 +46,7 @@
 
   const maxSegments = $derived(Math.max(12, Math.floor(containerWidth / Math.max(3, targetPx))));
 
-  function mergeBuckets(chunk: readonly Bucket[]): Bucket {
+  function mergeBuckets(chunk: readonly Bucket[], baseDurationMs: number | undefined): Bucket {
     const worst = chunk.reduce((w, b) => STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w, chunk[0]);
     const healthy = chunk.reduce((s, b) => s + b.probes.healthy, 0);
     const total = chunk.reduce((s, b) => s + b.probes.total, 0);
@@ -53,21 +59,22 @@
       latency: {p50: avgP50, p99: avgP99},
       ...(worst.httpStatus !== undefined && {httpStatus: worst.httpStatus}),
       ...(worst.worstSubCheck !== undefined && {worstSubCheck: worst.worstSubCheck}),
+      ...(baseDurationMs !== undefined && {spanMs: chunk.length * baseDurationMs}),
     };
     return merged;
   }
 
-  function downsample(input: readonly Bucket[], limit: number): readonly Bucket[] {
+  function downsample(input: readonly Bucket[], limit: number, baseDurationMs: number | undefined): readonly Bucket[] {
     if (input.length <= limit) return input;
     const chunkSize = Math.ceil(input.length / limit);
     const out: Bucket[] = [];
     for (let i = 0; i < input.length; i += chunkSize) {
-      out.push(mergeBuckets(input.slice(i, i + chunkSize)));
+      out.push(mergeBuckets(input.slice(i, i + chunkSize), baseDurationMs));
     }
     return out;
   }
 
-  const visibleBuckets = $derived(downsample(buckets, maxSegments));
+  const visibleBuckets = $derived(downsample(buckets, maxSegments, bucketDurationMs));
 
   function buildAriaLabel(b: Bucket): string {
     const date = new Date(b.t);

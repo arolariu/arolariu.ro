@@ -47,6 +47,13 @@ export interface Bucket {
   readonly latency: {readonly p50: number; readonly p99: number};
   readonly httpStatus?: number;
   readonly worstSubCheck?: SubCheckSummary;
+  /**
+   * Total time span (ms) this bucket covers. For base buckets this equals the
+   * bucketSize (30m/1h/1d). When buckets are merged (e.g. downsampled in
+   * UptimeBar), this represents the combined span so consumers can render the
+   * accurate end-of-range without needing the original bucketSize.
+   */
+  readonly spanMs?: number;
 }
 
 export interface ServiceSeries {
