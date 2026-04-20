@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import type {HealthStatus} from "../types/status";
+  import {formatRelativeTime} from "../aggregation/formatRelativeTime";
 
   interface Props {
     overallStatus: HealthStatus | "loading";
@@ -26,15 +27,8 @@
 
   const lastProbeAgo = $derived.by(() => {
     void nowTick; // reactive dependency — re-evaluates every minute
-    if (!lastProbeAt) return "";
-    const ms = nowTick - Date.parse(lastProbeAt);
-    if (!Number.isFinite(ms) || ms < 0) return "";
-    const min = Math.floor(ms / 60_000);
-    if (min < 1) return "just now";
-    if (min < 60) return `${min} min ago`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr} h ago`;
-    return `${Math.floor(hr / 24)} d ago`;
+    const out = formatRelativeTime(lastProbeAt, nowTick);
+    return out === "upcoming" ? "" : out;
   });
 </script>
 

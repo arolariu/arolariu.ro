@@ -1,5 +1,6 @@
 import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
 import {WINDOW_TO_DAYS} from "../types/status";
+import {weightedUptime} from "./weightedUptime";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -13,16 +14,7 @@ const MS_PER_DAY = 86_400_000;
  * Returns a number with 1 decimal place.
  */
 export function computeOverallUptime(services: readonly ServiceSeries[]): number {
-  let healthy = 0;
-  let total = 0;
-  for (const s of services) {
-    for (const b of s.buckets) {
-      healthy += b.probes.healthy;
-      total += b.probes.total;
-    }
-  }
-  if (total === 0) return 100;
-  return Math.round((healthy / total) * 1000) / 10;
+  return weightedUptime(services.flatMap(s => s.buckets));
 }
 
 /**

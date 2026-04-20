@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onDestroy} from "svelte";
   import type {Bucket} from "../types/status";
+  import {formatRelativeTime} from "../aggregation/formatRelativeTime";
 
   interface Props {
     bucket: Bucket | null;
@@ -71,14 +72,7 @@
   }
 
   function formatRelativeAge(iso: string): string {
-    const ms = Date.now() - Date.parse(iso);
-    if (!Number.isFinite(ms) || ms < 0) return "upcoming";
-    const min = Math.round(ms / 60_000);
-    if (min < 1) return "just now";
-    if (min < 60) return `${min} min ago`;
-    const hr = Math.round(ms / 3_600_000);
-    if (hr < 24) return `${hr} h ago`;
-    return `${Math.round(ms / 86_400_000)} d ago`;
+    return formatRelativeTime(iso);
   }
 
   // Latency visualization scale: clamp at max(500, p99)

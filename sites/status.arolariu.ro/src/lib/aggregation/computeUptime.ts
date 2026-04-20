@@ -1,15 +1,8 @@
 import type {Bucket} from "../types/status";
+import {weightedUptime} from "./weightedUptime";
 
 export function computeUptime(buckets: readonly Bucket[]): number {
-  if (buckets.length === 0) return 100;
-  let healthy = 0;
-  let total = 0;
-  for (const b of buckets) {
-    healthy += b.probes.healthy;
-    total += b.probes.total;
-  }
-  if (total === 0) return 100;
-  return Math.round((healthy / total) * 1000) / 10;
+  return weightedUptime(buckets);
 }
 
 export function computeAvgLatency(buckets: readonly Bucket[]): number {

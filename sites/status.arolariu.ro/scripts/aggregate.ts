@@ -4,6 +4,7 @@ import {SERVICE_IDS, type AggregateFile, type Bucket, type BucketSize,
   type HealthStatus, type ProbeResult, type ServiceId, type ServiceSeries,
   type SubCheckSummary} from "../src/lib/types/status";
 import {isAggregateFile} from "../src/lib/types/guards";
+import {readRawProbes} from "./rawProbes";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -170,25 +171,6 @@ function pruneRawFiles(dataDir: string, now: Date): void {
       unlinkSync(join(rawDir, f));
     }
   }
-}
-
-function readRawProbes(dataDir: string): ProbeResult[] {
-  const rawDir = join(dataDir, "raw");
-  if (!existsSync(rawDir)) return [];
-  const files = readdirSync(rawDir).filter(f => f.endsWith(".jsonl")).sort();
-  const probes: ProbeResult[] = [];
-  for (const f of files) {
-    const content = readFileSync(join(rawDir, f), "utf8");
-    for (const line of content.split("\n")) {
-      if (!line.trim()) continue;
-      try {
-        probes.push(JSON.parse(line) as ProbeResult);
-      } catch {
-        // Malformed line — skip.
-      }
-    }
-  }
-  return probes;
 }
 
 function mergeAggregate(

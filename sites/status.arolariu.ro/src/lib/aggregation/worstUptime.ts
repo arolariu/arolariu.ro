@@ -1,4 +1,5 @@
 import type {ServiceSeries} from "../types/status";
+import {weightedUptime} from "./weightedUptime";
 
 export interface WorstUptime {
   readonly service: string;
@@ -15,13 +16,7 @@ export function computeWorstUptime(services: readonly ServiceSeries[]): WorstUpt
   if (services.length === 0) return {service: "", uptime: 100};
   let worst: WorstUptime = {service: "", uptime: Infinity};
   for (const s of services) {
-    let healthy = 0;
-    let total = 0;
-    for (const b of s.buckets) {
-      healthy += b.probes.healthy;
-      total += b.probes.total;
-    }
-    const uptime = total === 0 ? 100 : Math.round((healthy / total) * 1000) / 10;
+    const uptime = weightedUptime(s.buckets);
     if (uptime < worst.uptime || (uptime === worst.uptime && s.service < worst.service)) {
       worst = {service: s.service, uptime};
     }

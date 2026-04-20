@@ -1,8 +1,9 @@
-import {mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync} from "node:fs";
+import {mkdirSync, existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile,
   ProbeResult, ServiceId} from "../src/lib/types/status";
 import {isIncidentsFile} from "../src/lib/types/guards";
+import {readRawProbes} from "./rawProbes";
 
 const MS_PER_DAY = 86_400_000;
 const RESOLVED_RETENTION_DAYS = 90;
@@ -147,20 +148,6 @@ function pruneResolved(file: IncidentsFile, now: Date): IncidentsFile {
     inc.status === "open" || (inc.resolvedAt !== undefined && Date.parse(inc.resolvedAt) >= cutoffMs)
   );
   return {...file, incidents: kept};
-}
-
-function readRawProbes(dataDir: string): ProbeResult[] {
-  const rawDir = join(dataDir, "raw");
-  if (!existsSync(rawDir)) return [];
-  const probes: ProbeResult[] = [];
-  for (const f of readdirSync(rawDir).sort()) {
-    if (!f.endsWith(".jsonl")) continue;
-    for (const line of readFileSync(join(rawDir, f), "utf8").split("\n")) {
-      if (!line.trim()) continue;
-      try { probes.push(JSON.parse(line) as ProbeResult); } catch { /* skip */ }
-    }
-  }
-  return probes;
 }
 
 function readPreviousIncidents(dataDir: string): IncidentsFile {
