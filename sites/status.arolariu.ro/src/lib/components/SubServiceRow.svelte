@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type {Bucket} from "../types/status";
+  import type {Bucket, ServiceId} from "../types/status";
   import {computeUptime, computeAvgLatency} from "../aggregation/computeUptime";
   import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
 
   interface Props {
+    service: ServiceId;
     name: string;
     buckets: readonly Bucket[];
     onHover: (bucket: Bucket | null, anchor: HTMLElement | null) => void;
@@ -12,12 +13,12 @@
     hoveredBucketT?: string | null;
   }
 
-  let {name, buckets, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
+  let {service, name, buckets, onHover, tooltipId, hoveredBucketT = null}: Props = $props();
 
   const latest = $derived(
     buckets.length === 0
       ? "Healthy" as const
-      : deriveLatestStatus({service: "api.arolariu.ro", buckets})
+      : deriveLatestStatus({service, buckets})
   );
   const uptime = $derived(computeUptime(buckets));
   const avgLatency = $derived(computeAvgLatency(buckets));

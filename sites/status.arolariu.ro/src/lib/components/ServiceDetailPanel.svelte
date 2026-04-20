@@ -22,7 +22,7 @@
   {#if subEntries.length > 0}
     <div class="subchecks">
       {#each subEntries as [name, buckets] (name)}
-        <SubServiceRow {name} {buckets} {onHover} {tooltipId} {hoveredBucketT}/>
+        <SubServiceRow service={series.service} {name} {buckets} {onHover} {tooltipId} {hoveredBucketT}/>
       {/each}
     </div>
   {/if}
