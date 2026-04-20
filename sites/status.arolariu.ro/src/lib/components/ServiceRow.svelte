@@ -50,7 +50,7 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 8ch 7ch;
+    grid-template-columns: var(--status-table-grid);
     grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     align-items: center;

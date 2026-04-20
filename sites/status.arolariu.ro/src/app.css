@@ -65,6 +65,14 @@
   /* UptimeBar target density */
   --segment-target-px: 6;
 
+  /*
+   * Status table column track. Single source of truth — every row
+   * (ServiceRow, SubServiceRow, SkeletonRow, and the header in
+   * +page.svelte) reads from this variable so all columns line up.
+   * Change the track shape here; everywhere else reads `var(--status-table-grid)`.
+   */
+  --status-table-grid: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 8ch 7ch;
+
   /* Z-stack */
   --z-tooltip: 20;
   --z-dropdown: 30;
