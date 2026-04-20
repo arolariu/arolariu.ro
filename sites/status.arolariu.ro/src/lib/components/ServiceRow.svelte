@@ -23,15 +23,15 @@
   const avgLatency = $derived(computeAvgLatency(series.buckets));
 </script>
 
-<div
-  class="row"
-  role="button"
-  tabindex="0"
-  aria-expanded={expanded}
-  onclick={onToggle}
-  onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
->
-  <div class="name-col">
+<div class="row">
+  <div
+    class="name-col"
+    role="button"
+    tabindex="0"
+    aria-expanded={expanded}
+    onclick={onToggle}
+    onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+  >
     <span class="dot dot-{latest.toLowerCase()}" class:pulse={latest !== "Healthy"}></span>
     <span class="name">{series.service}</span>
     <span class="caret" aria-hidden="true">{expanded ? "▾" : "▸"}</span>
@@ -56,16 +56,23 @@
     padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
     font-size: var(--fs-body);
-    cursor: pointer;
     transition: background .12s;
   }
   .row:hover { background: var(--surface-hover); }
-  .row:focus-visible {
-    outline: 2px solid var(--status-up);
-    outline-offset: -2px;
-  }
   .row > * { min-width: 0; }
-  .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .name-col {
+    grid-area: name;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .name-col:focus-visible {
+    outline: 2px solid var(--status-up);
+    outline-offset: 2px;
+  }
   .spark-cell { grid-area: sparkline; min-width: 0; display: block; }
   .bar-cell { grid-area: bar; min-width: 0; }
   .uptime { grid-area: uptime; text-align: right; font-variant-numeric: tabular-nums; }
@@ -107,7 +114,7 @@
     transition: transform .15s;
     margin-left: auto;
   }
-  .row[aria-expanded="true"] .caret { transform: rotate(90deg); }
+  .name-col[aria-expanded="true"] .caret { transform: rotate(90deg); }
 
   /* Stack on narrow page: driven by the .page container (statusPage) so
      it fires based on the page width rather than the row's own
