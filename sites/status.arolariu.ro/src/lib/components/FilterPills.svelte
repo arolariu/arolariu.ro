@@ -1,5 +1,6 @@
 <script lang="ts">
   import {FILTER_WINDOWS, type FilterWindow} from "../types/status";
+  import FilterChip from "./FilterChip.svelte";
 
   interface Props {
     activeWindow: FilterWindow;
@@ -39,18 +40,13 @@
 
 <div class="pills" role="radiogroup" aria-label="Time window">
   {#each FILTER_WINDOWS as window, i (window)}
-    <button
-      type="button"
-      role="radio"
-      class="pill"
-      class:active={window === activeWindow}
-      aria-checked={window === activeWindow}
-      tabindex={window === activeWindow ? 0 : -1}
-      onclick={() => onChange(window)}
-      onkeydown={(e) => handleKeydown(e, i)}
-    >
-      {window}
-    </button>
+    <FilterChip
+      label={window}
+      active={window === activeWindow}
+      variant="bracket"
+      onClick={() => onChange(window)}
+      onKeydown={(e) => handleKeydown(e, i)}
+    />
   {/each}
 </div>
 
@@ -68,41 +64,4 @@
     -ms-overflow-style: none;
   }
   .pills::-webkit-scrollbar { display: none; }
-  .pill {
-    padding: 4px 10px;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    font-variant-numeric: tabular-nums;
-    position: relative;
-    transition: color .15s ease;
-  }
-  .pill:hover { color: var(--text); }
-  .pill:focus-visible {
-    outline: 0;
-    color: var(--text);
-  }
-  .pill.active {
-    background: transparent;
-    color: var(--accent);
-    font-weight: 500;
-  }
-  .pill.active::before {
-    content: "[";
-    color: var(--accent);
-    margin-right: 4px;
-  }
-  .pill.active::after {
-    content: "]";
-    color: var(--accent);
-    margin-left: 4px;
-  }
 </style>

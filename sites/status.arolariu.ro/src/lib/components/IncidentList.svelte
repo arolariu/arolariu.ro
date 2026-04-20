@@ -4,6 +4,7 @@
   import {WINDOW_CONFIGS} from "../types/status";
   import {formatDuration} from "../aggregation/formatDuration";
   import IncidentDetail from "./IncidentDetail.svelte";
+  import FilterChip from "./FilterChip.svelte";
 
   interface Props {
     incidents: IncidentsFile | null;
@@ -138,19 +139,13 @@
   {#if incidents && serviceChips.length > 0}
     <div class="filter-chips" role="radiogroup" aria-label="Filter incidents by service">
       {#each allChips as chip, i (chip ?? "__all__")}
-        {@const active = selectedService === chip}
-        <button
-          type="button"
-          role="radio"
-          class="chip"
-          class:active
-          aria-checked={active}
-          tabindex={active ? 0 : -1}
-          onclick={() => selectChip(chip)}
-          onkeydown={(e) => handleChipKeydown(e, i)}
-        >
-          {chipLabel(chip)}
-        </button>
+        <FilterChip
+          label={chipLabel(chip)}
+          active={selectedService === chip}
+          variant="underline"
+          onClick={() => selectChip(chip)}
+          onKeydown={(e) => handleChipKeydown(e, i)}
+        />
       {/each}
     </div>
   {/if}
@@ -226,33 +221,6 @@
     margin-bottom: var(--sp-md);
     padding-bottom: var(--sp-sm);
     border-bottom: 1px solid var(--border);
-  }
-  .chip {
-    padding: 3px 8px;
-    border: 0;
-    border-bottom: 1px solid transparent;
-    border-radius: 0;
-    background: transparent;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    line-height: 1.4;
-    cursor: pointer;
-    transition: color .15s ease, border-color .15s ease;
-  }
-  .chip:hover { color: var(--text); }
-  .chip:focus-visible {
-    outline: 0;
-    color: var(--text);
-    border-bottom-color: var(--accent);
-  }
-  .chip.active {
-    background: transparent;
-    color: var(--text);
-    font-weight: 500;
-    border-bottom-color: var(--accent);
   }
   .month-header {
     font-family: var(--font-mono);
