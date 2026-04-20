@@ -1,9 +1,9 @@
 <script lang="ts">
-  import {onMount, untrack} from "svelte";
   import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
   import {computeOverallUptime, computeAvgLatency, computeIncidentCount, computeMttr} from "../aggregation/summaryStats";
   import {computeWorstUptime} from "../aggregation/worstUptime";
   import {formatDuration} from "../aggregation/formatDuration";
+  import {useCountTween} from "../hooks/useCountTween.svelte";
   import InfoButton from "./InfoButton.svelte";
 
   interface Props {
@@ -20,63 +20,9 @@
   const mttr = $derived(computeMttr(incidents, windowFilter));
   const worst = $derived(computeWorstUptime(services));
 
-  let displayUptime = $state(0);
-  let displayLatency = $state(0);
-  let displayIncidents = $state(0);
-  let displayMttr = $state<number | undefined>(undefined);
-
-  const ANIM_MS = 400;
-  const uptimeRaf = {id: null as number | null};
-  const latencyRaf = {id: null as number | null};
-  const incidentsRaf = {id: null as number | null};
-
-  function animate(from: number, to: number, setter: (v: number) => void, ref: {id: number | null}): void {
-    if (ref.id !== null) { cancelAnimationFrame(ref.id); ref.id = null; }
-    if (from === to) { setter(to); return; }
-    const start = performance.now();
-    function step(now: number) {
-      const t = Math.min(1, (now - start) / ANIM_MS);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      setter(from + (to - from) * eased);
-      if (t < 1) ref.id = requestAnimationFrame(step);
-      else ref.id = null;
-    }
-    ref.id = requestAnimationFrame(step);
-  }
-
-  const prefersReducedMotion = typeof window !== "undefined"
-    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-  $effect(() => {
-    const target = uptime;
-    untrack(() => {
-      if (prefersReducedMotion) { displayUptime = target; return; }
-      animate(displayUptime, target, (v) => { displayUptime = v; }, uptimeRaf);
-    });
-  });
-  $effect(() => {
-    const target = avgLatency;
-    untrack(() => {
-      if (prefersReducedMotion) { displayLatency = target; return; }
-      animate(displayLatency, target, (v) => { displayLatency = v; }, latencyRaf);
-    });
-  });
-  $effect(() => {
-    const target = incCount.total;
-    untrack(() => {
-      if (prefersReducedMotion) { displayIncidents = target; return; }
-      animate(displayIncidents, target, (v) => { displayIncidents = v; }, incidentsRaf);
-    });
-  });
-  $effect(() => {
-    displayMttr = mttr;
-  });
-
-  onMount(() => () => {
-    if (uptimeRaf.id !== null) cancelAnimationFrame(uptimeRaf.id);
-    if (latencyRaf.id !== null) cancelAnimationFrame(latencyRaf.id);
-    if (incidentsRaf.id !== null) cancelAnimationFrame(incidentsRaf.id);
-  });
+  const displayUptime = useCountTween(() => uptime);
+  const displayLatency = useCountTween(() => avgLatency);
+  const displayIncidents = useCountTween(() => incCount.total);
 
   const uptimeTier = $derived(
     uptime >= 99.9 ? "fast" : uptime >= 99 ? "ok" : "slow"
@@ -95,7 +41,7 @@
       <span>Overall uptime</span>
       <InfoButton text="Probe-weighted average across all monitored services over the selected window. Worst-service uptime shown below." />
     </dt>
-    <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(3)}%</dd>
+    <dd class="value tier-{uptimeTier}">{displayUptime().toFixed(3)}%</dd>
     <dd class="sub">weighted · last {windowFilter}</dd>
     {#if worst.service && worst.uptime < uptime}
       <dd class="worst">worst: <strong>{worst.service}</strong> · {worst.uptime.toFixed(1)}%</dd>
@@ -106,7 +52,7 @@
       <span>Avg latency</span>
       <InfoButton text="Unweighted mean of bucket p50 latencies across services." />
     </dt>
-    <dd class="value tier-{latencyTier}">{Math.round(displayLatency)} ms</dd>
+    <dd class="value tier-{latencyTier}">{Math.round(displayLatency())} ms</dd>
     <dd class="sub">p50 across all</dd>
   </dl>
   <dl class="card">
@@ -114,7 +60,7 @@
       <span>Incidents</span>
       <InfoButton text="Count of incidents whose start timestamp falls in the window." />
     </dt>
-    <dd class="value tier-{incidentsTier}">{Math.round(displayIncidents)}</dd>
+    <dd class="value tier-{incidentsTier}">{Math.round(displayIncidents())}</dd>
     <dd class="sub">{incCount.open} ongoing · {incCount.resolved} resolved</dd>
   </dl>
   <dl class="card">
@@ -122,7 +68,7 @@
       <span>MTTR</span>
       <InfoButton text="Mean duration of resolved incidents in the window." />
     </dt>
-    <dd class="value">{formatDuration(displayMttr)}</dd>
+    <dd class="value">{formatDuration(mttr)}</dd>
     <dd class="sub">mean time to resolve</dd>
   </dl>
 </section>
