@@ -2,6 +2,7 @@
   import {onMount, untrack} from "svelte";
   import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
   import {computeOverallUptime, computeAvgLatency, computeIncidentCount, computeMttr} from "../aggregation/summaryStats";
+  import {computeWorstUptime} from "../aggregation/worstUptime";
   import {formatDuration} from "../aggregation/formatDuration";
 
   interface Props {
@@ -16,6 +17,7 @@
   const avgLatency = $derived(computeAvgLatency(services));
   const incCount = $derived(computeIncidentCount(incidents, windowFilter));
   const mttr = $derived(computeMttr(incidents, windowFilter));
+  const worst = $derived(computeWorstUptime(services));
 
   let displayUptime = $state(0);
   let displayLatency = $state(0);
@@ -90,7 +92,10 @@
   <dl class="card">
     <dt>Overall uptime</dt>
     <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(1)}%</dd>
-    <dd class="sub">avg · last {windowFilter}</dd>
+    <dd class="sub">weighted · last {windowFilter}</dd>
+    {#if worst.service && worst.uptime < uptime}
+      <dd class="worst">worst: <strong>{worst.service}</strong> · {worst.uptime}%</dd>
+    {/if}
   </dl>
   <dl class="card">
     <dt>Avg latency</dt>
@@ -145,6 +150,14 @@
     font-size: var(--fs-xs);
     opacity: 0.55;
   }
+  .worst {
+    margin: 4px 0 0 0;
+    font-size: var(--fs-xs);
+    opacity: 0.65;
+    border-top: 1px dashed var(--border);
+    padding-top: 4px;
+  }
+  .worst strong { font-weight: 600; }
   @container statusPage (max-width: 640px) {
     .summary-stats { grid-template-columns: repeat(2, 1fr); }
   }
