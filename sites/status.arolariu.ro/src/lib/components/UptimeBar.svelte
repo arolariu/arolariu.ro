@@ -51,9 +51,9 @@
       status: worst.status,
       probes: {healthy, total},
       latency: {p50: avgP50, p99: avgP99},
+      ...(worst.httpStatus !== undefined && {httpStatus: worst.httpStatus}),
+      ...(worst.worstSubCheck !== undefined && {worstSubCheck: worst.worstSubCheck}),
     };
-    if (worst.httpStatus !== undefined) (merged as Record<string, unknown>)["httpStatus"] = worst.httpStatus;
-    if (worst.worstSubCheck !== undefined) (merged as Record<string, unknown>)["worstSubCheck"] = worst.worstSubCheck;
     return merged;
   }
 

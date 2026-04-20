@@ -15,16 +15,15 @@ export function sliceWindow(file: AggregateFile, window: FilterWindow): Aggregat
   return {
     ...file,
     services: file.services.map(s => {
-      const series = {
-        ...s,
-        buckets: filterBuckets(s.buckets, cutoffMs, nowMs),
-      };
-      if (s.subSeries) {
-        (series as Record<string, unknown>)["subSeries"] = Object.fromEntries(
-          Object.entries(s.subSeries).map(([k, v]) => [k, filterBuckets(v, cutoffMs, nowMs)])
-        );
-      }
-      return series;
+      const slicedBuckets = filterBuckets(s.buckets, cutoffMs, nowMs);
+      const subSeries = s.subSeries
+        ? Object.fromEntries(
+            Object.entries(s.subSeries).map(([k, v]) => [k, filterBuckets(v, cutoffMs, nowMs)])
+          )
+        : undefined;
+      return subSeries !== undefined
+        ? {...s, buckets: slicedBuckets, subSeries}
+        : {...s, buckets: slicedBuckets};
     }),
   };
 }
