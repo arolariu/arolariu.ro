@@ -83,4 +83,15 @@ test.describe("status page", () => {
     await page.goto("/");
     await expect(page.getByRole("alert")).toContainText("unreachable");
   });
+
+  test("refresh button is disabled during in-flight refresh (double-click safe)", async ({page}) => {
+    await page.goto("/");
+    await expect(page.getByText("arolariu.ro").first()).toBeVisible();
+    const btn = page.getByLabel("Refresh status data");
+    await btn.click();
+    // The button should be disabled while refreshing. Attempting a second
+    // click via .click({trial: true}) asserts the button is interactive,
+    // which would fail if disabled. Instead, check the disabled attribute.
+    await expect(btn).toBeDisabled();
+  });
 });

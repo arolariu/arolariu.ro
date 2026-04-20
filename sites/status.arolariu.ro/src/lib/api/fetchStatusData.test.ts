@@ -62,6 +62,43 @@ describe("fetchAggregate", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("respects 30-min TTL boundary: expired entry triggers fresh network fetch", async () => {
+    const nowSpy = vi.spyOn(Date, "now");
+    nowSpy.mockReturnValue(1_700_000_000_000);
+    setupFetch(validAggregate);
+    const {fetchAggregate} = await import("./fetchStatusData");
+
+    await fetchAggregate("fine");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+    // advance time by exactly TTL (30 min) — should still hit cache (< not <=)
+    nowSpy.mockReturnValue(1_700_000_000_000 + 30 * 60 * 1000 - 1);
+    await fetchAggregate("fine");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+    // advance past TTL → fresh fetch
+    nowSpy.mockReturnValue(1_700_000_000_000 + 30 * 60 * 1000 + 1);
+    await fetchAggregate("fine");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+    nowSpy.mockRestore();
+  });
+
+  it("localStorage with stale-schema payload falls through to network fetch", async () => {
+    // Seed localStorage with a value that looks like an old cache entry but
+    // has a shape isAggregateFile rejects.
+    localStorage.setItem(
+      "status.arolariu.ro/cache:fine",
+      JSON.stringify({fetchedAt: Date.now(), data: {legacy: true, missing: "fields"}}),
+    );
+    setupFetch(validAggregate);
+    const {fetchAggregate} = await import("./fetchStatusData");
+
+    const result = await fetchAggregate("fine");
+    expect(result).toEqual(validAggregate);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1); // fell through to network
+  });
+
   it("localStorage quota exceeded is silently tolerated", async () => {
     setupFetch(validAggregate);
     const orig = localStorage.setItem;

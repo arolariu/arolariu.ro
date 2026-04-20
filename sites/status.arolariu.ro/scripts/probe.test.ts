@@ -69,4 +69,34 @@ describe("runProbe", () => {
     const lines = readFileSync(file, "utf8").trim().split("\n");
     expect(lines).toHaveLength(8);
   });
+
+  it("records 200 OK with malformed JSON body as Degraded (not crash)", async () => {
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("arolariu.ro/api/health")) {
+        return new Response("not json {{{", {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date()});
+    const arolariu = results.find(r => r.service === "arolariu.ro")!;
+    expect(arolariu.overall).toBe("Degraded");
+    expect(arolariu.httpStatus).toBe(200);
+    expect(results).toHaveLength(4);  // all 4 still probed
+  });
+
+  it("total outage (all 4 services fail) produces 4 Unhealthy results, still writes JSONL", async () => {
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error("ECONNREFUSED");
+    }) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z")});
+    expect(results).toHaveLength(4);
+    expect(results.every(r => r.overall === "Unhealthy")).toBe(true);
+    expect(results.every(r => r.error?.includes("ECONNREFUSED"))).toBe(true);
+    // JSONL still written
+    const file = join(dataDir, "raw", "2026-04-19.jsonl");
+    expect(existsSync(file)).toBe(true);
+  });
 });
