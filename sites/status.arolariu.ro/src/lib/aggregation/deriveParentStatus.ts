@@ -6,8 +6,8 @@ export function deriveLatestStatus(series: ServiceSeries): HealthStatus {
   // Invariant: buckets are sorted ascending by `t` (produced by `toSeries` and
   // `mergeAggregate` in scripts/aggregate.ts, and preserved by `sliceWindow`).
   // So the last bucket is the most recent one.
-  if (series.buckets.length === 0) return "Healthy";
-  return series.buckets[series.buckets.length - 1].status;
+  const last = series.buckets[series.buckets.length - 1];
+  return last?.status ?? "Healthy";
 }
 
 export function deriveOverallStatus(services: readonly ServiceSeries[]): HealthStatus {

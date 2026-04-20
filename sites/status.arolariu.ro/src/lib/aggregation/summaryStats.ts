@@ -1,6 +1,8 @@
-import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
+import type {FilterWindow, Incident, IncidentsFile, ServiceSeries} from "../types/status";
 import {WINDOW_CONFIGS} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
+
+type ResolvedIncident = Extract<Incident, {readonly status: "resolved"}>;
 
 const MS_PER_DAY = 86_400_000;
 
@@ -66,11 +68,11 @@ export function computeMttr(incidents: IncidentsFile | null, windowFilter: Filte
   if (!incidents) return undefined;
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const resolved = incidents.incidents.filter(
-    inc => inc.status === "resolved"
+    (inc): inc is ResolvedIncident => inc.status === "resolved"
       && Date.parse(inc.startedAt) >= cutoffMs
       && typeof inc.durationMs === "number"
   );
   if (resolved.length === 0) return undefined;
-  const sum = resolved.reduce((s, inc) => s + (inc.durationMs ?? 0), 0);
+  const sum = resolved.reduce((s, inc) => s + inc.durationMs, 0);
   return Math.round(sum / resolved.length);
 }

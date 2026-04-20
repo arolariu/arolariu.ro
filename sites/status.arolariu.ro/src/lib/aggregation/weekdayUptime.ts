@@ -9,6 +9,9 @@ import type {ServiceSeries} from "../types/status";
  * viewer's local time. Values are rounded to one decimal.
  */
 export function computeWeekdayUptime(services: readonly ServiceSeries[]): readonly number[] {
+  // Fixed-length 7-element buckets (Mon..Sun). `idx` is always in [0..6] so
+  // the array access is always defined; non-null assertion keeps the hot
+  // path allocation-free under noUncheckedIndexedAccess.
   const healthy = new Array<number>(7).fill(0);
   const total = new Array<number>(7).fill(0);
   for (const s of services) {
@@ -16,9 +19,12 @@ export function computeWeekdayUptime(services: readonly ServiceSeries[]): readon
       const d = new Date(b.t);
       // getUTCDay: 0=Sun..6=Sat. ISO weekday: 0=Mon..6=Sun. Map: (getUTCDay + 6) % 7.
       const idx = (d.getUTCDay() + 6) % 7;
-      healthy[idx] += b.probes.healthy;
-      total[idx] += b.probes.total;
+      healthy[idx]! += b.probes.healthy;
+      total[idx]! += b.probes.total;
     }
   }
-  return healthy.map((h, i) => total[i] === 0 ? 100 : Math.round((h / total[i]) * 1000) / 10);
+  return healthy.map((h, i) => {
+    const t = total[i]!;
+    return t === 0 ? 100 : Math.round((h / t) * 1000) / 10;
+  });
 }
