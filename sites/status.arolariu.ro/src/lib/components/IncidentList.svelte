@@ -205,13 +205,19 @@
 <style>
   .incidents { margin-top: var(--sp-xl); }
   .heading {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-weight: 400;
-    font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
-    letter-spacing: -0.01em;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    text-transform: lowercase;
     margin: 0 0 var(--sp-md) 0;
     color: var(--text);
+  }
+  .heading::before {
+    content: "#";
+    color: var(--accent);
+    margin-right: 8px;
+    font-weight: 600;
   }
   .filter-chips {
     display: flex;
@@ -249,25 +255,17 @@
     border-bottom-color: var(--accent);
   }
   .month-header {
-    font-family: var(--font-display);
-    font-style: italic;
+    font-family: var(--font-mono);
     font-weight: 400;
-    font-size: var(--fs-sm);
-    letter-spacing: 0;
+    font-size: 11px;
+    letter-spacing: 0.02em;
     color: var(--text-muted);
-    text-transform: none;
+    text-transform: lowercase;
     margin: var(--sp-md) 0 var(--sp-xs) 0;
-    position: relative;
-    padding-left: 36px;
   }
   .month-header::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 24px;
-    height: 1px;
-    background: var(--border-strong);
+    content: "// ";
+    color: var(--accent-dim);
   }
   .month-header:first-of-type { margin-top: 0; }
   .placeholder {

@@ -1,49 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  /* Surfaces / borders / text — warm near-black, bone-white */
-  --bg: #0c0b0a;
-  --surface: rgba(248, 240, 228, 0.018);
-  --surface-hover: rgba(248, 240, 228, 0.035);
-  --surface-raised: rgba(248, 240, 228, 0.06);
-  --border: rgba(232, 218, 196, 0.08);
-  --border-strong: rgba(232, 218, 196, 0.16);
-  --text: #e8e0d5;
-  --text-muted: #9a9086;
-  --text-faint: rgba(232, 224, 213, 0.4);
+  /* Carbon + oxidized copper — the "observability console" palette */
+  --bg: #0a0b0d;
+  --surface: rgba(255, 255, 255, 0.02);
+  --surface-hover: rgba(255, 255, 255, 0.04);
+  --surface-raised: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #c9cdd2;
+  --text-muted: #6b7179;
+  --text-faint: rgba(201, 205, 210, 0.38);
 
-  /* Status palette — muted, editorial; not neon */
-  --status-up: #7da36b;
-  --status-up-bg: rgba(125, 163, 107, 0.12);
-  --status-up-border: rgba(125, 163, 107, 0.3);
-  --status-deg: #c8a35e;
-  --status-deg-bg: rgba(200, 163, 94, 0.13);
-  --status-deg-border: rgba(200, 163, 94, 0.34);
-  --status-down: #c66f5c;
-  --status-down-bg: rgba(198, 111, 92, 0.13);
-  --status-down-border: rgba(198, 111, 92, 0.4);
-  --status-missing: rgba(232, 218, 196, 0.05);
+  /* Status palette — terminal-saturated against carbon, not neon */
+  --status-up: #56d364;
+  --status-up-bg: rgba(86, 211, 100, 0.1);
+  --status-up-border: rgba(86, 211, 100, 0.3);
+  --status-deg: #e0b24e;
+  --status-deg-bg: rgba(224, 178, 78, 0.1);
+  --status-deg-border: rgba(224, 178, 78, 0.3);
+  --status-down: #ff6b5b;
+  --status-down-bg: rgba(255, 107, 91, 0.1);
+  --status-down-border: rgba(255, 107, 91, 0.35);
+  --status-missing: rgba(255, 255, 255, 0.05);
 
-  /* Accent — antique gold for focus rings, toggles */
-  --accent: #c8a35e;
+  /* Accent — oxidized copper. Signature color. */
+  --accent: #e87a3e;
+  --accent-dim: rgba(232, 122, 62, 0.65);
 
   /* Page geometry */
   --page-max: 1280px;
   --gutter: clamp(18px, 3vw, 44px);
 
-  /* Type stacks */
-  --font-display: "Fraunces", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --font-body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Type stacks — monospace primary, sans for display-body chrome if needed */
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-mono);
+  --font-body: var(--font-mono);
 
-  /* Fluid type scale — dense body, generous display */
+  /* Fluid type scale — dense, monospaced */
   --fs-xs: clamp(0.6875rem, 0.66rem + 0.15vw, 0.75rem);   /* 11–12 */
   --fs-sm: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);   /* 12–13 */
   --fs-body: clamp(0.8125rem, 0.78rem + 0.2vw, 0.9375rem);/* 13–15 */
   --fs-lg: clamp(0.9375rem, 0.9rem + 0.25vw, 1.0625rem);  /* 15–17 */
   --fs-h2: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);        /* 16–18 */
-  --fs-h1: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);          /* 28–48 — serif hero */
-  --fs-hero: clamp(2.5rem, 1.6rem + 4vw, 5rem);           /* 40–80 — the centerpiece numbers */
+  --fs-h1: clamp(1.375rem, 1rem + 1.6vw, 2.25rem);        /* 22–36 — mono wordmark */
+  --fs-hero: clamp(1.875rem, 1.2rem + 3vw, 3.5rem);       /* 30–56 — mono hero digits */
 
   /* Fluid spacing */
   --sp-2xs: clamp(2px, 0.15vw + 1px, 4px);
@@ -54,11 +56,11 @@
   --sp-xl: clamp(28px, 2vw + 16px, 48px);
   --sp-2xl: clamp(40px, 3vw + 24px, 72px);
 
-  /* Radii + shadows — hairline-first */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --shadow-tooltip: 0 10px 32px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(232, 218, 196, 0.06);
+  /* Radii — rectilinear. The console has no rounded corners. */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --shadow-tooltip: 0 10px 32px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.06);
 
   /* UptimeBar target density */
   --segment-target-px: 6;
@@ -70,31 +72,31 @@
 }
 
 :root[data-theme="light"] {
-  /* Warm ivory background, deep-ink text */
-  --bg: #f6f1e8;
-  --surface: #fdfaf3;
-  --surface-hover: #f0ead9;
+  /* Paper-terminal — near-white, deep-ink, dark-copper accent */
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --surface-hover: #f4f3ee;
   --surface-raised: #ffffff;
-  --border: #d9cfbc;
-  --border-strong: #b8a98d;
-  --text: #1a1714;
-  --text-muted: #776d5d;
-  --text-faint: rgba(26, 23, 20, 0.55);
+  --border: #d8d4c8;
+  --border-strong: #a39f93;
+  --text: #1a1c1f;
+  --text-muted: #6a6b6e;
+  --text-faint: rgba(26, 28, 31, 0.52);
 
-  /* Status palette — deep, WCAG AA on ivory */
-  --status-up: #3d5e2e;
-  --status-up-bg: rgba(61, 94, 46, 0.09);
-  --status-up-border: rgba(61, 94, 46, 0.28);
-  --status-deg: #96651a;
-  --status-deg-bg: rgba(150, 101, 26, 0.1);
-  --status-deg-border: rgba(150, 101, 26, 0.3);
-  --status-down: #933225;
-  --status-down-bg: rgba(147, 50, 37, 0.1);
-  --status-down-border: rgba(147, 50, 37, 0.35);
-  --status-missing: rgba(26, 23, 20, 0.06);
+  --status-up: #226c29;
+  --status-up-bg: rgba(34, 108, 41, 0.08);
+  --status-up-border: rgba(34, 108, 41, 0.28);
+  --status-deg: #8b5a00;
+  --status-deg-bg: rgba(139, 90, 0, 0.08);
+  --status-deg-border: rgba(139, 90, 0, 0.28);
+  --status-down: #9a2323;
+  --status-down-bg: rgba(154, 35, 35, 0.08);
+  --status-down-border: rgba(154, 35, 35, 0.32);
+  --status-missing: rgba(26, 28, 31, 0.06);
 
-  --accent: #1a1714;
-  --shadow-tooltip: 0 10px 32px rgba(26, 23, 20, 0.16), 0 0 0 1px rgba(26, 23, 20, 0.06);
+  --accent: #b85419;
+  --accent-dim: rgba(184, 84, 25, 0.6);
+  --shadow-tooltip: 0 10px 32px rgba(26, 28, 31, 0.12), 0 0 0 1px rgba(26, 28, 31, 0.06);
 }
 
 html, body {
@@ -102,10 +104,9 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-body);
-  font-feature-settings: "ss01", "ss02", "cv11"; /* Geist stylistic sets — gentle refinements */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -116,32 +117,42 @@ body {
   min-height: 100vh;
 }
 
-/* Subtle film grain — dark mode only. Noise applied via inline SVG data URI so there's no network fetch. */
+/* Subtle scanline texture — dark mode only. Terminal vibes without costume.
+   Achieved via a repeating linear gradient of faint horizontal lines. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: 0.35;
   z-index: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(255, 255, 255, 0.012) 2px,
+      rgba(255, 255, 255, 0.012) 3px
+    );
 }
 :root[data-theme="light"] body::before { display: none; }
 
 main, .page { position: relative; z-index: 1; }
 
-/* Display type helper */
-.display {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-}
-
-/* Mono helper (for timestamps / latency values where ligatures help) */
+/* Mono helper (explicit) */
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "ss01";
+}
+
+/* Selection colour — signature copper */
+::selection {
+  background: var(--accent);
+  color: #0a0b0d;
+}
+:root[data-theme="light"] ::selection {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 @keyframes shimmer {
@@ -158,10 +169,16 @@ main, .page { position: relative; z-index: 1; }
   50%      { box-shadow: 0 0 0 4px transparent; opacity: 0.7; }
 }
 
-/* Page-load hero + summary stagger entrance */
-@keyframes editorialReveal {
-  from { opacity: 0; transform: translateY(6px); letter-spacing: -0.02em; }
-  to   { opacity: 1; transform: none;            letter-spacing: inherit; }
+/* Page-load reveal — terminal line-print feel */
+@keyframes consolePrint {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Cursor blink for the prompt symbol */
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -173,5 +190,5 @@ main, .page { position: relative; z-index: 1; }
 }
 
 @container statusPage (max-width: 480px) {
-  :global(h1) { font-size: clamp(1.5rem, 1rem + 3vw, 2rem); }
+  :global(h1) { font-size: clamp(1.125rem, 0.9rem + 1.5vw, 1.5rem); }
 }

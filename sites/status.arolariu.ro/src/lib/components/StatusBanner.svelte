@@ -69,41 +69,53 @@
 
 <style>
   .banner {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--sp-md);
+    display: flex;
     align-items: center;
-    padding: var(--sp-md) 0;
+    gap: 12px;
+    padding: var(--sp-sm) var(--sp-md);
     border-radius: 0;
-    border: 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    border: 1px solid var(--border);
+    border-left: 2px solid currentColor;
     margin-bottom: var(--sp-xl);
     background: transparent;
     color: var(--status-up);
-    animation: editorialReveal 700ms cubic-bezier(0.2, 0, 0, 1) 80ms both;
+    animation: consolePrint 500ms cubic-bezier(0.2, 0, 0, 1) 80ms both;
   }
   .banner-degraded { color: var(--status-deg); }
   .banner-unhealthy { color: var(--status-down); }
   .banner-loading { color: var(--text-muted); }
 
-  .icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; flex-shrink: 0; }
   .icon .spinner { animation: spin 1.2s linear infinite; transform-origin: 10px 10px; }
-  .body { min-width: 0; color: var(--text); }
+  .body {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex: 1;
+    flex-wrap: wrap;
+  }
   .title {
-    font-family: var(--font-display);
-    font-style: italic;
-    font-weight: 400;
-    font-size: clamp(1.25rem, 1rem + 1vw, 1.875rem);
-    letter-spacing: -0.01em;
-    color: inherit;
-    line-height: 1.1;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    text-transform: lowercase;
+    line-height: 1.3;
+  }
+  .title::before {
+    content: ">";
+    color: currentColor;
+    margin-right: 8px;
+    font-weight: 600;
   }
   .meta {
-    font-family: var(--font-body);
+    font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-muted);
-    margin-top: 6px;
-    letter-spacing: 0.02em;
+    margin: 0;
+    letter-spacing: 0.01em;
   }
+  .meta::before { content: "// "; color: var(--accent-dim); }
 </style>

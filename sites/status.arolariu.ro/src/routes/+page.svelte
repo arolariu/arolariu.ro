@@ -164,16 +164,22 @@
   <header class="masthead">
     <div class="masthead-left">
       <h1 class="wordmark">
-        <span class="wordmark-italic">arolariu</span><span class="wordmark-dot">.</span><span class="wordmark-tld">ro</span>
+        <span class="prompt" aria-hidden="true">$</span>
+        <span class="verb">status</span>
+        <span class="target">arolariu.ro</span>
+        <span class="cursor" aria-hidden="true">_</span>
       </h1>
       <p class="kicker">
-        <span class="rule" aria-hidden="true"></span>
-        <span>Service Status &middot; polled every 30 minutes</span>
+        <span class="bracket">[</span>
+        service&nbsp;monitor
+        <span class="sep">::</span>
+        polled&nbsp;every&nbsp;30m
+        <span class="bracket">]</span>
       </p>
     </div>
     <div class="masthead-right">
       {#if isLocalHost()}
-        <span class="local-badge">LOCAL MOCKS</span>
+        <span class="local-badge">[ local mocks ]</span>
       {/if}
       <LightModeToggle />
       <RefreshButton {refreshing} onClick={handleRefresh}/>
@@ -264,7 +270,7 @@
     padding-bottom: var(--sp-lg);
     border-bottom: 1px solid var(--border-strong);
     margin-bottom: var(--sp-xl);
-    animation: editorialReveal 700ms cubic-bezier(0.2, 0, 0, 1) both;
+    animation: consolePrint 450ms cubic-bezier(0.2, 0, 0, 1) both;
   }
   .masthead-left { min-width: 0; }
   .masthead-right {
@@ -275,52 +281,53 @@
     padding-bottom: 4px;
   }
   .wordmark {
-    font-family: var(--font-display);
-    font-optical-sizing: auto;
+    font-family: var(--font-mono);
     font-size: var(--fs-h1);
-    font-weight: 400;
-    line-height: 0.92;
+    font-weight: 500;
+    line-height: 1.1;
     margin: 0;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.005em;
     color: var(--text);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    flex-wrap: wrap;
   }
-  .wordmark-italic {
-    font-style: italic;
+  .wordmark .prompt {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .wordmark .verb {
+    color: var(--text-muted);
     font-weight: 400;
   }
-  .wordmark-dot {
-    display: inline-block;
-    color: var(--accent);
-    margin: 0 0.02em;
+  .wordmark .target {
+    color: var(--text);
     font-weight: 500;
   }
-  .wordmark-tld {
-    font-style: normal;
+  .wordmark .cursor {
+    color: var(--accent);
     font-weight: 500;
-    color: var(--text-muted);
+    animation: blink 1.1s steps(1) infinite;
+    margin-left: -0.15em;
   }
   .kicker {
-    font-family: var(--font-body);
+    font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     color: var(--text-muted);
     margin: var(--sp-sm) 0 0;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
+    flex-wrap: wrap;
   }
-  .kicker .rule {
-    display: inline-block;
-    width: 36px;
-    height: 1px;
-    background: var(--border-strong);
-  }
+  .kicker .bracket { color: var(--accent-dim); }
+  .kicker .sep { color: var(--accent-dim); margin: 0 2px; }
   @container statusPage (max-width: 640px) {
     .masthead { flex-direction: column; align-items: flex-start; }
     .masthead-right { padding-bottom: 0; align-self: stretch; justify-content: flex-end; }
-    .kicker .rule { width: 24px; }
   }
   .controls {
     display: flex;
@@ -392,10 +399,9 @@
     font-size: 13px;
   }
   .footer {
-    font-family: var(--font-display);
-    font-style: italic;
+    font-family: var(--font-mono);
     font-weight: 400;
-    font-size: var(--fs-sm);
+    font-size: 11px;
     color: var(--text-muted);
     text-align: center;
     padding-block: var(--sp-xl);
@@ -403,17 +409,17 @@
     border-top: 1px solid var(--border);
     letter-spacing: 0.01em;
   }
+  .footer::before { content: "// "; color: var(--accent-dim); }
   .local-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 2px;
+    padding: 2px 6px;
     background: transparent;
     color: var(--accent);
-    border: 1px solid var(--accent);
+    border: 0;
     font-family: var(--font-mono);
-    font-weight: 500;
-    font-size: 10px;
-    letter-spacing: 0.12em;
+    font-weight: 400;
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
   }
   @media (max-width: 768px) {
     .status-table__header { grid-template-columns: 1fr 1.5fr 60px; }

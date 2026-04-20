@@ -71,30 +71,38 @@
   .pill {
     padding: 4px 10px;
     border: 0;
-    border-bottom: 1px solid transparent;
     border-radius: 0;
     background: transparent;
     color: var(--text-muted);
     font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.02em;
     cursor: pointer;
     flex-shrink: 0;
     scroll-snap-align: start;
     font-variant-numeric: tabular-nums;
-    transition: color .15s ease, border-color .15s ease;
+    position: relative;
+    transition: color .15s ease;
   }
   .pill:hover { color: var(--text); }
   .pill:focus-visible {
     outline: 0;
     color: var(--text);
-    border-bottom-color: var(--accent);
   }
   .pill.active {
     background: transparent;
-    color: var(--text);
+    color: var(--accent);
     font-weight: 500;
-    border-bottom-color: var(--accent);
+  }
+  .pill.active::before {
+    content: "[";
+    color: var(--accent);
+    margin-right: 4px;
+  }
+  .pill.active::after {
+    content: "]";
+    color: var(--accent);
+    margin-left: 4px;
   }
 </style>

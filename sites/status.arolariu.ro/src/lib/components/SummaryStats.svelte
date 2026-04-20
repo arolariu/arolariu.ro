@@ -141,36 +141,41 @@
     border: 0;
     border-right: 1px solid var(--border);
     border-radius: 0;
-    padding: var(--sp-md) var(--sp-md);
+    padding: var(--sp-md);
     margin: 0;
     position: relative;
-    animation: editorialReveal 700ms cubic-bezier(0.2, 0, 0, 1) both;
+    animation: consolePrint 500ms cubic-bezier(0.2, 0, 0, 1) both;
   }
   .card:last-child { border-right: 0; }
-  .card:nth-child(1) { animation-delay: 80ms; }
-  .card:nth-child(2) { animation-delay: 160ms; }
-  .card:nth-child(3) { animation-delay: 240ms; }
-  .card:nth-child(4) { animation-delay: 320ms; }
+  .card:nth-child(1) { animation-delay: 60ms; }
+  .card:nth-child(2) { animation-delay: 120ms; }
+  .card:nth-child(3) { animation-delay: 180ms; }
+  .card:nth-child(4) { animation-delay: 240ms; }
   dt {
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 400;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
   }
+  dt::before {
+    content: "//";
+    color: var(--accent-dim);
+    margin-right: 2px;
+    font-weight: 500;
+  }
   .value {
     margin: 0;
-    font-family: var(--font-display);
-    font-optical-sizing: auto;
+    font-family: var(--font-mono);
     font-size: var(--fs-hero);
-    font-weight: 300;
-    font-style: italic;
-    line-height: 0.95;
-    letter-spacing: -0.025em;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.04em;
     font-variant-numeric: tabular-nums;
     color: var(--text);
   }
@@ -179,23 +184,25 @@
   .value.tier-slow { color: var(--status-deg); }
   .sub {
     margin: 10px 0 0 0;
-    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--text-muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
   .worst {
     margin: 10px 0 0 0;
+    font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-muted);
     border-top: 1px solid var(--border);
     padding-top: 8px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
   .worst strong {
     font-weight: 500;
-    color: var(--text);
+    color: var(--accent);
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 11px;
   }
   @container statusPage (max-width: 640px) {
     .summary-stats {

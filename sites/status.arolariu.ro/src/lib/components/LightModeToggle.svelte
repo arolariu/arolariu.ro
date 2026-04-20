@@ -27,8 +27,8 @@
     setTheme(next);
   }
 
-  const label = $derived(theme === "dark" ? "Dark" : theme === "light" ? "Light" : "Auto");
-  const icon = $derived(theme === "dark" ? "🌙" : theme === "light" ? "☀" : "◐");
+  const label = $derived(theme === "dark" ? "dark" : theme === "light" ? "light" : "auto");
+  const icon = $derived(theme === "dark" ? "●" : theme === "light" ? "○" : "◐");
 </script>
 
 <button
@@ -38,7 +38,7 @@
   aria-label="Toggle color theme (currently {label})"
   title="Theme: {label}"
 >
-  <span aria-hidden="true">{icon}</span>
+  <span class="icon" aria-hidden="true">{icon}</span>
   <span class="label">{label}</span>
 </button>
 
@@ -46,26 +46,30 @@
   .theme-toggle {
     background: transparent;
     border: 1px solid var(--border);
-    color: var(--text);
+    color: var(--text-muted);
     padding: 4px 10px;
-    border-radius: var(--radius-sm, 4px);
-    font-size: var(--fs-xs);
-    font-family: inherit;
+    border-radius: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
     display: inline-flex;
     gap: 6px;
     align-items: center;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
   .theme-toggle:hover {
-    background: var(--surface-hover, var(--surface-raised, rgba(255, 255, 255, 0.05)));
-    border-color: var(--border-strong, var(--border));
+    color: var(--text);
+    border-color: var(--border-strong);
   }
   .theme-toggle:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent);
     outline-offset: 2px;
   }
-  .label {
-    font-weight: 500;
+  .theme-toggle .icon {
+    color: var(--accent);
+    font-size: 10px;
+    line-height: 1;
   }
+  .label { font-weight: 400; }
 </style>
