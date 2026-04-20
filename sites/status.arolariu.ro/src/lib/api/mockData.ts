@@ -4,12 +4,24 @@
  * shipped to the production Azure SWA runtime path. See fetchStatusData.ts.
  *
  * Data is generated relative to `Date.now()` so the UI always shows "recent"
- * timestamps regardless of when the dev server is started. This is why
- * static JSON fixtures (`tests/fixtures/*.json`) are not reused here.
+ * timestamps regardless of when the dev server is started.
+ *
+ * === Shape ===
+ *
+ * Each service has a `ServiceStoryline` record declaring:
+ *  - `baseline` — the "normal day" p50 latency
+ *  - optional `latencyDrift` — a linear creep window (startAgoHours → endAgoHours
+ *    ramps p50 from baseline to `endP50`, then snaps back)
+ *  - `blips` — list of wall-clock-anchored events (status + duration)
+ *  - optional `subChecks` — per-sub-check storylines driving the sub-series
+ *
+ * Incidents are derived from blips directly: one resolved Incident per
+ * past blip, plus `ongoing` blips become open incidents. Narrative stays
+ * declarative; bucket math + incident generation share one source.
  */
 
 import type {
-  AggregateFile, Bucket, Incident, IncidentsFile,
+  AggregateFile, Bucket, HealthStatus, Incident, IncidentsFile,
   ServiceId, ServiceSeries,
 } from "../types/status";
 
@@ -23,7 +35,7 @@ const MS_PER_DAY = 86_400_000;
 
 type Granularity = "fine" | "hourly" | "daily";
 
-interface WindowConfig {
+interface GranularityConfig {
   readonly bucketSize: "30m" | "1h" | "1d";
   readonly windowDays: 14 | 90 | 365;
   readonly bucketMs: number;
@@ -32,240 +44,290 @@ interface WindowConfig {
   readonly cronsPerBucket: number;
 }
 
-const CONFIGS: Record<Granularity, WindowConfig> = {
-  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * MS_PER_MIN,       bucketCount: 14 * 48, cronsPerBucket: 1},
-  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: MS_PER_HOUR,           bucketCount: 90 * 24, cronsPerBucket: 2},
-  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: MS_PER_DAY,            bucketCount: 365,     cronsPerBucket: 48},
+const CONFIGS: Record<Granularity, GranularityConfig> = {
+  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * MS_PER_MIN, bucketCount: 14 * 48, cronsPerBucket: 1},
+  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: MS_PER_HOUR,     bucketCount: 90 * 24, cronsPerBucket: 2},
+  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: MS_PER_DAY,      bucketCount: 365,     cronsPerBucket: 48},
 };
 
-// Samples per cron run in the new 3-sample-per-cron model
 const SAMPLES_PER_CRON = 3;
 
 /**
- * `healthyPerCron` / `totalPerCron` are per-cron-run sample counts (0..3).
- * The bucket-level probe count is scaled by `cronsPerBucket`, so a 1-day
- * bucket at daily granularity shows 48× the sample count of a 30-min bucket.
+ * A single incident-worthy event on a service (or sub-check). Anchored by
+ * `ageHours` = hours-ago from `Date.now()`, extends for `durationHours`.
+ * `open: true` makes it an ongoing incident (no `durationHours` applied
+ * to the bucket placement; the blip extends from `ageHours` ago to now).
+ *
+ * `latencyFactor` multiplies baseline p50 during the blip — e.g. 8.0 for
+ * a full outage, 3.2 for slow-but-serving. Defaults to 3.2 for Degraded,
+ * 8.0 for Unhealthy.
+ *
+ * `reason` carries through to the derived Incident record.
  */
+interface Blip {
+  readonly ageHours: number;
+  readonly durationHours: number;
+  readonly status: Exclude<HealthStatus, "Healthy">;
+  readonly reason: string;
+  readonly latencyFactor?: number;
+  readonly probeCount: number;
+  readonly open?: boolean;
+}
+
+interface SubCheckStoryline {
+  readonly baselineP50: number;
+  readonly blips: readonly Blip[];
+  /** Cyclic cosmetic degradation at sub-check level that does not
+   *  escalate to an incident (mssql "hiccup" every ~96 30m-buckets). */
+  readonly cyclicHiccup?: {readonly everyNBuckets: number; readonly atOffset: number; readonly p50: number; readonly healthyPerCron: number};
+}
+
+interface ServiceStoryline {
+  readonly service: ServiceId;
+  readonly baselineP50: number;
+  readonly latencyDrift?: {
+    readonly startAgoHours: number;
+    readonly endAgoHours: number;
+    readonly endP50: number;
+  };
+  readonly blips: readonly Blip[];
+  readonly subChecks?: Readonly<Record<string, SubCheckStoryline>>;
+}
+
+/**
+ * One storyline per service. Adding / tweaking a dev scenario is a one-
+ * dict edit — no bucket-math changes needed; `generateBuckets` folds the
+ * storyline into either fine / hourly / daily buckets identically.
+ */
+const STORYLINES: readonly ServiceStoryline[] = [
+  {
+    service: "arolariu.ro",
+    baselineP50: 142,
+    blips: [
+      {
+        ageHours: 14 * 24 + 2, durationHours: 4,
+        status: "Degraded",
+        reason: "CDN cache purge cascaded origin load (mock)",
+        latencyFactor: 2.6,
+        probeCount: 8,
+      },
+    ],
+  },
+  {
+    service: "api.arolariu.ro",
+    baselineP50: 310,
+    // Latency creep: from (4d + 14d) ago to 4d ago — p50 ramps 280 → 450.
+    latencyDrift: {
+      startAgoHours: (4 + 14) * 24,
+      endAgoHours: 4 * 24,
+      endP50: 450,
+    },
+    blips: [
+      {
+        ageHours: 26, durationHours: 1,
+        status: "Degraded",
+        reason: "connection pool exhausted (mock)",
+        latencyFactor: 4.0,
+        probeCount: 2,
+      },
+      {
+        ageHours: 4 * 24, durationHours: 2,
+        status: "Degraded",
+        reason: "connection pool saturation during deploy (mock)",
+        latencyFactor: 2.5,
+        probeCount: 4,
+      },
+    ],
+    subChecks: {
+      mssql: {
+        baselineP50: 10,
+        cyclicHiccup: {everyNBuckets: 96, atOffset: 48, p50: 600, healthyPerCron: 1},
+        blips: [
+          {
+            ageHours: 26, durationHours: 1,
+            status: "Degraded",
+            reason: "connection pool exhausted (mock)",
+            latencyFactor: 84.7,
+            probeCount: 2,
+          },
+        ],
+      },
+      cosmosdb: {
+        baselineP50: 48,
+        blips: [
+          {
+            ageHours: 5 * 24, durationHours: 0.5,
+            status: "Unhealthy",
+            reason: "cosmosdb throttling on partition key (mock)",
+            latencyFactor: 15.6,
+            probeCount: 1,
+          },
+        ],
+      },
+    },
+  },
+  {
+    service: "exp.arolariu.ro",
+    baselineP50: 89,
+    blips: [
+      {
+        ageHours: 3, durationHours: 3,
+        status: "Degraded",
+        reason: "elevated latency on upstream dependency (mock)",
+        latencyFactor: 3.0,
+        probeCount: 6,
+        open: true,
+      },
+      {
+        ageHours: 12, durationHours: 3,
+        status: "Unhealthy",
+        reason: "upstream ML model service unreachable (mock)",
+        latencyFactor: 8.0,
+        probeCount: 6,
+      },
+    ],
+  },
+  {
+    service: "cv.arolariu.ro",
+    baselineP50: 35,
+    blips: [
+      {
+        ageHours: 45 * 24, durationHours: 0.5,
+        status: "Degraded",
+        reason: "Azure Static Web App edge node hiccup (mock)",
+        latencyFactor: 3.2,
+        probeCount: 1,
+      },
+    ],
+  },
+];
+
+/** Derived p99/p75/p95 fan around p50 — matches the old p99 ≈ p50 * 2.1 contract. */
+function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99: number} {
+  return {
+    p50,
+    p75: Math.round(p50 * 1.35),
+    p95: Math.round(p50 * 1.80),
+    p99: Math.round(p50 * 2.10),
+  };
+}
+
 function mkBucket(
   t: string,
-  status: "Healthy" | "Degraded" | "Unhealthy",
+  status: HealthStatus,
   p50: number,
   healthyPerCron: number,
-  totalPerCron: number,
   cronsPerBucket: number,
-  extras: {worstSubCheck?: {name: string; status: "Healthy" | "Degraded" | "Unhealthy"; description?: string}} = {},
 ): Bucket {
-  // Plausible percentile fan around a given p50. Relations picked to match
-  // the old p99≈p50*2.1 contract and to space p75 + p95 sensibly between.
-  const p75 = Math.round(p50 * 1.35);
-  const p95 = Math.round(p50 * 1.80);
-  const p99 = Math.round(p50 * 2.10);
-  const bucket: Bucket = {
-    t, status,
+  return {
+    t,
+    status,
     probes: {
       healthy: healthyPerCron * cronsPerBucket,
-      total: totalPerCron * cronsPerBucket,
+      total: SAMPLES_PER_CRON * cronsPerBucket,
     },
-    latency: {p50, p75, p95, p99},
+    latency: percentileFan(p50),
     httpStatus: status === "Unhealthy" ? 503 : 200,
   };
-  if (extras.worstSubCheck !== undefined) {
-    (bucket as Record<string, unknown>)["worstSubCheck"] = extras.worstSubCheck;
-  }
-  return bucket;
 }
 
 /**
- * Returns true if bucket timestamp `t` (ms) overlaps the half-open range
- * [start, end). Used to place blips anchored by wall-clock instead of
- * bucket index, so they appear correctly across all three granularities.
+ * Half-open [start, end) test for "does this bucket overlap the blip window".
+ * Blips anchored by wall-clock (not bucket index) appear consistently across
+ * all three granularities.
  */
-function withinRange(t: number, bucketMs: number, start: number, end: number): boolean {
-  return t + bucketMs > start && t < end;
+function bucketOverlaps(bucketT: number, bucketMs: number, start: number, end: number): boolean {
+  return bucketT + bucketMs > start && bucketT < end;
 }
 
-/**
- * arolariu.ro storyline:
- * - Mostly Healthy
- * - Two short clusters of mild degradation (~5 days apart, ~1h each)
- * - One 4-hour Degraded blip centered ~14 days ago (visible in 14d/30d/90d views)
- */
-function generateArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
+function blipWindow(blip: Blip, now: number): {start: number; end: number} {
+  const end = now - blip.ageHours * MS_PER_HOUR + blip.durationHours * MS_PER_HOUR;
+  const start = now - blip.ageHours * MS_PER_HOUR;
+  return {start, end};
+}
+
+function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number): number {
+  if (!story.latencyDrift) return story.baselineP50;
+  const creepStart = now - story.latencyDrift.startAgoHours * MS_PER_HOUR;
+  const creepEnd = now - story.latencyDrift.endAgoHours * MS_PER_HOUR;
+  if (bucketT < creepStart || bucketT > creepEnd) return story.baselineP50;
+  const progress = (bucketT - creepStart) / (creepEnd - creepStart);
+  return Math.round(story.baselineP50 - 30 + progress * (story.latencyDrift.endP50 - (story.baselineP50 - 30)));
+}
+
+function generateBucketsFor(
+  baselineP50: number,
+  blips: readonly Blip[],
+  cyclicHiccup: SubCheckStoryline["cyclicHiccup"] | undefined,
+  driftForMainP50: ((bucketT: number) => number) | null,
+  config: GranularityConfig,
+  now: number,
+): Bucket[] {
   const total = config.bucketCount;
-  const p50 = 142;
-  const degradedCluster1 = new Set([30, 31, 32]);
-  const degradedCluster2 = new Set([270, 271, 272]);
+  // Ongoing blips (`open: true`) drive the incident log but do NOT rewrite
+  // history into the bucket series — they're near-now events whose health
+  // state hasn't settled yet. Pre-rewrite behavior preserved exactly.
+  const bucketBlips = blips.filter(b => !b.open);
+  const windows = bucketBlips.map(blip => ({blip, ...blipWindow(blip, now)}));
 
-  // Wall-clock anchor: 14 days + 2h ago, lasting 4 hours.
-  const blipStart = now - 14 * MS_PER_DAY - 2 * MS_PER_HOUR;
-  const blipEnd = blipStart + 4 * MS_PER_HOUR;
-
-  return Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
+  return Array.from({length: total}, (_, fromEnd) => {
     const bucketT = now - fromEnd * config.bucketMs;
     const t = new Date(bucketT).toISOString();
-    if (withinRange(bucketT, config.bucketMs, blipStart, blipEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 2.6), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
+
+    const activeBlip = windows.find(w => bucketOverlaps(bucketT, config.bucketMs, w.start, w.end));
+
+    const p50 = driftForMainP50 ? driftForMainP50(bucketT) : baselineP50;
+
+    if (activeBlip) {
+      const factor = activeBlip.blip.latencyFactor ?? (activeBlip.blip.status === "Unhealthy" ? 8.0 : 3.2);
+      const healthyPerCron = activeBlip.blip.status === "Unhealthy" ? 0 : 2;
+      return mkBucket(t, activeBlip.blip.status, Math.round(p50 * factor), healthyPerCron, config.cronsPerBucket);
     }
-    if (degradedCluster1.has(fromEnd) || degradedCluster2.has(fromEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
+
+    if (cyclicHiccup && fromEnd % cyclicHiccup.everyNBuckets === cyclicHiccup.atOffset) {
+      return mkBucket(t, "Degraded", cyclicHiccup.p50, cyclicHiccup.healthyPerCron, config.cronsPerBucket);
     }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
+
+    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
-/**
- * api.arolariu.ro storyline:
- * - Healthy overall
- * - Cosmetic mssql hiccup every ~2 days (sub-check flap, parent still Healthy)
- * - One 90-min full Degraded window (6 buckets, ~2 days ago): healthy=0/3
- * - Latency creep: in the 14 days BEFORE the mssql incident 4 days ago, p50 climbs
- *   from 280ms toward 450ms linearly, then snaps back.
- */
-function generateApiArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
-  const total = config.bucketCount;
-  const baseP50 = 310;
-  const degradedWindow = new Set([80, 81, 82, 83, 84, 85]);
-  const mssqlHiccup = (fromEnd: number) => fromEnd % 96 === 48;
+function generateServiceSeries(story: ServiceStoryline, config: GranularityConfig, now: number): ServiceSeries {
+  const mainBuckets = generateBucketsFor(
+    story.baselineP50,
+    story.blips,
+    undefined,
+    story.latencyDrift ? (bucketT) => computeP50AtTime(story, bucketT, now) : null,
+    config,
+    now,
+  );
 
-  // Latency creep window: from (4d + 14d) ago to (4d) ago.
-  const creepStart = now - (4 * MS_PER_DAY + 14 * MS_PER_DAY);
-  const creepEnd = now - 4 * MS_PER_DAY;
+  const series: ServiceSeries = {service: story.service, buckets: mainBuckets};
 
-  return Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
-    const bucketT = now - fromEnd * config.bucketMs;
-    const t = new Date(bucketT).toISOString();
-
-    // Latency creep: ramp 280 -> 450 as bucketT progresses from creepStart to creepEnd.
-    let p50 = baseP50;
-    if (bucketT >= creepStart && bucketT <= creepEnd) {
-      const progress = (bucketT - creepStart) / (creepEnd - creepStart);
-      p50 = Math.min(280 + progress * 170, 450);
-    }
-
-    if (degradedWindow.has(fromEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 4.0), 0, SAMPLES_PER_CRON, config.cronsPerBucket,
-        {worstSubCheck: {name: "mssql", status: "Degraded", description: "connection pool exhausted"}},
+  if (story.subChecks) {
+    const subSeries: Record<string, readonly Bucket[]> = {};
+    for (const [name, sub] of Object.entries(story.subChecks)) {
+      subSeries[name] = generateBucketsFor(
+        sub.baselineP50,
+        sub.blips,
+        sub.cyclicHiccup,
+        null,
+        config,
+        now,
       );
     }
-    if (mssqlHiccup(fromEnd)) {
-      return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket,
-        {worstSubCheck: {name: "mssql", status: "Degraded", description: "brief connection spike"}},
-      );
-    }
-    return mkBucket(t, "Healthy", Math.round(p50), SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
-}
-
-/**
- * exp.arolariu.ro storyline:
- * - One major outage ~12h ago: 6 buckets Unhealthy (healthy=0/3)
- * - Ongoing Degraded event ~3h ago (covered via incident, not buckets here)
- * - Otherwise clean
- */
-function generateExpArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
-  const total = config.bucketCount;
-  const p50 = 89;
-  const outageWindow = new Set([24, 25, 26, 27, 28, 29]);
-
-  return Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
-    if (outageWindow.has(fromEnd)) {
-      return mkBucket(t, "Unhealthy", Math.round(p50 * 8.0), 0, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
-}
-
-/**
- * cv.arolariu.ro storyline:
- * - Mostly clean (static site — boring is fine)
- * - One 30-min Degraded blip 45 days ago (visible in 90d/180d/365d views)
- */
-function generateCvArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
-  const total = config.bucketCount;
-  const p50 = 35;
-
-  const blipStart = now - 45 * MS_PER_DAY;
-  const blipEnd = blipStart + 30 * MS_PER_MIN;
-
-  return Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
-    const bucketT = now - fromEnd * config.bucketMs;
-    const t = new Date(bucketT).toISOString();
-    if (withinRange(bucketT, config.bucketMs, blipStart, blipEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
-}
-
-function generateMainBuckets(service: ServiceId, config: WindowConfig, now: number): Bucket[] {
-  switch (service) {
-    case "arolariu.ro":     return generateArolariuRoBuckets(config, now);
-    case "api.arolariu.ro": return generateApiArolariuRoBuckets(config, now);
-    case "exp.arolariu.ro": return generateExpArolariuRoBuckets(config, now);
-    case "cv.arolariu.ro":  return generateCvArolariuRoBuckets(config, now);
+    (series as Record<string, unknown>)["subSeries"] = subSeries;
   }
-}
 
-/**
- * api.arolariu.ro sub-series:
- * - mssql: same outage window (80-85 from end) plus cosmetic hiccups every ~96 buckets
- * - cosmosdb: mostly clean, one 30-min degraded spike ~30h ago (fromEnd ~ 60)
- *   plus a new 30-min Unhealthy blip 5 days ago (throttling)
- */
-function generateSubSeries(config: WindowConfig, now: number): Record<string, readonly Bucket[]> {
-  const total = config.bucketCount;
-  const degradedWindow = new Set([80, 81, 82, 83, 84, 85]);
-  const mssqlHiccup = (fromEnd: number) => fromEnd % 96 === 48;
-  const cosmosDegraded = new Set([60]);
-
-  // Cosmos throttle blip: 5 days ago, 30 min duration.
-  const cosmosBlipStart = now - 5 * MS_PER_DAY;
-  const cosmosBlipEnd = cosmosBlipStart + 30 * MS_PER_MIN;
-
-  const mssql: Bucket[] = Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
-    if (degradedWindow.has(fromEnd)) {
-      return mkBucket(t, "Degraded", 847, 0, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    if (mssqlHiccup(fromEnd)) {
-      return mkBucket(t, "Degraded", 600, 1, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    return mkBucket(t, "Healthy", 10, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
-
-  const cosmosdb: Bucket[] = Array.from({length: total}, (_, rev) => {
-    const fromEnd = rev;
-    const bucketT = now - fromEnd * config.bucketMs;
-    const t = new Date(bucketT).toISOString();
-    if (withinRange(bucketT, config.bucketMs, cosmosBlipStart, cosmosBlipEnd)) {
-      return mkBucket(t, "Unhealthy", 750, 0, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    if (cosmosDegraded.has(fromEnd)) {
-      return mkBucket(t, "Degraded", 320, 2, SAMPLES_PER_CRON, config.cronsPerBucket);
-    }
-    return mkBucket(t, "Healthy", 48, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
-  });
-
-  return {mssql, cosmosdb};
+  return series;
 }
 
 export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const now = Date.now();
   const config = CONFIGS[granularity];
-  const services: ServiceSeries[] = SERVICES.map(service => {
-    const buckets = generateMainBuckets(service, config, now);
-    const series: ServiceSeries = {service, buckets};
-    if (service === "api.arolariu.ro") {
-      (series as Record<string, unknown>)["subSeries"] = generateSubSeries(config, now);
-    }
-    return series;
-  });
+  const services: ServiceSeries[] = STORYLINES
+    .filter(s => SERVICES.includes(s.service))
+    .map(story => generateServiceSeries(story, config, now));
 
   // Intentionally construct via explicit discriminated-union literal so TS
   // verifies the (bucketSize, windowDays) pair is valid.
@@ -277,96 +339,59 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
   }
 }
 
+function blipToIncident(
+  story: ServiceStoryline,
+  blip: Blip,
+  subCheck: string | undefined,
+  index: number,
+  now: number,
+): Incident {
+  const startedAt = new Date(now - blip.ageHours * MS_PER_HOUR).toISOString();
+  const severity = blip.status;
+  const common = {
+    id: `inc-${String(index).padStart(3, "0")}`,
+    service: story.service,
+    severity,
+    startedAt,
+    reason: blip.reason,
+    probeCount: blip.probeCount,
+    ...(subCheck !== undefined ? {subCheck} : {}),
+  };
+  if (blip.open) {
+    return {...common, status: "open"};
+  }
+  const resolvedAt = new Date(now - blip.ageHours * MS_PER_HOUR + blip.durationHours * MS_PER_HOUR).toISOString();
+  return {
+    ...common,
+    status: "resolved",
+    resolvedAt,
+    durationMs: blip.durationHours * MS_PER_HOUR,
+  };
+}
+
 export function generateMockIncidents(): IncidentsFile {
   const now = Date.now();
 
-  const incidents: Incident[] = [
-    // inc-001: ongoing Degraded on exp.arolariu.ro (~3h ago)
-    {
-      id: "inc-001",
-      service: "exp.arolariu.ro",
-      status: "open",
-      severity: "Degraded",
-      startedAt: new Date(now - 3 * MS_PER_HOUR).toISOString(),
-      reason: "elevated latency on upstream dependency (mock)",
-      probeCount: 6,
-    },
-    // inc-002: exp.arolariu.ro Unhealthy outage 12h..9h ago
-    {
-      id: "inc-002",
-      service: "exp.arolariu.ro",
-      status: "resolved",
-      severity: "Unhealthy",
-      startedAt: new Date(now - 12 * MS_PER_HOUR).toISOString(),
-      resolvedAt: new Date(now - 9 * MS_PER_HOUR).toISOString(),
-      durationMs: 3 * MS_PER_HOUR,
-      reason: "upstream ML model service unreachable (mock)",
-      probeCount: 6,
-    },
-    // inc-003: api.arolariu.ro mssql Degraded 26h..25h ago
-    {
-      id: "inc-003",
-      service: "api.arolariu.ro",
-      subCheck: "mssql",
-      status: "resolved",
-      severity: "Degraded",
-      startedAt: new Date(now - 26 * MS_PER_HOUR).toISOString(),
-      resolvedAt: new Date(now - 25 * MS_PER_HOUR).toISOString(),
-      durationMs: 1 * MS_PER_HOUR,
-      reason: "connection pool exhausted (mock)",
-      probeCount: 2,
-    },
-    // inc-004: api.arolariu.ro mssql Degraded 4 days ago, 2h duration
-    {
-      id: "inc-004",
-      service: "api.arolariu.ro",
-      subCheck: "mssql",
-      status: "resolved",
-      severity: "Degraded",
-      startedAt: new Date(now - 4 * MS_PER_DAY).toISOString(),
-      resolvedAt: new Date(now - 4 * MS_PER_DAY + 2 * MS_PER_HOUR).toISOString(),
-      durationMs: 2 * MS_PER_HOUR,
-      reason: "connection pool saturation during deploy (mock)",
-      probeCount: 4,
-    },
-    // inc-005: api.arolariu.ro cosmosdb Unhealthy 5 days ago, 30min
-    {
-      id: "inc-005",
-      service: "api.arolariu.ro",
-      subCheck: "cosmosdb",
-      status: "resolved",
-      severity: "Unhealthy",
-      startedAt: new Date(now - 5 * MS_PER_DAY).toISOString(),
-      resolvedAt: new Date(now - 5 * MS_PER_DAY + 30 * MS_PER_MIN).toISOString(),
-      durationMs: 30 * MS_PER_MIN,
-      reason: "cosmosdb throttling on partition key (mock)",
-      probeCount: 1,
-    },
-    // inc-006: arolariu.ro Degraded 14 days ago, 4h duration
-    {
-      id: "inc-006",
-      service: "arolariu.ro",
-      status: "resolved",
-      severity: "Degraded",
-      startedAt: new Date(now - 14 * MS_PER_DAY - 2 * MS_PER_HOUR).toISOString(),
-      resolvedAt: new Date(now - 14 * MS_PER_DAY + 2 * MS_PER_HOUR).toISOString(),
-      durationMs: 4 * MS_PER_HOUR,
-      reason: "CDN cache purge cascaded origin load (mock)",
-      probeCount: 8,
-    },
-    // inc-007: cv.arolariu.ro Degraded 45 days ago, 30min
-    {
-      id: "inc-007",
-      service: "cv.arolariu.ro",
-      status: "resolved",
-      severity: "Degraded",
-      startedAt: new Date(now - 45 * MS_PER_DAY).toISOString(),
-      resolvedAt: new Date(now - 45 * MS_PER_DAY + 30 * MS_PER_MIN).toISOString(),
-      durationMs: 30 * MS_PER_MIN,
-      reason: "Azure Static Web App edge node hiccup (mock)",
-      probeCount: 1,
-    },
-  ];
+  // Order: open blips first (most recent + still-ongoing), then resolved
+  // newest-first. Matches the pre-rewrite shipped narrative closely.
+  const entries: Array<{story: ServiceStoryline; blip: Blip; subCheck?: string; age: number}> = [];
+  for (const story of STORYLINES) {
+    for (const blip of story.blips) {
+      entries.push({story, blip, age: blip.ageHours});
+    }
+    if (story.subChecks) {
+      for (const [name, sub] of Object.entries(story.subChecks)) {
+        for (const blip of sub.blips) {
+          entries.push({story, blip, subCheck: name, age: blip.ageHours});
+        }
+      }
+    }
+  }
+
+  // Newest first (lowest ageHours first).
+  entries.sort((a, b) => a.age - b.age);
+
+  const incidents: Incident[] = entries.map((e, i) => blipToIncident(e.story, e.blip, e.subCheck, i + 1, now));
 
   return {
     generatedAt: new Date(now).toISOString(),
