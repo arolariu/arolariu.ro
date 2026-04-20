@@ -1,11 +1,17 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import type {AggregateFile, Bucket, FilterWindow, IncidentsFile, ServiceSeries} from "$lib/types/status";
+  import type {AggregateFile, Bucket, FilterWindow, IncidentsFile} from "$lib/types/status";
   import {FILTER_WINDOWS, WINDOW_TO_GRANULARITY} from "$lib/types/status";
   import {fetchAggregate, fetchIncidents, invalidateAllCaches} from "$lib/api/fetchStatusData";
   import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
   import {deriveOverallStatus} from "$lib/aggregation/deriveParentStatus";
+  import {
+    bucketDurationMsFor,
+    orderedServices,
+    shouldIgnoreKeydown,
+    showWeekdayChart,
+  } from "$lib/routes/pageLogic";
   import FilterPills from "$lib/components/FilterPills.svelte";
   import StatusBanner from "$lib/components/StatusBanner.svelte";
   import ServiceRow from "$lib/components/ServiceRow.svelte";
@@ -30,37 +36,22 @@
   let hoveredAnchor: HTMLElement | null = $state(null);
   let helpOpen = $state(false);
 
-  const WEEKDAY_WINDOWS: ReadonlySet<FilterWindow> = new Set<FilterWindow>([
-    "14d", "30d", "60d", "90d", "180d", "365d",
-  ]);
-  const showWeekday = $derived(WEEKDAY_WINDOWS.has(activeWindow));
+  const showWeekday = $derived(showWeekdayChart(activeWindow));
 
   const granularity = $derived(WINDOW_TO_GRANULARITY[activeWindow]);
-
-  const bucketDurationMs = $derived.by(() => {
-    const size = sliced?.bucketSize;
-    if (size === "30m") return 30 * 60_000;
-    if (size === "1h") return 60 * 60_000;
-    if (size === "1d") return 24 * 60 * 60_000;
-    return 30 * 60_000;
-  });
 
   const sliced = $derived.by<AggregateFile | null>(() => {
     const file = cache[granularity];
     return file ? sliceWindow(file, activeWindow) : null;
   });
 
+  const bucketDurationMs = $derived(bucketDurationMsFor(sliced?.bucketSize));
+
   const overallStatus = $derived.by(() =>
     sliced ? deriveOverallStatus(sliced.services) : "loading" as const
   );
 
   const lastProbeAt = $derived(sliced?.generatedAt);
-
-  function orderedServices(file: AggregateFile | null): readonly ServiceSeries[] {
-    if (!file) return [];
-    const order = ["arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro"];
-    return [...file.services].sort((a, b) => order.indexOf(a.service) - order.indexOf(b.service));
-  }
 
   async function loadAggregate(g: "fine" | "hourly" | "daily") {
     if (cache[g]) return;
@@ -82,18 +73,6 @@
   }
 
   $effect(() => { void loadAggregate(granularity); });
-
-  /**
-   * Short-circuit keyboard shortcuts when focus is in an editable element,
-   * or when any modifier is held (so we don't steal Ctrl+R / Cmd+L / etc).
-   */
-  function shouldIgnoreKeydown(event: KeyboardEvent): boolean {
-    if (event.ctrlKey || event.metaKey || event.altKey) return true;
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return false;
-    if (target.matches("input, textarea, select, [contenteditable=\"true\"]")) return true;
-    return false;
-  }
 
   function handleGlobalKeydown(event: KeyboardEvent) {
     if (shouldIgnoreKeydown(event)) return;

@@ -34,6 +34,15 @@ export interface ProbeResult {
 
 export type BucketSize = "30m" | "1h" | "1d";
 
+/** BucketSize → millisecond duration. Used for x-axis math, tooltip spans,
+ *  and "minutes per bucket" readouts. Single source of truth — any place
+ *  that needs to convert a BucketSize to a duration must use this map. */
+export const BUCKET_SIZE_TO_MS: Record<BucketSize, number> = {
+  "30m": 30 * 60_000,
+  "1h": 60 * 60_000,
+  "1d": 24 * 60 * 60_000,
+};
+
 export interface SubCheckSummary {
   readonly name: string;
   readonly status: HealthStatus;

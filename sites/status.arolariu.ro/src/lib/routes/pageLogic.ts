@@ -1,0 +1,74 @@
+/**
+ * Pure logic extracted from `src/routes/+page.svelte` for testability.
+ * The route file is excluded from coverage (see vitest.config.ts), so
+ * anything that can be pulled out into a plain module gets pulled out.
+ *
+ * Nothing in here may import Svelte runtime primitives — `$props`, `$state`,
+ * `$derived`, or `onMount`. Keep functions pure and side-effect-free.
+ */
+
+import {
+  BUCKET_SIZE_TO_MS,
+  type AggregateFile,
+  type BucketSize,
+  type FilterWindow,
+  type ServiceId,
+  type ServiceSeries,
+} from "../types/status";
+
+/** Display order for service rows on the status page. Drives `orderedServices`. */
+export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = [
+  "arolariu.ro",
+  "api.arolariu.ro",
+  "exp.arolariu.ro",
+  "cv.arolariu.ro",
+];
+
+/** Windows for which the weekday-uptime chart renders (≥14 days of history). */
+export const WEEKDAY_CHART_WINDOWS: ReadonlySet<FilterWindow> = new Set<FilterWindow>([
+  "14d", "30d", "60d", "90d", "180d", "365d",
+]);
+
+/**
+ * Returns services sorted by the canonical display order. Unknown service
+ * ids sort to the end (indexOf returns -1, which `-b.idx` handles naturally —
+ * we instead push them after known ones explicitly).
+ */
+export function orderedServices(file: AggregateFile | null): readonly ServiceSeries[] {
+  if (!file) return [];
+  const orderIndex = (id: string): number => {
+    const idx = SERVICE_DISPLAY_ORDER.indexOf(id as ServiceId);
+    return idx === -1 ? SERVICE_DISPLAY_ORDER.length : idx;
+  };
+  return [...file.services].sort((a, b) => orderIndex(a.service) - orderIndex(b.service));
+}
+
+/**
+ * Maps the bucketSize of a sliced aggregate to its duration in ms.
+ * Falls back to the 30m default for a null/missing slice.
+ */
+export function bucketDurationMsFor(bucketSize: BucketSize | undefined): number {
+  if (bucketSize === undefined) return BUCKET_SIZE_TO_MS["30m"];
+  return BUCKET_SIZE_TO_MS[bucketSize];
+}
+
+/**
+ * Whether the WeekdayUptimeChart should render for the given filter window.
+ * True for windows covering at least 14 days of history; false for narrower
+ * windows where the 7-day breakdown would just be two samples per bar.
+ */
+export function showWeekdayChart(windowFilter: FilterWindow): boolean {
+  return WEEKDAY_CHART_WINDOWS.has(windowFilter);
+}
+
+/**
+ * Short-circuit keyboard shortcuts when focus is in an editable element,
+ * or when any modifier is held (so we don't steal Ctrl+R / Cmd+L / etc).
+ */
+export function shouldIgnoreKeydown(event: KeyboardEvent): boolean {
+  if (event.ctrlKey || event.metaKey || event.altKey) return true;
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.matches("input, textarea, select, [contenteditable=\"true\"]")) return true;
+  return false;
+}
