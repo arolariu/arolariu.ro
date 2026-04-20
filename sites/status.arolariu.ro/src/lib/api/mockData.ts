@@ -24,28 +24,39 @@ interface WindowConfig {
   readonly windowDays: 14 | 90 | 365;
   readonly bucketMs: number;
   readonly bucketCount: number;
+  /** How many 30-min cron runs are aggregated into one bucket at this granularity. */
+  readonly cronsPerBucket: number;
 }
 
 const CONFIGS: Record<Granularity, WindowConfig> = {
-  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * 60_000,       bucketCount: 14 * 48},
-  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: 60 * 60_000,       bucketCount: 90 * 24},
-  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: 24 * 60 * 60_000,  bucketCount: 365},
+  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * 60_000,       bucketCount: 14 * 48, cronsPerBucket: 1},
+  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: 60 * 60_000,       bucketCount: 90 * 24, cronsPerBucket: 2},
+  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: 24 * 60 * 60_000,  bucketCount: 365,     cronsPerBucket: 48},
 };
 
 // Samples per cron run in the new 3-sample-per-cron model
 const SAMPLES_PER_CRON = 3;
 
+/**
+ * `healthyPerCron` / `totalPerCron` are per-cron-run sample counts (0..3).
+ * The bucket-level probe count is scaled by `cronsPerBucket`, so a 1-day
+ * bucket at daily granularity shows 48× the sample count of a 30-min bucket.
+ */
 function mkBucket(
   t: string,
   status: "Healthy" | "Degraded" | "Unhealthy",
   p50: number,
-  healthy: number,
-  total: number,
+  healthyPerCron: number,
+  totalPerCron: number,
+  cronsPerBucket: number,
   extras: {worstSubCheck?: {name: string; status: "Healthy" | "Degraded" | "Unhealthy"; description?: string}} = {},
 ): Bucket {
   const bucket: Bucket = {
     t, status,
-    probes: {healthy, total},
+    probes: {
+      healthy: healthyPerCron * cronsPerBucket,
+      total: totalPerCron * cronsPerBucket,
+    },
     latency: {p50, p99: Math.round(p50 * 2.1)},
     httpStatus: status === "Unhealthy" ? 503 : 200,
   };
@@ -75,10 +86,10 @@ function generateArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] 
     const fromEnd = rev; // distance from newest
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
     if (degradedCluster1.has(fromEnd) || degradedCluster2.has(fromEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON);
+      return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
     void i;
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
@@ -100,17 +111,17 @@ function generateApiArolariuRoBuckets(config: WindowConfig, now: number): Bucket
     const fromEnd = rev;
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
     if (degradedWindow.has(fromEnd)) {
-      return mkBucket(t, "Degraded", Math.round(p50 * 4.0), 0, SAMPLES_PER_CRON,
+      return mkBucket(t, "Degraded", Math.round(p50 * 4.0), 0, SAMPLES_PER_CRON, config.cronsPerBucket,
         {worstSubCheck: {name: "mssql", status: "Degraded", description: "connection pool exhausted"}},
       );
     }
     if (mssqlHiccup(fromEnd)) {
       // Parent stays Healthy but worstSubCheck shows the flap
-      return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON,
+      return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket,
         {worstSubCheck: {name: "mssql", status: "Degraded", description: "brief connection spike"}},
       );
     }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
@@ -129,9 +140,9 @@ function generateExpArolariuRoBuckets(config: WindowConfig, now: number): Bucket
     const fromEnd = rev;
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
     if (outageWindow.has(fromEnd)) {
-      return mkBucket(t, "Unhealthy", Math.round(p50 * 8.0), 0, SAMPLES_PER_CRON);
+      return mkBucket(t, "Unhealthy", Math.round(p50 * 8.0), 0, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
@@ -145,7 +156,7 @@ function generateCvArolariuRoBuckets(config: WindowConfig, now: number): Bucket[
   return Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
@@ -173,21 +184,21 @@ function generateSubSeries(config: WindowConfig, now: number): Record<string, re
     const fromEnd = rev;
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
     if (degradedWindow.has(fromEnd)) {
-      return mkBucket(t, "Degraded", 847, 0, SAMPLES_PER_CRON);
+      return mkBucket(t, "Degraded", 847, 0, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
     if (mssqlHiccup(fromEnd)) {
-      return mkBucket(t, "Degraded", 600, 1, SAMPLES_PER_CRON);
+      return mkBucket(t, "Degraded", 600, 1, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
-    return mkBucket(t, "Healthy", 10, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", 10, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 
   const cosmosdb: Bucket[] = Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
     const t = new Date(now - fromEnd * config.bucketMs).toISOString();
     if (cosmosDegraded.has(fromEnd)) {
-      return mkBucket(t, "Degraded", 320, 2, SAMPLES_PER_CRON);
+      return mkBucket(t, "Degraded", 320, 2, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
-    return mkBucket(t, "Healthy", 48, SAMPLES_PER_CRON, SAMPLES_PER_CRON);
+    return mkBucket(t, "Healthy", 48, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 
   return {mssql, cosmosdb};
