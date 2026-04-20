@@ -1,7 +1,7 @@
 <script lang="ts">
-  import {onDestroy} from "svelte";
   import type {Bucket} from "../types/status";
   import {formatRelativeTime} from "../aggregation/formatRelativeTime";
+  import {usePopoverPosition} from "../hooks/usePopoverPosition.svelte";
 
   interface Props {
     bucket: Bucket | null;
@@ -19,44 +19,15 @@
     bucketDurationMs = DEFAULT_DURATION,
   }: Props = $props();
 
-  let position = $state({top: 0, left: 0, flipHoriz: false});
   let tooltipEl = $state<HTMLDivElement | null>(null);
 
-  function updatePosition() {
-    if (!anchor || !bucket) return;
-    const rect = anchor.getBoundingClientRect();
-    const tipWidth = tooltipEl?.offsetWidth ?? 280;
-    const desiredLeft = rect.left + rect.width / 2 + window.scrollX;
-    const viewportRight = window.scrollX + window.innerWidth - 8;
-    const flipHoriz = desiredLeft + tipWidth / 2 > viewportRight;
-    const clampedLeft = flipHoriz
-      ? Math.min(desiredLeft, viewportRight - tipWidth / 2)
-      : desiredLeft;
-    position = {
-      top: rect.top + window.scrollY - 8,
-      left: clampedLeft,
-      flipHoriz,
-    };
-  }
-
-  $effect(() => {
-    if (!anchor || !bucket) return;
-    updatePosition();
-    const opts: AddEventListenerOptions = {passive: true};
-    window.addEventListener("scroll", updatePosition, opts);
-    window.addEventListener("resize", updatePosition);
-    return () => {
-      window.removeEventListener("scroll", updatePosition);
-      window.removeEventListener("resize", updatePosition);
-    };
-  });
-
-  onDestroy(() => {
-    if (typeof window !== "undefined") {
-      window.removeEventListener("scroll", updatePosition);
-      window.removeEventListener("resize", updatePosition);
-    }
-  });
+  // Positioning math + scroll/resize plumbing lives in the shared hook so
+  // the viewport-flip behavior is unit-testable (see usePopoverPosition.test).
+  const position = usePopoverPosition(
+    () => anchor,
+    () => tooltipEl,
+    () => anchor !== null && bucket !== null,
+  );
 
   const endISO = $derived.by(() => {
     if (!bucket) return "";
@@ -87,7 +58,7 @@
     {id}
     class="tooltip"
     role="tooltip"
-    style="top: {position.top}px; left: {position.left}px;"
+    style="top: {position().top}px; left: {position().left}px;"
   >
     <header class="tip-head">
       <div class="time-range">
