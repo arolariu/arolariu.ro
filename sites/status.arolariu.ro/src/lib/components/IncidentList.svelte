@@ -40,7 +40,7 @@
         </div>
         <div class="meta">
           {inc.startedAt}
-          {#if inc.resolvedAt}→ {inc.resolvedAt} · {formatDuration(inc.durationMs)}{:else}· ongoing{/if}
+          {#if inc.status === "resolved"}→ {inc.resolvedAt} · {formatDuration(inc.durationMs)}{:else}· ongoing{/if}
           {#if inc.reason}· <code>{inc.reason}</code>{/if}
         </div>
       </div>

@@ -53,28 +53,46 @@ export interface ServiceSeries {
   readonly subSeries?: Record<string, readonly Bucket[]>;
 }
 
-export interface AggregateFile {
+/**
+ * AggregateFile is discriminated on the (bucketSize, windowDays) pair.
+ * Only three pairs are valid; the union makes invalid combinations
+ * unrepresentable at the type level.
+ */
+export type AggregateWindow =
+  | {readonly bucketSize: "30m"; readonly windowDays: 14}
+  | {readonly bucketSize: "1h"; readonly windowDays: 90}
+  | {readonly bucketSize: "1d"; readonly windowDays: 365};
+
+export type AggregateFile = {
   readonly generatedAt: string;
-  readonly bucketSize: BucketSize;
-  readonly windowDays: 14 | 90 | 365;
   readonly services: readonly ServiceSeries[];
-}
+} & AggregateWindow;
 
 export type IncidentStatus = "open" | "resolved";
 export type IncidentSeverity = "Degraded" | "Unhealthy";
 
-export interface Incident {
+interface IncidentCommon {
   readonly id: string;
   readonly service: ServiceId;
   readonly subCheck?: string;
-  readonly status: IncidentStatus;
   readonly startedAt: string;
-  readonly resolvedAt?: string;
-  readonly durationMs?: number;
   readonly severity: IncidentSeverity;
   readonly reason: string;
   readonly probeCount: number;
 }
+
+/**
+ * Incident is discriminated on `status`. When resolved, `resolvedAt` and
+ * `durationMs` are required (not optional) — the type narrows those in
+ * `if (inc.status === "resolved") { … }` branches.
+ */
+export type Incident =
+  | (IncidentCommon & {readonly status: "open"})
+  | (IncidentCommon & {
+      readonly status: "resolved";
+      readonly resolvedAt: string;
+      readonly durationMs: number;
+    });
 
 export interface IncidentsFile {
   readonly generatedAt: string;

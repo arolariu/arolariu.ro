@@ -8,6 +8,10 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+function isNonNegativeNumber(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0;
+}
+
 export function isHealthStatus(v: unknown): v is HealthStatus {
   return v === "Healthy" || v === "Degraded" || v === "Unhealthy";
 }
@@ -20,7 +24,7 @@ export function isSubCheck(v: unknown): v is SubCheck {
   if (!isObject(v)) return false;
   if (typeof v["name"] !== "string") return false;
   if (!isHealthStatus(v["status"])) return false;
-  if (typeof v["durationMs"] !== "number") return false;
+  if (!isNonNegativeNumber(v["durationMs"])) return false;
   if (v["description"] !== undefined && typeof v["description"] !== "string") return false;
   return true;
 }
@@ -29,8 +33,8 @@ export function isProbeResult(v: unknown): v is ProbeResult {
   if (!isObject(v)) return false;
   if (!isServiceId(v["service"])) return false;
   if (typeof v["timestamp"] !== "string") return false;
-  if (typeof v["latencyMs"] !== "number") return false;
-  if (typeof v["httpStatus"] !== "number") return false;
+  if (!isNonNegativeNumber(v["latencyMs"])) return false;
+  if (!isNonNegativeNumber(v["httpStatus"])) return false;
   if (!isHealthStatus(v["overall"])) return false;
   if (v["error"] !== undefined && typeof v["error"] !== "string") return false;
   const subs = v["subChecks"];
@@ -47,11 +51,13 @@ export function isBucket(v: unknown): v is Bucket {
   if (!isHealthStatus(v["status"])) return false;
   const probes = v["probes"];
   if (!isObject(probes)) return false;
-  if (typeof probes["healthy"] !== "number" || typeof probes["total"] !== "number") return false;
+  if (!isNonNegativeNumber(probes["healthy"]) || !isNonNegativeNumber(probes["total"])) return false;
+  if (probes["healthy"] > probes["total"]) return false; // invariant
   const latency = v["latency"];
   if (!isObject(latency)) return false;
-  if (typeof latency["p50"] !== "number" || typeof latency["p99"] !== "number") return false;
-  if (v["httpStatus"] !== undefined && typeof v["httpStatus"] !== "number") return false;
+  if (!isNonNegativeNumber(latency["p50"]) || !isNonNegativeNumber(latency["p99"])) return false;
+  if (latency["p50"] > latency["p99"]) return false; // invariant
+  if (v["httpStatus"] !== undefined && !isNonNegativeNumber(v["httpStatus"])) return false;
   const worst = v["worstSubCheck"];
   if (worst !== undefined) {
     if (!isObject(worst)) return false;
@@ -78,11 +84,20 @@ export function isServiceSeries(v: unknown): v is ServiceSeries {
   return true;
 }
 
+const VALID_AGGREGATE_PAIRS: ReadonlyMap<string, 14 | 90 | 365> = new Map([
+  ["30m", 14],
+  ["1h", 90],
+  ["1d", 365],
+]);
+
 export function isAggregateFile(v: unknown): v is AggregateFile {
   if (!isObject(v)) return false;
   if (typeof v["generatedAt"] !== "string") return false;
-  if (v["bucketSize"] !== "30m" && v["bucketSize"] !== "1h" && v["bucketSize"] !== "1d") return false;
-  if (v["windowDays"] !== 14 && v["windowDays"] !== 90 && v["windowDays"] !== 365) return false;
+  const bucketSize = v["bucketSize"];
+  if (typeof bucketSize !== "string") return false;
+  const expectedWindowDays = VALID_AGGREGATE_PAIRS.get(bucketSize);
+  if (expectedWindowDays === undefined) return false; // unknown bucketSize
+  if (v["windowDays"] !== expectedWindowDays) return false; // mismatched pair
   if (!Array.isArray(v["services"])) return false;
   if (!v["services"].every(isServiceSeries)) return false;
   return true;
@@ -93,14 +108,24 @@ export function isIncident(v: unknown): v is Incident {
   if (typeof v["id"] !== "string") return false;
   if (!isServiceId(v["service"])) return false;
   if (v["subCheck"] !== undefined && typeof v["subCheck"] !== "string") return false;
-  if (v["status"] !== "open" && v["status"] !== "resolved") return false;
   if (typeof v["startedAt"] !== "string") return false;
-  if (v["resolvedAt"] !== undefined && typeof v["resolvedAt"] !== "string") return false;
-  if (v["durationMs"] !== undefined && typeof v["durationMs"] !== "number") return false;
   if (v["severity"] !== "Degraded" && v["severity"] !== "Unhealthy") return false;
   if (typeof v["reason"] !== "string") return false;
-  if (typeof v["probeCount"] !== "number") return false;
-  return true;
+  if (!isNonNegativeNumber(v["probeCount"])) return false;
+
+  // Discriminated on status: open incidents must NOT carry resolvedAt/durationMs;
+  // resolved incidents MUST carry both.
+  if (v["status"] === "open") {
+    if (v["resolvedAt"] !== undefined) return false;
+    if (v["durationMs"] !== undefined) return false;
+    return true;
+  }
+  if (v["status"] === "resolved") {
+    if (typeof v["resolvedAt"] !== "string") return false;
+    if (!isNonNegativeNumber(v["durationMs"])) return false;
+    return true;
+  }
+  return false;
 }
 
 export function isIncidentsFile(v: unknown): v is IncidentsFile {
