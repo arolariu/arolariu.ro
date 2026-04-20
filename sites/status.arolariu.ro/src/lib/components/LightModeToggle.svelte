@@ -1,11 +1,24 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import {getTheme, setTheme, type Theme} from "../stores/themeStore.svelte";
+  import {applyTheme, getTheme, setTheme, type Theme} from "../stores/themeStore.svelte";
 
   let theme: Theme = $state("auto");
 
   onMount(() => {
     theme = getTheme();
+
+    // When the user has theme="auto", track the OS-level preference live so
+    // the page re-themes as the user flips their system appearance without
+    // reloading. applyTheme re-evaluates matchMedia each call.
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => { if (theme === "auto") applyTheme("auto"); };
+    // addEventListener is the modern API; fall back silently if unavailable.
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    }
+    return;
   });
 
   function cycle() {
