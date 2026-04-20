@@ -1,7 +1,7 @@
 <script lang="ts">
-  import {onMount} from "svelte";
   import type {HealthStatus} from "../../types/status";
   import {formatRelativeTime} from "../../aggregation/formatRelativeTime";
+  import {useMinuteTick} from "../../hooks/useMinuteTick.svelte";
 
   interface Props {
     overallStatus: HealthStatus | "loading";
@@ -10,12 +10,7 @@
 
   let {overallStatus, lastProbeAt}: Props = $props();
 
-  let nowTick = $state(Date.now());
-
-  onMount(() => {
-    const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
-    return () => clearInterval(id);
-  });
+  const nowTick = useMinuteTick();
 
   const title = $derived(
     overallStatus === "Healthy" ? "All systems operational"
@@ -25,8 +20,7 @@
   );
 
   const lastProbeAgo = $derived.by(() => {
-    void nowTick; // reactive dependency — re-evaluates every minute
-    const out = formatRelativeTime(lastProbeAt, nowTick);
+    const out = formatRelativeTime(lastProbeAt, nowTick());
     return out === "upcoming" ? "" : out;
   });
 </script>

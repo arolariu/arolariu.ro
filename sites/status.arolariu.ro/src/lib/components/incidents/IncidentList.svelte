@@ -1,7 +1,7 @@
 <script lang="ts">
-  import {onMount} from "svelte";
   import type {Incident, IncidentsFile, FilterWindow} from "../../types/status";
   import {WINDOW_CONFIGS} from "../../types/status";
+  import {useMinuteTick} from "../../hooks/useMinuteTick.svelte";
   import IncidentCard from "./IncidentCard.svelte";
   import IncidentFilterChips from "./IncidentFilterChips.svelte";
 
@@ -12,23 +12,17 @@
 
   let {incidents, windowFilter}: Props = $props();
 
-  let nowTick = $state(Date.now());
+  const nowTick = useMinuteTick();
   // null = "All" chip selected
   let selectedService: string | null = $state(null);
   let expandedId: string | null = $state(null);
-
-  onMount(() => {
-    const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
-    return () => clearInterval(id);
-  });
 
   const RTF = new Intl.RelativeTimeFormat("en", {numeric: "auto"});
   const MONTH_FMT = new Intl.DateTimeFormat("en-US", {year: "numeric", month: "long"});
 
   function formatRelative(iso: string | undefined): string {
-    void nowTick; // reactive dependency — re-evaluates every minute
     if (!iso) return "";
-    const ms = nowTick - Date.parse(iso);
+    const ms = nowTick() - Date.parse(iso);
     if (!Number.isFinite(ms)) return "";
     const abs = Math.abs(ms);
     const sign = ms >= 0 ? -1 : 1; // past = negative
