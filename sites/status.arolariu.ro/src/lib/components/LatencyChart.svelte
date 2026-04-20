@@ -18,6 +18,15 @@
   const INNER_W = CHART_W - PAD_L - PAD_R;
   const INNER_H = CHART_H - PAD_T - PAD_B;
 
+  // True when every bucket in the window carries p75 AND p95. When any bucket
+  // is missing either, we can't draw a continuous fan — fall back to the
+  // degraded (p50 line + p99 envelope) look that was in place before.
+  const hasFan = $derived(
+    buckets.length > 0 && buckets.every(b =>
+      b.latency.p75 !== undefined && b.latency.p95 !== undefined
+    )
+  );
+
   const p50Max = $derived(Math.max(...buckets.map(b => b.latency.p50), 100));
   const p99Max = $derived(Math.max(...buckets.map(b => b.latency.p99), 200));
   const yMax = $derived(Math.max(p99Max, p50Max * 2, 200));
@@ -29,17 +38,39 @@
     return PAD_T + INNER_H - (v / yMax) * INNER_H;
   }
 
-  const p50Points = $derived(buckets.map((b, i) => `${xFor(i).toFixed(1)},${yFor(b.latency.p50).toFixed(1)}`).join(" "));
-  const p99Points = $derived(buckets.map((b, i) => `${xFor(i).toFixed(1)},${yFor(b.latency.p99).toFixed(1)}`).join(" "));
-  const p99Polygon = $derived.by(() => {
+  /** Build a polyline point string for a given percentile extractor. */
+  function linePoints(pick: (b: Bucket) => number): string {
+    return buckets.map((b, i) => `${xFor(i).toFixed(1)},${yFor(pick(b)).toFixed(1)}`).join(" ");
+  }
+
+  /** Build a polygon point string for a band between two percentile lines. */
+  function bandPoints(upper: (b: Bucket) => number, lower: (b: Bucket) => number): string {
     if (buckets.length === 0) return "";
+    const topFwd = buckets.map((b, i) => `${xFor(i).toFixed(1)},${yFor(upper(b)).toFixed(1)}`);
+    const bottomRev = buckets.map((b, i) => `${xFor(i).toFixed(1)},${yFor(lower(b)).toFixed(1)}`).reverse();
+    return [...topFwd, ...bottomRev].join(" ");
+  }
+
+  const p50Points = $derived(linePoints(b => b.latency.p50));
+  const p99Points = $derived(linePoints(b => b.latency.p99));
+  // Fan polygons (only valid when hasFan is true). Back-to-front order so the
+  // darkest (innermost) band paints last and stays visually in front.
+  const outerBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p95 as number, b => b.latency.p99) : "");
+  const middleBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p75 as number, b => b.latency.p95 as number) : "");
+  const innerBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p50, b => b.latency.p75 as number) : "");
+
+  // Degraded-mode polygon (old style): p50 line + p99 envelope down to the x-axis.
+  const p99Polygon = $derived.by(() => {
+    if (hasFan || buckets.length === 0) return "";
     const top = p99Points;
     const bottomRight = `${xFor(buckets.length - 1).toFixed(1)},${(PAD_T + INNER_H).toFixed(1)}`;
     const bottomLeft = `${xFor(0).toFixed(1)},${(PAD_T + INNER_H).toFixed(1)}`;
     return `${top} ${bottomRight} ${bottomLeft}`;
   });
 
-  let hovered = $state<{i: number; x: number; y50: number; y99: number; bucket: Bucket} | null>(null);
+  let hovered = $state<{
+    i: number; x: number; y50: number; y99: number; bucket: Bucket;
+  } | null>(null);
   let svgEl = $state<SVGSVGElement | null>(null);
 
   function onPointerMove(e: PointerEvent) {
@@ -67,7 +98,14 @@
     if (buckets.length === 0) return `Latency trend for ${service}: no data.`;
     const p50s = buckets.map(b => b.latency.p50);
     const p99s = buckets.map(b => b.latency.p99);
-    return `Latency trend for ${service} across ${buckets.length} buckets. p50 ranges ${Math.min(...p50s)}-${Math.max(...p50s)}ms. p99 peaks at ${Math.max(...p99s)}ms.`;
+    const p50Range = `${Math.min(...p50s)}-${Math.max(...p50s)}ms`;
+    const p99Peak = `${Math.max(...p99s)}ms`;
+    if (hasFan) {
+      const p75s = buckets.map(b => b.latency.p75 as number);
+      const p95s = buckets.map(b => b.latency.p95 as number);
+      return `Latency trend for ${service} across ${buckets.length} buckets: p50 ${p50Range}, p75 peaks at ${Math.max(...p75s)}ms, p95 peaks at ${Math.max(...p95s)}ms, p99 peaks at ${p99Peak}.`;
+    }
+    return `Latency trend for ${service} across ${buckets.length} buckets. p50 ranges ${p50Range}. p99 peaks at ${p99Peak}.`;
   });
 </script>
 
@@ -99,18 +137,37 @@
     <text x={PAD_L - 4} y={PAD_T + 4} text-anchor="end" class="axis-label">{formatAxisLabel(yMax)}</text>
     <text x={PAD_L - 4} y={PAD_T + INNER_H * 0.5 + 3} text-anchor="end" class="axis-label">{formatAxisLabel(yMax * 0.5)}</text>
     <text x={PAD_L - 4} y={PAD_T + INNER_H + 3} text-anchor="end" class="axis-label">0</text>
-    <!-- p99 envelope -->
-    {#if p99Polygon}
-      <polygon fill="url(#p99-env-{service})" points={p99Polygon}/>
+
+    {#if hasFan}
+      <!-- percentile fan: outer (p95↔p99), middle (p75↔p95), inner (p50↔p75).
+           Back-to-front: lightest first, so inner (darkest) sits visually in
+           front. All three share the service latency accent (var(--status-up)),
+           varying alpha only — colorblind-safe via the legend + centerline. -->
+      {#if outerBandPoints}
+        <polygon class="band band-outer" points={outerBandPoints}/>
+      {/if}
+      {#if middleBandPoints}
+        <polygon class="band band-middle" points={middleBandPoints}/>
+      {/if}
+      {#if innerBandPoints}
+        <polygon class="band band-inner" points={innerBandPoints}/>
+      {/if}
+    {:else}
+      <!-- degraded fallback: p99 envelope (old look) when any bucket
+           lacks p75/p95 (pre-upgrade aggregate data). -->
+      {#if p99Polygon}
+        <polygon fill="url(#p99-env-{service})" points={p99Polygon}/>
+      {/if}
+      {#if p99Points}
+        <polyline class="p99" fill="none" stroke-width="1.3" points={p99Points}/>
+      {/if}
     {/if}
-    <!-- p99 line -->
-    {#if p99Points}
-      <polyline class="p99" fill="none" stroke-width="1.3" points={p99Points}/>
-    {/if}
-    <!-- p50 line -->
+
+    <!-- p50 centerline sits on top of everything -->
     {#if p50Points}
-      <polyline class="p50" fill="none" stroke-width="1.6" points={p50Points}/>
+      <polyline class="p50" fill="none" stroke-width="1.5" points={p50Points}/>
     {/if}
+
     <!-- hover crosshair -->
     {#if hovered}
       <line x1={hovered.x} y1={PAD_T} x2={hovered.x} y2={PAD_T + INNER_H} stroke="currentColor" stroke-width="0.8" opacity="0.4" stroke-dasharray="2 2"/>
@@ -126,8 +183,15 @@
     </div>
   {/if}
   <div class="legend">
-    <span><span class="swatch p50"></span>p50 · median</span>
-    <span><span class="swatch p99"></span>p99 · tail</span>
+    {#if hasFan}
+      <span><span class="swatch p50"></span>p50</span>
+      <span><span class="swatch band-sw-inner"></span>p75</span>
+      <span><span class="swatch band-sw-middle"></span>p95</span>
+      <span><span class="swatch band-sw-outer"></span>p99</span>
+    {:else}
+      <span><span class="swatch p50"></span>p50 · median</span>
+      <span><span class="swatch p99"></span>p99 · tail</span>
+    {/if}
     <span class="legend-hint">{buckets.length} buckets · {Math.round(bucketDurationMs / 60_000)} min each</span>
   </div>
 </div>
@@ -146,6 +210,15 @@
   }
   .p50 { stroke: var(--status-up); }
   .p99 { stroke: var(--status-deg); }
+  /* Percentile fan bands — alpha varied on the latency accent.
+     Outer (p95→p99) lightest; middle (p75→p95) medium; inner (p50→p75) darkest.
+     Stroke is a hairline of the same tone so the band edge is readable without
+     relying on color alone (legend + p50 centerline remain the primary signal). */
+  .band { stroke: var(--status-up); stroke-width: 0.3; fill: var(--status-up); }
+  .band-outer  { fill-opacity: 0.12; stroke-opacity: 0.25; }
+  .band-middle { fill-opacity: 0.22; stroke-opacity: 0.35; }
+  .band-inner  { fill-opacity: 0.35; stroke-opacity: 0.45; }
+
   .dot-p50 { fill: var(--status-up); stroke: var(--bg); stroke-width: 1; }
   .dot-p99 { fill: var(--status-deg); stroke: var(--bg); stroke-width: 1; }
   .axis-label {
@@ -171,6 +244,16 @@
   }
   .swatch.p50 { background: var(--status-up); }
   .swatch.p99 { background: var(--status-deg); }
+  .band-sw-outer,
+  .band-sw-middle,
+  .band-sw-inner {
+    height: 8px;
+    border-radius: 1px;
+    background: var(--status-up);
+  }
+  .band-sw-outer  { opacity: 0.25; }
+  .band-sw-middle { opacity: 0.45; }
+  .band-sw-inner  { opacity: 0.65; }
   .crosshair-label {
     position: absolute;
     top: 0;

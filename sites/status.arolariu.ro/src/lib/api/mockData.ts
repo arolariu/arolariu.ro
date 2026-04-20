@@ -55,13 +55,18 @@ function mkBucket(
   cronsPerBucket: number,
   extras: {worstSubCheck?: {name: string; status: "Healthy" | "Degraded" | "Unhealthy"; description?: string}} = {},
 ): Bucket {
+  // Plausible percentile fan around a given p50. Relations picked to match
+  // the old p99≈p50*2.1 contract and to space p75 + p95 sensibly between.
+  const p75 = Math.round(p50 * 1.35);
+  const p95 = Math.round(p50 * 1.80);
+  const p99 = Math.round(p50 * 2.10);
   const bucket: Bucket = {
     t, status,
     probes: {
       healthy: healthyPerCron * cronsPerBucket,
       total: totalPerCron * cronsPerBucket,
     },
-    latency: {p50, p99: Math.round(p50 * 2.1)},
+    latency: {p50, p75, p95, p99},
     httpStatus: status === "Unhealthy" ? 503 : 200,
   };
   if (extras.worstSubCheck !== undefined) {
