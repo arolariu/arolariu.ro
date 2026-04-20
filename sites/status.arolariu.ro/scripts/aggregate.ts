@@ -1,131 +1,17 @@
 import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync} from "node:fs";
 import {join} from "node:path";
 import {SERVICE_IDS, type AggregateFile, type Bucket, type BucketSize,
-  type HealthStatus, type ProbeResult, type ServiceId, type ServiceSeries,
-  type SubCheckSummary} from "../src/lib/types/status";
+  type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status";
 import {isAggregateFile} from "../src/lib/types/guards";
 import {readRawProbes} from "./rawProbes";
+import {bucketStart, makeBucket, type BucketAccumulator} from "./aggregateCommon";
+import {groupProbes} from "./aggregateServices";
+import {groupSubChecks} from "./aggregateSubChecks";
+
+// Re-export so existing test imports (`from "./aggregate"`) keep working.
+export {bucketStart};
 
 const MS_PER_DAY = 86_400_000;
-
-export function bucketStart(d: Date, size: BucketSize): string {
-  const t = new Date(Date.UTC(
-    d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(),
-    size === "1d" ? 0 : d.getUTCHours(),
-    size === "30m" ? Math.floor(d.getUTCMinutes() / 30) * 30 : 0,
-    0, 0,
-  ));
-  return t.toISOString();
-}
-
-function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
-  const order: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
-  return order[a] >= order[b] ? a : b;
-}
-
-function percentile(values: readonly number[], p: number): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const rank = (p / 100) * (sorted.length - 1);
-  const lo = Math.floor(rank);
-  const hi = Math.min(lo + 1, sorted.length - 1);
-  return Math.round(sorted[lo]! + (rank - lo) * (sorted[hi]! - sorted[lo]!));
-}
-
-function mode(values: readonly number[]): number | undefined {
-  if (values.length === 0) return undefined;
-  const counts = new Map<number, number>();
-  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
-  let best = values[0]; let bestCount = 0;
-  for (const [v, c] of counts) if (c > bestCount) {best = v; bestCount = c;}
-  return best;
-}
-
-interface BucketAccumulator {
-  statuses: HealthStatus[];
-  latencies: number[];
-  httpStatuses: number[];
-  /** sum of sampleCount across all probes in this bucket (defaults 1 per probe when legacy) */
-  sampleCount: number;
-  /** count of fully-healthy samples; see sampleCount math below */
-  healthySamples: number;
-  worstSub?: {name: string; status: HealthStatus; description?: string};
-}
-
-function makeBucket(t: string, acc: BucketAccumulator): Bucket {
-  const worstOverall = acc.statuses.reduce(worstStatus, "Healthy" as HealthStatus);
-  const httpMode = mode(acc.httpStatuses);
-  const bucket: Bucket = {
-    t,
-    status: worstOverall,
-    probes: {healthy: acc.healthySamples, total: acc.sampleCount},
-    latency: {
-      p50: percentile(acc.latencies, 50),
-      p75: percentile(acc.latencies, 75),
-      p95: percentile(acc.latencies, 95),
-      p99: percentile(acc.latencies, 99),
-    },
-  };
-  const result: Record<string, unknown> = {...bucket};
-  if (httpMode !== undefined) result["httpStatus"] = httpMode;
-  if (acc.worstSub !== undefined) {
-    const summary: SubCheckSummary = {name: acc.worstSub.name, status: acc.worstSub.status};
-    if (acc.worstSub.description !== undefined) (summary as Record<string, unknown>)["description"] = acc.worstSub.description;
-    result["worstSubCheck"] = summary;
-  }
-  return result as Bucket;
-}
-
-function groupProbes(probes: readonly ProbeResult[], size: BucketSize):
-  Map<ServiceId, Map<string, BucketAccumulator>> {
-  const byService = new Map<ServiceId, Map<string, BucketAccumulator>>();
-  for (const p of probes) {
-    const bucket = bucketStart(new Date(p.timestamp), size);
-    let perService = byService.get(p.service);
-    if (!perService) {perService = new Map(); byService.set(p.service, perService);}
-    let acc = perService.get(bucket);
-    if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perService.set(bucket, acc);}
-    const samples = p.sampleCount ?? 1;
-    acc.statuses.push(p.overall);
-    acc.latencies.push(p.latencyMs);
-    acc.httpStatuses.push(p.httpStatus);
-    acc.sampleCount += samples;
-    if (p.overall === "Healthy") acc.healthySamples += samples;
-    if (p.subChecks) {
-      for (const sc of p.subChecks) {
-        if (sc.status !== "Healthy") {
-          if (!acc.worstSub || worstStatus(acc.worstSub.status, sc.status) === sc.status) {
-            acc.worstSub = {name: sc.name, status: sc.status, description: sc.description};
-          }
-        }
-      }
-    }
-  }
-  return byService;
-}
-
-function groupSubChecks(probes: readonly ProbeResult[], size: BucketSize):
-  Map<ServiceId, Map<string, Map<string, BucketAccumulator>>> {
-  const byService = new Map<ServiceId, Map<string, Map<string, BucketAccumulator>>>();
-  for (const p of probes) {
-    if (!p.subChecks) continue;
-    const bucket = bucketStart(new Date(p.timestamp), size);
-    let perService = byService.get(p.service);
-    if (!perService) {perService = new Map(); byService.set(p.service, perService);}
-    const samples = p.sampleCount ?? 1;
-    for (const sc of p.subChecks) {
-      let perSub = perService.get(sc.name);
-      if (!perSub) {perSub = new Map(); perService.set(sc.name, perSub);}
-      let acc = perSub.get(bucket);
-      if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perSub.set(bucket, acc);}
-      acc.statuses.push(sc.status);
-      acc.latencies.push(sc.durationMs);
-      acc.sampleCount += samples;
-      if (sc.status === "Healthy") acc.healthySamples += samples;
-    }
-  }
-  return byService;
-}
 
 function toSeries(
   service: ServiceId,
