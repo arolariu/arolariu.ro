@@ -51,8 +51,10 @@ const SAMPLES_PER_CRON = 3;
 /**
  * A single incident-worthy event on a service (or sub-check). Anchored by
  * `ageHours` = hours-ago from `Date.now()`, extends for `durationHours`.
- * `open: true` makes it an ongoing incident (no `durationHours` applied
- * to the bucket placement; the blip extends from `ageHours` ago to now).
+ * `open: true` marks it as an ongoing incident: the blip appears in the
+ * IncidentsFile as an open entry, but is intentionally *excluded* from the
+ * bucket series (see `generateBucketsFor` — `.filter(b => !b.open)`) so
+ * near-now, unsettled state doesn't rewrite the health timeline.
  *
  * `latencyFactor` multiplies baseline p50 during the blip — e.g. 8.0 for
  * a full outage, 3.2 for slow-but-serving. Defaults to 3.2 for Degraded,

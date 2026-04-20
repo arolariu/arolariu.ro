@@ -27,7 +27,7 @@
     </div>
   {/if}
   <div class="chart-block">
-    <h4 class="chart-heading">Latency trend · p50 and p99 over the selected window</h4>
+    <h4 class="chart-heading">Latency percentiles · p50 / p75 / p95 / p99 over the selected window</h4>
     <LatencyChart buckets={series.buckets} service={series.service} {bucketDurationMs}/>
   </div>
 </section>
