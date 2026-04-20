@@ -1,145 +1,31 @@
 import {mkdirSync, existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile,
-  ProbeResult, ServiceId} from "../src/lib/types/status";
+import type {Incident, IncidentsFile, ProbeResult} from "../src/lib/types/status";
 import {isIncidentsFile} from "../src/lib/types/guards";
 import {readRawProbes} from "./rawProbes";
+import {applyTrackSignals, type TrackSignal} from "./detectIncidentsCommon";
+import {serviceSignal} from "./detectIncidentsServices";
+import {subCheckSignals} from "./detectIncidentsSubChecks";
 
 const MS_PER_DAY = 86_400_000;
 const RESOLVED_RETENTION_DAYS = 90;
 
-type TrackKey = string;
-
-function trackKey(service: ServiceId, subCheck?: string): TrackKey {
-  return subCheck ? `${service}::${subCheck}` : service;
-}
-
-function worstSeverity(a: IncidentSeverity, b: IncidentSeverity): IncidentSeverity {
-  return a === "Unhealthy" || b === "Unhealthy" ? "Unhealthy" : "Degraded";
-}
-
-function toSeverity(status: HealthStatus): IncidentSeverity {
-  return status === "Unhealthy" ? "Unhealthy" : "Degraded";
-}
-
-function buildIncidentId(startedAt: string, service: ServiceId, subCheck?: string): string {
-  const slug = startedAt.replace(/[:.]/g, "-");
-  return subCheck ? `inc-${slug}-${service}-${subCheck}` : `inc-${slug}-${service}`;
-}
-
-interface TrackSignal {
-  readonly key: TrackKey;
-  readonly service: ServiceId;
-  readonly subCheck?: string;
-  readonly timestamp: string;
-  readonly status: HealthStatus;
-  readonly reason: string;
-}
-
+/**
+ * Orchestrates incident detection: reads raw probes, extracts main-service
+ * and sub-check signals, time-sorts, folds them through the state machine,
+ * prunes stale resolved incidents, and writes `incidents.json`.
+ */
 function signalsFromProbe(probe: ProbeResult): TrackSignal[] {
-  const signals: TrackSignal[] = [{
-    key: trackKey(probe.service),
-    service: probe.service,
-    timestamp: probe.timestamp,
-    status: probe.overall,
-    reason: probe.error ?? probe.subChecks?.find(s => s.status !== "Healthy")?.description ?? `HTTP ${probe.httpStatus}`,
-  }];
-  if (probe.subChecks) {
-    for (const sc of probe.subChecks) {
-      signals.push({
-        key: trackKey(probe.service, sc.name),
-        service: probe.service,
-        subCheck: sc.name,
-        timestamp: probe.timestamp,
-        status: sc.status,
-        reason: sc.description ?? `${sc.name} ${sc.status}`,
-      });
-    }
-  }
-  return signals;
-}
-
-interface TrackState {
-  previousFailure?: TrackSignal;
-  streak: number;
+  return [serviceSignal(probe), ...subCheckSignals(probe)];
 }
 
 export function updateIncidentState(
   prev: IncidentsFile | {incidents: Incident[]},
   probes: readonly ProbeResult[],
 ): IncidentsFile {
-  const incidents = [...prev.incidents];
-  const tracks = new Map<TrackKey, TrackState>();
-  const openByKey = new Map<TrackKey, number>();
-
-  for (let i = 0; i < incidents.length; i++) {
-    const inc = incidents[i];
-    if (inc.status === "open") {
-      openByKey.set(trackKey(inc.service, inc.subCheck), i);
-      tracks.set(trackKey(inc.service, inc.subCheck), {streak: inc.probeCount});
-    }
-  }
-
   const sortedProbes = [...probes].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-  for (const probe of sortedProbes) {
-    for (const sig of signalsFromProbe(probe)) {
-      const state = tracks.get(sig.key) ?? {streak: 0};
-      const openIdx = openByKey.get(sig.key);
-
-      if (sig.status === "Healthy") {
-        if (openIdx !== undefined) {
-          const open = incidents[openIdx];
-          incidents[openIdx] = {
-            ...open, status: "resolved",
-            resolvedAt: sig.timestamp,
-            durationMs: Date.parse(sig.timestamp) - Date.parse(open.startedAt),
-          };
-          openByKey.delete(sig.key);
-        }
-        tracks.set(sig.key, {streak: 0});
-        continue;
-      }
-
-      const newStreak = state.streak + 1;
-      if (openIdx !== undefined) {
-        const open = incidents[openIdx];
-        const nextSeverity = worstSeverity(open.severity, toSeverity(sig.status));
-        // If severity escalated (e.g. Degraded → Unhealthy), refresh `reason`
-        // to reflect the new signature. A stale "slow response" reason on an
-        // incident that has since escalated to a full outage is misleading in
-        // post-mortems.
-        const escalated = nextSeverity !== open.severity;
-        incidents[openIdx] = {
-          ...open,
-          probeCount: open.probeCount + 1,
-          severity: nextSeverity,
-          ...(escalated ? {reason: sig.reason} : {}),
-        };
-        tracks.set(sig.key, {streak: newStreak});
-      } else if (newStreak === 1) {
-        tracks.set(sig.key, {streak: 1, previousFailure: sig});
-      } else if (newStreak >= 2 && state.previousFailure) {
-        const startSig = state.previousFailure;
-        const incident: Incident = {
-          id: buildIncidentId(startSig.timestamp, sig.service, sig.subCheck),
-          service: sig.service,
-          status: "open",
-          startedAt: startSig.timestamp,
-          severity: worstSeverity(toSeverity(startSig.status), toSeverity(sig.status)),
-          reason: startSig.reason,
-          probeCount: 2,
-          ...(sig.subCheck !== undefined ? {subCheck: sig.subCheck} : {}),
-        };
-        incidents.push(incident);
-        openByKey.set(sig.key, incidents.length - 1);
-        tracks.set(sig.key, {streak: 2});
-      }
-    }
-  }
-
-  incidents.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  return {generatedAt: new Date().toISOString(), incidents};
+  const signals = sortedProbes.flatMap(signalsFromProbe);
+  return applyTrackSignals(prev, signals);
 }
 
 function pruneResolved(file: IncidentsFile, now: Date): IncidentsFile {
