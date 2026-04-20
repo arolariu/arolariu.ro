@@ -107,8 +107,8 @@
     </div>
   {/if}
 
-  <section class="table" aria-label="Service uptime table">
-    <div class="row header">
+  <section class="status-table" aria-label="Service uptime table">
+    <div class="status-table__header">
       <div>Service</div>
       <div>Uptime timeline</div>
       <div>Uptime</div>
@@ -195,13 +195,13 @@
     cursor: pointer;
     margin-left: 6px;
   }
-  .table {
+  .status-table {
     background: var(--surface);
     border-radius: 10px;
     border: 1px solid var(--border);
     overflow: hidden;
   }
-  .row.header {
+  .status-table__header {
     display: grid;
     grid-template-columns: 1.4fr 2.2fr 80px 100px;
     gap: 14px;
@@ -213,7 +213,7 @@
     background: var(--surface-hover);
     border-bottom: 1px solid var(--border-strong);
   }
-  .row.header > * { min-width: 0; }
+  .status-table__header > * { min-width: 0; }
   .empty {
     padding: 24px;
     text-align: center;
@@ -241,7 +241,7 @@
     letter-spacing: 0.08em;
   }
   @media (max-width: 768px) {
-    .row.header { grid-template-columns: 1fr 1.5fr 60px; }
-    .row.header > :nth-child(4) { display: none; }
+    .status-table__header { grid-template-columns: 1fr 1.5fr 60px; }
+    .status-table__header > :nth-child(4) { display: none; }
   }
 </style>

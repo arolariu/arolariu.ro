@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  /* Surfaces / borders / text */
   --bg: #0a0d12;
   --surface: rgba(255, 255, 255, 0.015);
   --surface-hover: rgba(255, 255, 255, 0.03);
@@ -8,6 +9,9 @@
   --border-strong: rgba(255, 255, 255, 0.12);
   --text: #e6edf3;
   --text-muted: #8b949e;
+  --text-faint: rgba(230, 237, 243, 0.5);
+
+  /* Status palette */
   --status-up: #3fb950;
   --status-up-bg: rgba(63, 185, 80, 0.12);
   --status-up-border: rgba(63, 185, 80, 0.3);
@@ -16,7 +20,41 @@
   --status-deg-border: rgba(210, 153, 34, 0.3);
   --status-down: #f85149;
   --status-down-bg: rgba(248, 81, 73, 0.12);
+  --status-down-border: rgba(248, 81, 73, 0.4);
   --status-missing: rgba(255, 255, 255, 0.05);
+
+  /* Page geometry */
+  --page-max: 1400px;
+  --gutter: clamp(16px, 3vw, 40px);
+
+  /* Fluid type scale */
+  --fs-xs: clamp(0.6875rem, 0.66rem + 0.15vw, 0.75rem);   /* 11–12px */
+  --fs-sm: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);   /* 12–13px */
+  --fs-body: clamp(0.8125rem, 0.78rem + 0.2vw, 0.9375rem); /* 13–15px */
+  --fs-lg: clamp(0.9375rem, 0.9rem + 0.25vw, 1.0625rem);  /* 15–17px */
+  --fs-h2: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);        /* 16–18px */
+  --fs-h1: clamp(1.125rem, 1.05rem + 0.5vw, 1.375rem);    /* 18–22px */
+
+  /* Fluid spacing */
+  --sp-2xs: clamp(2px, 0.15vw + 1px, 4px);
+  --sp-xs: clamp(6px, 0.4vw + 4px, 10px);
+  --sp-sm: clamp(10px, 0.6vw + 6px, 14px);
+  --sp-md: clamp(14px, 0.9vw + 8px, 20px);
+  --sp-lg: clamp(20px, 1.5vw + 12px, 32px);
+  --sp-xl: clamp(28px, 2vw + 16px, 48px);
+
+  /* Radii + shadows */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+
+  /* UptimeBar target density — referenced by JS ResizeObserver math */
+  --segment-target-px: 6;
+
+  /* Z-stack */
+  --z-tooltip: 20;
+  --z-dropdown: 30;
 }
 
 html, body {
@@ -26,6 +64,7 @@ html, body {
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   font-variant-numeric: tabular-nums;
+  font-size: var(--fs-body);
 }
 
 @keyframes shimmer {
@@ -37,9 +76,15 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  50% { box-shadow: 0 0 0 4px transparent; opacity: 0.7; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
