@@ -60,6 +60,10 @@ export function isBucket(v: unknown): v is Bucket {
   if (!isObject(latency)) return false;
   if (!isNonNegativeNumber(latency["p50"]) || !isNonNegativeNumber(latency["p99"])) return false;
   if (latency["p50"] > latency["p99"]) return false; // invariant
+  // p75 / p95 are additive: accept when absent (legacy buckets),
+  // validate as finite non-negative numbers when present.
+  if (latency["p75"] !== undefined && !isNonNegativeNumber(latency["p75"])) return false;
+  if (latency["p95"] !== undefined && !isNonNegativeNumber(latency["p95"])) return false;
   if (v["httpStatus"] !== undefined && !isNonNegativeNumber(v["httpStatus"])) return false;
   const worst = v["worstSubCheck"];
   if (worst !== undefined) {

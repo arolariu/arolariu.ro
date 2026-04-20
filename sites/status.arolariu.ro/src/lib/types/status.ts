@@ -53,7 +53,19 @@ export interface Bucket {
   readonly t: string;
   readonly status: HealthStatus;
   readonly probes: {readonly healthy: number; readonly total: number};
-  readonly latency: {readonly p50: number; readonly p99: number};
+  /**
+   * Latency percentiles. `p50` and `p99` are required for every bucket
+   * (stable contract since v1). `p75` and `p95` are additive: emitted by
+   * aggregate runs from 2026-04 onward, absent on buckets retained from
+   * earlier runs. Consumers MUST treat missing values as `undefined` and
+   * fall back to the p50/p99 look.
+   */
+  readonly latency: {
+    readonly p50: number;
+    readonly p75?: number;
+    readonly p95?: number;
+    readonly p99: number;
+  };
   readonly httpStatus?: number;
   readonly worstSubCheck?: SubCheckSummary;
   /**

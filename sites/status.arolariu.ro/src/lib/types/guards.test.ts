@@ -71,6 +71,15 @@ describe("isBucket", () => {
   it("rejects missing latency fields", () => {
     expect(isBucket({...valid, latency: {p50: 100}})).toBe(false);
   });
+  it("accepts legacy 2-percentile latency shape (p50, p99 only)", () => {
+    expect(isBucket({...valid, latency: {p50: 100, p99: 300}})).toBe(true);
+  });
+  it("accepts new 4-percentile latency shape (p50, p75, p95, p99)", () => {
+    expect(isBucket({...valid, latency: {p50: 100, p75: 180, p95: 250, p99: 300}})).toBe(true);
+  });
+  it("rejects malformed optional percentiles (p75 non-numeric)", () => {
+    expect(isBucket({...valid, latency: {p50: 100, p75: "slow", p99: 300}})).toBe(false);
+  });
 });
 
 describe("isServiceSeries", () => {
