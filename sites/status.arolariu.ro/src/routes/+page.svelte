@@ -15,6 +15,7 @@
   import RefreshButton from "$lib/components/RefreshButton.svelte";
   import SummaryStats from "$lib/components/SummaryStats.svelte";
   import LightModeToggle from "$lib/components/LightModeToggle.svelte";
+  import KeyboardHelpOverlay from "$lib/components/KeyboardHelpOverlay.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 
@@ -26,6 +27,7 @@
   let expandedService: string | null = $state(null);
   let hoveredBucket: Bucket | null = $state(null);
   let hoveredAnchor: HTMLElement | null = $state(null);
+  let helpOpen = $state(false);
 
   const granularity = $derived(WINDOW_TO_GRANULARITY[activeWindow]);
 
@@ -93,6 +95,12 @@
     // already consumed the event. Without this, ArrowLeft/ArrowRight on a
     // focused filter pill would advance the window twice.
     if (event.defaultPrevented) return;
+
+    if (event.key === "?") {
+      event.preventDefault();
+      helpOpen = !helpOpen;
+      return;
+    }
 
     const currentIdx = FILTER_WINDOWS.indexOf(activeWindow);
     const total = FILTER_WINDOWS.length;
@@ -242,6 +250,8 @@
   </footer>
 
   <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID} {bucketDurationMs}/>
+
+  <KeyboardHelpOverlay open={helpOpen} onClose={() => (helpOpen = false)} />
 </main>
 
 <style>
