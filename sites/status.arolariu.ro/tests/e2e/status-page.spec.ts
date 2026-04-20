@@ -137,6 +137,34 @@ test.describe("status page", () => {
     await expect(detailPanel).toBeHidden();
   });
 
+  test("light mode toggle flips data-theme attribute", async ({page}) => {
+    await page.goto("/?mocks=off");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", /dark|light/);
+    await page.getByRole("button", {name: /toggle color theme/i}).click();
+    // After 1 click cycle: was auto(→resolved), now explicit next.
+    const t1 = await page.locator("html").getAttribute("data-theme");
+    expect(t1).toMatch(/dark|light/);
+    await page.getByRole("button", {name: /toggle color theme/i}).click();
+    const t2 = await page.locator("html").getAttribute("data-theme");
+    expect(t2).not.toBe(t1);
+  });
+
+  test("? opens keyboard help overlay, Esc closes", async ({page}) => {
+    await page.goto("/?mocks=off");
+    await page.keyboard.press("?");
+    await expect(page.getByRole("dialog", {name: /keyboard shortcuts/i})).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+  });
+
+  test("LatencyHeatstrip renders one row per service", async ({page}) => {
+    await page.goto("/?mocks=off");
+    const strip = page.getByRole("region", {name: /latency heatstrip/i});
+    await expect(strip).toBeVisible();
+    const rows = strip.locator(".row");
+    await expect(rows).toHaveCount(4);
+  });
+
   test("incident filter chip narrows the list", async ({page}) => {
     await page.goto("/?mocks=off");
     // The fixture incident is 2 days old, so widen the window to 7d to make

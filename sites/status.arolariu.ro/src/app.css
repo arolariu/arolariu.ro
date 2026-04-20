@@ -121,3 +121,9 @@ html, body {
     transition-duration: 0.01ms !important;
   }
 }
+
+@container statusPage (max-width: 480px) {
+  :global(h1) {
+    font-size: var(--fs-lg);
+  }
+}
