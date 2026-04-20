@@ -42,9 +42,9 @@ metadata version = '2.0.0'
 param dnsZoneName string
 
 @description('The name of the Static Web App to bind the custom domain to.')
-param statusWebsiteHostname string
+param statusWebsiteName string
 
-resource statusWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: statusWebsiteHostname }
+resource statusWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: statusWebsiteName }
 resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
 
 // CNAME record for status.arolariu.ro
