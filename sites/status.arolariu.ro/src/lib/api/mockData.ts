@@ -17,6 +17,10 @@ const SERVICES: readonly ServiceId[] = [
   "arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro",
 ];
 
+const MS_PER_MIN = 60_000;
+const MS_PER_HOUR = 3_600_000;
+const MS_PER_DAY = 86_400_000;
+
 type Granularity = "fine" | "hourly" | "daily";
 
 interface WindowConfig {
@@ -29,9 +33,9 @@ interface WindowConfig {
 }
 
 const CONFIGS: Record<Granularity, WindowConfig> = {
-  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * 60_000,       bucketCount: 14 * 48, cronsPerBucket: 1},
-  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: 60 * 60_000,       bucketCount: 90 * 24, cronsPerBucket: 2},
-  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: 24 * 60 * 60_000,  bucketCount: 365,     cronsPerBucket: 48},
+  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * MS_PER_MIN,       bucketCount: 14 * 48, cronsPerBucket: 1},
+  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: MS_PER_HOUR,           bucketCount: 90 * 24, cronsPerBucket: 2},
+  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: MS_PER_DAY,            bucketCount: 365,     cronsPerBucket: 48},
 };
 
 // Samples per cron run in the new 3-sample-per-cron model
@@ -67,28 +71,40 @@ function mkBucket(
 }
 
 /**
+ * Returns true if bucket timestamp `t` (ms) overlaps the half-open range
+ * [start, end). Used to place blips anchored by wall-clock instead of
+ * bucket index, so they appear correctly across all three granularities.
+ */
+function withinRange(t: number, bucketMs: number, start: number, end: number): boolean {
+  return t + bucketMs > start && t < end;
+}
+
+/**
  * arolariu.ro storyline:
- * - Mostly Healthy (3/3 samples)
- * - Two short clusters of mild degradation (3 adjacent buckets each, ~5 days apart)
- *   with healthy=2/3 (one sample flaked)
+ * - Mostly Healthy
+ * - Two short clusters of mild degradation (~5 days apart, ~1h each)
+ * - One 4-hour Degraded blip centered ~14 days ago (visible in 14d/30d/90d views)
  */
 function generateArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
   const total = config.bucketCount;
   const p50 = 142;
-  // Place clusters relative to bucket index from end
-  // Cluster 1: indices 30-32 from end (~ day 1)
-  // Cluster 2: indices 270-272 from end (~ day 5-6) — only relevant for fine/hourly windows
   const degradedCluster1 = new Set([30, 31, 32]);
   const degradedCluster2 = new Set([270, 271, 272]);
 
+  // Wall-clock anchor: 14 days + 2h ago, lasting 4 hours.
+  const blipStart = now - 14 * MS_PER_DAY - 2 * MS_PER_HOUR;
+  const blipEnd = blipStart + 4 * MS_PER_HOUR;
+
   return Array.from({length: total}, (_, rev) => {
-    const i = total - 1 - rev; // bucket index from oldest
-    const fromEnd = rev; // distance from newest
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
+    const fromEnd = rev;
+    const bucketT = now - fromEnd * config.bucketMs;
+    const t = new Date(bucketT).toISOString();
+    if (withinRange(bucketT, config.bucketMs, blipStart, blipEnd)) {
+      return mkBucket(t, "Degraded", Math.round(p50 * 2.6), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
+    }
     if (degradedCluster1.has(fromEnd) || degradedCluster2.has(fromEnd)) {
       return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
-    void i;
     return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
@@ -98,42 +114,54 @@ function generateArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] 
  * - Healthy overall
  * - Cosmetic mssql hiccup every ~2 days (sub-check flap, parent still Healthy)
  * - One 90-min full Degraded window (6 buckets, ~2 days ago): healthy=0/3
+ * - Latency creep: in the 14 days BEFORE the mssql incident 4 days ago, p50 climbs
+ *   from 280ms toward 450ms linearly, then snaps back.
  */
 function generateApiArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
   const total = config.bucketCount;
-  const p50 = 310;
-  // Full Degraded window: buckets 80-85 from end (~2 days ago in fine mode)
+  const baseP50 = 310;
   const degradedWindow = new Set([80, 81, 82, 83, 84, 85]);
-  // Cosmetic mssql hiccup every ~2 days: indices mod 96 (48 buckets/day * 2 = 96)
   const mssqlHiccup = (fromEnd: number) => fromEnd % 96 === 48;
+
+  // Latency creep window: from (4d + 14d) ago to (4d) ago.
+  const creepStart = now - (4 * MS_PER_DAY + 14 * MS_PER_DAY);
+  const creepEnd = now - 4 * MS_PER_DAY;
 
   return Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
+    const bucketT = now - fromEnd * config.bucketMs;
+    const t = new Date(bucketT).toISOString();
+
+    // Latency creep: ramp 280 -> 450 as bucketT progresses from creepStart to creepEnd.
+    let p50 = baseP50;
+    if (bucketT >= creepStart && bucketT <= creepEnd) {
+      const progress = (bucketT - creepStart) / (creepEnd - creepStart);
+      p50 = Math.min(280 + progress * 170, 450);
+    }
+
     if (degradedWindow.has(fromEnd)) {
       return mkBucket(t, "Degraded", Math.round(p50 * 4.0), 0, SAMPLES_PER_CRON, config.cronsPerBucket,
         {worstSubCheck: {name: "mssql", status: "Degraded", description: "connection pool exhausted"}},
       );
     }
     if (mssqlHiccup(fromEnd)) {
-      // Parent stays Healthy but worstSubCheck shows the flap
       return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket,
         {worstSubCheck: {name: "mssql", status: "Degraded", description: "brief connection spike"}},
       );
     }
-    return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
+    return mkBucket(t, "Healthy", Math.round(p50), SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
 
 /**
  * exp.arolariu.ro storyline:
  * - One major outage ~12h ago: 6 buckets Unhealthy (healthy=0/3)
+ * - Ongoing Degraded event ~3h ago (covered via incident, not buckets here)
  * - Otherwise clean
  */
 function generateExpArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
   const total = config.bucketCount;
   const p50 = 89;
-  // Outage window: buckets 24-29 from end (~12h ago in fine 30m mode)
   const outageWindow = new Set([24, 25, 26, 27, 28, 29]);
 
   return Array.from({length: total}, (_, rev) => {
@@ -148,14 +176,23 @@ function generateExpArolariuRoBuckets(config: WindowConfig, now: number): Bucket
 
 /**
  * cv.arolariu.ro storyline:
- * - All Healthy (static site — boring is fine)
+ * - Mostly clean (static site — boring is fine)
+ * - One 30-min Degraded blip 45 days ago (visible in 90d/180d/365d views)
  */
 function generateCvArolariuRoBuckets(config: WindowConfig, now: number): Bucket[] {
   const total = config.bucketCount;
   const p50 = 35;
+
+  const blipStart = now - 45 * MS_PER_DAY;
+  const blipEnd = blipStart + 30 * MS_PER_MIN;
+
   return Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
+    const bucketT = now - fromEnd * config.bucketMs;
+    const t = new Date(bucketT).toISOString();
+    if (withinRange(bucketT, config.bucketMs, blipStart, blipEnd)) {
+      return mkBucket(t, "Degraded", Math.round(p50 * 3.2), 2, SAMPLES_PER_CRON, config.cronsPerBucket);
+    }
     return mkBucket(t, "Healthy", p50, SAMPLES_PER_CRON, SAMPLES_PER_CRON, config.cronsPerBucket);
   });
 }
@@ -173,12 +210,17 @@ function generateMainBuckets(service: ServiceId, config: WindowConfig, now: numb
  * api.arolariu.ro sub-series:
  * - mssql: same outage window (80-85 from end) plus cosmetic hiccups every ~96 buckets
  * - cosmosdb: mostly clean, one 30-min degraded spike ~30h ago (fromEnd ~ 60)
+ *   plus a new 30-min Unhealthy blip 5 days ago (throttling)
  */
 function generateSubSeries(config: WindowConfig, now: number): Record<string, readonly Bucket[]> {
   const total = config.bucketCount;
   const degradedWindow = new Set([80, 81, 82, 83, 84, 85]);
   const mssqlHiccup = (fromEnd: number) => fromEnd % 96 === 48;
   const cosmosDegraded = new Set([60]);
+
+  // Cosmos throttle blip: 5 days ago, 30 min duration.
+  const cosmosBlipStart = now - 5 * MS_PER_DAY;
+  const cosmosBlipEnd = cosmosBlipStart + 30 * MS_PER_MIN;
 
   const mssql: Bucket[] = Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
@@ -194,7 +236,11 @@ function generateSubSeries(config: WindowConfig, now: number): Record<string, re
 
   const cosmosdb: Bucket[] = Array.from({length: total}, (_, rev) => {
     const fromEnd = rev;
-    const t = new Date(now - fromEnd * config.bucketMs).toISOString();
+    const bucketT = now - fromEnd * config.bucketMs;
+    const t = new Date(bucketT).toISOString();
+    if (withinRange(bucketT, config.bucketMs, cosmosBlipStart, cosmosBlipEnd)) {
+      return mkBucket(t, "Unhealthy", 750, 0, SAMPLES_PER_CRON, config.cronsPerBucket);
+    }
     if (cosmosDegraded.has(fromEnd)) {
       return mkBucket(t, "Degraded", 320, 2, SAMPLES_PER_CRON, config.cronsPerBucket);
     }
@@ -228,60 +274,92 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
 
 export function generateMockIncidents(): IncidentsFile {
   const now = Date.now();
-  const resolvedStart = new Date(now - 26 * 60 * 60_000).toISOString();   // 26h ago
-  const resolvedEnd   = new Date(now - 25 * 60 * 60_000).toISOString();   // 25h ago
-  const openStart     = new Date(now - 3 * 60 * 60_000).toISOString();    // 3h ago (ongoing)
-  // New: api mssql incident ~4 days ago, 2h duration
-  const apiMssqlStart   = new Date(now - 4 * 24 * 60 * 60_000).toISOString();
-  const apiMssqlEnd     = new Date(now - 4 * 24 * 60 * 60_000 + 2 * 60 * 60_000).toISOString();
-  // New: exp outage ~12h ago, 3h duration (matches storyline)
-  const expOutageStart  = new Date(now - 12 * 60 * 60_000).toISOString();
-  const expOutageEnd    = new Date(now - 9 * 60 * 60_000).toISOString();
 
   const incidents: Incident[] = [
+    // inc-001: ongoing Degraded on exp.arolariu.ro (~3h ago)
     {
-      id: `inc-${openStart.replace(/[:.]/g, "-")}-exp.arolariu.ro`,
+      id: "inc-001",
       service: "exp.arolariu.ro",
       status: "open",
-      startedAt: openStart,
       severity: "Degraded",
+      startedAt: new Date(now - 3 * MS_PER_HOUR).toISOString(),
       reason: "elevated latency on upstream dependency (mock)",
       probeCount: 6,
     },
+    // inc-002: exp.arolariu.ro Unhealthy outage 12h..9h ago
     {
-      id: `inc-${resolvedStart.replace(/[:.]/g, "-")}-api.arolariu.ro-mssql`,
-      service: "api.arolariu.ro",
-      subCheck: "mssql",
+      id: "inc-002",
+      service: "exp.arolariu.ro",
       status: "resolved",
-      startedAt: resolvedStart,
-      resolvedAt: resolvedEnd,
-      durationMs: 60 * 60_000,
-      severity: "Degraded",
-      reason: "connection pool exhausted (mock)",
-      probeCount: 4,
+      severity: "Unhealthy",
+      startedAt: new Date(now - 12 * MS_PER_HOUR).toISOString(),
+      resolvedAt: new Date(now - 9 * MS_PER_HOUR).toISOString(),
+      durationMs: 3 * MS_PER_HOUR,
+      reason: "upstream ML model service unreachable (mock)",
+      probeCount: 6,
     },
+    // inc-003: api.arolariu.ro mssql Degraded 26h..25h ago
     {
-      id: `inc-${apiMssqlStart.replace(/[:.]/g, "-")}-api.arolariu.ro-mssql-long`,
+      id: "inc-003",
       service: "api.arolariu.ro",
       subCheck: "mssql",
       status: "resolved",
-      startedAt: apiMssqlStart,
-      resolvedAt: apiMssqlEnd,
-      durationMs: 2 * 60 * 60_000,
       severity: "Degraded",
+      startedAt: new Date(now - 26 * MS_PER_HOUR).toISOString(),
+      resolvedAt: new Date(now - 25 * MS_PER_HOUR).toISOString(),
+      durationMs: 1 * MS_PER_HOUR,
+      reason: "connection pool exhausted (mock)",
+      probeCount: 2,
+    },
+    // inc-004: api.arolariu.ro mssql Degraded 4 days ago, 2h duration
+    {
+      id: "inc-004",
+      service: "api.arolariu.ro",
+      subCheck: "mssql",
+      status: "resolved",
+      severity: "Degraded",
+      startedAt: new Date(now - 4 * MS_PER_DAY).toISOString(),
+      resolvedAt: new Date(now - 4 * MS_PER_DAY + 2 * MS_PER_HOUR).toISOString(),
+      durationMs: 2 * MS_PER_HOUR,
       reason: "connection pool saturation during deploy (mock)",
       probeCount: 4,
     },
+    // inc-005: api.arolariu.ro cosmosdb Unhealthy 5 days ago, 30min
     {
-      id: `inc-${expOutageStart.replace(/[:.]/g, "-")}-exp.arolariu.ro-outage`,
-      service: "exp.arolariu.ro",
+      id: "inc-005",
+      service: "api.arolariu.ro",
+      subCheck: "cosmosdb",
       status: "resolved",
-      startedAt: expOutageStart,
-      resolvedAt: expOutageEnd,
-      durationMs: 3 * 60 * 60_000,
       severity: "Unhealthy",
-      reason: "upstream ML model service unreachable (mock)",
-      probeCount: 6,
+      startedAt: new Date(now - 5 * MS_PER_DAY).toISOString(),
+      resolvedAt: new Date(now - 5 * MS_PER_DAY + 30 * MS_PER_MIN).toISOString(),
+      durationMs: 30 * MS_PER_MIN,
+      reason: "cosmosdb throttling on partition key (mock)",
+      probeCount: 1,
+    },
+    // inc-006: arolariu.ro Degraded 14 days ago, 4h duration
+    {
+      id: "inc-006",
+      service: "arolariu.ro",
+      status: "resolved",
+      severity: "Degraded",
+      startedAt: new Date(now - 14 * MS_PER_DAY - 2 * MS_PER_HOUR).toISOString(),
+      resolvedAt: new Date(now - 14 * MS_PER_DAY + 2 * MS_PER_HOUR).toISOString(),
+      durationMs: 4 * MS_PER_HOUR,
+      reason: "CDN cache purge cascaded origin load (mock)",
+      probeCount: 8,
+    },
+    // inc-007: cv.arolariu.ro Degraded 45 days ago, 30min
+    {
+      id: "inc-007",
+      service: "cv.arolariu.ro",
+      status: "resolved",
+      severity: "Degraded",
+      startedAt: new Date(now - 45 * MS_PER_DAY).toISOString(),
+      resolvedAt: new Date(now - 45 * MS_PER_DAY + 30 * MS_PER_MIN).toISOString(),
+      durationMs: 30 * MS_PER_MIN,
+      reason: "Azure Static Web App edge node hiccup (mock)",
+      probeCount: 1,
     },
   ];
 
