@@ -36,11 +36,12 @@ function parseEntries(entries: Record<string, UiEntry> | undefined): SubCheck[] 
   const out: SubCheck[] = [];
   for (const [name, entry] of Object.entries(entries)) {
     const status = isHealthStatusValue(entry.status) ? entry.status : "Degraded";
+    const description = sanitizeDescription(entry.description);
     out.push({
       name,
       status,
       durationMs: Math.round(timeSpanToMs(entry.duration)),
-      description: sanitizeDescription(entry.description),
+      ...(description !== undefined && {description}),
     });
   }
   return out;

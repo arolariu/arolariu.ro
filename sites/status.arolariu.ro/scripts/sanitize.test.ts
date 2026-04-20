@@ -21,6 +21,21 @@ describe("sanitizeDescription", () => {
       .toBe("auth failed  reason");
   });
 
+  it("strips token= and secret= tokens case-insensitively", () => {
+    expect(sanitizeDescription("bad token=xyz999")).toBe("bad ");
+    expect(sanitizeDescription("SECRET=abc leaked")).toBe(" leaked");
+  });
+
+  it("strips bearer prefixes and authorization headers", () => {
+    const out1 = sanitizeDescription("Bearer eyJhbGc... expired")!;
+    expect(out1.toLowerCase()).not.toContain("bearer");
+    expect(out1.toLowerCase()).not.toContain("eyjhbgc");
+
+    const out2 = sanitizeDescription("Authorization: Bearer xyz failed")!;
+    expect(out2.toLowerCase()).not.toContain("authorization:");
+    expect(out2.toLowerCase()).not.toContain("bearer");
+  });
+
   it("truncates to 200 chars with ellipsis", () => {
     const long = "x".repeat(250);
     const out = sanitizeDescription(long)!;

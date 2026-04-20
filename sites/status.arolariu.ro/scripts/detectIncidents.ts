@@ -179,11 +179,11 @@ export async function runDetectIncidents(opts: RunDetectIncidentsOptions): Promi
   // Only feed probes newer than the last run through the state machine —
   // otherwise every cron re-processes 14 days of raw probes and ratchets
   // probeCount/severity on already-counted incidents (reviewer C1).
+  // readPreviousIncidents always returns a valid ISO string (epoch-0 on
+  // first run), so cursorMs is always finite — no guard needed.
   const cursorMs = Date.parse(previous.generatedAt);
   const allProbes = readRawProbes(opts.dataDir);
-  const fresh = Number.isFinite(cursorMs)
-    ? allProbes.filter(p => Date.parse(p.timestamp) > cursorMs)
-    : allProbes;
+  const fresh = allProbes.filter(p => Date.parse(p.timestamp) > cursorMs);
 
   const updated = updateIncidentState(previous, fresh);
   const pruned = pruneResolved(updated, now);
