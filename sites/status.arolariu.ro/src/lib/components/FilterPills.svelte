@@ -57,11 +57,11 @@
 <style>
   .pills {
     display: flex;
-    gap: 4px;
-    background: var(--surface);
-    padding: 4px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    gap: 2px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: 0;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -69,26 +69,32 @@
   }
   .pills::-webkit-scrollbar { display: none; }
   .pill {
-    padding: 5px 12px;
+    padding: 4px 10px;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
     background: transparent;
     color: var(--text-muted);
-    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     cursor: pointer;
     flex-shrink: 0;
     scroll-snap-align: start;
     font-variant-numeric: tabular-nums;
-    transition: color .12s, background .12s;
+    transition: color .15s ease, border-color .15s ease;
   }
   .pill:hover { color: var(--text); }
   .pill:focus-visible {
-    outline: 2px solid var(--status-up);
-    outline-offset: 1px;
+    outline: 0;
+    color: var(--text);
+    border-bottom-color: var(--accent);
   }
   .pill.active {
-    background: var(--surface-hover);
+    background: transparent;
     color: var(--text);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+    border-bottom-color: var(--accent);
   }
 </style>

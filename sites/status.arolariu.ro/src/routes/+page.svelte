@@ -182,12 +182,17 @@
 </svelte:head>
 
 <main class="page">
-  <header class="header">
-    <div class="header-left">
-      <h1>arolariu.ro — Service Status</h1>
-      <p class="sub">Health of arolariu.ro services, refreshed every 30 minutes</p>
+  <header class="masthead">
+    <div class="masthead-left">
+      <h1 class="wordmark">
+        <span class="wordmark-italic">arolariu</span><span class="wordmark-dot">.</span><span class="wordmark-tld">ro</span>
+      </h1>
+      <p class="kicker">
+        <span class="rule" aria-hidden="true"></span>
+        <span>Service Status &middot; polled every 30 minutes</span>
+      </p>
     </div>
-    <div class="header-right">
+    <div class="masthead-right">
       {#if isLocalHost()}
         <span class="local-badge">LOCAL MOCKS</span>
       {/if}
@@ -268,36 +273,75 @@
   .page {
     width: min(var(--page-max), 100% - 2 * var(--gutter));
     margin-inline: auto;
-    padding-block: var(--sp-lg);
+    padding-block: var(--sp-xl) var(--sp-lg);
     container-type: inline-size;
     container-name: statusPage;
   }
-  .header {
+  .masthead {
     display: flex;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
     gap: var(--sp-md);
-    padding-bottom: var(--sp-md);
-    border-bottom: 1px solid var(--border);
-    margin-bottom: var(--sp-lg);
+    padding-bottom: var(--sp-lg);
+    border-bottom: 1px solid var(--border-strong);
+    margin-bottom: var(--sp-xl);
+    animation: editorialReveal 700ms cubic-bezier(0.2, 0, 0, 1) both;
   }
-  .header-left { min-width: 0; }
-  .header-right {
+  .masthead-left { min-width: 0; }
+  .masthead-right {
     display: flex;
     align-items: center;
     gap: var(--sp-sm);
     flex-shrink: 0;
+    padding-bottom: 4px;
   }
-  h1 {
+  .wordmark {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
     font-size: var(--fs-h1);
-    font-weight: 600;
+    font-weight: 400;
+    line-height: 0.92;
     margin: 0;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    color: var(--text);
   }
-  .sub {
-    font-size: var(--fs-xs);
-    opacity: 0.55;
-    margin: 4px 0 0 0;
+  .wordmark-italic {
+    font-style: italic;
+    font-weight: 400;
+  }
+  .wordmark-dot {
+    display: inline-block;
+    color: var(--accent);
+    margin: 0 0.02em;
+    font-weight: 500;
+  }
+  .wordmark-tld {
+    font-style: normal;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .kicker {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: var(--sp-sm) 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .kicker .rule {
+    display: inline-block;
+    width: 36px;
+    height: 1px;
+    background: var(--border-strong);
+  }
+  @container statusPage (max-width: 640px) {
+    .masthead { flex-direction: column; align-items: flex-start; }
+    .masthead-right { padding-bottom: 0; align-self: stretch; justify-content: flex-end; }
+    .kicker .rule { width: 24px; }
   }
   .controls {
     display: flex;
@@ -323,23 +367,23 @@
     margin-left: 6px;
   }
   .status-table {
-    background: var(--surface);
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    overflow: hidden;
+    background: transparent;
+    border-top: 1px solid var(--border-strong);
+    border-bottom: 1px solid var(--border-strong);
   }
   .status-table__header {
     display: grid;
     grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
     grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
-    padding: 10px var(--sp-md);
+    padding: 12px var(--sp-md);
     font-size: 10px;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.45;
-    background: var(--surface-hover);
-    border-bottom: 1px solid var(--border-strong);
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    background: transparent;
+    border-bottom: 1px solid var(--border);
   }
   .status-table__header > * { min-width: 0; }
   .status-table__header > :nth-child(1) { grid-area: name; }
@@ -369,23 +413,28 @@
     font-size: 13px;
   }
   .footer {
-    font-size: var(--fs-xs);
-    color: var(--text-faint);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
     text-align: center;
-    padding-block: var(--sp-md);
+    padding-block: var(--sp-xl);
+    margin-top: var(--sp-xl);
     border-top: 1px solid var(--border);
-    margin-top: var(--sp-lg);
+    letter-spacing: 0.01em;
   }
   .local-badge {
     display: inline-block;
-    padding: 1px 6px;
-    border-radius: 3px;
-    background: var(--status-deg-bg);
-    color: var(--status-deg);
-    border: 1px solid var(--status-deg-border);
-    font-weight: 600;
-    font-size: var(--fs-xs);
-    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.12em;
   }
   @media (max-width: 768px) {
     .status-table__header { grid-template-columns: 1fr 1.5fr 60px; }

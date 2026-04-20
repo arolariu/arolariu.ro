@@ -203,51 +203,71 @@
 </div>
 
 <style>
-  .incidents { margin-top: var(--sp-lg); }
+  .incidents { margin-top: var(--sp-xl); }
   .heading {
-    font-size: var(--fs-xs);
-    opacity: 0.5;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: var(--sp-sm);
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--sp-md) 0;
+    color: var(--text);
   }
   .filter-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: var(--sp-sm);
+    gap: 2px 4px;
+    margin-bottom: var(--sp-md);
+    padding-bottom: var(--sp-sm);
+    border-bottom: 1px solid var(--border);
   }
   .chip {
-    padding: 3px 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
+    padding: 3px 8px;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-muted);
+    font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     line-height: 1.4;
     cursor: pointer;
-    transition: color .12s, background .12s, border-color .12s;
+    transition: color .15s ease, border-color .15s ease;
   }
   .chip:hover { color: var(--text); }
   .chip:focus-visible {
-    outline: 2px solid var(--status-up);
-    outline-offset: 1px;
+    outline: 0;
+    color: var(--text);
+    border-bottom-color: var(--accent);
   }
   .chip.active {
-    background: var(--surface-hover);
+    background: transparent;
     color: var(--text);
-    border-color: var(--border-strong);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+    border-bottom-color: var(--accent);
   }
   .month-header {
-    font-size: var(--fs-xs);
-    opacity: 0.45;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    margin: var(--sp-sm) 0 var(--sp-xs) 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--fs-sm);
+    letter-spacing: 0;
+    color: var(--text-muted);
+    text-transform: none;
+    margin: var(--sp-md) 0 var(--sp-xs) 0;
+    position: relative;
+    padding-left: 36px;
+  }
+  .month-header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 24px;
+    height: 1px;
+    background: var(--border-strong);
   }
   .month-header:first-of-type { margin-top: 0; }
   .placeholder {
@@ -259,27 +279,30 @@
     border: 1px solid var(--border);
   }
   .item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--sp-xs);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    margin-bottom: 0;
     overflow: hidden;
     position: relative;
   }
+  .item:last-child { border-bottom: 0; }
   .item-head {
     all: unset;
     display: grid;
-    grid-template-columns: 4px 1fr;
+    grid-template-columns: 2px 1fr;
     gap: var(--sp-md);
-    padding: var(--sp-sm) var(--sp-md);
+    padding: var(--sp-md);
     width: 100%;
     box-sizing: border-box;
     cursor: pointer;
     color: var(--text);
+    transition: background 0.18s ease;
   }
   .item-head:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
+    outline: 0;
+    background: var(--surface-hover);
   }
   .item-head:hover { background: var(--surface-hover); }
   .item-rail {
@@ -304,32 +327,32 @@
     margin-bottom: 4px;
   }
   .service-name {
-    font-weight: 600;
-    font-size: var(--fs-sm);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 12.5px;
+    letter-spacing: 0.005em;
+    color: var(--text);
   }
   .pill {
-    padding: 1px 7px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    background: transparent;
+    border: 1px solid currentColor;
   }
-  .pill-open {
-    background: var(--status-down-bg);
-    color: var(--status-down);
-    border: 1px solid var(--status-down-border);
-  }
-  .pill-resolved {
-    background: var(--status-up-bg);
-    color: var(--status-up);
-    border: 1px solid var(--status-up-border);
-  }
+  .pill-open    { color: var(--status-down); }
+  .pill-resolved { color: var(--status-up); }
   .severity {
+    font-family: var(--font-body);
     font-size: 10px;
-    opacity: 0.7;
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.12em;
+    font-weight: 500;
   }
   .severity-unhealthy { color: var(--status-down); }
   .severity-degraded { color: var(--status-deg); }
