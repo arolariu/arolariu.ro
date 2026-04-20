@@ -38,19 +38,20 @@ jobs:
         with:
           ref: main
 
-      - name: 📦 Setup Node 24
-        uses: actions/setup-node@v4
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache: npm
-
-      - name: 📦 Install status workspace deps
-        run: npm ci --workspace=sites/status.arolariu.ro
+          cache-key-prefix: 'status-probe'
 
       - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
         run: |
           set -e
-          if git fetch origin status-data 2>/dev/null; then
+          # Explicit existence check — `git fetch ... 2>/dev/null` would also
+          # swallow transient network failures, which could then be misread as
+          # "branch missing" and overwrite real data via the bootstrap path.
+          if git ls-remote --exit-code --heads origin status-data >/dev/null 2>&1; then
+            git fetch origin status-data
             git worktree add ../data-wt status-data
           else
             echo "status-data branch does not exist; bootstrapping as orphan"
