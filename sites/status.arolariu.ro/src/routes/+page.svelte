@@ -12,6 +12,7 @@
   import IncidentList from "$lib/components/IncidentList.svelte";
   import SkeletonRow from "$lib/components/SkeletonRow.svelte";
   import SegmentTooltip from "$lib/components/SegmentTooltip.svelte";
+  import RefreshButton from "$lib/components/RefreshButton.svelte";
 
   let activeWindow: FilterWindow = $state("1d");
   let cache: Partial<Record<"fine" | "hourly" | "daily", AggregateFile>> = $state({});
@@ -89,13 +90,19 @@
 
 <main class="page">
   <header class="header">
-    <div>
+    <div class="header-left">
       <h1>arolariu.ro — Service Status</h1>
       <p class="sub">Health of arolariu.ro services, refreshed every 30 minutes</p>
     </div>
+    <div class="header-right">
+      {#if isLocalHost()}
+        <span class="local-badge">LOCAL MOCKS</span>
+      {/if}
+      <RefreshButton {refreshing} onClick={handleRefresh}/>
+    </div>
   </header>
 
-  <StatusBanner {overallStatus} {lastProbeAt} {refreshing} onRefresh={handleRefresh}/>
+  <StatusBanner {overallStatus} {lastProbeAt}/>
 
   <div class="controls">
     <FilterPills {activeWindow} onChange={(w) => { activeWindow = w; }}/>
@@ -139,12 +146,7 @@
   <IncidentList {incidents} windowFilter={activeWindow}/>
 
   <footer class="footer">
-    {#if isLocalHost()}
-      <span class="local-badge">LOCAL MOCKS</span>
-      Synthetic data generated in-browser — run on status.arolariu.ro to see live probes
-    {:else}
-      Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
-    {/if}
+    Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
   </footer>
 
   <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor}/>
@@ -152,23 +154,36 @@
 
 <style>
   .page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 32px;
+    width: min(var(--page-max), 100% - 2 * var(--gutter));
+    margin-inline: auto;
+    padding-block: var(--sp-lg);
+    container-type: inline-size;
+    container-name: statusPage;
   }
   .header {
-    padding-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-md);
+    padding-bottom: var(--sp-md);
     border-bottom: 1px solid var(--border);
-    margin-bottom: 24px;
+    margin-bottom: var(--sp-lg);
+  }
+  .header-left { min-width: 0; }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    flex-shrink: 0;
   }
   h1 {
-    font-size: 20px;
+    font-size: var(--fs-h1);
     font-weight: 600;
     margin: 0;
     letter-spacing: -0.01em;
   }
   .sub {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     opacity: 0.55;
     margin: 4px 0 0 0;
   }
@@ -176,7 +191,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: var(--sp-md);
   }
   .error {
     padding: 12px 14px;
@@ -221,23 +236,22 @@
     font-size: 13px;
   }
   .footer {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-    font-size: 10.5px;
-    opacity: 0.4;
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
     text-align: center;
+    padding-block: var(--sp-md);
+    border-top: 1px solid var(--border);
+    margin-top: var(--sp-lg);
   }
   .local-badge {
     display: inline-block;
     padding: 1px 6px;
-    margin-right: 6px;
     border-radius: 3px;
     background: var(--status-deg-bg);
     color: var(--status-deg);
     border: 1px solid var(--status-deg-border);
     font-weight: 600;
-    font-size: 9px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.08em;
   }
   @media (max-width: 768px) {

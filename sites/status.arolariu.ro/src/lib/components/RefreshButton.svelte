@@ -11,6 +11,7 @@
   class="refresh"
   class:spinning={refreshing}
   aria-label="Refresh status data"
+  aria-busy={refreshing}
   disabled={refreshing}
   onclick={onClick}
 >
