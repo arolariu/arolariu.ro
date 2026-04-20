@@ -1,5 +1,6 @@
 import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
 import {WINDOW_TO_DAYS} from "../types/status";
+import {weightedUptime} from "./weightedUptime";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -9,23 +10,13 @@ const MS_PER_DAY = 86_400_000;
  * contributes more to the average (this matches user intuition of
  * "how often were we reachable overall").
  *
- * Returns 100 when denominator is 0 (no data yet).
- * Returns a number with up to 3 decimal places. The hero "Overall
- * uptime" card is the only consumer that needs "five-nines" precision
- * (e.g. 99.999%); per-service uptime + worst-uptime displays keep the
- * 1-decimal convention via weightedUptime().
+ * Returns 100 when denominator is 0 (no data yet). Returns up to 3
+ * decimal places (supports "five-nines" display precision — 99.999%).
+ * Worst-service sub-line formats at 1 decimal at the render site.
  */
 export function computeOverallUptime(services: readonly ServiceSeries[]): number {
-  let healthy = 0;
-  let total = 0;
-  for (const s of services) {
-    for (const b of s.buckets) {
-      healthy += b.probes.healthy;
-      total += b.probes.total;
-    }
-  }
-  if (total === 0) return 100;
-  return Math.round((healthy / total) * 100_000) / 1000;
+  const allBuckets = services.flatMap(s => [...s.buckets]);
+  return weightedUptime(allBuckets);
 }
 
 /**

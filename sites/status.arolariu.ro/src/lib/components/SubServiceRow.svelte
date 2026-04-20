@@ -32,7 +32,7 @@
   </div>
   <div class="spark-cell"></div>
   <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs} /></div>
-  <div class="uptime">{uptime}%</div>
+  <div class="uptime">{uptime.toFixed(3)}%</div>
   <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
 </div>
 

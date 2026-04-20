@@ -98,7 +98,7 @@
     <dd class="value tier-{uptimeTier}">{displayUptime.toFixed(3)}%</dd>
     <dd class="sub">weighted · last {windowFilter}</dd>
     {#if worst.service && worst.uptime < uptime}
-      <dd class="worst">worst: <strong>{worst.service}</strong> · {worst.uptime}%</dd>
+      <dd class="worst">worst: <strong>{worst.service}</strong> · {worst.uptime.toFixed(1)}%</dd>
     {/if}
   </dl>
   <dl class="card">

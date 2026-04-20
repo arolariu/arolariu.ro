@@ -23,9 +23,11 @@ describe("weightedUptime", () => {
     expect(weightedUptime([mk(50, 100), mk(10, 10)])).toBeCloseTo(54.5, 1);
   });
 
-  it("rounds to 1 decimal place", () => {
-    // 2/3 = 66.666... → 66.7
-    expect(weightedUptime([mk(2, 3)])).toBe(66.7);
+  it("rounds to 3 decimal places (supports five-nines precision)", () => {
+    // 2/3 = 66.6666... → 66.667
+    expect(weightedUptime([mk(2, 3)])).toBe(66.667);
+    // 99995/100000 = 99.995% exactly
+    expect(weightedUptime([mk(99_995, 100_000)])).toBe(99.995);
   });
 
   it("returns 100 for all-healthy buckets", () => {
