@@ -1,7 +1,8 @@
 import {mkdirSync, appendFileSync, existsSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import {performance} from "node:perf_hooks";
-import type {ProbeResult, ServiceId} from "../src/lib/types/status";
+import {setTimeout as sleep} from "node:timers/promises";
+import type {HealthStatus, ProbeResult, ServiceId} from "../src/lib/types/status";
 import type {ProbeContext, RawResponse} from "./parsers/arolariuRo";
 import {parseArolariuRo} from "./parsers/arolariuRo";
 import {parseApiArolariuRo} from "./parsers/apiArolariuRo";
@@ -9,6 +10,15 @@ import {parseCvArolariuRo} from "./parsers/cvArolariuRo";
 import {parseExpArolariuRo} from "./parsers/expArolariuRo";
 
 const PROBE_TIMEOUT_MS = 10_000;
+
+/**
+ * Delay BEFORE each sample fetch. Three samples per service per 30-min cron:
+ * immediate, +15s, +30s. Total wall-clock per service ≤ 45s + fetch time.
+ * Overridable in tests via `RunProbeOptions.sampleDelaysMs`.
+ */
+const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 15_000, 30_000];
+
+const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
 
 interface ServiceConfig {
   readonly service: ServiceId;
@@ -24,7 +34,7 @@ const SERVICES: readonly ServiceConfig[] = [
   {service: "cv.arolariu.ro", url: "https://cv.arolariu.ro/", parse: parseCvArolariuRo, parseBody: false},
 ];
 
-async function probeOne(cfg: ServiceConfig, nowIso: string): Promise<ProbeResult> {
+async function singleFetch(cfg: ServiceConfig, nowIso: string): Promise<ProbeResult> {
   const start = performance.now();
   try {
     const response = await fetch(cfg.url, {
@@ -53,16 +63,60 @@ async function probeOne(cfg: ServiceConfig, nowIso: string): Promise<ProbeResult
   }
 }
 
+/**
+ * Aggregates N sample ProbeResults into a single ProbeResult.
+ *   - `overall` / `httpStatus` / `subChecks` / `error` come from the worst
+ *     sample (preserves the most informative sub-check state + error text).
+ *   - `latencyMs` is the median of the samples (noise-resistant; a single
+ *     bad sample does not dominate).
+ *   - `timestamp` is the first sample's timestamp, so every service's
+ *     aggregate aligns to the same 30-min bucket regardless of which
+ *     sample was fastest/slowest.
+ */
+function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
+  if (samples.length === 0) throw new Error("aggregateSamples requires at least one sample");
+  const worst = samples.reduce((w, s) => STATUS_ORDER[s.overall] > STATUS_ORDER[w.overall] ? s : w, samples[0]);
+  const sortedLatencies = [...samples.map(s => s.latencyMs)].sort((a, b) => a - b);
+  const median = sortedLatencies[Math.floor(samples.length / 2)];
+  const out: ProbeResult = {
+    service: worst.service,
+    timestamp: samples[0].timestamp,
+    latencyMs: median,
+    httpStatus: worst.httpStatus,
+    overall: worst.overall,
+  };
+  if (worst.subChecks !== undefined) (out as Record<string, unknown>)["subChecks"] = worst.subChecks;
+  if (worst.error !== undefined) (out as Record<string, unknown>)["error"] = worst.error;
+  return out;
+}
+
+async function probeOne(
+  cfg: ServiceConfig,
+  nowIso: string,
+  delaysMs: readonly number[],
+): Promise<ProbeResult> {
+  const samples: ProbeResult[] = [];
+  for (let i = 0; i < delaysMs.length; i++) {
+    const delay = delaysMs[i];
+    if (delay > 0) await sleep(delay);
+    samples.push(await singleFetch(cfg, nowIso));
+  }
+  return aggregateSamples(samples);
+}
+
 export interface RunProbeOptions {
   readonly dataDir: string;
   readonly now?: Date;
+  /** Delay BEFORE each sample fetch. Defaults to [0, 15000, 30000]. Pass [0, 0, 0] in tests. */
+  readonly sampleDelaysMs?: readonly number[];
 }
 
 export async function runProbe(opts: RunProbeOptions): Promise<ProbeResult[]> {
   const now = opts.now ?? new Date();
   const nowIso = now.toISOString();
+  const delays = opts.sampleDelaysMs ?? DEFAULT_SAMPLE_DELAYS_MS;
 
-  const results = await Promise.all(SERVICES.map(cfg => probeOne(cfg, nowIso)));
+  const results = await Promise.all(SERVICES.map(cfg => probeOne(cfg, nowIso, delays)));
 
   const rawDir = join(opts.dataDir, "raw");
   mkdirSync(rawDir, {recursive: true});

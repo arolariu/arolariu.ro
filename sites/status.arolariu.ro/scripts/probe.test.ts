@@ -33,7 +33,7 @@ describe("runProbe", () => {
       return new Response("", {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z")});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
 
     expect(results).toHaveLength(4);
     const services = results.map(r => r.service).sort();
@@ -52,7 +52,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date()});
+    const results = await runProbe({dataDir, now: new Date(), sampleDelaysMs: [0, 0, 0]});
     const api = results.find(r => r.service === "api.arolariu.ro")!;
     expect(api.overall).toBe("Unhealthy");
     expect(api.error).toContain("ECONNREFUSED");
@@ -63,8 +63,8 @@ describe("runProbe", () => {
   it("appends to existing JSONL file on same day", async () => {
     globalThis.fetch = vi.fn(async () =>
       new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
-    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z")});
-    await runProbe({dataDir, now: new Date("2026-04-19T14:30:00Z")});
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    await runProbe({dataDir, now: new Date("2026-04-19T14:30:00Z"), sampleDelaysMs: [0, 0, 0]});
     const file = join(dataDir, "raw", "2026-04-19.jsonl");
     const lines = readFileSync(file, "utf8").trim().split("\n");
     expect(lines).toHaveLength(8);
@@ -79,7 +79,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date()});
+    const results = await runProbe({dataDir, now: new Date(), sampleDelaysMs: [0, 0, 0]});
     const arolariu = results.find(r => r.service === "arolariu.ro")!;
     expect(arolariu.overall).toBe("Degraded");
     expect(arolariu.httpStatus).toBe(200);
@@ -91,12 +91,72 @@ describe("runProbe", () => {
       throw new Error("ECONNREFUSED");
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z")});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
     expect(results).toHaveLength(4);
     expect(results.every(r => r.overall === "Unhealthy")).toBe(true);
     expect(results.every(r => r.error?.includes("ECONNREFUSED"))).toBe(true);
     // JSONL still written
     const file = join(dataDir, "raw", "2026-04-19.jsonl");
     expect(existsSync(file)).toBe(true);
+  });
+
+  it("takes 3 samples per service per run", async () => {
+    const calls = new Map<string, number>();
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      calls.set(u, (calls.get(u) ?? 0) + 1);
+      if (u.includes("api.arolariu.ro/health")) {
+        return new Response(JSON.stringify({status: "Healthy", entries: {}}), {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+
+    // Four unique URLs, three fetches each → 12 total calls
+    expect(calls.size).toBe(4);
+    for (const [url, count] of calls.entries()) {
+      expect(count, `${url} should be probed 3 times`).toBe(3);
+    }
+  });
+
+  it("one transient failure among 3 samples still records Unhealthy (worst-wins aggregation)", async () => {
+    let apiCalls = 0;
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("api.arolariu.ro/health")) {
+        apiCalls++;
+        // Fail only the middle sample, succeed on the 1st and 3rd
+        if (apiCalls === 2) throw new Error("ECONNREFUSED");
+        return new Response(JSON.stringify({status: "Healthy", entries: {}}), {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const api = results.find(r => r.service === "api.arolariu.ro")!;
+    expect(api.overall).toBe("Unhealthy");  // worst of [Healthy, Unhealthy, Healthy]
+    expect(api.error).toContain("ECONNREFUSED");
+  });
+
+  it("all 3 samples healthy → aggregated result is Healthy with median latency", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    expect(results.every(r => r.overall === "Healthy")).toBe(true);
+    expect(results.every(r => typeof r.latencyMs === "number" && r.latencyMs >= 0)).toBe(true);
+  });
+
+  it("waits sampleDelaysMs between samples (using non-zero delays)", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
+
+    const start = Date.now();
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 50, 100]});
+    const elapsed = Date.now() - start;
+    // Services run in parallel, so total wall time ≈ 0 + 50 + 100 = 150ms + fetch time
+    expect(elapsed).toBeGreaterThanOrEqual(140);
+    expect(elapsed).toBeLessThan(1000);  // upper bound to catch regressions
   });
 });
