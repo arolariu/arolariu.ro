@@ -43,8 +43,10 @@
   });
 
   onDestroy(() => {
-    window.removeEventListener("scroll", updatePosition);
-    window.removeEventListener("resize", updatePosition);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", updatePosition);
+    }
   });
 
   function formatTime(iso: string): string {
