@@ -3,6 +3,7 @@
   import type {Incident, IncidentsFile, FilterWindow} from "../types/status";
   import {WINDOW_TO_DAYS} from "../types/status";
   import {formatDuration} from "../aggregation/formatDuration";
+  import IncidentDetail from "./IncidentDetail.svelte";
 
   interface Props {
     incidents: IncidentsFile | null;
@@ -14,6 +15,7 @@
   let nowTick = $state(Date.now());
   // null = "All" chip selected
   let selectedService: string | null = $state(null);
+  let expandedId: string | null = $state(null);
 
   onMount(() => {
     const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
@@ -161,25 +163,39 @@
       <h3 class="month-header">{group.label}</h3>
       {#each group.items as inc (inc.id)}
         <article class="item" data-status={inc.status}>
-          <div class="item-rail" aria-hidden="true"></div>
-          <div class="item-body">
-            <div class="head">
-              <strong class="service-name">{inc.service}{inc.subCheck ? ` · ${inc.subCheck}` : ""}</strong>
-              <span class="pill pill-{inc.status}">{inc.status === "open" ? "Ongoing" : "Resolved"}</span>
-              <span class="severity severity-{inc.severity.toLowerCase()}">{inc.severity}</span>
+          <button
+            type="button"
+            class="item-head"
+            aria-expanded={expandedId === inc.id}
+            aria-controls={`incident-detail-${inc.id}`}
+            onclick={() => (expandedId = expandedId === inc.id ? null : inc.id)}
+          >
+            <div class="item-rail" aria-hidden="true"></div>
+            <div class="item-body">
+              <div class="head">
+                <strong class="service-name">{inc.service}{inc.subCheck ? ` · ${inc.subCheck}` : ""}</strong>
+                <span class="pill pill-{inc.status}">{inc.status === "open" ? "Ongoing" : "Resolved"}</span>
+                <span class="severity severity-{inc.severity.toLowerCase()}">{inc.severity}</span>
+                <span class="chevron" aria-hidden="true">{expandedId === inc.id ? "▾" : "▸"}</span>
+              </div>
+              <div class="meta" title={inc.startedAt}>
+                <span>Started {formatRelative(inc.startedAt)}</span>
+                {#if inc.status === "resolved"}
+                  <span class="sep">·</span>
+                  <span>lasted {formatDuration(inc.durationMs)}</span>
+                {/if}
+                {#if inc.reason}
+                  <span class="sep">·</span>
+                  <code>{inc.reason}</code>
+                {/if}
+              </div>
             </div>
-            <div class="meta" title={inc.startedAt}>
-              <span>Started {formatRelative(inc.startedAt)}</span>
-              {#if inc.status === "resolved"}
-                <span class="sep">·</span>
-                <span>lasted {formatDuration(inc.durationMs)}</span>
-              {/if}
-              {#if inc.reason}
-                <span class="sep">·</span>
-                <code>{inc.reason}</code>
-              {/if}
+          </button>
+          {#if expandedId === inc.id}
+            <div id={`incident-detail-${inc.id}`} class="item-detail-wrap">
+              <IncidentDetail incident={inc} />
             </div>
-          </div>
+          {/if}
         </article>
       {/each}
     {/each}
@@ -243,10 +259,6 @@
     border: 1px solid var(--border);
   }
   .item {
-    display: grid;
-    grid-template-columns: 4px 1fr;
-    gap: var(--sp-md);
-    padding: var(--sp-sm) var(--sp-md);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -254,12 +266,36 @@
     overflow: hidden;
     position: relative;
   }
+  .item-head {
+    all: unset;
+    display: grid;
+    grid-template-columns: 4px 1fr;
+    gap: var(--sp-md);
+    padding: var(--sp-sm) var(--sp-md);
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .item-head:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .item-head:hover { background: var(--surface-hover); }
   .item-rail {
     background: var(--status-deg);
     border-radius: 4px;
   }
   .item[data-status="open"] .item-rail { background: var(--status-down); }
   .item-body { min-width: 0; }
+  .chevron {
+    margin-left: auto;
+    opacity: 0.5;
+    font-size: 11px;
+  }
+  .item-detail-wrap {
+    padding: 0 var(--sp-md) var(--sp-sm);
+  }
   .head {
     display: flex;
     align-items: center;
