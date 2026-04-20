@@ -13,6 +13,7 @@
   import SkeletonRow from "$lib/components/SkeletonRow.svelte";
   import SegmentTooltip from "$lib/components/SegmentTooltip.svelte";
   import RefreshButton from "$lib/components/RefreshButton.svelte";
+  import SummaryStats from "$lib/components/SummaryStats.svelte";
 
   const TOOLTIP_ID = "status-segment-tooltip";
 
@@ -113,6 +114,10 @@
   </header>
 
   <StatusBanner {overallStatus} {lastProbeAt}/>
+
+  {#if sliced}
+    <SummaryStats services={sliced.services} {incidents} windowFilter={activeWindow}/>
+  {/if}
 
   <div class="controls">
     <FilterPills {activeWindow} onChange={(w) => { activeWindow = w; }}/>
