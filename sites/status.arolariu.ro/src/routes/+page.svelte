@@ -359,7 +359,7 @@
   }
   .status-table__header {
     display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 6ch 7ch;
+    grid-template-columns: minmax(8rem, 1.4fr) 70px minmax(0, 2fr) 8ch 7ch;
     grid-template-areas: "name sparkline bar uptime latency";
     gap: var(--sp-sm);
     padding: 12px var(--sp-md);
