@@ -257,12 +257,26 @@ function mergeAggregate(
 function readPrevious(dataDir: string, name: string): AggregateFile | undefined {
   const path = join(dataDir, name);
   if (!existsSync(path)) return undefined;
+  // If the file exists but is corrupt/unparseable, fail loudly rather than
+  // silently returning undefined — otherwise the next run would overwrite
+  // 15–365 days of retained buckets with only the last 14d of raw JSONL.
+  // A human can inspect and hand-rewind status-data in that case.
+  let raw: string;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    return isAggregateFile(parsed) ? parsed : undefined;
-  } catch {
-    return undefined;
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    throw new Error(`readPrevious: failed to read ${path}: ${err instanceof Error ? err.message : String(err)}`);
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`readPrevious: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`);
+  }
+  if (!isAggregateFile(parsed)) {
+    throw new Error(`readPrevious: ${path} does not match AggregateFile schema — refusing to overwrite history.`);
+  }
+  return parsed;
 }
 
 export interface RunAggregateOptions {

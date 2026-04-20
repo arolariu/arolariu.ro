@@ -159,12 +159,19 @@ function readRawProbes(dataDir: string): ProbeResult[] {
 function readPreviousIncidents(dataDir: string): IncidentsFile {
   const path = join(dataDir, "incidents.json");
   if (!existsSync(path)) return {generatedAt: new Date(0).toISOString(), incidents: []};
+  // Same loud-failure rationale as aggregate.ts readPrevious: a corrupt
+  // incidents.json must not silently become an empty file (losing open
+  // incidents and 90 days of resolved history).
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    return isIncidentsFile(parsed) ? parsed : {generatedAt: new Date(0).toISOString(), incidents: []};
-  } catch {
-    return {generatedAt: new Date(0).toISOString(), incidents: []};
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch (err) {
+    throw new Error(`readPreviousIncidents: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`);
   }
+  if (!isIncidentsFile(parsed)) {
+    throw new Error(`readPreviousIncidents: ${path} does not match IncidentsFile schema — refusing to overwrite history.`);
+  }
+  return parsed;
 }
 
 export interface RunDetectIncidentsOptions {

@@ -80,7 +80,11 @@ jobs:
               exit 0
             fi
             echo "push race detected — rebasing and retrying ($i/3)"
-            git pull --rebase origin status-data || true
+            if ! git pull --rebase origin status-data; then
+              echo "::error::rebase conflict on status-data — aborting. Inspect the branch manually."
+              git rebase --abort 2>/dev/null || true
+              exit 1
+            fi
             sleep $((i*i*5))
           done
           echo "push failed after 3 retries"
