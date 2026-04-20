@@ -14,13 +14,13 @@
 #   - Manual: workflow_dispatch for on-demand deployments
 #
 # Technology Stack:
-#   - SvelteKit v2.46.2 with Azure Static Web Apps adapter
+#   - SvelteKit 2.x with Azure Static Web Apps adapter (svelte-adapter-azure-swa)
 #   - Node.js 24 for build environment
 #   - Azure Static Web Apps for hosting
 #
 # Security:
-#   - Uses OIDC for Azure authentication
-#   - Static Web Apps deployment token stored in GitHub Secrets
+#   - Deploy auth: SWA deployment token (AZURE_STATIC_WEB_APPS_STATUS_TOKEN)
+#     stored in GitHub Secrets. Not OIDC.
 #
 # Prerequisites:
 #   1. Azure Static Web Apps resource provisioned
@@ -34,7 +34,6 @@
 name: "official-status-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
   contents: read # Required to checkout repository
 
 defaults:

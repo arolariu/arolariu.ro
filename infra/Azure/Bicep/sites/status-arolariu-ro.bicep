@@ -11,7 +11,7 @@
 // - No server-side rendering costs
 //
 // Technology Stack:
-// - Framework: SvelteKit 5 (prerendered shell + client fetch)
+// - Framework: SvelteKit 2.x on Svelte 5 (prerendered shell + client fetch)
 // - Build output: Static HTML/CSS/JS + managed Azure Functions
 // - Adapter: svelte-adapter-azure-swa
 //

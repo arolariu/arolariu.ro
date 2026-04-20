@@ -41,7 +41,7 @@ metadata version = '2.0.0'
 @description('The name of the DNS zone for the custom domain.')
 param dnsZoneName string
 
-@description('The name of the App Service to bind the custom domain to.')
+@description('The name of the Static Web App to bind the custom domain to.')
 param statusWebsiteHostname string
 
 resource statusWebsite 'Microsoft.Web/staticSites@2025-03-01' existing = { name: statusWebsiteHostname }
