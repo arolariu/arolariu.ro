@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {onMount} from "svelte";
+  import {onMount, untrack} from "svelte";
   import type {FilterWindow, IncidentsFile, ServiceSeries} from "../types/status";
   import {computeOverallUptime, computeAvgLatency, computeIncidentCount, computeMttr} from "../aggregation/summaryStats";
   import {formatDuration} from "../aggregation/formatDuration";
@@ -17,48 +17,63 @@
   const incCount = $derived(computeIncidentCount(incidents, windowFilter));
   const mttr = $derived(computeMttr(incidents, windowFilter));
 
-  // Animated counters: tween the displayed numeric values toward the derived
-  // targets. Uses requestAnimationFrame; cancels cleanly on teardown.
   let displayUptime = $state(0);
   let displayLatency = $state(0);
   let displayIncidents = $state(0);
   let displayMttr = $state<number | undefined>(undefined);
 
   const ANIM_MS = 400;
-  let rafId: number | null = null;
+  const uptimeRaf = {id: null as number | null};
+  const latencyRaf = {id: null as number | null};
+  const incidentsRaf = {id: null as number | null};
 
-  function animate(from: number, to: number, setter: (v: number) => void): void {
+  function animate(from: number, to: number, setter: (v: number) => void, ref: {id: number | null}): void {
+    if (ref.id !== null) { cancelAnimationFrame(ref.id); ref.id = null; }
     if (from === to) { setter(to); return; }
     const start = performance.now();
     function step(now: number) {
       const t = Math.min(1, (now - start) / ANIM_MS);
       const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
       setter(from + (to - from) * eased);
-      if (t < 1) rafId = requestAnimationFrame(step);
+      if (t < 1) ref.id = requestAnimationFrame(step);
+      else ref.id = null;
     }
-    rafId = requestAnimationFrame(step);
+    ref.id = requestAnimationFrame(step);
   }
 
   const prefersReducedMotion = typeof window !== "undefined"
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   $effect(() => {
-    if (prefersReducedMotion) { displayUptime = uptime; return; }
-    animate(displayUptime, uptime, (v) => { displayUptime = v; });
+    const target = uptime;
+    untrack(() => {
+      if (prefersReducedMotion) { displayUptime = target; return; }
+      animate(displayUptime, target, (v) => { displayUptime = v; }, uptimeRaf);
+    });
   });
   $effect(() => {
-    if (prefersReducedMotion) { displayLatency = avgLatency; return; }
-    animate(displayLatency, avgLatency, (v) => { displayLatency = v; });
+    const target = avgLatency;
+    untrack(() => {
+      if (prefersReducedMotion) { displayLatency = target; return; }
+      animate(displayLatency, target, (v) => { displayLatency = v; }, latencyRaf);
+    });
   });
   $effect(() => {
-    if (prefersReducedMotion) { displayIncidents = incCount.total; return; }
-    animate(displayIncidents, incCount.total, (v) => { displayIncidents = v; });
+    const target = incCount.total;
+    untrack(() => {
+      if (prefersReducedMotion) { displayIncidents = target; return; }
+      animate(displayIncidents, target, (v) => { displayIncidents = v; }, incidentsRaf);
+    });
   });
   $effect(() => {
-    displayMttr = mttr; // no tween — it's shown formatted
+    displayMttr = mttr;
   });
 
-  onMount(() => () => { if (rafId !== null) cancelAnimationFrame(rafId); });
+  onMount(() => () => {
+    if (uptimeRaf.id !== null) cancelAnimationFrame(uptimeRaf.id);
+    if (latencyRaf.id !== null) cancelAnimationFrame(latencyRaf.id);
+    if (incidentsRaf.id !== null) cancelAnimationFrame(incidentsRaf.id);
+  });
 
   const uptimeTier = $derived(
     uptime >= 99.9 ? "fast" : uptime >= 99 ? "ok" : "slow"
