@@ -63,13 +63,13 @@
     justify-content: center;
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: 0;
     background: transparent;
     border: 1px solid var(--border);
-    color: var(--text-muted, var(--text));
+    color: var(--text-muted);
+    font-family: var(--font-mono);
     font-size: 9px;
-    font-style: italic;
-    font-family: ui-serif, Georgia, serif;
+    font-weight: 500;
     cursor: pointer;
     padding: 0;
     vertical-align: middle;
@@ -77,32 +77,37 @@
     line-height: 1;
   }
   .info-btn:hover {
-    background: var(--surface-hover, var(--surface-raised, rgba(255, 255, 255, 0.06)));
-    color: var(--text);
+    color: var(--accent);
+    border-color: var(--accent);
   }
   .info-btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    outline: 1px solid var(--accent);
+    outline-offset: 2px;
   }
   .popover {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 8px);
     left: 0;
-    max-width: 240px;
+    max-width: 260px;
     width: max-content;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
-    font-size: var(--fs-xs);
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-left: 2px solid var(--accent);
+    border-radius: 0;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     font-style: normal;
     font-weight: 400;
-    letter-spacing: normal;
+    letter-spacing: 0.01em;
     text-transform: none;
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--text);
     opacity: 1;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    z-index: 50;
+  }
+  :root[data-theme="light"] .popover {
+    box-shadow: 0 8px 24px rgba(21, 16, 10, 0.18), 0 0 0 1px rgba(21, 16, 10, 0.04);
   }
 </style>

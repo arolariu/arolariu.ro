@@ -72,31 +72,32 @@
 }
 
 :root[data-theme="light"] {
-  /* Paper-terminal — near-white, deep-ink, dark-copper accent */
-  --bg: #fafaf8;
-  --surface: #ffffff;
-  --surface-hover: #f4f3ee;
-  --surface-raised: #ffffff;
-  --border: #d8d4c8;
-  --border-strong: #a39f93;
-  --text: #1a1c1f;
-  --text-muted: #6a6b6e;
-  --text-faint: rgba(26, 28, 31, 0.52);
+  /* Cream paper + deep-ink — warm, deliberate, not generic-off-white */
+  --bg: #f2e9d8;
+  --surface: rgba(21, 16, 10, 0.025);
+  --surface-hover: rgba(21, 16, 10, 0.05);
+  --surface-raised: #fbf5e6;
+  --border: rgba(21, 16, 10, 0.12);
+  --border-strong: rgba(21, 16, 10, 0.28);
+  --text: #15100a;
+  --text-muted: #6b5f4f;
+  --text-faint: rgba(21, 16, 10, 0.48);
 
-  --status-up: #226c29;
-  --status-up-bg: rgba(34, 108, 41, 0.08);
-  --status-up-border: rgba(34, 108, 41, 0.28);
-  --status-deg: #8b5a00;
-  --status-deg-bg: rgba(139, 90, 0, 0.08);
-  --status-deg-border: rgba(139, 90, 0, 0.28);
-  --status-down: #9a2323;
-  --status-down-bg: rgba(154, 35, 35, 0.08);
-  --status-down-border: rgba(154, 35, 35, 0.32);
-  --status-missing: rgba(26, 28, 31, 0.06);
+  /* Status palette — saturated ink-hues, punchy against cream */
+  --status-up: #1f5e1a;
+  --status-up-bg: rgba(31, 94, 26, 0.1);
+  --status-up-border: rgba(31, 94, 26, 0.3);
+  --status-deg: #9a5a11;
+  --status-deg-bg: rgba(154, 90, 17, 0.1);
+  --status-deg-border: rgba(154, 90, 17, 0.32);
+  --status-down: #a72418;
+  --status-down-bg: rgba(167, 36, 24, 0.1);
+  --status-down-border: rgba(167, 36, 24, 0.35);
+  --status-missing: rgba(21, 16, 10, 0.07);
 
-  --accent: #b85419;
-  --accent-dim: rgba(184, 84, 25, 0.6);
-  --shadow-tooltip: 0 10px 32px rgba(26, 28, 31, 0.12), 0 0 0 1px rgba(26, 28, 31, 0.06);
+  --accent: #c44419;
+  --accent-dim: rgba(196, 68, 25, 0.65);
+  --shadow-tooltip: 0 10px 32px rgba(21, 16, 10, 0.16), 0 0 0 1px rgba(21, 16, 10, 0.06);
 }
 
 html, body {
@@ -117,8 +118,9 @@ body {
   min-height: 100vh;
 }
 
-/* Subtle scanline texture — dark mode only. Terminal vibes without costume.
-   Achieved via a repeating linear gradient of faint horizontal lines. */
+/* Subtle scanline texture — terminal vibes without costume.
+   Dark mode: faint white horizontal lines over carbon.
+   Light mode: faint ink horizontal lines + vertical graph-paper grid over cream. */
 body::before {
   content: "";
   position: fixed;
@@ -135,7 +137,24 @@ body::before {
       rgba(255, 255, 255, 0.012) 3px
     );
 }
-:root[data-theme="light"] body::before { display: none; }
+:root[data-theme="light"] body::before {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(21, 16, 10, 0.025) 2px,
+      rgba(21, 16, 10, 0.025) 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 48px,
+      rgba(21, 16, 10, 0.03) 48px,
+      rgba(21, 16, 10, 0.03) 49px
+    );
+}
 
 main, .page { position: relative; z-index: 1; }
 
