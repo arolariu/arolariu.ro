@@ -1,6 +1,7 @@
 <script lang="ts">
   import type {Bucket, ServiceSeries} from "../types/status";
-  import {computeUptime, computeAvgLatency} from "../aggregation/computeUptime";
+  import {computeUptime} from "../aggregation/computeUptime";
+  import {computeAvgLatency} from "../aggregation/computeAvgLatency";
   import {deriveLatestStatus} from "../aggregation/deriveParentStatus";
   import UptimeBar from "./UptimeBar.svelte";
   import LatencySparkline from "./LatencySparkline.svelte";

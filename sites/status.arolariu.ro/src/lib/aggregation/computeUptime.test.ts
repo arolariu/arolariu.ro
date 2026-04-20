@@ -1,6 +1,6 @@
 import {describe, it, expect} from "vitest";
 import type {Bucket} from "../types/status";
-import {computeUptime, computeAvgLatency} from "./computeUptime";
+import {computeUptime} from "./computeUptime";
 
 function mkBucket(
   status: "Healthy" | "Degraded" | "Unhealthy",
@@ -29,14 +29,5 @@ describe("computeUptime", () => {
   });
   it("returns 100 when empty (no data = assume healthy)", () => {
     expect(computeUptime([])).toBe(100);
-  });
-});
-
-describe("computeAvgLatency", () => {
-  it("averages p50 across buckets", () => {
-    expect(computeAvgLatency([mkBucket("Healthy", 100), mkBucket("Healthy", 200)])).toBe(150);
-  });
-  it("returns 0 for empty", () => {
-    expect(computeAvgLatency([])).toBe(0);
   });
 });
