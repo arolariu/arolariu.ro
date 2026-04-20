@@ -29,7 +29,7 @@
 
 <div class="row">
   <div class="name-col">
-    <span class="dot dot-{latest.toLowerCase()}"></span>
+    <span class="dot dot-{latest.toLowerCase()}" class:pulse={latest !== "Healthy"}></span>
     <span class="name">{series.service}</span>
     {#if hasSubs}
       <button
@@ -43,7 +43,7 @@
   </div>
   <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
-  <div class="latency">{avgLatency} ms</div>
+  <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
 </div>
 
 {#if expanded && hasSubs}
@@ -68,6 +68,9 @@
   .bar-cell { grid-area: bar; min-width: 0; }
   .uptime { grid-area: uptime; text-align: right; font-variant-numeric: tabular-nums; }
   .latency { grid-area: latency; text-align: right; font-variant-numeric: tabular-nums; opacity: 0.85; }
+  .latency[data-tier="fast"] { color: var(--status-up); }
+  .latency[data-tier="ok"]   { color: var(--text); }
+  .latency[data-tier="slow"] { color: var(--status-deg); }
 
   .dot {
     width: 8px; height: 8px;
@@ -78,6 +81,18 @@
   .dot-healthy { background: var(--status-up); box-shadow: 0 0 8px rgba(63,185,80,0.5); }
   .dot-degraded { background: var(--status-deg); box-shadow: 0 0 8px rgba(210,153,34,0.5); }
   .dot-unhealthy { background: var(--status-down); box-shadow: 0 0 8px rgba(248,81,73,0.5); }
+  .dot.pulse {
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+    50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 15%, transparent); }
+  }
+  .dot-degraded.pulse { color: var(--status-deg); }
+  .dot-unhealthy.pulse { color: var(--status-down); }
+  @media (prefers-reduced-motion: reduce) {
+    .dot.pulse { animation: none; }
+  }
   .name {
     font-weight: 500;
     white-space: nowrap;

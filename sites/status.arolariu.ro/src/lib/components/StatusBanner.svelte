@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {onMount} from "svelte";
   import type {HealthStatus} from "../types/status";
 
   interface Props {
@@ -9,6 +10,13 @@
 
   let {overallStatus, lastProbeAt, affectedServices = []}: Props = $props();
 
+  let nowTick = $state(Date.now());
+
+  onMount(() => {
+    const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
+    return () => clearInterval(id);
+  });
+
   const title = $derived(
     overallStatus === "Healthy" ? "All systems operational"
     : overallStatus === "Degraded" ? "Some systems degraded"
@@ -16,9 +24,10 @@
     : "Loading status…"
   );
 
-  function formatAgo(iso: string | undefined): string {
-    if (!iso) return "";
-    const ms = Date.now() - Date.parse(iso);
+  const lastProbeAgo = $derived.by(() => {
+    void nowTick; // reactive dependency — re-evaluates every minute
+    if (!lastProbeAt) return "";
+    const ms = nowTick - Date.parse(lastProbeAt);
     if (!Number.isFinite(ms) || ms < 0) return "";
     const min = Math.floor(ms / 60_000);
     if (min < 1) return "just now";
@@ -26,7 +35,7 @@
     const hr = Math.floor(min / 60);
     if (hr < 24) return `${hr} h ago`;
     return `${Math.floor(hr / 24)} d ago`;
-  }
+  });
 </script>
 
 <div class="banner banner-{overallStatus.toLowerCase()}" role="status" aria-live="polite">
@@ -58,8 +67,8 @@
     <div class="title">{title}</div>
     {#if overallStatus !== "Healthy" && affectedServices.length > 0}
       <div class="meta">Affected: {affectedServices.join(", ")}</div>
-    {:else if lastProbeAt}
-      <div class="meta">Last probe · {formatAgo(lastProbeAt)}</div>
+    {:else if lastProbeAgo}
+      <div class="meta">Last probe · {lastProbeAgo}</div>
     {/if}
   </div>
 </div>

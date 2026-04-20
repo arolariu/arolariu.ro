@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {onMount} from "svelte";
   import type {Incident, IncidentsFile, FilterWindow} from "../types/status";
   import {WINDOW_TO_DAYS} from "../types/status";
 
@@ -9,11 +10,19 @@
 
   let {incidents, windowFilter}: Props = $props();
 
+  let nowTick = $state(Date.now());
+
+  onMount(() => {
+    const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
+    return () => clearInterval(id);
+  });
+
   const RTF = new Intl.RelativeTimeFormat("en", {numeric: "auto"});
 
   function formatRelative(iso: string | undefined): string {
+    void nowTick; // reactive dependency — re-evaluates every minute
     if (!iso) return "";
-    const ms = Date.now() - Date.parse(iso);
+    const ms = nowTick - Date.parse(iso);
     if (!Number.isFinite(ms)) return "";
     const abs = Math.abs(ms);
     const sign = ms >= 0 ? -1 : 1; // past = negative

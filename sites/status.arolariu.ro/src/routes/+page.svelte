@@ -142,16 +142,20 @@
     {:else if sliced.services.length === 0}
       <div class="empty">No probes recorded yet — first data in ≤30 min.</div>
     {:else}
-      {#each orderedServices(sliced) as series (series.service)}
-        <ServiceRow
-          {series}
-          expanded={expanded[series.service] ?? false}
-          onToggle={() => toggleExpand(series.service)}
-          {onHover}
-          tooltipId={TOOLTIP_ID}
-          hoveredBucketT={hoveredBucket?.t ?? null}
-        />
-      {/each}
+      {#key activeWindow}
+        <div class="status-rows-slot">
+          {#each orderedServices(sliced) as series (series.service)}
+            <ServiceRow
+              {series}
+              expanded={expanded[series.service] ?? false}
+              onToggle={() => toggleExpand(series.service)}
+              {onHover}
+              tooltipId={TOOLTIP_ID}
+              hoveredBucketT={hoveredBucket?.t ?? null}
+            />
+          {/each}
+        </div>
+      {/key}
     {/if}
   </section>
 
@@ -250,6 +254,16 @@
     /* Card layout labels service/uptime/latency inline; the grid header
        is redundant and would overflow the narrow page. Hide it. */
     .status-table__header { display: none; }
+  }
+  .status-rows-slot {
+    animation: fadeIn 180ms ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0.45; transform: translateY(-2px); }
+    to   { opacity: 1;    transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .status-rows-slot { animation: none; }
   }
   .empty {
     padding: 24px;

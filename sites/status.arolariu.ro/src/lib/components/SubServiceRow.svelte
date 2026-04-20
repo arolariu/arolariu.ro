@@ -30,7 +30,7 @@
   </div>
   <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} /></div>
   <div class="uptime">{uptime}%</div>
-  <div class="latency">{avgLatency} ms</div>
+  <div class="latency" data-tier={avgLatency < 200 ? "fast" : avgLatency < 500 ? "ok" : "slow"}>{avgLatency} ms</div>
 </div>
 
 <style>
@@ -51,6 +51,9 @@
   .bar-cell { grid-area: bar; min-width: 0; }
   .uptime { grid-area: uptime; text-align: right; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
   .latency { grid-area: latency; text-align: right; font-size: var(--fs-xs); opacity: 0.85; font-variant-numeric: tabular-nums; }
+  .latency[data-tier="fast"] { color: var(--status-up); }
+  .latency[data-tier="ok"]   { color: var(--text); }
+  .latency[data-tier="slow"] { color: var(--status-deg); }
 
   .dot {
     width: 6px;
