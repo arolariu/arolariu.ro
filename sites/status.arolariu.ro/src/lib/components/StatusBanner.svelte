@@ -60,9 +60,9 @@
   <div class="body">
     <div class="title">{title}</div>
     {#if overallStatus !== "Healthy" && affectedServices.length > 0}
-      <div class="meta">Affected: {affectedServices.join(", ")}</div>
+      <div class="meta label-comment">Affected: {affectedServices.join(", ")}</div>
     {:else if lastProbeAgo}
-      <div class="meta">Last probe · {lastProbeAgo}</div>
+      <div class="meta label-comment">Last probe · {lastProbeAgo}</div>
     {/if}
   </div>
 </div>
@@ -117,5 +117,5 @@
     margin: 0;
     letter-spacing: 0.01em;
   }
-  .meta::before { content: "// "; color: var(--accent-dim); }
+  /* `// ` prefix comes from the shared `.label-comment` utility class in app.css */
 </style>

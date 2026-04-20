@@ -216,6 +216,27 @@ main, .page { position: relative; z-index: 1; }
   }
 }
 
+/*
+ * Console-aesthetic typographic prefixes. The `//` comment prefix and the
+ * `#` heading prefix recur across StatusBanner, SummaryStats, IncidentList,
+ * and +page.svelte (footer). Classes live here so individual components
+ * don't re-author the pseudo-element rule.
+ *
+ * Usage:
+ *   <span class="label-comment">last probe 8m ago</span>
+ *   <h2 class="heading-hash">Recent incidents</h2>
+ */
+.label-comment::before {
+  content: "// ";
+  color: var(--accent-dim);
+}
+.heading-hash::before {
+  content: "#";
+  color: var(--accent);
+  margin-right: 8px;
+  font-weight: 600;
+}
+
 @container statusPage (max-width: 480px) {
   :global(h1) { font-size: clamp(1.125rem, 0.9rem + 1.5vw, 1.5rem); }
 }

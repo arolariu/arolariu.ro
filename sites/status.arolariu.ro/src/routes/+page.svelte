@@ -197,7 +197,7 @@
 
   <IncidentList {incidents} windowFilter={activeWindow}/>
 
-  <footer class="footer">
+  <footer class="footer label-comment">
     Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
   </footer>
 
@@ -361,7 +361,7 @@
     border-top: 1px solid var(--border);
     letter-spacing: 0.01em;
   }
-  .footer::before { content: "// "; color: var(--accent-dim); }
+  /* `// ` prefix comes from the shared `.label-comment` utility class in app.css */
   .local-badge {
     display: inline-block;
     padding: 2px 6px;

@@ -96,7 +96,7 @@
 </script>
 
 <div class="incidents">
-  <h2 class="heading">Recent incidents · last {windowFilter}</h2>
+  <h2 class="heading heading-hash">Recent incidents · last {windowFilter}</h2>
   {#if incidents && serviceChips.length > 0}
     <IncidentFilterChips
       chips={allChips}
@@ -110,7 +110,7 @@
     <div class="placeholder">No incidents in this window. 🌿</div>
   {:else}
     {#each grouped as group (group.label)}
-      <h3 class="month-header">{group.label}</h3>
+      <h3 class="month-header label-comment">{group.label}</h3>
       {#each group.items as inc (inc.id)}
         <IncidentCard
           incident={inc}
@@ -134,12 +134,7 @@
     margin: 0 0 var(--sp-md) 0;
     color: var(--text);
   }
-  .heading::before {
-    content: "#";
-    color: var(--accent);
-    margin-right: 8px;
-    font-weight: 600;
-  }
+  /* `#` prefix comes from the shared `.heading-hash` utility class in app.css */
   .month-header {
     font-family: var(--font-mono);
     font-weight: 400;
@@ -149,10 +144,7 @@
     text-transform: lowercase;
     margin: var(--sp-md) 0 var(--sp-xs) 0;
   }
-  .month-header::before {
-    content: "// ";
-    color: var(--accent-dim);
-  }
+  /* `// ` prefix comes from the shared `.label-comment` utility class in app.css */
   .month-header:first-of-type { margin-top: 0; }
   .placeholder {
     padding: var(--sp-sm) var(--sp-md);
