@@ -114,8 +114,8 @@
       <dd>
         <span class="mono">{bucket.probes.healthy}</span>
         <span class="faint">/ {bucket.probes.total}</span>
-        {#if bucket.probes.total >= 3 && bucket.probes.total % 3 === 0}
-          <span class="detail">· {bucket.probes.total / 3} cron × 3 samples</span>
+        {#if bucket.probes.total > 0}
+          <span class="detail">· samples</span>
         {/if}
       </dd>
     </dl>
