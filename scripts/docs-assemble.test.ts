@@ -32,6 +32,15 @@ describe('syncProse', () => {
     expect(existsSync(join(destDir, 'stale.md'))).toBe(false);
     expect(existsSync(join(destDir, 'fresh.md'))).toBe(true);
   });
+
+  it('excludes superpowers subdirectory from the destination', async () => {
+    mkdirSync(join(srcDir, 'superpowers'));
+    writeFileSync(join(srcDir, 'superpowers', 'secret.md'), 'private');
+    writeFileSync(join(srcDir, 'public.md'), 'ok');
+    await syncProse(srcDir, destDir);
+    expect(existsSync(join(destDir, 'superpowers'))).toBe(false);
+    expect(existsSync(join(destDir, 'public.md'))).toBe(true);
+  });
 });
 
 describe('assertNonEmpty', () => {
