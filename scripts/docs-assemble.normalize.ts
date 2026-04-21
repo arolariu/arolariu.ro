@@ -61,6 +61,12 @@ function slugForFile(filePath: string, rootDir: string, slugRoot: string): strin
 }
 
 async function normalizeFile(filePath: string, rootDir: string, options: NormalizeOptions, position: number): Promise<void> {
+  // Docusaurus derives URLs from file paths relative to each plugin's `path` config
+  // plus its `routeBasePath`. Setting an explicit `slug` here would double-prefix the
+  // routeBasePath (e.g. `/reference/typescript/reference/typescript/...`), so we only
+  // fill `title` and `sidebar_position` and let Docusaurus route by filesystem.
+  void rootDir;
+  void options;
   const source = readFileSync(filePath, 'utf8');
   const {frontmatter, body} = parseFrontmatter(source);
   if (!('title' in frontmatter)) {
@@ -68,7 +74,6 @@ async function normalizeFile(filePath: string, rootDir: string, options: Normali
     if (heading) frontmatter.title = heading;
   }
   if (!('sidebar_position' in frontmatter)) frontmatter.sidebar_position = position;
-  if (!('slug' in frontmatter)) frontmatter.slug = slugForFile(filePath, rootDir, options.slugRoot);
   writeFileSync(filePath, serializeFrontmatter(frontmatter, body));
 }
 

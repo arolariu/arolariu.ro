@@ -19,17 +19,17 @@ describe('normalizeDirectory', () => {
     const out = readFileSync(join(root, 'alpha.md'), 'utf8');
     expect(out).toMatch(/^---\ntitle: Alpha Module\n/);
     expect(out).toMatch(/sidebar_position: 1\n/);
-    expect(out).toMatch(/slug: \/ref\/alpha\n/);
+    expect(out).not.toMatch(/slug: /);
     expect(out).toContain('# Alpha Module');
   });
 
   it('preserves existing frontmatter keys and only fills missing ones', async () => {
-    writeFileSync(join(root, 'beta.md'), '---\ntitle: Custom Title\n---\n# Beta\n\nBody.\n');
+    writeFileSync(join(root, 'beta.md'), '---\ntitle: Custom Title\nslug: /preserved\n---\n# Beta\n\nBody.\n');
     await normalizeDirectory(root, {slugRoot: '/ref'});
     const out = readFileSync(join(root, 'beta.md'), 'utf8');
     expect(out).toMatch(/title: Custom Title/);
+    expect(out).toMatch(/slug: \/preserved/);
     expect(out).toMatch(/sidebar_position: /);
-    expect(out).toMatch(/slug: /);
   });
 
   it('skips paths listed in skipPaths', async () => {
