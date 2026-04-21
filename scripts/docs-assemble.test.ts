@@ -2,7 +2,7 @@ import {describe, it, expect, beforeEach, afterEach} from 'vitest';
 import {mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {syncProse} from './docs-assemble';
+import {syncProse, assertNonEmpty} from './docs-assemble';
 
 describe('syncProse', () => {
   let srcDir: string;
@@ -31,5 +31,30 @@ describe('syncProse', () => {
     await syncProse(srcDir, destDir);
     expect(existsSync(join(destDir, 'stale.md'))).toBe(false);
     expect(existsSync(join(destDir, 'fresh.md'))).toBe(true);
+  });
+});
+
+describe('assertNonEmpty', () => {
+  let root: string;
+  beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'assert-')); });
+  afterEach(() => { rmSync(root, {recursive: true, force: true}); });
+
+  it('throws when directory does not exist', () => {
+    expect(() => assertNonEmpty(join(root, 'missing'), 'test')).toThrow(/expected directory not found/);
+  });
+
+  it('throws when directory contains no md or json files', () => {
+    writeFileSync(join(root, 'irrelevant.txt'), '');
+    expect(() => assertNonEmpty(root, 'test')).toThrow(/extracted 0 files/);
+  });
+
+  it('passes when directory contains at least one md file', () => {
+    writeFileSync(join(root, 'ok.md'), '# OK');
+    expect(() => assertNonEmpty(root, 'test')).not.toThrow();
+  });
+
+  it('passes when directory contains at least one json file', () => {
+    writeFileSync(join(root, 'spec.json'), '{}');
+    expect(() => assertNonEmpty(root, 'test')).not.toThrow();
   });
 });
