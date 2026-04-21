@@ -16,6 +16,17 @@ on:
       - '.github/workflows/official-docs-v2-trigger.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'sites/docs.arolariu.ro-v2/**'
+      - 'sites/api.arolariu.ro/src/**'
+      - 'sites/arolariu.ro/src/**'
+      - 'packages/components/src/**'
+      - 'sites/exp.arolariu.ro/**'
+      - 'docs/**'
+      - 'scripts/docs-assemble*.ts'
+      - 'typedoc.*.json'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/official-docs-v2-trigger.yml'
   workflow_dispatch:
 
 jobs:
