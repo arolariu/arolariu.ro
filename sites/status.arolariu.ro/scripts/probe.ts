@@ -26,16 +26,19 @@ import {parseExpArolariuRo} from "./parsers/expArolariuRo";
 const PROBE_TIMEOUT_MS = 10_000;
 
 /**
- * Delay BEFORE each sample fetch. Ten samples per service per 30-min cron,
- * spread over 3 minutes (immediate, +20s, +40s, …, +180s). The longer
- * window smooths out per-sample noise so bucket-level p95/p99 signal
- * becomes meaningful at the 30-minute fine tier.
+ * Delay BEFORE each sample fetch (inter-sample delta, NOT an absolute offset
+ * from probe start — see `probeOne`). Ten samples at a constant 20 s cadence:
+ * the first fires immediately, each subsequent sample waits 20 s after the
+ * previous one returns. Total sleep = 9 × 20 s = 180 s → the full run lasts
+ * ≈ 3 minutes + fetch time (≈190s worst case with PROBE_TIMEOUT_MS=10s on
+ * the final sample). Well under the 30-min cron cadence.
  *
- * Total wall-clock per service ≤ 180s + fetch time (≈190s worst case with
- * PROBE_TIMEOUT_MS=10s on the final sample). Still well under the 30-min
- * cron interval. Overridable in tests via `RunProbeOptions.sampleDelaysMs`.
+ * The 3-minute window is a deliberate trade-off: long enough to smooth out
+ * per-sample noise so bucket-level p95/p99 carry real signal, short enough
+ * to leave plenty of headroom on each cron tick. Overridable in tests via
+ * `RunProbeOptions.sampleDelaysMs`.
  */
-const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 20_000, 40_000, 60_000, 80_000, 100_000, 120_000, 140_000, 160_000, 180_000];
+const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000];
 
 /** Severity ranking used when picking the "worst" sample across the batch. */
 const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
