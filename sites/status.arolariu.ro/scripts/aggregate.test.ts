@@ -171,6 +171,74 @@ describe("rebuildFine", () => {
     expect(bucket.latency.p99).toBeDefined();
   });
 
+  it("fans out sampleLatenciesMs into bucket percentiles so p50/p75/p95/p99 differ for a single probe run", () => {
+    // This is the direct regression test for the all-percentiles-equal bug:
+    // ONE probe run in the bucket, but it persists a distribution of 10 per-sample
+    // latencies. Without the fan-out, `acc.latencies.length === 1` and every
+    // percentile collapses to the median. With the fan-out, p50 ≠ p95 ≠ p99.
+    const probes: ProbeResult[] = [
+      {
+        service: "arolariu.ro",
+        timestamp: "2026-04-19T14:00:00Z",
+        latencyMs: 55, // median of the array below
+        httpStatus: 200,
+        overall: "Healthy",
+        sampleCount: 10,
+        sampleLatenciesMs: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+    ];
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const {p50, p75, p95, p99} = agg.services[0]!.buckets[0]!.latency;
+    expect(p50).toBe(55);
+    expect(p75).toBe(78);
+    expect(p95).toBe(95);
+    expect(p99).toBe(99);
+    // Counts in the bucket still reflect probe-run cardinality, not sample cardinality.
+    expect(agg.services[0]!.buckets[0]!.probes).toEqual({healthy: 10, total: 10});
+  });
+
+  it("falls back to latencyMs when a legacy probe row has no sampleLatenciesMs", () => {
+    // Legacy rows (pre-schema-change) had only `latencyMs`. They should still
+    // aggregate, and — when only one such row is in the bucket — the percentile
+    // collapse is expected: that row predates the fix by design.
+    const probes: ProbeResult[] = [mkProbe("arolariu.ro", "2026-04-19T14:00:00Z", "Healthy", 200)];
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const {p50, p75, p95, p99} = agg.services[0]!.buckets[0]!.latency;
+    expect(p50).toBe(200);
+    expect(p99).toBe(200);
+    expect(p75).toBe(200);
+    expect(p95).toBe(200);
+  });
+
+  it("fans out sub-check sampleDurationsMs so sub-series percentiles differ within one probe run", () => {
+    const probes: ProbeResult[] = [
+      {
+        service: "api.arolariu.ro",
+        timestamp: "2026-04-19T14:00:00Z",
+        latencyMs: 55,
+        httpStatus: 200,
+        overall: "Healthy",
+        sampleCount: 10,
+        sampleLatenciesMs: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+        subChecks: [
+          {
+            name: "mssql",
+            status: "Healthy",
+            durationMs: 55,
+            sampleDurationsMs: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+          },
+        ],
+      },
+    ];
+    const agg = rebuildFine(probes, new Date("2026-04-19T15:00:00Z"));
+    const api = agg.services.find((s) => s.service === "api.arolariu.ro")!;
+    const mssqlBucket = api.subSeries!["mssql"]![0]!;
+    expect(mssqlBucket.latency.p50).toBe(55);
+    expect(mssqlBucket.latency.p75).toBe(78);
+    expect(mssqlBucket.latency.p95).toBe(95);
+    expect(mssqlBucket.latency.p99).toBe(99);
+  });
+
   it("computes expected 4 percentiles for a known input sequence", () => {
     // latencies = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     // linear interpolation between ranks (note: floating-point arithmetic

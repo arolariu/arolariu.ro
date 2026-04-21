@@ -154,7 +154,12 @@ describe("generateMockIncidents", () => {
     const result = generateMockIncidents();
     for (const incident of result.incidents) {
       if (incident.status === "open") {
-        expect(incident.resolvedAt).toBeUndefined();
+        // The `open` variant of the Incident union doesn't declare `resolvedAt`,
+        // so TS narrows the property away. This assertion exists to verify the
+        // *runtime* shape matches that type-level invariant — widen the view
+        // just for the read.
+        const maybeResolved = (incident as {resolvedAt?: string}).resolvedAt;
+        expect(maybeResolved).toBeUndefined();
       }
     }
   });

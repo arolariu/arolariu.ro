@@ -11,7 +11,7 @@ import {appendFileSync, existsSync, mkdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import {performance} from "node:perf_hooks";
 import {setTimeout as sleep} from "node:timers/promises";
-import type {HealthStatus, ProbeResult, ServiceId} from "../src/lib/types/status";
+import type {HealthStatus, ProbeResult, ServiceId, SubCheck} from "../src/lib/types/status";
 import {parseApiArolariuRo} from "./parsers/apiArolariuRo";
 import type {ProbeContext, RawResponse} from "./parsers/arolariuRo";
 import {parseArolariuRo} from "./parsers/arolariuRo";
@@ -26,16 +26,19 @@ import {parseExpArolariuRo} from "./parsers/expArolariuRo";
 const PROBE_TIMEOUT_MS = 10_000;
 
 /**
- * Delay BEFORE each sample fetch. Ten samples per service per 30-min cron,
- * spread over 3 minutes (immediate, +20s, +40s, …, +180s). The longer
- * window smooths out per-sample noise so bucket-level p95/p99 signal
- * becomes meaningful at the 30-minute fine tier.
+ * Delay BEFORE each sample fetch (inter-sample delta, NOT an absolute offset
+ * from probe start — see `probeOne`). Ten samples at a constant 20 s cadence:
+ * the first fires immediately, each subsequent sample waits 20 s after the
+ * previous one returns. Total sleep = 9 × 20 s = 180 s → the full run lasts
+ * ≈ 3 minutes + fetch time (≈190s worst case with PROBE_TIMEOUT_MS=10s on
+ * the final sample). Well under the 30-min cron cadence.
  *
- * Total wall-clock per service ≤ 180s + fetch time (≈190s worst case with
- * PROBE_TIMEOUT_MS=10s on the final sample). Still well under the 30-min
- * cron interval. Overridable in tests via `RunProbeOptions.sampleDelaysMs`.
+ * The 3-minute window is a deliberate trade-off: long enough to smooth out
+ * per-sample noise so bucket-level p95/p99 carry real signal, short enough
+ * to leave plenty of headroom on each cron tick. Overridable in tests via
+ * `RunProbeOptions.sampleDelaysMs`.
  */
-const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 20_000, 40_000, 60_000, 80_000, 100_000, 120_000, 140_000, 160_000, 180_000];
+const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000];
 
 /** Severity ranking used when picking the "worst" sample across the batch. */
 const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
@@ -118,6 +121,11 @@ async function singleFetch(cfg: ServiceConfig, nowIso: string): Promise<ProbeRes
  *     sample (preserves the most informative sub-check state + error text).
  *   - `latencyMs` is the median of the samples (noise-resistant; a single
  *     bad sample does not dominate).
+ *   - `sampleLatenciesMs` preserves the raw per-sample latencies so bucket
+ *     percentile math downstream has a real distribution, not a 1-element
+ *     array that collapses every percentile to the median.
+ *   - Each sub-check on the result carries `sampleDurationsMs` with its
+ *     per-sample durations across the run, for the same reason.
  *   - `timestamp` is the first sample's timestamp, so every service's
  *     aggregate aligns to the same 30-min bucket regardless of which
  *     sample was fastest/slowest.
@@ -127,9 +135,40 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
   /* v8 ignore next */
   if (first === undefined) throw new Error("aggregateSamples requires at least one sample");
   const worst = samples.reduce<ProbeResult>((w, s) => (STATUS_ORDER[s.overall] > STATUS_ORDER[w.overall] ? s : w), first);
-  const sortedLatencies = [...samples.map((s) => s.latencyMs)].sort((a, b) => a - b);
+  const sampleLatenciesMs = samples.map((s) => s.latencyMs);
+  const sortedLatencies = [...sampleLatenciesMs].sort((a, b) => a - b);
   /* v8 ignore next */
   const median = sortedLatencies[Math.floor(samples.length / 2)] ?? first.latencyMs;
+
+  // Collect per-sample sub-check durations keyed by sub-check name. We preserve
+  // the worst sample's sub-check array as the output skeleton (status + error
+  // description semantics match `overall`), then enrich each entry with the
+  // full array of durations seen across ALL samples under that name.
+  let enrichedSubChecks: readonly SubCheck[] | undefined;
+  if (worst.subChecks !== undefined) {
+    const durationsByName = new Map<string, number[]>();
+    for (const s of samples) {
+      if (s.subChecks === undefined) continue;
+      for (const sc of s.subChecks) {
+        let arr = durationsByName.get(sc.name);
+        /* v8 ignore next */
+        if (arr === undefined) {arr = []; durationsByName.set(sc.name, arr);}
+        arr.push(sc.durationMs);
+      }
+    }
+    enrichedSubChecks = worst.subChecks.map((sc) => {
+      const durations = durationsByName.get(sc.name);
+      // `durations` is always defined + non-empty here: `worst` is one of the
+      // samples we iterated above, so its sub-check names are guaranteed keys
+      // in `durationsByName`. The fallback exists only to keep the type
+      // checker happy.
+      /* v8 ignore next 3 */
+      return durations !== undefined && durations.length > 0
+        ? {...sc, sampleDurationsMs: durations}
+        : sc;
+    });
+  }
+
   const base: ProbeResult = {
     service: worst.service,
     timestamp: first.timestamp,
@@ -137,11 +176,11 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
     httpStatus: worst.httpStatus,
     overall: worst.overall,
     sampleCount: samples.length,
+    sampleLatenciesMs,
   };
   return {
     ...base,
-    /* v8 ignore next */
-    ...(worst.subChecks !== undefined && {subChecks: worst.subChecks}),
+    ...(enrichedSubChecks !== undefined && {subChecks: enrichedSubChecks}),
     /* v8 ignore next */
     ...(worst.error !== undefined && {error: worst.error}),
   };

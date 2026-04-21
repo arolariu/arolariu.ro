@@ -55,10 +55,23 @@ export interface SubCheck {
   readonly name: string;
   /** Sub-check health status contributing to the service overall status. */
   readonly status: HealthStatus;
-  /** Sub-check execution time in milliseconds. */
+  /**
+   * Representative sub-check execution time in milliseconds. When
+   * `sampleDurationsMs` is populated this is the worst sample's duration
+   * (aligned with how `overall` picks worst-sample status); when absent
+   * (legacy single-sample probes) it is simply the probe's only measurement.
+   */
   readonly durationMs: number;
   /** Optional human-readable message when degraded or unhealthy. */
   readonly description?: string;
+  /**
+   * Per-sample sub-check durations in milliseconds for this probe run.
+   * Present when the probe took multiple samples (current 10-sample-per-cron
+   * regime). Bucket-level percentile math MUST prefer this over `durationMs`
+   * when available — one `durationMs` per bucket collapses p50/p75/p95/p99
+   * to the same value.
+   */
+  readonly sampleDurationsMs?: readonly number[];
 }
 
 /**
@@ -82,6 +95,14 @@ export interface ProbeResult {
   readonly error?: string;
   /** Number of HTTP samples aggregated into this result. Defaults to 1 when absent (legacy). */
   readonly sampleCount?: number;
+  /**
+   * Raw per-sample latencies in milliseconds (one entry per HTTP sample
+   * taken in this cron run), preserved so bucket-level percentile math has
+   * a real distribution to work on instead of a single median. Absent on
+   * legacy single-sample rows. Consumers computing percentiles MUST prefer
+   * this when present and fall back to `[latencyMs]` otherwise.
+   */
+  readonly sampleLatenciesMs?: readonly number[];
 }
 
 /**
