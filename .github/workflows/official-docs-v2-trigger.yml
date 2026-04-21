@@ -1,0 +1,58 @@
+name: Docs v2 — build & deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sites/docs.arolariu.ro-v2/**'
+      - 'sites/api.arolariu.ro/src/**'
+      - 'sites/arolariu.ro/src/**'
+      - 'packages/components/src/**'
+      - 'sites/exp.arolariu.ro/**'
+      - 'docs/**'
+      - 'scripts/docs-assemble*.ts'
+      - 'typedoc.*.json'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/official-docs-v2-trigger.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and deploy docs-v2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: 'npm'}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.0.x'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
+      - name: Install Python docs dependencies
+        run: python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
+
+      - name: Assemble docs
+        run: npm run docs:assemble
+
+      - name: Build Docusaurus
+        run: npm run build:docs-v2
+
+      - name: Deploy to Azure Static Web Apps (staging slot)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_V2 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: 'sites/docs.arolariu.ro-v2/build'
+          skip_app_build: true
+          deployment_environment: staging
