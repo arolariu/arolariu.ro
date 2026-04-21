@@ -22,21 +22,21 @@
     "probe:all": "tsx scripts/probe.ts && tsx scripts/aggregate.ts && tsx scripts/detectIncidents.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@sveltejs/kit": "^2.57.1",
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "@tailwindcss/vite": "^4.2.2",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/svelte": "^5.3.1",
-    "@types/node": "^24.12.0",
-    "jsdom": "^29.0.2",
-    "svelte": "^5.55.4",
-    "svelte-adapter-azure-swa": "^0.22.1",
-    "svelte-check": "^4.4.6",
-    "tailwindcss": "^4.2.2",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
-    "vite": "^8.0.8",
-    "vitest": "^4.1.4"
+    "@playwright/test": "*",
+    "@sveltejs/kit": "*",
+    "@sveltejs/vite-plugin-svelte": "*",
+    "@tailwindcss/vite": "*",
+    "@testing-library/jest-dom": "*",
+    "@testing-library/svelte": "*",
+    "@types/node": "*",
+    "jsdom": "*",
+    "svelte": "*",
+    "svelte-adapter-azure-swa": "*",
+    "svelte-check": "*",
+    "tailwindcss": "*",
+    "tsx": "*",
+    "typescript": "*",
+    "vite": "*",
+    "vitest": "*"
   }
 }
