@@ -56,6 +56,41 @@ export function cleanGenerated(): void {
 
 const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
 const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
+const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
+const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
+
+type DotnetProject = {
+  readonly csproj: string;
+  readonly assemblyName: string;
+  readonly binRelative: string;
+};
+
+const DOTNET_PROJECTS: readonly DotnetProject[] = [
+  {csproj: 'src/Common/arolariu.Backend.Common.csproj', assemblyName: 'arolariu.Backend.Common', binRelative: 'src/Common/bin/Release/net10.0'},
+  {csproj: 'src/Core/arolariu.Backend.Core.csproj', assemblyName: 'arolariu.Backend.Core', binRelative: 'src/Core/bin/Release/net10.0'},
+  {csproj: 'src/Core.Auth/arolariu.Backend.Core.Auth.csproj', assemblyName: 'arolariu.Backend.Core.Auth', binRelative: 'src/Core.Auth/bin/Release/net10.0'},
+  {csproj: 'src/Invoices/arolariu.Backend.Domain.Invoices.csproj', assemblyName: 'arolariu.Backend.Domain.Invoices', binRelative: 'src/Invoices/bin/Release/net10.0'},
+];
+
+async function runDotnetInternals(): Promise<void> {
+  await runCommand('dotnet', ['build', 'src/Core/arolariu.Backend.Core.csproj', '-c', 'Release'], API_ROOT);
+  mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
+  for (const proj of DOTNET_PROJECTS) {
+    const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
+    mkdirSync(outDir, {recursive: true});
+    const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
+    await runCommand(
+      'dotnet',
+      ['tool', 'run', 'DefaultDocumentation', '--',
+       '--AssemblyFilePath', dll,
+       '--OutputDirectoryPath', outDir,
+       '--FileNameFactory', 'Name',
+       '--GeneratedPages', 'Namespaces'],
+      API_ROOT,
+    );
+  }
+  assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
+}
 
 async function runTypedoc(): Promise<void> {
   await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT);
@@ -84,9 +119,10 @@ async function runPydocMarkdown(): Promise<void> {
 
 async function main(): Promise<void> {
   cleanGenerated();
-  await Promise.all([runTypedoc(), runPydocMarkdown()]);
+  await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
   await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
   await normalizeDirectory(PYTHON_DIR, {slugRoot: '/internals/experimental'});
+  await normalizeDirectory(DOTNET_INTERNALS_DIR, {slugRoot: '/internals/dotnet'});
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 
