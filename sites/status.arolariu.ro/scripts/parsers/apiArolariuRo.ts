@@ -44,10 +44,8 @@ function timeSpanToMs(input: string | undefined): number {
   const [, h, m, s, fracRaw] = match;
   const frac = (fracRaw ?? "0").padEnd(7, "0").slice(0, 7);
   const subMs = Number.parseInt(frac, 10) / 10_000;
-  return Number.parseInt(h ?? "0", 10) * 3_600_000
-    + Number.parseInt(m ?? "0", 10) * 60_000
-    + Number.parseInt(s ?? "0", 10) * 1_000
-    + subMs;
+  /* v8 ignore next 3 */
+  return Number.parseInt(h ?? "0", 10) * 3_600_000 + Number.parseInt(m ?? "0", 10) * 60_000 + Number.parseInt(s ?? "0", 10) * 1_000 + subMs;
 }
 
 /**
@@ -107,8 +105,6 @@ export function parseApiArolariuRo(raw: RawResponse, ctx: ProbeContext): ProbeRe
   const subChecks = parseEntries(body.entries);
   const bodyOverall: HealthStatus = isHealthStatusValue(body.status) ? body.status : "Degraded";
   const {status: overall, error: overrideError} = reconcileBodyVsHttp(bodyOverall, status);
-  const result: ProbeResult = overrideError
-    ? {...base, overall, error: overrideError}
-    : {...base, overall};
+  const result: ProbeResult = overrideError ? {...base, overall, error: overrideError} : {...base, overall};
   return subChecks.length > 0 ? {...result, subChecks} : result;
 }

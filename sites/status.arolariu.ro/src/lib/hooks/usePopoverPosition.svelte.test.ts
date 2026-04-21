@@ -63,6 +63,28 @@ describe("usePopoverPosition (reactive hook)", () => {
     vi.unstubAllGlobals();
   });
 
+  it("returns zero position when active but anchor is null", () => {
+    vi.stubGlobal("window", {
+      scrollX: 0,
+      scrollY: 0,
+      innerWidth: 1200,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+
+    const root = $effect.root(() => {
+      const getPos = usePopoverPosition(
+        () => null, // anchor is null
+        () => null,
+        () => true, // active = true
+      );
+      flushSync();
+      // Recompute runs but exits early at `if (!el) return`
+      expect(getPos()).toEqual({top: 0, left: 0, flipHoriz: false});
+    });
+    root();
+  });
+
   it("returns initial zero position when inactive", () => {
     const root = $effect.root(() => {
       const anchor = () => null;

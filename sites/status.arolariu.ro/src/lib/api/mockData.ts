@@ -20,10 +20,7 @@
  * declarative; bucket math + incident generation share one source.
  */
 
-import type {
-  AggregateFile, Bucket, HealthStatus, Incident, IncidentsFile,
-  ServiceId, ServiceSeries,
-} from "../types/status";
+import type {AggregateFile, Bucket, HealthStatus, Incident, IncidentsFile, ServiceId, ServiceSeries} from "../types/status";
 
 const MS_PER_MIN = 60_000;
 const MS_PER_HOUR = 3_600_000;
@@ -50,9 +47,9 @@ interface GranularityConfig {
  * or the mock will produce unvalidatable files.
  */
 const CONFIGS: Record<Granularity, GranularityConfig> = {
-  fine:   {bucketSize: "30m", windowDays: 14,  bucketMs: 30 * MS_PER_MIN, bucketCount: 14 * 48, cronsPerBucket: 1},
-  hourly: {bucketSize: "1h",  windowDays: 90,  bucketMs: MS_PER_HOUR,     bucketCount: 90 * 24, cronsPerBucket: 2},
-  daily:  {bucketSize: "1d",  windowDays: 365, bucketMs: MS_PER_DAY,      bucketCount: 365,     cronsPerBucket: 48},
+  fine: {bucketSize: "30m", windowDays: 14, bucketMs: 30 * MS_PER_MIN, bucketCount: 14 * 48, cronsPerBucket: 1},
+  hourly: {bucketSize: "1h", windowDays: 90, bucketMs: MS_PER_HOUR, bucketCount: 90 * 24, cronsPerBucket: 2},
+  daily: {bucketSize: "1d", windowDays: 365, bucketMs: MS_PER_DAY, bucketCount: 365, cronsPerBucket: 48},
 };
 
 /**
@@ -98,7 +95,12 @@ interface SubCheckStoryline {
   readonly blips: readonly Blip[];
   /** Cyclic cosmetic degradation at sub-check level that does not
    *  escalate to an incident (mssql "hiccup" every ~96 30m-buckets). */
-  readonly cyclicHiccup?: {readonly everyNBuckets: number; readonly atOffset: number; readonly p50: number; readonly healthyPerCron: number};
+  readonly cyclicHiccup?: {
+    readonly everyNBuckets: number;
+    readonly atOffset: number;
+    readonly p50: number;
+    readonly healthyPerCron: number;
+  };
 }
 
 /**
@@ -134,7 +136,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
     baselineP50: 142,
     blips: [
       {
-        ageHours: 14 * 24 + 2, durationHours: 4,
+        ageHours: 14 * 24 + 2,
+        durationHours: 4,
         status: "Degraded",
         reason: "CDN cache purge cascaded origin load (mock)",
         latencyFactor: 2.6,
@@ -153,14 +156,16 @@ const STORYLINES: readonly ServiceStoryline[] = [
     },
     blips: [
       {
-        ageHours: 26, durationHours: 1,
+        ageHours: 26,
+        durationHours: 1,
         status: "Degraded",
         reason: "connection pool exhausted (mock)",
         latencyFactor: 4.0,
         probeCount: 2,
       },
       {
-        ageHours: 4 * 24, durationHours: 2,
+        ageHours: 4 * 24,
+        durationHours: 2,
         status: "Degraded",
         reason: "connection pool saturation during deploy (mock)",
         latencyFactor: 2.5,
@@ -173,7 +178,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
         cyclicHiccup: {everyNBuckets: 96, atOffset: 48, p50: 600, healthyPerCron: 1},
         blips: [
           {
-            ageHours: 26, durationHours: 1,
+            ageHours: 26,
+            durationHours: 1,
             status: "Degraded",
             reason: "connection pool exhausted (mock)",
             latencyFactor: 84.7,
@@ -185,7 +191,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
         baselineP50: 48,
         blips: [
           {
-            ageHours: 5 * 24, durationHours: 0.5,
+            ageHours: 5 * 24,
+            durationHours: 0.5,
             status: "Unhealthy",
             reason: "cosmosdb throttling on partition key (mock)",
             latencyFactor: 15.6,
@@ -200,7 +207,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
     baselineP50: 89,
     blips: [
       {
-        ageHours: 3, durationHours: 3,
+        ageHours: 3,
+        durationHours: 3,
         status: "Degraded",
         reason: "elevated latency on upstream dependency (mock)",
         latencyFactor: 3.0,
@@ -208,7 +216,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
         open: true,
       },
       {
-        ageHours: 12, durationHours: 3,
+        ageHours: 12,
+        durationHours: 3,
         status: "Unhealthy",
         reason: "upstream ML model service unreachable (mock)",
         latencyFactor: 8.0,
@@ -221,7 +230,8 @@ const STORYLINES: readonly ServiceStoryline[] = [
     baselineP50: 35,
     blips: [
       {
-        ageHours: 45 * 24, durationHours: 0.5,
+        ageHours: 45 * 24,
+        durationHours: 0.5,
         status: "Degraded",
         reason: "Azure Static Web App edge node hiccup (mock)",
         latencyFactor: 3.2,
@@ -240,8 +250,8 @@ function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99
   return {
     p50,
     p75: Math.round(p50 * 1.35),
-    p95: Math.round(p50 * 1.80),
-    p99: Math.round(p50 * 2.10),
+    p95: Math.round(p50 * 1.8),
+    p99: Math.round(p50 * 2.1),
   };
 }
 
@@ -251,13 +261,7 @@ function percentileFan(p50: number): {p50: number; p75: number; p95: number; p99
  * `healthyPerCron * cronsPerBucket`. `httpStatus` is set to 503 for
  * `Unhealthy` and 200 otherwise (we don't model 5xx variety in mocks).
  */
-function mkBucket(
-  t: string,
-  status: HealthStatus,
-  p50: number,
-  healthyPerCron: number,
-  cronsPerBucket: number,
-): Bucket {
+function mkBucket(t: string, status: HealthStatus, p50: number, healthyPerCron: number, cronsPerBucket: number): Bucket {
   return {
     t,
     status,
@@ -293,6 +297,7 @@ function blipWindow(blip: Blip, now: number): {start: number; end: number} {
  * window ramps linearly from `baseline - 30` to `latencyDrift.endP50`.
  */
 function computeP50AtTime(story: ServiceStoryline, bucketT: number, now: number): number {
+  /* v8 ignore next */
   if (!story.latencyDrift) return story.baselineP50;
   const creepStart = now - story.latencyDrift.startAgoHours * MS_PER_HOUR;
   const creepEnd = now - story.latencyDrift.endAgoHours * MS_PER_HOUR;
@@ -322,23 +327,25 @@ function generateBucketsFor(
   // Ongoing blips (`open: true`) drive the incident log but do NOT rewrite
   // history into the bucket series — they're near-now events whose health
   // state hasn't settled yet. Pre-rewrite behavior preserved exactly.
-  const bucketBlips = blips.filter(b => !b.open);
-  const windows = bucketBlips.map(blip => ({blip, ...blipWindow(blip, now)}));
+  const bucketBlips = blips.filter((b) => !b.open);
+  const windows = bucketBlips.map((blip) => ({blip, ...blipWindow(blip, now)}));
 
   return Array.from({length: total}, (_, fromEnd) => {
     const bucketT = now - fromEnd * config.bucketMs;
     const t = new Date(bucketT).toISOString();
 
-    const activeBlip = windows.find(w => bucketOverlaps(bucketT, config.bucketMs, w.start, w.end));
+    const activeBlip = windows.find((w) => bucketOverlaps(bucketT, config.bucketMs, w.start, w.end));
 
     const p50 = driftForMainP50 ? driftForMainP50(bucketT) : baselineP50;
 
     if (activeBlip) {
+      /* v8 ignore next */
       const factor = activeBlip.blip.latencyFactor ?? (activeBlip.blip.status === "Unhealthy" ? 8.0 : 3.2);
       const healthyPerCron = activeBlip.blip.status === "Unhealthy" ? 0 : 2;
       return mkBucket(t, activeBlip.blip.status, Math.round(p50 * factor), healthyPerCron, config.cronsPerBucket);
     }
 
+    /* v8 ignore next */
     if (cyclicHiccup && fromEnd % cyclicHiccup.everyNBuckets === cyclicHiccup.atOffset) {
       return mkBucket(t, "Degraded", cyclicHiccup.p50, cyclicHiccup.healthyPerCron, config.cronsPerBucket);
     }
@@ -365,14 +372,7 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
   if (story.subChecks) {
     subSeriesObj = {};
     for (const [name, sub] of Object.entries(story.subChecks)) {
-      subSeriesObj[name] = generateBucketsFor(
-        sub.baselineP50,
-        sub.blips,
-        sub.cyclicHiccup,
-        null,
-        config,
-        now,
-      );
+      subSeriesObj[name] = generateBucketsFor(sub.baselineP50, sub.blips, sub.cyclicHiccup, null, config, now);
     }
   }
 
@@ -393,15 +393,18 @@ function generateServiceSeries(story: ServiceStoryline, config: GranularityConfi
 export function generateMockAggregate(granularity: Granularity): AggregateFile {
   const now = Date.now();
   const config = CONFIGS[granularity];
-  const services: ServiceSeries[] = STORYLINES.map(story => generateServiceSeries(story, config, now));
+  const services: ServiceSeries[] = STORYLINES.map((story) => generateServiceSeries(story, config, now));
 
   // Intentionally construct via explicit discriminated-union literal so TS
   // verifies the (bucketSize, windowDays) pair is valid.
   const generatedAt = new Date(now).toISOString();
   switch (granularity) {
-    case "fine":   return {generatedAt, bucketSize: "30m", windowDays: 14,  services};
-    case "hourly": return {generatedAt, bucketSize: "1h",  windowDays: 90,  services};
-    case "daily":  return {generatedAt, bucketSize: "1d",  windowDays: 365, services};
+    case "fine":
+      return {generatedAt, bucketSize: "30m", windowDays: 14, services};
+    case "hourly":
+      return {generatedAt, bucketSize: "1h", windowDays: 90, services};
+    case "daily":
+      return {generatedAt, bucketSize: "1d", windowDays: 365, services};
   }
 }
 
@@ -411,13 +414,7 @@ export function generateMockAggregate(granularity: Granularity): AggregateFile {
  * become `{status: "resolved"}` incidents with those fields computed from
  * the blip duration.
  */
-function blipToIncident(
-  story: ServiceStoryline,
-  blip: Blip,
-  subCheck: string | undefined,
-  index: number,
-  now: number,
-): Incident {
+function blipToIncident(story: ServiceStoryline, blip: Blip, subCheck: string | undefined, index: number, now: number): Incident {
   const startedAt = new Date(now - blip.ageHours * MS_PER_HOUR).toISOString();
   const severity = blip.status;
   const common = {

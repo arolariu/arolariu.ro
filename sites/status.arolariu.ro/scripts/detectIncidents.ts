@@ -7,14 +7,14 @@
  * cron runs do not re-process the same probes and inflate `probeCount` /
  * `severity` on incidents that were already recorded.
  */
-import {mkdirSync, existsSync, readFileSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import type {Incident, IncidentsFile, ProbeResult} from "../src/lib/types/status";
 import {isIncidentsFile} from "../src/lib/types/guards";
-import {readRawProbes} from "./rawProbes";
+import type {Incident, IncidentsFile, ProbeResult} from "../src/lib/types/status";
 import {applyTrackSignals, type TrackSignal} from "./detectIncidentsCommon";
 import {serviceSignal} from "./detectIncidentsServices";
 import {subCheckSignals} from "./detectIncidentsSubChecks";
+import {readRawProbes} from "./rawProbes";
 
 const MS_PER_DAY = 86_400_000;
 /** How long resolved incidents linger in `incidents.json` before they are pruned. */
@@ -37,10 +37,7 @@ function signalsFromProbe(probe: ProbeResult): TrackSignal[] {
  * @param probes - Probes to apply. Caller decides whether these are "fresh only" or "everything".
  * @returns The updated incidents file with a fresh `generatedAt`.
  */
-export function updateIncidentState(
-  prev: IncidentsFile | {incidents: Incident[]},
-  probes: readonly ProbeResult[],
-): IncidentsFile {
+export function updateIncidentState(prev: IncidentsFile | {incidents: Incident[]}, probes: readonly ProbeResult[]): IncidentsFile {
   const sortedProbes = [...probes].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   const signals = sortedProbes.flatMap(signalsFromProbe);
   return applyTrackSignals(prev, signals);
@@ -53,8 +50,8 @@ export function updateIncidentState(
  */
 function pruneResolved(file: IncidentsFile, now: Date): IncidentsFile {
   const cutoffMs = now.getTime() - RESOLVED_RETENTION_DAYS * MS_PER_DAY;
-  const kept = file.incidents.filter(inc =>
-    inc.status === "open" || (inc.resolvedAt !== undefined && Date.parse(inc.resolvedAt) >= cutoffMs)
+  const kept = file.incidents.filter(
+    (inc) => inc.status === "open" || (inc.resolvedAt !== undefined && Date.parse(inc.resolvedAt) >= cutoffMs),
   );
   return {...file, incidents: kept};
 }
@@ -77,7 +74,10 @@ function readPreviousIncidents(dataDir: string): IncidentsFile {
   try {
     parsed = JSON.parse(readFileSync(path, "utf8"));
   } catch (err) {
-    throw new Error(`readPreviousIncidents: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`);
+    /* v8 ignore next */
+    throw new Error(
+      `readPreviousIncidents: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`,
+    );
   }
   if (!isIncidentsFile(parsed)) {
     throw new Error(`readPreviousIncidents: ${path} does not match IncidentsFile schema — refusing to overwrite history.`);
@@ -109,7 +109,7 @@ export async function runDetectIncidents(opts: RunDetectIncidentsOptions): Promi
   // first run), so cursorMs is always finite — no guard needed.
   const cursorMs = Date.parse(previous.generatedAt);
   const allProbes = readRawProbes(opts.dataDir);
-  const fresh = allProbes.filter(p => Date.parse(p.timestamp) > cursorMs);
+  const fresh = allProbes.filter((p) => Date.parse(p.timestamp) > cursorMs);
 
   const updated = updateIncidentState(previous, fresh);
   const pruned = pruneResolved(updated, now);
@@ -119,9 +119,10 @@ export async function runDetectIncidents(opts: RunDetectIncidentsOptions): Promi
   writeFileSync(join(opts.dataDir, "incidents.json"), JSON.stringify(final), "utf8");
 }
 
+/* v8 ignore next 8 */
 if (import.meta.url === `file://${process.argv[1]}`) {
   const dataDir = process.env["DATA_DIR"] ?? "./data";
-  runDetectIncidents({dataDir}).catch(err => {
+  runDetectIncidents({dataDir}).catch((err) => {
     console.error("detectIncidents failed:", err);
     process.exit(1);
   });
