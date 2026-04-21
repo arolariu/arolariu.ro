@@ -86,6 +86,14 @@
   },
   "devDependencies": {
     "@arolariu/components": "2.1.0",
+    "@docusaurus/core": "3.10.0",
+    "@docusaurus/module-type-aliases": "3.10.0",
+    "@docusaurus/preset-classic": "3.10.0",
+    "@docusaurus/theme-classic": "3.10.0",
+    "@docusaurus/tsconfig": "3.10.0",
+    "@docusaurus/types": "3.10.0",
+    "@easyops-cn/docusaurus-search-local": "0.52.1",
+    "@mdx-js/react": "3.1.1",
     "@azure/identity": "4.13.1",
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.32",
     "@azure/storage-blob": "12.31.0",
@@ -146,6 +154,8 @@
     "cross-env": "10.1.0",
     "cssnano": "7.1.7",
     "dexie": "4.4.2",
+    "docusaurus-plugin-openapi-docs": "4.5.1",
+    "docusaurus-theme-openapi-docs": "4.5.1",
     "embla-carousel-react": "8.6.0",
     "eslint": "9.39.2",
     "eslint-plugin-jsx-a11y": "6.10.2",
@@ -183,6 +193,7 @@
     "prettier-plugin-organize-imports": "4.3.0",
     "prettier-plugin-svelte": "3.5.1",
     "prettier-plugin-tailwindcss": "0.7.2",
+    "prism-react-renderer": "2.4.1",
     "react": "19.2.5",
     "react-day-picker": "9.14.0",
     "react-dom": "19.2.5",
@@ -216,6 +227,7 @@
   },
   "overrides": {
     "typescript": "6.0.3",
+    "webpackbar": "7.0.0",
     "eslint-plugin-react-hooks": {
       "zod-validation-error": "^4.0.2"
     }

@@ -1,0 +1,42 @@
+{
+  "name": "@arolariu/docs-v2",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start --port 3100",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docusaurus/core": "*",
+    "@docusaurus/preset-classic": "*",
+    "@docusaurus/theme-classic": "*",
+    "@easyops-cn/docusaurus-search-local": "*",
+    "@mdx-js/react": "*",
+    "clsx": "*",
+    "docusaurus-plugin-openapi-docs": "*",
+    "docusaurus-theme-openapi-docs": "*",
+    "prism-react-renderer": "*",
+    "react": "*",
+    "react-dom": "*"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "*",
+    "@docusaurus/tsconfig": "*",
+    "@docusaurus/types": "*"
+  },
+  "browserslist": {
+    "production": [">0.5%", "not dead", "not op_mini all"],
+    "development": ["last 3 chrome version", "last 3 firefox version", "last 5 safari version"]
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

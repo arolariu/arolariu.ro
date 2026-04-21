@@ -1,0 +1,54 @@
+{
+  "name": "@arolariu/docs-v2",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/docs.arolariu.ro-v2",
+  "projectType": "application",
+  "targets": {
+    "assemble": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/docs-assemble.ts",
+        "cwd": "."
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx docusaurus build",
+        "cwd": "sites/docs.arolariu.ro-v2"
+      },
+      "outputs": ["{projectRoot}/build"],
+      "dependsOn": ["assemble"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx docusaurus start --port 3100",
+        "cwd": "sites/docs.arolariu.ro-v2"
+      },
+      "dependsOn": ["assemble"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx docusaurus serve",
+        "cwd": "sites/docs.arolariu.ro-v2"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -e \"for(const d of ['_generated','build','.docusaurus']) require('fs').rmSync(d,{recursive:true,force:true})\"",
+        "cwd": "sites/docs.arolariu.ro-v2"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsc --noEmit",
+        "cwd": "sites/docs.arolariu.ro-v2"
+      }
+    }
+  },
+  "tags": ["domain:docs", "scope:docs", "type:app", "platform:node"]
+}
