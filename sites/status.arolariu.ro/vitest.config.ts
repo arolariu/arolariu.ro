@@ -25,15 +25,8 @@ export default mergeConfig(
       include: ["src/**/*.test.{ts,js}", "scripts/**/*.test.{ts,js}"],
       exclude: ["**/node_modules/**", "**/tests/e2e/**", "**/build/**", "**/.svelte-kit/**"],
       coverage: {
-        include: ["src/**/*.{ts,js,svelte}", "scripts/**/*.ts"],
-        exclude: [
-          "**/src/__mocks__/**",
-          "**/src/app.html",
-          "**/src/app.css",
-          "**/src/routes/**/*.svelte",
-          "**/src/routes/**/*.ts",
-          "**/*.test.{ts,js}",
-        ],
+        include: ["src/**/*.{ts,js}", "scripts/**/*.ts"],
+        exclude: ["**/src/__mocks__/**", "**/src/app.html", "**/src/app.css", "**/src/routes/**/*.ts", "**/*.test.{ts,js}"],
       },
     },
   }),

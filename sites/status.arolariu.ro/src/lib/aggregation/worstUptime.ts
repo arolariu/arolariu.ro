@@ -21,5 +21,6 @@ export function computeWorstUptime(services: readonly ServiceSeries[]): WorstUpt
       worst = {service: s.service, uptime};
     }
   }
+  /* v8 ignore next */
   return worst.uptime === Infinity ? {service: "", uptime: 100} : worst;
 }

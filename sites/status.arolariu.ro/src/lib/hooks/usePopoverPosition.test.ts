@@ -1,4 +1,4 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {computePopoverPosition} from "./usePopoverPosition.svelte";
 
 function mkRect(top: number, left: number, width: number) {
@@ -6,7 +6,9 @@ function mkRect(top: number, left: number, width: number) {
 }
 
 const viewport = (scrollX = 0, scrollY = 0, innerWidth = 1200) => ({
-  scrollX, scrollY, innerWidth,
+  scrollX,
+  scrollY,
+  innerWidth,
 });
 
 describe("computePopoverPosition", () => {

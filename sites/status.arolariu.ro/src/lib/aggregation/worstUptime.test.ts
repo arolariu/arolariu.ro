@@ -1,6 +1,6 @@
-import {describe, it, expect} from "vitest";
-import {computeWorstUptime} from "./worstUptime";
+import {describe, expect, it} from "vitest";
 import type {ServiceSeries} from "../types/status";
+import {computeWorstUptime} from "./worstUptime";
 
 function svc(service: string, healthy: number, total: number): ServiceSeries {
   return {
@@ -26,6 +26,13 @@ describe("computeWorstUptime", () => {
 
   it("breaks ties by service name alphabetically", () => {
     const res = computeWorstUptime([svc("arolariu.ro", 95, 100), svc("api.arolariu.ro", 95, 100)]);
+    expect(res.service).toBe("api.arolariu.ro");
+  });
+
+  it("keeps first-seen when later service has equal uptime but alphabetically larger name", () => {
+    // api.arolariu.ro comes first (worst=api), then arolariu.ro has equal uptime
+    // but "arolariu.ro" > "api.arolariu.ro" so tie-breaking is false → api stays worst
+    const res = computeWorstUptime([svc("api.arolariu.ro", 95, 100), svc("arolariu.ro", 95, 100)]);
     expect(res.service).toBe("api.arolariu.ro");
   });
 });

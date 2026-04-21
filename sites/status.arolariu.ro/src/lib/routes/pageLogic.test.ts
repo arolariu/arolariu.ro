@@ -1,13 +1,8 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import type {AggregateFile, ServiceSeries} from "../types/status";
 import {BUCKET_SIZE_TO_MS} from "../types/status";
-import {
-  SERVICE_DISPLAY_ORDER,
-  bucketDurationMsFor,
-  orderedServices,
-  showWeekdayChart,
-} from "./pageLogic";
 import {shouldIgnoreKeydown} from "./keyboardShortcuts";
+import {SERVICE_DISPLAY_ORDER, bucketDurationMsFor, orderedServices, showWeekdayChart} from "./pageLogic";
 
 function mkSeries(service: ServiceSeries["service"]): ServiceSeries {
   return {service, buckets: []};
@@ -31,7 +26,7 @@ describe("orderedServices", () => {
     // Input order intentionally reversed relative to SERVICE_DISPLAY_ORDER.
     const reversed = [...SERVICE_DISPLAY_ORDER].reverse().map(mkSeries);
     const sorted = orderedServices(mkFile(reversed));
-    expect(sorted.map(s => s.service)).toEqual([...SERVICE_DISPLAY_ORDER]);
+    expect(sorted.map((s) => s.service)).toEqual([...SERVICE_DISPLAY_ORDER]);
   });
 
   it("is stable — does not mutate the input file", () => {
@@ -40,6 +35,14 @@ describe("orderedServices", () => {
     orderedServices(file);
     // Original array retains its shuffled order — sort was on a copy.
     expect(file.services[0]!.service).toBe("cv.arolariu.ro");
+  });
+
+  it("pushes unknown service IDs to the end", () => {
+    // "unknown.service" is not in SERVICE_DISPLAY_ORDER → idx === -1 branch
+    const services = [mkSeries("unknown.service" as ServiceId), mkSeries("arolariu.ro")];
+    const sorted = orderedServices(mkFile(services));
+    expect(sorted[0]!.service).toBe("arolariu.ro");
+    expect(sorted[sorted.length - 1]!.service).toBe("unknown.service");
   });
 });
 

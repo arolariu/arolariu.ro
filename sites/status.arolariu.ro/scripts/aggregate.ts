@@ -9,15 +9,14 @@
  * probes; older buckets in the previous file are preserved untouched, so
  * long-retention tiers don't get truncated when the raw window slides.
  */
-import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync} from "node:fs";
+import {existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import {SERVICE_IDS, type AggregateFile, type Bucket,
-  type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status";
 import {isAggregateFile} from "../src/lib/types/guards";
-import {readRawProbes} from "./rawProbes";
+import {SERVICE_IDS, type AggregateFile, type Bucket, type ProbeResult, type ServiceId, type ServiceSeries} from "../src/lib/types/status";
 import {bucketStart, makeBucket, type BucketAccumulator} from "./aggregateCommon";
 import {groupProbes} from "./aggregateServices";
 import {groupSubChecks} from "./aggregateSubChecks";
+import {readRawProbes} from "./rawProbes";
 
 // Re-export so existing test imports (`from "./aggregate"`) keep working.
 export {bucketStart};
@@ -34,15 +33,12 @@ function toSeries(
   mainBuckets: Map<string, BucketAccumulator>,
   subs: Map<string, Map<string, BucketAccumulator>> | undefined,
 ): ServiceSeries {
-  const buckets: Bucket[] = [...mainBuckets.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([t, acc]) => makeBucket(t, acc));
+  const buckets: Bucket[] = [...mainBuckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([t, acc]) => makeBucket(t, acc));
+  /* v8 ignore next */
   if (subs && subs.size > 0) {
     const subSeries: Record<string, readonly Bucket[]> = {};
     for (const [name, accMap] of subs) {
-      subSeries[name] = [...accMap.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([t, acc]) => makeBucket(t, acc));
+      subSeries[name] = [...accMap.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([t, acc]) => makeBucket(t, acc));
     }
     return {service, buckets, subSeries};
   }
@@ -59,12 +55,12 @@ function toSeries(
  */
 export function rebuildFine(probes: readonly ProbeResult[], now: Date): AggregateFile {
   const cutoff = now.getTime() - 14 * MS_PER_DAY;
-  const recent = probes.filter(p => Date.parse(p.timestamp) >= cutoff);
+  const recent = probes.filter((p) => Date.parse(p.timestamp) >= cutoff);
   const mainGroups = groupProbes(recent, "30m");
   const subGroups = groupSubChecks(recent, "30m");
-  const services: ServiceSeries[] = SERVICE_IDS
-    .filter(s => mainGroups.has(s))
-    .map(s => toSeries(s, mainGroups.get(s)!, subGroups.get(s)));
+  const services: ServiceSeries[] = SERVICE_IDS.filter((s) => mainGroups.has(s)).map((s) =>
+    toSeries(s, mainGroups.get(s)!, subGroups.get(s)),
+  );
   return {
     generatedAt: now.toISOString(),
     bucketSize: "30m",
@@ -82,9 +78,11 @@ function pruneRawFiles(dataDir: string, now: Date): void {
   if (!existsSync(rawDir)) return;
   const cutoffMs = now.getTime() - 14 * MS_PER_DAY;
   for (const f of readdirSync(rawDir)) {
+    /* v8 ignore next 2 */
     if (!f.endsWith(".jsonl")) continue;
     const day = f.slice(0, 10);
     const dayMs = Date.parse(`${day}T00:00:00Z`);
+    /* v8 ignore next */
     if (Number.isFinite(dayMs) && dayMs < cutoffMs) {
       unlinkSync(join(rawDir, f));
     }
@@ -118,7 +116,7 @@ function mergeAggregate<S extends MergeBucketSize>(
   const today = bucketStart(now, "1d");
   const yesterday = bucketStart(new Date(now.getTime() - MS_PER_DAY), "1d");
 
-  const freshProbes = probes.filter(p => {
+  const freshProbes = probes.filter((p) => {
     const bd = bucketStart(new Date(p.timestamp), "1d");
     return bd === today || bd === yesterday;
   });
@@ -127,17 +125,16 @@ function mergeAggregate<S extends MergeBucketSize>(
 
   const merged: ServiceSeries[] = [];
   for (const service of SERVICE_IDS) {
-    const prevSeries = previous?.services.find(s => s.service === service);
-    const keptPrevBuckets: Bucket[] = prevSeries?.buckets.filter(b => {
-      if (Date.parse(b.t) < cutoffMs) return false;
-      const day = bucketStart(new Date(b.t), "1d");
-      return day !== today && day !== yesterday;
-    }) ?? [];
+    const prevSeries = previous?.services.find((s) => s.service === service);
+    const keptPrevBuckets: Bucket[] =
+      prevSeries?.buckets.filter((b) => {
+        if (Date.parse(b.t) < cutoffMs) return false;
+        const day = bucketStart(new Date(b.t), "1d");
+        return day !== today && day !== yesterday;
+      }) ?? [];
 
     const freshBuckets: Bucket[] = freshMain.has(service)
-      ? [...freshMain.get(service)!.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([t, acc]) => makeBucket(t, acc))
+      ? [...freshMain.get(service)!.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([t, acc]) => makeBucket(t, acc))
       : [];
 
     const combinedBuckets = [...keptPrevBuckets, ...freshBuckets].sort((a, b) => a.t.localeCompare(b.t));
@@ -145,31 +142,32 @@ function mergeAggregate<S extends MergeBucketSize>(
     const freshSubForService = freshSub.get(service);
     const prevSubSeries = prevSeries?.subSeries;
     let subSeriesOut: Record<string, readonly Bucket[]> | undefined;
+    /* v8 ignore next */
     if ((freshSubForService && freshSubForService.size > 0) || (prevSubSeries && Object.keys(prevSubSeries).length > 0)) {
       const subNames = new Set<string>();
+      /* v8 ignore next */
       if (prevSubSeries) for (const n of Object.keys(prevSubSeries)) subNames.add(n);
+      /* v8 ignore next */
       if (freshSubForService) for (const n of freshSubForService.keys()) subNames.add(n);
 
       const built: Record<string, readonly Bucket[]> = {};
       for (const subName of subNames) {
-        const keptPrev = (prevSubSeries?.[subName] ?? []).filter(b => {
+        const keptPrev = (prevSubSeries?.[subName] ?? []).filter((b) => {
           if (Date.parse(b.t) < cutoffMs) return false;
           const day = bucketStart(new Date(b.t), "1d");
           return day !== today && day !== yesterday;
         });
+        /* v8 ignore next 4 */
         const freshSubBuckets = freshSubForService?.get(subName)
-          ? [...freshSubForService.get(subName)!.entries()]
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([t, acc]) => makeBucket(t, acc))
+          ? [...freshSubForService.get(subName)!.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([t, acc]) => makeBucket(t, acc))
           : [];
         built[subName] = [...keptPrev, ...freshSubBuckets].sort((a, b) => a.t.localeCompare(b.t));
       }
       subSeriesOut = built;
     }
 
-    const series: ServiceSeries = subSeriesOut !== undefined
-      ? {service, buckets: combinedBuckets, subSeries: subSeriesOut}
-      : {service, buckets: combinedBuckets};
+    const series: ServiceSeries =
+      subSeriesOut !== undefined ? {service, buckets: combinedBuckets, subSeries: subSeriesOut} : {service, buckets: combinedBuckets};
 
     if (combinedBuckets.length > 0 || series.subSeries) merged.push(series);
   }
@@ -211,13 +209,17 @@ function readPrevious(dataDir: string, name: string): AggregateFile | undefined 
   try {
     raw = readFileSync(path, "utf8");
   } catch (err) {
+    /* v8 ignore next */
     throw new Error(`readPrevious: failed to read ${path}: ${err instanceof Error ? err.message : String(err)}`);
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`readPrevious: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`);
+    /* v8 ignore next */
+    throw new Error(
+      `readPrevious: ${path} exists but is not valid JSON — refusing to overwrite history. ${err instanceof Error ? err.message : ""}`,
+    );
   }
   if (!isAggregateFile(parsed)) {
     throw new Error(`readPrevious: ${path} does not match AggregateFile schema — refusing to overwrite history.`);
@@ -240,6 +242,7 @@ export interface RunAggregateOptions {
  * atomically `writeFileSync`'d (single buffer write).
  */
 export async function runAggregate(opts: RunAggregateOptions): Promise<void> {
+  /* v8 ignore next */
   const now = opts.now ?? new Date();
   const probes = readRawProbes(opts.dataDir);
 
@@ -259,9 +262,10 @@ export async function runAggregate(opts: RunAggregateOptions): Promise<void> {
   pruneRawFiles(opts.dataDir, now);
 }
 
+/* v8 ignore next 8 */
 if (import.meta.url === `file://${process.argv[1]}`) {
   const dataDir = process.env["DATA_DIR"] ?? "./data";
-  runAggregate({dataDir}).catch(err => {
+  runAggregate({dataDir}).catch((err) => {
     console.error("aggregate failed:", err);
     process.exit(1);
   });

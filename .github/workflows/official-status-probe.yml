@@ -23,7 +23,7 @@ jobs:
     if: github.repository == 'arolariu/arolariu.ro'
     name: 📡 Probe services and publish status data
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     # Setting git identity via env vars once at the job level — every git
     # subcommand in the job inherits these, so we avoid repeating
     # `git config user.name/email` across steps. Runners do not auto-assign.

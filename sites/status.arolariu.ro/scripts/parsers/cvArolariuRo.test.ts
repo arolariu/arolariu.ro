@@ -1,4 +1,4 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {parseCvArolariuRo} from "./cvArolariuRo";
 
 const ctx = {timestamp: "2026-04-19T14:00:00Z", latencyMs: 35};
@@ -30,5 +30,11 @@ describe("parseCvArolariuRo", () => {
     const r = parseCvArolariuRo({status: 0, body: null, error: "timeout"}, ctx);
     expect(r.overall).toBe("Unhealthy");
     expect(r.error).toBe("timeout");
+  });
+
+  it("transport error with no error field → 'transport error' default", () => {
+    const r = parseCvArolariuRo({status: 0, body: null}, ctx);
+    expect(r.overall).toBe("Unhealthy");
+    expect(r.error).toBe("transport error");
   });
 });

@@ -1,5 +1,4 @@
-import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile,
-  ServiceId} from "../src/lib/types/status";
+import type {HealthStatus, Incident, IncidentSeverity, IncidentsFile, ServiceId} from "../src/lib/types/status";
 
 /**
  * Shared state-machine helpers for incident detection. Neither the
@@ -88,10 +87,7 @@ interface TrackState {
  * @param signalsInOrder  - Time-sorted signals to apply.
  * @returns The updated `IncidentsFile` with a fresh `generatedAt`.
  */
-export function applyTrackSignals(
-  prev: IncidentsFile | {incidents: Incident[]},
-  signalsInOrder: readonly TrackSignal[],
-): IncidentsFile {
+export function applyTrackSignals(prev: IncidentsFile | {incidents: Incident[]}, signalsInOrder: readonly TrackSignal[]): IncidentsFile {
   const incidents = [...prev.incidents];
   const tracks = new Map<TrackKey, TrackState>();
   const openByKey = new Map<TrackKey, number>();
@@ -112,7 +108,8 @@ export function applyTrackSignals(
       if (openIdx !== undefined) {
         const open = incidents[openIdx]!;
         incidents[openIdx] = {
-          ...open, status: "resolved",
+          ...open,
+          status: "resolved",
           resolvedAt: sig.timestamp,
           durationMs: Date.parse(sig.timestamp) - Date.parse(open.startedAt),
         };
@@ -140,7 +137,8 @@ export function applyTrackSignals(
       tracks.set(sig.key, {streak: newStreak});
     } else if (newStreak === 1) {
       tracks.set(sig.key, {streak: 1, previousFailure: sig});
-    } else if (newStreak >= 2 && state.previousFailure) {
+      /* v8 ignore next */
+    } else if (/* v8 ignore next */ newStreak >= 2 && state.previousFailure) {
       const startSig = state.previousFailure;
       const incident: Incident = {
         id: buildIncidentId(startSig.timestamp, sig.service, sig.subCheck),

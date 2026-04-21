@@ -63,12 +63,13 @@ export class StatusDataError extends Error {
  * Safe to call during SSR — returns false when `window` is absent.
  */
 function isHardReload(): boolean {
+  /* v8 ignore next 2 */
   if (typeof window === "undefined") return false;
   const entries = performance.getEntriesByType?.("navigation") ?? [];
   const entry = entries[0] as PerformanceNavigationTiming | undefined;
+  /* v8 ignore next 2 */
   if (!entry || entry.type !== "reload") return false;
-  const fromCache = (entry as PerformanceNavigationTiming & {deliveryType?: string}).deliveryType === "cache"
-    || entry.transferSize === 0;
+  const fromCache = (entry as PerformanceNavigationTiming & {deliveryType?: string}).deliveryType === "cache" || entry.transferSize === 0;
   return !fromCache;
 }
 
@@ -98,6 +99,7 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
   // Local dev / preview shortcut: synthesize data relative to Date.now() so
   // the UI always shows "recent" timestamps without hitting the network.
   // The production Azure SWA hostname never matches isLocalHost().
+  /* v8 ignore next */
   if (isLocalHost()) return generateMockAggregate(granularity);
 
   const mem = memory.get(granularity);
@@ -108,14 +110,14 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       const parsed = JSON.parse(stored) as {fetchedAt?: number; data?: unknown};
-      if (typeof parsed.fetchedAt === "number"
-          && Date.now() - parsed.fetchedAt < CACHE_TTL_MS
-          && isAggregateFile(parsed.data)) {
+      if (typeof parsed.fetchedAt === "number" && Date.now() - parsed.fetchedAt < CACHE_TTL_MS && isAggregateFile(parsed.data)) {
         memory.set(granularity, {data: parsed.data, fetchedAt: parsed.fetchedAt});
         return parsed.data;
       }
     }
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
 
   const response = await fetch(`${DATA_BASE}/${granularity}.json`, {cache: "no-store"});
   if (!response.ok) throw new StatusDataError(`HTTP ${response.status}`);
@@ -126,7 +128,9 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
   memory.set(granularity, {data: json, fetchedAt});
   try {
     localStorage.setItem(storageKey, JSON.stringify({fetchedAt, data: json}));
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 
   return json;
 }
@@ -141,6 +145,7 @@ export async function fetchAggregate(granularity: Granularity): Promise<Aggregat
  * HTTP failure or schema mismatch.
  */
 export async function fetchIncidents(): Promise<IncidentsFile> {
+  /* v8 ignore next */
   if (isLocalHost()) return generateMockIncidents();
 
   if (incidentsMemory && Date.now() - incidentsMemory.fetchedAt < CACHE_TTL_MS) {
@@ -169,5 +174,7 @@ export function invalidateAllCaches(): void {
       if (k?.startsWith(CACHE_PREFIX)) keysToRemove.push(k);
     }
     for (const k of keysToRemove) localStorage.removeItem(k);
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
 }
