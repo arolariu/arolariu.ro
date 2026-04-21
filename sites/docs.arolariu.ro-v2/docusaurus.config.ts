@@ -68,6 +68,9 @@ const config: Config = {
   onBrokenMarkdownLinks: 'warn',
   markdown: {format: 'detect'},
   i18n: {defaultLocale: 'en', locales: ['en']},
+  scripts: [
+    {src: '/js/clarity.js', async: true},
+  ],
   presets: [
     [
       'classic',

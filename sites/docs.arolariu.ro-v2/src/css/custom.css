@@ -1,7 +1,21 @@
 :root {
-  --ifm-color-primary: #2e8555;
+  --ifm-color-primary: #003f7d;
+  --ifm-color-primary-dark: #003871;
+  --ifm-color-primary-darker: #00356b;
+  --ifm-color-primary-darkest: #002c58;
+  --ifm-color-primary-light: #004689;
+  --ifm-color-primary-lighter: #00498f;
+  --ifm-color-primary-lightest: #00529f;
   --ifm-code-font-size: 95%;
+  --ifm-font-family-base: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary: #4aa3ff;
+  --ifm-color-primary-dark: #2d94ff;
+  --ifm-color-primary-darker: #1e8cff;
+  --ifm-color-primary-darkest: #006dd9;
+  --ifm-color-primary-light: #67b2ff;
+  --ifm-color-primary-lighter: #76baff;
+  --ifm-color-primary-lightest: #a1cfff;
+  --ifm-background-color: #0e1422;
 }
