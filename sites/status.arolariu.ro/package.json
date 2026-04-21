@@ -1,0 +1,42 @@
+{
+  "name": "@arolariu/status",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview --port 4175",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "npm run test:unit",
+    "test:unit": "svelte-kit sync && vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "svelte-kit sync && vitest run --coverage",
+    "test:e2e": "playwright test",
+    "probe": "tsx scripts/probe.ts",
+    "probe:all": "tsx scripts/probe.ts && tsx scripts/aggregate.ts && tsx scripts/detectIncidents.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@sveltejs/kit": "^2.57.1",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
+    "@types/node": "^24.12.0",
+    "jsdom": "^29.0.2",
+    "svelte": "^5.55.4",
+    "svelte-adapter-azure-swa": "^0.22.1",
+    "svelte-check": "^4.4.6",
+    "tailwindcss": "^4.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
+  }
+}
