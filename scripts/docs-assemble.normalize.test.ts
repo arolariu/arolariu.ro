@@ -49,4 +49,14 @@ describe('normalizeDirectory', () => {
     expect(idx).toMatch(/sidebar_position: 0/);
     expect(zzz).toMatch(/sidebar_position: 1/);
   });
+
+  it('quotes titles containing YAML-reserved characters (@, :, #)', async () => {
+    writeFileSync(join(root, 'scoped.md'), '# @arolariu/components\n');
+    writeFileSync(join(root, 'colon.md'), '# Name: With Colon\n');
+    await normalizeDirectory(root, {slugRoot: '/ref'});
+    const scoped = readFileSync(join(root, 'scoped.md'), 'utf8');
+    const colon = readFileSync(join(root, 'colon.md'), 'utf8');
+    expect(scoped).toMatch(/title: "@arolariu\/components"/);
+    expect(colon).toMatch(/title: "Name: With Colon"/);
+  });
 });

@@ -30,10 +30,17 @@ function parseFrontmatter(source: string): {frontmatter: Frontmatter; body: stri
   return {frontmatter, body};
 }
 
+function serializeValue(value: string | number): string {
+  if (typeof value === 'number') return String(value);
+  const needsQuoting = /^[@#&*!|>%`?{}[\]-]|[:#]|^\s|\s$/.test(value);
+  if (!needsQuoting) return value;
+  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+}
+
 function serializeFrontmatter(fm: Frontmatter, body: string): string {
   const keys = Object.keys(fm);
   if (keys.length === 0) return body;
-  const lines = keys.map((k) => `${k}: ${fm[k]}`).join('\n');
+  const lines = keys.map((k) => `${k}: ${serializeValue(fm[k])}`).join('\n');
   return `${FRONTMATTER_DELIMITER}\n${lines}\n${FRONTMATTER_DELIMITER}\n${body}`;
 }
 
