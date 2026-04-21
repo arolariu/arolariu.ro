@@ -57,6 +57,7 @@ export function cleanGenerated(): void {
 const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
 const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
+const DOTNET_API_DIR = join(GENERATED_ROOT, 'dotnet-api');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
 type DotnetProject = {
@@ -92,6 +93,27 @@ async function runDotnetInternals(): Promise<void> {
   assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
 }
 
+async function runDotnetOpenApi(): Promise<void> {
+  mkdirSync(DOTNET_API_DIR, {recursive: true});
+  // Microsoft.AspNetCore.OpenApi emits the build-time spec into obj/<Config>/net10.0/EndpointInfo.
+  // Preference order: Release (matches runDotnetInternals), then Debug (dev builds), so we pick
+  // whichever exists. If neither exists we warn and continue — Task 8 will treat the empty
+  // dotnet-api dir as a gap (the openapi-docs plugin will simply have no pages to generate).
+  const releaseSpec = join(API_ROOT, 'src', 'Core', 'obj', 'Release', 'net10.0', 'EndpointInfo', 'arolariu.Backend.Core.json');
+  const debugSpec = join(API_ROOT, 'src', 'Core', 'obj', 'Debug', 'net10.0', 'EndpointInfo', 'arolariu.Backend.Core.json');
+  const specSource = existsSync(releaseSpec) ? releaseSpec : existsSync(debugSpec) ? debugSpec : null;
+  if (!specSource) {
+    console.warn(`dotnet-openapi: no spec found at ${releaseSpec} or ${debugSpec}. Skipping copy. ` +
+      `Microsoft.AspNetCore.OpenApi build-time emission requires Microsoft.Extensions.ApiDescription.Server ` +
+      `targets; verify the csproj still wires those in before Task 8 wires the openapi-docs plugin.`);
+    return;
+  }
+  cpSync(specSource, join(DOTNET_API_DIR, 'openapi.json'));
+  // Task 8 will wire docusaurus-plugin-openapi-docs into docusaurus.config.ts and
+  // then call `npx docusaurus gen-api-docs all` here to generate MDX pages.
+  // assertNonEmpty(join(DOTNET_API_DIR, 'pages'), 'openapi-pages');
+}
+
 async function runTypedoc(): Promise<void> {
   await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT);
   await runCommand('npx', ['typedoc', '--options', 'typedoc.website.json'], REPO_ROOT);
@@ -120,6 +142,7 @@ async function runPydocMarkdown(): Promise<void> {
 async function main(): Promise<void> {
   cleanGenerated();
   await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
+  await runDotnetOpenApi();
   await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
   await normalizeDirectory(PYTHON_DIR, {slugRoot: '/internals/experimental'});
   await normalizeDirectory(DOTNET_INTERNALS_DIR, {slugRoot: '/internals/dotnet'});
