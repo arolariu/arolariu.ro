@@ -1,6 +1,7 @@
 import {cpSync, rmSync, mkdirSync, readdirSync, statSync, existsSync} from 'node:fs';
 import {join, resolve} from 'node:path';
 import {spawn} from 'node:child_process';
+import {normalizeDirectory} from './docs-assemble.normalize.ts';
 
 const REPO_ROOT = resolve(import.meta.dirname, '..');
 const DOCS_V2_ROOT = join(REPO_ROOT, 'sites', 'docs.arolariu.ro-v2');
@@ -25,7 +26,7 @@ export async function syncProse(src: string, dest: string): Promise<void> {
 
 export function runCommand(command: string, args: readonly string[], cwd: string): Promise<void> {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(resolveCommand(command), args, {cwd, stdio: 'inherit'});
+    const child = spawn(resolveCommand(command), args, {cwd, stdio: 'inherit', shell: process.platform === 'win32'});
     child.on('error', reject);
     child.on('exit', (code) => {
       if (code === 0) resolvePromise();
@@ -53,8 +54,18 @@ export function cleanGenerated(): void {
   mkdirSync(GENERATED_ROOT, {recursive: true});
 }
 
+const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
+
+async function runTypedoc(): Promise<void> {
+  await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT);
+  await runCommand('npx', ['typedoc', '--options', 'typedoc.website.json'], REPO_ROOT);
+  assertNonEmpty(TS_REFERENCE_DIR, 'typedoc');
+}
+
 async function main(): Promise<void> {
   cleanGenerated();
+  await Promise.all([runTypedoc()]);
+  await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 
