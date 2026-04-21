@@ -3,3 +3,4 @@
 -r requirements.txt
 pytest==9.0.2
 ruff==0.15.4
+pydoc-markdown==4.8.2

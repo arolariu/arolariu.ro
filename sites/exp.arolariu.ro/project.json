@@ -28,6 +28,13 @@
         "cwd": "sites/exp.arolariu.ro"
       }
     },
+    "docs:python": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pydoc_markdown.main",
+        "cwd": "sites/exp.arolariu.ro"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

@@ -1,4 +1,4 @@
-import {cpSync, rmSync, mkdirSync, readdirSync, statSync, existsSync} from 'node:fs';
+import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from 'node:fs';
 import {join, resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {normalizeDirectory} from './docs-assemble.normalize.ts';
@@ -55,6 +55,7 @@ export function cleanGenerated(): void {
 }
 
 const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
+const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 
 async function runTypedoc(): Promise<void> {
   await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT);
@@ -62,10 +63,30 @@ async function runTypedoc(): Promise<void> {
   assertNonEmpty(TS_REFERENCE_DIR, 'typedoc');
 }
 
+function normalizeLineEndings(dir: string): void {
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) normalizeLineEndings(full);
+    else if (/\.mdx?$|\.json$/i.test(name)) {
+      const content = readFileSync(full, 'utf8');
+      if (content.includes('\r\n')) writeFileSync(full, content.replaceAll('\r\n', '\n'));
+    }
+  }
+}
+
+async function runPydocMarkdown(): Promise<void> {
+  const expDir = join(REPO_ROOT, 'sites', 'exp.arolariu.ro');
+  await runCommand('python', ['-m', 'pydoc_markdown.main'], expDir);
+  assertNonEmpty(PYTHON_DIR, 'pydoc-markdown');
+  // pydoc-markdown emits CRLF on Windows; normalize so downstream frontmatter parsers match on \n.
+  normalizeLineEndings(PYTHON_DIR);
+}
+
 async function main(): Promise<void> {
   cleanGenerated();
-  await Promise.all([runTypedoc()]);
+  await Promise.all([runTypedoc(), runPydocMarkdown()]);
   await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
+  await normalizeDirectory(PYTHON_DIR, {slugRoot: '/internals/experimental'});
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 
