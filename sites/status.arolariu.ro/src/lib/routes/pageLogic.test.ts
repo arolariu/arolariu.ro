@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import type {AggregateFile, ServiceSeries} from "../types/status";
+import type {AggregateFile, ServiceId, ServiceSeries} from "../types/status";
 import {BUCKET_SIZE_TO_MS} from "../types/status";
 import {shouldIgnoreKeydown} from "./keyboardShortcuts";
 import {SERVICE_DISPLAY_ORDER, bucketDurationMsFor, orderedServices, showWeekdayChart} from "./pageLogic";

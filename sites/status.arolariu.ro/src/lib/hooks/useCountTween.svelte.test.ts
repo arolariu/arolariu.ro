@@ -127,10 +127,10 @@ describe("useCountTween", () => {
   });
 
   it("cleanup effect cancels pending RAF on scope teardown", () => {
-    let cancelId: number | null = null;
-    vi.stubGlobal("cancelAnimationFrame", (id: number) => {
-      cancelId = id;
-    });
+    // Stub `cancelAnimationFrame` with a no-op so teardown does not hit the
+    // real browser API (jsdom). We don't assert on the captured id — the
+    // test's only guarantee is that teardown doesn't throw.
+    vi.stubGlobal("cancelAnimationFrame", () => {});
 
     const root = $effect.root(() => {
       let target = $state(0);
