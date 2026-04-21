@@ -7,7 +7,12 @@
    * No persistent chrome lives here — the page itself owns its masthead,
    * footer, and overlays.
    */
-  import "@/app.css";
+  // Relative import avoids the `@/*` alias, which svelte-check cannot resolve
+  // for side-effect CSS imports (the alias is defined in svelte.config.js +
+  // the generated .svelte-kit/tsconfig.json, but side-effect CSS resolution
+  // still needs a filesystem-relative path here). Runtime behaviour is
+  // identical; Vite resolves either form.
+  import "../app.css";
 
   /** Root layout props — only the Svelte-provided children snippet. */
   interface Props {

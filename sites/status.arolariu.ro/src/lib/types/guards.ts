@@ -38,13 +38,18 @@ export function isServiceId(v: unknown): v is ServiceId {
   return typeof v === "string" && (SERVICE_IDS as readonly string[]).includes(v);
 }
 
-/** Validates a sub-check shape: required name/status/durationMs, optional description. */
+/** Validates a sub-check shape: required name/status/durationMs, optional description/sampleDurationsMs. */
 export function isSubCheck(v: unknown): v is SubCheck {
   if (!isObject(v)) return false;
   if (typeof v["name"] !== "string") return false;
   if (!isHealthStatus(v["status"])) return false;
   if (!isNonNegativeNumber(v["durationMs"])) return false;
   if (v["description"] !== undefined && typeof v["description"] !== "string") return false;
+  const sampleDurations = v["sampleDurationsMs"];
+  if (sampleDurations !== undefined) {
+    if (!Array.isArray(sampleDurations)) return false;
+    if (!sampleDurations.every(isNonNegativeNumber)) return false;
+  }
   return true;
 }
 
@@ -68,6 +73,11 @@ export function isProbeResult(v: unknown): v is ProbeResult {
   }
   if (v["sampleCount"] !== undefined) {
     if (typeof v["sampleCount"] !== "number" || !Number.isFinite(v["sampleCount"]) || v["sampleCount"] < 1) return false;
+  }
+  const sampleLatencies = v["sampleLatenciesMs"];
+  if (sampleLatencies !== undefined) {
+    if (!Array.isArray(sampleLatencies)) return false;
+    if (!sampleLatencies.every(isNonNegativeNumber)) return false;
   }
   return true;
 }

@@ -147,6 +147,78 @@ describe("runProbe", () => {
     expect(results.every((r) => typeof r.latencyMs === "number" && r.latencyMs >= 0)).toBe(true);
   });
 
+  it("emits sampleLatenciesMs with one entry per sample so percentile math gets a real distribution", async () => {
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
+
+    const delays = [0, 0, 0, 0, 0];
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
+
+    for (const r of results) {
+      expect(r.sampleLatenciesMs).toBeDefined();
+      expect(r.sampleLatenciesMs).toHaveLength(delays.length);
+      expect(r.sampleLatenciesMs!.every((l) => typeof l === "number" && l >= 0)).toBe(true);
+      expect(r.sampleCount).toBe(delays.length);
+    }
+  });
+
+  it("skips samples without subChecks when enriching sampleDurationsMs (partial-response continue branch)", async () => {
+    // Worst sample MUST carry subChecks (otherwise the enrichment block is
+    // skipped entirely). Mid-run, emit one response whose body lacks the
+    // `entries` dictionary so the parser returns a subChecks-less ProbeResult —
+    // exercises the `if (s.subChecks === undefined) continue;` true branch.
+    let call = 0;
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("api.arolariu.ro/health")) {
+        const i = call++;
+        // sample 0: Healthy w/ subChecks; sample 1: Healthy, NO entries (no subChecks);
+        // sample 2: Degraded w/ subChecks (this is `worst` and has subChecks).
+        if (i === 1) return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+        const body =
+          i === 2
+            ? {status: "Degraded", entries: {mssql: {status: "Degraded", duration: "00:00:00.300"}}}
+            : {status: "Healthy", entries: {mssql: {status: "Healthy", duration: "00:00:00.100"}}};
+        return new Response(JSON.stringify(body), {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const api = results.find((r) => r.service === "api.arolariu.ro")!;
+    expect(api.overall).toBe("Degraded");
+    const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
+    expect(mssql).toBeDefined();
+    // Only 2 of 3 samples contributed mssql durations; the middle sample was skipped.
+    expect(mssql!.sampleDurationsMs).toEqual([100, 300]);
+  });
+
+  it("populates sampleDurationsMs on each sub-check with per-sample durations across the run", async () => {
+    // Return a different mssql duration on each call so we can assert the
+    // aggregated sub-check preserves all four distinct values, not just one.
+    let call = 0;
+    const apiDurations = ["00:00:00.100", "00:00:00.200", "00:00:00.300", "00:00:00.400"];
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("api.arolariu.ro/health")) {
+        const duration = apiDurations[call++ % apiDurations.length];
+        return new Response(
+          JSON.stringify({status: "Healthy", entries: {mssql: {status: "Healthy", duration}}}),
+          {status: 200},
+        );
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0, 0]});
+    const api = results.find((r) => r.service === "api.arolariu.ro")!;
+    const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
+    expect(mssql).toBeDefined();
+    expect(mssql!.sampleDurationsMs).toBeDefined();
+    expect(mssql!.sampleDurationsMs).toHaveLength(4);
+    // Four samples with four distinct durations ⇒ the sub-check must carry all four.
+    expect(new Set(mssql!.sampleDurationsMs)).toEqual(new Set([100, 200, 300, 400]));
+  });
+
   it("waits sampleDelaysMs between samples (using non-zero delays)", async () => {
     globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 

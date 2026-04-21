@@ -19,7 +19,15 @@ export function groupProbes(
     if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perService.set(bucket, acc);}
     const samples = p.sampleCount ?? 1;
     acc.statuses.push(p.overall);
-    acc.latencies.push(p.latencyMs);
+    // Fan out per-sample latencies when the probe persisted them; fall back to
+    // the single aggregated median for legacy rows pre-dating `sampleLatenciesMs`.
+    // This is what keeps bucket-level p50/p75/p95/p99 distinct — one latency
+    // per bucket collapses every percentile to the same number.
+    if (p.sampleLatenciesMs !== undefined && p.sampleLatenciesMs.length > 0) {
+      for (const l of p.sampleLatenciesMs) acc.latencies.push(l);
+    } else {
+      acc.latencies.push(p.latencyMs);
+    }
     acc.httpStatuses.push(p.httpStatus);
     acc.sampleCount += samples;
     if (p.overall === "Healthy") acc.healthySamples += samples;

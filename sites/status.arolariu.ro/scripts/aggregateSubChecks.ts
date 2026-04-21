@@ -23,7 +23,14 @@ export function groupSubChecks(
       let acc = perSub.get(bucket);
       if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perSub.set(bucket, acc);}
       acc.statuses.push(sc.status);
-      acc.latencies.push(sc.durationMs);
+      // Mirror the main-service fan-out: if the probe captured per-sample
+      // sub-check durations, feed all of them into the percentile calc. Legacy
+      // rows without `sampleDurationsMs` still contribute a single data point.
+      if (sc.sampleDurationsMs !== undefined && sc.sampleDurationsMs.length > 0) {
+        for (const d of sc.sampleDurationsMs) acc.latencies.push(d);
+      } else {
+        acc.latencies.push(sc.durationMs);
+      }
       acc.sampleCount += samples;
       if (sc.status === "Healthy") acc.healthySamples += samples;
     }
