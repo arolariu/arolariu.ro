@@ -52,7 +52,7 @@ jobs:
           # "branch missing" and overwrite real data via the bootstrap path.
           if git ls-remote --exit-code --heads origin status-data >/dev/null 2>&1; then
             git fetch origin status-data:status-data
-            git worktree add ../data-wt status-data
+            git worktree add -B status-data ../data-wt origin/status-data
           else
             echo "status-data branch does not exist; bootstrapping as orphan"
             git worktree add --detach ../data-wt HEAD
