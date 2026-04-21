@@ -74,7 +74,9 @@ const DOTNET_PROJECTS: readonly DotnetProject[] = [
 ];
 
 async function runDotnetInternals(): Promise<void> {
-  await runCommand('dotnet', ['build', 'src/Core/arolariu.Backend.Core.csproj', '-c', 'Release'], API_ROOT);
+  for (const proj of DOTNET_PROJECTS) {
+    await runCommand('dotnet', ['build', proj.csproj, '-c', 'Release'], API_ROOT);
+  }
   mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
   for (const proj of DOTNET_PROJECTS) {
     const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
