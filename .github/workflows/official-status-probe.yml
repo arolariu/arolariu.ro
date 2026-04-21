@@ -8,7 +8,14 @@ name: "official-status-probe"
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # Fire at :09 and :39 instead of the usual :00 / :30. GitHub Actions'
+    # shared scheduler load-sheds the heavily-subscribed round-minute slots
+    # (top-of-hour and :30 are the most-requested cron times across the
+    # platform), so a meaningful fraction of our scheduled runs were being
+    # dropped or delayed 10+ minutes. Odd-minute slots face far less
+    # contention and historically land closer to on-time. Cadence is
+    # unchanged — still two runs per hour, 30 min apart.
+    - cron: "9,39 * * * *"
   workflow_dispatch: {}
 
 permissions:
