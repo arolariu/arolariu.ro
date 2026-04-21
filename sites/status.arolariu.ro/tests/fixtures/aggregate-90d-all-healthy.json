@@ -1,0 +1,1 @@
+{"generatedAt":"2026-04-19T14:00:00Z","bucketSize":"1h","windowDays":90,"services":[{"service":"arolariu.ro","buckets":[{"t":"2026-04-19T13:00:00.000Z","status":"Healthy","probes":{"healthy":1,"total":1},"latency":{"p50":100,"p99":200}}]}]}

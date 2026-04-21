@@ -1,0 +1,96 @@
+# =============================================================================
+# Status Probe Cron — polls /health endpoints every 30 min, commits aggregates
+# to the `status-data` orphan branch. Data is served to the status SWA via
+# raw.githubusercontent.com at runtime; no SWA rebuild is needed per probe.
+# =============================================================================
+
+name: "official-status-probe"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: status-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.repository == 'arolariu/arolariu.ro'
+    name: 📡 Probe services and publish status data
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Setting git identity via env vars once at the job level — every git
+    # subcommand in the job inherits these, so we avoid repeating
+    # `git config user.name/email` across steps. Runners do not auto-assign.
+    env:
+      GIT_AUTHOR_NAME: "github-actions[bot]"
+      GIT_AUTHOR_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+      GIT_COMMITTER_NAME: "github-actions[bot]"
+      GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+    steps:
+      - name: 🛫 Checkout main (site code + scripts)
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          cache-key-prefix: 'status-probe'
+
+      - name: 🌲 Prepare status-data worktree (fetch or bootstrap orphan branch)
+        run: |
+          set -e
+          # Explicit existence check — `git fetch ... 2>/dev/null` would also
+          # swallow transient network failures, which could then be misread as
+          # "branch missing" and overwrite real data via the bootstrap path.
+          if git ls-remote --exit-code --heads origin status-data >/dev/null 2>&1; then
+            git fetch origin status-data:status-data
+            git worktree add -B status-data ../data-wt origin/status-data
+          else
+            echo "status-data branch does not exist; bootstrapping as orphan"
+            git worktree add --detach ../data-wt HEAD
+            cd ../data-wt
+            git checkout --orphan status-data
+            git rm -rf . 2>/dev/null || true
+            mkdir -p data
+            git commit --allow-empty -m "init status-data branch"
+            cd -
+          fi
+
+      - name: 📡 Run probe + aggregate + detect incidents
+        run: npm run probe:all --workspace=sites/status.arolariu.ro
+        env:
+          DATA_DIR: ${{ github.workspace }}/../data-wt/data
+
+      - name: 📝 Commit + push data (with retry on race)
+        working-directory: ../data-wt
+        run: |
+          set -e
+          git add data/
+          if git diff --cached --quiet; then
+            echo "no data changes — skipping commit"
+            exit 0
+          fi
+          git commit -m "data: probe @ $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for i in 1 2 3; do
+            if git push origin status-data; then
+              echo "pushed successfully"
+              exit 0
+            fi
+            echo "push race detected — rebasing and retrying ($i/3)"
+            if ! git pull --rebase origin status-data; then
+              echo "::error::rebase conflict on status-data — aborting. Inspect the branch manually."
+              git rebase --abort 2>/dev/null || true
+              exit 1
+            fi
+            sleep $((i*i*5))
+          done
+          echo "push failed after 3 retries"
+          exit 1

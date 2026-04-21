@@ -1,0 +1,1 @@
+{"generatedAt":"2026-04-19T14:00:00Z","incidents":[{"id":"inc-2026-04-18T14-00-00Z-api-mssql","service":"api.arolariu.ro","subCheck":"mssql","status":"resolved","startedAt":"2026-04-18T14:00:00Z","resolvedAt":"2026-04-18T15:00:00Z","durationMs":3600000,"severity":"Degraded","reason":"connection pool exhausted","probeCount":2}]}
