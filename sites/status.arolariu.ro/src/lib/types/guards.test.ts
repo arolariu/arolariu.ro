@@ -37,6 +37,18 @@ describe("isSubCheck", () => {
   it("rejects wrong types", () => {
     expect(isSubCheck({name: "mssql", status: "bad", durationMs: 12})).toBe(false);
   });
+  it("accepts valid sampleDurationsMs array", () => {
+    expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, sampleDurationsMs: [10, 11, 12, 13]})).toBe(true);
+  });
+  it("accepts empty sampleDurationsMs array", () => {
+    expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, sampleDurationsMs: []})).toBe(true);
+  });
+  it("rejects non-array sampleDurationsMs", () => {
+    expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, sampleDurationsMs: 12})).toBe(false);
+  });
+  it("rejects negative values inside sampleDurationsMs", () => {
+    expect(isSubCheck({name: "mssql", status: "Healthy", durationMs: 12, sampleDurationsMs: [10, -1, 12]})).toBe(false);
+  });
 });
 
 describe("isProbeResult", () => {
@@ -59,6 +71,15 @@ describe("isProbeResult", () => {
   });
   it("rejects sampleCount < 1", () => {
     expect(isProbeResult({...valid, sampleCount: 0})).toBe(false);
+  });
+  it("accepts valid sampleLatenciesMs array", () => {
+    expect(isProbeResult({...valid, sampleLatenciesMs: [100, 120, 140]})).toBe(true);
+  });
+  it("rejects non-array sampleLatenciesMs", () => {
+    expect(isProbeResult({...valid, sampleLatenciesMs: 120})).toBe(false);
+  });
+  it("rejects negative values inside sampleLatenciesMs", () => {
+    expect(isProbeResult({...valid, sampleLatenciesMs: [100, -1, 140]})).toBe(false);
   });
 });
 
