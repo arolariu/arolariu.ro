@@ -143,6 +143,8 @@ async function main(): Promise<void> {
   cleanGenerated();
   await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
   await runDotnetOpenApi();
+  // NOTE: _generated/dotnet-api/pages is owned by docusaurus-plugin-openapi-docs.
+  // Do not normalize it — the plugin emits its own MDX frontmatter conventions.
   await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
   await normalizeDirectory(PYTHON_DIR, {slugRoot: '/internals/experimental'});
   await normalizeDirectory(DOTNET_INTERNALS_DIR, {slugRoot: '/internals/dotnet'});
