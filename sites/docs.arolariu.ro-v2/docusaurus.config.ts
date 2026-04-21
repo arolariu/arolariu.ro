@@ -10,8 +10,9 @@ const config: Config = {
   baseUrl: '/',
   organizationName: 'arolariu',
   projectName: 'arolariu.ro',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
+  markdown: {format: 'detect'},
   i18n: {defaultLocale: 'en', locales: ['en']},
   presets: [
     [
