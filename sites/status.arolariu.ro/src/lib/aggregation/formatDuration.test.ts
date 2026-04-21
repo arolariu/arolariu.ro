@@ -22,7 +22,7 @@ describe("formatDuration", () => {
     expect(formatDuration(0)).toBe("0 min");
   });
 
-  it("rounds sub-minute durations to 0 min", () => {
+  it("rounds sub-minute durations to the nearest minute", () => {
     expect(formatDuration(45_000)).toBe("1 min");
   });
 
