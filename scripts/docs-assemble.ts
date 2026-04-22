@@ -141,6 +141,31 @@ async function runPydocMarkdown(): Promise<void> {
   normalizeLineEndings(PYTHON_DIR);
 }
 
+type LandingPage = {
+  readonly dir: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly routeBase: string;
+};
+
+function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
+  if (!existsSync(dir)) return;
+  const children = readdirSync(dir)
+    .filter((name) => {
+      const full = join(dir, name);
+      return statSync(full).isDirectory() || /\.mdx?$/i.test(name);
+    })
+    .filter((name) => !/^index\.mdx?$/i.test(name))
+    .sort();
+  const bullets = children.map((name) => {
+    const label = name.replace(/\.mdx?$/i, '');
+    const href = statSync(join(dir, name)).isDirectory() ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
+    return `- [${label}](${href})`;
+  }).join('\n');
+  const body = `---\ntitle: ${title}\nsidebar_position: 0\n---\n\n# ${title}\n\n${summary}\n\n${bullets}\n`;
+  writeFileSync(join(dir, 'index.md'), body);
+}
+
 async function main(): Promise<void> {
   cleanGenerated();
   await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
@@ -150,6 +175,27 @@ async function main(): Promise<void> {
   await normalizeDirectory(TS_REFERENCE_DIR, {slugRoot: '/reference/typescript'});
   await normalizeDirectory(PYTHON_DIR, {slugRoot: '/internals/experimental'});
   await normalizeDirectory(DOTNET_INTERNALS_DIR, {slugRoot: '/internals/dotnet'});
+  // Navbar links target each plugin's routeBasePath (e.g. /internals/dotnet); without
+  // an index.md at the tier root, Docusaurus has no page to serve there. Generate one
+  // after normalization so the landing pages appear in the sidebar at position 0.
+  writeLandingPage({
+    dir: TS_REFERENCE_DIR,
+    title: 'TypeScript reference',
+    summary: 'Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.',
+    routeBase: '/reference/typescript',
+  });
+  writeLandingPage({
+    dir: PYTHON_DIR,
+    title: 'Experimental service (Python)',
+    summary: 'Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.',
+    routeBase: '/internals/experimental',
+  });
+  writeLandingPage({
+    dir: DOTNET_INTERNALS_DIR,
+    title: '.NET internals',
+    summary: 'Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.',
+    routeBase: '/internals/dotnet',
+  });
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
 
