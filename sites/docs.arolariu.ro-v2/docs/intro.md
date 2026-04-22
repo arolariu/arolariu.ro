@@ -1,11 +1,15 @@
 ---
 sidebar_position: 1
-slug: /
+slug: /intro
+title: Introduction
 ---
 
-# arolariu.ro documentation
+# Introduction
 
-Unified portal covering:
-- **.NET API** (`api.arolariu.ro`) — HTTP contract and internals
-- **TypeScript** (`arolariu.ro`, `@arolariu/components`) — types, hooks, UI components
-- **Python experimental** (`exp.arolariu.ro`) — config proxy service internals
+Welcome to the unified reference for `arolariu.ro`. The sidebar and navbar cover the three service-level surfaces:
+
+- **.NET API** (`api.arolariu.ro`) — HTTP contract plus internal types, services, and brokers.
+- **TypeScript** (`arolariu.ro`, `@arolariu/components`) — component library, hooks, shared types.
+- **Python experimental** (`exp.arolariu.ro`) — config proxy service internals.
+
+Prose lives under `/monorepo/` — engineering guides and RFCs mirrored from the repo's `/docs/` folder.

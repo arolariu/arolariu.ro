@@ -1,0 +1,714 @@
+/*
+ * Docusaurus (Infima) variable overrides. We remap Infima's tokens onto
+ * the carbon/copper palette defined in theme-tokens.css so every built-in
+ * Docusaurus component inherits the identity without per-component edits.
+ */
+
+:root,
+:root[data-theme='dark'],
+:root[data-theme='light'] {
+  /* Primary accent → oxidized copper */
+  --ifm-color-primary: var(--accent);
+  --ifm-color-primary-dark: var(--accent);
+  --ifm-color-primary-darker: var(--accent);
+  --ifm-color-primary-darkest: var(--accent);
+  --ifm-color-primary-light: var(--accent-dim);
+  --ifm-color-primary-lighter: var(--accent-dim);
+  --ifm-color-primary-lightest: var(--accent-faint);
+
+  /* Surfaces */
+  --ifm-background-color: var(--bg);
+  --ifm-background-surface-color: var(--bg);
+  --ifm-card-background-color: var(--surface);
+  --ifm-hover-overlay: var(--surface-hover);
+
+  /* Text */
+  --ifm-color-content: var(--text);
+  --ifm-color-content-secondary: var(--text-muted);
+  --ifm-font-color-base: var(--text);
+  --ifm-heading-color: var(--text);
+
+  /* Borders */
+  --ifm-color-emphasis-100: var(--surface);
+  --ifm-color-emphasis-200: var(--surface-hover);
+  --ifm-color-emphasis-300: var(--border);
+  --ifm-color-emphasis-500: var(--border-strong);
+  --ifm-color-emphasis-700: var(--text-muted);
+  --ifm-toc-border-color: var(--border);
+  --ifm-hr-border-color: var(--border);
+  --ifm-table-border-color: var(--border);
+
+  /* Typography */
+  --ifm-font-family-base: var(--font-sans);
+  --ifm-font-family-monospace: var(--font-mono);
+  --ifm-heading-font-family: var(--font-mono);
+  --ifm-font-weight-semibold: 500;
+  --ifm-heading-font-weight: 500;
+  --ifm-font-size-base: 16px;
+  --ifm-code-font-size: 0.875em;
+  --ifm-line-height-base: 1.65;
+  --ifm-h1-font-size: var(--fs-h1);
+  --ifm-h2-font-size: var(--fs-h2);
+  --ifm-h3-font-size: var(--fs-h3);
+
+  /* Geometry — rectilinear */
+  --ifm-global-radius: 0;
+  --ifm-button-border-radius: 0;
+  --ifm-code-border-radius: 0;
+  --ifm-alert-border-radius: 0;
+  --ifm-card-border-radius: 0;
+  --ifm-pagination-nav-border-radius: 0;
+  --ifm-badge-border-radius: 0;
+  --ifm-avatar-border-radius: 0;
+
+  /* Shadows — suppressed; docs don't need lift */
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: var(--shadow-raised);
+
+  /* Navbar */
+  --ifm-navbar-background-color: var(--bg);
+  --ifm-navbar-link-color: var(--text-muted);
+  --ifm-navbar-link-hover-color: var(--accent);
+  --ifm-navbar-height: 3.25rem;
+  --ifm-navbar-padding-vertical: 0.5rem;
+  --ifm-navbar-shadow: none;
+
+  /* Footer */
+  --ifm-footer-background-color: var(--bg);
+  --ifm-footer-color: var(--text-muted);
+  --ifm-footer-link-color: var(--text-muted);
+  --ifm-footer-title-color: var(--text);
+  --ifm-footer-padding-vertical: 1.5rem;
+
+  /* Sidebar (menu) */
+  --ifm-menu-color: var(--text-muted);
+  --ifm-menu-color-background-active: transparent;
+  --ifm-menu-color-background-hover: var(--surface-hover);
+  --ifm-menu-color-active: var(--accent);
+  --ifm-menu-link-sublist-icon-filter: invert(55%) sepia(59%) saturate(452%) hue-rotate(340deg) brightness(95%);
+
+  /* Table of contents (right rail) */
+  --ifm-toc-link-color: var(--text-muted);
+
+  /* Code block */
+  --ifm-code-background: var(--surface);
+  --ifm-pre-background: var(--surface);
+  --docusaurus-highlighted-code-line-bg: rgba(232, 122, 62, 0.12);
+
+  /* Breadcrumb */
+  --ifm-breadcrumb-color-active: var(--accent);
+  --ifm-breadcrumb-item-background-active: transparent;
+
+  /* Pagination */
+  --ifm-pagination-nav-color-hover: var(--accent);
+
+  /* Button */
+  --ifm-button-color: var(--text);
+  --ifm-button-background-color: transparent;
+
+  /* Spacing */
+  --ifm-container-width: 1280px;
+  --ifm-spacing-horizontal: var(--sp-md);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Global chrome — scanlines (dark) / graph paper (light)          *
+ * ---------------------------------------------------------------- */
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss03", "ss04";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(255, 255, 255, 0.012) 2px,
+    rgba(255, 255, 255, 0.012) 3px
+  );
+}
+
+:root[data-theme='light'] body::before {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(21, 16, 10, 0.025) 2px,
+      rgba(21, 16, 10, 0.025) 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 48px,
+      rgba(21, 16, 10, 0.03) 48px,
+      rgba(21, 16, 10, 0.03) 49px
+    );
+}
+
+#__docusaurus {
+  position: relative;
+  z-index: 1;
+}
+
+/* Selection — signature copper */
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Focus rings — single-pixel copper, no halo */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- *
+ *  Headings — mono + #/##/### prefixes in copper                   *
+ * ---------------------------------------------------------------- */
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-top: 2.4em;
+  margin-bottom: 0.6em;
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1rem);
+}
+
+.markdown h1 {
+  margin-top: 0.2em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid var(--accent-faint);
+  font-size: var(--fs-h1);
+}
+.markdown h1::before {
+  content: "# ";
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.markdown h2 {
+  font-size: var(--fs-h2);
+}
+.markdown h2::before {
+  content: "## ";
+  color: var(--accent-dim);
+}
+
+.markdown h3 {
+  font-size: var(--fs-h3);
+}
+.markdown h3::before {
+  content: "### ";
+  color: var(--accent-dim);
+}
+
+.markdown h4 {
+  font-size: var(--fs-lg);
+  color: var(--text-muted);
+}
+.markdown h4::before {
+  content: "#### ";
+  color: var(--text-faint);
+}
+
+/* Anchor hover — the copper hash sign also acts as the anchor link */
+.markdown h1:hover::before,
+.markdown h2:hover::before,
+.markdown h3:hover::before {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+}
+
+/* Anchor-link icon Docusaurus injects (#) is redundant with our ::before */
+.markdown .hash-link {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- *
+ *  Body prose                                                       *
+ * ---------------------------------------------------------------- */
+
+.markdown {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.markdown p,
+.markdown li {
+  color: var(--text);
+}
+
+.markdown strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.markdown em {
+  color: var(--text);
+}
+
+.markdown a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-faint);
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.markdown a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.markdown blockquote {
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  padding: var(--sp-sm) var(--sp-md);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Inline code */
+.markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 1px 6px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Code blocks — hairline frame, uppercase copper language chip     *
+ * ---------------------------------------------------------------- */
+
+.markdown pre,
+.theme-code-block {
+  border: 1px solid var(--border-strong);
+  background: var(--surface) !important;
+  font-family: var(--font-mono) !important;
+  font-size: var(--fs-sm) !important;
+  line-height: 1.55 !important;
+}
+
+.markdown pre code,
+.theme-code-block code {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text) !important;
+  padding: 0 !important;
+}
+
+/* Code block title (filename chip) */
+.theme-code-block .theme-code-block-title,
+.codeBlockTitle_node_modules-\@docusaurus-theme-classic-lib-theme-CodeBlock-Container-styles-module {
+  background: var(--surface-hover) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--accent) !important;
+  font-family: var(--font-mono) !important;
+  font-size: var(--fs-xs) !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px !important;
+}
+
+/* Copy button: "copy ›" text, no icon flourish */
+.clean-btn {
+  border-radius: 0 !important;
+  background: var(--surface-hover) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border) !important;
+  font-family: var(--font-mono) !important;
+}
+.clean-btn:hover {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  background: var(--surface-raised) !important;
+}
+
+/* ---------------------------------------------------------------- *
+ *  Admonitions — text-first, icon-suppressed, [label] frames        *
+ * ---------------------------------------------------------------- */
+
+.theme-admonition,
+.alert {
+  border: none !important;
+  border-left: 3px solid var(--doc-note) !important;
+  border-radius: 0 !important;
+  background: var(--doc-note-bg) !important;
+  padding: var(--sp-sm) var(--sp-md) !important;
+  font-family: var(--font-sans);
+  color: var(--text);
+}
+
+.theme-admonition--note,
+.alert--secondary,
+.alert--info { border-left-color: var(--doc-note) !important; background: var(--doc-note-bg) !important; }
+.theme-admonition--tip,
+.alert--success { border-left-color: var(--doc-tip) !important; background: var(--doc-tip-bg) !important; }
+.theme-admonition--warning,
+.alert--warning { border-left-color: var(--doc-warning) !important; background: var(--doc-warning-bg) !important; }
+.theme-admonition--danger,
+.alert--danger { border-left-color: var(--doc-danger) !important; background: var(--doc-danger-bg) !important; }
+
+.theme-admonition .admonitionHeading_node_modules-\@docusaurus-theme-classic-lib-theme-Admonition-Layout-styles-module,
+.theme-admonition [class*="admonitionHeading"] {
+  font-family: var(--font-mono) !important;
+  font-size: var(--fs-xs) !important;
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+  color: var(--doc-note);
+  margin-bottom: var(--sp-xs);
+}
+
+/* Replace the default icon+name with bracketed label */
+.theme-admonition [class*="admonitionHeading"] > span:first-child {
+  display: none;
+}
+.theme-admonition [class*="admonitionHeading"] > span:last-child::before {
+  content: "[";
+  color: var(--text-muted);
+}
+.theme-admonition [class*="admonitionHeading"] > span:last-child::after {
+  content: "]";
+  color: var(--text-muted);
+}
+
+.theme-admonition--tip [class*="admonitionHeading"] { color: var(--doc-tip); }
+.theme-admonition--warning [class*="admonitionHeading"] { color: var(--doc-warning); }
+.theme-admonition--danger [class*="admonitionHeading"] { color: var(--doc-danger); }
+
+/* ---------------------------------------------------------------- *
+ *  Tables — mono, tabular-nums, hairline rows                       *
+ * ---------------------------------------------------------------- */
+
+.markdown table {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border);
+  border-collapse: collapse;
+  width: 100%;
+  display: table;
+  margin: var(--sp-md) 0;
+}
+
+.markdown table thead {
+  background: transparent;
+}
+
+.markdown table th {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent-faint);
+  padding: var(--sp-xs) var(--sp-sm);
+  text-align: left;
+}
+
+.markdown table td {
+  border-top: 1px solid var(--border);
+  padding: var(--sp-xs) var(--sp-sm);
+  color: var(--text);
+}
+
+.markdown table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Navbar                                                           *
+ * ---------------------------------------------------------------- */
+
+.navbar {
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+}
+
+.navbar__brand,
+.navbar__title {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.navbar__items .navbar__link {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.navbar__items .navbar__link:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+.navbar__items .navbar__link--active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 4px;
+}
+
+/* GitHub link — prepend a terminal glyph, strip default icon if any */
+.navbar__items--right .navbar__link[href*="github.com"]::before {
+  content: "⎘ ";
+  color: var(--accent);
+  margin-right: 2px;
+}
+
+/* Search trigger */
+.DocSearch-Button,
+[class*="searchBox"] button {
+  background: var(--surface-hover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  font-family: var(--font-mono) !important;
+  color: var(--text-muted) !important;
+}
+.DocSearch-Button:hover {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+/* ---------------------------------------------------------------- *
+ *  Sidebar                                                          *
+ * ---------------------------------------------------------------- */
+
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--border);
+  background: transparent;
+}
+
+.menu {
+  background: transparent;
+  font-family: var(--font-mono);
+  padding: var(--sp-sm);
+}
+
+.menu__list {
+  font-size: var(--fs-sm);
+}
+
+.menu__link {
+  border-radius: 0;
+  padding: 4px 10px 4px 6px;
+  color: var(--text-muted);
+  transition: color 0.08s ease, background 0.08s ease;
+  border-left: 2px solid transparent;
+  line-height: 1.5;
+  position: relative;
+}
+
+/* Tree connector — the signature sidebar treatment.
+ * Every leaf link gets a "└─" prefix; the collapsible category header
+ * separately gets a "▸" caret (via .menu__caret, Docusaurus default).
+ * The deeply-nested rules re-draw the connector per depth level so
+ * branches look like tree(1) output.
+ */
+.menu__link::before {
+  content: "└─";
+  display: inline-block;
+  margin-right: 0.5ch;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  letter-spacing: -0.1em;
+  transition: color 0.08s ease;
+}
+
+.menu__list-item:not(:last-child) > .menu__link::before,
+.menu__list-item:not(:last-child) > .menu__list-item-collapsible > .menu__link::before {
+  content: "├─";
+}
+
+.menu__list-item-collapsible > .menu__link::before {
+  content: "├─";
+}
+
+.menu__list .menu__list .menu__link::before {
+  color: var(--text-faint);
+  opacity: 0.85;
+}
+
+.menu__link:hover::before {
+  color: var(--accent-dim);
+}
+.menu__link--active::before {
+  color: var(--accent);
+}
+
+.menu__link:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.menu__link--active {
+  color: var(--accent);
+  background: transparent;
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+
+.menu__link--sublist-caret::after,
+.menu__caret::before {
+  filter: brightness(0.7);
+}
+
+.menu__list-item-collapsible:hover {
+  background: var(--surface-hover);
+}
+
+.menu__list-item-collapsible--active {
+  background: transparent;
+}
+
+/* Section labels in sidebar — category headers */
+.menu__list-item--collapsed > .menu__list-item-collapsible > .menu__link,
+.menu__list-item-collapsible > .menu__link {
+  color: var(--text);
+  font-weight: 500;
+  text-transform: none;
+}
+
+/* ---------------------------------------------------------------- *
+ *  Right-rail TOC                                                   *
+ * ---------------------------------------------------------------- */
+
+.table-of-contents {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  border-left: 1px solid var(--border);
+}
+
+.table-of-contents__link {
+  color: var(--text-muted);
+}
+
+.table-of-contents__link--active,
+.table-of-contents__link:hover {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Pagination (prev/next)                                           *
+ * ---------------------------------------------------------------- */
+
+.pagination-nav__link {
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  transition: border-color 0.12s ease;
+}
+.pagination-nav__link:hover {
+  border-color: var(--accent);
+}
+.pagination-nav__sublabel {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  text-transform: lowercase;
+  letter-spacing: 0.06em;
+}
+.pagination-nav__label {
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Breadcrumb                                                       *
+ * ---------------------------------------------------------------- */
+
+.breadcrumbs {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Footer                                                           *
+ * ---------------------------------------------------------------- */
+
+.footer {
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.footer__copyright {
+  color: var(--text-muted);
+}
+
+.footer__copyright::before {
+  content: "// ";
+  color: var(--accent-dim);
+}
+
+/* ---------------------------------------------------------------- *
+ *  Search modal (Ctrl+K)                                            *
+ * ---------------------------------------------------------------- */
+
+.DocSearch-Modal,
+[class*="SearchModal"] {
+  background: var(--bg) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: var(--shadow-raised) !important;
+  font-family: var(--font-mono) !important;
+}
+
+.DocSearch-SearchBar,
+.DocSearch-Input {
+  font-family: var(--font-mono) !important;
+}
+
+/* ---------------------------------------------------------------- *
+ *  HR — hairline, copper-tinted                                     *
+ * ---------------------------------------------------------------- */
+
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--sp-lg) 0;
+}

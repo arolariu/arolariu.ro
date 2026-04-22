@@ -19,6 +19,8 @@
     "@docusaurus/preset-classic": "*",
     "@docusaurus/theme-classic": "*",
     "@easyops-cn/docusaurus-search-local": "*",
+    "@fontsource/ibm-plex-mono": "*",
+    "@fontsource/ibm-plex-sans": "*",
     "@mdx-js/react": "*",
     "clsx": "*",
     "docusaurus-plugin-openapi-docs": "*",
