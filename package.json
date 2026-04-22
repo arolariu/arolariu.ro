@@ -96,6 +96,8 @@
     "@docusaurus/tsconfig": "3.10.0",
     "@docusaurus/types": "3.10.0",
     "@easyops-cn/docusaurus-search-local": "0.52.1",
+    "@fontsource/ibm-plex-mono": "5.2.7",
+    "@fontsource/ibm-plex-sans": "5.2.7",
     "@mdx-js/react": "3.1.1",
     "@azure/identity": "4.13.1",
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.32",

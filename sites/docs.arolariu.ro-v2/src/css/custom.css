@@ -1,21 +1,17 @@
-:root {
-  --ifm-color-primary: #003f7d;
-  --ifm-color-primary-dark: #003871;
-  --ifm-color-primary-darker: #00356b;
-  --ifm-color-primary-darkest: #002c58;
-  --ifm-color-primary-light: #004689;
-  --ifm-color-primary-lighter: #00498f;
-  --ifm-color-primary-lightest: #00529f;
-  --ifm-code-font-size: 95%;
-  --ifm-font-family-base: system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-[data-theme='dark'] {
-  --ifm-color-primary: #4aa3ff;
-  --ifm-color-primary-dark: #2d94ff;
-  --ifm-color-primary-darker: #1e8cff;
-  --ifm-color-primary-darkest: #006dd9;
-  --ifm-color-primary-light: #67b2ff;
-  --ifm-color-primary-lighter: #76baff;
-  --ifm-color-primary-lightest: #a1cfff;
-  --ifm-background-color: #0e1422;
-}
+/*
+ * docs.arolariu.ro — single entry point for custom styling.
+ *
+ * Loads the fonts first, then the layered theme files.
+ * Docusaurus picks up this file via `themeConfig.customCss`.
+ */
+
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+
+@import "./theme-tokens.css";
+@import "./theme-docusaurus.css";
+@import "./theme-motion.css";

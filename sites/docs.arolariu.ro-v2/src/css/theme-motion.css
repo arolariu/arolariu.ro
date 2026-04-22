@@ -1,0 +1,47 @@
+/*
+ * Motion — restrained. Docs are reference material, not a dashboard;
+ * motion should never distract from reading. We use exactly two
+ * ingredients: a one-shot consolePrint reveal on the initial heading,
+ * and a steady caret blink on the hero.
+ */
+
+@keyframes consolePrint {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+/* Primary article title reveals as if line-printed */
+.markdown > h1:first-child {
+  animation: consolePrint 0.25s ease-out both;
+}
+
+/* Reusable helper classes */
+.console-print {
+  animation: consolePrint 0.3s ease-out both;
+}
+
+.blinking-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  vertical-align: -0.12em;
+  margin-left: 0.1em;
+  background: var(--accent);
+  animation: blink 1.05s steps(2, end) infinite;
+}
+
+/* Respect the platform preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
