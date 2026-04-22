@@ -527,11 +527,49 @@ body::before {
 
 .menu__link {
   border-radius: 0;
-  padding: 4px 10px;
+  padding: 4px 10px 4px 6px;
   color: var(--text-muted);
   transition: color 0.08s ease, background 0.08s ease;
   border-left: 2px solid transparent;
   line-height: 1.5;
+  position: relative;
+}
+
+/* Tree connector — the signature sidebar treatment.
+ * Every leaf link gets a "└─" prefix; the collapsible category header
+ * separately gets a "▸" caret (via .menu__caret, Docusaurus default).
+ * The deeply-nested rules re-draw the connector per depth level so
+ * branches look like tree(1) output.
+ */
+.menu__link::before {
+  content: "└─";
+  display: inline-block;
+  margin-right: 0.5ch;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  letter-spacing: -0.1em;
+  transition: color 0.08s ease;
+}
+
+.menu__list-item:not(:last-child) > .menu__link::before,
+.menu__list-item:not(:last-child) > .menu__list-item-collapsible > .menu__link::before {
+  content: "├─";
+}
+
+.menu__list-item-collapsible > .menu__link::before {
+  content: "├─";
+}
+
+.menu__list .menu__list .menu__link::before {
+  color: var(--text-faint);
+  opacity: 0.85;
+}
+
+.menu__link:hover::before {
+  color: var(--accent-dim);
+}
+.menu__link--active::before {
+  color: var(--accent);
 }
 
 .menu__link:hover {
