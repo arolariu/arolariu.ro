@@ -2,7 +2,7 @@ import {describe, it, expect, beforeEach, afterEach} from 'vitest';
 import {mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {normalizeDirectory} from './docs-assemble.normalize';
+import {normalizeDirectory, serializeFrontmatter} from './docs-assemble.normalize';
 
 describe('normalizeDirectory', () => {
   let root: string;
@@ -58,5 +58,36 @@ describe('normalizeDirectory', () => {
     const colon = readFileSync(join(root, 'colon.md'), 'utf8');
     expect(scoped).toMatch(/title: "@arolariu\/components"/);
     expect(colon).toMatch(/title: "Name: With Colon"/);
+  });
+});
+
+describe('serializeFrontmatter', () => {
+  it('renders simple string and numeric values without quoting', () => {
+    const out = serializeFrontmatter({title: 'Hello', sidebar_position: 3}, 'body');
+    expect(out).toBe('---\ntitle: Hello\nsidebar_position: 3\n---\nbody');
+  });
+
+  it('returns the body unchanged when frontmatter is empty', () => {
+    expect(serializeFrontmatter({}, 'body')).toBe('body');
+  });
+
+  it.each([
+    'true', 'false', 'yes', 'no', 'on', 'off', 'null', '~',
+    'TRUE', 'NO', 'Null',
+  ])('quotes YAML keyword scalar %j so it round-trips as a string', (keyword) => {
+    const out = serializeFrontmatter({title: keyword}, '');
+    expect(out).toContain(`title: "${keyword}"`);
+  });
+
+  it('quotes values starting with YAML-reserved punctuation', () => {
+    const out = serializeFrontmatter({title: '@scope/pkg'}, '');
+    expect(out).toContain('title: "@scope/pkg"');
+  });
+
+  it('escapes embedded double quotes and backslashes when quoting is triggered', () => {
+    // The leading `@` forces quoting; inside the quoted scalar, `"` and
+    // `\` must be backslash-escaped so the value round-trips correctly.
+    const out = serializeFrontmatter({title: '@a "b" \\c'}, '');
+    expect(out).toContain('title: "@a \\"b\\" \\\\c"');
   });
 });
