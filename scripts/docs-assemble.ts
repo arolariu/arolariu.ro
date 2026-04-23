@@ -4,9 +4,9 @@ import {spawn} from 'node:child_process';
 import {normalizeDirectory} from './docs-assemble.normalize.ts';
 
 const REPO_ROOT = resolve(import.meta.dirname, '..');
-const DOCS_V2_ROOT = join(REPO_ROOT, 'sites', 'docs.arolariu.ro-v2');
-const GENERATED_ROOT = join(DOCS_V2_ROOT, '_generated');
-const PROSE_DEST = join(DOCS_V2_ROOT, 'docs', 'monorepo');
+const DOCS_ROOT = join(REPO_ROOT, 'sites', 'docs.arolariu.ro');
+const GENERATED_ROOT = join(DOCS_ROOT, '_generated');
+const PROSE_DEST = join(DOCS_ROOT, 'docs', 'monorepo');
 const PROSE_SRC = join(REPO_ROOT, 'docs');
 
 const NPM_FAMILY_COMMANDS = new Set(['npm', 'npx', 'node']);

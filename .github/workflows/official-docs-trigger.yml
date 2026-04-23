@@ -1,178 +1,68 @@
-# =============================================================================
-# Documentation Website Build and Deployment Workflow
-# =============================================================================
-# This workflow generates and deploys the API documentation website
-# (docs.arolariu.ro) using DocFX for .NET API reference documentation.
-#
-# Architecture:
-#   - DocFX Metadata: Extracts XML documentation from .NET assemblies
-#   - DocFX Build: Generates static HTML documentation
-#   - Azure Static Web Apps: Hosts the generated documentation
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch (excluding .github/ changes)
-#   - Manual: workflow_dispatch for on-demand documentation regeneration
-#
-# Technology Stack:
-#   - DocFX: .NET API documentation generator
-#   - .NET 10.0: Required for building and analyzing assemblies
-#   - Azure Static Web Apps: Global CDN hosting
-#
-# Security:
-#   - Uses OIDC for Azure authentication
-#   - Static Web Apps deployment token stored in GitHub Secrets
-#
-# Prerequisites:
-#   1. DocFX configuration in sites/docs.arolariu.ro/docfx.json
-#   2. .NET solution with XML documentation enabled
-#   3. GitHub Secrets configured:
-#      - AZURE_STATIC_WEB_APPS_DOCS_TOKEN
-#
-# Output:
-#   - URL: https://docs.arolariu.ro
-#   - Content: Auto-generated API reference from C# XML comments
-# =============================================================================
-
-name: "official-docs-trigger"
-
-permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
+name: Docs — build & deploy
 
 on:
-  # Automatic trigger on main branch changes (except .github/)
   push:
-    branches: ["main"]
-    paths-ignore: [".github/*"]
-
-  # Manual trigger for on-demand documentation regeneration
+    branches: [main]
+    paths:
+      - 'sites/docs.arolariu.ro/**'
+      - 'sites/api.arolariu.ro/src/**'
+      - 'sites/arolariu.ro/src/**'
+      - 'packages/components/src/**'
+      - 'sites/exp.arolariu.ro/**'
+      - 'docs/**'
+      - 'scripts/docs-assemble*.ts'
+      - 'typedoc.*.json'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/official-docs-trigger.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sites/docs.arolariu.ro/**'
+      - 'sites/api.arolariu.ro/src/**'
+      - 'sites/arolariu.ro/src/**'
+      - 'packages/components/src/**'
+      - 'sites/exp.arolariu.ro/**'
+      - 'docs/**'
+      - 'scripts/docs-assemble*.ts'
+      - 'typedoc.*.json'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/official-docs-trigger.yml'
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment for deployment"
-        options:
-          - "production"
-        default: "production"
-        type: choice
-
-env:
-  COMMIT_SHA: ${{ github.sha }}
 
 jobs:
-  build-and-deploy:
-    if: github.repository == 'arolariu/arolariu.ro'
-    name: 🚀 Building and deploying the docs platform (docs.arolariu.ro)...
+  build_and_deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: "documentation"
-      url: "https://docs.arolariu.ro"
+    name: Build and deploy docs
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: 'npm'}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.0.x'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
 
-      - name: 📝 Display workflow context
-        run: |
-          echo "::group::🔍 Workflow Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 📚 DOCUMENTATION WEBSITE PIPELINE                          │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Build & Deploy                           │"
-          echo "│ 🌍 Framework:     DocFX + TypeDoc                          │"
-          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
+      - name: Install npm dependencies
+        run: npm ci
 
-          # Write initial summary
-          echo "## 📚 Documentation Website Pipeline" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Framework | DocFX + TypeDoc |" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | https://docs.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+      - name: Restore dotnet tools
+        run: dotnet tool restore
 
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          dotnet-version: '10'
-          install-node-dependencies: 'true'
-          install-dotnet-dependencies: 'true'
-          cache-key-prefix: 'docs'
+      - name: Install Python docs dependencies
+        run: python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
 
-      - name: "[DOCS::1/4] 🏗️ Installing the .NET dependencies..."
-        run: |
-          echo "::group::📦 .NET Dependencies"
-          echo "Installing .NET workloads and restoring packages..."
-          START_TIME=$(date +%s)
-          dotnet workload restore
-          dotnet restore ./arolariu.slnx
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Dependencies installed in ${DURATION}s"
-          echo "::endgroup::"
+      - name: Assemble docs
+        run: npm run docs:assemble
 
-      - name: "[DOCS::2/4] 🧾 Generating TypeScript API reference (TypeDoc)..."
-        run: |
-          echo "::group::📝 TypeDoc Generation"
-          echo "Generating TypeScript API documentation..."
-          START_TIME=$(date +%s)
-          npm run docs:typedoc
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ TypeDoc completed in ${DURATION}s"
-          echo "::endgroup::"
+      - name: Build Docusaurus
+        run: npm run build:docs
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📝 TypeDoc Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-
-      - name: "[DOCS::3/4] ⚙️ Building the DocFX documentation platform..."
-        run: |
-          echo "::group::📚 DocFX Build"
-          echo "Generating .NET API documentation with DocFX..."
-          START_TIME=$(date +%s)
-          dotnet tool update -g docfx
-          docfx metadata "./sites/docs.arolariu.ro/docfx.json"
-          docfx build "./sites/docs.arolariu.ro/docfx.json"
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ DocFX completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📚 DocFX Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Output | sites/docs.arolariu.ro/_site |" >> $GITHUB_STEP_SUMMARY
-
-      - name: "[DOCS::4/4] 🚀 Deploying documentation..."
+      - name: Deploy to Azure Static Web Apps
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_DOCS_TOKEN }}
-          action: "upload"
-          app_location: "./sites/docs.arolariu.ro/_site" # App source code path
-          output_location: "./sites/docs.arolariu.ro/_site"
-
-      - name: 📊 Deployment summary
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Live URL**: https://docs.arolariu.ro" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-
-          echo ""
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ✅ DOCUMENTATION DEPLOYED SUCCESSFULLY                     │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔗 URL: https://docs.arolariu.ro                           │"
-          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: 'sites/docs.arolariu.ro/build'
+          skip_app_build: true

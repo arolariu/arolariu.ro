@@ -5,7 +5,7 @@
   ],
   "entryPointStrategy": "resolve",
   "tsconfig": "packages/components/tsconfig.json",
-  "out": "sites/docs.arolariu.ro-v2/_generated/ts-reference/components",
+  "out": "sites/docs.arolariu.ro/_generated/ts-reference/components",
   "plugin": [
     "typedoc-plugin-markdown"
   ],

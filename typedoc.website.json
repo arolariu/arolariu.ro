@@ -6,7 +6,7 @@
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "sites/arolariu.ro/tsconfig.typedoc.json",
-  "out": "sites/docs.arolariu.ro-v2/_generated/ts-reference/website",
+  "out": "sites/docs.arolariu.ro/_generated/ts-reference/website",
   "plugin": [
     "typedoc-plugin-markdown"
   ],

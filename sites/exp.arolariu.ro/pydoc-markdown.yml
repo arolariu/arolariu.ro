@@ -27,7 +27,7 @@ processors:
 
 renderer:
   type: docusaurus
-  docs_base_path: ../../sites/docs.arolariu.ro-v2/_generated/experimental
+  docs_base_path: ../../sites/docs.arolariu.ro/_generated/experimental
   relative_output_path: .
   relative_sidebar_path: sidebar.json
   sidebar_top_level_label: Experimental
