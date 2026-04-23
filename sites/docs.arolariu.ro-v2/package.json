@@ -6,6 +6,7 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start --port 3100",
     "build": "docusaurus build",
+    "postbuild": "node scripts/postbuild.ts",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -18,6 +19,7 @@
     "@docusaurus/core": "*",
     "@docusaurus/preset-classic": "*",
     "@docusaurus/theme-classic": "*",
+    "@docusaurus/theme-mermaid": "*",
     "@easyops-cn/docusaurus-search-local": "*",
     "@fontsource/ibm-plex-mono": "*",
     "@fontsource/ibm-plex-sans": "*",
@@ -32,7 +34,9 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "*",
     "@docusaurus/tsconfig": "*",
-    "@docusaurus/types": "*"
+    "@docusaurus/types": "*",
+    "@resvg/resvg-js": "*",
+    "node-html-parser": "*"
   },
   "browserslist": {
     "production": [">0.5%", "not dead", "not op_mini all"],

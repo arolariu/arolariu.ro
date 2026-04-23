@@ -87,7 +87,7 @@ function Section({
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>
-        <span className={styles.chevron}>&gt;</span> {title}
+        <span className={styles.chevron} aria-hidden="true">&gt;</span> {title}
       </h2>
       <ul className={styles.rows}>
         {rows.map((row, i) => {

@@ -42,8 +42,8 @@
   --ifm-font-family-base: var(--font-sans);
   --ifm-font-family-monospace: var(--font-mono);
   --ifm-heading-font-family: var(--font-mono);
-  --ifm-font-weight-semibold: 500;
-  --ifm-heading-font-weight: 500;
+  --ifm-font-weight-semibold: 600;
+  --ifm-heading-font-weight: 600;
   --ifm-font-size-base: 16px;
   --ifm-code-font-size: 0.875em;
   --ifm-line-height-base: 1.65;
@@ -193,7 +193,7 @@ body::before {
 .markdown h3,
 .markdown h4 {
   font-family: var(--font-mono);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text);
   margin-top: 2.4em;
@@ -581,7 +581,7 @@ body::before {
   color: var(--accent);
   background: transparent;
   border-left-color: var(--accent);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .menu__link--sublist-caret::after,
@@ -601,7 +601,7 @@ body::before {
 .menu__list-item--collapsed > .menu__list-item-collapsible > .menu__link,
 .menu__list-item-collapsible > .menu__link {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: none;
 }
 
@@ -711,4 +711,46 @@ body::before {
   border: none;
   border-top: 1px solid var(--border);
   margin: var(--sp-lg) 0;
+}
+
+/* Skip-to-content — Docusaurus' SkipToContent is visually hidden
+ * until focused. Surface the focused state in our console aesthetic. */
+#skipToContent,
+a[href="#__docusaurus_skipToContent_fallback"],
+[class*="skipToContent"] {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 999;
+  background: var(--bg);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.15s ease-out;
+}
+
+#skipToContent:focus,
+a[href="#__docusaurus_skipToContent_fallback"]:focus,
+[class*="skipToContent"]:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Focus-ring audit — every interactive element gets a visible
+ * copper outline. Normalizes Docusaurus' inconsistent defaults. */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0;
 }
