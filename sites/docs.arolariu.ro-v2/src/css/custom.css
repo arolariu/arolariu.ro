@@ -1,15 +1,14 @@
 /*
  * docs.arolariu.ro — single entry point for custom styling.
  *
- * Loads the fonts first, then the layered theme files.
- * Docusaurus picks up this file via `themeConfig.customCss`.
+ * Loads IBM Plex Mono + Sans at weights 400 and 600 only.
+ * Weight 500 was dropped in the enhancement pass; call sites now
+ * reference 600 explicitly.
  */
 
 @import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
 @import "@fontsource/ibm-plex-sans/400.css";
-@import "@fontsource/ibm-plex-sans/500.css";
 @import "@fontsource/ibm-plex-sans/600.css";
 
 @import "./theme-tokens.css";

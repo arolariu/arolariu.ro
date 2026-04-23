@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/staticwebapp.config.json",
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/assets/*",
+      "/img/*",
+      "/js/*",
+      "/css/*",
+      "/fonts/*",
+      "*.{txt,json,xml,png,svg,ico,woff2,css,js,webmanifest,map}"
+    ]
+  },
+  "mimeTypes": {
+    ".txt": "text/plain; charset=utf-8",
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json"
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.clarity.ms; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.clarity.ms; frame-ancestors 'none';",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), payment=(), geolocation=(), interest-cohort=()"
+  }
+}

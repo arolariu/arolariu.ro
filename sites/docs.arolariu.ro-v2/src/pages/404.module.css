@@ -1,0 +1,93 @@
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 5vw, 5rem) clamp(1rem, 3vw, 2.5rem);
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-hero);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.chevron { color: var(--accent); margin-right: 0.4ch; }
+.accent { color: var(--accent); }
+.slash { color: var(--text-faint); margin: 0 0.1em; }
+.text { color: var(--text); }
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  vertical-align: -0.12em;
+  margin-left: 0.3em;
+  background: var(--accent);
+  animation: blink 1.05s steps(2, end) infinite;
+}
+
+.tagline {
+  margin-top: 1rem;
+  margin-bottom: 0;
+  color: var(--text-muted);
+}
+
+.comment { color: var(--accent-dim); margin-right: 0.5ch; }
+
+.path {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 1px 6px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.rows { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: baseline;
+  column-gap: 0.6ch;
+  padding: 6px 8px;
+  border-left: 2px solid transparent;
+  transition: background-color 0.12s ease, border-left-color 0.12s ease;
+}
+
+.row:hover { background: var(--surface-hover); border-left-color: var(--accent); }
+
+.tree { color: var(--text-faint); letter-spacing: -0.1em; }
+
+.rowLabel {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.rowLabel:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+.rowArrow { color: var(--text-faint); padding: 0 0.4ch; }
+
+.rowPath {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; opacity: 1; }
+}

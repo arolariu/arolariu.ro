@@ -13,6 +13,31 @@ This RFC documents the Domain-Driven Design (DDD) architecture and SOLID princip
 
 ---
 
+## Layer diagram
+
+```mermaid
+flowchart TB
+  Endpoints[Endpoints · Exposers]
+  Processing[Processing Services]
+  Orchestration[Orchestration Services]
+  Foundation[Foundation Services]
+  Brokers[Brokers]
+  External[(External systems<br/>DB · AI · HTTP · Storage)]
+
+  Endpoints --> Processing
+  Processing --> Orchestration
+  Orchestration --> Foundation
+  Foundation --> Brokers
+  Brokers --> External
+
+  classDef layer stroke:#e87a3e,stroke-width:1.5px;
+  classDef external stroke-dasharray:4 3;
+  class Endpoints,Processing,Orchestration,Foundation,Brokers layer;
+  class External external;
+```
+
+---
+
 ## 1. Motivation
 
 ### 1.1 Problem Statement

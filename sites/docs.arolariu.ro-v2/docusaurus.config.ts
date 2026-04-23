@@ -5,6 +5,7 @@ import type {Config, PluginConfig} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
 import {themes as prismThemes} from 'prism-react-renderer';
+import schemaJsonLdPlugin from './src/plugins/schema-jsonld';
 
 // Docusaurus loads this config via jiti, which transpiles to CJS and does NOT
 // support `import.meta.dirname`. Resolve paths relative to the config file by
@@ -66,8 +67,18 @@ const config: Config = {
   projectName: 'arolariu.ro',
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
-  markdown: {format: 'detect'},
+  markdown: {format: 'detect', mermaid: true},
   i18n: {defaultLocale: 'en', locales: ['en']},
+  headTags: [
+    {tagName: 'meta', attributes: {name: 'theme-color', content: '#0a0b0d'}},
+    {tagName: 'meta', attributes: {property: 'og:site_name', content: 'arolariu.ro docs'}},
+    {tagName: 'meta', attributes: {property: 'og:type', content: 'article'}},
+    {tagName: 'meta', attributes: {property: 'og:image', content: 'https://docs.arolariu.ro/img/og-card.png'}},
+    {tagName: 'meta', attributes: {property: 'og:image:width', content: '1200'}},
+    {tagName: 'meta', attributes: {property: 'og:image:height', content: '630'}},
+    {tagName: 'meta', attributes: {name: 'twitter:card', content: 'summary_large_image'}},
+    {tagName: 'meta', attributes: {name: 'twitter:image', content: 'https://docs.arolariu.ro/img/og-card.png'}},
+  ],
   scripts: [
     {src: '/js/clarity.js', async: true},
   ],
@@ -78,6 +89,12 @@ const config: Config = {
         docs: false,
         blog: false,
         theme: {customCss: './src/css/custom.css'},
+        sitemap: {
+          changefreq: 'weekly',
+          priority: 0.7,
+          ignorePatterns: ['/404', '/search'],
+          filename: 'sitemap.xml',
+        },
       } satisfies Preset.Options,
     ],
   ],
@@ -120,10 +137,25 @@ const config: Config = {
         sidebarPath: './sidebars/experimental.ts',
       },
     ],
+    schemaJsonLdPlugin,
     '@easyops-cn/docusaurus-search-local',
   ],
-  themes: hasOpenApiSpec ? ['docusaurus-theme-openapi-docs'] : [],
+  themes: [
+    ...(hasOpenApiSpec ? ['docusaurus-theme-openapi-docs'] : []),
+    '@docusaurus/theme-mermaid',
+  ],
   themeConfig: {
+    mermaid: {
+      // Let Mermaid's built-in themes pick sensible colors per mode.
+      // We only override the font family so diagrams match the site's mono type.
+      // Diagrams themselves should avoid hardcoded fills/text colors so both modes render cleanly.
+      theme: {light: 'neutral', dark: 'dark'},
+      options: {
+        themeVariables: {
+          fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
+        },
+      },
+    },
     navbar: {
       title: 'arolariu.ro',
       items: navbarItems,
