@@ -152,10 +152,13 @@ async function runDotnetInternals(): Promise<void> {
     const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
     mkdirSync(outDir, {recursive: true});
     const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
+    // DefaultDocumentation is installed globally (via `dotnet tool install
+    // --global`) — see sites/docs.arolariu.ro/README.md for the one-time
+    // local setup command. Invoking the executable directly (instead of
+    // `dotnet tool run`) removes the need for a repo-level tool manifest.
     await runCommand(
-      'dotnet',
-      ['tool', 'run', 'DefaultDocumentation', '--',
-       '--AssemblyFilePath', dll,
+      'DefaultDocumentation',
+      ['--AssemblyFilePath', dll,
        '--OutputDirectoryPath', outDir,
        '--FileNameFactory', 'Name',
        '--GeneratedPages', 'Namespaces'],

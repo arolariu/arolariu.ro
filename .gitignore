@@ -27,6 +27,8 @@ docs/superpowers/**
 **/*.tsbuildinfo
 **/__generated__/**
 **/_generated/**
+**/.docusaurus/**
+sites/docs.arolariu.ro/docs/monorepo/
 **/artifacts/
 **/test-file.txt
 
