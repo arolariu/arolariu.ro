@@ -26,6 +26,7 @@ docs/superpowers/**
 **/**/.DS_Store
 **/*.tsbuildinfo
 **/__generated__/**
+**/_generated/**
 **/artifacts/
 **/test-file.txt
 
