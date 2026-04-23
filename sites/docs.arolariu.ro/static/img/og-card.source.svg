@@ -17,7 +17,6 @@
   <text x="100" y="320" class="wordmark">
     <tspan>arolariu.ro</tspan><tspan class="slash">/</tspan><tspan class="accent">docs</tspan>
   </text>
-  <rect x="835" y="232" width="52" height="96" class="accent" />
   <text x="100" y="410" class="tagline">
     <tspan class="comment">//</tspan> unified reference for three services
   </text>
