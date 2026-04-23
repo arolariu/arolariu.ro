@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Custom 404 page for docs.arolariu.ro.
+ *
+ * @remarks
+ * Renders in the same console aesthetic as the landing hero: a
+ * wordmark with a blinking caret, two `//`-prefixed comment lines
+ * (one echoing the attempted path, one introducing alternatives),
+ * and a tree-drawn list of next moves. Fires a Microsoft Clarity
+ * `404` custom event with the requested path so dead routes are
+ * visible in analytics.
+ *
+ * The shortcut hint in the "open search" row is platform-aware
+ * (⌘K on macOS, Ctrl+K elsewhere) so the prompt matches the
+ * keyboard shortcut the SearchBar wrapper actually binds.
+ */
+
 import React, {useEffect, useState} from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
@@ -9,12 +25,30 @@ declare global {
   }
 }
 
-export default function NotFound(): React.ReactNode {
+/**
+ * Return `true` when the current user agent looks like macOS or iOS —
+ * i.e. the platforms on which the SearchBar wrapper binds `⌘K` rather
+ * than `Ctrl+K`. SSR safe (returns `false` during server render).
+ */
+function isApplePlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform ?? navigator.userAgent ?? '');
+}
+
+/**
+ * The 404 page component. Docusaurus routes any unresolved URL here
+ * automatically when `onBrokenLinks` / `onBrokenMarkdownLinks` are
+ * set to `'warn'` and the Azure Static Web Apps rewrite rule falls
+ * through to `index.html`.
+ */
+export default function NotFound(): React.JSX.Element {
   const [pathname, setPathname] = useState<string>('');
+  const [shortcutHint, setShortcutHint] = useState<string>('Ctrl+K');
 
   useEffect(() => {
     const p = typeof window !== 'undefined' ? window.location.pathname : '';
     setPathname(p);
+    setShortcutHint(isApplePlatform() ? '⌘K' : 'Ctrl+K');
     window.clarity?.('event', '404', {path: p});
   }, []);
 
@@ -45,7 +79,7 @@ export default function NotFound(): React.ReactNode {
             <span className={styles.tree} aria-hidden="true">├─</span>
             <span className={styles.rowLabel}>open search</span>
             <span className={styles.rowArrow} aria-hidden="true">→</span>
-            <code className={styles.rowPath}>press ⌘K</code>
+            <code className={styles.rowPath}>press {shortcutHint}</code>
           </li>
           <li className={styles.row}>
             <span className={styles.tree} aria-hidden="true">└─</span>

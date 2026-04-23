@@ -1,8 +1,30 @@
+/**
+ * @fileoverview Landing page for docs.arolariu.ro.
+ *
+ * @remarks
+ * Three tiers are rendered, top-to-bottom:
+ *
+ * 1. **`i want to…`** — six task-led entry points curated for
+ *    returning developers who know what they want to accomplish.
+ * 2. **`start here`** — four service-level roots (monorepo overview,
+ *    .NET internals, TypeScript reference, Python experimental) for
+ *    open-ended browsing.
+ * 3. **`resources`** — three supplementary tiers (RFCs, backend
+ *    guides, frontend guides).
+ *
+ * A keyboard cursor (↑/↓ or j/k) moves through all 13 rows; Enter
+ * navigates to the highlighted entry. Escape clears the selection.
+ * The cursor shortcuts deliberately do not fire when the user is
+ * typing in an input/textarea/contenteditable, so the landing never
+ * intercepts site-search typing.
+ */
+
 import React, {useEffect, useState} from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import styles from './index.module.css';
 
+/** A single row on the landing page — human label + absolute href. */
 type Row = {readonly label: string; readonly href: string};
 
 const I_WANT_TO: readonly Row[] = [
@@ -29,15 +51,33 @@ const RESOURCES: readonly Row[] = [
 
 const ALL_ROWS: readonly Row[] = [...I_WANT_TO, ...START_HERE, ...RESOURCES];
 
+/**
+ * Return `'└─'` for the last row in a section, `'├─'` otherwise.
+ * Used to draw the tree-style connector to the left of each row.
+ */
 function connector(index: number, total: number): string {
   return index === total - 1 ? '└─' : '├─';
 }
 
-export default function Home(): React.ReactNode {
+/**
+ * Return `true` when the given event target is an input, textarea, or
+ * contenteditable element — in which case the landing's keyboard
+ * shortcuts must NOT fire, or we'd hijack the user's typing.
+ */
+function isInteractiveTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+}
+
+export default function Home(): React.JSX.Element {
   const [cursor, setCursor] = useState<number | null>(null);
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent): void {
+      // Never hijack typing in form fields, search inputs, or editable content.
+      if (isInteractiveTarget(event.target)) return;
+
       if (event.key === 'ArrowDown' || event.key === 'j') {
         event.preventDefault();
         setCursor((value) => (value === null ? 0 : Math.min(value + 1, ALL_ROWS.length - 1)));
@@ -83,17 +123,21 @@ export default function Home(): React.ReactNode {
   );
 }
 
-function Section({
-  title,
-  rows,
-  cursor,
-  cursorOffset,
-}: {
+/** Props for the internal `Section` helper. */
+type SectionProps = {
   readonly title: string;
   readonly rows: readonly Row[];
   readonly cursor: number | null;
   readonly cursorOffset: number;
-}): React.ReactNode {
+};
+
+/**
+ * Render one of the three landing tiers as a heading + tree-drawn list.
+ *
+ * @param cursorOffset - Starting global index for this section. Each
+ *   row's "am I active" check adds its local index to this offset.
+ */
+function Section({title, rows, cursor, cursorOffset}: Readonly<SectionProps>): React.JSX.Element {
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>
