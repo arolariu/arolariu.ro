@@ -146,17 +146,13 @@ const config: Config = {
   ],
   themeConfig: {
     mermaid: {
+      // Let Mermaid's built-in themes pick sensible colors per mode.
+      // We only override the font family so diagrams match the site's mono type.
+      // Diagrams themselves should avoid hardcoded fills/text colors so both modes render cleanly.
       theme: {light: 'neutral', dark: 'dark'},
       options: {
         themeVariables: {
           fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-          primaryColor: '#e87a3e',
-          primaryTextColor: '#c9cdd2',
-          primaryBorderColor: '#e87a3e',
-          lineColor: '#6b7179',
-          secondaryColor: 'rgba(255,255,255,0.07)',
-          tertiaryColor: '#0a0b0d',
-          background: '#0a0b0d',
         },
       },
     },

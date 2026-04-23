@@ -30,8 +30,8 @@ flowchart TB
   Foundation --> Brokers
   Brokers --> External
 
-  classDef layer fill:#0a0b0d,stroke:#e87a3e,color:#c9cdd2,stroke-width:1.5px;
-  classDef external fill:#0a0b0d,stroke:#6b7179,color:#6b7179,stroke-dasharray:4 3;
+  classDef layer stroke:#e87a3e,stroke-width:1.5px;
+  classDef external stroke-dasharray:4 3;
   class Endpoints,Processing,Orchestration,Foundation,Brokers layer;
   class External external;
 ```
