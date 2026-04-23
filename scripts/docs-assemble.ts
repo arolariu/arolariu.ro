@@ -18,9 +18,9 @@
  */
 
 import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from 'node:fs';
-import {join, resolve} from 'node:path';
+import {dirname, join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {spawn} from 'node:child_process';
+import {spawn, type StdioOptions} from 'node:child_process';
 import {normalizeDirectory} from './docs-assemble.normalize.ts';
 
 const REPO_ROOT = resolve(import.meta.dirname, '..');
@@ -29,6 +29,23 @@ const GENERATED_ROOT = join(DOCS_ROOT, '_generated');
 const PROSE_DEST = join(DOCS_ROOT, 'docs', 'monorepo');
 const PROSE_SRC = join(REPO_ROOT, 'docs');
 
+/**
+ * .NET target framework shared across every project under
+ * `sites/api.arolariu.ro/src/`. Declared centrally in
+ * `api.arolariu.ro/Directory.Build.props`; duplicated here only so
+ * {@link discoverDotnetProjects} can locate each project's built DLL
+ * without parsing MSBuild props on every run.
+ */
+const DOTNET_TFM = 'net10.0';
+
+/**
+ * Commands that, on Windows, ship as `.cmd` shims rather than real
+ * `.exe` binaries. `spawn` can't locate those without either the
+ * explicit `.cmd` extension or `shell: true`, so we reserve
+ * `shell: true` exclusively for this set. Everything else (dotnet,
+ * python, DefaultDocumentation) is a real executable on PATH and
+ * runs faster + safer without cmd.exe in between.
+ */
 const NPM_FAMILY_COMMANDS = new Set(['npm', 'npx', 'node']);
 
 /**
@@ -60,24 +77,59 @@ export async function syncProse(src: string, dest: string): Promise<void> {
   rmSync(join(dest, 'superpowers'), {recursive: true, force: true});
 }
 
+/** Optional knobs for {@link runCommand}. */
+export type RunOptions = {
+  /**
+   * When true, stdout and stderr are captured and returned as a single
+   * string. When false (default), they stream live to the parent's TTY
+   * via `stdio: 'inherit'`. Buffered mode is used by the parallel
+   * extractor functions so their output doesn't interleave at the
+   * terminal — each block is replayed as a whole after its extractor
+   * finishes.
+   */
+  readonly buffered?: boolean;
+};
+
 /**
- * Spawn a child process and resolve the returned Promise when it exits
- * with status 0, otherwise reject with a descriptive error. Stdio is
- * inherited so extractor output streams directly into the caller's
- * console.
+ * Spawn a child process and resolve when it exits with status 0.
  *
  * @param command - Command name, rewritten via {@link resolveCommand}
  *   so Windows callers can use `npm`/`npx`/`node` without `.cmd`.
- * @param args    - Argument vector; no shell interpolation happens.
+ * @param args    - Argument vector. No shell interpolation: `shell:true`
+ *   is set only for npm-family shims on Windows (required to locate the
+ *   `.cmd` launcher); native binaries are spawned directly.
  * @param cwd     - Working directory for the child process.
+ * @param options - See {@link RunOptions}.
+ * @returns Captured output when `buffered: true`, otherwise the empty
+ *   string. Non-zero exit rejects with the command line, exit code,
+ *   and (when buffered) the last 2KB of output so CI logs surface the
+ *   real failure instead of just "exited with N".
  */
-export function runCommand(command: string, args: readonly string[], cwd: string): Promise<void> {
-  return new Promise((resolvePromise, reject) => {
-    const child = spawn(resolveCommand(command), args, {cwd, stdio: 'inherit', shell: process.platform === 'win32'});
+export function runCommand(
+  command: string,
+  args: readonly string[],
+  cwd: string,
+  options: RunOptions = {},
+): Promise<string> {
+  const buffered = options.buffered === true;
+  const isNpmFamily = NPM_FAMILY_COMMANDS.has(command);
+  const shell = process.platform === 'win32' && isNpmFamily;
+  const stdio: StdioOptions = buffered ? ['ignore', 'pipe', 'pipe'] : 'inherit';
+
+  return new Promise<string>((resolvePromise, reject) => {
+    const child = spawn(resolveCommand(command), args as string[], {cwd, stdio, shell});
+    let output = '';
+    if (buffered) {
+      child.stdout?.setEncoding('utf8');
+      child.stderr?.setEncoding('utf8');
+      child.stdout?.on('data', (chunk: string) => { output += chunk; });
+      child.stderr?.on('data', (chunk: string) => { output += chunk; });
+    }
     child.on('error', reject);
     child.on('exit', (code) => {
-      if (code === 0) resolvePromise();
-      else reject(new Error(`${command} ${args.join(' ')} exited with ${code}`));
+      if (code === 0) return resolvePromise(output);
+      const tail = buffered && output ? `\n--- last output ---\n${output.slice(-2000)}` : '';
+      reject(new Error(`${command} ${args.join(' ')} exited with ${code}${tail}`));
     });
   });
 }
@@ -121,37 +173,103 @@ const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
 /**
- * One of the four .NET projects whose XML docs are exposed on the docs
- * site. {@link runDotnetInternals} builds each entry independently and
- * then feeds its compiled DLL into `DefaultDocumentation`.
+ * One .NET project whose XML docs are exposed on the docs site.
+ * {@link runDotnetInternals} builds the graph roots once (so every
+ * project is compiled transitively via MSBuild's ProjectReference
+ * traversal) and then runs `DefaultDocumentation` against each
+ * compiled assembly.
  */
-type DotnetProject = {
-  /** Path to the `.csproj` file, relative to `sites/api.arolariu.ro/`. */
+export type DotnetProject = {
+  /** Absolute path to the `.csproj` file. */
   readonly csproj: string;
+  /** Path to the `.csproj` relative to `sites/api.arolariu.ro/`, for logging. */
+  readonly csprojRelative: string;
   /** Final assembly filename without the `.dll` extension. */
   readonly assemblyName: string;
   /** Directory (relative to the API root) containing the built DLL. */
   readonly binRelative: string;
+  /** Absolute paths of every `<ProjectReference>` declared in the csproj. */
+  readonly projectReferences: readonly string[];
 };
 
-const DOTNET_PROJECTS: readonly DotnetProject[] = [
-  {csproj: 'src/Common/arolariu.Backend.Common.csproj', assemblyName: 'arolariu.Backend.Common', binRelative: 'src/Common/bin/Release/net10.0'},
-  {csproj: 'src/Core/arolariu.Backend.Core.csproj', assemblyName: 'arolariu.Backend.Core', binRelative: 'src/Core/bin/Release/net10.0'},
-  {csproj: 'src/Core.Auth/arolariu.Backend.Core.Auth.csproj', assemblyName: 'arolariu.Backend.Core.Auth', binRelative: 'src/Core.Auth/bin/Release/net10.0'},
-  {csproj: 'src/Invoices/arolariu.Backend.Domain.Invoices.csproj', assemblyName: 'arolariu.Backend.Domain.Invoices', binRelative: 'src/Invoices/bin/Release/net10.0'},
-];
+/** Extract `<ProjectReference Include="..." />` paths from a csproj. */
+function parseProjectReferences(csprojPath: string): readonly string[] {
+  const content = readFileSync(csprojPath, 'utf8');
+  const refs: string[] = [];
+  const regex = /<ProjectReference\s+Include\s*=\s*["']([^"']+)["']/g;
+  for (let match: RegExpExecArray | null; (match = regex.exec(content)) !== null;) {
+    const relPath = match[1].replaceAll('\\', '/');
+    refs.push(resolve(dirname(csprojPath), relPath));
+  }
+  return refs;
+}
 
 /**
- * Build every .NET project in {@link DOTNET_PROJECTS} once, then run
- * `DefaultDocumentation` against each compiled DLL to emit namespace
- * pages into `_generated/dotnet-internals/<assembly>/`.
+ * Walk `sites/api.arolariu.ro/src/*` and return every `.csproj` with
+ * its assembly name, bin-output path, and declared project references.
+ *
+ * Returning project references lets {@link findDotnetBuildRoots}
+ * compute the minimum build set — projects not referenced by any
+ * sibling are the entry points MSBuild needs; building each one once
+ * cascades through the entire graph via `BuildProjectReferences=true`
+ * (the default).
  */
-async function runDotnetInternals(): Promise<void> {
-  for (const proj of DOTNET_PROJECTS) {
-    await runCommand('dotnet', ['build', proj.csproj, '-c', 'Release'], API_ROOT);
+export function discoverDotnetProjects(
+  apiRoot: string = API_ROOT,
+  tfm: string = DOTNET_TFM,
+): readonly DotnetProject[] {
+  const srcRoot = join(apiRoot, 'src');
+  const projects: DotnetProject[] = [];
+  for (const dir of readdirSync(srcRoot)) {
+    const dirPath = join(srcRoot, dir);
+    if (!statSync(dirPath).isDirectory()) continue;
+    for (const file of readdirSync(dirPath)) {
+      if (!file.endsWith('.csproj')) continue;
+      const csproj = join(dirPath, file);
+      projects.push({
+        csproj,
+        csprojRelative: `src/${dir}/${file}`,
+        assemblyName: file.replace(/\.csproj$/, ''),
+        binRelative: `src/${dir}/bin/Release/${tfm}`,
+        projectReferences: parseProjectReferences(csproj),
+      });
+    }
+  }
+  return projects.sort((a, b) => a.csproj.localeCompare(b.csproj));
+}
+
+/**
+ * Return the subset of projects that no other project references — the
+ * minimum MSBuild entry points needed to compile every assembly. Given
+ * the current graph (Core references Common, Core.Auth, Invoices),
+ * this returns `[Core]`: one `dotnet build` call against Core cascades
+ * through the whole set.
+ */
+export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readonly DotnetProject[] {
+  const referenced = new Set(projects.flatMap((p) => p.projectReferences));
+  const roots = projects.filter((p) => !referenced.has(p.csproj));
+  if (roots.length === 0) {
+    throw new Error('.NET projects: every project is referenced by another — cyclic graph, cannot pick a build root.');
+  }
+  return roots;
+}
+
+/**
+ * Discover every `.csproj` under `api.arolariu.ro/src/`, build the
+ * minimum set of graph roots with one `dotnet build` call each (so
+ * MSBuild covers the whole graph via ProjectReference transitivity),
+ * then run `DefaultDocumentation` against each compiled DLL. Output
+ * lands under `_generated/dotnet-internals/<assembly>/`.
+ */
+async function runDotnetInternals(): Promise<string> {
+  let log = '';
+  const projects = discoverDotnetProjects();
+  const roots = findDotnetBuildRoots(projects);
+  for (const root of roots) {
+    log += await runCommand('dotnet', ['build', root.csprojRelative, '-c', 'Release'], API_ROOT, {buffered: true});
   }
   mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
-  for (const proj of DOTNET_PROJECTS) {
+  for (const proj of projects) {
     const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
     mkdirSync(outDir, {recursive: true});
     const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
@@ -159,16 +277,18 @@ async function runDotnetInternals(): Promise<void> {
     // --global`) — see sites/docs.arolariu.ro/README.md for the one-time
     // local setup command. Invoking the executable directly (instead of
     // `dotnet tool run`) removes the need for a repo-level tool manifest.
-    await runCommand(
+    log += await runCommand(
       'DefaultDocumentation',
       ['--AssemblyFilePath', dll,
        '--OutputDirectoryPath', outDir,
        '--FileNameFactory', 'Name',
        '--GeneratedPages', 'Namespaces'],
       API_ROOT,
+      {buffered: true},
     );
   }
   assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
+  return log;
 }
 
 /**
@@ -176,10 +296,12 @@ async function runDotnetInternals(): Promise<void> {
  * selected modules of the `arolariu.ro` website — emitting markdown
  * under `_generated/ts-reference/{components,website}/`.
  */
-async function runTypedoc(): Promise<void> {
-  await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT);
-  await runCommand('npx', ['typedoc', '--options', 'typedoc.website.json'], REPO_ROOT);
+async function runTypedoc(): Promise<string> {
+  let log = '';
+  log += await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT, {buffered: true});
+  log += await runCommand('npx', ['typedoc', '--options', 'typedoc.website.json'], REPO_ROOT, {buffered: true});
   assertNonEmpty(TS_REFERENCE_DIR, 'typedoc');
+  return log;
 }
 
 /**
@@ -205,12 +327,13 @@ function normalizeLineEndings(dir: string): void {
  * Line endings are normalized after extraction so the downstream
  * frontmatter pass sees consistent `\n` separators.
  */
-async function runPydocMarkdown(): Promise<void> {
+async function runPydocMarkdown(): Promise<string> {
   const expDir = join(REPO_ROOT, 'sites', 'exp.arolariu.ro');
-  await runCommand('python', ['-m', 'pydoc_markdown.main'], expDir);
+  const log = await runCommand('python', ['-m', 'pydoc_markdown.main'], expDir, {buffered: true});
   assertNonEmpty(PYTHON_DIR, 'pydoc-markdown');
   // pydoc-markdown emits CRLF on Windows; normalize so downstream frontmatter parsers match on \n.
   normalizeLineEndings(PYTHON_DIR);
+  return log;
 }
 
 /** Inputs for the per-tier landing page writer. */
@@ -249,14 +372,30 @@ function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
   writeFileSync(join(dir, 'index.md'), body);
 }
 
+/** Write a labeled block of buffered extractor output to stdout. */
+function flushExtractorLog(label: string, body: string): void {
+  if (body.length === 0) return;
+  process.stdout.write(`\n=== ${label} ===\n`);
+  process.stdout.write(body.endsWith('\n') ? body : `${body}\n`);
+}
+
 /**
- * Entry point. Runs the three markdown-producing extractors in parallel,
+ * Entry point. Runs the three markdown-producing extractors in parallel
+ * with their stdio buffered so output from one doesn't interleave with
+ * another, replays each block in a fixed order once they all finish,
  * normalizes each tier's frontmatter, writes landing pages, and mirrors
  * prose. Designed to be idempotent — see module-level docs.
  */
 async function main(): Promise<void> {
   cleanGenerated();
-  await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
+  const [tsOut, pyOut, dotnetOut] = await Promise.all([
+    runTypedoc(),
+    runPydocMarkdown(),
+    runDotnetInternals(),
+  ]);
+  flushExtractorLog('TypeScript (TypeDoc)', tsOut);
+  flushExtractorLog('Python (pydoc-markdown)', pyOut);
+  flushExtractorLog('.NET internals (DefaultDocumentation)', dotnetOut);
   await normalizeDirectory(TS_REFERENCE_DIR);
   await normalizeDirectory(PYTHON_DIR);
   await normalizeDirectory(DOTNET_INTERNALS_DIR);
