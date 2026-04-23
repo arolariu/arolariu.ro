@@ -15,7 +15,7 @@ describe('normalizeDirectory', () => {
 
   it('inserts title from first H1 when frontmatter is absent', async () => {
     writeFileSync(join(root, 'alpha.md'), '# Alpha Module\n\nBody.\n');
-    await normalizeDirectory(root, {slugRoot: '/ref'});
+    await normalizeDirectory(root, {});
     const out = readFileSync(join(root, 'alpha.md'), 'utf8');
     expect(out).toMatch(/^---\ntitle: Alpha Module\n/);
     expect(out).toMatch(/sidebar_position: 1\n/);
@@ -25,7 +25,7 @@ describe('normalizeDirectory', () => {
 
   it('preserves existing frontmatter keys and only fills missing ones', async () => {
     writeFileSync(join(root, 'beta.md'), '---\ntitle: Custom Title\nslug: /preserved\n---\n# Beta\n\nBody.\n');
-    await normalizeDirectory(root, {slugRoot: '/ref'});
+    await normalizeDirectory(root, {});
     const out = readFileSync(join(root, 'beta.md'), 'utf8');
     expect(out).toMatch(/title: Custom Title/);
     expect(out).toMatch(/slug: \/preserved/);
@@ -35,7 +35,7 @@ describe('normalizeDirectory', () => {
   it('skips paths listed in skipPaths', async () => {
     mkdirSync(join(root, 'skipme'));
     writeFileSync(join(root, 'skipme', 'x.md'), '# X\n');
-    await normalizeDirectory(root, {slugRoot: '/ref', skipPaths: [join(root, 'skipme')]});
+    await normalizeDirectory(root, {skipPaths: [join(root, 'skipme')]});
     const out = readFileSync(join(root, 'skipme', 'x.md'), 'utf8');
     expect(out).toBe('# X\n');
   });
@@ -43,7 +43,7 @@ describe('normalizeDirectory', () => {
   it('forces position 0 for index/README files', async () => {
     writeFileSync(join(root, 'zzz.md'), '# ZZZ\n');
     writeFileSync(join(root, 'index.md'), '# Overview\n');
-    await normalizeDirectory(root, {slugRoot: '/ref'});
+    await normalizeDirectory(root, {});
     const zzz = readFileSync(join(root, 'zzz.md'), 'utf8');
     const idx = readFileSync(join(root, 'index.md'), 'utf8');
     expect(idx).toMatch(/sidebar_position: 0/);
@@ -53,7 +53,7 @@ describe('normalizeDirectory', () => {
   it('quotes titles containing YAML-reserved characters (@, :, #)', async () => {
     writeFileSync(join(root, 'scoped.md'), '# @arolariu/components\n');
     writeFileSync(join(root, 'colon.md'), '# Name: With Colon\n');
-    await normalizeDirectory(root, {slugRoot: '/ref'});
+    await normalizeDirectory(root, {});
     const scoped = readFileSync(join(root, 'scoped.md'), 'utf8');
     const colon = readFileSync(join(root, 'colon.md'), 'utf8');
     expect(scoped).toMatch(/title: "@arolariu\/components"/);
