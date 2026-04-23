@@ -36,7 +36,7 @@ const config: Config = {
   organizationName: 'arolariu',
   projectName: 'arolariu.ro',
   onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenMarkdownLinks: 'throw',
   markdown: {format: 'detect', mermaid: true},
   i18n: {defaultLocale: 'en', locales: ['en']},
   headTags: [
