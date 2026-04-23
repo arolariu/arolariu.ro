@@ -1,6 +1,21 @@
+/**
+ * @fileoverview "Was this page useful?" feedback widget rendered at
+ * the bottom of every doc page (via the `DocItem/Footer` swizzle).
+ *
+ * @remarks
+ * - Persists the user's answer in `localStorage` under
+ *   `docfb-<pathname>` so each page never re-prompts.
+ * - Also emits a Microsoft Clarity custom event (`doc-feedback`) with
+ *   `{page, helpful}` so aggregate feedback is visible in analytics.
+ * - Deliberately minimal: two bracketed buttons, no free-form text
+ *   input, no backend. If a feedback backend is ever added this
+ *   component is the single entry point to extend.
+ */
+
 import React, {useEffect, useState} from 'react';
 import styles from './styles.module.css';
 
+/** Binary feedback answers; wider schemas are intentionally avoided. */
 type StoredFeedback = 'yes' | 'no';
 
 declare global {
@@ -9,11 +24,25 @@ declare global {
   }
 }
 
+/**
+ * `localStorage` key for a given page path. Scoped per-path so two
+ * tabs on different pages don't collide.
+ */
 function storageKey(pagePath: string): string {
   return `docfb-${pagePath}`;
 }
 
-export default function DocFeedback({pagePath}: {readonly pagePath: string}): React.ReactNode {
+/** Props for {@link DocFeedback}. */
+type DocFeedbackProps = {
+  /** Absolute URL path of the doc page, used as the localStorage scope. */
+  readonly pagePath: string;
+};
+
+/**
+ * Render the feedback prompt (or "already marked" confirmation) for
+ * the given `pagePath`.
+ */
+export default function DocFeedback({pagePath}: Readonly<DocFeedbackProps>): React.JSX.Element {
   const [recorded, setRecorded] = useState<StoredFeedback | null>(null);
 
   useEffect(() => {

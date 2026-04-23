@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Docusaurus site configuration for docs.arolariu.ro.
+ *
+ * @remarks
+ * Registers four content-docs plugin instances (one per extractor
+ * tier — monorepo prose, .NET internals, TypeScript reference,
+ * Python experimental) plus the `docusaurus-plugin-openapi-docs`
+ * pair when a .NET OpenAPI spec is present. Also wires the local
+ * schema.org JSON-LD plugin, local search, Mermaid, custom head
+ * tags, and the console-aesthetic theme customizations.
+ *
+ * Loaded at build time by Docusaurus via `jiti` (CJS transpile),
+ * which is why `__dirname` is the primary way to derive paths.
+ */
+
 import {existsSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -16,10 +31,29 @@ const CONFIG_DIR = typeof __dirname !== 'undefined'
 const GENERATED_ROOT = join(CONFIG_DIR, '_generated');
 const OPENAPI_SPEC = join(GENERATED_ROOT, 'dotnet-api', 'openapi.json');
 const OPENAPI_PAGES = join(GENERATED_ROOT, 'dotnet-api', 'pages');
+
+/** True when `docs:assemble` copied the OpenAPI spec into staging. */
 const hasOpenApiSpec = existsSync(OPENAPI_SPEC);
+/**
+ * True when `docusaurus gen-api-docs` has produced MDX for every path
+ * in the spec. Keeps the content-docs plugin from pointing at a path
+ * that doesn't exist yet, and hides the navbar entry until content
+ * is available.
+ */
 const hasOpenApiPages = existsSync(OPENAPI_PAGES);
 
-const dotnetApiPlugins: PluginConfig[] = hasOpenApiSpec
+/**
+ * Conditional plugin pair for the .NET HTTP API:
+ *
+ *   1. A `plugin-content-docs` instance rendering the MDX pages
+ *      emitted by `docusaurus-plugin-openapi-docs`.
+ *   2. The OpenAPI docs generator itself, pointed at the copied
+ *      `openapi.json`.
+ *
+ * Only registered when both the spec AND the generated pages exist,
+ * otherwise Docusaurus would error on the missing content directory.
+ */
+const dotnetApiPlugins: PluginConfig[] = hasOpenApiSpec && hasOpenApiPages
   ? [
       [
         '@docusaurus/plugin-content-docs',

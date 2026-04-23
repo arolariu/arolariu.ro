@@ -1,9 +1,29 @@
+/**
+ * @fileoverview 2px reading-progress bar pinned to the top of the
+ * viewport, growing as the user scrolls through a long page.
+ *
+ * @remarks
+ * Auto-hides when the document is shorter than 1.7× the viewport
+ * (short pages don't need a progress cue). The scroll listener is
+ * `requestAnimationFrame`-throttled so paint cost stays near zero.
+ * Mounted once inside the `Root` swizzle.
+ */
+
 import React, {useEffect, useRef, useState} from 'react';
 import styles from './styles.module.css';
 
+/**
+ * Minimum ratio of `scrollHeight / viewportHeight` at which the bar
+ * becomes visible. 1.7× roughly corresponds to "more than one screen
+ * of content below the fold."
+ */
 const LENGTH_RATIO_THRESHOLD = 1.7;
 
-export default function ReadingProgress(): React.ReactNode {
+/**
+ * Thin copper bar at the top of the viewport whose width represents
+ * how much of the current page the user has scrolled past.
+ */
+export default function ReadingProgress(): React.JSX.Element | null {
   const [widthPct, setWidthPct] = useState(0);
   const [active, setActive] = useState(false);
   const rafRef = useRef<number | null>(null);

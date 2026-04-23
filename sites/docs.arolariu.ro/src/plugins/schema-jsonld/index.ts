@@ -1,8 +1,30 @@
+/**
+ * @fileoverview Local Docusaurus plugin that injects a site-level
+ * schema.org JSON-LD block into every page.
+ *
+ * @remarks
+ * Emits a `WebSite` schema with `publisher` (Organization) and
+ * `author` (Person) sub-objects so search engines have a consistent
+ * site identity across every doc page. Per-page `TechArticle`
+ * enrichment is a future enhancement (flagged in the spec) — it
+ * would require reading per-doc metadata that isn't uniformly
+ * exposed through the `injectHtmlTags` lifecycle.
+ */
+
 import type {Plugin, LoadContext} from '@docusaurus/types';
 
+/**
+ * Docusaurus plugin factory. Docusaurus calls this during site load
+ * and invokes the returned plugin's lifecycle hooks at build time.
+ */
 export default function schemaJsonLdPlugin(_context: LoadContext): Plugin {
   return {
     name: 'schema-jsonld',
+    /**
+     * `injectHtmlTags` runs once per locale and its return value is
+     * inlined into the `<head>` of every generated HTML page. We emit
+     * a single `application/ld+json` script describing the site.
+     */
     injectHtmlTags() {
       const ld = {
         '@context': 'https://schema.org',

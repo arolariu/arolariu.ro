@@ -1,9 +1,24 @@
+/**
+ * @fileoverview Fixed "[↑ top]" button that appears after 400px of
+ * vertical scroll and smooth-scrolls back to the page origin.
+ *
+ * @remarks
+ * Mounted inside `DocItem/Footer` (via swizzle) so it's scoped to
+ * doc pages, not the landing. Respects `prefers-reduced-motion` by
+ * falling back to an instant scroll.
+ */
+
 import React, {useEffect, useState} from 'react';
 import styles from './styles.module.css';
 
+/** Minimum vertical scroll (in px) before the button appears. */
 const THRESHOLD_PX = 400;
 
-export default function BackToTop(): React.ReactNode {
+/**
+ * Render a fixed "back to top" button once the page has been scrolled
+ * past {@link THRESHOLD_PX}.
+ */
+export default function BackToTop(): React.JSX.Element | null {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
