@@ -24,9 +24,8 @@
     "@fontsource/ibm-plex-mono": "*",
     "@fontsource/ibm-plex-sans": "*",
     "@mdx-js/react": "*",
+    "@mermaid-js/layout-elk": "*",
     "clsx": "*",
-    "docusaurus-plugin-openapi-docs": "*",
-    "docusaurus-theme-openapi-docs": "*",
     "prism-react-renderer": "*",
     "react": "*",
     "react-dom": "*"

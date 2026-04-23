@@ -2,10 +2,14 @@
  * @fileoverview Docs pipeline orchestrator for `sites/docs.arolariu.ro`.
  *
  * @remarks
- * Runs the four extractors in parallel (TypeDoc, pydoc-markdown,
- * DefaultDocumentation, .NET OpenAPI spec copy), normalizes the
- * generated markdown, writes per-tier landing index pages, and mirrors
+ * Runs the three markdown-producing extractors in parallel (TypeDoc,
+ * pydoc-markdown, DefaultDocumentation), normalizes the generated
+ * frontmatter, writes per-tier landing index pages, and mirrors
  * `/docs/` prose into the Docusaurus source tree under `docs/monorepo/`.
+ *
+ * HTTP API reference is intentionally excluded: `api.arolariu.ro`
+ * hosts Swagger UI from the live OpenAPI spec, so re-publishing the
+ * spec here would just duplicate that browser.
  *
  * Invoked via `npm run docs:assemble` before `npm run build:docs` /
  * `dev:docs`. Designed to be idempotent — each run starts by cleaning
@@ -114,7 +118,6 @@ export function cleanGenerated(): void {
 const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
 const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
 const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
-const DOTNET_API_DIR = join(GENERATED_ROOT, 'dotnet-api');
 const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
 
 /**
@@ -166,34 +169,6 @@ async function runDotnetInternals(): Promise<void> {
     );
   }
   assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
-}
-
-/**
- * Copy the build-time OpenAPI spec emitted by
- * `Microsoft.AspNetCore.OpenApi` into `_generated/dotnet-api/openapi.json`.
- * Returns quietly (with a warning) when neither Release nor Debug
- * produced a spec — this lets the rest of the pipeline succeed while
- * the OpenAPI wiring is still being re-enabled upstream.
- */
-async function runDotnetOpenApi(): Promise<void> {
-  mkdirSync(DOTNET_API_DIR, {recursive: true});
-  // Microsoft.AspNetCore.OpenApi emits the build-time spec into obj/<Config>/net10.0/EndpointInfo.
-  // Preference order: Release (matches runDotnetInternals), then Debug (dev builds), so we pick
-  // whichever exists. If neither exists we warn and continue — Task 8 will treat the empty
-  // dotnet-api dir as a gap (the openapi-docs plugin will simply have no pages to generate).
-  const releaseSpec = join(API_ROOT, 'src', 'Core', 'obj', 'Release', 'net10.0', 'EndpointInfo', 'arolariu.Backend.Core.json');
-  const debugSpec = join(API_ROOT, 'src', 'Core', 'obj', 'Debug', 'net10.0', 'EndpointInfo', 'arolariu.Backend.Core.json');
-  const specSource = existsSync(releaseSpec) ? releaseSpec : existsSync(debugSpec) ? debugSpec : null;
-  if (!specSource) {
-    console.warn(`dotnet-openapi: no spec found at ${releaseSpec} or ${debugSpec}. Skipping copy. ` +
-      `Microsoft.AspNetCore.OpenApi build-time emission requires Microsoft.Extensions.ApiDescription.Server ` +
-      `targets; verify the csproj still wires those in before Task 8 wires the openapi-docs plugin.`);
-    return;
-  }
-  cpSync(specSource, join(DOTNET_API_DIR, 'openapi.json'));
-  // Task 8 will wire docusaurus-plugin-openapi-docs into docusaurus.config.ts and
-  // then call `npx docusaurus gen-api-docs all` here to generate MDX pages.
-  // assertNonEmpty(join(DOTNET_API_DIR, 'pages'), 'openapi-pages');
 }
 
 /**
@@ -276,16 +251,12 @@ function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
 
 /**
  * Entry point. Runs the three markdown-producing extractors in parallel,
- * then sequentially copies the OpenAPI spec, normalizes each tier's
- * frontmatter, writes landing pages, and mirrors prose. Designed to be
- * idempotent — see module-level docs.
+ * normalizes each tier's frontmatter, writes landing pages, and mirrors
+ * prose. Designed to be idempotent — see module-level docs.
  */
 async function main(): Promise<void> {
   cleanGenerated();
   await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
-  await runDotnetOpenApi();
-  // NOTE: _generated/dotnet-api/pages is owned by docusaurus-plugin-openapi-docs.
-  // Do not normalize it — the plugin emits its own MDX frontmatter conventions.
   await normalizeDirectory(TS_REFERENCE_DIR);
   await normalizeDirectory(PYTHON_DIR);
   await normalizeDirectory(DOTNET_INTERNALS_DIR);
