@@ -1,4 +1,26 @@
+# =============================================================================
+# Docs Build and Deployment Workflow
+# =============================================================================
+# Builds the Docusaurus 3.10 documentation portal (docs.arolariu.ro) and
+# deploys it to Azure Static Web Apps on push to main.
+#
+# Steps:
+#   1. Restore the monorepo workspace (Node.js + .NET) via the shared
+#      setup-workspace composite action (cached npm + NuGet).
+#   2. Restore .NET tool manifest (.config/dotnet-tools.json) so
+#      DefaultDocumentation is available for the .NET internals extractor.
+#   3. Install Python dev deps for pydoc-markdown.
+#   4. Run `npm run docs:assemble` (TypeDoc + pydoc-markdown +
+#      DefaultDocumentation + prose sync + normalization + landing pages).
+#   5. Run `npm run build:docs` (Docusaurus build + postbuild hook that
+#      copies staticwebapp.config.json and generates llms.txt).
+#   6. Deploy to Azure Static Web Apps on push to main.
+
 name: Docs — build & deploy
+
+permissions:
+  id-token: write # Required for OIDC authentication if ever added
+  contents: read  # Required to checkout repository
 
 on:
   push:
@@ -35,29 +57,31 @@ jobs:
     name: Build and deploy docs
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: '24', cache: 'npm'}
-      - uses: actions/setup-dotnet@v4
-        with: {dotnet-version: '10.0.x'}
-      - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
 
-      - name: Install npm dependencies
-        run: npm ci
+      - name: 🚀 Setup monorepo workspace (Node.js + .NET)
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          dotnet-version: '10'
+          cache-key-prefix: docs
 
-      - name: Restore dotnet tools
+      - name: 🛠️ Restore .NET tool manifest
         run: dotnet tool restore
 
-      - name: Install Python docs dependencies
+      - name: 🐍 Setup Python 3.12
+        uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      - name: 📥 Install Python docs dependencies
         run: python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
 
-      - name: Assemble docs
+      - name: 🧩 Assemble docs (extractors + normalizer + landing pages)
         run: npm run docs:assemble
 
-      - name: Build Docusaurus
+      - name: 🏗️ Build Docusaurus
         run: npm run build:docs
 
-      - name: Deploy to Azure Static Web Apps
+      - name: ☁️ Deploy to Azure Static Web Apps
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: Azure/static-web-apps-deploy@v1
         with:
