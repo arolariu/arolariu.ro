@@ -67,7 +67,7 @@ const config: Config = {
   projectName: 'arolariu.ro',
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
-  markdown: {format: 'detect'},
+  markdown: {format: 'detect', mermaid: true},
   i18n: {defaultLocale: 'en', locales: ['en']},
   headTags: [
     {tagName: 'meta', attributes: {name: 'theme-color', content: '#0a0b0d'}},
@@ -140,8 +140,26 @@ const config: Config = {
     schemaJsonLdPlugin,
     '@easyops-cn/docusaurus-search-local',
   ],
-  themes: hasOpenApiSpec ? ['docusaurus-theme-openapi-docs'] : [],
+  themes: [
+    ...(hasOpenApiSpec ? ['docusaurus-theme-openapi-docs'] : []),
+    '@docusaurus/theme-mermaid',
+  ],
   themeConfig: {
+    mermaid: {
+      theme: {light: 'neutral', dark: 'dark'},
+      options: {
+        themeVariables: {
+          fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
+          primaryColor: '#e87a3e',
+          primaryTextColor: '#c9cdd2',
+          primaryBorderColor: '#e87a3e',
+          lineColor: '#6b7179',
+          secondaryColor: 'rgba(255,255,255,0.07)',
+          tertiaryColor: '#0a0b0d',
+          background: '#0a0b0d',
+        },
+      },
+    },
     navbar: {
       title: 'arolariu.ro',
       items: navbarItems,

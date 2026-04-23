@@ -5,6 +5,15 @@ import styles from './index.module.css';
 
 type Row = {readonly label: string; readonly href: string};
 
+const I_WANT_TO: readonly Row[] = [
+  {label: 'hit the api from code', href: '/internals/dotnet/arolariu.Backend.Core/'},
+  {label: 'understand the architecture', href: '/monorepo/rfc/domain-driven-design-architecture/'},
+  {label: 'use the component library', href: '/reference/typescript/components/'},
+  {label: 'add a new RFC', href: '/monorepo/rfc/'},
+  {label: 'configure telemetry', href: '/monorepo/backend/opentelemetry-guide/'},
+  {label: 'debug the config proxy', href: '/internals/experimental/config/loader/'},
+];
+
 const START_HERE: readonly Row[] = [
   {label: 'monorepo overview', href: '/monorepo/'},
   {label: '.net internals', href: '/internals/dotnet/'},
@@ -18,7 +27,7 @@ const RESOURCES: readonly Row[] = [
   {label: 'frontend guides', href: '/monorepo/frontend/'},
 ];
 
-const ALL_ROWS: readonly Row[] = [...START_HERE, ...RESOURCES];
+const ALL_ROWS: readonly Row[] = [...I_WANT_TO, ...START_HERE, ...RESOURCES];
 
 function connector(index: number, total: number): string {
   return index === total - 1 ? '└─' : '├─';
@@ -61,8 +70,9 @@ export default function Home(): React.ReactNode {
           </p>
         </section>
 
-        <Section title="start here" rows={START_HERE} cursor={cursor} cursorOffset={0} />
-        <Section title="resources" rows={RESOURCES} cursor={cursor} cursorOffset={START_HERE.length} />
+        <Section title="i want to…" rows={I_WANT_TO} cursor={cursor} cursorOffset={0} />
+        <Section title="start here" rows={START_HERE} cursor={cursor} cursorOffset={I_WANT_TO.length} />
+        <Section title="resources" rows={RESOURCES} cursor={cursor} cursorOffset={I_WANT_TO.length + START_HERE.length} />
 
         <footer className={styles.footer}>
           <span className={styles.comment}>//</span> use <kbd className={styles.kbd}>↑</kbd>{' '}
