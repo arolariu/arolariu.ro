@@ -42,12 +42,22 @@ export type NormalizeOptions = {
  * A parsed YAML frontmatter map. Values are kept as `string | number`
  * because Docusaurus' frontmatter is small and flat in practice.
  */
-type Frontmatter = Record<string, string | number>;
+export type Frontmatter = Record<string, string | number>;
 
 const FRONTMATTER_DELIMITER = '---';
 
 /**
  * Parse the leading YAML frontmatter block of a markdown source string.
+ *
+ * Intentionally *minimal*: only single-line `key: value` pairs are
+ * recognised. Arrays (`- item`), nested mappings, block scalars
+ * (`|`, `>`), anchors, tags, quoted multi-line strings, and escaped
+ * colons inside unquoted values are all out of scope. Every extractor
+ * we wrap emits trivial flat frontmatter, so a real YAML parser would
+ * just add dependency weight. Missing keys are filled in by the
+ * normalizer; existing keys survive round-trip through
+ * {@link serializeFrontmatter} as long as their values are simple
+ * scalars.
  *
  * @param source - Full file contents.
  * @returns Parsed frontmatter plus the remaining body. An empty
@@ -75,21 +85,35 @@ function parseFrontmatter(source: string): {frontmatter: Frontmatter; body: stri
 }
 
 /**
+ * YAML 1.1 keyword literals that parse as non-string scalars when
+ * unquoted — a frontmatter value of literal `true` / `no` / `null`
+ * would round-trip as a boolean or null, silently changing meaning.
+ * Serialising any match as a quoted string preserves string identity.
+ */
+const YAML_KEYWORD_SCALAR = /^(true|false|yes|no|on|off|null|~)$/i;
+
+/**
  * Encode a single frontmatter value as a YAML scalar, double-quoting
- * strings that start with or contain YAML-reserved characters.
+ * strings that (a) begin with or contain YAML-reserved punctuation,
+ * or (b) would otherwise parse as a non-string scalar via
+ * {@link YAML_KEYWORD_SCALAR}.
  */
 function serializeValue(value: string | number): string {
   if (typeof value === 'number') return String(value);
-  const needsQuoting = /^[@#&*!|>%`?{}[\]-]|[:#]|^\s|\s$/.test(value);
-  if (!needsQuoting) return value;
+  const needsPunctuationQuoting = /^[@#&*!|>%`?{}[\]-]|[:#]|^\s|\s$/.test(value);
+  const needsKeywordQuoting = YAML_KEYWORD_SCALAR.test(value);
+  if (!needsPunctuationQuoting && !needsKeywordQuoting) return value;
   return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 }
 
 /**
  * Render a frontmatter object back onto the beginning of the body.
  * When the frontmatter is empty the body is returned unchanged.
+ *
+ * Exported so orchestrator code (landing-page writer) can reuse the
+ * same quoting rules without duplicating them.
  */
-function serializeFrontmatter(fm: Frontmatter, body: string): string {
+export function serializeFrontmatter(fm: Frontmatter, body: string): string {
   const keys = Object.keys(fm);
   if (keys.length === 0) return body;
   const lines = keys.map((k) => `${k}: ${serializeValue(fm[k])}`).join('\n');

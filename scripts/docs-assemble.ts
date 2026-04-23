@@ -21,7 +21,7 @@ import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFil
 import {dirname, join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {spawn, type StdioOptions} from 'node:child_process';
-import {normalizeDirectory} from './docs-assemble.normalize.ts';
+import {normalizeDirectory, serializeFrontmatter} from './docs-assemble.normalize.ts';
 
 const REPO_ROOT = resolve(import.meta.dirname, '..');
 const DOCS_ROOT = join(REPO_ROOT, 'sites', 'docs.arolariu.ro');
@@ -353,6 +353,10 @@ type LandingPage = {
  * this file, Docusaurus has no page to serve at the plugin's
  * `routeBasePath` and navbar links to `/internals/dotnet` (etc.) 404.
  * The page lists each immediate child so visitors can browse.
+ *
+ * Frontmatter is rendered via {@link serializeFrontmatter} so a title
+ * containing YAML-reserved characters (or a YAML keyword literal)
+ * gets quoted the same way the normalizer quotes extractor output.
  */
 function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
   if (!existsSync(dir)) return;
@@ -368,8 +372,9 @@ function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
     const href = statSync(join(dir, name)).isDirectory() ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
     return `- [${label}](${href})`;
   }).join('\n');
-  const body = `---\ntitle: ${title}\nsidebar_position: 0\n---\n\n# ${title}\n\n${summary}\n\n${bullets}\n`;
-  writeFileSync(join(dir, 'index.md'), body);
+  const body = `\n# ${title}\n\n${summary}\n\n${bullets}\n`;
+  const full = serializeFrontmatter({title, sidebar_position: 0}, body);
+  writeFileSync(join(dir, 'index.md'), full);
 }
 
 /** Write a labeled block of buffered extractor output to stdout. */
