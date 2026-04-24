@@ -4,9 +4,16 @@ Unified developer reference portal for the arolariu.ro monorepo,
 built on **Docusaurus 3.10** and deployed to Azure Static Web Apps at
 [https://docs.arolariu.ro](https://docs.arolariu.ro).
 
-The site pulls reference content from three services via four
-extractors, then normalizes and mounts it under a single shell with a
-console-aesthetic theme shared with `status.arolariu.ro`.
+The site pulls reference content from three services via three
+extractors (TypeDoc, pydoc-markdown, DefaultDocumentation), then
+normalizes and mounts it under a single shell with a console-aesthetic
+theme shared with `status.arolariu.ro`.
+
+The `.NET` HTTP API contract is **not** hosted here. `api.arolariu.ro`
+serves Swagger UI at runtime from the live OpenAPI spec, so the docs
+navbar links out to `https://api.arolariu.ro/swagger` rather than
+duplicating the browser. Internal `.NET` *types* are still documented
+via `DefaultDocumentation` under `/internals/dotnet/`.
 
 ## What lives here
 
@@ -41,7 +48,6 @@ gitignored at the repo root.
 
 ```
 arolariu.Backend.*.csproj  ──DefaultDocumentation──►  _generated/dotnet-internals/
-Core/obj/**/EndpointInfo   ──cp──────────────────────►  _generated/dotnet-api/
 arolariu.ro + components   ──TypeDoc──────────────────►  _generated/ts-reference/
 exp.arolariu.ro            ──pydoc-markdown──────────►  _generated/experimental/
 /docs/**                   ──syncProse (cp)──────────►  docs/monorepo/
@@ -58,6 +64,11 @@ exp.arolariu.ro            ──pydoc-markdown──────────►
                                   ▼
                      Azure Static Web Apps (prod slot)
 ```
+
+The .NET build step itself is a single `dotnet build` invocation
+against `arolariu.Backend.Core.csproj` — that project is the sole
+graph root (everything else is a `<ProjectReference>` dependency),
+so MSBuild compiles the full assembly set in one pass.
 
 ## Local development
 
@@ -97,12 +108,16 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
 
 ## Extractor quirks worth knowing
 
-- **.NET OpenAPI** (`runDotnetOpenApi` in `scripts/docs-assemble.ts`):
-  copies the compile-time spec from
-  `obj/<Config>/net10.0/EndpointInfo/*.json`. When the spec is
-  absent, the function warns and continues; the site simply doesn't
-  mount the `/api/dotnet/` interactive browser until the spec is
-  restored.
+- **.NET project discovery** (`scripts/docs-assemble.ts`): the
+  orchestrator globs `sites/api.arolariu.ro/src/*/*.csproj`, parses
+  `<ProjectReference>` entries, and builds only the graph roots so
+  adding a new bounded context doesn't require a hardcoded list
+  update. See `discoverDotnetProjects` + `findDotnetBuildRoots`.
+- **Parallel extractor output is buffered** so TypeDoc /
+  pydoc-markdown / DefaultDocumentation logs don't interleave at
+  the terminal; each block is replayed in a fixed order after
+  `Promise.all` resolves. Non-zero exits surface the last 2KB of
+  buffered output so CI logs show the actual failure.
 - **pydoc-markdown** emits CRLF on Windows. `normalizeLineEndings()`
   in the orchestrator rewrites `\r\n` → `\n` before the frontmatter
   pass so the parser is platform-agnostic.
