@@ -39,6 +39,8 @@ All architectural RFCs are organized by number ranges in a single directory:
 - [RFC 1004: Metadata and SEO System](./rfc/1004-metadata-seo-system.md) - ✅ Implemented
 - [RFC 1005: State Management with Zustand](./rfc/1005-state-management-zustand.md) - ✅ Implemented
 - [RFC 1006: Component Library Architecture](./rfc/1006-component-library-architecture.md) - ✅ Implemented
+- [RFC 1007: Advanced Frontend Patterns](./rfc/1007-advanced-frontend-patterns.md) - ✅ Implemented
+- [RFC 1008: SCSS System Architecture](./rfc/1008-scss-system-architecture.md) - ✅ Implemented
 - Next.js application architecture
 - React components and patterns
 - Client-side state management
@@ -103,9 +105,11 @@ RFCs go through the following stages:
   - These contain development setup and site-specific instructions
   - Should reference relevant RFCs for architectural decisions
 
-- **API Documentation**: Generated from code at `sites/docs.arolariu.ro`
-  - XML documentation comments from backend code
-  - TypeScript interfaces from frontend code
+- **API Documentation**: Generated and hosted at [docs.arolariu.ro](https://docs.arolariu.ro)
+  - `.NET` internals from XML doc comments via `DefaultDocumentation`
+  - TypeScript reference from TSDoc/JSDoc via TypeDoc
+  - Python experimental service from docstrings via `pydoc-markdown`
+  - Live `.NET` HTTP API Swagger UI at [api.arolariu.ro/swagger](https://api.arolariu.ro/swagger)
 
 - **GitHub Instructions**: Located in `.github/instructions/`
   - Development guidelines and coding standards
@@ -150,5 +154,5 @@ For questions about documentation:
 
 ---
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2026-04-24
 **Maintained By**: arolariu team
