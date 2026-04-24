@@ -1368,7 +1368,7 @@ The SCSS system is designed for gradual migration:
 
 - [RFC 1006: Component Library Architecture](./1006-component-library-architecture.md)
 - [RFC 1007: Advanced Frontend Patterns](./1007-advanced-frontend-patterns.md)
-- [CLAUDE.md](../../CLAUDE.md) - Project development guide
+- [CLAUDE.md](https://github.com/arolariu/arolariu.ro/blob/main/CLAUDE.md) - Project development guide
 
 ---
 

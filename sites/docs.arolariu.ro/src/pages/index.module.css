@@ -1,0 +1,218 @@
+.page {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 5vw, 5rem) clamp(1rem, 3vw, 2.5rem) clamp(3rem, 6vw, 6rem);
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+
+.hero {
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  animation: consolePrint 0.35s ease-out both;
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-hero);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0;
+}
+
+.prefix {
+  color: var(--text);
+}
+
+.slash {
+  color: var(--text-faint);
+  margin: 0 0.1em;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.tagline {
+  margin-top: clamp(0.75rem, 1.5vw, 1.25rem);
+  margin-bottom: 0;
+  font-size: var(--fs-lg);
+  color: var(--text-muted);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.comment {
+  color: var(--accent-dim);
+  margin-right: 0.5ch;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  vertical-align: -0.12em;
+  margin-left: 0.3em;
+  background: var(--accent);
+  animation: blink 1.05s steps(2, end) infinite;
+}
+
+.section {
+  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  color: var(--text);
+  letter-spacing: -0.01em;
+  animation: consolePrint 0.3s ease-out both;
+  animation-delay: 40ms;
+}
+
+.sectionTitle::before {
+  content: none;
+}
+
+.chevron {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: 0.4ch;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 2px;
+  font-size: var(--fs-body);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: baseline;
+  column-gap: 0.6ch;
+  padding: 6px 8px;
+  border-left: 2px solid transparent;
+  transition: background-color 0.12s ease, border-left-color 0.12s ease;
+  animation: consolePrint 0.3s ease-out both;
+}
+
+.row:hover {
+  background: var(--surface-hover);
+  border-left-color: var(--accent);
+}
+
+.row:has(.rowLabel[data-active='true']) {
+  background: var(--surface-hover);
+  border-left-color: var(--accent);
+}
+
+.tree {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  letter-spacing: -0.1em;
+}
+
+.pointer {
+  color: var(--text-faint);
+  font-weight: 600;
+  width: 1ch;
+  text-align: center;
+  transition: color 0.12s ease;
+}
+
+.pointer[data-active='true'] {
+  color: var(--accent);
+}
+
+.rowLabel {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.12s ease, border-color 0.12s ease;
+  white-space: nowrap;
+}
+
+.rowLabel:hover,
+.rowLabel[data-active='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.rowArrow {
+  color: var(--text-faint);
+  padding: 0 0.4ch;
+}
+
+.rowPath {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.footer {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  margin: 0 0.15em;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: auto auto 1fr;
+  }
+  .rowArrow,
+  .rowPath {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+    opacity: 1;
+  }
+  .hero,
+  .sectionTitle,
+  .row {
+    animation: none;
+  }
+}
+
+@keyframes consolePrint {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}

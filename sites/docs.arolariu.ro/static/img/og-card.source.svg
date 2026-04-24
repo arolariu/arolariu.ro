@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <style>
+      .wordmark { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 600; font-size: 112px; fill: #c9cdd2; letter-spacing: -0.02em; }
+      .slash { fill: rgba(201,205,210,0.38); }
+      .accent { fill: #e87a3e; }
+      .tagline { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 400; font-size: 32px; fill: #6b7179; }
+      .comment { fill: rgba(232,122,62,0.65); }
+    </style>
+    <pattern id="scanlines" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="2" fill="transparent"/>
+      <rect y="2" width="3" height="1" fill="rgba(255,255,255,0.012)"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#0a0b0d"/>
+  <rect width="1200" height="630" fill="url(#scanlines)" opacity="0.35"/>
+  <text x="100" y="320" class="wordmark">
+    <tspan>arolariu.ro</tspan><tspan class="slash">/</tspan><tspan class="accent">docs</tspan>
+  </text>
+  <text x="100" y="410" class="tagline">
+    <tspan class="comment">//</tspan> unified reference for three services
+  </text>
+</svg>

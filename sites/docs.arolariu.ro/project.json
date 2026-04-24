@@ -4,79 +4,51 @@
   "sourceRoot": "sites/docs.arolariu.ro",
   "projectType": "application",
   "targets": {
-    "typedoc": {
+    "assemble": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run docs:typedoc",
+        "command": "node scripts/docs-assemble.ts",
         "cwd": "."
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docfx build docfx.json",
+        "command": "npm run build",
         "cwd": "sites/docs.arolariu.ro"
       },
-      "outputs": [
-        "{projectRoot}/_site"
-      ],
-      "dependsOn": [
-        "typedoc",
-        "api:build"
-      ]
-    },
-    "metadata": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "docfx metadata docfx.json",
-        "cwd": "sites/docs.arolariu.ro"
-      },
-      "dependsOn": [
-        "api:build"
-      ]
-    },
-    "serve": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "docfx serve _site",
-        "cwd": "sites/docs.arolariu.ro"
-      }
+      "outputs": ["{projectRoot}/build"],
+      "dependsOn": ["assemble"]
     },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docfx docfx.json --serve",
+        "command": "npx docusaurus start --port 3100",
         "cwd": "sites/docs.arolariu.ro"
       },
-      "dependsOn": [
-        "typedoc",
-        "api:build"
-      ]
+      "dependsOn": ["assemble"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx docusaurus serve",
+        "cwd": "sites/docs.arolariu.ro"
+      }
     },
     "clean": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"for(const d of['_site','api','obj'])require('fs').rmSync(d,{recursive:true,force:true})\"",
+        "command": "node -e \"for(const d of ['_generated','build','.docusaurus']) require('fs').rmSync(d,{recursive:true,force:true})\"",
         "cwd": "sites/docs.arolariu.ro"
       }
     },
-    "test": {
+    "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'No tests configured for docs yet'",
+        "command": "npx tsc --noEmit",
         "cwd": "sites/docs.arolariu.ro"
-      },
-      "configurations": {
-        "unit": {
-          "command": "echo 'No unit tests configured for docs yet'"
-        }
       }
     }
   },
-  "tags": [
-    "domain:docs",
-    "scope:docs",
-    "type:app",
-    "platform:dotnet"
-  ]
+  "tags": ["domain:docs", "scope:docs", "type:app", "platform:node"]
 }

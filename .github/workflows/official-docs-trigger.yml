@@ -1,12 +1,16 @@
 # =============================================================================
 # Documentation Website Build and Deployment Workflow
 # =============================================================================
-# This workflow generates and deploys the API documentation website
-# (docs.arolariu.ro) using DocFX for .NET API reference documentation.
+# This workflow generates and deploys the documentation website
+# (docs.arolariu.ro) using Docusaurus 3.10 as the shell, with four
+# extractors feeding into it (TypeDoc for the TS reference,
+# DefaultDocumentation for .NET internals, pydoc-markdown for the
+# Python experimental service, plus a build-time OpenAPI spec copy).
 #
 # Architecture:
-#   - DocFX Metadata: Extracts XML documentation from .NET assemblies
-#   - DocFX Build: Generates static HTML documentation
+#   - docs:assemble: Runs all four extractors + normalizer + landing pages
+#   - npm run build:docs: Docusaurus build (fires the postbuild hook
+#     that copies staticwebapp.config.json and emits llms.txt)
 #   - Azure Static Web Apps: Hosts the generated documentation
 #
 # Triggers:
@@ -14,8 +18,10 @@
 #   - Manual: workflow_dispatch for on-demand documentation regeneration
 #
 # Technology Stack:
-#   - DocFX: .NET API documentation generator
-#   - .NET 10.0: Required for building and analyzing assemblies
+#   - Docusaurus 3.10: Site shell
+#   - TypeDoc + DefaultDocumentation + pydoc-markdown: Extractors
+#   - .NET 10.0: Required for building assemblies whose XML docs feed DefaultDocumentation
+#   - Python 3.12: Required for pydoc-markdown
 #   - Azure Static Web Apps: Global CDN hosting
 #
 # Security:
@@ -23,14 +29,14 @@
 #   - Static Web Apps deployment token stored in GitHub Secrets
 #
 # Prerequisites:
-#   1. DocFX configuration in sites/docs.arolariu.ro/docfx.json
+#   1. Docusaurus config in sites/docs.arolariu.ro/docusaurus.config.ts
 #   2. .NET solution with XML documentation enabled
 #   3. GitHub Secrets configured:
 #      - AZURE_STATIC_WEB_APPS_DOCS_TOKEN
 #
 # Output:
 #   - URL: https://docs.arolariu.ro
-#   - Content: Auto-generated API reference from C# XML comments
+#   - Content: Unified developer reference across three services
 # =============================================================================
 
 name: "official-docs-trigger"
@@ -77,7 +83,7 @@ jobs:
           echo "│ 📚 DOCUMENTATION WEBSITE PIPELINE                          │"
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Build & Deploy                           │"
-          echo "│ 🌍 Framework:     DocFX + TypeDoc                          │"
+          echo "│ 🌍 Framework:     Docusaurus 3.10                          │"
           echo "│ 🎯 Target:        Azure Static Web Apps                    │"
           echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
           echo "│ 👤 Triggered by:  ${{ github.actor }}"
@@ -91,7 +97,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Framework | DocFX + TypeDoc |" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework | Docusaurus 3.10 |" >> $GITHUB_STEP_SUMMARY
           echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
           echo "| URL | https://docs.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
 
@@ -103,62 +109,69 @@ jobs:
           install-dotnet-dependencies: 'true'
           cache-key-prefix: 'docs'
 
+      - name: 🐍 Setting up Python 3.12 for pydoc-markdown...
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
       - name: "[DOCS::1/4] 🏗️ Installing the .NET dependencies..."
         run: |
           echo "::group::📦 .NET Dependencies"
-          echo "Installing .NET workloads and restoring packages..."
+          echo "Installing .NET workloads, restoring packages, and installing DefaultDocumentation.Console..."
           START_TIME=$(date +%s)
           dotnet workload restore
           dotnet restore ./arolariu.slnx
+          dotnet tool install --global DefaultDocumentation.Console --version 1.2.4
+          echo "${HOME}/.dotnet/tools" >> $GITHUB_PATH
+          python -m pip install -r sites/exp.arolariu.ro/requirements-dev.txt
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "::notice::✅ Dependencies installed in ${DURATION}s"
           echo "::endgroup::"
 
-      - name: "[DOCS::2/4] 🧾 Generating TypeScript API reference (TypeDoc)..."
+      - name: "[DOCS::2/4] 🧾 Assembling extractor output (TypeDoc + pydoc-markdown + DefaultDocumentation)..."
         run: |
-          echo "::group::📝 TypeDoc Generation"
-          echo "Generating TypeScript API documentation..."
+          echo "::group::📝 Docs assemble"
+          echo "Running the four extractors and the frontmatter normalizer..."
           START_TIME=$(date +%s)
-          npm run docs:typedoc
+          npm run docs:assemble
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ TypeDoc completed in ${DURATION}s"
+          echo "::notice::✅ Assemble completed in ${DURATION}s"
           echo "::endgroup::"
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📝 TypeDoc Results" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 Assemble Results" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
-      - name: "[DOCS::3/4] ⚙️ Building the DocFX documentation platform..."
+      - name: "[DOCS::3/4] ⚙️ Building the Docusaurus documentation platform..."
         run: |
-          echo "::group::📚 DocFX Build"
-          echo "Generating .NET API documentation with DocFX..."
+          echo "::group::📚 Docusaurus Build"
+          echo "Building the Docusaurus static site (postbuild hook copies the SWA config and emits llms.txt)..."
           START_TIME=$(date +%s)
-          dotnet tool update -g docfx
-          docfx metadata "./sites/docs.arolariu.ro/docfx.json"
-          docfx build "./sites/docs.arolariu.ro/docfx.json"
+          npm run build:docs
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ DocFX completed in ${DURATION}s"
+          echo "::notice::✅ Docusaurus build completed in ${DURATION}s"
           echo "::endgroup::"
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📚 DocFX Results" >> $GITHUB_STEP_SUMMARY
+          echo "### 📚 Docusaurus Results" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Output | sites/docs.arolariu.ro/_site |" >> $GITHUB_STEP_SUMMARY
+          echo "| Output | sites/docs.arolariu.ro/build |" >> $GITHUB_STEP_SUMMARY
 
       - name: "[DOCS::4/4] 🚀 Deploying documentation..."
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_DOCS_TOKEN }}
           action: "upload"
-          app_location: "./sites/docs.arolariu.ro/_site" # App source code path
-          output_location: "./sites/docs.arolariu.ro/_site"
+          app_location: "./sites/docs.arolariu.ro/build" # App source code path
+          output_location: "./sites/docs.arolariu.ro/build"
 
       - name: 📊 Deployment summary
         run: |

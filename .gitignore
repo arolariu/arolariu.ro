@@ -26,6 +26,9 @@ docs/superpowers/**
 **/**/.DS_Store
 **/*.tsbuildinfo
 **/__generated__/**
+**/_generated/**
+**/.docusaurus/**
+sites/docs.arolariu.ro/docs/monorepo/
 **/artifacts/
 **/test-file.txt
 

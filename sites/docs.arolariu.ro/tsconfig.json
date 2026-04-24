@@ -1,0 +1,7 @@
+{
+  "extends": ["../../tsconfig.json", "@docusaurus/tsconfig"],
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "exclude": ["build", "_generated"]
+}

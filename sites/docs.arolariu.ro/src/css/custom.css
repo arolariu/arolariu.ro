@@ -1,0 +1,16 @@
+/*
+ * docs.arolariu.ro — single entry point for custom styling.
+ *
+ * Loads IBM Plex Mono + Sans at weights 400 and 600 only.
+ * Weight 500 was dropped in the enhancement pass; call sites now
+ * reference 600 explicitly.
+ */
+
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+
+@import "./theme-tokens.css";
+@import "./theme-docusaurus.css";
+@import "./theme-motion.css";

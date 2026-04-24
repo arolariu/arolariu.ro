@@ -833,9 +833,9 @@ describe("Button", () => {
 - [CSS Modules Guide](https://github.com/css-modules/css-modules)
 - [OKLCH Color Space](https://oklch.com/)
 - [React forwardRef](https://react.dev/reference/react/forwardRef)
-- [packages/components/README.md](../../packages/components/README.md) - Full component catalog
-- [packages/components/MIGRATION.md](../../packages/components/MIGRATION.md) - v0.x → v1.0 migration guide
-- [packages/components/EXAMPLES.md](../../packages/components/EXAMPLES.md) - Real-world usage patterns
+- [packages/components/README.md](https://github.com/arolariu/arolariu.ro/blob/main/packages/components/README.md) - Full component catalog
+- [packages/components/MIGRATION.md](https://github.com/arolariu/arolariu.ro/blob/main/packages/components/MIGRATION.md) - v0.x → v1.0 migration guide
+- [packages/components/EXAMPLES.md](https://github.com/arolariu/arolariu.ro/blob/main/packages/components/EXAMPLES.md) - Real-world usage patterns
 
 ---
 
