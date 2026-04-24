@@ -23,7 +23,7 @@ const navbarItems = [
   {to: '/internals/dotnet', label: '.NET internals', position: 'left' as const},
   {to: '/reference/typescript', label: 'TypeScript', position: 'left' as const},
   {to: '/internals/experimental', label: 'Experimental', position: 'left' as const},
-  {href: 'https://api.arolariu.ro/swagger', label: 'HTTP API', position: 'right' as const},
+  {href: 'https://api.arolariu.ro/index.html', label: 'HTTP API', position: 'right' as const},
   {href: 'https://github.com/arolariu/arolariu.ro', label: 'GitHub', position: 'right' as const},
 ];
 

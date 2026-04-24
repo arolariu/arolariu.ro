@@ -10,10 +10,12 @@ normalizes and mounts it under a single shell with a console-aesthetic
 theme shared with `status.arolariu.ro`.
 
 The `.NET` HTTP API contract is **not** hosted here. `api.arolariu.ro`
-serves Swagger UI at runtime from the live OpenAPI spec, so the docs
-navbar links out to `https://api.arolariu.ro/swagger` rather than
-duplicating the browser. Internal `.NET` *types* are still documented
-via `DefaultDocumentation` under `/internals/dotnet/`.
+serves Swagger UI at runtime from the live OpenAPI spec (Swashbuckle
+is configured with an empty `RoutePrefix`, so the UI lives at the
+site root and the canonical link is `https://api.arolariu.ro/index.html`).
+The docs navbar links out to that URL rather than duplicating the
+browser here. Internal `.NET` *types* are still documented via
+`DefaultDocumentation` under `/internals/dotnet/`.
 
 ## What lives here
 

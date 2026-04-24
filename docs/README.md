@@ -109,7 +109,7 @@ RFCs go through the following stages:
   - `.NET` internals from XML doc comments via `DefaultDocumentation`
   - TypeScript reference from TSDoc/JSDoc via TypeDoc
   - Python experimental service from docstrings via `pydoc-markdown`
-  - Live `.NET` HTTP API Swagger UI at [api.arolariu.ro/swagger](https://api.arolariu.ro/swagger)
+  - Live `.NET` HTTP API Swagger UI at [api.arolariu.ro](https://api.arolariu.ro/index.html) (hosted at the site root)
 
 - **GitHub Instructions**: Located in `.github/instructions/`
   - Development guidelines and coding standards
