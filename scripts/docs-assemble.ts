@@ -273,12 +273,16 @@ async function runDotnetInternals(): Promise<string> {
     const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
     mkdirSync(outDir, {recursive: true});
     const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
-    // DefaultDocumentation is installed globally (via `dotnet tool install
-    // --global`) — see sites/docs.arolariu.ro/README.md for the one-time
-    // local setup command. Invoking the executable directly (instead of
-    // `dotnet tool run`) removes the need for a repo-level tool manifest.
+    // DefaultDocumentation.Console is installed globally (via `dotnet tool
+    // install --global`) — see sites/docs.arolariu.ro/README.md for the
+    // one-time local setup command. The invocable name is LOWERCASE
+    // (`defaultdocumentation`) — NuGet registers tool commands in lower
+    // case regardless of the package name's casing, and Linux file
+    // systems enforce that strictly. Windows' case-insensitive file
+    // system masks a PascalCase call here, so a mixed-case spelling
+    // silently works locally and only breaks on Linux CI.
     log += await runCommand(
-      'DefaultDocumentation',
+      'defaultdocumentation',
       ['--AssemblyFilePath', dll,
        '--OutputDirectoryPath', outDir,
        '--FileNameFactory', 'Name',
