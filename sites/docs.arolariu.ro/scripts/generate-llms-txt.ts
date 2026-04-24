@@ -55,8 +55,10 @@ function walk(dir: string): string[] {
 
 /**
  * Translate a `build/`-relative path into a public URL path. Strips
- * the `index.html` suffix so URLs end with a trailing slash, and
- * collapses stray double slashes that arise from the root page.
+ * the `.html` suffix (and any lingering `index.html` segment) and
+ * drops a trailing slash so each page is referenced by its canonical
+ * slug-free URL. The root page is the one exception — it returns
+ * `/` so the site landing isn't emitted as an empty string.
  */
 function toUrlPath(pathFromBuild: string): string {
   if (pathFromBuild === 'index.html') return '/';

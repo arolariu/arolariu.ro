@@ -14,7 +14,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx docusaurus build",
+        "command": "npm run build",
         "cwd": "sites/docs.arolariu.ro"
       },
       "outputs": ["{projectRoot}/build"],

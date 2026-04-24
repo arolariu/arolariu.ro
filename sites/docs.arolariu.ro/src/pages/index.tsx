@@ -19,9 +19,10 @@
  * intercepts site-search typing.
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
+import {useHistory} from '@docusaurus/router';
 import styles from './index.module.css';
 
 /** A single row on the landing page — human label + absolute href. */
@@ -72,6 +73,12 @@ function isInteractiveTarget(el: EventTarget | null): boolean {
 
 export default function Home(): React.JSX.Element {
   const [cursor, setCursor] = useState<number | null>(null);
+  const history = useHistory();
+  // Mirror `cursor` into a ref so the global keydown listener can read
+  // the latest value without being re-attached each render — installing
+  // once keeps this hot on pages with heavy redraws.
+  const cursorRef = useRef<number | null>(null);
+  cursorRef.current = cursor;
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent): void {
@@ -84,16 +91,18 @@ export default function Home(): React.JSX.Element {
       } else if (event.key === 'ArrowUp' || event.key === 'k') {
         event.preventDefault();
         setCursor((value) => (value === null || value <= 0 ? 0 : value - 1));
-      } else if (event.key === 'Enter' && cursor !== null) {
+      } else if (event.key === 'Enter' && cursorRef.current !== null) {
         event.preventDefault();
-        window.location.href = ALL_ROWS[cursor]!.href;
+        // Route via Docusaurus' SPA history so the navigation stays
+        // client-side — no full reload, preserves plugin state.
+        history.push(ALL_ROWS[cursorRef.current]!.href);
       } else if (event.key === 'Escape') {
         setCursor(null);
       }
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [cursor]);
+  }, [history]);
 
   return (
     <Layout title="docs" description="Unified reference for arolariu.ro">
