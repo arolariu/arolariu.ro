@@ -3155,6 +3155,7 @@
       "clearCache": "Clear cached model",
       "dismissError": "Dismiss error",
       "download": "Download local model",
+      "retryHardware": "Retry hardware check",
       "reset": "Reset chat",
       "send": "Send",
       "stop": "Stop generating"

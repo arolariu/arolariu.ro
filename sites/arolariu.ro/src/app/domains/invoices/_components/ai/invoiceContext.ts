@@ -23,9 +23,9 @@ export type SanitizedInvoiceForAssistant = Readonly<{
   category: number;
   countryRegion: string;
   currencyCode: string;
-  id: string;
+  invoiceAlias: string;
   items: ReadonlyArray<SanitizedInvoiceLineItem>;
-  merchantReference: string;
+  merchantAlias: string;
   name: string;
   omittedItemCount: number;
   receiptType: string;
@@ -42,12 +42,12 @@ export type LocalInvoiceAssistantAnalytics = Readonly<{
   largestInvoices: ReadonlyArray<
     Readonly<{
       currencyCode: string;
-      id: string;
+      invoiceAlias: string;
       name: string;
       totalAmount: number;
     }>
   >;
-  merchantReferenceBreakdown: Record<
+  merchantBreakdown: Record<
     string,
     Readonly<{
       invoiceCount: number;
@@ -87,7 +87,29 @@ function toIsoDate(value: Date | string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-function sanitizeInvoiceForAssistant(invoice: Invoice, limits: LocalInvoiceAssistantContextLimits): SanitizedInvoiceForAssistant {
+function getMerchantAlias(merchantAliases: Map<string, string>, merchantReference: string): string {
+  const normalizedReference = merchantReference.trim();
+  if (!normalizedReference) {
+    return "merchant-unknown";
+  }
+
+  const existingAlias = merchantAliases.get(normalizedReference);
+  if (existingAlias) {
+    return existingAlias;
+  }
+
+  const nextAlias = `merchant-${merchantAliases.size + 1}`;
+  merchantAliases.set(normalizedReference, nextAlias);
+
+  return nextAlias;
+}
+
+function sanitizeInvoiceForAssistant(
+  invoice: Invoice,
+  limits: LocalInvoiceAssistantContextLimits,
+  invoiceAlias: string,
+  merchantAlias: string,
+): SanitizedInvoiceForAssistant {
   const items = invoice.items.slice(0, limits.maxLineItemsPerInvoice).map((item) => ({
     category: item.category,
     name: item.name,
@@ -101,9 +123,9 @@ function sanitizeInvoiceForAssistant(invoice: Invoice, limits: LocalInvoiceAssis
     category: invoice.category,
     countryRegion: invoice.countryRegion,
     currencyCode: invoice.paymentInformation.currency.code,
-    id: invoice.id,
+    invoiceAlias,
     items,
-    merchantReference: invoice.merchantReference,
+    merchantAlias,
     name: invoice.name,
     omittedItemCount: Math.max(invoice.items.length - items.length, 0),
     receiptType: invoice.receiptType,
@@ -114,7 +136,7 @@ function sanitizeInvoiceForAssistant(invoice: Invoice, limits: LocalInvoiceAssis
 
 function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedInvoiceForAssistant>): LocalInvoiceAssistantAnalytics {
   const totalSpendByCurrency: Record<string, number> = {};
-  const merchantReferenceBreakdown: Record<
+  const merchantBreakdown: Record<
     string,
     {
       invoiceCount: number;
@@ -129,14 +151,14 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
   for (const invoice of invoices) {
     totalSpendByCurrency[invoice.currencyCode] = roundMoney((totalSpendByCurrency[invoice.currencyCode] ?? 0) + invoice.totalAmount);
 
-    const merchantKey = invoice.merchantReference || "unknown";
-    merchantReferenceBreakdown[merchantKey] ??= {
+    const merchantKey = invoice.merchantAlias;
+    merchantBreakdown[merchantKey] ??= {
       invoiceCount: 0,
       totalAmountByCurrency: {},
     };
-    merchantReferenceBreakdown[merchantKey].invoiceCount += 1;
-    merchantReferenceBreakdown[merchantKey].totalAmountByCurrency[invoice.currencyCode] = roundMoney(
-      (merchantReferenceBreakdown[merchantKey].totalAmountByCurrency[invoice.currencyCode] ?? 0) + invoice.totalAmount,
+    merchantBreakdown[merchantKey].invoiceCount += 1;
+    merchantBreakdown[merchantKey].totalAmountByCurrency[invoice.currencyCode] = roundMoney(
+      (merchantBreakdown[merchantKey].totalAmountByCurrency[invoice.currencyCode] ?? 0) + invoice.totalAmount,
     );
   }
 
@@ -151,11 +173,11 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
       .slice(0, 5)
       .map((invoice) => ({
         currencyCode: invoice.currencyCode,
-        id: invoice.id,
+        invoiceAlias: invoice.invoiceAlias,
         name: invoice.name,
         totalAmount: invoice.totalAmount,
       })),
-    merchantReferenceBreakdown,
+    merchantBreakdown,
     totalSpendByCurrency,
   };
 }
@@ -176,9 +198,17 @@ export function createLocalInvoiceAssistantContext({
     ...limits,
   };
   const scopedInvoices = activeInvoiceId ? invoices.filter((invoice) => invoice.id === activeInvoiceId) : invoices;
+  const merchantAliases = new Map<string, string>();
   const sanitizedInvoices = scopedInvoices
     .slice(0, resolvedLimits.maxInvoices)
-    .map((invoice) => sanitizeInvoiceForAssistant(invoice, resolvedLimits));
+    .map((invoice, index) =>
+      sanitizeInvoiceForAssistant(
+        invoice,
+        resolvedLimits,
+        `invoice-${index + 1}`,
+        getMerchantAlias(merchantAliases, invoice.merchantReference),
+      ),
+    );
   const analytics = createLocalInvoiceAssistantAnalytics(sanitizedInvoices);
 
   return {

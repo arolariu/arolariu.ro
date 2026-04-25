@@ -28,6 +28,7 @@ vi.mock("next-intl", () => ({
       "actions.clearCache": "Clear cached model",
       "actions.dismissError": "Dismiss error",
       "actions.download": "Download local model",
+      "actions.retryHardware": "Retry hardware check",
       "actions.reset": "Reset chat",
       "actions.send": "Send",
       "actions.stop": "Stop generating",
@@ -212,6 +213,39 @@ describe("LocalInvoiceAssistantPanel", () => {
       expect(adapter.interrupt).toHaveBeenCalledOnce();
     });
     expect(screen.getByText("Partial answer")).toBeInTheDocument();
+  });
+
+  it("lets users retry hardware analysis without showing chat-ready UI for pre-load errors", async () => {
+    let attempts = 0;
+    const adapter = createFakeAdapter();
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => {
+          attempts += 1;
+
+          if (attempts === 1) {
+            throw new Error("Storage probe failed");
+          }
+
+          return eligibleHardware;
+        }}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Storage probe failed");
+    expect(screen.queryByText("Local model is ready")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Download local model"})).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", {name: "Retry hardware check"}));
+
+    expect(await screen.findByRole("button", {name: "Download local model"})).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(adapter.load).not.toHaveBeenCalled();
   });
 });
 

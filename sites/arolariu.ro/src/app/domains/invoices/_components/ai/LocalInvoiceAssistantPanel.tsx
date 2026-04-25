@@ -20,7 +20,10 @@ type LocalInvoiceAssistantPanelProps = Readonly<{
 }>;
 
 type HardwareStatusProps = Readonly<{
+  error: string | null;
+  hardware: HardwareEligibilityResult | null;
   lifecycle: LocalInvoiceAssistantLifecycle;
+  onRetryHardwareAnalysis: () => void;
 }>;
 
 type ModelPreparationCardProps = Readonly<{
@@ -44,7 +47,7 @@ type ChatShellProps = Readonly<{
   state: LocalInvoiceAssistantState;
 }>;
 
-function HardwareStatus({lifecycle}: HardwareStatusProps): React.JSX.Element | null {
+function HardwareStatus({error, hardware, lifecycle, onRetryHardwareAnalysis}: HardwareStatusProps): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
 
   if (lifecycle === "checking-hardware") {
@@ -64,6 +67,25 @@ function HardwareStatus({lifecycle}: HardwareStatusProps): React.JSX.Element | n
         role='status'>
         <h3 className={styles["fallbackTitle"]}>{t("hardware.ineligibleTitle")}</h3>
         <p className={styles["fallbackText"]}>{t("hardware.ineligibleMessage")}</p>
+      </div>
+    );
+  }
+
+  if (lifecycle === "error" && hardware === null && error !== null) {
+    return (
+      <div
+        className={styles["errorBox"]}
+        role='alert'>
+        <div>
+          <h3 className={styles["sectionTitle"]}>{t("errors.title")}</h3>
+          <p className={styles["statusText"]}>{error}</p>
+        </div>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={onRetryHardwareAnalysis}>
+          {t("actions.retryHardware")}
+        </Button>
       </div>
     );
   }
@@ -132,7 +154,8 @@ function ChatShell({
 }: ChatShellProps): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
   const shouldShowChat =
-    state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error" || state.lifecycle === "cancelled";
+    state.hardware !== null
+    && (state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error" || state.lifecycle === "cancelled");
 
   if (shouldShowChat) {
     return (
@@ -241,7 +264,18 @@ export function LocalInvoiceAssistantPanel({
     invoices,
     ...(now ? {now} : {}),
   });
-  const {canLoadModel, canSendMessage, deleteCachedModel, dismissError, interrupt, loadModel, resetSession, sendMessage, state} = assistant;
+  const {
+    canLoadModel,
+    canSendMessage,
+    deleteCachedModel,
+    dismissError,
+    interrupt,
+    loadModel,
+    resetSession,
+    retryHardwareAnalysis,
+    sendMessage,
+    state,
+  } = assistant;
   const isGenerating = state.lifecycle === "generating";
   const progressPercent = Math.round(state.progress * 100);
 
@@ -269,6 +303,10 @@ export function LocalInvoiceAssistantPanel({
     interrupt();
   }, [interrupt]);
 
+  const handleRetryHardwareAnalysis = useCallback((): void => {
+    void retryHardwareAnalysis();
+  }, [retryHardwareAnalysis]);
+
   const handleSubmit = useCallback(
     (event: Readonly<{preventDefault: () => void}>): void => {
       event.preventDefault();
@@ -290,7 +328,12 @@ export function LocalInvoiceAssistantPanel({
         <CardDescription>{t("privacy")}</CardDescription>
       </CardHeader>
       <CardContent className={styles["content"]}>
-        <HardwareStatus lifecycle={state.lifecycle} />
+        <HardwareStatus
+          error={state.error}
+          hardware={state.hardware}
+          lifecycle={state.lifecycle}
+          onRetryHardwareAnalysis={handleRetryHardwareAnalysis}
+        />
         <ModelPreparationCard
           activeModelArtifactHost={state.activeModel.artifactHost}
           canLoadModel={canLoadModel}

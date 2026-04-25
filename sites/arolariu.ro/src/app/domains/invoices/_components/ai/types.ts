@@ -5,15 +5,13 @@ export type LocalInvoiceAssistantRole = "assistant" | "system" | "user";
 export type LocalInvoiceAssistantLifecycle =
   | "cancelled"
   | "checking-hardware"
-  | "checking-support"
   | "compatibility-unknown"
   | "downloading"
   | "error"
   | "generating"
   | "hardware-ineligible"
   | "not-downloaded"
-  | "ready"
-  | "unsupported";
+  | "ready";
 
 export type LocalInvoiceAssistantMessage = Readonly<{
   content: string;

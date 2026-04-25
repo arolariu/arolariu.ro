@@ -35,6 +35,7 @@ type UseLocalInvoiceAssistantResult = Readonly<{
   dismissError: () => void;
   interrupt: () => void;
   loadModel: () => Promise<void>;
+  retryHardwareAnalysis: () => Promise<void>;
   resetSession: () => void;
   sendMessage: (content: string) => Promise<void>;
   state: LocalInvoiceAssistantState;
@@ -173,44 +174,62 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     stateRef.current = state;
   }, [state]);
 
-  useEffect(() => {
-    let isActive = true;
+  const retryHardwareAnalysis = useCallback(async (): Promise<void> => {
+    setState((current) => {
+      const nextState = {
+        ...current,
+        error: null,
+        hardware: null,
+        lifecycle: "checking-hardware" as const,
+      };
+      stateRef.current = nextState;
 
-    async function analyzeHardware(): Promise<void> {
-      try {
-        const hardware = await analyzeHardwareRef.current();
-        if (!isActive) {
-          return;
-        }
+      return nextState;
+    });
 
-        setState((current) => {
-          const nextState = {
-            ...current,
-            error: null,
-            hardware,
-            lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),
-          };
-          stateRef.current = nextState;
+    try {
+      const hardware = await analyzeHardwareRef.current();
+      if (!isMountedRef.current) {
+        return;
+      }
 
-          return nextState;
-        });
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
+      setState((current) => {
+        const nextState = {
+          ...current,
+          error: null,
+          hardware,
+          lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),
+        };
+        stateRef.current = nextState;
 
-        setState((current) => ({
+        return nextState;
+      });
+    } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      setState((current) => {
+        const nextState = {
           ...current,
           error: getErrorMessage(error),
-          lifecycle: "error",
-        }));
-      }
+          hardware: null,
+          lifecycle: "error" as const,
+        };
+        stateRef.current = nextState;
+
+        return nextState;
+      });
     }
+  }, []);
 
-    void analyzeHardware();
+  useEffect(() => {
+    void retryHardwareAnalysis();
+  }, [retryHardwareAnalysis]);
 
+  useEffect(() => {
     return () => {
-      isActive = false;
+      isMountedRef.current = false;
     };
   }, []);
 
@@ -395,9 +414,11 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, [activeModel]);
 
   const canLoadModel =
-    state.lifecycle === "not-downloaded"
-    || state.lifecycle === "compatibility-unknown"
-    || (state.lifecycle === "error" && !loadedRef.current);
+    state.hardware !== null
+    && state.hardware.status !== "ineligible"
+    && (state.lifecycle === "not-downloaded"
+      || state.lifecycle === "compatibility-unknown"
+      || (state.lifecycle === "error" && !loadedRef.current));
   const canSendMessage = state.lifecycle === "ready" || state.lifecycle === "cancelled";
 
   return {
@@ -408,6 +429,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     dismissError,
     interrupt,
     loadModel,
+    retryHardwareAnalysis,
     resetSession,
     sendMessage,
     state,

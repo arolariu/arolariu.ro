@@ -3155,6 +3155,7 @@
       "clearCache": "Effacer le modèle en cache",
       "dismissError": "Masquer l'erreur",
       "download": "Télécharger le modèle local",
+      "retryHardware": "Réessayer la vérification matérielle",
       "reset": "Réinitialiser le chat",
       "send": "Envoyer",
       "stop": "Arrêter la génération"

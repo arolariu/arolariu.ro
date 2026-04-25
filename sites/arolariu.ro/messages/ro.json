@@ -3155,6 +3155,7 @@
       "clearCache": "Șterge modelul din cache",
       "dismissError": "Închide eroarea",
       "download": "Descarcă modelul local",
+      "retryHardware": "Reîncearcă verificarea hardware",
       "reset": "Resetează chatul",
       "send": "Trimite",
       "stop": "Oprește generarea"

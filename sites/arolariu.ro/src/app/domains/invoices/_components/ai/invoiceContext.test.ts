@@ -26,11 +26,13 @@ describe("createLocalInvoiceAssistantContext", () => {
     expect(context.invoices).toHaveLength(1);
     expect(context.invoices[0]).toMatchObject({
       currencyCode: "RON",
-      id: "invoice-redacted",
-      merchantReference: "merchant-123",
+      invoiceAlias: "invoice-1",
+      merchantAlias: "merchant-1",
       name: "Private grocery receipt",
       totalAmount: 42,
     });
+    expect(context.promptContext).not.toContain("invoice-redacted");
+    expect(context.promptContext).not.toContain("merchant-123");
     expect(JSON.stringify(context)).not.toContain(invoice.userIdentifier);
     expect(JSON.stringify(context)).not.toContain("user-shared-1");
     expect(JSON.stringify(context)).not.toContain("private-scan.jpg");
@@ -74,9 +76,12 @@ describe("createLocalInvoiceAssistantContext", () => {
 
     expect(context.analytics.invoiceCount).toBe(2);
     expect(context.analytics.totalSpendByCurrency).toEqual({RON: 100});
-    expect(context.analytics.merchantReferenceBreakdown).toEqual({
-      "merchant-a": {invoiceCount: 2, totalAmountByCurrency: {RON: 100}},
+    expect(context.analytics.merchantBreakdown).toEqual({
+      "merchant-1": {invoiceCount: 2, totalAmountByCurrency: {RON: 100}},
     });
-    expect(context.analytics.largestInvoices.map((invoice) => invoice.id)).toEqual(["invoice-two", "invoice-one"]);
+    expect(context.analytics.largestInvoices.map((invoice) => invoice.invoiceAlias)).toEqual(["invoice-2", "invoice-1"]);
+    expect(context.promptContext).not.toContain("invoice-one");
+    expect(context.promptContext).not.toContain("invoice-two");
+    expect(context.promptContext).not.toContain("merchant-a");
   });
 });

@@ -132,7 +132,8 @@ describe("useLocalInvoiceAssistant", () => {
       },
     ]);
     expect(capturedPrompts[0]).toContain("Sensitive grocery receipt");
-    expect(capturedPrompts[0]).toContain("invoice-local-ai");
+    expect(capturedPrompts[0]).toContain("invoice-1");
+    expect(capturedPrompts[0]).not.toContain("invoice-local-ai");
     expect(capturedPrompts[0]).not.toContain("secret raw OCR");
     expect(capturedPrompts[0]).not.toContain("shared-user");
   });
@@ -256,6 +257,45 @@ describe("useLocalInvoiceAssistant", () => {
 
     expect(result.current.state.lifecycle).toBe("error");
     expect(result.current.state.error).toBe("Cache delete failed");
+  });
+
+  it("retries hardware analysis after an initial analyzer failure", async () => {
+    let attempts = 0;
+    const adapter = createFakeAdapter();
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => {
+          attempts += 1;
+
+          if (attempts === 1) {
+            throw new Error("Storage probe failed");
+          }
+
+          return eligibleHardware;
+        },
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("error");
+    });
+
+    expect(result.current.state.hardware).toBeNull();
+    expect(result.current.canLoadModel).toBe(false);
+
+    await act(async () => {
+      await result.current.retryHardwareAnalysis();
+    });
+
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.canLoadModel).toBe(true);
+    expect(attempts).toBe(2);
   });
 });
 
