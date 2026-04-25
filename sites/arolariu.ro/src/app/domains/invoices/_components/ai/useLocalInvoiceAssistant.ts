@@ -1,3 +1,12 @@
+/**
+ * @fileoverview React hook for managing local invoice AI assistant lifecycle.
+ *
+ * Orchestrates hardware analysis, model loading, chat state, and error recovery
+ * for the client-only invoice AI assistant powered by WebLLM.
+ *
+ * @module app/domains/invoices/_components/ai/useLocalInvoiceAssistant
+ */
+
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -16,36 +25,75 @@ import {
   type LocalInvoiceAssistantAdapter,
 } from "./webLlmAdapter";
 
+/**
+ * Input parameters for useLocalInvoiceAssistant hook.
+ */
 type UseLocalInvoiceAssistantInput = Readonly<{
+  /** If provided, scope context to single invoice (detail view). */
   activeInvoiceId?: string;
+  /** Optional pre-configured adapter (for testing). */
   adapter?: LocalInvoiceAssistantAdapter;
+  /** Optional injectable hardware analysis function (for testing). */
   analyzeHardware?: () => Promise<HardwareEligibilityResult>;
+  /** Optional adapter factory (for testing). */
   createAdapter?: () => LocalInvoiceAssistantAdapter;
+  /** Optional message ID generator (for testing). */
   createId?: () => string;
+  /** Full invoice list from store. */
   invoices: ReadonlyArray<Invoice>;
+  /** LLM model to use (defaults to Llama 3.2 1B). */
   model?: LocalInvoiceAssistantModelMetadata;
+  /** Optional time provider (for testing). */
   now?: () => Date;
 }>;
 
+/**
+ * Return value from useLocalInvoiceAssistant hook.
+ */
 type UseLocalInvoiceAssistantResult = Readonly<{
+  /** Whether model download can be initiated (hardware eligible, not loaded). */
   canLoadModel: boolean;
+  /** Whether user can send messages (model loaded, not generating). */
   canSendMessage: boolean;
+  /** Sanitized invoice context for prompts. */
   context: LocalInvoiceAssistantContext;
+  /** Deletes cached model from IndexedDB. */
   deleteCachedModel: () => Promise<void>;
+  /** Dismisses error and recovers to last valid state. */
   dismissError: () => void;
+  /** Interrupts active generation. */
   interrupt: () => void;
+  /** Downloads and loads LLM model. */
   loadModel: () => Promise<void>;
+  /** Retries hardware capability analysis. */
   retryHardwareAnalysis: () => Promise<void>;
+  /** Resets chat session (clears messages). */
   resetSession: () => void;
+  /** Sends user message and generates assistant response. */
   sendMessage: (content: string) => Promise<void>;
+  /** Current assistant state. */
   state: LocalInvoiceAssistantState;
 }>;
 
+/**
+ * System prompt instructing LLM to use only sanitized invoice context.
+ *
+ * @remarks
+ * Prevents LLM from hallucinating access to scans, raw OCR, or remote services.
+ * Emphasizes local-only capabilities and transparent data limitations.
+ *
+ * @internal
+ */
 const LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT =
   "You are a local-only invoice assistant. Answer using only the sanitized invoice JSON provided in this prompt. "
   + "Do not claim access to scans, raw OCR, hidden metadata, accounts, or remote services. "
   + "If the invoice data is insufficient, say what is missing and suggest a local-only next step.";
 
+/**
+ * Fallback message ID counter for browsers without crypto.randomUUID.
+ *
+ * @internal
+ */
 let fallbackMessageId = 0;
 
 function createPromptMessages(
@@ -126,10 +174,58 @@ function createDefaultMessageId(): string {
 }
 
 /**
- * Manages the browser-only lifecycle for the local invoice AI assistant.
+ * React hook managing browser-only lifecycle for local invoice AI assistant.
  *
- * @param input - Invoice context and optional injectable dependencies for tests.
- * @returns Local assistant state plus actions for loading, chatting, and recovery.
+ * @param input - Invoice context and optional injectable dependencies for testing.
+ * @returns Local assistant state, chat actions, and error recovery functions.
+ *
+ * @remarks
+ * **Lifecycle:**
+ * 1. Mount → Analyze hardware capabilities
+ * 2. User action → Download model (if eligible)
+ * 3. Model loaded → Enable chat
+ * 4. User sends message → Stream LLM response
+ * 5. Unmount → Dispose adapter, cleanup resources
+ *
+ * **Privacy guarantees:**
+ * - WebLLM import deferred until explicit load action (no automatic download)
+ * - All inference client-side (no server requests)
+ * - Session-only chat (no message persistence)
+ * - Invoice context sanitized (IDs replaced with aliases)
+ *
+ * **Error recovery:**
+ * - Hardware check failures → Retry button
+ * - Download failures → Recoverable error state
+ * - Generation failures → Dismiss error, retain chat history
+ *
+ * **Performance:**
+ * - Hardware analysis async (non-blocking)
+ * - Model download with progress reporting
+ * - Token streaming for responsive UX
+ * - Worker-based inference (non-blocking main thread)
+ *
+ * @example
+ * ```typescript
+ * function InvoiceAssistant({invoices}: {invoices: Invoice[]}) {
+ *   const assistant = useLocalInvoiceAssistant({invoices});
+ *
+ *   if (assistant.state.lifecycle === 'not-downloaded') {
+ *     return <button onClick={assistant.loadModel}>Download AI</button>;
+ *   }
+ *
+ *   if (assistant.state.lifecycle === 'ready') {
+ *     return (
+ *       <form onSubmit={(e) => {
+ *         e.preventDefault();
+ *         assistant.sendMessage(inputValue);
+ *       }}>
+ *         <input />
+ *         <button type="submit">Ask</button>
+ *       </form>
+ *     );
+ *   }
+ * }
+ * ```
  */
 export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): UseLocalInvoiceAssistantResult {
   const activeModel = input.model ?? DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL;

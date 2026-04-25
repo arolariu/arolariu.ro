@@ -31,6 +31,7 @@ considered, and what landed.
 - [1006 — Component library architecture](./1006-component-library-architecture.md)
 - [1007 — Advanced frontend patterns](./1007-advanced-frontend-patterns.md)
 - [1008 — SCSS system architecture](./1008-scss-system-architecture.md)
+- [1009 — Local invoice AI assistant](./1009-local-invoice-ai-assistant.md)
 
 ### Backend
 

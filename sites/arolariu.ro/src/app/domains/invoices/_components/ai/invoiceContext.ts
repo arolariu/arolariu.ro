@@ -1,44 +1,118 @@
+/**
+ * @fileoverview Invoice context sanitization and analytics for local AI prompts.
+ *
+ * Redacts sensitive invoice data (IDs, merchant references) and creates compact,
+ * privacy-safe analytics summaries suitable for client-only LLM prompts.
+ *
+ * @module app/domains/invoices/_components/ai/invoiceContext
+ */
+
 import type {Invoice} from "@/types/invoices";
 
+/**
+ * Default truncation limits for invoice assistant context.
+ *
+ * @remarks
+ * Limits context size for smaller models (Llama 3.2 1B, 4K context window):
+ * - Maximum 25 invoices included in prompt
+ * - Maximum 20 line items per invoice
+ *
+ * Omitted items tracked in `omittedItemCount` for transparency.
+ */
 export const LOCAL_INVOICE_ASSISTANT_CONTEXT_LIMITS = {
   maxInvoices: 25,
   maxLineItemsPerInvoice: 20,
 } as const satisfies LocalInvoiceAssistantContextLimits;
 
+/**
+ * Context truncation limits for invoice assistant prompts.
+ */
 export type LocalInvoiceAssistantContextLimits = Readonly<{
+  /** Maximum number of invoices to include in context. */
   maxInvoices: number;
+  /** Maximum line items per invoice (excess tracked in `omittedItemCount`). */
   maxLineItemsPerInvoice: number;
 }>;
 
+/**
+ * Sanitized invoice line item for AI prompt context.
+ *
+ * @remarks
+ * **Excluded fields:** Raw OCR data, product IDs, vendor-specific codes.
+ * **Retained fields:** Human-readable name, category, price, quantity.
+ */
 export type SanitizedInvoiceLineItem = Readonly<{
+  /** Product category enum value. */
   category: number;
+  /** Product name (as recognized by OCR/user). */
   name: string;
+  /** Purchased quantity. */
   quantity: number;
+  /** Quantity unit (e.g., "kg", "pcs"). */
   quantityUnit: string;
+  /** Total price for this line item (quantity × unitPrice). */
   totalPrice: number;
+  /** Unit price per quantity unit. */
   unitPrice: number;
 }>;
 
+/**
+ * Sanitized invoice for AI assistant prompt context.
+ *
+ * @remarks
+ * **Privacy redactions:**
+ * - Invoice ID → `invoice-N` (deterministic alias)
+ * - Merchant reference → `merchant-N` (deterministic alias)
+ * - No scan URLs, account IDs, or raw OCR metadata
+ *
+ * **Retained data:**
+ * - User-assigned name, category, amounts, dates
+ * - Top N line items (configurable limit)
+ * - Currency and country/region
+ */
 export type SanitizedInvoiceForAssistant = Readonly<{
+  /** Invoice category enum value. */
   category: number;
+  /** Country/region code for invoice. */
   countryRegion: string;
+  /** Currency code (e.g., "RON", "USD"). */
   currencyCode: string;
+  /** Deterministic alias (e.g., "invoice-1") hiding real ID. */
   invoiceAlias: string;
+  /** Sanitized line items (limited by `maxLineItemsPerInvoice`). */
   items: ReadonlyArray<SanitizedInvoiceLineItem>;
+  /** Deterministic merchant alias (e.g., "merchant-1"). */
   merchantAlias: string;
+  /** User-assigned invoice name. */
   name: string;
+  /** Count of line items omitted due to truncation. */
   omittedItemCount: number;
+  /** Receipt type (e.g., "invoice", "receipt"). */
   receiptType: string;
+  /** Total invoice amount. */
   totalAmount: number;
+  /** ISO 8601 transaction date (null if unavailable). */
   transactionDate: string | null;
 }>;
 
+/**
+ * Aggregated analytics for invoice assistant prompt context.
+ *
+ * @remarks
+ * Provides high-level spending insights without exposing sensitive IDs.
+ * All amounts grouped by currency to avoid incorrect cross-currency math.
+ */
 export type LocalInvoiceAssistantAnalytics = Readonly<{
+  /** Date range spanning all invoices (ISO 8601). */
   dateRange: Readonly<{
+    /** Latest transaction date. */
     end: string | null;
+    /** Earliest transaction date. */
     start: string | null;
   }>;
+  /** Total number of invoices in context. */
   invoiceCount: number;
+  /** Top 5 invoices by total amount. */
   largestInvoices: ReadonlyArray<
     Readonly<{
       currencyCode: string;
@@ -47,25 +121,45 @@ export type LocalInvoiceAssistantAnalytics = Readonly<{
       totalAmount: number;
     }>
   >;
+  /** Spending breakdown by merchant alias. */
   merchantBreakdown: Record<
     string,
     Readonly<{
+      /** Number of invoices from this merchant. */
       invoiceCount: number;
+      /** Total spending by currency code. */
       totalAmountByCurrency: Record<string, number>;
     }>
   >;
+  /** Total spending across all invoices, grouped by currency. */
   totalSpendByCurrency: Record<string, number>;
 }>;
 
+/**
+ * Complete invoice context for local AI assistant prompts.
+ *
+ * @remarks
+ * Combines sanitized invoice list with pre-computed analytics.
+ * `promptContext` is JSON-serialized for direct LLM injection.
+ */
 export type LocalInvoiceAssistantContext = Readonly<{
+  /** Aggregated analytics summary. */
   analytics: LocalInvoiceAssistantAnalytics;
+  /** Sanitized invoice list (redacted IDs). */
   invoices: ReadonlyArray<SanitizedInvoiceForAssistant>;
+  /** JSON-stringified context for LLM system prompt. */
   promptContext: string;
 }>;
 
+/**
+ * Input options for creating invoice assistant context.
+ */
 type CreateLocalInvoiceAssistantContextInput = Readonly<{
+  /** If provided, scope context to single invoice (invoice detail view). */
   activeInvoiceId?: string;
+  /** Full invoice list from store. */
   invoices: ReadonlyArray<Invoice>;
+  /** Optional context truncation overrides. */
   limits?: Partial<LocalInvoiceAssistantContextLimits>;
 }>;
 
@@ -183,10 +277,38 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
 }
 
 /**
- * Creates a compact, sanitized invoice context for local-only assistant prompts.
+ * Creates privacy-safe, sanitized invoice context for local AI assistant prompts.
  *
- * @param input - Invoice list plus optional active invoice and truncation limits.
- * @returns Redacted invoice context and deterministic analytics.
+ * @param input - Invoice list, optional single-invoice scope, and truncation limits.
+ * @returns Redacted invoice context with deterministic analytics and JSON prompt string.
+ *
+ * @remarks
+ * **Privacy model:**
+ * - Replaces invoice IDs with deterministic aliases (`invoice-1`, `invoice-2`)
+ * - Replaces merchant references with aliases (`merchant-1`, `merchant-2`)
+ * - Excludes: Scan URLs, account IDs, raw OCR metadata, product IDs
+ * - Retains: User-assigned names, categories, amounts, dates
+ *
+ * **Truncation:**
+ * - Limits to first `maxInvoices` invoices
+ * - Limits to first `maxLineItemsPerInvoice` items per invoice
+ * - Tracks omitted item count for transparency
+ *
+ * **Analytics:**
+ * - Total spending by currency (no cross-currency arithmetic)
+ * - Merchant breakdown with invoice count and spending
+ * - Top 5 largest invoices
+ * - Date range spanning all invoices
+ *
+ * @example
+ * ```typescript
+ * const context = createLocalInvoiceAssistantContext({
+ *   invoices: allInvoices,
+ *   limits: {maxInvoices: 10}
+ * });
+ * // Use context.promptContext in LLM system message
+ * console.log(context.analytics.totalSpendByCurrency);
+ * ```
  */
 export function createLocalInvoiceAssistantContext({
   activeInvoiceId,

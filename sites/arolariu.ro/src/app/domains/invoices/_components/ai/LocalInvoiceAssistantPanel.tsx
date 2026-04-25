@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Local invoice AI assistant panel component.
+ *
+ * Renders hardware status, model download UI, and chat interface for the
+ * client-only invoice AI assistant.
+ *
+ * @module app/domains/invoices/_components/ai/LocalInvoiceAssistantPanel
+ */
+
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -10,12 +19,21 @@ import type {LocalInvoiceAssistantLifecycle, LocalInvoiceAssistantState} from ".
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
 import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 
+/**
+ * Props for LocalInvoiceAssistantPanel component.
+ */
 type LocalInvoiceAssistantPanelProps = Readonly<{
+  /** If provided, scope context to single invoice (detail view). */
   activeInvoiceId?: string;
+  /** Optional pre-configured adapter (for testing). */
   adapter?: LocalInvoiceAssistantAdapter;
+  /** Optional hardware analysis override (for testing). */
   analyzeHardware?: () => Promise<HardwareEligibilityResult>;
+  /** Optional message ID generator (for testing). */
   createId?: () => string;
+  /** Full invoice list from store. */
   invoices: ReadonlyArray<Invoice>;
+  /** Optional time provider (for testing). */
   now?: () => Date;
 }>;
 
@@ -241,10 +259,41 @@ function ChatShell({
 }
 
 /**
- * Renders the local-only invoice AI assistant panel.
+ * Local-only invoice AI assistant panel component.
  *
  * @param props - Invoice context and optional test dependencies.
- * @returns Client-side local invoice assistant UI.
+ * @returns Client-side local invoice assistant UI with hardware status, model download, and chat.
+ *
+ * @remarks
+ * **Component structure:**
+ * 1. `HardwareStatus` → Hardware eligibility check and error recovery
+ * 2. `ModelPreparationCard` → Model download UI with progress bar
+ * 3. `ChatShell` → Message history and input form
+ *
+ * **Lifecycle states:**
+ * - `checking-hardware` → Loading spinner
+ * - `hardware-ineligible` → Fallback message with requirements
+ * - `compatibility-unknown` → Warning banner, allow download with caveat
+ * - `not-downloaded` → Download button
+ * - `downloading` → Progress bar
+ * - `ready` → Chat interface enabled
+ * - `generating` → Streaming response with stop button
+ * - `error` → Error banner with dismiss/retry
+ *
+ * **Accessibility:**
+ * - `aria-live` regions for status updates
+ * - `role="alert"` for errors
+ * - `role="status"` for non-critical updates
+ * - Keyboard-accessible form submission
+ *
+ * @example
+ * ```tsx
+ * <LocalInvoiceAssistantPanel invoices={allInvoices} />
+ * <LocalInvoiceAssistantPanel
+ *   activeInvoiceId="invoice-123"
+ *   invoices={[invoice]}
+ * />
+ * ```
  */
 export function LocalInvoiceAssistantPanel({
   activeInvoiceId,

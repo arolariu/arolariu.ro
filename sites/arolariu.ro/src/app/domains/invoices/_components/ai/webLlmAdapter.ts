@@ -1,5 +1,21 @@
+/**
+ * @fileoverview WebLLM adapter for browser-based local LLM inference.
+ *
+ * Provides a clean, testable interface for loading, generating, and managing
+ * local language models using WebLLM with Web Worker execution.
+ *
+ * @module app/domains/invoices/_components/ai/webLlmAdapter
+ */
+
 import type {LocalInvoiceAssistantModelMetadata, LocalInvoiceAssistantPromptMessage} from "./types";
 
+/**
+ * Default local invoice assistant model configuration.
+ *
+ * @remarks
+ * Llama 3.2 1B Instruct quantized to 4-bit (q4f16_1) for client-side inference.
+ * ~1.5 GB download, targets WebGPU-capable browsers with 4+ GB device memory.
+ */
 export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = {
   artifactHost: "https://huggingface.co/mlc-ai",
   contextWindowTokens: 4096,
@@ -7,51 +23,108 @@ export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = {
   id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
 } as const satisfies LocalInvoiceAssistantModelMetadata;
 
+/**
+ * Available local invoice assistant models.
+ *
+ * @remarks
+ * Currently single-model (future: add Phi-3 variants).
+ */
 export const LOCAL_INVOICE_ASSISTANT_MODELS = [DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL] as const;
 
+/**
+ * Default LLM generation hyperparameters.
+ *
+ * @remarks
+ * - `temperature`: 0.2 (low randomness for factual invoice queries)
+ * - `topP`: 0.9 (nucleus sampling)
+ * - `maxTokens`: 384 (limit response length for UI constraints)
+ */
 export const DEFAULT_LOCAL_INVOICE_ASSISTANT_GENERATION_OPTIONS = {
   maxTokens: 384,
   temperature: 0.2,
   topP: 0.9,
 } as const satisfies LocalInvoiceAssistantGenerationOptions;
 
+/**
+ * Model download progress report from WebLLM.
+ */
 export type LocalInvoiceAssistantProgressReport = Readonly<{
+  /** Download progress (0-1 range). */
   progress: number;
+  /** Human-readable progress text. */
   text: string;
+  /** Time elapsed since download started (milliseconds). */
   timeElapsed: number;
 }>;
 
+/**
+ * LLM generation hyperparameters.
+ */
 export type LocalInvoiceAssistantGenerationOptions = Readonly<{
+  /** Maximum tokens to generate. */
   maxTokens: number;
+  /** Sampling temperature (0 = deterministic, 1 = creative). */
   temperature: number;
+  /** Nucleus sampling threshold. */
   topP: number;
 }>;
 
+/**
+ * Options for generating a local LLM response.
+ */
 export type GenerateLocalInvoiceAssistantResponseOptions = Readonly<{
+  /** Optional generation parameter overrides. */
   generationOptions?: Partial<LocalInvoiceAssistantGenerationOptions>;
+  /** Token-by-token streaming callback (for live UI updates). */
   onToken?: (token: string, accumulatedResponse: string) => void;
 }>;
 
+/**
+ * Options for loading a local LLM model.
+ */
 export type LoadLocalInvoiceAssistantModelOptions = Readonly<{
+  /** Model to load (defaults to `DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL`). */
   model?: LocalInvoiceAssistantModelMetadata;
+  /** Progress callback for download UI. */
   onProgress?: (report: LocalInvoiceAssistantProgressReport) => void;
 }>;
 
+/**
+ * Web Worker handle for local LLM inference.
+ */
 export type LocalInvoiceAssistantWebWorker = Readonly<{
+  /** Terminates the worker and releases resources. */
   terminate: () => void;
 }>;
 
+/**
+ * Local invoice assistant adapter interface.
+ *
+ * @remarks
+ * Abstracts WebLLM implementation for testability.
+ * Manages model lifecycle: load → generate → interrupt → dispose.
+ */
 export type LocalInvoiceAssistantAdapter = Readonly<{
+  /** Deletes cached model artifacts from IndexedDB. */
   deleteCachedModel: (model?: LocalInvoiceAssistantModelMetadata) => Promise<void>;
+  /** Unloads model and terminates worker (cleanup on unmount). */
   dispose: () => Promise<void>;
+  /** Generates streaming LLM response for given messages. */
   generate: (
     messages: ReadonlyArray<LocalInvoiceAssistantPromptMessage>,
     options?: GenerateLocalInvoiceAssistantResponseOptions,
   ) => Promise<string>;
+  /** Interrupts active generation (user cancellation). */
   interrupt: () => void;
+  /** Downloads and loads LLM model into worker. */
   load: (options?: LoadLocalInvoiceAssistantModelOptions) => Promise<void>;
 }>;
 
+/**
+ * WebLLM chat completion request structure.
+ *
+ * @internal
+ */
 type WebLlmChatCompletionRequest = {
   max_tokens: number;
   messages: Array<LocalInvoiceAssistantPromptMessage>;
@@ -60,6 +133,11 @@ type WebLlmChatCompletionRequest = {
   top_p: number;
 };
 
+/**
+ * WebLLM streaming chunk response.
+ *
+ * @internal
+ */
 type WebLlmChatCompletionChunk = Readonly<{
   choices: ReadonlyArray<
     Readonly<{
@@ -70,6 +148,11 @@ type WebLlmChatCompletionChunk = Readonly<{
   >;
 }>;
 
+/**
+ * WebLLM engine interface (MLC AI WebLLM library).
+ *
+ * @internal
+ */
 type WebLlmEngine = Readonly<{
   chat: Readonly<{
     completions: Readonly<{
@@ -80,11 +163,21 @@ type WebLlmEngine = Readonly<{
   unload: () => Promise<void>;
 }>;
 
+/**
+ * WebLLM engine configuration.
+ *
+ * @internal
+ */
 type WebLlmEngineConfig = Readonly<{
   initProgressCallback?: (report: LocalInvoiceAssistantProgressReport) => void;
   logLevel?: "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "SILENT";
 }>;
 
+/**
+ * WebLLM runtime module (dynamic import target).
+ *
+ * @internal
+ */
 type WebLlmRuntimeModule = Readonly<{
   CreateWebWorkerMLCEngine: (
     worker: LocalInvoiceAssistantWebWorker,
@@ -94,8 +187,13 @@ type WebLlmRuntimeModule = Readonly<{
   deleteModelAllInfoInCache: (modelId: string) => Promise<void>;
 }>;
 
+/**
+ * Injectable dependencies for WebLLM adapter (testability).
+ */
 type CreateWebLlmLocalInvoiceAssistantAdapterOptions = Readonly<{
+  /** Optional worker factory (for test injection). */
   createWorker?: () => LocalInvoiceAssistantWebWorker;
+  /** Optional WebLLM import function (for test mocking). */
   importWebLlm?: () => Promise<WebLlmRuntimeModule>;
 }>;
 
@@ -115,8 +213,41 @@ async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
 /**
  * Creates a WebLLM-backed local invoice assistant adapter.
  *
- * @param options - Optional injectable browser runtime dependencies for tests.
- * @returns Adapter that loads, streams, interrupts, and disposes the local model.
+ * @param options - Optional injectable dependencies for testing.
+ * @returns Adapter managing local LLM model lifecycle and inference.
+ *
+ * @remarks
+ * **Architecture:**
+ * - WebLLM engine runs in dedicated Web Worker for non-blocking UI
+ * - Model artifacts cached in IndexedDB (persistent across sessions)
+ * - Streaming token generation for real-time chat UX
+ *
+ * **Lifecycle:**
+ * 1. `load()` → Downloads model (if not cached), initializes engine in worker
+ * 2. `generate()` → Streams LLM response token-by-token
+ * 3. `interrupt()` → Cancels active generation
+ * 4. `dispose()` → Unloads model, terminates worker (cleanup)
+ *
+ * **Error handling:**
+ * - Load errors: Network failures, quota exceeded, unsupported browser
+ * - Generate errors: Context window overflow, generation timeout
+ * - Disposal errors: Gracefully handled (worker already terminated)
+ *
+ * @example
+ * ```typescript
+ * const adapter = createWebLlmLocalInvoiceAssistantAdapter();
+ *
+ * await adapter.load({
+ *   onProgress: (report) => console.log(report.progress)
+ * });
+ *
+ * const response = await adapter.generate(
+ *   [{role: 'user', content: 'What did I spend on groceries?'}],
+ *   {onToken: (token) => appendToUI(token)}
+ * );
+ *
+ * await adapter.dispose();
+ * ```
  */
 export function createWebLlmLocalInvoiceAssistantAdapter(
   options: CreateWebLlmLocalInvoiceAssistantAdapterOptions = {},

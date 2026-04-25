@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Invoice detail tabs component with recipes, metadata, and AI assistant.
+ *
+ * Displays AI-generated recipes, invoice metadata, and local AI assistant panel
+ * in tabbed layout for invoice detail view.
+ *
+ * @module app/domains/invoices/view-invoice/[id]/_components/tabs/InvoiceTabs
+ */
+
 "use client";
 
 import {formatEnum} from "@/lib/utils.generic";
@@ -62,21 +71,35 @@ function createIngredientListItems(ingredients: ReadonlyArray<string>): Array<Re
 }
 
 /**
- * Invoice tabs component displaying possible recipes and additional metadata.
+ * Invoice detail tabs component with recipes, metadata, and AI assistant.
+ *
+ * @returns Tabbed interface with three views: recipes, metadata, and local AI chat.
  *
  * @remarks
- * Renders two tabs:
- * - **Possible Recipes**: AI-generated recipe suggestions with full details
- * - **Additional Info**: Invoice metadata key-value pairs
+ * **Tabs:**
+ * 1. **Possible Recipes**: AI-generated recipe suggestions with full details
+ *    - Recipe name, description, complexity badge
+ *    - Time breakdown (preparation + cooking)
+ *    - Ingredients list from invoice line items
+ *    - Cooking instructions (if available)
+ *    - External recipe link (if valid URL)
+ * 2. **Additional Info**: Invoice metadata key-value pairs
+ * 3. **AI Assistant**: Local-only AI chat scoped to current invoice
  *
- * **Recipe Features**:
- * - Full recipe cards with name, description, complexity badge
- * - Time breakdown (preparation + cooking)
- * - Ingredients list from invoice products
- * - Instructions display
- * - External recipe link (if available)
+ * **Privacy:**
+ * - AI assistant scoped to single invoice (`activeInvoiceId`)
+ * - All processing client-side (no server requests)
  *
- * @returns Invoice tabs component with recipe and metadata display
+ * **Accessibility:**
+ * - Icon + text labels for tabs
+ * - Empty states with descriptive messages
+ * - Semantic HTML for recipe cards
+ *
+ * @example
+ * ```tsx
+ * // Used in invoice detail page
+ * <InvoiceTabs />
+ * ```
  */
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();

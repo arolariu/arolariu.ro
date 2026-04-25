@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Generative AI view for invoice analysis.
+ *
+ * Renders the local invoice AI assistant panel in the invoice list view
+ * generative tab.
+ *
+ * @module app/domains/invoices/view-invoices/_components/views/GenerativeView
+ */
+
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -6,14 +15,31 @@ import {useTranslations} from "next-intl";
 import {LocalInvoiceAssistantPanel} from "../../../_components/ai/LocalInvoiceAssistantPanel";
 import styles from "./GenerativeView.module.scss";
 
+/**
+ * Props for RenderGenerativeView component.
+ */
 type Props = Readonly<{
+  /** Full invoice list for AI context. */
   invoices: ReadonlyArray<Invoice>;
 }>;
 
 /**
- * This function renders the generative view for invoice analysis.
- * It allows users to chat with an AI assistant to analyze invoices and get insights.
- * @returns This function renders the generative view for invoice analysis.
+ * Generative AI view for invoice analysis and chat.
+ *
+ * @param props - Invoice list for AI assistant context.
+ * @returns Animated view with local invoice assistant panel.
+ *
+ * @remarks
+ * Renders the local-only AI assistant with multi-invoice context
+ * for spend analysis, merchant insights, and invoice Q&A.
+ *
+ * **Scope:** All invoices in list (no single-invoice filter).
+ * **Privacy:** All processing client-side, no server requests.
+ *
+ * @example
+ * ```tsx
+ * <RenderGenerativeView invoices={allInvoices} />
+ * ```
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--List.generativeView");
