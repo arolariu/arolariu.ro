@@ -7,6 +7,24 @@ import {
   recommendLocalInvoiceAssistantModel,
 } from "./modelCatalog";
 
+/**
+ * WebLLM 0.2.82 verified model ID allowlist.
+ *
+ * @remarks
+ * Only these IDs are confirmed to exist in the pinned @mlc-ai/web-llm@0.2.82.
+ * Any model ID not in this list must be upgrade-gated or removed.
+ */
+const WEBLLM_0_2_82_VERIFIED_IDS = [
+  "gemma-2b-it-q4f16_1-MLC",
+  "gemma-2-2b-it-q4f16_1-MLC",
+  "SmolLM2-360M-Instruct-q4f16_1-MLC",
+  "Qwen3-0.6B-q4f16_1-MLC",
+  "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+  "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+  "Phi-3.5-mini-instruct-q4f16_1-MLC",
+  "Phi-3.5-mini-instruct-q4f16_1-MLC-1k",
+] as const;
+
 describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("exports a non-empty catalog of models", () => {
     expect(LOCAL_INVOICE_ASSISTANT_MODELS).toBeDefined();
@@ -62,6 +80,20 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
     expect(shader16Models.length).toBeGreaterThan(0);
     const smolLm2 = shader16Models.find((model) => model.id === "SmolLM2-360M-Instruct-q4f16_1-MLC");
     expect(smolLm2).toBeDefined();
+    const gemma2 = shader16Models.find((model) => model.id === "gemma-2-2b-it-q4f16_1-MLC");
+    expect(gemma2).toBeDefined();
+  });
+
+  it("contains only WebLLM 0.2.82 verified model IDs", () => {
+    const allowedIds = new Set(WEBLLM_0_2_82_VERIFIED_IDS);
+    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+      expect(allowedIds.has(model.id as (typeof WEBLLM_0_2_82_VERIFIED_IDS)[number])).toBe(true);
+    }
+  });
+
+  it("does not include Gemma 3 1B in the selectable catalog", () => {
+    const gemma3Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
+    expect(gemma3Models).toHaveLength(0);
   });
 });
 
@@ -79,6 +111,11 @@ describe("UPGRADE_GATED_MODEL_CANDIDATES", () => {
   it("includes Phi 4 Mini as upgrade-gated candidate", () => {
     const phi4Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id.includes("Phi-4"));
     expect(phi4Models.length).toBeGreaterThan(0);
+  });
+
+  it("includes Gemma 3 1B as upgrade-gated candidate", () => {
+    const gemma3Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
+    expect(gemma3Models.length).toBeGreaterThan(0);
   });
 
   it("ensures upgrade-gated candidates are not in selectable catalog", () => {
@@ -163,14 +200,10 @@ describe("recommendLocalInvoiceAssistantModel", () => {
 
     const recommendation = recommendLocalInvoiceAssistantModel({hardwareResult});
 
-    // Should recommend smallest model or nothing
-    if (recommendation) {
-      expect(recommendation.tier).toBe("fallback");
-      // Verify it's one of the smallest models
-      const allModels = LOCAL_INVOICE_ASSISTANT_MODELS;
-      const smallerModels = allModels.filter((model) => model.vramRequiredMB < recommendation.vramRequiredMB);
-      expect(smallerModels.length).toBe(0);
-    }
+    // Should recommend Qwen 3 0.6B (no shader-f16, fits in 2 GiB)
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.id).toBe("Qwen3-0.6B-q4f16_1-MLC");
+    expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
   });
 
   it("returns null for ineligible devices", () => {
@@ -202,6 +235,8 @@ describe("recommendLocalInvoiceAssistantModel", () => {
 
     const recommendation = recommendLocalInvoiceAssistantModel({hardwareResult});
     expect(recommendation).toBeDefined();
+    // Conservative: no shader-f16 when features omitted
+    expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
     expect(recommendation?.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
   });
 
@@ -212,10 +247,10 @@ describe("recommendLocalInvoiceAssistantModel", () => {
       hardwareResult,
     });
 
-    // Should recommend smallest model that fits or null
-    if (recommendation) {
-      expect(recommendation.vramRequiredMB).toBeLessThanOrEqual(1000);
-    }
+    // Should recommend Qwen 3 0.6B (768 MB) as smallest that fits
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.vramRequiredMB).toBeLessThanOrEqual(1000);
+    expect(recommendation?.id).toBe("Qwen3-0.6B-q4f16_1-MLC");
   });
 
   it("returns null when hardware is eligible but no model satisfies all constraints", () => {
@@ -240,12 +275,49 @@ describe("recommendLocalInvoiceAssistantModel", () => {
     });
 
     // Should not recommend a model that requires shader-f16
-    if (recommendation) {
-      expect(recommendation.requiredFeatures).not.toContain("shader-f16");
-    } else {
-      // If all models require shader-f16, recommendation should be null
-      const allRequireShaderF16 = LOCAL_INVOICE_ASSISTANT_MODELS.every((model) => model.requiredFeatures.includes("shader-f16"));
-      expect(allRequireShaderF16).toBe(false);
-    }
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
+  });
+
+  it("treats omitted gpuFeatures as conservative (no shader-f16)", () => {
+    const hardwareResult = createEligibleHardwareResult();
+    const recommendation = recommendLocalInvoiceAssistantModel({
+      // Omitted gpuFeatures
+      hardwareResult,
+    });
+
+    // Conservative: no shader-f16
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
+  });
+
+  it("handles omitted availableStorageBytes gracefully", () => {
+    const hardwareResult: HardwareEligibilityResult = {
+      // No availableStorageBytes
+      reasons: [],
+      requirements: {
+        minimumAvailableStorageBytes: 6 * 1024 ** 3,
+        minimumDeviceMemoryGB: 4,
+        minimumLogicalCores: 4,
+      },
+      status: "eligible",
+    };
+
+    const recommendation = recommendLocalInvoiceAssistantModel({hardwareResult});
+    expect(recommendation).not.toBeNull();
+  });
+
+  it("recommends first balanced model when Llama 3.2 1B filtered out by constraints", () => {
+    const hardwareResult = createEligibleHardwareResult();
+    const recommendation = recommendLocalInvoiceAssistantModel({
+      gpuFeatures: ["shader-f16"],
+      gpuLimits: {maxVramMB: 1500}, // Filters out Llama 3.2 1B (1536 MB), allows Gemma 2B (1477 MB)
+      hardwareResult,
+    });
+
+    // Should recommend Gemma 2B as first balanced model that fits
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.id).toBe("gemma-2b-it-q4f16_1-MLC");
+    expect(recommendation?.tier).toBe("balanced");
   });
 });

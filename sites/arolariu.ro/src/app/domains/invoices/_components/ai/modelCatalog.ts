@@ -63,13 +63,13 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
   },
   {
     artifactHost: "https://huggingface.co/mlc-ai",
-    contextWindowTokens: 8192,
-    displayName: "Gemma 3 1B Instruct",
+    contextWindowTokens: 4096,
+    displayName: "Gemma 2B Instruct",
     family: "gemma",
-    id: "gemma3-1b-it-q4f16_1-MLC",
-    requiredFeatures: [],
+    id: "gemma-2b-it-q4f16_1-MLC",
+    requiredFeatures: ["shader-f16"],
     tier: "balanced",
-    vramRequiredMB: 1536,
+    vramRequiredMB: 1477,
   },
 
   // Quality tier: Larger models for capable devices
@@ -131,6 +131,16 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
 export const UPGRADE_GATED_MODEL_CANDIDATES = [
   {
     artifactHost: "https://huggingface.co/mlc-ai",
+    contextWindowTokens: 8192,
+    displayName: "Gemma 3 1B Instruct",
+    family: "gemma",
+    id: "gemma3-1b-it-q4f16_1-MLC",
+    requiredFeatures: [],
+    tier: "balanced",
+    vramRequiredMB: 1536,
+  },
+  {
+    artifactHost: "https://huggingface.co/mlc-ai",
     contextWindowTokens: 4096,
     displayName: "Qwen 3.5 0.8B",
     family: "qwen",
@@ -168,10 +178,16 @@ export const UPGRADE_GATED_MODEL_CANDIDATES = [
  * Llama 3.2 1B Instruct quantized to 4-bit (q4f16_1) for client-side inference.
  * ~1.5 GB download, targets WebGPU-capable browsers with 4+ GB device memory.
  * Balanced tier: good performance-to-resource ratio for most devices.
+ *
+ * @throws Error if Llama 3.2 1B is not found in catalog (catalog integrity violation)
  */
-export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = LOCAL_INVOICE_ASSISTANT_MODELS.find(
-  (model) => model.id === "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-)!;
+export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = (() => {
+  const defaultModel = LOCAL_INVOICE_ASSISTANT_MODELS.find((model) => model.id === "Llama-3.2-1B-Instruct-q4f16_1-MLC");
+  if (!defaultModel) {
+    throw new Error("Catalog integrity violation: Llama-3.2-1B-Instruct-q4f16_1-MLC must exist in LOCAL_INVOICE_ASSISTANT_MODELS");
+  }
+  return defaultModel;
+})();
 
 /**
  * GPU feature flags for model compatibility filtering.
@@ -207,11 +223,16 @@ export type RecommendLocalInvoiceAssistantModelInput = Readonly<{
  * @remarks
  * **Recommendation logic:**
  * 1. Returns `null` if hardware status is `ineligible`
- * 2. Filters models by required GPU features (e.g., shader-f16)
+ * 2. Filters models by required GPU features (conservative: omitted `gpuFeatures` treated as empty set)
  * 3. Filters models by VRAM limits if provided
  * 4. Filters models by available storage (model size estimate: ~1.5× VRAM)
  * 5. Prefers balanced tier models for eligible/unknown hardware
  * 6. Falls back to smallest compatible model for constrained devices
+ *
+ * **GPU feature handling (conservative):**
+ * Omitted `gpuFeatures` behaves like an empty feature set, filtering out all models
+ * requiring any GPU features (e.g., shader-f16). Explicit `gpuFeatures: ["shader-f16"]`
+ * must be provided to enable shader-f16 models.
  *
  * **Storage estimation:**
  * Model download size ≈ 1.5× VRAM requirement to account for weights + KV cache.
@@ -242,11 +263,9 @@ export function recommendLocalInvoiceAssistantModel(
   // Start with full catalog
   let candidates = [...LOCAL_INVOICE_ASSISTANT_MODELS];
 
-  // Filter by GPU features if provided
-  if (gpuFeatures) {
-    const featureSet = new Set(gpuFeatures);
-    candidates = candidates.filter((model) => model.requiredFeatures.every((feature) => featureSet.has(feature)));
-  }
+  // Filter by GPU features (conservative: omitted features treated as empty set)
+  const featureSet = new Set(gpuFeatures ?? []);
+  candidates = candidates.filter((model) => model.requiredFeatures.every((feature) => featureSet.has(feature)));
 
   // Filter by VRAM limits if provided
   if (gpuLimits) {
