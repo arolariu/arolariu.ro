@@ -3150,6 +3150,39 @@
       "title": "Cum Funcționează"
     }
   },
+  "IMS--LocalInvoiceAssistant": {
+    "actions": {
+      "clearCache": "Șterge modelul din cache",
+      "dismissError": "Închide eroarea",
+      "download": "Descarcă modelul local",
+      "reset": "Resetează chatul",
+      "send": "Trimite"
+    },
+    "chat": {
+      "inputLabel": "Pune o întrebare locală despre facturi",
+      "inputPlaceholder": "Întreabă despre facturile locale...",
+      "ready": "Modelul local este pregătit",
+      "title": "Asistent pentru facturi exclusiv local"
+    },
+    "errors": {
+      "title": "Eroare asistent"
+    },
+    "hardware": {
+      "checking": "Se verifică dacă acest dispozitiv poate rula asistentul local...",
+      "ineligibleMessage": "Dispozitivul tău nu îndeplinește cerințele hardware minime pentru asistentul AI exclusiv local. Folosește alt dispozitiv sau așteaptă până când funcția de asistent AI la distanță devine disponibilă.",
+      "ineligibleTitle": "Asistentul AI local nu este disponibil"
+    },
+    "model": {
+      "description": "Descarcă un model lingvistic mic pentru chat privat despre facturi, exclusiv local.",
+      "host": "Artefactele modelului sunt descărcate de la {host}.",
+      "progress": "Progres descărcare: {progress}%",
+      "title": "Pregătește modelul local"
+    },
+    "privacy": "Datele facturilor rămân în acest browser. Artefactele modelului sunt descărcate de la gazda externă aprobată.",
+    "status": {
+      "compatibilityUnknown": "Unele detalii hardware nu sunt disponibile, așa că performanța poate varia."
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {

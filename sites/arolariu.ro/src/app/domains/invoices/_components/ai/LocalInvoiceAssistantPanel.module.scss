@@ -1,0 +1,110 @@
+@use '../../../../../styles/abstracts' as *;
+
+.panel {
+  width: 100%;
+}
+
+.content {
+  display: grid;
+  gap: space(4);
+}
+
+.fallback,
+.modelCard,
+.chatShell,
+.errorBox {
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(4);
+}
+
+.fallback {
+  background-color: color-alpha('destructive', 0.08);
+}
+
+.fallbackTitle,
+.sectionTitle {
+  margin: 0;
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+}
+
+.fallbackText,
+.statusText,
+.warningText,
+.messageContent {
+  margin: 0;
+  font-size: font-size('sm');
+  line-height: line-height('relaxed');
+}
+
+.fallbackText,
+.statusText {
+  color: color('muted-foreground');
+}
+
+.warningText {
+  color: color('warning');
+}
+
+.modelCard,
+.chatShell {
+  display: grid;
+  gap: space(4);
+}
+
+.progressGroup {
+  display: grid;
+  gap: space(2);
+}
+
+.readyText {
+  margin: 0;
+  color: color('success');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.errorBox {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(3);
+  background-color: color-alpha('destructive', 0.08);
+}
+
+.messages {
+  display: grid;
+  max-height: 24rem;
+  overflow-y: auto;
+  gap: space(3);
+}
+
+.userMessage,
+.assistantMessage {
+  border-radius: radius('lg');
+  padding: space(3);
+}
+
+.userMessage {
+  background-color: color-alpha('muted', 0.6);
+}
+
+.assistantMessage {
+  background-color: color-alpha('primary', 0.08);
+}
+
+.form {
+  display: grid;
+  gap: space(3);
+}
+
+.textarea {
+  min-height: 7rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}

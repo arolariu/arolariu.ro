@@ -3150,6 +3150,39 @@
       "title": "How It Works"
     }
   },
+  "IMS--LocalInvoiceAssistant": {
+    "actions": {
+      "clearCache": "Clear cached model",
+      "dismissError": "Dismiss error",
+      "download": "Download local model",
+      "reset": "Reset chat",
+      "send": "Send"
+    },
+    "chat": {
+      "inputLabel": "Ask a local invoice question",
+      "inputPlaceholder": "Ask about your local invoices...",
+      "ready": "Local model is ready",
+      "title": "Local-only invoice assistant"
+    },
+    "errors": {
+      "title": "Assistant error"
+    },
+    "hardware": {
+      "checking": "Checking whether this device can run the local assistant...",
+      "ineligibleMessage": "Your device does not meet the minimum hardware requirements for the local-only AI assistant. Use another device or wait until the remote AI assistant feature is available.",
+      "ineligibleTitle": "Local AI assistant unavailable"
+    },
+    "model": {
+      "description": "Downloads a small language model for private, local-only invoice chat.",
+      "host": "Model artifacts are downloaded from {host}.",
+      "progress": "Download progress: {progress}%",
+      "title": "Prepare local model"
+    },
+    "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
+    "status": {
+      "compatibilityUnknown": "Some hardware details are unavailable, so performance may vary."
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {

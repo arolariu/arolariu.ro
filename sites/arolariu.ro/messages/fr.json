@@ -3150,6 +3150,39 @@
       "title": "Comment Ça Marche"
     }
   },
+  "IMS--LocalInvoiceAssistant": {
+    "actions": {
+      "clearCache": "Effacer le modèle en cache",
+      "dismissError": "Masquer l'erreur",
+      "download": "Télécharger le modèle local",
+      "reset": "Réinitialiser le chat",
+      "send": "Envoyer"
+    },
+    "chat": {
+      "inputLabel": "Poser une question locale sur les factures",
+      "inputPlaceholder": "Posez une question sur vos factures locales...",
+      "ready": "Le modèle local est prêt",
+      "title": "Assistant de factures entièrement local"
+    },
+    "errors": {
+      "title": "Erreur de l'assistant"
+    },
+    "hardware": {
+      "checking": "Vérification de la capacité de cet appareil à exécuter l'assistant local...",
+      "ineligibleMessage": "Votre appareil ne répond pas aux exigences matérielles minimales pour l'assistant IA entièrement local. Utilisez un autre appareil ou attendez que la fonctionnalité d'assistant IA distant soit disponible.",
+      "ineligibleTitle": "Assistant IA local indisponible"
+    },
+    "model": {
+      "description": "Télécharge un petit modèle de langage pour discuter de vos factures en privé et uniquement localement.",
+      "host": "Les artefacts du modèle sont téléchargés depuis {host}.",
+      "progress": "Progression du téléchargement : {progress}%",
+      "title": "Préparer le modèle local"
+    },
+    "privacy": "Les données des factures restent dans ce navigateur. Les artefacts du modèle sont téléchargés depuis l'hôte externe approuvé.",
+    "status": {
+      "compatibilityUnknown": "Certains détails matériels ne sont pas disponibles, les performances peuvent donc varier."
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {
