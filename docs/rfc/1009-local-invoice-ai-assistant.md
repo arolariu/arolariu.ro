@@ -112,6 +112,43 @@ while model loading is still pending, the worker is terminated after the load
 promise resolves. Cache deletion unloads any active in-memory model before
 removing cached artifacts.
 
+#### Model catalog and recommender
+
+`modelCatalog.ts` defines the curated catalog of local invoice assistant models
+and provides hardware-aware recommendation logic. The catalog includes 8
+selectable models across 4 families (Llama, Gemma, Phi, Qwen, SmolLM) and 4
+tiers (fallback, balanced, quality, experimental). All models use q4f16_1
+quantization for browser feasibility.
+
+**Selectable models (current WebLLM version):**
+
+| Model ID | Family | Tier | VRAM (MB) | Context (tokens) | Display Name |
+|----------|--------|------|-----------|------------------|--------------|
+| `SmolLM2-360M-Instruct-q4f16_1-MLC` | smollm | fallback | 512 | 2048 | SmolLM2 360M Instruct |
+| `Qwen3-0.6B-q4f16_1-MLC` | qwen | fallback | 768 | 4096 | Qwen 3 0.6B |
+| `Llama-3.2-1B-Instruct-q4f16_1-MLC` | llama | balanced | 1536 | 4096 | Llama 3.2 1B Instruct |
+| `gemma3-1b-it-q4f16_1-MLC` | gemma | balanced | 1536 | 8192 | Gemma 3 1B Instruct |
+| `gemma-2-2b-it-q4f16_1-MLC` | gemma | quality | 2048 | 8192 | Gemma 2 2B Instruct |
+| `Llama-3.2-3B-Instruct-q4f16_1-MLC` | llama | quality | 3072 | 4096 | Llama 3.2 3B Instruct |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC` | phi | quality | 4096 | 128000 | Phi 3.5 Mini Instruct |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC-1k` | phi | experimental | 4096 | 1024 | Phi 3.5 Mini Instruct (1k context) |
+
+**Upgrade-gated candidates (excluded until WebLLM upgrade and verification):**
+
+- `Qwen3.5-0.8B-q4f16_1-MLC`
+- `Qwen3.5-2B-q4f16_1-MLC`
+- `Phi-4-mini-instruct-q4f16_1-MLC`
+
+The recommender (`recommendLocalInvoiceAssistantModel`) filters models by:
+1. Hardware eligibility status (returns null for ineligible devices)
+2. Required GPU features (e.g., shader-f16)
+3. VRAM limits (when provided)
+4. Available storage (model size ≈ 1.5× VRAM requirement)
+
+For eligible or unknown hardware with sufficient storage, it prefers balanced
+tier models (defaulting to Llama 3.2 1B). For constrained devices, it falls
+back to the smallest compatible model.
+
 #### React lifecycle hook
 
 `useLocalInvoiceAssistant.ts` exposes a compact state machine for the UI:
@@ -251,6 +288,8 @@ The focused unit suite covers:
 
 - hardware eligibility and ineligibility reasons
 - storage-estimate unavailability blocking the feature
+- model catalog structure, tier classification, and upgrade-gated exclusions
+- hardware-aware model recommendation (eligible, unknown, ineligible, storage/VRAM constraints)
 - prompt context sanitization, aliasing, limits, and analytics
 - WebLLM adapter loading, streaming, interruption, disposal, and cache deletion
 - hook lifecycle transitions, error recovery, retry, and late response guards

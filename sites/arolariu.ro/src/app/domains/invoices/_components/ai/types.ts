@@ -64,10 +64,29 @@ export type LocalInvoiceAssistantMessage = Readonly<{
 }>;
 
 /**
+ * Model family classification for local invoice assistant models.
+ *
+ * @remarks
+ * Groups models by architecture lineage for UI filtering and analytics.
+ */
+export type LocalInvoiceAssistantModelFamily = "gemma" | "llama" | "phi" | "qwen" | "smollm";
+
+/**
+ * Model tier for recommendation and UI grouping.
+ *
+ * @remarks
+ * - `fallback`: Smallest models for constrained devices
+ * - `balanced`: Default tier balancing performance and resource usage
+ * - `quality`: Larger models for capable devices
+ * - `experimental`: Bleeding-edge models requiring validation
+ */
+export type LocalInvoiceAssistantModelTier = "balanced" | "experimental" | "fallback" | "quality";
+
+/**
  * Local LLM model metadata.
  *
  * @remarks
- * Currently supports Llama 3.2 1B Instruct quantized (q4f16_1).
+ * Extended from single hardcoded model to catalog-based selection.
  * Model ID must match WebLLM prebuilt model registry.
  */
 export type LocalInvoiceAssistantModelMetadata = Readonly<{
@@ -77,8 +96,16 @@ export type LocalInvoiceAssistantModelMetadata = Readonly<{
   contextWindowTokens: number;
   /** Human-readable model name for UI. */
   displayName: string;
+  /** Model family (llama, gemma, phi, qwen, smollm). */
+  family: LocalInvoiceAssistantModelFamily;
   /** WebLLM model identifier. */
   id: string;
+  /** Required GPU features (e.g., shader-f16). */
+  requiredFeatures: ReadonlyArray<string>;
+  /** Model tier for recommendation logic. */
+  tier: LocalInvoiceAssistantModelTier;
+  /** Estimated VRAM requirement in megabytes. */
+  vramRequiredMB: number;
 }>;
 
 /**

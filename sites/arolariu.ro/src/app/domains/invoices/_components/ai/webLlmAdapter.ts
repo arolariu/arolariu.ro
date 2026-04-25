@@ -7,29 +7,11 @@
  * @module app/domains/invoices/_components/ai/webLlmAdapter
  */
 
+import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS} from "./modelCatalog";
 import type {LocalInvoiceAssistantModelMetadata, LocalInvoiceAssistantPromptMessage} from "./types";
 
-/**
- * Default local invoice assistant model configuration.
- *
- * @remarks
- * Llama 3.2 1B Instruct quantized to 4-bit (q4f16_1) for client-side inference.
- * ~1.5 GB download, targets WebGPU-capable browsers with 4+ GB device memory.
- */
-export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = {
-  artifactHost: "https://huggingface.co/mlc-ai",
-  contextWindowTokens: 4096,
-  displayName: "Llama 3.2 1B Instruct",
-  id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-} as const satisfies LocalInvoiceAssistantModelMetadata;
-
-/**
- * Available local invoice assistant models.
- *
- * @remarks
- * Currently single-model (future: add Phi-3 variants).
- */
-export const LOCAL_INVOICE_ASSISTANT_MODELS = [DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL] as const;
+// Re-export catalog for backward compatibility with existing imports
+export {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS};
 
 /**
  * Default LLM generation hyperparameters.
