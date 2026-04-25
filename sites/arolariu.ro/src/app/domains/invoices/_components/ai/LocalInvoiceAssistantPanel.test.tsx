@@ -206,6 +206,9 @@ describe("LocalInvoiceAssistantPanel", () => {
       target: {value: "Stop this answer."},
     });
     fireEvent.click(screen.getByRole("button", {name: "Send"}));
+    await waitFor(() => {
+      expect(screen.queryByText("Local model is ready")).not.toBeInTheDocument();
+    });
     fireEvent.click(await screen.findByRole("button", {name: "Stop generating"}));
     pendingResponse.resolve("Late complete response");
 

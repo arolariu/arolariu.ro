@@ -174,15 +174,18 @@ function ChatShell({
   const shouldShowChat =
     state.hardware !== null
     && (state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error" || state.lifecycle === "cancelled");
+  const shouldShowReadyBanner = state.lifecycle === "ready";
 
   if (shouldShowChat) {
     return (
       <div className={styles["chatShell"]}>
-        <p
-          className={styles["readyText"]}
-          aria-live='polite'>
-          {t("chat.ready")}
-        </p>
+        {shouldShowReadyBanner ? (
+          <p
+            className={styles["readyText"]}
+            aria-live='polite'>
+            {t("chat.ready")}
+          </p>
+        ) : null}
 
         {state.error === null ? null : (
           <div
