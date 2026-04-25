@@ -3839,6 +3839,7 @@
       },
       "tabs": {
         "additionalInfo": "Additional Info",
+        "aiAssistant": "AI Assistant",
         "possibleRecipes": "Possible Recipes"
       }
     },

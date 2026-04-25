@@ -4,7 +4,8 @@ import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbToolsKitchen2} from "react-icons/tb";
+import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbMessage, TbToolsKitchen2} from "react-icons/tb";
+import {LocalInvoiceAssistantPanel} from "../../../../_components/ai/LocalInvoiceAssistantPanel";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
 
@@ -85,6 +86,12 @@ export function InvoiceTabs(): React.JSX.Element {
               className={styles["tabsTrigger"]}>
               <TbInfoCircle className={styles["tabIcon"]} />
               {t("tabs.additionalInfo")}
+            </TabsTrigger>
+            <TabsTrigger
+              value='assistant'
+              className={styles["tabsTrigger"]}>
+              <TbMessage className={styles["tabIcon"]} />
+              {t("tabs.aiAssistant")}
             </TabsTrigger>
           </TabsList>
         </CardHeader>
@@ -201,7 +208,15 @@ export function InvoiceTabs(): React.JSX.Element {
                 <TbInfoCircle className={styles["emptyIcon"]} />
                 <p className={styles["emptyStateText"]}>{t("empty.additionalInfo")}</p>
               </div>
-            )}
+              )}
+            </TabsContent>
+          <TabsContent
+            value='assistant'
+            className={styles["tabsContent"]}>
+            <LocalInvoiceAssistantPanel
+              activeInvoiceId={invoice.id}
+              invoices={[invoice]}
+            />
           </TabsContent>
         </CardContent>
       </Tabs>
