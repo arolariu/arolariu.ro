@@ -5,9 +5,9 @@ import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Label
 import {useTranslations} from "next-intl";
 import {useState} from "react";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
-import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
-import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
 import styles from "./LocalInvoiceAssistantPanel.module.scss";
+import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
+import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 
 type LocalInvoiceAssistantPanelProps = Readonly<{
   activeInvoiceId?: string;

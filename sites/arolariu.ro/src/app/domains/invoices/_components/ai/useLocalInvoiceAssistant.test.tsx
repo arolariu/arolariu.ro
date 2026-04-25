@@ -3,8 +3,8 @@ import {act, renderHook, waitFor} from "@testing-library/react";
 import {describe, expect, it, vi} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import {DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
-import type {LocalInvoiceAssistantAdapter, LocalInvoiceAssistantProgressReport} from "./webLlmAdapter";
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
+import type {LocalInvoiceAssistantAdapter, LocalInvoiceAssistantProgressReport} from "./webLlmAdapter";
 
 const eligibleHardware = {
   availableStorageBytes: 8 * 1024 ** 3,

@@ -1,12 +1,12 @@
-import "@testing-library/jest-dom/vitest";
 import {InvoiceBuilder} from "@/data/mocks";
+import "@testing-library/jest-dom/vitest";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import type {ReactNode} from "react";
 import {describe, expect, it, vi} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import {DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
-import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 import {LocalInvoiceAssistantPanel} from "./LocalInvoiceAssistantPanel";
+import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 
 const eligibleHardware = {
   availableStorageBytes: 8 * 1024 ** 3,
@@ -43,17 +43,14 @@ vi.mock("next-intl", () => ({
       "model.host": "Model artifacts are downloaded from {host}.",
       "model.progress": "Download progress: {progress}%",
       "model.title": "Prepare local model",
-      "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
+      privacy: "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
       "status.compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
     };
 
     return (key: string, values?: Record<string, string | number>) => {
       const template = translations[key] ?? key;
 
-      return Object.entries(values ?? {}).reduce(
-        (message, [name, value]) => message.replace(`{${name}}`, String(value)),
-        template,
-      );
+      return Object.entries(values ?? {}).reduce((message, [name, value]) => message.replace(`{${name}}`, String(value)), template);
     };
   },
 }));
@@ -67,7 +64,9 @@ vi.mock("@arolariu/components", () => ({
   CardDescription: ({children}: {children: ReactNode}) => <p>{children}</p>,
   CardHeader: ({children}: {children: ReactNode}) => <header>{children}</header>,
   CardTitle: ({children}: {children: ReactNode}) => <h3>{children}</h3>,
-  Label: ({children, ...props}: {children: ReactNode} & React.LabelHTMLAttributes<HTMLLabelElement>) => <label {...props}>{children}</label>,
+  Label: ({children, ...props}: {children: ReactNode} & React.LabelHTMLAttributes<HTMLLabelElement>) => (
+    <label {...props}>{children}</label>
+  ),
   Progress: ({value}: {value?: number}) => (
     <progress
       max={100}

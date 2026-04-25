@@ -208,8 +208,8 @@ export function InvoiceTabs(): React.JSX.Element {
                 <TbInfoCircle className={styles["emptyIcon"]} />
                 <p className={styles["emptyStateText"]}>{t("empty.additionalInfo")}</p>
               </div>
-              )}
-            </TabsContent>
+            )}
+          </TabsContent>
           <TabsContent
             value='assistant'
             className={styles["tabsContent"]}>

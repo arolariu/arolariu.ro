@@ -1,8 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {
-  createWebLlmLocalInvoiceAssistantAdapter,
-  DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
-} from "./webLlmAdapter";
+import {createWebLlmLocalInvoiceAssistantAdapter, DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL} from "./webLlmAdapter";
 
 type FakeProgressReport = Readonly<{
   progress: number;

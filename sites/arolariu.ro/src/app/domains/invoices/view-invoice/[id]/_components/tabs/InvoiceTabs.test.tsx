@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom/vitest";
 import {InvoiceBuilder} from "@/data/mocks";
+import "@testing-library/jest-dom/vitest";
 import {render, screen} from "@testing-library/react";
 import type {ReactNode} from "react";
 import {describe, expect, it, vi} from "vitest";
@@ -36,7 +36,9 @@ vi.mock("next-intl", () => ({
       "tabs.additionalInfo": "Additional Info",
       "tabs.aiAssistant": "AI Assistant",
       "tabs.possibleRecipes": "Possible Recipes",
-    })[key] ?? values?.minutes ?? key,
+    })[key]
+    ?? values?.minutes
+    ?? key,
 }));
 
 vi.mock("@arolariu/components", () => ({

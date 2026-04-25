@@ -193,8 +193,7 @@ async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
   const webLlm = await import("@mlc-ai/web-llm");
 
   return {
-    CreateWebWorkerMLCEngine: async (worker, modelId, engineConfig) =>
-      webLlm.CreateWebWorkerMLCEngine(worker, modelId, engineConfig),
+    CreateWebWorkerMLCEngine: async (worker, modelId, engineConfig) => webLlm.CreateWebWorkerMLCEngine(worker, modelId, engineConfig),
     deleteModelAllInfoInCache: webLlm.deleteModelAllInfoInCache,
   };
 }

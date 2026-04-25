@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom/vitest";
 import {InvoiceBuilder} from "@/data/mocks";
+import "@testing-library/jest-dom/vitest";
 import {render, screen} from "@testing-library/react";
 import type {ReactNode} from "react";
 import {describe, expect, it, vi} from "vitest";
@@ -33,10 +33,7 @@ vi.mock("next-intl", () => ({
 
 describe("RenderGenerativeView", () => {
   it("renders the shared local invoice assistant panel with the visible invoices", () => {
-    const invoices = [
-      new InvoiceBuilder().withId("invoice-one").build(),
-      new InvoiceBuilder().withId("invoice-two").build(),
-    ];
+    const invoices = [new InvoiceBuilder().withId("invoice-one").build(), new InvoiceBuilder().withId("invoice-two").build()];
 
     render(<RenderGenerativeView invoices={invoices} />);
 

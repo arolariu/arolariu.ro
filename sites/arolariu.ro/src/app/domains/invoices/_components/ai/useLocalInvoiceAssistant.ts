@@ -41,9 +41,9 @@ type UseLocalInvoiceAssistantResult = Readonly<{
 }>;
 
 const LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT =
-  "You are a local-only invoice assistant. Answer using only the sanitized invoice JSON provided in this prompt. " +
-  "Do not claim access to scans, raw OCR, hidden metadata, accounts, or remote services. " +
-  "If the invoice data is insufficient, say what is missing and suggest a local-only next step.";
+  "You are a local-only invoice assistant. Answer using only the sanitized invoice JSON provided in this prompt. "
+  + "Do not claim access to scans, raw OCR, hidden metadata, accounts, or remote services. "
+  + "If the invoice data is insufficient, say what is missing and suggest a local-only next step.";
 
 /**
  * Manages the browser-only lifecycle for the local invoice AI assistant.
@@ -261,7 +261,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, [activeModel]);
 
   const canLoadModel =
-    state.lifecycle === "not-downloaded" || state.lifecycle === "compatibility-unknown" || (state.lifecycle === "error" && !loadedRef.current);
+    state.lifecycle === "not-downloaded"
+    || state.lifecycle === "compatibility-unknown"
+    || (state.lifecycle === "error" && !loadedRef.current);
   const canSendMessage = state.lifecycle === "ready";
 
   return {

@@ -85,9 +85,9 @@ export function createLocalInvoiceAssistantContext({
     ...limits,
   };
   const scopedInvoices = activeInvoiceId ? invoices.filter((invoice) => invoice.id === activeInvoiceId) : invoices;
-  const sanitizedInvoices = scopedInvoices.slice(0, resolvedLimits.maxInvoices).map((invoice) =>
-    sanitizeInvoiceForAssistant(invoice, resolvedLimits),
-  );
+  const sanitizedInvoices = scopedInvoices
+    .slice(0, resolvedLimits.maxInvoices)
+    .map((invoice) => sanitizeInvoiceForAssistant(invoice, resolvedLimits));
   const analytics = createLocalInvoiceAssistantAnalytics(sanitizedInvoices);
 
   return {
@@ -97,10 +97,7 @@ export function createLocalInvoiceAssistantContext({
   };
 }
 
-function sanitizeInvoiceForAssistant(
-  invoice: Invoice,
-  limits: LocalInvoiceAssistantContextLimits,
-): SanitizedInvoiceForAssistant {
+function sanitizeInvoiceForAssistant(invoice: Invoice, limits: LocalInvoiceAssistantContextLimits): SanitizedInvoiceForAssistant {
   const items = invoice.items.slice(0, limits.maxLineItemsPerInvoice).map((item) => ({
     category: item.category,
     name: item.name,
@@ -125,9 +122,7 @@ function sanitizeInvoiceForAssistant(
   };
 }
 
-function createLocalInvoiceAssistantAnalytics(
-  invoices: ReadonlyArray<SanitizedInvoiceForAssistant>,
-): LocalInvoiceAssistantAnalytics {
+function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedInvoiceForAssistant>): LocalInvoiceAssistantAnalytics {
   const totalSpendByCurrency: Record<string, number> = {};
   const merchantReferenceBreakdown: Record<
     string,

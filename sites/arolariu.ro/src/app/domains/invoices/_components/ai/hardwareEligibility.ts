@@ -64,9 +64,7 @@ type AnalyzeHardwareEligibilityInput = Readonly<{
  * @param input - Optional testable environment and hardware thresholds.
  * @returns A coarse local-only eligibility result used before model suggestions.
  */
-export async function analyzeLocalAiHardwareEligibility(
-  input: AnalyzeHardwareEligibilityInput = {},
-): Promise<HardwareEligibilityResult> {
+export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEligibilityInput = {}): Promise<HardwareEligibilityResult> {
   const requirements = input.requirements ?? DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS;
   const environment = input.environment ?? getDefaultHardwareEligibilityEnvironment();
   const ineligibleReasons: HardwareEligibilityReason[] = [];
