@@ -31,13 +31,13 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
   // Fallback tier: Smallest models for constrained devices
   {
     artifactHost: "https://huggingface.co/mlc-ai",
-    contextWindowTokens: 2048,
+    contextWindowTokens: 4096,
     displayName: "SmolLM2 360M Instruct",
     family: "smollm",
     id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
     requiredFeatures: ["shader-f16"],
     tier: "fallback",
-    vramRequiredMB: 512,
+    vramRequiredMB: 376.06,
   },
   {
     artifactHost: "https://huggingface.co/mlc-ai",
@@ -47,7 +47,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "Qwen3-0.6B-q4f16_1-MLC",
     requiredFeatures: [],
     tier: "fallback",
-    vramRequiredMB: 768,
+    vramRequiredMB: 1403.34,
   },
 
   // Balanced tier: Default models balancing performance and resources
@@ -59,7 +59,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
     requiredFeatures: [],
     tier: "balanced",
-    vramRequiredMB: 1536,
+    vramRequiredMB: 879.04,
   },
   {
     artifactHost: "https://huggingface.co/mlc-ai",
@@ -69,19 +69,19 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "gemma-2b-it-q4f16_1-MLC",
     requiredFeatures: ["shader-f16"],
     tier: "balanced",
-    vramRequiredMB: 1477,
+    vramRequiredMB: 1476.52,
   },
 
   // Quality tier: Larger models for capable devices
   {
     artifactHost: "https://huggingface.co/mlc-ai",
-    contextWindowTokens: 8192,
+    contextWindowTokens: 4096,
     displayName: "Gemma 2 2B Instruct",
     family: "gemma",
     id: "gemma-2-2b-it-q4f16_1-MLC",
     requiredFeatures: ["shader-f16"],
     tier: "quality",
-    vramRequiredMB: 2048,
+    vramRequiredMB: 1895.3,
   },
   {
     artifactHost: "https://huggingface.co/mlc-ai",
@@ -91,17 +91,17 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "Llama-3.2-3B-Instruct-q4f16_1-MLC",
     requiredFeatures: [],
     tier: "quality",
-    vramRequiredMB: 3072,
+    vramRequiredMB: 2263.69,
   },
   {
     artifactHost: "https://huggingface.co/mlc-ai",
-    contextWindowTokens: 128000,
+    contextWindowTokens: 4096,
     displayName: "Phi 3.5 Mini Instruct",
     family: "phi",
     id: "Phi-3.5-mini-instruct-q4f16_1-MLC",
     requiredFeatures: [],
     tier: "quality",
-    vramRequiredMB: 4096,
+    vramRequiredMB: 3672.07,
   },
 
   // Experimental tier: Context-optimized variant
@@ -113,7 +113,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "Phi-3.5-mini-instruct-q4f16_1-MLC-1k",
     requiredFeatures: [],
     tier: "experimental",
-    vramRequiredMB: 4096,
+    vramRequiredMB: 2520.07,
   },
 ] as const satisfies ReadonlyArray<LocalInvoiceAssistantModelMetadata>;
 
@@ -289,8 +289,10 @@ export function recommendLocalInvoiceAssistantModel(
   // For eligible or unknown hardware, prefer balanced tier
   const balancedModels = candidates.filter((model) => model.tier === "balanced");
   if (balancedModels.length > 0) {
-    // Return Llama 3.2 1B if available, otherwise first balanced model
-    return balancedModels.find((model) => model.id === "Llama-3.2-1B-Instruct-q4f16_1-MLC") ?? balancedModels[0]!;
+    // Sort by VRAM (ascending) and return smallest balanced model
+    // Llama 3.2 1B is the smallest balanced model (879 MB), so it's naturally preferred
+    balancedModels.sort((a, b) => a.vramRequiredMB - b.vramRequiredMB);
+    return balancedModels[0]!;
   }
 
   // Fall back to smallest compatible model

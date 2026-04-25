@@ -8,22 +8,33 @@ import {
 } from "./modelCatalog";
 
 /**
+ * WebLLM 0.2.82 verified model metadata from installed package registry.
+ *
+ * @remarks
+ * These values are from the installed @mlc-ai/web-llm@0.2.82 prebuiltAppConfig.
+ * Any deviation in the catalog is a metadata correctness bug.
+ */
+const WEBLLM_0_2_82_REGISTRY_METADATA = {
+  "Llama-3.2-1B-Instruct-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: [], vramMB: 879.04},
+  "Llama-3.2-3B-Instruct-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: [], vramMB: 2263.69},
+  "Phi-3.5-mini-instruct-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: [], vramMB: 3672.07},
+  "Phi-3.5-mini-instruct-q4f16_1-MLC-1k": {contextWindow: 1024, requiredFeatures: [], vramMB: 2520.07},
+  "Qwen3-0.6B-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: [], vramMB: 1403.34},
+  "SmolLM2-360M-Instruct-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: ["shader-f16"], vramMB: 376.06},
+  "gemma-2-2b-it-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: ["shader-f16"], vramMB: 1895.3},
+  "gemma-2b-it-q4f16_1-MLC": {contextWindow: 4096, requiredFeatures: ["shader-f16"], vramMB: 1476.52},
+} as const;
+
+/**
  * WebLLM 0.2.82 verified model ID allowlist.
  *
  * @remarks
  * Only these IDs are confirmed to exist in the pinned @mlc-ai/web-llm@0.2.82.
  * Any model ID not in this list must be upgrade-gated or removed.
  */
-const WEBLLM_0_2_82_VERIFIED_IDS = [
-  "gemma-2b-it-q4f16_1-MLC",
-  "gemma-2-2b-it-q4f16_1-MLC",
-  "SmolLM2-360M-Instruct-q4f16_1-MLC",
-  "Qwen3-0.6B-q4f16_1-MLC",
-  "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-  "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-  "Phi-3.5-mini-instruct-q4f16_1-MLC",
-  "Phi-3.5-mini-instruct-q4f16_1-MLC-1k",
-] as const;
+const WEBLLM_0_2_82_VERIFIED_IDS = Object.keys(WEBLLM_0_2_82_REGISTRY_METADATA) as ReadonlyArray<
+  keyof typeof WEBLLM_0_2_82_REGISTRY_METADATA
+>;
 
 describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("exports a non-empty catalog of models", () => {
@@ -88,6 +99,16 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
     const allowedIds = new Set(WEBLLM_0_2_82_VERIFIED_IDS);
     for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
       expect(allowedIds.has(model.id as (typeof WEBLLM_0_2_82_VERIFIED_IDS)[number])).toBe(true);
+    }
+  });
+
+  it("matches WebLLM 0.2.82 registry metadata exactly", () => {
+    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+      const registryMetadata = WEBLLM_0_2_82_REGISTRY_METADATA[model.id as keyof typeof WEBLLM_0_2_82_REGISTRY_METADATA];
+      expect(registryMetadata).toBeDefined();
+      expect(model.vramRequiredMB).toBe(registryMetadata.vramMB);
+      expect(model.contextWindowTokens).toBe(registryMetadata.contextWindow);
+      expect(model.requiredFeatures).toEqual(registryMetadata.requiredFeatures);
     }
   });
 
@@ -200,9 +221,9 @@ describe("recommendLocalInvoiceAssistantModel", () => {
 
     const recommendation = recommendLocalInvoiceAssistantModel({hardwareResult});
 
-    // Should recommend Qwen 3 0.6B (no shader-f16, fits in 2 GiB)
+    // Conservative (no shader-f16): Llama 3.2 1B (879 MB * 1.5 = 1318.5 MB, fits in 2 GiB)
     expect(recommendation).not.toBeNull();
-    expect(recommendation?.id).toBe("Qwen3-0.6B-q4f16_1-MLC");
+    expect(recommendation?.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
     expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
   });
 
@@ -243,14 +264,14 @@ describe("recommendLocalInvoiceAssistantModel", () => {
   it("respects VRAM limits when provided", () => {
     const hardwareResult = createEligibleHardwareResult();
     const recommendation = recommendLocalInvoiceAssistantModel({
-      gpuLimits: {maxVramMB: 1000}, // Very low VRAM
+      gpuLimits: {maxVramMB: 1000}, // Llama 3.2 1B (879 MB) fits, Qwen 3 0.6B (1403 MB) does not
       hardwareResult,
     });
 
-    // Should recommend Qwen 3 0.6B (768 MB) as smallest that fits
+    // Should recommend Llama 3.2 1B as largest that fits under 1000 MB VRAM
     expect(recommendation).not.toBeNull();
     expect(recommendation?.vramRequiredMB).toBeLessThanOrEqual(1000);
-    expect(recommendation?.id).toBe("Qwen3-0.6B-q4f16_1-MLC");
+    expect(recommendation?.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
   });
 
   it("returns null when hardware is eligible but no model satisfies all constraints", () => {
@@ -291,6 +312,19 @@ describe("recommendLocalInvoiceAssistantModel", () => {
     expect(recommendation?.requiredFeatures).not.toContain("shader-f16");
   });
 
+  it("handles omitted gpuLimits parameter (no VRAM filtering)", () => {
+    const hardwareResult = createEligibleHardwareResult();
+    const recommendation = recommendLocalInvoiceAssistantModel({
+      gpuFeatures: [], // No shader-f16
+      // Omitted gpuLimits - no VRAM filtering
+      hardwareResult,
+    });
+
+    // Should recommend balanced model without VRAM constraints
+    expect(recommendation).not.toBeNull();
+    expect(recommendation?.tier).toBe("balanced");
+  });
+
   it("handles omitted availableStorageBytes gracefully", () => {
     const hardwareResult: HardwareEligibilityResult = {
       // No availableStorageBytes
@@ -307,17 +341,17 @@ describe("recommendLocalInvoiceAssistantModel", () => {
     expect(recommendation).not.toBeNull();
   });
 
-  it("recommends first balanced model when Llama 3.2 1B filtered out by constraints", () => {
+  it("recommends SmolLM2 when balanced models filtered by VRAM with shader-f16", () => {
     const hardwareResult = createEligibleHardwareResult();
     const recommendation = recommendLocalInvoiceAssistantModel({
       gpuFeatures: ["shader-f16"],
-      gpuLimits: {maxVramMB: 1500}, // Filters out Llama 3.2 1B (1536 MB), allows Gemma 2B (1477 MB)
+      gpuLimits: {maxVramMB: 850}, // Filters out Llama 3.2 1B (879 MB), Gemma (1476 MB), keeps SmolLM2 (376 MB)
       hardwareResult,
     });
 
-    // Should recommend Gemma 2B as first balanced model that fits
+    // No balanced models fit, fallback to SmolLM2
     expect(recommendation).not.toBeNull();
-    expect(recommendation?.id).toBe("gemma-2b-it-q4f16_1-MLC");
-    expect(recommendation?.tier).toBe("balanced");
+    expect(recommendation?.id).toBe("SmolLM2-360M-Instruct-q4f16_1-MLC");
+    expect(recommendation?.tier).toBe("fallback");
   });
 });

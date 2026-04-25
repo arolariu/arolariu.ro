@@ -124,14 +124,14 @@ experimental). All models use q4f16_1 quantization for browser feasibility.
 
 | Model ID | Family | Tier | VRAM (MB) | Context (tokens) | Display Name | Required Features |
 |----------|--------|------|-----------|------------------|--------------|-------------------|
-| `SmolLM2-360M-Instruct-q4f16_1-MLC` | smollm | fallback | 512 | 2048 | SmolLM2 360M Instruct | shader-f16 |
-| `Qwen3-0.6B-q4f16_1-MLC` | qwen | fallback | 768 | 4096 | Qwen 3 0.6B | - |
-| `Llama-3.2-1B-Instruct-q4f16_1-MLC` | llama | balanced | 1536 | 4096 | Llama 3.2 1B Instruct | - |
-| `gemma-2b-it-q4f16_1-MLC` | gemma | balanced | 1477 | 4096 | Gemma 2B Instruct | shader-f16 |
-| `gemma-2-2b-it-q4f16_1-MLC` | gemma | quality | 2048 | 8192 | Gemma 2 2B Instruct | shader-f16 |
-| `Llama-3.2-3B-Instruct-q4f16_1-MLC` | llama | quality | 3072 | 4096 | Llama 3.2 3B Instruct | - |
-| `Phi-3.5-mini-instruct-q4f16_1-MLC` | phi | quality | 4096 | 128000 | Phi 3.5 Mini Instruct | - |
-| `Phi-3.5-mini-instruct-q4f16_1-MLC-1k` | phi | experimental | 4096 | 1024 | Phi 3.5 Mini Instruct (1k context) | - |
+| `SmolLM2-360M-Instruct-q4f16_1-MLC` | smollm | fallback | 376.06 | 4096 | SmolLM2 360M Instruct | shader-f16 |
+| `Qwen3-0.6B-q4f16_1-MLC` | qwen | fallback | 1403.34 | 4096 | Qwen 3 0.6B | - |
+| `Llama-3.2-1B-Instruct-q4f16_1-MLC` | llama | balanced | 879.04 | 4096 | Llama 3.2 1B Instruct | - |
+| `gemma-2b-it-q4f16_1-MLC` | gemma | balanced | 1476.52 | 4096 | Gemma 2B Instruct | shader-f16 |
+| `gemma-2-2b-it-q4f16_1-MLC` | gemma | quality | 1895.3 | 4096 | Gemma 2 2B Instruct | shader-f16 |
+| `Llama-3.2-3B-Instruct-q4f16_1-MLC` | llama | quality | 2263.69 | 4096 | Llama 3.2 3B Instruct | - |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC` | phi | quality | 3672.07 | 4096 | Phi 3.5 Mini Instruct | - |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC-1k` | phi | experimental | 2520.07 | 1024 | Phi 3.5 Mini Instruct (1k context) | - |
 
 **Upgrade-gated candidates (`UPGRADE_GATED_MODEL_CANDIDATES`):**
 
