@@ -99,6 +99,19 @@ type CreateWebLlmLocalInvoiceAssistantAdapterOptions = Readonly<{
   importWebLlm?: () => Promise<WebLlmRuntimeModule>;
 }>;
 
+function createDefaultWebLlmWorker(): LocalInvoiceAssistantWebWorker {
+  return new Worker(new URL("webLlmWorker.ts", import.meta.url), {type: "module"});
+}
+
+async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
+  const webLlm = await import("@mlc-ai/web-llm");
+
+  return {
+    CreateWebWorkerMLCEngine: async (worker, modelId, engineConfig) => webLlm.CreateWebWorkerMLCEngine(worker, modelId, engineConfig),
+    deleteModelAllInfoInCache: webLlm.deleteModelAllInfoInCache,
+  };
+}
+
 /**
  * Creates a WebLLM-backed local invoice assistant adapter.
  *
@@ -112,6 +125,54 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
   const importWebLlm = options.importWebLlm ?? importWebLlmRuntimeModule;
   let engine: WebLlmEngine | null = null;
   let worker: LocalInvoiceAssistantWebWorker | null = null;
+  let loadingModel: Promise<void> | null = null;
+
+  async function loadModelOnce(
+    model: LocalInvoiceAssistantModelMetadata,
+    onProgress: LoadLocalInvoiceAssistantModelOptions["onProgress"],
+  ): Promise<void> {
+    const nextWorker = createWorker();
+
+    try {
+      const webLlm = await importWebLlm();
+      const nextEngine = await webLlm.CreateWebWorkerMLCEngine(nextWorker, model.id, {
+        initProgressCallback: onProgress,
+        logLevel: "WARN",
+      });
+
+      if (engine) {
+        await nextEngine.unload();
+        nextWorker.terminate();
+        return;
+      }
+
+      engine = nextEngine;
+      worker = nextWorker;
+    } catch (error) {
+      nextWorker.terminate();
+      throw error;
+    }
+  }
+
+  async function loadModel({
+    model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
+    onProgress,
+  }: LoadLocalInvoiceAssistantModelOptions = {}): Promise<void> {
+    if (engine) {
+      return;
+    }
+
+    const currentLoadingModel = loadingModel ?? loadModelOnce(model, onProgress);
+    loadingModel = currentLoadingModel;
+
+    try {
+      await currentLoadingModel;
+    } finally {
+      if (loadingModel === currentLoadingModel) {
+        loadingModel = null;
+      }
+    }
+  }
 
   return {
     async deleteCachedModel(model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL): Promise<void> {
@@ -164,36 +225,8 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
     interrupt(): void {
       engine?.interruptGenerate();
     },
-    async load({model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, onProgress}: LoadLocalInvoiceAssistantModelOptions = {}): Promise<void> {
-      if (engine) {
-        return;
-      }
-
-      const nextWorker = createWorker();
-      try {
-        const webLlm = await importWebLlm();
-        engine = await webLlm.CreateWebWorkerMLCEngine(nextWorker, model.id, {
-          initProgressCallback: onProgress,
-          logLevel: "WARN",
-        });
-        worker = nextWorker;
-      } catch (error) {
-        nextWorker.terminate();
-        throw error;
-      }
+    async load(options?: LoadLocalInvoiceAssistantModelOptions): Promise<void> {
+      await loadModel(options);
     },
-  };
-}
-
-function createDefaultWebLlmWorker(): LocalInvoiceAssistantWebWorker {
-  return new Worker(new URL("./webLlmWorker.ts", import.meta.url), {type: "module"});
-}
-
-async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
-  const webLlm = await import("@mlc-ai/web-llm");
-
-  return {
-    CreateWebWorkerMLCEngine: async (worker, modelId, engineConfig) => webLlm.CreateWebWorkerMLCEngine(worker, modelId, engineConfig),
-    deleteModelAllInfoInCache: webLlm.deleteModelAllInfoInCache,
   };
 }

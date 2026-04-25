@@ -69,32 +69,22 @@ type CreateLocalInvoiceAssistantContextInput = Readonly<{
   limits?: Partial<LocalInvoiceAssistantContextLimits>;
 }>;
 
-/**
- * Creates a compact, sanitized invoice context for local-only assistant prompts.
- *
- * @param input - Invoice list plus optional active invoice and truncation limits.
- * @returns Redacted invoice context and deterministic analytics.
- */
-export function createLocalInvoiceAssistantContext({
-  activeInvoiceId,
-  invoices,
-  limits,
-}: CreateLocalInvoiceAssistantContextInput): LocalInvoiceAssistantContext {
-  const resolvedLimits = {
-    ...LOCAL_INVOICE_ASSISTANT_CONTEXT_LIMITS,
-    ...limits,
-  };
-  const scopedInvoices = activeInvoiceId ? invoices.filter((invoice) => invoice.id === activeInvoiceId) : invoices;
-  const sanitizedInvoices = scopedInvoices
-    .slice(0, resolvedLimits.maxInvoices)
-    .map((invoice) => sanitizeInvoiceForAssistant(invoice, resolvedLimits));
-  const analytics = createLocalInvoiceAssistantAnalytics(sanitizedInvoices);
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
-  return {
-    analytics,
-    invoices: sanitizedInvoices,
-    promptContext: JSON.stringify({analytics, invoices: sanitizedInvoices}),
-  };
+function toDateOrNull(value: string | null): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toIsoDate(value: Date | string): string | null {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function sanitizeInvoiceForAssistant(invoice: Invoice, limits: LocalInvoiceAssistantContextLimits): SanitizedInvoiceForAssistant {
@@ -134,7 +124,7 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
   const transactionDates = invoices
     .map((invoice) => toDateOrNull(invoice.transactionDate))
     .filter((date): date is Date => date !== null)
-    .sort((left, right) => left.getTime() - right.getTime());
+    .toSorted((left, right) => left.getTime() - right.getTime());
 
   for (const invoice of invoices) {
     totalSpendByCurrency[invoice.currencyCode] = roundMoney((totalSpendByCurrency[invoice.currencyCode] ?? 0) + invoice.totalAmount);
@@ -156,8 +146,8 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
       start: transactionDates.at(0)?.toISOString() ?? null,
     },
     invoiceCount: invoices.length,
-    largestInvoices: [...invoices]
-      .sort((left, right) => right.totalAmount - left.totalAmount)
+    largestInvoices: invoices
+      .toSorted((left, right) => right.totalAmount - left.totalAmount)
       .slice(0, 5)
       .map((invoice) => ({
         currencyCode: invoice.currencyCode,
@@ -170,20 +160,30 @@ function createLocalInvoiceAssistantAnalytics(invoices: ReadonlyArray<SanitizedI
   };
 }
 
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+/**
+ * Creates a compact, sanitized invoice context for local-only assistant prompts.
+ *
+ * @param input - Invoice list plus optional active invoice and truncation limits.
+ * @returns Redacted invoice context and deterministic analytics.
+ */
+export function createLocalInvoiceAssistantContext({
+  activeInvoiceId,
+  invoices,
+  limits,
+}: CreateLocalInvoiceAssistantContextInput): LocalInvoiceAssistantContext {
+  const resolvedLimits = {
+    ...LOCAL_INVOICE_ASSISTANT_CONTEXT_LIMITS,
+    ...limits,
+  };
+  const scopedInvoices = activeInvoiceId ? invoices.filter((invoice) => invoice.id === activeInvoiceId) : invoices;
+  const sanitizedInvoices = scopedInvoices
+    .slice(0, resolvedLimits.maxInvoices)
+    .map((invoice) => sanitizeInvoiceForAssistant(invoice, resolvedLimits));
+  const analytics = createLocalInvoiceAssistantAnalytics(sanitizedInvoices);
 
-function toDateOrNull(value: string | null): Date | null {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function toIsoDate(value: Date | string): string | null {
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  return {
+    analytics,
+    invoices: sanitizedInvoices,
+    promptContext: JSON.stringify({analytics, invoices: sanitizedInvoices}),
+  };
 }

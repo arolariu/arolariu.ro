@@ -45,6 +45,85 @@ const LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT =
   + "Do not claim access to scans, raw OCR, hidden metadata, accounts, or remote services. "
   + "If the invoice data is insufficient, say what is missing and suggest a local-only next step.";
 
+let fallbackMessageId = 0;
+
+function createPromptMessages(
+  context: LocalInvoiceAssistantContext,
+  messages: ReadonlyArray<LocalInvoiceAssistantMessage>,
+): LocalInvoiceAssistantPromptMessage[] {
+  return [
+    {
+      content: `${LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT}\n\nSanitized invoice context:\n${context.promptContext}`,
+      role: "system",
+    },
+    ...messages.map((message) => ({
+      content: message.content,
+      role: message.role,
+    })),
+  ];
+}
+
+function createMessage(
+  content: string,
+  role: LocalInvoiceAssistantMessage["role"],
+  timestamp: string,
+  createId: () => string,
+): LocalInvoiceAssistantMessage {
+  return {
+    content,
+    id: createId(),
+    role,
+    timestamp,
+  };
+}
+
+function replaceMessageContent(
+  messages: ReadonlyArray<LocalInvoiceAssistantMessage>,
+  messageId: string,
+  content: string,
+): LocalInvoiceAssistantMessage[] {
+  return messages.map((message) => (message.id === messageId ? {...message, content} : message));
+}
+
+function getLifecycleAfterHardwareAnalysis(
+  hardware: HardwareEligibilityResult,
+  hasLoadedModel: boolean,
+): LocalInvoiceAssistantState["lifecycle"] {
+  if (hardware.status === "ineligible") {
+    return "hardware-ineligible";
+  }
+
+  if (hasLoadedModel) {
+    return "ready";
+  }
+
+  return hardware.status === "unknown" ? "compatibility-unknown" : "not-downloaded";
+}
+
+function getRecoveredLifecycle(
+  hardware: HardwareEligibilityResult | null,
+  hasLoadedModel: boolean,
+): LocalInvoiceAssistantState["lifecycle"] {
+  if (!hardware) {
+    return "checking-hardware";
+  }
+
+  return getLifecycleAfterHardwareAnalysis(hardware, hasLoadedModel);
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "The local invoice assistant failed unexpectedly.";
+}
+
+function createDefaultMessageId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  fallbackMessageId += 1;
+  return `local-invoice-ai-${Date.now()}-${fallbackMessageId}`;
+}
+
 /**
  * Manages the browser-only lifecycle for the local invoice AI assistant.
  *
@@ -278,80 +357,4 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     sendMessage,
     state,
   };
-}
-
-function createPromptMessages(
-  context: LocalInvoiceAssistantContext,
-  messages: ReadonlyArray<LocalInvoiceAssistantMessage>,
-): LocalInvoiceAssistantPromptMessage[] {
-  return [
-    {
-      content: `${LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT}\n\nSanitized invoice context:\n${context.promptContext}`,
-      role: "system",
-    },
-    ...messages.map((message) => ({
-      content: message.content,
-      role: message.role,
-    })),
-  ];
-}
-
-function createMessage(
-  content: string,
-  role: LocalInvoiceAssistantMessage["role"],
-  timestamp: string,
-  createId: () => string,
-): LocalInvoiceAssistantMessage {
-  return {
-    content,
-    id: createId(),
-    role,
-    timestamp,
-  };
-}
-
-function replaceMessageContent(
-  messages: ReadonlyArray<LocalInvoiceAssistantMessage>,
-  messageId: string,
-  content: string,
-): LocalInvoiceAssistantMessage[] {
-  return messages.map((message) => (message.id === messageId ? {...message, content} : message));
-}
-
-function getLifecycleAfterHardwareAnalysis(
-  hardware: HardwareEligibilityResult,
-  hasLoadedModel: boolean,
-): LocalInvoiceAssistantState["lifecycle"] {
-  if (hardware.status === "ineligible") {
-    return "hardware-ineligible";
-  }
-
-  if (hasLoadedModel) {
-    return "ready";
-  }
-
-  return hardware.status === "unknown" ? "compatibility-unknown" : "not-downloaded";
-}
-
-function getRecoveredLifecycle(
-  hardware: HardwareEligibilityResult | null,
-  hasLoadedModel: boolean,
-): LocalInvoiceAssistantState["lifecycle"] {
-  if (!hardware) {
-    return "checking-hardware";
-  }
-
-  return getLifecycleAfterHardwareAnalysis(hardware, hasLoadedModel);
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "The local invoice assistant failed unexpectedly.";
-}
-
-function createDefaultMessageId(): string {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `local-invoice-ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }

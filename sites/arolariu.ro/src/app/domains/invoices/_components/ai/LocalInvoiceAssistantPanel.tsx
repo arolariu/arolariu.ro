@@ -3,7 +3,7 @@
 import type {Invoice} from "@/types/invoices";
 import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Label, Progress, Textarea} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import styles from "./LocalInvoiceAssistantPanel.module.scss";
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
@@ -42,20 +42,44 @@ export function LocalInvoiceAssistantPanel({
     invoices,
     ...(now ? {now} : {}),
   });
-  const isDownloading = assistant.state.lifecycle === "downloading";
-  const isGenerating = assistant.state.lifecycle === "generating";
-  const progressPercent = Math.round(assistant.state.progress * 100);
+  const {canLoadModel, canSendMessage, deleteCachedModel, dismissError, loadModel, resetSession, sendMessage, state} = assistant;
+  const isDownloading = state.lifecycle === "downloading";
+  const isGenerating = state.lifecycle === "generating";
+  const progressPercent = Math.round(state.progress * 100);
+  const shouldShowModelCard = state.lifecycle === "not-downloaded" || state.lifecycle === "compatibility-unknown" || isDownloading;
+  const shouldShowChat = state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error";
+  const hasError = state.error !== null;
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+  const handleLoadModel = useCallback((): void => {
+    void loadModel();
+  }, [loadModel]);
+
+  const handleDismissError = useCallback((): void => {
+    dismissError();
+  }, [dismissError]);
+
+  const handleQuestionChange = useCallback((event: Readonly<{currentTarget: Readonly<{value: string}>}>): void => {
+    setQuestion(event.currentTarget.value);
+  }, []);
+
+  const handleResetSession = useCallback((): void => {
+    resetSession();
+  }, [resetSession]);
+
+  const handleDeleteCachedModel = useCallback((): void => {
+    void deleteCachedModel();
+  }, [deleteCachedModel]);
+
+  const handleSubmit = useCallback((event: Readonly<{preventDefault: () => void}>): void => {
     event.preventDefault();
     const nextQuestion = question.trim();
-    if (!nextQuestion || !assistant.canSendMessage || isGenerating) {
+    if (!nextQuestion || !canSendMessage || isGenerating) {
       return;
     }
 
     setQuestion("");
-    await assistant.sendMessage(nextQuestion);
-  }
+    void sendMessage(nextQuestion);
+  }, [canSendMessage, isGenerating, question, sendMessage]);
 
   return (
     <Card className={styles["panel"]}>
@@ -64,7 +88,7 @@ export function LocalInvoiceAssistantPanel({
         <CardDescription>{t("privacy")}</CardDescription>
       </CardHeader>
       <CardContent className={styles["content"]}>
-        {assistant.state.lifecycle === "checking-hardware" && (
+        {state.lifecycle === "checking-hardware" && (
           <p
             className={styles["statusText"]}
             aria-live='polite'>
@@ -72,7 +96,7 @@ export function LocalInvoiceAssistantPanel({
           </p>
         )}
 
-        {assistant.state.lifecycle === "hardware-ineligible" && (
+        {state.lifecycle === "hardware-ineligible" && (
           <div
             className={styles["fallback"]}
             role='status'>
@@ -81,13 +105,13 @@ export function LocalInvoiceAssistantPanel({
           </div>
         )}
 
-        {(assistant.state.lifecycle === "not-downloaded" || assistant.state.lifecycle === "compatibility-unknown" || isDownloading) && (
+        {shouldShowModelCard ? (
           <div className={styles["modelCard"]}>
             <div>
               <h3 className={styles["sectionTitle"]}>{t("model.title")}</h3>
               <p className={styles["statusText"]}>{t("model.description")}</p>
-              <p className={styles["statusText"]}>{t("model.host", {host: assistant.state.activeModel.artifactHost})}</p>
-              {assistant.state.lifecycle === "compatibility-unknown" && (
+              <p className={styles["statusText"]}>{t("model.host", {host: state.activeModel.artifactHost})}</p>
+              {state.lifecycle === "compatibility-unknown" && (
                 <p
                   className={styles["warningText"]}
                   role='status'>
@@ -104,15 +128,15 @@ export function LocalInvoiceAssistantPanel({
             ) : (
               <Button
                 type='button'
-                onClick={() => void assistant.loadModel()}
-                disabled={!assistant.canLoadModel}>
+                onClick={handleLoadModel}
+                disabled={!canLoadModel}>
                 {t("actions.download")}
               </Button>
             )}
           </div>
-        )}
+        ) : null}
 
-        {(assistant.state.lifecycle === "ready" || assistant.state.lifecycle === "generating" || assistant.state.lifecycle === "error") && (
+        {shouldShowChat ? (
           <div className={styles["chatShell"]}>
             <p
               className={styles["readyText"]}
@@ -120,25 +144,25 @@ export function LocalInvoiceAssistantPanel({
               {t("chat.ready")}
             </p>
 
-            {assistant.state.error && (
+            {hasError ? (
               <div
                 className={styles["errorBox"]}
                 role='alert'>
                 <div>
                   <h3 className={styles["sectionTitle"]}>{t("errors.title")}</h3>
-                  <p className={styles["statusText"]}>{assistant.state.error}</p>
+                  <p className={styles["statusText"]}>{state.error}</p>
                 </div>
                 <Button
                   type='button'
                   variant='outline'
-                  onClick={assistant.dismissError}>
+                  onClick={handleDismissError}>
                   {t("actions.dismissError")}
                 </Button>
               </div>
-            )}
+            ) : null}
 
             <div className={styles["messages"]}>
-              {assistant.state.messages.map((message) => (
+              {state.messages.map((message) => (
                 <article
                   key={message.id}
                   className={message.role === "user" ? styles["userMessage"] : styles["assistantMessage"]}>
@@ -149,38 +173,38 @@ export function LocalInvoiceAssistantPanel({
 
             <form
               className={styles["form"]}
-              onSubmit={(event) => void handleSubmit(event)}>
+              onSubmit={handleSubmit}>
               <Label htmlFor='local-invoice-assistant-input'>{t("chat.inputLabel")}</Label>
               <Textarea
                 id='local-invoice-assistant-input'
                 value={question}
-                onChange={(event) => setQuestion(event.currentTarget.value)}
+                onChange={handleQuestionChange}
                 placeholder={t("chat.inputPlaceholder")}
-                disabled={!assistant.canSendMessage || isGenerating}
+                disabled={!canSendMessage || isGenerating}
                 className={styles["textarea"]}
               />
               <div className={styles["actions"]}>
                 <Button
                   type='submit'
-                  disabled={!question.trim() || !assistant.canSendMessage || isGenerating}>
+                  disabled={!question.trim() || !canSendMessage || isGenerating}>
                   {t("actions.send")}
                 </Button>
                 <Button
                   type='button'
                   variant='outline'
-                  onClick={assistant.resetSession}>
+                  onClick={handleResetSession}>
                   {t("actions.reset")}
                 </Button>
                 <Button
                   type='button'
                   variant='outline'
-                  onClick={() => void assistant.deleteCachedModel()}>
+                  onClick={handleDeleteCachedModel}>
                   {t("actions.clearCache")}
                 </Button>
               </div>
             </form>
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

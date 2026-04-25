@@ -47,6 +47,20 @@ function getComplexityEmoji(complexity: RecipeComplexity): string {
   }
 }
 
+function createIngredientListItems(ingredients: ReadonlyArray<string>): Array<Readonly<{ingredient: string; key: string}>> {
+  const occurrenceCounts = new Map<string, number>();
+
+  return ingredients.map((ingredient) => {
+    const occurrence = (occurrenceCounts.get(ingredient) ?? 0) + 1;
+    occurrenceCounts.set(ingredient, occurrence);
+
+    return {
+      ingredient,
+      key: `${ingredient}-${occurrence}`,
+    };
+  });
+}
+
 /**
  * Invoice tabs component displaying possible recipes and additional metadata.
  *
@@ -102,10 +116,13 @@ export function InvoiceTabs(): React.JSX.Element {
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
                 {invoice.possibleRecipes.map((recipe) => {
-                  const hasValidReference =
+                  const hasInstructions = recipe.instructions.trim().length > 0;
+                  const hasValidReference = Boolean(
                     recipe.referenceForMoreDetails
                     && recipe.referenceForMoreDetails !== "https://arolariu.ro"
-                    && recipe.referenceForMoreDetails !== "";
+                    && recipe.referenceForMoreDetails !== "",
+                  );
+                  const ingredientItems = createIngredientListItems(recipe.ingredients);
 
                   return (
                     <Card
@@ -128,42 +145,42 @@ export function InvoiceTabs(): React.JSX.Element {
                             <TbClock className={styles["tabIcon"]} />
                             <span>{t("recipe.duration", {minutes: String(recipe.approximateTotalDuration)})}</span>
                           </div>
-                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
+                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 ? (
                             <div className={styles["recipeDetailMuted"]}>
                               {t("recipe.prepCook", {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
                             </div>
-                          )}
+                          ) : null}
                         </div>
 
                         {/* Ingredients List */}
-                        {recipe.ingredients.length > 0 && (
+                        {ingredientItems.length > 0 ? (
                           <div className={styles["ingredientsSection"]}>
                             <div className={styles["ingredientsHeader"]}>
                               <TbToolsKitchen2 className={styles["sectionIcon"]} />
                               <h4 className={styles["sectionTitle"]}>{t("recipe.ingredients")}</h4>
                             </div>
                             <ul className={styles["ingredientsList"]}>
-                              {recipe.ingredients.map((ingredient, index) => (
+                              {ingredientItems.map(({ingredient, key}) => (
                                 <li
-                                  key={`${ingredient}-${index}`}
+                                  key={key}
                                   className={styles["ingredientItem"]}>
                                   {ingredient}
                                 </li>
                               ))}
                             </ul>
                           </div>
-                        )}
+                        ) : null}
 
                         {/* Instructions */}
-                        {recipe.instructions && (
+                        {hasInstructions ? (
                           <div className={styles["instructionsSection"]}>
                             <h4 className={styles["sectionTitle"]}>{t("recipe.instructions")}</h4>
                             <p className={styles["instructionsText"]}>{recipe.instructions}</p>
                           </div>
-                        )}
+                        ) : null}
 
                         {/* External Link */}
-                        {hasValidReference && (
+                        {hasValidReference ? (
                           <Button
                             variant='link'
                             className={styles["recipeLink"]}
@@ -176,7 +193,7 @@ export function InvoiceTabs(): React.JSX.Element {
                               <TbExternalLink className={styles["externalLinkIcon"]} />
                             </a>
                           </Button>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   );
