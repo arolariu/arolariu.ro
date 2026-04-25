@@ -123,7 +123,7 @@ export function LocalInvoiceAssistantPanel({
             {isDownloading ? (
               <div className={styles["progressGroup"]}>
                 <Progress value={progressPercent} />
-                <span className={styles["statusText"]}>{t("model.progress", {progress: progressPercent})}</span>
+                <span className={styles["statusText"]}>{t("model.progress", {progress: String(progressPercent)})}</span>
               </div>
             ) : (
               <Button

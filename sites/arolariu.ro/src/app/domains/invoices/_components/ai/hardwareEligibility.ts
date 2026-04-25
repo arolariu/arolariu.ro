@@ -58,6 +58,21 @@ type AnalyzeHardwareEligibilityInput = Readonly<{
   requirements?: LocalAiHardwareRequirements;
 }>;
 
+type StorageAvailabilityResult =
+  | Readonly<{
+      availableStorageBytes: number;
+      status: "known";
+    }>
+  | Readonly<{
+      status: "unknown";
+    }>;
+
+type StorageCapabilityResult = Readonly<{
+  availableStorageBytes?: number;
+  ineligibleReason?: "storage-quota-too-low";
+  unknownReason?: "storage-estimate-unavailable";
+}>;
+
 function createResult(
   status: HardwareEligibilityStatus,
   reasons: ReadonlyArray<HardwareEligibilityReason>,
@@ -99,9 +114,7 @@ function getDefaultHardwareEligibilityEnvironment(): HardwareEligibilityEnvironm
   return environment;
 }
 
-async function getAvailableStorageBytes(
-  storage: StorageManagerLike | undefined,
-): Promise<Readonly<{availableStorageBytes?: number; status: "known" | "unknown"}>> {
+async function getAvailableStorageBytes(storage: StorageManagerLike | undefined): Promise<StorageAvailabilityResult> {
   if (!storage) {
     return {status: "unknown"};
   }
@@ -119,6 +132,22 @@ async function getAvailableStorageBytes(
   } catch {
     return {status: "unknown"};
   }
+}
+
+function collectStorageCapabilityReason(
+  storageResult: StorageAvailabilityResult,
+  requirements: LocalAiHardwareRequirements,
+): StorageCapabilityResult {
+  if (storageResult.status === "unknown") {
+    return {unknownReason: "storage-estimate-unavailable"};
+  }
+
+  const {availableStorageBytes} = storageResult;
+  if (availableStorageBytes < requirements.minimumAvailableStorageBytes) {
+    return {availableStorageBytes, ineligibleReason: "storage-quota-too-low"};
+  }
+
+  return {availableStorageBytes};
 }
 
 async function collectGpuIneligibleReason(navigator: LocalAiHardwareNavigator): Promise<HardwareEligibilityReason | null> {
@@ -203,22 +232,26 @@ export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEl
   }
 
   const storageResult = await getAvailableStorageBytes(environment.navigator.storage);
-  if (storageResult.status === "unknown") {
-    unknownReasons.push("storage-estimate-unavailable");
-  } else if (storageResult.availableStorageBytes < requirements.minimumAvailableStorageBytes) {
-    ineligibleReasons.push("storage-quota-too-low");
+  const storageReason = collectStorageCapabilityReason(storageResult, requirements);
+  const {availableStorageBytes, ineligibleReason, unknownReason} = storageReason;
+  if (unknownReason) {
+    unknownReasons.push(unknownReason);
+  }
+
+  if (ineligibleReason) {
+    ineligibleReasons.push(ineligibleReason);
   }
 
   pushCapabilityReason(collectMemoryReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
   pushCapabilityReason(collectCpuReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
 
   if (ineligibleReasons.length > 0) {
-    return createResult("ineligible", ineligibleReasons, requirements, storageResult.availableStorageBytes);
+    return createResult("ineligible", ineligibleReasons, requirements, availableStorageBytes);
   }
 
   if (unknownReasons.length > 0) {
-    return createResult("unknown", unknownReasons, requirements, storageResult.availableStorageBytes);
+    return createResult("unknown", unknownReasons, requirements, availableStorageBytes);
   }
 
-  return createResult("eligible", [], requirements, storageResult.availableStorageBytes);
+  return createResult("eligible", [], requirements, availableStorageBytes);
 }
