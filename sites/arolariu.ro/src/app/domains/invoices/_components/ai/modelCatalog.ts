@@ -21,10 +21,8 @@ import type {LocalInvoiceAssistantModelMetadata} from "./types";
  * 3. Quality: Larger models for capable hardware
  * 4. Experimental: Bleeding-edge models requiring validation
  *
- * **Upgrade-gated models (not included until WebLLM upgrade):**
- * - `Qwen3.5-0.8B-q4f16_1-MLC`
- * - `Qwen3.5-2B-q4f16_1-MLC`
- * - `Phi-4-mini-instruct-q4f16_1-MLC`
+ * **Upgrade-gated models:**
+ * See `UPGRADE_GATED_MODEL_CANDIDATES` for models excluded until WebLLM upgrade.
  *
  * All models use q4f16_1 quantization for browser feasibility.
  * Model IDs must match WebLLM prebuilt model registry.
@@ -37,7 +35,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     displayName: "SmolLM2 360M Instruct",
     family: "smollm",
     id: "SmolLM2-360M-Instruct-q4f16_1-MLC",
-    requiredFeatures: [],
+    requiredFeatures: ["shader-f16"],
     tier: "fallback",
     vramRequiredMB: 512,
   },
@@ -81,7 +79,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     displayName: "Gemma 2 2B Instruct",
     family: "gemma",
     id: "gemma-2-2b-it-q4f16_1-MLC",
-    requiredFeatures: [],
+    requiredFeatures: ["shader-f16"],
     tier: "quality",
     vramRequiredMB: 2048,
   },
@@ -115,6 +113,50 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     id: "Phi-3.5-mini-instruct-q4f16_1-MLC-1k",
     requiredFeatures: [],
     tier: "experimental",
+    vramRequiredMB: 4096,
+  },
+] as const satisfies ReadonlyArray<LocalInvoiceAssistantModelMetadata>;
+
+/**
+ * Upgrade-gated model candidates.
+ *
+ * @remarks
+ * These models are excluded from the selectable catalog until:
+ * 1. WebLLM dependency is upgraded to a version exposing these model IDs
+ * 2. Models are verified to load successfully in the target environment
+ * 3. Model catalog tests are updated to confirm availability
+ *
+ * **Do not add these to `LOCAL_INVOICE_ASSISTANT_MODELS` until upgrade verification.**
+ */
+export const UPGRADE_GATED_MODEL_CANDIDATES = [
+  {
+    artifactHost: "https://huggingface.co/mlc-ai",
+    contextWindowTokens: 4096,
+    displayName: "Qwen 3.5 0.8B",
+    family: "qwen",
+    id: "Qwen3.5-0.8B-q4f16_1-MLC",
+    requiredFeatures: [],
+    tier: "fallback",
+    vramRequiredMB: 896,
+  },
+  {
+    artifactHost: "https://huggingface.co/mlc-ai",
+    contextWindowTokens: 4096,
+    displayName: "Qwen 3.5 2B",
+    family: "qwen",
+    id: "Qwen3.5-2B-q4f16_1-MLC",
+    requiredFeatures: [],
+    tier: "balanced",
+    vramRequiredMB: 2048,
+  },
+  {
+    artifactHost: "https://huggingface.co/mlc-ai",
+    contextWindowTokens: 16384,
+    displayName: "Phi 4 Mini Instruct",
+    family: "phi",
+    id: "Phi-4-mini-instruct-q4f16_1-MLC",
+    requiredFeatures: [],
+    tier: "quality",
     vramRequiredMB: 4096,
   },
 ] as const satisfies ReadonlyArray<LocalInvoiceAssistantModelMetadata>;

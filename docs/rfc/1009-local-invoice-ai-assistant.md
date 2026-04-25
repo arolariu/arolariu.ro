@@ -122,22 +122,28 @@ quantization for browser feasibility.
 
 **Selectable models (current WebLLM version):**
 
+| Model ID | Family | Tier | VRAM (MB) | Context (tokens) | Display Name | Required Features |
+|----------|--------|------|-----------|------------------|--------------|-------------------|
+| `SmolLM2-360M-Instruct-q4f16_1-MLC` | smollm | fallback | 512 | 2048 | SmolLM2 360M Instruct | shader-f16 |
+| `Qwen3-0.6B-q4f16_1-MLC` | qwen | fallback | 768 | 4096 | Qwen 3 0.6B | - |
+| `Llama-3.2-1B-Instruct-q4f16_1-MLC` | llama | balanced | 1536 | 4096 | Llama 3.2 1B Instruct | - |
+| `gemma3-1b-it-q4f16_1-MLC` | gemma | balanced | 1536 | 8192 | Gemma 3 1B Instruct | - |
+| `gemma-2-2b-it-q4f16_1-MLC` | gemma | quality | 2048 | 8192 | Gemma 2 2B Instruct | shader-f16 |
+| `Llama-3.2-3B-Instruct-q4f16_1-MLC` | llama | quality | 3072 | 4096 | Llama 3.2 3B Instruct | - |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC` | phi | quality | 4096 | 128000 | Phi 3.5 Mini Instruct | - |
+| `Phi-3.5-mini-instruct-q4f16_1-MLC-1k` | phi | experimental | 4096 | 1024 | Phi 3.5 Mini Instruct (1k context) | - |
+
+**Upgrade-gated candidates (`UPGRADE_GATED_MODEL_CANDIDATES`):**
+
+These models are exported as typed records but excluded from the selectable
+catalog until WebLLM upgrade and verification. They are not user-selectable
+and must not appear in any UI model picker.
+
 | Model ID | Family | Tier | VRAM (MB) | Context (tokens) | Display Name |
 |----------|--------|------|-----------|------------------|--------------|
-| `SmolLM2-360M-Instruct-q4f16_1-MLC` | smollm | fallback | 512 | 2048 | SmolLM2 360M Instruct |
-| `Qwen3-0.6B-q4f16_1-MLC` | qwen | fallback | 768 | 4096 | Qwen 3 0.6B |
-| `Llama-3.2-1B-Instruct-q4f16_1-MLC` | llama | balanced | 1536 | 4096 | Llama 3.2 1B Instruct |
-| `gemma3-1b-it-q4f16_1-MLC` | gemma | balanced | 1536 | 8192 | Gemma 3 1B Instruct |
-| `gemma-2-2b-it-q4f16_1-MLC` | gemma | quality | 2048 | 8192 | Gemma 2 2B Instruct |
-| `Llama-3.2-3B-Instruct-q4f16_1-MLC` | llama | quality | 3072 | 4096 | Llama 3.2 3B Instruct |
-| `Phi-3.5-mini-instruct-q4f16_1-MLC` | phi | quality | 4096 | 128000 | Phi 3.5 Mini Instruct |
-| `Phi-3.5-mini-instruct-q4f16_1-MLC-1k` | phi | experimental | 4096 | 1024 | Phi 3.5 Mini Instruct (1k context) |
-
-**Upgrade-gated candidates (excluded until WebLLM upgrade and verification):**
-
-- `Qwen3.5-0.8B-q4f16_1-MLC`
-- `Qwen3.5-2B-q4f16_1-MLC`
-- `Phi-4-mini-instruct-q4f16_1-MLC`
+| `Qwen3.5-0.8B-q4f16_1-MLC` | qwen | fallback | 896 | 4096 | Qwen 3.5 0.8B |
+| `Qwen3.5-2B-q4f16_1-MLC` | qwen | balanced | 2048 | 4096 | Qwen 3.5 2B |
+| `Phi-4-mini-instruct-q4f16_1-MLC` | phi | quality | 4096 | 16384 | Phi 4 Mini Instruct |
 
 The recommender (`recommendLocalInvoiceAssistantModel`) filters models by:
 1. Hardware eligibility status (returns null for ineligible devices)

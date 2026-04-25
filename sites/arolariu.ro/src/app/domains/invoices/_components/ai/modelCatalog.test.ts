@@ -1,6 +1,11 @@
 import {describe, expect, it} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
-import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS, recommendLocalInvoiceAssistantModel} from "./modelCatalog";
+import {
+  DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
+  LOCAL_INVOICE_ASSISTANT_MODELS,
+  UPGRADE_GATED_MODEL_CANDIDATES,
+  recommendLocalInvoiceAssistantModel,
+} from "./modelCatalog";
 
 describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("exports a non-empty catalog of models", () => {
@@ -44,6 +49,43 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("does not include Phi 4 Mini in the selectable catalog", () => {
     const phi4Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id.includes("Phi-4"));
     expect(phi4Models).toHaveLength(0);
+  });
+
+  it("does not include Gemma 4 models in the selectable catalog", () => {
+    const gemma4Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id.includes("gemma-4") || model.id.includes("gemma4"));
+    expect(gemma4Models).toHaveLength(0);
+  });
+
+  it("includes models with shader-f16 feature requirements", () => {
+    const shader16Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.requiredFeatures.includes("shader-f16"));
+    // At least SmolLM2 360M and Gemma 2 2B should require shader-f16
+    expect(shader16Models.length).toBeGreaterThan(0);
+    const smolLm2 = shader16Models.find((model) => model.id === "SmolLM2-360M-Instruct-q4f16_1-MLC");
+    expect(smolLm2).toBeDefined();
+  });
+});
+
+describe("UPGRADE_GATED_MODEL_CANDIDATES", () => {
+  it("exports upgrade-gated candidates as typed records", () => {
+    expect(UPGRADE_GATED_MODEL_CANDIDATES).toBeDefined();
+    expect(Array.isArray(UPGRADE_GATED_MODEL_CANDIDATES)).toBe(true);
+  });
+
+  it("includes Qwen 3.5 models as upgrade-gated candidates", () => {
+    const qwen35Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id.includes("Qwen3.5"));
+    expect(qwen35Models.length).toBeGreaterThan(0);
+  });
+
+  it("includes Phi 4 Mini as upgrade-gated candidate", () => {
+    const phi4Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id.includes("Phi-4"));
+    expect(phi4Models.length).toBeGreaterThan(0);
+  });
+
+  it("ensures upgrade-gated candidates are not in selectable catalog", () => {
+    const selectableIds = new Set(LOCAL_INVOICE_ASSISTANT_MODELS.map((model) => model.id));
+    for (const candidate of UPGRADE_GATED_MODEL_CANDIDATES) {
+      expect(selectableIds.has(candidate.id)).toBe(false);
+    }
   });
 });
 
@@ -173,6 +215,37 @@ describe("recommendLocalInvoiceAssistantModel", () => {
     // Should recommend smallest model that fits or null
     if (recommendation) {
       expect(recommendation.vramRequiredMB).toBeLessThanOrEqual(1000);
+    }
+  });
+
+  it("returns null when hardware is eligible but no model satisfies all constraints", () => {
+    const hardwareResult = createEligibleHardwareResult();
+    const recommendation = recommendLocalInvoiceAssistantModel({
+      gpuFeatures: [], // No GPU features, so shader-f16 models excluded
+      gpuLimits: {maxVramMB: 100}, // Impossibly low VRAM
+      hardwareResult: {
+        ...hardwareResult,
+        availableStorageBytes: 100 * 1024 * 1024, // Only 100 MB storage
+      },
+    });
+
+    expect(recommendation).toBeNull();
+  });
+
+  it("filters out shader-f16 models when GPU features do not include shader-f16", () => {
+    const hardwareResult = createEligibleHardwareResult();
+    const recommendation = recommendLocalInvoiceAssistantModel({
+      gpuFeatures: [], // No shader-f16
+      hardwareResult,
+    });
+
+    // Should not recommend a model that requires shader-f16
+    if (recommendation) {
+      expect(recommendation.requiredFeatures).not.toContain("shader-f16");
+    } else {
+      // If all models require shader-f16, recommendation should be null
+      const allRequireShaderF16 = LOCAL_INVOICE_ASSISTANT_MODELS.every((model) => model.requiredFeatures.includes("shader-f16"));
+      expect(allRequireShaderF16).toBe(false);
     }
   });
 });
