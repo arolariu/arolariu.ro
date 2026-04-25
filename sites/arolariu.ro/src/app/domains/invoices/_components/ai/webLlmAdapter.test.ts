@@ -150,6 +150,28 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
     expect(worker.terminated).toBe(true);
   });
 
+  it("releases worker and engine resources when disposed during pending model loading", async () => {
+    const worker = createFakeWorker();
+    const fakeEngine = createFakeEngine(["unused"]);
+    const pendingEngine = createDeferred<typeof fakeEngine>();
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => pendingEngine.promise,
+        deleteModelAllInfoInCache: vi.fn(async () => undefined),
+      }),
+    });
+
+    const loadPromise = adapter.load();
+    await Promise.resolve();
+    await adapter.dispose();
+    pendingEngine.resolve(fakeEngine);
+    await loadPromise;
+
+    expect(fakeEngine.unload).toHaveBeenCalledOnce();
+    expect(worker.terminated).toBe(true);
+  });
+
   it("terminates the worker if model loading fails", async () => {
     const worker = createFakeWorker();
     const adapter = createWebLlmLocalInvoiceAssistantAdapter({
@@ -186,6 +208,29 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
     expect(workerCreated).toBe(false);
     expect(deleteModelAllInfoInCache).toHaveBeenCalledWith(DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL.id);
   });
+
+  it("unloads the active model before deleting cached model artifacts", async () => {
+    const worker = createFakeWorker();
+    const fakeEngine = createFakeEngine(["unused"]);
+    const deleteModelAllInfoInCache = vi.fn(async () => undefined);
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => fakeEngine,
+        deleteModelAllInfoInCache,
+      }),
+    });
+
+    await adapter.load();
+    await adapter.deleteCachedModel();
+
+    expect(fakeEngine.unload).toHaveBeenCalledOnce();
+    expect(worker.terminated).toBe(true);
+    expect(deleteModelAllInfoInCache).toHaveBeenCalledWith(DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL.id);
+    await expect(adapter.generate([{content: "Hello", role: "user"}])).rejects.toThrow(
+      "Load the local invoice assistant model before generating a response.",
+    );
+  });
 });
 
 function createFakeEngine(tokens: ReadonlyArray<string>, requests: FakeChatCompletionRequest[] = []) {
@@ -202,4 +247,18 @@ function createFakeEngine(tokens: ReadonlyArray<string>, requests: FakeChatCompl
     interruptGenerate: vi.fn(),
     unload: vi.fn(async () => undefined),
   };
+}
+
+function createDeferred<T>(): Readonly<{
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}> {
+  let resolve: (value: T) => void = () => {
+    throw new Error("Deferred promise resolved before initialization.");
+  };
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return {promise, resolve};
 }

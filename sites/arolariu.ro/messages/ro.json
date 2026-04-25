@@ -3156,7 +3156,8 @@
       "dismissError": "Închide eroarea",
       "download": "Descarcă modelul local",
       "reset": "Resetează chatul",
-      "send": "Trimite"
+      "send": "Trimite",
+      "stop": "Oprește generarea"
     },
     "chat": {
       "inputLabel": "Pune o întrebare locală despre facturi",

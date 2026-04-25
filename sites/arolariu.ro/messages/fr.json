@@ -3156,7 +3156,8 @@
       "dismissError": "Masquer l'erreur",
       "download": "Télécharger le modèle local",
       "reset": "Réinitialiser le chat",
-      "send": "Envoyer"
+      "send": "Envoyer",
+      "stop": "Arrêter la génération"
     },
     "chat": {
       "inputLabel": "Poser une question locale sur les factures",

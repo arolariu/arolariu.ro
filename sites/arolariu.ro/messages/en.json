@@ -3156,7 +3156,8 @@
       "dismissError": "Dismiss error",
       "download": "Download local model",
       "reset": "Reset chat",
-      "send": "Send"
+      "send": "Send",
+      "stop": "Stop generating"
     },
     "chat": {
       "inputLabel": "Ask a local invoice question",

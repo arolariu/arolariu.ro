@@ -180,6 +180,83 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.lifecycle).toBe("ready");
     expect(result.current.state.error).toBeNull();
   });
+
+  it("keeps interrupted generation cancelled when a late response resolves", async () => {
+    const pendingResponse = createDeferred<string>();
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onToken?.("Partial answer", "Partial answer");
+
+        return pendingResponse.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    let sendPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      sendPromise = result.current.sendMessage("Stop this response.");
+    });
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("generating");
+    });
+
+    act(() => {
+      result.current.interrupt();
+    });
+    pendingResponse.resolve("Late complete response");
+    await act(async () => {
+      await sendPromise;
+    });
+
+    expect(adapter.interrupt).toHaveBeenCalledOnce();
+    expect(result.current.state.lifecycle).toBe("cancelled");
+    expect(result.current.state.messages.at(-1)?.content).toBe("Partial answer");
+  });
+
+  it("surfaces cached model deletion errors through assistant state", async () => {
+    const adapter = createFakeAdapter({
+      deleteCachedModel: vi.fn(async () => {
+        throw new Error("Cache delete failed");
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+      await result.current.deleteCachedModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("error");
+    expect(result.current.state.error).toBe("Cache delete failed");
+  });
 });
 
 function createSequentialIdFactory(): () => string {
@@ -201,4 +278,18 @@ function createFakeAdapter(overrides: Partial<LocalInvoiceAssistantAdapter> = {}
     load: vi.fn(async () => undefined),
     ...overrides,
   };
+}
+
+function createDeferred<T>(): Readonly<{
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}> {
+  let resolve: (value: T) => void = () => {
+    throw new Error("Deferred promise resolved before initialization.");
+  };
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return {promise, resolve};
 }

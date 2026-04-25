@@ -69,8 +69,7 @@ type StorageAvailabilityResult =
 
 type StorageCapabilityResult = Readonly<{
   availableStorageBytes?: number;
-  ineligibleReason?: "storage-quota-too-low";
-  unknownReason?: "storage-estimate-unavailable";
+  ineligibleReason?: "storage-estimate-unavailable" | "storage-quota-too-low";
 }>;
 
 function createResult(
@@ -139,7 +138,7 @@ function collectStorageCapabilityReason(
   requirements: LocalAiHardwareRequirements,
 ): StorageCapabilityResult {
   if (storageResult.status === "unknown") {
-    return {unknownReason: "storage-estimate-unavailable"};
+    return {ineligibleReason: "storage-estimate-unavailable"};
   }
 
   const {availableStorageBytes} = storageResult;
@@ -233,10 +232,7 @@ export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEl
 
   const storageResult = await getAvailableStorageBytes(environment.navigator.storage);
   const storageReason = collectStorageCapabilityReason(storageResult, requirements);
-  const {availableStorageBytes, ineligibleReason, unknownReason} = storageReason;
-  if (unknownReason) {
-    unknownReasons.push(unknownReason);
-  }
+  const {availableStorageBytes, ineligibleReason} = storageReason;
 
   if (ineligibleReason) {
     ineligibleReasons.push(ineligibleReason);

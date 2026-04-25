@@ -126,12 +126,30 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
   let engine: WebLlmEngine | null = null;
   let worker: LocalInvoiceAssistantWebWorker | null = null;
   let loadingModel: Promise<void> | null = null;
+  let isDisposed = false;
+
+  async function unloadActiveModel({interrupt}: Readonly<{interrupt: boolean}>): Promise<void> {
+    const loadedEngine = engine;
+    const loadedWorker = worker;
+    engine = null;
+    worker = null;
+
+    try {
+      if (interrupt) {
+        loadedEngine?.interruptGenerate();
+      }
+      await loadedEngine?.unload();
+    } finally {
+      loadedWorker?.terminate();
+    }
+  }
 
   async function loadModelOnce(
     model: LocalInvoiceAssistantModelMetadata,
     onProgress: LoadLocalInvoiceAssistantModelOptions["onProgress"],
   ): Promise<void> {
     const nextWorker = createWorker();
+    worker = nextWorker;
 
     try {
       const webLlm = await importWebLlm();
@@ -140,9 +158,12 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         logLevel: "WARN",
       });
 
-      if (engine) {
+      if (isDisposed || engine) {
         await nextEngine.unload();
         nextWorker.terminate();
+        if (worker === nextWorker) {
+          worker = null;
+        }
         return;
       }
 
@@ -150,6 +171,9 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
       worker = nextWorker;
     } catch (error) {
       nextWorker.terminate();
+      if (worker === nextWorker) {
+        worker = null;
+      }
       throw error;
     }
   }
@@ -158,6 +182,10 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
     model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
     onProgress,
   }: LoadLocalInvoiceAssistantModelOptions = {}): Promise<void> {
+    if (isDisposed) {
+      throw new Error("The local invoice assistant adapter has already been disposed.");
+    }
+
     if (engine) {
       return;
     }
@@ -176,20 +204,13 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
 
   return {
     async deleteCachedModel(model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL): Promise<void> {
+      await unloadActiveModel({interrupt: true});
       const webLlm = await importWebLlm();
       await webLlm.deleteModelAllInfoInCache(model.id);
     },
     async dispose(): Promise<void> {
-      const loadedEngine = engine;
-      const loadedWorker = worker;
-      engine = null;
-      worker = null;
-
-      try {
-        await loadedEngine?.unload();
-      } finally {
-        loadedWorker?.terminate();
-      }
+      isDisposed = true;
+      await unloadActiveModel({interrupt: false});
     },
     async generate(messages, options = {}): Promise<string> {
       if (!engine) {

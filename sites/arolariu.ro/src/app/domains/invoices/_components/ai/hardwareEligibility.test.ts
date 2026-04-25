@@ -91,6 +91,20 @@ describe("analyzeLocalAiHardwareEligibility", () => {
     expect(result.reasons).toContain("storage-quota-too-low");
   });
 
+  it("returns ineligible when storage quota cannot be verified before model download", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator({
+          storage: undefined,
+        }),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("ineligible");
+    expect(result.reasons).toContain("storage-estimate-unavailable");
+  });
+
   it("returns unknown when optional memory and CPU signals are unavailable", async () => {
     const result = await analyzeLocalAiHardwareEligibility({
       environment: {

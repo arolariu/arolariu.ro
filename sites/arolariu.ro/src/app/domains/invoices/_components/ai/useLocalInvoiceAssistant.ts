@@ -135,6 +135,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const adapterRef = useRef<LocalInvoiceAssistantAdapter | null>(null);
   const analyzeHardwareRef = useRef(input.analyzeHardware ?? analyzeLocalAiHardwareEligibility);
   const createIdRef = useRef(input.createId ?? createDefaultMessageId);
+  const generationIdRef = useRef(0);
+  const isMountedRef = useRef(true);
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
 
@@ -181,12 +183,17 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           return;
         }
 
-        setState((current) => ({
-          ...current,
-          error: null,
-          hardware,
-          lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),
-        }));
+        setState((current) => {
+          const nextState = {
+            ...current,
+            error: null,
+            hardware,
+            lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),
+          };
+          stateRef.current = nextState;
+
+          return nextState;
+        });
       } catch (error) {
         if (!isActive) {
           return;
@@ -209,6 +216,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   useEffect(
     () => () => {
+      isMountedRef.current = false;
       void adapterRef.current?.dispose();
     },
     [],
@@ -216,7 +224,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const loadModel = useCallback(async (): Promise<void> => {
     const adapter = adapterRef.current;
-    if (!adapter || stateRef.current.hardware?.status === "ineligible") {
+    if (!adapter || !stateRef.current.hardware || stateRef.current.hardware.status === "ineligible") {
       return;
     }
 
@@ -231,12 +239,20 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       await adapter.load({
         model: activeModel,
         onProgress: (report) => {
+          if (!isMountedRef.current) {
+            return;
+          }
+
           setState((current) => ({
             ...current,
             progress: report.progress,
           }));
         },
       });
+      if (!isMountedRef.current) {
+        return;
+      }
+
       loadedRef.current = true;
       setState((current) => ({
         ...current,
@@ -245,6 +261,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         progress: 1,
       }));
     } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
       loadedRef.current = false;
       setState((current) => ({
         ...current,
@@ -267,6 +287,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       const userMessage = createMessage(trimmedContent, "user", timestamp, createIdRef.current);
       const assistantMessage = createMessage("", "assistant", timestamp, createIdRef.current);
       const promptMessages = createPromptMessages(context, [...stateRef.current.messages, userMessage]);
+      const generationId = generationIdRef.current + 1;
+      generationIdRef.current = generationId;
 
       setState((current) => ({
         ...current,
@@ -278,12 +300,20 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       try {
         const response = await adapter.generate(promptMessages, {
           onToken: (_token, accumulatedResponse) => {
+            if (!isMountedRef.current || generationIdRef.current !== generationId) {
+              return;
+            }
+
             setState((current) => ({
               ...current,
               messages: replaceMessageContent(current.messages, assistantMessage.id, accumulatedResponse),
             }));
           },
         });
+
+        if (!isMountedRef.current || generationIdRef.current !== generationId) {
+          return;
+        }
 
         setState((current) => ({
           ...current,
@@ -292,6 +322,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           messages: replaceMessageContent(current.messages, assistantMessage.id, response),
         }));
       } catch (error) {
+        if (!isMountedRef.current || generationIdRef.current !== generationId) {
+          return;
+        }
+
         setState((current) => ({
           ...current,
           error: getErrorMessage(error),
@@ -312,6 +346,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, []);
 
   const interrupt = useCallback((): void => {
+    generationIdRef.current += 1;
     adapterRef.current?.interrupt();
     setState((current) => ({
       ...current,
@@ -320,6 +355,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, []);
 
   const resetSession = useCallback((): void => {
+    generationIdRef.current += 1;
     setState((current) => ({
       ...current,
       error: null,
@@ -329,21 +365,40 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, []);
 
   const deleteCachedModel = useCallback(async (): Promise<void> => {
-    await adapterRef.current?.deleteCachedModel(activeModel);
-    loadedRef.current = false;
-    setState((current) => ({
-      ...current,
-      error: null,
-      lifecycle: getRecoveredLifecycle(current.hardware, false),
-      progress: 0,
-    }));
+    generationIdRef.current += 1;
+    try {
+      await adapterRef.current?.deleteCachedModel(activeModel);
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      loadedRef.current = false;
+      setState((current) => ({
+        ...current,
+        error: null,
+        lifecycle: getRecoveredLifecycle(current.hardware, false),
+        progress: 0,
+      }));
+    } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      loadedRef.current = false;
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error),
+        lifecycle: "error",
+        progress: 0,
+      }));
+    }
   }, [activeModel]);
 
   const canLoadModel =
     state.lifecycle === "not-downloaded"
     || state.lifecycle === "compatibility-unknown"
     || (state.lifecycle === "error" && !loadedRef.current);
-  const canSendMessage = state.lifecycle === "ready";
+  const canSendMessage = state.lifecycle === "ready" || state.lifecycle === "cancelled";
 
   return {
     canLoadModel,

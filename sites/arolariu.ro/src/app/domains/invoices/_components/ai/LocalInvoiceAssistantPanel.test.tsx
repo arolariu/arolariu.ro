@@ -30,6 +30,7 @@ vi.mock("next-intl", () => ({
       "actions.download": "Download local model",
       "actions.reset": "Reset chat",
       "actions.send": "Send",
+      "actions.stop": "Stop generating",
       "chat.inputLabel": "Ask a local invoice question",
       "chat.inputPlaceholder": "Ask about your local invoices...",
       "chat.ready": "Local model is ready",
@@ -174,6 +175,44 @@ describe("LocalInvoiceAssistantPanel", () => {
     });
     expect(screen.getByText("Summarize invoices.")).toBeInTheDocument();
   });
+
+  it("lets users stop local generation from the chat panel", async () => {
+    const pendingResponse = createDeferred<string>();
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onToken?.("Partial answer", "Partial answer");
+
+        return pendingResponse.promise;
+      }),
+    });
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText("Ask a local invoice question"), {
+      target: {value: "Stop this answer."},
+    });
+    fireEvent.click(screen.getByRole("button", {name: "Send"}));
+    fireEvent.click(await screen.findByRole("button", {name: "Stop generating"}));
+    pendingResponse.resolve("Late complete response");
+
+    await waitFor(() => {
+      expect(adapter.interrupt).toHaveBeenCalledOnce();
+    });
+    expect(screen.getByText("Partial answer")).toBeInTheDocument();
+  });
 });
 
 function createSequentialIdFactory(): () => string {
@@ -197,4 +236,18 @@ function createFakeAdapter(overrides: Partial<LocalInvoiceAssistantAdapter> = {}
     }),
     ...overrides,
   };
+}
+
+function createDeferred<T>(): Readonly<{
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+}> {
+  let resolve: (value: T) => void = () => {
+    throw new Error("Deferred promise resolved before initialization.");
+  };
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return {promise, resolve};
 }
