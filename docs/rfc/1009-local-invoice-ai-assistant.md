@@ -99,6 +99,19 @@ The prompt context excludes:
 - additional metadata and raw metadata
 - implementation metadata and raw invoice identifiers
 
+#### Deterministic analytics and suggested prompts
+
+`LocalInvoiceAssistantPanel.tsx` renders an analytics preview from
+`context.analytics` after hardware analysis and before model download, so users
+see useful invoice insights without waiting for model artifacts. Totals are
+grouped by currency and are never cross-summed across currencies.
+
+After the model is loaded, `suggestedPrompts.ts` selects localized prompt chips
+for common invoice questions such as total spending, largest invoice, top
+merchant, and spending by currency. Prompt chips use the same `sendMessage`
+boundary as manually typed questions and are disabled while generation is not
+send-ready.
+
 #### WebLLM adapter
 
 `webLlmAdapter.ts` owns model loading, streaming, interruption, unloading, and
@@ -180,6 +193,13 @@ The hook keeps chat messages in React state only. It guards state updates after
 unmount, invalidates late generation responses after interruption/reset/cache
 clear, and exposes retry paths for hardware analysis, model loading, generation
 errors, and cache deletion errors.
+
+Chat and benchmark generation share a synchronous generation-owner lock so
+benchmark runs cannot overlap with user chat, and stale completion from an
+interrupted or reset generation cannot unlock a newer in-flight generation.
+Streaming responses are buffered through `streamingBuffer.ts` so token updates
+flush at frame cadence instead of forcing a React render for every streamed
+delta.
 
 #### UI panel and route integration
 
