@@ -999,22 +999,21 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.lifecycle).toBe("not-downloaded");
   });
 
-  it("does not mark hook ready when late load resolves after abort", async () => {
+  it("does not mark hook ready when late load resolves after mounted abort", async () => {
     const pendingLoad = createDeferred<void>();
     let loadWasAborted = false;
     const adapter = createFakeAdapter({
       load: vi.fn(async ({signal}) => {
-        return new Promise((resolve, reject) => {
-          signal?.addEventListener("abort", () => {
-            loadWasAborted = true;
-            reject(new Error("Load aborted"));
-          });
-          void pendingLoad.promise.then(resolve).catch(reject);
+        // Track abort but don't reject - keep promise pending
+        signal?.addEventListener("abort", () => {
+          loadWasAborted = true;
         });
+        // Wait for pending load to resolve (does NOT reject on abort)
+        return pendingLoad.promise;
       }),
     });
 
-    const {result, unmount} = renderHook(() =>
+    const {result} = renderHook(() =>
       useLocalInvoiceAssistant({
         adapter,
         analyzeHardware: async () => eligibleHardware,
@@ -1037,24 +1036,93 @@ describe("useLocalInvoiceAssistant", () => {
       expect(result.current.state.lifecycle).toBe("downloading");
     });
 
-    // Unmount (abort) - this should abort the load
-    unmount();
-
-    // Verify load was aborted
-    await waitFor(() => {
-      expect(loadWasAborted).toBe(true);
+    // Delete cache while loading (mounted abort)
+    await act(async () => {
+      await result.current.deleteCachedModel();
     });
 
-    // Complete load late (after unmount)
-    pendingLoad.resolve();
-    await Promise.resolve();
+    // Verify load was aborted
+    expect(loadWasAborted).toBe(true);
+    expect(adapter.deleteCachedModel).toHaveBeenCalledOnce();
 
-    // Since hook is unmounted, we verify abort happened during mount
+    // Late load resolution (after abort)
+    await act(async () => {
+      pendingLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Hook should NOT be marked ready after late resolution
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.canLoadModel).toBe(true);
+    expect(result.current.canSendMessage).toBe(false);
+
+    // Verify signal was passed to adapter
     expect(adapter.load).toHaveBeenCalledWith(
       expect.objectContaining({
         signal: expect.any(AbortSignal),
       }),
     );
+  });
+
+  it("does not mark hook ready when load resolves after resetSession abort", async () => {
+    const pendingLoad = createDeferred<void>();
+    let loadWasAborted = false;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        // Track abort but don't reject - keep promise pending
+        signal?.addEventListener("abort", () => {
+          loadWasAborted = true;
+        });
+        // Wait for pending load to resolve (does NOT reject on abort)
+        return pendingLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start model load without awaiting
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Reset session while loading (mounted abort)
+    act(() => {
+      result.current.resetSession();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Verify load was aborted
+    expect(loadWasAborted).toBe(true);
+
+    // Late load resolution (after abort)
+    await act(async () => {
+      pendingLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Hook should still NOT be marked ready after late resolution
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.canLoadModel).toBe(true);
+    expect(result.current.canSendMessage).toBe(false);
   });
 });
 

@@ -417,7 +417,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         },
         signal: abortController.signal,
       });
-      if (!isMountedRef.current) {
+      
+      // Check both mounted state and abort status before marking ready
+      if (!isMountedRef.current || abortController.signal.aborted) {
         return;
       }
 
