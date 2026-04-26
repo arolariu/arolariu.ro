@@ -1,5 +1,4 @@
 <script lang="ts">
-  import "@/app.css";
   import "@/styles/global.scss";
   import {onNavigate, preloadData} from "$app/navigation";
   import {page} from "$app/stores";
