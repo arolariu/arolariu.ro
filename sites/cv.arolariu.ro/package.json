@@ -33,7 +33,6 @@
     "svelte": "*",
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
-    "svelte-pdf": "*",
     "typescript": "*",
     "vite": "*",
     "vitest": "*"
