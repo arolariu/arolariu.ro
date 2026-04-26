@@ -391,10 +391,20 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     // Use current recommended model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;
 
-    // If there's already a pending load, reuse it to prevent controller race
+    // If there's already a pending load
     const existingPendingLoad = pendingLoadRef.current;
     if (existingPendingLoad) {
-      return existingPendingLoad.promise;
+      // If the existing load is aborted, wait for it to settle before starting new load
+      if (existingPendingLoad.controller.signal.aborted) {
+        // Wait for the aborted load to settle (prevents binding to stale adapter load)
+        await existingPendingLoad.promise.catch(() => {
+          // Intentional abort errors are expected, ignore them
+        });
+        // After settlement, continue to start a new load
+      } else {
+        // Existing load is still active, reuse it to prevent controller race
+        return existingPendingLoad.promise;
+      }
     }
 
     // Create abort controller for this load
@@ -602,8 +612,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const resetSession = useCallback((): void => {
     generationIdRef.current += 1;
+    // Abort the pending load but keep the ref until promise settles
+    // This prevents retry from binding to stale adapter load
     pendingLoadRef.current?.controller.abort();
-    pendingLoadRef.current = null;
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
     setState((current) => ({
@@ -679,9 +690,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
 
-    // Abort any active load before deleting cache
+    // Abort any active load but keep the ref until promise settles
+    // This prevents retry from binding to stale adapter load
     pendingLoadRef.current?.controller.abort();
-    pendingLoadRef.current = null;
 
     // Use current model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;

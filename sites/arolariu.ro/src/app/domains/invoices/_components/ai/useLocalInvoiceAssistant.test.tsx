@@ -1262,6 +1262,177 @@ describe("useLocalInvoiceAssistant", () => {
     // The first signal (the one actually used by adapter) should be aborted
     expect(firstSignal?.aborted).toBe(true);
   });
+
+  it("does not surface scary error when retry after resetSession before old load settles", async () => {
+    const firstLoad = createDeferred<void>();
+    const secondLoad = createDeferred<void>();
+    let loadCallCount = 0;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        loadCallCount += 1;
+        if (loadCallCount === 1) {
+          // First load: wait for deferred resolution
+          return firstLoad.promise;
+        }
+        // Second load (retry): wait for deferred resolution
+        return secondLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start first load
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Reset session while first load is pending
+    act(() => {
+      result.current.resetSession();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Retry load immediately before first load settles (starts async)
+    let retryPromise: Promise<void> | undefined;
+    act(() => {
+      retryPromise = result.current.loadModel();
+    });
+
+    // Adapter load should NOT be called yet (waiting for first to settle)
+    expect(adapter.load).toHaveBeenCalledTimes(1);
+
+    // Settle the old aborted load with rejection
+    await act(async () => {
+      firstLoad.reject(new Error("Aborted load"));
+      await Promise.resolve();
+    });
+
+    // Now wait for the retry to actually start
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Adapter should now be called twice (first + retry after settlement)
+    expect(adapter.load).toHaveBeenCalledTimes(2);
+
+    // Should be downloading (not scary error from old load)
+    expect(result.current.state.lifecycle).toBe("downloading");
+    expect(result.current.state.error).toBeNull();
+
+    // Settle the retry load successfully
+    await act(async () => {
+      secondLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Should now be ready from retry
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.error).toBeNull();
+  });
+
+  it("does not surface scary error when retry after deleteCachedModel before old load settles", async () => {
+    const firstLoad = createDeferred<void>();
+    const secondLoad = createDeferred<void>();
+    let loadCallCount = 0;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        loadCallCount += 1;
+        if (loadCallCount === 1) {
+          // First load: wait for deferred resolution
+          return firstLoad.promise;
+        }
+        // Second load (retry): wait for deferred resolution
+        return secondLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start first load
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Delete cache while first load is pending
+    await act(async () => {
+      await result.current.deleteCachedModel();
+    });
+
+    expect(adapter.deleteCachedModel).toHaveBeenCalledOnce();
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+
+    // Retry load immediately before first load settles (starts async)
+    let retryPromise: Promise<void> | undefined;
+    act(() => {
+      retryPromise = result.current.loadModel();
+    });
+
+    // Adapter load should NOT be called yet (waiting for first to settle)
+    expect(adapter.load).toHaveBeenCalledTimes(1);
+
+    // Settle the old aborted load with rejection
+    await act(async () => {
+      firstLoad.reject(new Error("Aborted load"));
+      await Promise.resolve();
+    });
+
+    // Now wait for the retry to actually start
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Adapter should now be called twice (first + retry after settlement)
+    expect(adapter.load).toHaveBeenCalledTimes(2);
+
+    // Should be downloading (not scary error from old load)
+    expect(result.current.state.lifecycle).toBe("downloading");
+    expect(result.current.state.error).toBeNull();
+
+    // Settle the retry load successfully
+    await act(async () => {
+      secondLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Should now be ready from retry
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.error).toBeNull();
+  });
 });
 
 function createSequentialIdFactory(): () => string {
@@ -1287,14 +1458,19 @@ function createFakeAdapter(overrides: Partial<LocalInvoiceAssistantAdapter> = {}
 
 function createDeferred<T>(): Readonly<{
   promise: Promise<T>;
+  reject: (error: Error) => void;
   resolve: (value: T) => void;
 }> {
   let resolve: (value: T) => void = () => {
     throw new Error("Deferred promise resolved before initialization.");
   };
-  const promise = new Promise<T>((nextResolve) => {
+  let reject: (error: Error) => void = () => {
+    throw new Error("Deferred promise rejected before initialization.");
+  };
+  const promise = new Promise<T>((nextResolve, nextReject) => {
     resolve = nextResolve;
+    reject = nextReject;
   });
 
-  return {promise, resolve};
+  return {promise, reject, resolve};
 }

@@ -339,6 +339,43 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
       "Load the local invoice assistant model before generating a response.",
     );
   });
+
+  it("invalidates pending load when deleteCachedModel called without manual abort", async () => {
+    const worker = createFakeWorker();
+    const fakeEngine = createFakeEngine(["Response"]);
+    const pendingEngine = createDeferred<typeof fakeEngine>();
+    const deleteModelAllInfoInCache = vi.fn(async () => undefined);
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => pendingEngine.promise,
+        deleteModelAllInfoInCache,
+      }),
+    });
+
+    // Start pending load WITHOUT signal (no manual abort)
+    const loadPromise = adapter.load();
+    await Promise.resolve();
+
+    // Delete cache while load is pending (should invalidate load generation)
+    await adapter.deleteCachedModel();
+
+    // Verify cache delete was called
+    expect(deleteModelAllInfoInCache).toHaveBeenCalledOnce();
+
+    // Late engine resolution
+    pendingEngine.resolve(fakeEngine);
+    await loadPromise;
+
+    // Late engine should be unloaded due to generation invalidation
+    expect(fakeEngine.unload).toHaveBeenCalledOnce();
+    expect(worker.terminated).toBe(true);
+
+    // Adapter should not be ready - generate should reject
+    await expect(adapter.generate([{content: "Hello", role: "user"}])).rejects.toThrow(
+      "Load the local invoice assistant model before generating a response.",
+    );
+  });
 });
 
 function createFakeEngine(tokens: ReadonlyArray<string>, requests: FakeChatCompletionRequest[] = []) {

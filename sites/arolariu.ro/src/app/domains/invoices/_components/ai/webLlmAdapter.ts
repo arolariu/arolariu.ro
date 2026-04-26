@@ -251,6 +251,7 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
   let loadingModel: Promise<void> | null = null;
   let isDisposed = false;
   let activeModelId: string | null = null;
+  let loadGeneration = 0;
 
   async function unloadActiveModel({interrupt}: Readonly<{interrupt: boolean}>): Promise<void> {
     const loadedEngine = engine;
@@ -275,6 +276,9 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
   ): Promise<void> {
     const nextWorker = createWorker();
     worker = nextWorker;
+
+    // Capture the current load generation to detect invalidation
+    const capturedGeneration = loadGeneration;
 
     // Check if already aborted before starting
     if (signal?.aborted) {
@@ -309,8 +313,8 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         logLevel: "WARN",
       });
 
-      // If aborted or disposed during engine creation, unload late engine
-      if (signal?.aborted || isDisposed || engine) {
+      // If aborted, disposed, or generation invalidated during engine creation, unload late engine
+      if (signal?.aborted || isDisposed || engine || loadGeneration !== capturedGeneration) {
         await nextEngine.unload();
         nextWorker.terminate();
         if (worker === nextWorker) {
@@ -365,11 +369,15 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
 
   return {
     async deleteCachedModel(model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL): Promise<void> {
+      // Increment generation to invalidate any pending loads
+      loadGeneration += 1;
       await unloadActiveModel({interrupt: true});
       const webLlm = await importWebLlm();
       await webLlm.deleteModelAllInfoInCache(model.id);
     },
     async dispose(): Promise<void> {
+      // Increment generation to invalidate any pending loads
+      loadGeneration += 1;
       isDisposed = true;
       await unloadActiveModel({interrupt: false});
     },
