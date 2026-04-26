@@ -129,12 +129,37 @@ jobs:
         if: matrix.target == 'backend'
         shell: bash
         run: |
-          http_code=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
-          if [ "$http_code" != "200" ]; then
-            echo "::error::Backend health check failed with HTTP $http_code"
-            cat backend-health.json
-            exit 1
-          fi
+          health_url="https://api.arolariu.ro/health"
+          for attempt in 1 2 3 4 5; do
+            status_code=$(curl -sS -o backend-health.json -w "%{http_code}" "$health_url" || echo "000")
+            echo "Backend health attempt ${attempt}/5 -> HTTP ${status_code}"
+            if [ "$status_code" = "200" ]; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+
+          echo "::error::Health check failed after 5 attempts for ${health_url}"
+          cat backend-health.json
+          exit 1
+
+      - name: 🌡️ Frontend health check
+        if: matrix.target == 'frontend'
+        shell: bash
+        run: |
+          health_url="https://arolariu.ro/"
+          for attempt in 1 2 3 4 5; do
+            status_code=$(curl -sS -o frontend-health.html -w "%{http_code}" "$health_url" || echo "000")
+            echo "Frontend health attempt ${attempt}/5 -> HTTP ${status_code}"
+            if [ "$status_code" = "200" ]; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+
+          echo "::error::Health check failed after 5 attempts for ${health_url}"
+          head -c 4000 frontend-health.html || true
+          exit 1
 
       - name: 🚀 Warm up frontend runtime
         if: matrix.target == 'frontend'
@@ -224,6 +249,7 @@ jobs:
             e2e-${{ matrix.target }}.log
             e2e-status-${{ matrix.target }}.json
             backend-health.json
+            frontend-health.html
           retention-days: 14
 
   raise-issue-on-failure:

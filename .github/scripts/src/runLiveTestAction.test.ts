@@ -26,9 +26,11 @@ const coreMocks = vi.hoisted(() => ({
 const githubMocks = vi.hoisted(() => {
   const searchIssuesAndPullRequests = vi.fn();
   const createIssue = vi.fn();
+  const createComment = vi.fn();
   const getOctokit = vi.fn(() => ({
     rest: {
       issues: {
+        createComment,
         create: createIssue,
       },
       search: {
@@ -44,6 +46,7 @@ const githubMocks = vi.hoisted(() => {
         repo: "arolariu.ro",
       },
     },
+    createComment,
     createIssue,
     getOctokit,
     searchIssuesAndPullRequests,
@@ -186,6 +189,12 @@ describe("runLiveTestAction", () => {
       },
     });
 
+    githubMocks.createComment.mockResolvedValue({
+      data: {
+        html_url: "https://github.com/arolariu/arolariu.ro/issues/1234#issuecomment-1",
+      },
+    });
+
     for (const key of managedEnvironmentVariables) {
       originalEnvironmentValues.set(key, process.env[key]);
       delete process.env[key];
@@ -309,7 +318,7 @@ describe("runLiveTestAction", () => {
 
       const issueInput = githubMocks.createIssue.mock.calls[0]?.[0];
       expect(issueInput).toBeDefined();
-      expect(issueInput?.title).toContain("Hourly Live Test Failed");
+      expect(issueInput?.title).toBe("[Live E2E] Frontend failed");
       expect(issueInput?.body).toContain("Live E2E Test Failure Report");
       expect(issueInput?.body).toContain("Target Status Matrix");
       expect(issueInput?.body).toContain("Frontend");
@@ -452,13 +461,13 @@ describe("runLiveTestAction", () => {
       expect(coreMocks.notice).toHaveBeenCalledWith(expect.stringContaining("No test failures detected"));
     });
 
-    it("skips duplicate issue creation when an open issue already exists", async () => {
+    it("comments on the matching open issue when a target failure already exists", async () => {
       const root = await createTemporaryDirectory();
       temporaryDirectories.push(root);
 
       githubMocks.searchIssuesAndPullRequests.mockResolvedValueOnce({
         data: {
-          items: [{number: 1234, state: "open"}],
+          items: [{number: 1234, state: "open", title: "[Live E2E] Frontend failed"}],
         },
       });
 
@@ -473,7 +482,16 @@ describe("runLiveTestAction", () => {
 
       expect(githubMocks.searchIssuesAndPullRequests).toHaveBeenCalledOnce();
       expect(githubMocks.createIssue).not.toHaveBeenCalled();
-      expect(coreMocks.warning).toHaveBeenCalledWith(expect.stringContaining("Existing open issue found"));
+      expect(githubMocks.createComment).toHaveBeenCalledOnce();
+      const commentInput = githubMocks.createComment.mock.calls[0]?.[0];
+      expect(commentInput).toMatchObject({
+        issue_number: 1234,
+        owner: "arolariu",
+        repo: "arolariu.ro",
+      });
+      expect(commentInput?.body).toContain("Live E2E failure reproduced");
+      expect(commentInput?.body).toContain("https://github.com/arolariu/arolariu.ro/actions/runs/999");
+      expect(coreMocks.warning).toHaveBeenCalledWith(expect.stringContaining("Appended run diagnostics"));
     });
 
     it("marks the action as failed when workflow metadata is missing", async () => {

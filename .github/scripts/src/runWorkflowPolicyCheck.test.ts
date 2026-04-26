@@ -11,6 +11,10 @@ function ruleIdsFor(content: string): readonly string[] {
   return checkWorkflowPolicyFiles({".github/workflows/test.yml": content}).map((violation) => violation.rule);
 }
 
+function ruleIdsForFile(file: string, content: string): readonly string[] {
+  return checkWorkflowPolicyFiles({[file]: content}).map((violation) => violation.rule);
+}
+
 describe("checkWorkflowPolicyFiles", () => {
   it("accepts full-SHA pinned external actions", () => {
     const rules = ruleIdsFor(`
@@ -89,5 +93,38 @@ jobs:
 `);
 
     expect(rules).toContain("deployment-environment");
+  });
+
+  it("rejects top-level contents write outside the status-data publisher", () => {
+    const rules = ruleIdsFor(`
+name: unsafe-writer
+permissions:
+  contents: write
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo write
+`);
+
+    expect(rules).toContain("top-level-contents-write-allowlist");
+  });
+
+  it("allows status probe to publish the status-data branch", () => {
+    const rules = ruleIdsForFile(
+      ".github/workflows/official-status-probe.yml",
+      `
+name: official-status-probe
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run probe:all --workspace=sites/status.arolariu.ro
+`,
+    );
+
+    expect(rules).not.toContain("top-level-contents-write-allowlist");
   });
 });

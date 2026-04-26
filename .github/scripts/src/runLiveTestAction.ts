@@ -58,6 +58,7 @@ const DEFAULT_MAX_ISSUE_BODY_CHARS = 65_000;
 const DEFAULT_MAX_LOG_TAIL_CHARS = 2_000;
 const DEFAULT_MAX_ASSERTION_SUMMARY_CHARS = 12_000;
 const DEFAULT_MAX_TARGET_SUMMARY_CHARS = 4_000;
+const E2E_FAILURE_LABEL = "e2e-failure";
 
 interface SummaryTableMetric {
   readonly executed: number;
@@ -906,6 +907,39 @@ function hasFailures(results: E2ETestResults): boolean {
   return Object.values(results).some((result) => result.status === "failure" || result.status === "unknown");
 }
 
+function getFailingTargets(results: E2ETestResults): readonly string[] {
+  return Object.entries(results)
+    .filter(([, result]) => result.status === "failure" || result.status === "unknown")
+    .map(([target]) => target)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function formatFailureTargetSummary(targets: readonly string[]): string {
+  if (targets.length === 0) {
+    return "unknown target";
+  }
+
+  return targets.map(capitalizeTarget).join(", ");
+}
+
+function titleMatchesFailureTargets(title: string, targets: readonly string[]): boolean {
+  const normalizedTitle = title.toLowerCase();
+  return targets.some((target) => normalizedTitle.includes(target.toLowerCase()));
+}
+
+function generateDuplicateFailureComment(metadata: WorkflowMetadata, results: E2ETestResults): string {
+  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
+  let body = "## 🔁 Live E2E failure reproduced\n\n";
+  body += `A later run reproduced the failure. Keeping diagnostics on this issue instead of opening a duplicate.\n\n`;
+  body += `- Workflow run: [${metadata.runId}](${workflowUrl})\n`;
+  body += `- Run number: \`${metadata.runNumber}\`\n`;
+  body += `- Trigger: \`${metadata.eventName}\`\n`;
+  body += `- Execution date: \`${metadata.executionDate}\`\n\n`;
+  body += generateJobStatusTable(results);
+
+  return body;
+}
+
 export default async function runLiveTestAction(): Promise<void> {
   const github = await import("@actions/github");
   const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
@@ -936,26 +970,36 @@ export default async function runLiveTestAction(): Promise<void> {
     }
 
     const issueBody = await generateIssueBody(metadata, results, artifacts, newmanReports);
-    const issueTitle = `[${metadata.executionDate}] Hourly Live Test Failed 🚨`;
+    const failingTargets = getFailingTargets(results);
+    const issueTitle = `[Live E2E] ${formatFailureTargetSummary(failingTargets)} failed`;
 
-    const searchQuery = `is:issue repo:${context.repo.owner}/${context.repo.repo} in:title "${metadata.executionDate}" label:${AUTOMATED_TEST_FAILURE_LABELS[0]}`;
+    const searchQuery = `is:issue is:open repo:${context.repo.owner}/${context.repo.repo} label:${E2E_FAILURE_LABEL}`;
     const searchResults = await octokit.rest.search.issuesAndPullRequests({
       order: "desc",
-      per_page: 10,
+      per_page: 50,
       q: searchQuery,
-      sort: "created",
+      sort: "updated",
     });
 
-    const openIssues = searchResults.data.items.filter((issue) => issue.state === "open");
-    if (openIssues.length > 0) {
-      core.warning(`⏭️ Existing open issue found: #${openIssues[0]!.number}. Skipping duplicate creation.`);
+    const openIssues = searchResults.data.items.filter(
+      (issue) => issue.state === "open" && titleMatchesFailureTargets(issue.title ?? "", failingTargets),
+    );
+    const existingIssue = openIssues[0];
+    if (existingIssue) {
+      await octokit.rest.issues.createComment({
+        body: generateDuplicateFailureComment(metadata, results),
+        issue_number: existingIssue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+      });
+      core.warning(`⏭️ Existing open issue found: #${existingIssue.number}. Appended run diagnostics instead of creating a duplicate.`);
       return;
     }
 
     const issueResponse = await octokit.rest.issues.create({
       assignees: ["arolariu"],
       body: issueBody,
-      labels: [...AUTOMATED_TEST_FAILURE_LABELS],
+      labels: [...new Set([...AUTOMATED_TEST_FAILURE_LABELS, E2E_FAILURE_LABEL])],
       owner: context.repo.owner,
       repo: context.repo.repo,
       title: issueTitle,

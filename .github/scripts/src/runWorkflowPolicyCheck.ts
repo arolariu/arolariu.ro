@@ -24,6 +24,12 @@ const DOCKER_REFERENCE_REGEX = /^docker:\/\//;
 const AZURE_LOGIN_REGEX = /uses:\s*["']?azure\/login@/i;
 const DEPLOYMENT_STEP_REGEX = /uses:\s*["']?(?:azure\/webapps-deploy|Azure\/static-web-apps-deploy)@|docker\s+push\s+/i;
 const STATUS_PROBE_WORKFLOW = ".github/workflows/official-status-probe.yml";
+const TOP_LEVEL_CONTENTS_WRITE_ALLOWLIST = new Map<string, string>([
+  [
+    STATUS_PROBE_WORKFLOW,
+    "Publishes generated status data to the status-data orphan branch; no other workflow should have repository-wide contents: write.",
+  ],
+]);
 
 const scanDirectories = [".github/workflows", ".github/actions"] as const;
 
@@ -136,6 +142,15 @@ function checkContent(file: string, content: string): readonly WorkflowPolicyVio
   });
 
   const isWorkflowFile = file.startsWith(".github/workflows/");
+  if (isWorkflowFile && hasTopLevelPermission(content, "contents", "write") && !TOP_LEVEL_CONTENTS_WRITE_ALLOWLIST.has(file)) {
+    violations.push({
+      file,
+      line: findLineNumber(lines, (line) => /^\s{2}contents:\s*write(?:\s+#.*)?\s*$/.test(line)),
+      message: "Top-level contents: write is reserved for explicitly allowlisted repository-write workflows.",
+      rule: "top-level-contents-write-allowlist",
+    });
+  }
+
   const usesAzureLogin = lines.some((line) => AZURE_LOGIN_REGEX.test(line));
   if (isWorkflowFile && usesAzureLogin && !hasTopLevelPermission(content, "id-token", "write")) {
     violations.push({
