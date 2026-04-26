@@ -1198,7 +1198,7 @@ export function MyComponent() {
 
 **Responsive Classes:**
 ```scss
-// Tailwind: className="flex flex-col md:flex-row lg:gap-8"
+// Previous utility-class pattern: className="flex flex-col md:flex-row lg:gap-8"
 // SCSS:
 .container {
   display: flex;
@@ -1216,7 +1216,7 @@ export function MyComponent() {
 
 **Conditional Classes:**
 ```typescript
-// Tailwind: className={cn("base", isActive && "active")}
+// Previous utility-class pattern: className={cn("base", isActive && "active")}
 // SCSS:
 const containerClass = `${styles["container"]} ${isActive ? styles["active"] : ""}`;
 // or
@@ -1411,7 +1411,7 @@ All public SCSS APIs (variables, functions, mixins) are documented using [SassDo
 
 **Required annotations for variables/maps:**
 ```scss
-/// Spacing scale map — matches Tailwind usage patterns.
+/// Spacing scale map for consistent layout tokens.
 /// @type Map
 /// @group tokens-spacing
 /// @prop {Length} 0 [0] - No spacing
