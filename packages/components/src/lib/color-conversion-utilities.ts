@@ -6,7 +6,7 @@
 
 /**
  * Converts a hexadecimal color code to an HSL string for CSS variables.
- * The output format matches Tailwind CSS HSL variable format: "h s% l%"
+ * The output format is "h s% l%" for CSS custom property HSL components.
  *
  * @param hexColor - Hex color code (e.g., "#06b6d4" or "06b6d4")
  * @returns HSL values as "h s% l%" string suitable for CSS variables

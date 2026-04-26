@@ -1,0 +1,264 @@
+@use "../../styles/effects";
+@use "../../styles/breakpoints";
+
+.section {
+  padding: 4rem 1.5rem;
+}
+
+.container {
+  width: min(100%, 72rem);
+  margin-inline: auto;
+}
+
+.title {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.heading {
+  font-weight: 700;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.accent {
+  color: var(--cv-color-blue-600);
+
+  :global(.dark) & {
+    color: var(--cv-color-blue-400);
+  }
+}
+
+.contentWrapper {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.categorySection {
+  margin-bottom: 4rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.categoryTitle {
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--cv-color-gray-800);
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-200);
+  }
+}
+
+.categoryHeading {
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.grid {
+  display: grid;
+  gap: 2rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.card {
+  @include effects.card-surface;
+  @include effects.hover-lift;
+  padding: 2rem;
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    align-items: start;
+    justify-content: space-between;
+  }
+}
+
+.cardContent {
+  flex: 1;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: var(--cv-color-blue-600);
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: var(--cv-color-blue-400);
+  }
+}
+
+.cardInstitution {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  color: var(--cv-color-gray-800);
+  margin-bottom: 0.25rem;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-200);
+  }
+}
+
+.cardLocation {
+  color: var(--cv-color-gray-600);
+  margin-bottom: 1rem;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-400);
+  }
+}
+
+.cardDescription {
+  color: var(--cv-color-gray-700);
+  line-height: 1.625;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-300);
+  }
+}
+
+.cardMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 1rem;
+
+  @media (min-width: 1024px) {
+    margin-left: 2rem;
+    margin-top: 0;
+  }
+}
+
+.periodBadge {
+  background: linear-gradient(to right, var(--cv-color-blue-500), var(--cv-color-purple-500));
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--cv-radius-full);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.statusBadge {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--cv-radius-full);
+}
+
+.statusCompleted {
+  background: var(--cv-color-green-100);
+  color: #166534;
+
+  :global(.dark) & {
+    background: rgb(34 197 94 / 0.3);
+    color: #86efac;
+  }
+}
+
+.statusInProgress {
+  background: #fef3c7;
+  color: #92400e;
+
+  :global(.dark) & {
+    background: rgb(234 179 8 / 0.3);
+    color: #fde047;
+  }
+}
+
+.certCard {
+  background: linear-gradient(135deg, var(--cv-color-blue-50), var(--cv-color-purple-50));
+  @include effects.hover-lift;
+  padding: 1.5rem;
+  border-radius: var(--cv-radius-xl);
+  box-shadow: var(--cv-shadow-lg);
+  border: 1px solid rgb(59 130 246 / 0.5);
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, rgb(30 58 138 / 0.2), rgb(88 28 135 / 0.2));
+    border-color: rgb(59 130 246 / 0.5);
+  }
+}
+
+.certHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.certContent {
+  flex: 1;
+}
+
+.certTitle {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: var(--cv-color-blue-600);
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: var(--cv-color-blue-400);
+  }
+}
+
+.certCode {
+  color: var(--cv-color-gray-600);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  margin-bottom: 0.5rem;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-400);
+  }
+}
+
+.certIssuer {
+  color: var(--cv-color-gray-800);
+  font-weight: 500;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-200);
+  }
+}
+
+.certDate {
+  background: var(--cv-color-blue-500);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--cv-radius-full);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+}
+
+.certDescription {
+  color: var(--cv-color-gray-700);
+  font-size: 0.875rem;
+  line-height: 1.625;
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-300);
+  }
+}

@@ -93,7 +93,7 @@ These run automatically in every Copilot CLI session:
 | Extension | What It Does |
 |-----------|-------------|
 | `arolariu-context` | Injects live version numbers and RFC references per domain |
-| `arolariu-guardrails` | Blocks destructive commands, detects `any` types, enforces Tailwind |
+| `arolariu-guardrails` | Blocks destructive commands, detects `any` types, enforces styling best practices |
 | `arolariu-workflow` | Custom tools: `arolariu_lookup_rfc`, `arolariu_check_project_health`, `arolariu_list_stores` |
 
 ---

@@ -387,7 +387,7 @@ All functions include:
 - ✅ No `any` types
 - ✅ All props use `Readonly<Props>`
 - ✅ Explicit return types: `React.JSX.Element`
-- ✅ SCSS Modules (not Tailwind)
+- ✅ SCSS Modules
 - ✅ i18n for all user-facing text
 - ✅ Error boundaries for resilience
 - ✅ Loading states for async operations

@@ -2,7 +2,9 @@
   import {goto} from "$app/navigation";
   import ThemeToggle from "../components/ThemeToggle.svelte";
   import {ui} from "../data";
+  import {cx} from "@/lib/utils";
   import ActionButton from "@/presentation/ActionButton.svelte";
+  import styles from "./Header.module.scss";
 
   export type ActionConfig = {
     icon: "print" | "download" | "copy";
@@ -34,54 +36,47 @@
     goto("/");
   }
 
-  const wrapperBase =
-    (sticky ? "sticky top-0 " : "")
-    + (variant === "inverse"
-      ? "z-50 border-b border-white/20 bg-white/5 backdrop-blur-md shadow-lg text-white"
-      : "z-50 border-b border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-sm");
-
-  const titleClasses =
-    "font-bold font-['Caudex'] transition-colors duration-300 "
-    + (variant === "inverse" ? "text-xl md:text-xl text-white" : "text-xl md:text-xl text-gray-900 dark:text-gray-100");
+  const headerClasses = $derived(cx(styles.header, sticky && styles.sticky, styles[variant], extra));
+  const titleClasses = $derived(cx(styles.title, variant === "inverse" ? styles.titleInverse : styles.titleDefault));
 </script>
 
-<header class={`${wrapperBase} transition-all duration-300 ${extra} print:hidden`}>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      <div class="flex items-center gap-4">
+<header class={headerClasses}>
+  <div class={styles.inner}>
+    <div class={styles.content}>
+      <div class={styles.brandGroup}>
         <ActionButton
           back
           label={ui.navigation.backToMenu}
           onClick={goBack}
           variant={variant === "inverse" ? "text-inverse" : "text"} />
-        <div class="flex items-center 2xsm:text-md">
+        <div class={styles.titleWrap}>
           <h1 class={titleClasses}>Alexandru-Razvan Olariu</h1>
         </div>
       </div>
-      <div class="flex items-center space-x-4">
+      <div class={styles.actions}>
         {#if showNavLinks}
-          <nav class="hidden md:flex items-center space-x-6">
+          <nav class={styles.nav}>
             <a
               href="#about"
-              class="text-gray-700 dark:text-gray-300 transition-colors duration-200 hover:text-blue-600 dark:hover:text-blue-400"
+              class={styles.navLink}
               >{ui.navigation.about}</a>
             <a
               href="#experience"
-              class="text-gray-700 dark:text-gray-300 transition-colors duration-200 hover:text-blue-600 dark:hover:text-blue-400"
+              class={styles.navLink}
               >{ui.navigation.experience}</a>
             <a
               href="#skills"
-              class="text-gray-700 dark:text-gray-300 transition-colors duration-200 hover:text-blue-600 dark:hover:text-blue-400"
+              class={styles.navLink}
               >{ui.navigation.skills}</a>
             <a
               href="#contact"
-              class="text-gray-700 dark:text-gray-300 transition-colors duration-200 hover:text-blue-600 dark:hover:text-blue-400"
+              class={styles.navLink}
               >{ui.navigation.contact}</a>
           </nav>
         {/if}
         <ThemeToggle />
         {#if actionsConfig}
-          <div class="md:flex items-center gap-3 2xsm:hidden">
+          <div class={styles.actionButtons}>
             {#each actionsConfig as act}
               <ActionButton
                 icon={act.icon}
@@ -94,7 +89,7 @@
           </div>
         {/if}
         {#if actions && !actionsConfig}
-          <div class="md:flex items-center gap-3 2xsm:hidden">{@render actions()}</div>
+          <div class={styles.actionButtons}>{@render actions()}</div>
         {/if}
       </div>
     </div>

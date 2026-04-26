@@ -1,18 +1,20 @@
 <script lang="ts">
   import {useTheme} from "@/hooks/useTheme.svelte";
+  import styles from "./ThemeToggle.module.scss";
+
   const {toggle} = useTheme();
 </script>
 
 <button
   onclick={toggle}
-  class="relative inline-flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-300 ease-in-out bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+  class={styles.button}
   aria-label="Toggle theme"
   title="Toggle theme">
-  <div class="relative w-6 h-6 overflow-hidden">
+  <div class={styles.iconFrame}>
     <!-- Sun Icon -->
-    <div class="absolute inset-0 transition-transform duration-500 ease-in-out dark:-translate-y-full translate-y-0">
+    <div class={styles.sunIcon}>
       <svg
-        class="w-6 h-6 text-yellow-400"
+        class={styles.sunSvg}
         viewBox="0 0 48 48"
         xmlns="http://www.w3.org/2000/svg"
         fill="#000000"
@@ -55,9 +57,9 @@
         </g></svg>
     </div>
     <!-- Moon Icon -->
-    <div class="absolute inset-0 transition-transform duration-500 ease-in-out dark:translate-y-0 transform translate-y-full">
+    <div class={styles.moonIcon}>
       <svg
-        class="w-6 h-6 text-blue-500"
+        class={styles.moonSvg}
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

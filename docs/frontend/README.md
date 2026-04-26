@@ -9,7 +9,7 @@ The frontend is built using:
 - **Framework**: Next.js 16.1.6 with App Router
 - **Language**: TypeScript 5.9.3 (strict mode)
 - **UI Library**: React 19.2.4 with Server Components
-- **Styling**: Tailwind CSS v4.1.18
+- **Styling**: Sass (SCSS Modules + CSS Modules)
 - **State Management**: Zustand v5.0.11
 - **Testing**: Jest + Playwright
 

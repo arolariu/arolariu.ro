@@ -1,25 +1,26 @@
 <script lang="ts">
   import {footer} from "@/data";
+  import styles from "./Footer.module.scss";
 </script>
 
-<footer class=" py-8 px-6">
-  <div class="container mx-auto">
-    <div class="flex flex-col md:flex-row justify-between items-center">
-      <div class="mb-4 md:mb-0">
-        <p class="text-gray-400">
+<footer class={styles.footer}>
+  <div class={styles.container}>
+    <div class={styles.content}>
+      <div class={styles.copyrightWrap}>
+        <p class={styles.copyright}>
           {footer.copyright}
         </p>
       </div>
 
-      <div class="flex space-x-6">
+      <div class={styles.links}>
         <a
           href={footer.links.github.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-gray-400 hover:text-blue-400 transition-colors duration-200"
+          class={styles.link}
           aria-label={footer.links.github.label}>
           <svg
-            class="w-6 h-6"
+            class={styles.icon}
             fill="currentColor"
             viewBox="0 0 24 24">
             <path
@@ -31,10 +32,10 @@
           href={footer.links.linkedin.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-gray-400 hover:text-blue-400 transition-colors duration-200"
+          class={styles.link}
           aria-label={footer.links.linkedin.label}>
           <svg
-            class="w-6 h-6"
+            class={styles.icon}
             fill="currentColor"
             viewBox="0 0 24 24">
             <path
@@ -46,10 +47,10 @@
           href={footer.links.website.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="text-gray-400 hover:text-blue-400 transition-colors duration-200"
+          class={styles.link}
           aria-label={footer.links.website.label}>
           <svg
-            class="w-6 h-6"
+            class={styles.icon}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24">

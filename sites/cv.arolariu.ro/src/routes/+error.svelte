@@ -25,6 +25,7 @@ This component is automatically rendered by SvelteKit when an error occurs.
   import {page} from "$app/stores";
   import {goto} from "$app/navigation";
   import ThemeToggle from "@/components/ThemeToggle.svelte";
+  import styles from "./ErrorPage.module.scss";
 
   const error = $derived($page.error);
   const status = $derived($page.status);
@@ -68,18 +69,18 @@ This component is automatically rendered by SvelteKit when an error occurs.
 </svelte:head>
 
 <div
-  class="min-h-screen bg-white dark:bg-black text-black dark:text-white transition-colors duration-300 flex items-center justify-center p-6"
+  class={styles.shell}
   role="main"
   aria-labelledby="error-title">
   <!-- Theme Toggle -->
-  <div class="fixed top-6 right-6 z-50">
+  <div class={styles.themeToggle}>
     <ThemeToggle />
   </div>
 
-  <div class="text-center max-w-md mx-auto">
+  <div class={styles.content}>
     <!-- Error Code -->
     <div
-      class="text-8xl font-bold text-blue-600 dark:text-blue-400 mb-4 font-['Caudex']"
+      class={styles.errorCode}
       aria-hidden="true">
       {status}
     </div>
@@ -87,21 +88,21 @@ This component is automatically rendered by SvelteKit when an error occurs.
     <!-- Error Title -->
     <h1
       id="error-title"
-      class="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+      class={styles.errorTitle}>
       {currentError.title}
     </h1>
 
     <!-- Error Description -->
-    <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">
+    <p class={styles.errorDescription}>
       {currentError.description}
     </p>
 
     <!-- Action Buttons -->
-    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+    <div class={styles.actions}>
       <button
         type="button"
         onclick={goHome}
-        class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/40">
+        class={styles.primaryButton}>
         Go Home
       </button>
 
@@ -109,7 +110,7 @@ This component is automatically rendered by SvelteKit when an error occurs.
         <button
           type="button"
           onclick={retry}
-          class="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 px-8 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 cursor-pointer focus:outline-none focus:ring-4 focus:ring-gray-500/40">
+          class={styles.secondaryButton}>
           Try Again
         </button>
       {/if}
@@ -117,13 +118,11 @@ This component is automatically rendered by SvelteKit when an error occurs.
 
     <!-- Debug Info (Development Only) -->
     {#if error?.message && status >= 500}
-      <details class="mt-8 text-left">
-        <summary class="cursor-pointer text-sm text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+      <details class={styles.debugSection}>
+        <summary class={styles.debugSummary}>
           Technical Details
         </summary>
-        <pre
-          class="mt-2 p-4 bg-gray-100 dark:bg-gray-900 rounded-lg text-xs overflow-auto max-h-40 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-          >{error.message}</pre>
+        <pre class={styles.debugContent}>{error.message}</pre>
       </details>
     {/if}
   </div>

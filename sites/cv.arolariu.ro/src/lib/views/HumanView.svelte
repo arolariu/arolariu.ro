@@ -24,8 +24,8 @@ single-page layout with smooth scrolling between sections.
 9. Contact - Contact information and form
 10. Footer - Links and copyright
 
-**Theming**: Supports light/dark mode via Tailwind `dark:` variants.
-Background transitions smoothly between `bg-white` and `bg-black`.
+**Theming**: Supports light/dark mode via document-level theme classes.
+Background transitions smoothly between light and dark shell colors.
 
 **Accessibility**: Each section is a semantic HTML element.
 Full keyboard navigation supported.
@@ -49,11 +49,12 @@ Full keyboard navigation supported.
   import Hero from "@/presentation/human/Hero.svelte";
   import Skills from "@/presentation/human/Skills.svelte";
   import Testimonials from "@/presentation/human/Testimonials.svelte";
+  import styles from "./HumanView.module.scss";
 </script>
 
 <main
   id="main"
-  class="min-h-screen relative bg-white dark:bg-black transition-colors duration-300">
+  class={styles.shell}>
   <Header />
   <Hero />
   <About />

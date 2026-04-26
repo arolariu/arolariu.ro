@@ -74,7 +74,7 @@
 </p>
 
 <p align="center">
-  <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind-4.1-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS"/></a>
+  <a href="https://sass-lang.com"><img src="https://img.shields.io/badge/Sass-1.99-CC6699?style=for-the-badge&logo=sass&logoColor=white" alt="Sass"/></a>
   <a href="https://azure.microsoft.com"><img src="https://img.shields.io/badge/Azure-Cloud-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white" alt="Azure"/></a>
   <a href="https://nx.dev"><img src="https://img.shields.io/badge/Nx-Monorepo-143055?style=for-the-badge&logo=nx&logoColor=white" alt="Nx"/></a>
   <a href="https://storybook.js.org"><img src="https://img.shields.io/badge/Storybook-10-FF4785?style=for-the-badge&logo=storybook&logoColor=white" alt="Storybook"/></a>
@@ -943,7 +943,7 @@ Special thanks to these amazing resources and tools:
 - [React](https://react.dev) — Library for building user interfaces
 - [.NET](https://dotnet.microsoft.com) — Free, open-source developer platform
 - [SvelteKit](https://svelte.dev/docs/kit) — Web framework for Svelte
-- [Tailwind CSS](https://tailwindcss.com) — Utility-first CSS framework
+- [Sass](https://sass-lang.com) — CSS preprocessor with superpowers
 - [shadcn/ui](https://ui.shadcn.com) — Re-usable components built on Radix UI
 - [Zustand](https://zustand.docs.pmnd.rs/) — Lightweight state management
 - [React Email](https://react.email) — Build emails using React components

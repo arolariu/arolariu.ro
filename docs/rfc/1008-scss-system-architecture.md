@@ -9,14 +9,14 @@
 
 ## Abstract
 
-This RFC documents the SCSS Module system architecture for the arolariu.ro frontend. Built on the 7-1 pattern with CSS Modules for scoping, the system provides a scalable, maintainable approach to styling React components. The architecture enables gradual migration from Tailwind CSS while maintaining design consistency through shared variables, mixins, and functions.
+This RFC documents the SCSS Module system architecture for the arolariu.ro frontend. Built on the 7-1 pattern with CSS Modules for scoping, the system provides a scalable, maintainable approach to styling React components with full SCSS preprocessing capabilities.
 
 Key features:
 - **7-1 Pattern Architecture**: Organized SCSS partials for variables, mixins, base styles, themes, animations, and components
 - **CSS Modules**: Scoped styles preventing class name collisions
 - **Design Token Integration**: SCSS functions that reference CSS variables for theming
 - **Mobile-First Responsive**: Comprehensive mixin library for responsive design
-- **Tailwind Alignment**: Spacing scale and breakpoints match Tailwind for seamless migration
+- **Consistent Spacing Scale**: Standardized design tokens for spacing and breakpoints
 - **SassDoc Documentation**: All public APIs documented with `///` annotations (`@group`, `@param`, `@return`, `@example`)
 - **Feature Flags**: Configurable system via `_config.scss` (fluid type, logical properties, container queries, etc.)
 
@@ -31,16 +31,16 @@ The arolariu.ro frontend requires a styling solution that:
 1. **Scalable Organization**: Clear file structure for growing codebase
 2. **Scope Isolation**: Prevent class name collisions without runtime overhead
 3. **Design Consistency**: Shared design tokens across all components
-4. **Gradual Migration**: Coexist with existing Tailwind CSS
-5. **Full CSS Power**: Variables, mixins, nesting, functions
-6. **Theme Support**: Light/dark mode with runtime switching
-7. **Type Safety**: Predictable class name access in TypeScript
+4. **Full CSS Power**: Variables, mixins, nesting, functions
+5. **Theme Support**: Light/dark mode with runtime switching
+6. **Type Safety**: Predictable class name access in TypeScript
+7. **Component Integration**: Work seamlessly with shared component library
 
 ### 1.2 Design Goals
 
 - **SCSS Modules**: Combine SCSS power with automatic scoping
 - **7-1 Pattern**: Industry-standard file organization
-- **Tailwind Alignment**: Match existing spacing/breakpoint scales
+- **Consistent Design Tokens**: Standardized spacing and breakpoint scales
 - **CSS Variable Integration**: Runtime theming via CSS custom properties
 - **Mobile-First**: Consistent responsive design approach
 - **DRY Code**: Comprehensive mixin/function library
@@ -145,7 +145,7 @@ All variables are defined in `src/styles/abstracts/_variables.scss` with helper 
 
 ### 3.1 Spacing Scale
 
-Matches Tailwind's spacing scale for seamless migration:
+Standardized spacing scale for consistent design:
 
 ```scss
 // Usage: space(4) returns 1rem (16px)
@@ -178,7 +178,7 @@ $spacing: (
 
 ### 3.2 Breakpoints
 
-Custom breakpoints matching Tailwind config:
+Responsive breakpoints for mobile-first design:
 
 ```scss
 // Usage: breakpoint('md') returns 768px
@@ -1133,9 +1133,9 @@ Use the `@include orb()` mixin for decorative blur orbs:
 
 ---
 
-## 9. Migration Guidelines
+## 9. Component Styling Guidelines
 
-### 9.1 Tailwind to SCSS Migration Process
+### 9.1 Creating New Component Styles
 
 **Step 1: Create SCSS Module File**
 ```bash
@@ -1151,18 +1151,20 @@ touch src/app/domain/_components/MyComponent.module.scss
 @use '../../../../styles/abstracts' as *;
 ```
 
-**Step 3: Convert Tailwind Classes**
+**Step 3: Define Component Styles**
 
-| Tailwind | SCSS Equivalent |
-|----------|-----------------|
-| `flex items-center justify-between` | `@include flex-between` |
-| `grid grid-cols-3 gap-4` | `@include grid(3, space(4))` |
-| `p-4` | `padding: space(4)` |
-| `mt-8 mb-4` | `margin-top: space(8); margin-bottom: space(4)` |
-| `text-xl font-bold` | `font-size: font-size('xl'); font-weight: font-weight('bold')` |
-| `text-gray-500` | `color: hsl(var(--muted-foreground))` |
-| `bg-card` | `background-color: hsl(var(--card))` |
-| `rounded-xl` | `border-radius: radius('xl')` |
+Common pattern examples:
+
+| Pattern | SCSS Implementation |
+|---------|---------------------|
+| Flexbox layout | `@include flex-between` |
+| Grid layout | `@include grid(3, space(4))` |
+| Padding | `padding: space(4)` |
+| Spacing | `margin-top: space(8); margin-bottom: space(4)` |
+| Typography | `font-size: font-size('xl'); font-weight: font-weight('bold')` |
+| Muted text | `color: hsl(var(--muted-foreground))` |
+| Card background | `background-color: hsl(var(--card))` |
+| Border radius | `border-radius: radius('xl')` |
 | `shadow-lg` | `@include shadow('lg')` |
 | `hover:scale-105` | `&:hover { transform: scale(1.05); }` |
 | `transition-all` | `@include transition(all)` |
@@ -1196,7 +1198,7 @@ export function MyComponent() {
 
 **Responsive Classes:**
 ```scss
-// Tailwind: className="flex flex-col md:flex-row lg:gap-8"
+// Previous utility-class pattern: className="flex flex-col md:flex-row lg:gap-8"
 // SCSS:
 .container {
   display: flex;
@@ -1214,7 +1216,7 @@ export function MyComponent() {
 
 **Conditional Classes:**
 ```typescript
-// Tailwind: className={cn("base", isActive && "active")}
+// Previous utility-class pattern: className={cn("base", isActive && "active")}
 // SCSS:
 const containerClass = `${styles["container"]} ${isActive ? styles["active"] : ""}`;
 // or
@@ -1232,9 +1234,9 @@ const variantMap = {
 <div className={`${styles["button"]} ${styles[variantMap[variant]]}`}>
 ```
 
-### 9.3 Keeping Tailwind for Component Library
+### 9.3 Using Shared Component Library
 
-The `@arolariu/components` library uses Tailwind CSS. When using these components alongside SCSS modules:
+The `@arolariu/components` library provides pre-built components with CSS Modules. When using these components alongside custom SCSS modules:
 
 ```typescript
 import {Button, Card} from "@arolariu/components";
@@ -1243,8 +1245,8 @@ import styles from "./MyPage.module.scss";
 export function MyPage() {
   return (
     <section className={styles["section"]}>
-      {/* Component library components keep Tailwind */}
-      <Card className="custom-tailwind-override">
+      {/* Shared component library components */}
+      <Card>
         <h2 className={styles["title"]}>Title</h2>
         <Button variant="primary">Click</Button>
       </Card>
@@ -1253,11 +1255,16 @@ export function MyPage() {
 }
 ```
 
+**Integration guidelines:**
+- Shared components use their own CSS Modules internally
+- Custom page/component styles use SCSS Modules
+- Both systems coexist without conflicts due to scoping
+- Override shared component styles using CSS Modules composition or wrapper classes
+
 ### 9.4 Migration Checklist
 
 - [ ] Create `.module.scss` file with standard header
 - [ ] Import abstracts with correct relative path
-- [ ] Convert all Tailwind utility classes to SCSS
 - [ ] Use semantic camelCase class names
 - [ ] Implement mobile-first responsive styles
 - [ ] Add dark mode support where needed
@@ -1265,7 +1272,6 @@ export function MyPage() {
 - [ ] Use bracket notation for class access
 - [ ] Test on all breakpoints
 - [ ] Test dark/light mode toggle
-- [ ] Remove unused Tailwind classes from component
 
 ---
 
@@ -1289,13 +1295,12 @@ export function MyPage() {
 - Automatic scoping via CSS Modules
 - No runtime overhead (compile-time only)
 - Next.js native support
-- Coexists with Tailwind during migration
 - Familiar CSS syntax
 - Type-safe class access with bracket notation
+- Component-level encapsulation
 
 **Trade-offs:**
 - Build-time compilation required
-- Two styling systems during migration period
 - Relative import paths for abstracts
 - No TypeScript autocomplete for class names (minor)
 
@@ -1309,19 +1314,19 @@ export function MyPage() {
 - Promotes DRY code with shared abstracts
 
 **Adaptations:**
-- Utilities folder optional (Tailwind fills this role)
 - Pages folder optional (CSS Modules are page-scoped)
 - No separate vendors folder (npm dependencies)
+- Utilities integrated into mixins/functions
 
-### 10.4 Tailwind Coexistence Strategy
+### 10.4 Architecture Consistency
 
-The SCSS system is designed for gradual migration:
+The SCSS system maintains consistency through:
 
-1. **main.scss imported AFTER Tailwind** - SCSS has higher specificity
-2. **Shared design tokens** - Spacing/breakpoints match Tailwind scale
-3. **Component library stays Tailwind** - No migration needed
-4. **Route-by-route migration** - Convert pages incrementally
-5. **Mixed usage allowed** - Tailwind utilities + SCSS modules
+1. **Shared design tokens** - Centralized spacing and breakpoint scales
+2. **Component library integration** - CSS Modules-based `@arolariu/components`
+3. **Theme system** - CSS custom properties for runtime theme switching
+4. **Mobile-first approach** - Consistent responsive design methodology
+5. **Documentation standards** - SassDoc annotations for all public APIs
 
 ---
 
@@ -1406,7 +1411,7 @@ All public SCSS APIs (variables, functions, mixins) are documented using [SassDo
 
 **Required annotations for variables/maps:**
 ```scss
-/// Spacing scale map — matches Tailwind usage patterns.
+/// Spacing scale map for consistent layout tokens.
 /// @type Map
 /// @group tokens-spacing
 /// @prop {Length} 0 [0] - No spacing
