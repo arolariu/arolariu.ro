@@ -152,7 +152,7 @@ updates:
   # ===========================================================================
   # FRONTEND - NEXT.JS 16 WEBSITE
   # ===========================================================================
-  # Main website: Next.js 16, React 19, Tailwind CSS v4, Clerk, OpenTelemetry
+  # Main website: Next.js 16, React 19, Sass/CSS Modules, Clerk, OpenTelemetry
   - package-ecosystem: "npm"
     directory: "/sites/arolariu.ro"
     target-branch: "preview"
@@ -292,13 +292,12 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # UI utilities (CVA, clsx, tailwind-merge)
+      # UI utilities (CVA, clsx)
       ui-utils:
         patterns:
           - "@radix-ui/*"
           - "class-variance-authority"
           - "clsx"
-          - "tailwind-merge"
         update-types:
           - "minor"
           - "major"

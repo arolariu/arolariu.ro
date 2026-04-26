@@ -286,7 +286,7 @@ When making architectural changes:
 
 - **ESLint**: 20+ plugins (typescript-eslint, react, sonarjs, security, jsx-a11y, jsdoc, etc.) — see `eslint.config.ts`
 - **TypeScript**: Strictest settings (`strict`, `noImplicitAny`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
-- **Prettier**: v3.8 with organize-imports, svelte, tailwindcss plugins
+- **Prettier**: v3.8 with organize-imports, svelte plugins
 
 > **Details**: See `typescript.instructions.md` for TypeScript configuration and `react.instructions.md` for React/JSX rules.
 

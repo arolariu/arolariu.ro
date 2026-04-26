@@ -214,7 +214,7 @@ describe("ComponentName", () => {
 - [ ] JSDoc documentation on component and props
 - [ ] `useTranslations()` for user-facing strings
 - [ ] Loading and error state handling
-- [ ] Dark mode compatible styles (Tailwind)
+- [ ] Dark mode compatible styles
 - [ ] Accessibility: semantic HTML, ARIA where needed
 - [ ] Tests with 90%+ coverage (AAA pattern)
 - [ ] No `any` types

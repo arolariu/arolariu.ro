@@ -51,7 +51,7 @@ Comprehensive guidelines for the arolariu.ro Next.js frontend application.
 | **Framework** | Next.js 16.2 (App Router) |
 | **React** | 19.2.4 (with RSC) |
 | **TypeScript** | 6.0 (strict mode) |
-| **Styling** | Tailwind CSS 4.2 |
+| **Styling** | CSS Modules + Sass + @arolariu/components |
 | **State** | Zustand 5.0.12 + Context API |
 | **Auth** | Clerk (@clerk/nextjs 7.0) |
 | **i18n** | next-intl 4.9.0 |
@@ -155,7 +155,6 @@ sites/arolariu.ro/
 │   └── manifest/                   # PWA manifest & icons
 │
 ├── next.config.ts                  # Next.js config
-├── tailwind.config.ts              # Tailwind config
 ├── tsconfig.json                   # TypeScript config
 ├── vitest.config.ts                # Unit test config
 └── playwright.config.ts            # E2E test config
@@ -451,7 +450,7 @@ export function useInvoice({invoiceIdentifier}: HookInput): HookOutput {
 
 ---
 
-## 🎨 Styling with Tailwind CSS
+## 🎨 Styling
 
 ### Using @arolariu/components
 
@@ -472,24 +471,31 @@ export function MyComponent() {
 }
 ```
 
-### Tailwind Class Patterns
+### Component Styling Patterns
 
 ```tsx
-// Use cn() for conditional classes
+// Use cn() for conditional classes from shared components
 import {cn} from "@arolariu/components";
 
 <div className={cn(
-  "flex items-center gap-4 p-4",
-  "bg-white dark:bg-black",
-  isActive && "border-2 border-primary",
+  "base-class",
+  isActive && "active-class",
   className
 )} />
 
-// Responsive design
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" />
+// CSS Modules for site-specific styles
+import styles from "./Component.module.css";
 
-// Dark mode
-<div className="bg-white text-black dark:bg-black dark:text-white" />
+<div className={styles.container}>
+  <h1 className={styles.title}>Styled Content</h1>
+</div>
+
+// SCSS modules for advanced styling
+import styles from "./Component.module.scss";
+
+<div className={styles.wrapper}>
+  {/* Component content */}
+</div>
 ```
 
 ---
@@ -735,7 +741,7 @@ test("user can view invoices", async ({page}) => {
 |--------------|------------|
 | `"use client"` everywhere | Server Components by default |
 | Prop drilling | Context API or Zustand |
-| Inline styles | Tailwind CSS classes |
+| Inline styles | CSS modules, SCSS modules, or shared component classes |
 | Direct DOM manipulation | React refs and state |
 | Missing cleanup | useEffect cleanup function |
 | Missing error boundaries | Implement error.tsx |
