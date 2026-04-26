@@ -3170,6 +3170,7 @@
     "deviceCompatibility": {
       "gpuFeatures": "GPU features: {features}",
       "gpuLimits": "GPU buffer limit: {maxBufferMB} MB",
+      "gpuStorageBufferLimit": "GPU storage buffer binding limit: {maxStorageBufferMB} MB",
       "logicalCores": "CPU cores: {cores}",
       "memoryGB": "Device memory: {memory} GB",
       "storageUnavailable": "Storage quota cannot be verified. Download at your own risk.",

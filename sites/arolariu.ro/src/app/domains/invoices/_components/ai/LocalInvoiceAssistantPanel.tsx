@@ -93,6 +93,13 @@ function DeviceCompatibilityDetails({hardware}: Readonly<{hardware: HardwareElig
             })}
           </li>
         ) : null}
+        {hardware.gpu?.limits.maxStorageBufferBindingSize ? (
+          <li className={styles["compatibilityItem"]}>
+            {t("deviceCompatibility.gpuStorageBufferLimit", {
+              maxStorageBufferMB: Math.round(hardware.gpu.limits.maxStorageBufferBindingSize / (1024 * 1024)),
+            })}
+          </li>
+        ) : null}
         {hardware.device?.deviceMemoryGB ? (
           <li className={styles["compatibilityItem"]}>
             {t("deviceCompatibility.memoryGB", {

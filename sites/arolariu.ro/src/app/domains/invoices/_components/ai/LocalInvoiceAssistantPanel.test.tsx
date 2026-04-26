@@ -36,6 +36,12 @@ vi.mock("next-intl", () => ({
       "chat.inputPlaceholder": "Ask about your local invoices...",
       "chat.ready": "Local model is ready",
       "chat.title": "Local-only invoice assistant",
+      "deviceCompatibility.gpuFeatures": "GPU features: {features}",
+      "deviceCompatibility.gpuLimits": "GPU buffer limit: {maxBufferMB} MB",
+      "deviceCompatibility.gpuStorageBufferLimit": "GPU storage buffer binding limit: {maxStorageBufferMB} MB",
+      "deviceCompatibility.logicalCores": "CPU cores: {cores}",
+      "deviceCompatibility.memoryGB": "Device memory: {memory} GB",
+      "deviceCompatibility.title": "Device compatibility",
       "errors.title": "Assistant error",
       "hardware.checking": "Checking whether this device can run the local assistant...",
       "hardware.ineligibleMessage":
@@ -96,6 +102,34 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(screen.getByText(/Your device does not meet the minimum hardware requirements/)).toBeInTheDocument();
     expect(screen.queryByRole("button", {name: "Download local model"})).not.toBeInTheDocument();
     expect(adapter.load).not.toHaveBeenCalled();
+  });
+
+  it("surfaces both safe WebGPU buffer limits in device compatibility details", async () => {
+    const hardwareWithGpuLimits = {
+      ...eligibleHardware,
+      gpu: {
+        features: ["shader-f16"],
+        limits: {
+          maxBufferSize: 256 * 1024 ** 2,
+          maxStorageBufferBindingSize: 128 * 1024 ** 2,
+        },
+      },
+    } as const satisfies HardwareEligibilityResult;
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => hardwareWithGpuLimits}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    expect(await screen.findByText("Device compatibility")).toBeInTheDocument();
+    expect(screen.getByText("GPU features: shader-f16")).toBeInTheDocument();
+    expect(screen.getByText("GPU buffer limit: 256 MB")).toBeInTheDocument();
+    expect(screen.getByText("GPU storage buffer binding limit: 128 MB")).toBeInTheDocument();
   });
 
   it("downloads the local model and sends sanitized invoice questions", async () => {

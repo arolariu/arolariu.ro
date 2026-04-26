@@ -3170,6 +3170,7 @@
     "deviceCompatibility": {
       "gpuFeatures": "Funcții GPU: {features}",
       "gpuLimits": "Limită buffer GPU: {maxBufferMB} MB",
+      "gpuStorageBufferLimit": "Limită legare buffer de stocare GPU: {maxStorageBufferMB} MB",
       "logicalCores": "Nuclee CPU: {cores}",
       "memoryGB": "Memorie dispozitiv: {memory} GB",
       "storageUnavailable": "Cota de stocare nu poate fi verificată. Descarcă pe propriul risc.",

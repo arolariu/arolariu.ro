@@ -3170,6 +3170,7 @@
     "deviceCompatibility": {
       "gpuFeatures": "Fonctionnalités GPU : {features}",
       "gpuLimits": "Limite de tampon GPU : {maxBufferMB} Mo",
+      "gpuStorageBufferLimit": "Limite de liaison de tampon de stockage GPU : {maxStorageBufferMB} Mo",
       "logicalCores": "Cœurs CPU : {cores}",
       "memoryGB": "Mémoire de l'appareil : {memory} Go",
       "storageUnavailable": "Le quota de stockage ne peut pas être vérifié. Téléchargez à vos propres risques.",
