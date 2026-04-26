@@ -14,7 +14,10 @@ import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Label
 import {useTranslations} from "next-intl";
 import {memo, useCallback, useDeferredValue, useState} from "react";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
+import type {LocalInvoiceAssistantAnalytics} from "./invoiceContext";
 import styles from "./LocalInvoiceAssistantPanel.module.scss";
+import type {SuggestedPromptKey} from "./suggestedPrompts";
+import {getSuggestedPromptKeys, shouldShowSuggestedPrompts} from "./suggestedPrompts";
 import type {LocalInvoiceAssistantLifecycle, LocalInvoiceAssistantMessage, LocalInvoiceAssistantState} from "./types";
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
 import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
@@ -59,10 +62,12 @@ type ChatShellProps = Readonly<{
   activeModelDisplayName: string;
   activeModelHost: string;
   activeModelSizeMB: number;
+  analytics: LocalInvoiceAssistantAnalytics;
   canSendMessage: boolean;
   isGenerating: boolean;
   onDeleteCachedModel: () => void;
   onDismissError: () => void;
+  onPromptClick: (promptKey: SuggestedPromptKey) => void;
   onQuestionChange: (event: Readonly<{currentTarget: Readonly<{value: string}>}>) => void;
   onResetSession: () => void;
   onStopGenerating: () => void;
@@ -455,14 +460,112 @@ const MessageComposer = memo(function MessageComposer({
   );
 });
 
+/**
+ * Analytics preview component.
+ *
+ * @remarks
+ * Shows deterministic analytics summary from invoice context,
+ * providing instant insights without waiting for LLM generation.
+ * Never cross-sums currencies - displays each currency separately.
+ */
+function AnalyticsPreview({analytics}: Readonly<{analytics: LocalInvoiceAssistantAnalytics}>): React.JSX.Element | null {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  if (analytics.invoiceCount === 0) {
+    return (
+      <div className={styles["analyticsPreview"]}>
+        <h4 className={styles["subsectionTitle"]}>{t("analyticsPreview.title")}</h4>
+        <p className={styles["statusText"]}>{t("analyticsPreview.noData")}</p>
+      </div>
+    );
+  }
+
+  const topMerchantEntry = Object.entries(analytics.merchantBreakdown).toSorted(
+    ([, left], [, right]) => right.invoiceCount - left.invoiceCount,
+  )[0];
+
+  return (
+    <div className={styles["analyticsPreview"]}>
+      <h4 className={styles["subsectionTitle"]}>{t("analyticsPreview.title")}</h4>
+      <ul className={styles["metricsList"]}>
+        <li>
+          {t("analyticsPreview.invoiceCountLabel")}: {analytics.invoiceCount}
+        </li>
+        <li>
+          {t("analyticsPreview.totalSpendLabel")}:
+          <ul className={styles["metricsList"]}>
+            {Object.entries(analytics.totalSpendByCurrency)
+              .toSorted(([, left], [, right]) => right - left)
+              .map(([currency, amount]) => (
+                <li key={currency}>
+                  {currency}: {amount.toFixed(2)}
+                </li>
+              ))}
+          </ul>
+        </li>
+        {topMerchantEntry ? (
+          <li>
+            {t("analyticsPreview.topMerchantLabel")}: {topMerchantEntry[0]} ({topMerchantEntry[1].invoiceCount} invoices)
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Suggested prompt chips component.
+ *
+ * @remarks
+ * Displays localized suggested questions as clickable buttons,
+ * helping users discover assistant capabilities.
+ */
+function SuggestedPrompts({
+  analytics,
+  onPromptClick,
+}: Readonly<{
+  analytics: LocalInvoiceAssistantAnalytics;
+  onPromptClick: (promptKey: SuggestedPromptKey) => void;
+}>): React.JSX.Element | null {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  if (!shouldShowSuggestedPrompts(analytics)) {
+    return null;
+  }
+
+  const promptKeys = getSuggestedPromptKeys(analytics);
+
+  return (
+    <div className={styles["suggestedPrompts"]}>
+      <h4 className={styles["subsectionTitle"]}>{t("suggestedPrompts.title")}</h4>
+      <div className={styles["promptChips"]}>
+        {promptKeys.map((key) => (
+          <Button
+            key={key}
+            type='button'
+            variant='outline'
+            onClick={() => {
+              onPromptClick(key);
+            }}>
+            {t(`suggestedPrompts.${key}`)}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function ChatShell({
   activeModelDisplayName,
   activeModelHost,
   activeModelSizeMB,
+  analytics,
   canSendMessage,
   isGenerating,
   onDeleteCachedModel,
   onDismissError,
+  onPromptClick,
   onQuestionChange,
   onResetSession,
   onStopGenerating,
@@ -510,6 +613,13 @@ function ChatShell({
             </Button>
           </div>
         )}
+
+        <AnalyticsPreview analytics={analytics} />
+
+        <SuggestedPrompts
+          analytics={analytics}
+          onPromptClick={onPromptClick}
+        />
 
         <MessageList messages={state.messages} />
 
@@ -588,6 +698,7 @@ export function LocalInvoiceAssistantPanel({
     canLoadModel,
     canRunBenchmark,
     canSendMessage,
+    context,
     deleteCachedModel,
     dismissError,
     interrupt,
@@ -633,6 +744,15 @@ export function LocalInvoiceAssistantPanel({
   const handleRunBenchmark = useCallback((): void => {
     void runBenchmark();
   }, [runBenchmark]);
+
+  const handlePromptClick = useCallback(
+    (promptKey: SuggestedPromptKey): void => {
+      const promptText = t(`suggestedPrompts.${promptKey}`);
+      setQuestion("");
+      void sendMessage(promptText);
+    },
+    [sendMessage, t],
+  );
 
   const handleSubmit = useCallback(
     (event: Readonly<{preventDefault: () => void}>): void => {
@@ -682,10 +802,12 @@ export function LocalInvoiceAssistantPanel({
           activeModelDisplayName={state.activeModel.displayName}
           activeModelHost={state.activeModel.artifactHost}
           activeModelSizeMB={state.activeModel.vramRequiredMB * 1.5}
+          analytics={context.analytics}
           canSendMessage={canSendMessage}
           isGenerating={isGenerating}
           onDeleteCachedModel={handleDeleteCachedModel}
           onDismissError={handleDismissError}
+          onPromptClick={handlePromptClick}
           onQuestionChange={handleQuestionChange}
           onResetSession={handleResetSession}
           onStopGenerating={handleStopGenerating}

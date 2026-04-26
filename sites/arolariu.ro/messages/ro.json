@@ -3199,31 +3199,46 @@
       "source": "Artefactele modelului descărcate de la sursa de încredere: {host}"
     },
     "privacy": "Datele facturilor rămân în browser. Artefactele modelului sunt descărcate de la gazda externă aprobată.",
-      "benchmark": {
-        "title": "Testează performanța dispozitivului",
-        "description": "Testează viteza modelului local pe browserul și hardware-ul tău curent.",
-        "runButton": "Rulează testul",
-        "running": "Se rulează testul...",
-        "results": {
-          "title": "Ultimul test",
-          "model": "Model: {modelName}",
-          "firstToken": "Primul token: {latencyMs}ms",
-          "throughput": "Viteză: {chunksPerSec} tokeni/sec (estimat)",
-          "duration": "Durată: {durationMs}ms",
-          "characters": "{charsPerSec} caractere/sec"
-        },
-        "latestGeneration": {
-          "title": "Statistici ultimă generare",
-          "model": "Model: {modelName}",
-          "firstToken": "Primul token: {latencyMs}ms",
-          "throughput": "Viteză: {chunksPerSec} tokeni/sec (estimat)",
-          "duration": "Durată: {durationMs}ms",
-          "characters": "{charsPerSec} caractere/sec"
-        }
+    "benchmark": {
+      "title": "Testează performanța dispozitivului",
+      "description": "Testează viteza modelului local pe browserul și hardware-ul tău curent.",
+      "runButton": "Rulează testul",
+      "running": "Se rulează testul...",
+      "results": {
+        "title": "Ultimul test",
+        "model": "Model: {modelName}",
+        "firstToken": "Primul token: {latencyMs}ms",
+        "throughput": "Viteză: {chunksPerSec} tokeni/sec (estimat)",
+        "duration": "Durată: {durationMs}ms",
+        "characters": "{charsPerSec} caractere/sec"
       },
-      "status": {
+      "latestGeneration": {
+        "title": "Statistici ultimă generare",
+        "model": "Model: {modelName}",
+        "firstToken": "Primul token: {latencyMs}ms",
+        "throughput": "Viteză: {chunksPerSec} tokeni/sec (estimat)",
+        "duration": "Durată: {durationMs}ms",
+        "characters": "{charsPerSec} caractere/sec"
+      }
+    },
+    "status": {
       "compatibilityUnknown": "Unele detalii hardware nu sunt disponibile, așa că performanța poate varia.",
       "storageWarning": "Disponibilitatea spațiului de stocare nu poate fi verificată. Asigură-te că ai cel puțin 6 GB spațiu liber pe disc înainte de descărcare."
+    },
+    "suggestedPrompts": {
+      "summarizeSpending": "Rezumă cheltuielile mele totale",
+      "largestInvoice": "Care factură este cea mai mare?",
+      "topMerchant": "Care comerciant apare cel mai des?",
+      "spendingByCurrency": "Arată cheltuielile pe monedă",
+      "title": "Întrebări sugerate"
+    },
+    "analyticsPreview": {
+      "title": "Informații rapide",
+      "totalSpendLabel": "Cheltuieli totale",
+      "invoiceCountLabel": "Facturi",
+      "noData": "Nu există date de factură disponibile",
+      "currencyBreakdown": "Pe monedă",
+      "topMerchantLabel": "Comerciant principal"
     }
   },
   "IMS--List": {

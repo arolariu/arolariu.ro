@@ -3199,31 +3199,46 @@
       "source": "Model artifacts downloaded from trusted source: {host}"
     },
     "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
-      "benchmark": {
-        "title": "Benchmark your device",
-        "description": "Test local model speed on your current browser and hardware.",
-        "runButton": "Run benchmark",
-        "running": "Running benchmark...",
-        "results": {
-          "title": "Latest benchmark",
-          "model": "Model: {modelName}",
-          "firstToken": "First token: {latencyMs}ms",
-          "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
-          "duration": "Duration: {durationMs}ms",
-          "characters": "{charsPerSec} chars/sec"
-        },
-        "latestGeneration": {
-          "title": "Latest generation stats",
-          "model": "Model: {modelName}",
-          "firstToken": "First token: {latencyMs}ms",
-          "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
-          "duration": "Duration: {durationMs}ms",
-          "characters": "{charsPerSec} chars/sec"
-        }
+    "benchmark": {
+      "title": "Benchmark your device",
+      "description": "Test local model speed on your current browser and hardware.",
+      "runButton": "Run benchmark",
+      "running": "Running benchmark...",
+      "results": {
+        "title": "Latest benchmark",
+        "model": "Model: {modelName}",
+        "firstToken": "First token: {latencyMs}ms",
+        "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
+        "duration": "Duration: {durationMs}ms",
+        "characters": "{charsPerSec} chars/sec"
       },
-      "status": {
+      "latestGeneration": {
+        "title": "Latest generation stats",
+        "model": "Model: {modelName}",
+        "firstToken": "First token: {latencyMs}ms",
+        "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
+        "duration": "Duration: {durationMs}ms",
+        "characters": "{charsPerSec} chars/sec"
+      }
+    },
+    "status": {
       "compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
       "storageWarning": "Storage availability cannot be verified. Ensure you have at least 6 GB of free disk space before downloading."
+    },
+    "suggestedPrompts": {
+      "summarizeSpending": "Summarize my total spending",
+      "largestInvoice": "Which invoice is largest?",
+      "topMerchant": "Which merchant appears most often?",
+      "spendingByCurrency": "Show spending by currency",
+      "title": "Suggested questions"
+    },
+    "analyticsPreview": {
+      "title": "Quick insights",
+      "totalSpendLabel": "Total spending",
+      "invoiceCountLabel": "Invoices",
+      "noData": "No invoice data available",
+      "currencyBreakdown": "By currency",
+      "topMerchantLabel": "Top merchant"
     }
   },
   "IMS--List": {

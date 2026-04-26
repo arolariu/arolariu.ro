@@ -3199,31 +3199,46 @@
       "source": "Artefacts du modèle téléchargés depuis une source de confiance : {host}"
     },
     "privacy": "Les données de factures restent dans ce navigateur. Les artefacts du modèle sont téléchargés depuis l'hôte externe approuvé.",
-      "benchmark": {
-        "title": "Évaluez votre appareil",
-        "description": "Testez la vitesse du modèle local sur votre navigateur et matériel actuels.",
-        "runButton": "Lancer le test",
-        "running": "Test en cours...",
-        "results": {
-          "title": "Dernier test",
-          "model": "Modèle: {modelName}",
-          "firstToken": "Premier jeton: {latencyMs}ms",
-          "throughput": "Débit: {chunksPerSec} jetons/sec (estimé)",
-          "duration": "Durée: {durationMs}ms",
-          "characters": "{charsPerSec} caractères/sec"
-        },
-        "latestGeneration": {
-          "title": "Statistiques dernière génération",
-          "model": "Modèle: {modelName}",
-          "firstToken": "Premier jeton: {latencyMs}ms",
-          "throughput": "Débit: {chunksPerSec} jetons/sec (estimé)",
-          "duration": "Durée: {durationMs}ms",
-          "characters": "{charsPerSec} caractères/sec"
-        }
+    "benchmark": {
+      "title": "Évaluez votre appareil",
+      "description": "Testez la vitesse du modèle local sur votre navigateur et matériel actuels.",
+      "runButton": "Lancer le test",
+      "running": "Test en cours...",
+      "results": {
+        "title": "Dernier test",
+        "model": "Modèle: {modelName}",
+        "firstToken": "Premier jeton: {latencyMs}ms",
+        "throughput": "Débit: {chunksPerSec} jetons/sec (estimé)",
+        "duration": "Durée: {durationMs}ms",
+        "characters": "{charsPerSec} caractères/sec"
       },
-      "status": {
+      "latestGeneration": {
+        "title": "Statistiques dernière génération",
+        "model": "Modèle: {modelName}",
+        "firstToken": "Premier jeton: {latencyMs}ms",
+        "throughput": "Débit: {chunksPerSec} jetons/sec (estimé)",
+        "duration": "Durée: {durationMs}ms",
+        "characters": "{charsPerSec} caractères/sec"
+      }
+    },
+    "status": {
       "compatibilityUnknown": "Certains détails matériels ne sont pas disponibles, les performances peuvent donc varier.",
       "storageWarning": "La disponibilité du stockage ne peut pas être vérifiée. Assurez-vous d'avoir au moins 6 Go d'espace disque libre avant de télécharger."
+    },
+    "suggestedPrompts": {
+      "summarizeSpending": "Résumer mes dépenses totales",
+      "largestInvoice": "Quelle facture est la plus grande?",
+      "topMerchant": "Quel commerçant apparaît le plus souvent?",
+      "spendingByCurrency": "Afficher les dépenses par devise",
+      "title": "Questions suggérées"
+    },
+    "analyticsPreview": {
+      "title": "Aperçus rapides",
+      "totalSpendLabel": "Dépenses totales",
+      "invoiceCountLabel": "Factures",
+      "noData": "Aucune donnée de facture disponible",
+      "currencyBreakdown": "Par devise",
+      "topMerchantLabel": "Commerçant principal"
     }
   },
   "IMS--List": {

@@ -84,4 +84,54 @@ describe("createLocalInvoiceAssistantContext", () => {
     expect(context.promptContext).not.toContain("invoice-two");
     expect(context.promptContext).not.toContain("merchant-a");
   });
+
+  it("groups totals by currency and never cross-sums currencies", () => {
+    const ronInvoice = new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build();
+    const usdInvoice = new InvoiceBuilder().withPaymentAmount(50).withPaymentCurrency("USD").build();
+    const eurInvoice = new InvoiceBuilder().withPaymentAmount(75).withPaymentCurrency("EUR").build();
+
+    const context = createLocalInvoiceAssistantContext({
+      invoices: [ronInvoice, usdInvoice, eurInvoice],
+    });
+
+    expect(context.analytics.totalSpendByCurrency).toEqual({
+      EUR: 75,
+      RON: 100,
+      USD: 50,
+    });
+    expect(context.analytics.invoiceCount).toBe(3);
+
+    // Ensure no aggregated "total" field that crosses currencies
+    const stringified = JSON.stringify(context.analytics);
+    expect(stringified).not.toContain('"totalAmount":225');
+    expect(stringified).not.toContain('"totalAmount":150');
+    expect(stringified).not.toContain('"totalAmount":175');
+  });
+
+  it("merchant breakdown groups totals by currency", () => {
+    const merchantA_RON = new InvoiceBuilder()
+      .withMerchantReference("merchant-alpha")
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+    const merchantA_USD = new InvoiceBuilder()
+      .withMerchantReference("merchant-alpha")
+      .withPaymentAmount(50)
+      .withPaymentCurrency("USD")
+      .build();
+
+    const context = createLocalInvoiceAssistantContext({
+      invoices: [merchantA_RON, merchantA_USD],
+    });
+
+    expect(context.analytics.merchantBreakdown).toEqual({
+      "merchant-1": {
+        invoiceCount: 2,
+        totalAmountByCurrency: {
+          RON: 100,
+          USD: 50,
+        },
+      },
+    });
+  });
 });
