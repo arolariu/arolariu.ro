@@ -372,6 +372,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   useEffect(
     () => () => {
       isMountedRef.current = false;
+      streamingBufferRef.current?.interrupt();
+      streamingBufferRef.current = null;
       void adapterRef.current?.dispose();
     },
     [],
@@ -455,19 +457,23 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         messages: [...current.messages, userMessage, assistantMessage],
       }));
 
+      // Track full accumulated response from adapter across token callbacks
+      let fullAccumulatedResponse = "";
+
       // Create streaming buffer with requestAnimationFrame scheduler
       const streamingBuffer = createStreamingResponseBuffer({
         cancel: (id) => globalThis.cancelAnimationFrame(id),
-        flush: (accumulatedContent) => {
+        flush: () => {
           if (!isMountedRef.current || generationIdRef.current !== generationId) {
             return;
           }
 
           // Use startTransition for non-urgent message updates
+          // Replace message content with full accumulated response
           startTransition(() => {
             setState((current) => ({
               ...current,
-              messages: replaceMessageContent(current.messages, assistantMessage.id, accumulatedContent),
+              messages: replaceMessageContent(current.messages, assistantMessage.id, fullAccumulatedResponse),
             }));
           });
         },
@@ -493,8 +499,13 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
               return;
             }
 
-            // Append to buffer instead of setState on every token
-            streamingBuffer.append(accumulatedResponse);
+            // Update full response and compute delta for buffer
+            const previousLength = fullAccumulatedResponse.length;
+            fullAccumulatedResponse = accumulatedResponse;
+            const delta = accumulatedResponse.slice(previousLength);
+
+            // Append delta to buffer to schedule flush
+            streamingBuffer.append(delta);
           },
         });
 
@@ -553,6 +564,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const resetSession = useCallback((): void => {
     generationIdRef.current += 1;
+    streamingBufferRef.current?.interrupt();
+    streamingBufferRef.current = null;
     setState((current) => ({
       ...current,
       error: null,
@@ -623,6 +636,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const deleteCachedModel = useCallback(async (): Promise<void> => {
     generationIdRef.current += 1;
+    streamingBufferRef.current?.interrupt();
+    streamingBufferRef.current = null;
     // Use current model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;
 

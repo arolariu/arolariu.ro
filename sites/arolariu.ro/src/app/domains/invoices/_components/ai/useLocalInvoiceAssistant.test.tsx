@@ -632,6 +632,207 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.latestGeneration?.benchmarkPromptVersion).toBeNull(); // Normal chat
   });
 
+  it("streams multi-token response correctly without duplication across multiple flushes", async () => {
+    let flushCallbackScheduled: (() => void) | null = null;
+    const scheduledFlushes: Array<() => void> = [];
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        // Simulate tokens arriving incrementally (adapter accumulates)
+        options?.onToken?.("First", "First");
+        options?.onToken?.(" second", "First second");
+        options?.onToken?.(" third", "First second third");
+        options?.onToken?.(" token", "First second third token");
+
+        return "First second third token";
+      }),
+    });
+
+    // Mock requestAnimationFrame to capture scheduled flushes
+    const originalRAF = globalThis.requestAnimationFrame;
+    const originalCAF = globalThis.cancelAnimationFrame;
+    globalThis.requestAnimationFrame = vi.fn((callback: () => void) => {
+      scheduledFlushes.push(callback);
+      flushCallbackScheduled = callback;
+
+      return scheduledFlushes.length;
+    }) as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame = vi.fn();
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    // Start generation
+    act(() => {
+      void result.current.sendMessage("Test");
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("generating");
+    });
+
+    // Execute first scheduled flush (should show accumulated content)
+    if (flushCallbackScheduled) {
+      act(() => {
+        flushCallbackScheduled?.();
+      });
+    }
+
+    await waitFor(() => {
+      const assistantMessage = result.current.state.messages.find((message) => message.role === "assistant");
+      // After flush, message should contain full accumulated content without duplication
+      expect(assistantMessage?.content).toBe("First second third token");
+    });
+
+    // Verify final state after completion
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("ready");
+    });
+
+    const finalAssistantMessage = result.current.state.messages.find((message) => message.role === "assistant");
+    expect(finalAssistantMessage?.content).toBe("First second third token");
+
+    // Restore globals
+    globalThis.requestAnimationFrame = originalRAF;
+    globalThis.cancelAnimationFrame = originalCAF;
+  });
+
+  it("forces final flush before returning to ready state", async () => {
+    let flushCallbackScheduled: (() => void) | null = null;
+    let flushWasExecuted = false;
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        // Tokens arrive but flush not executed yet
+        options?.onToken?.("Pending", "Pending");
+        options?.onToken?.(" content", "Pending content");
+
+        return "Pending content";
+      }),
+    });
+
+    // Mock requestAnimationFrame to defer execution
+    const originalRAF = globalThis.requestAnimationFrame;
+    const originalCAF = globalThis.cancelAnimationFrame;
+    globalThis.requestAnimationFrame = vi.fn((callback: () => void) => {
+      flushCallbackScheduled = callback;
+
+      return 1;
+    }) as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame = vi.fn();
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+      await result.current.sendMessage("Test");
+    });
+
+    // Verify lifecycle is ready (forced flush happened)
+    expect(result.current.state.lifecycle).toBe("ready");
+
+    // Verify final content is visible even though scheduled flush didn't execute
+    const assistantMessage = result.current.state.messages.find((message) => message.role === "assistant");
+    expect(assistantMessage?.content).toBe("Pending content");
+
+    // Verify scheduled flush was cancelled (forceFlush cancels pending schedule)
+    expect(globalThis.cancelAnimationFrame).toHaveBeenCalled();
+
+    // Restore globals
+    globalThis.requestAnimationFrame = originalRAF;
+    globalThis.cancelAnimationFrame = originalCAF;
+  });
+
+  it("cancels pending buffer flush on reset during streaming", async () => {
+    let resolveGeneration: ((value: string) => void) | null = null;
+    const generationPromise = new Promise<string>((resolve) => {
+      resolveGeneration = resolve;
+    });
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onToken?.("Streaming", "Streaming");
+        options?.onToken?.(" content", "Streaming content");
+
+        return generationPromise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    // Start generation without awaiting
+    act(() => {
+      void result.current.sendMessage("Test");
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("generating");
+    });
+
+    // Reset session during streaming
+    act(() => {
+      result.current.resetSession();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("ready");
+    });
+
+    // Messages should be cleared
+    expect(result.current.state.messages).toEqual([]);
+
+    // Complete generation (late)
+    act(() => {
+      resolveGeneration?.("Late response");
+    });
+
+    // Messages should still be empty (generation was invalidated)
+    expect(result.current.state.messages).toEqual([]);
+  });
+
   it("interrupts streaming and cancels pending buffer flushes", async () => {
     let resolveGeneration: ((value: string) => void) | null = null;
     const generationPromise = new Promise<string>((resolve) => {
@@ -643,7 +844,8 @@ describe("useLocalInvoiceAssistant", () => {
       generate: vi.fn(async (_messages, options) => {
         // Simulate multiple token callbacks that would normally trigger setState
         for (let index = 0; index < 10; index += 1) {
-          options?.onToken?.(`Token${index} `, `Token${index} `);
+          const accumulated = Array.from({length: index + 1}, (_, idx) => `Token${idx}`).join(" ");
+          options?.onToken?.(`Token${index}`, accumulated);
           tokenCallbackCount += 1;
         }
 
