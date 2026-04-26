@@ -1,62 +1,28 @@
 # =============================================================================
 # Main Website Release Workflow
 # =============================================================================
-# This workflow deploys the containerized Next.js website to Azure App Service
-# after a successful build workflow completion.
-#
-# Architecture:
-#   - Single Phase: Release - Deploys container from ACR to Azure App Service
-#   - Chained Workflow: Triggered automatically after official-website-build
-#
-# Deployment Strategy:
-#   - Blue/Green: Azure App Service handles deployment slots
-#   - Container: Pulls pre-built image from Azure Container Registry
-#   - Environment URL: Automatically updated in GitHub Environments
-#
-# Triggers:
-#   - Automatic: Triggered on successful completion of official-website-build
-#   - Manual: workflow_dispatch for on-demand deployments
-#
-# Environment Targets:
-#   - Development: dev-arolariu-ro (frontend/dev.arolariu container)
-#   - Production: www-arolariu-ro (frontend/arolariu container)
-#
-# Security:
-#   - Uses OIDC for Azure authentication (no long-lived secrets)
-#   - Azure Container Registry credentials in GitHub Secrets
-#   - Environment-specific secret management
-#
-# Prerequisites:
-#   1. Successful official-website-build workflow run
-#   2. Container image present in Azure Container Registry
-#   3. Azure App Service configured for container deployment
-#   4. GitHub Secrets configured:
-#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_ADDRESS
-#
-# Related Workflows:
-#   - official-website-build.yml: Builds and pushes container to ACR
+# Deploys the immutable container image produced by official-website-build.
+# Automatic releases use the workflow_run head SHA and downloaded image metadata;
+# manual releases require an explicit image tag for production.
 # =============================================================================
 
 name: "official-website-release"
 
 permissions:
+  actions: read # Required to download artifacts from the build workflow run
+  contents: read # Required to checkout local composite actions
   id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository (if needed)
 
 on:
-  # Automatic trigger after successful build workflow
   workflow_run:
     workflows: ["official-website-build"]
     types: ["completed"]
     branches: ["preview"]
 
-  # Manual trigger for controlled releases
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to release to. (e.g. 'development', 'production')"
+        description: "The environment to release to."
         options:
           - "development"
           - "production"
@@ -64,70 +30,114 @@ on:
         required: true
         type: choice
       container_name:
-        description: "The name of the container to release. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
+        description: "The container image name to release."
         options:
           - "frontend/dev.arolariu"
           - "frontend/arolariu"
         default: "frontend/dev.arolariu"
         required: true
         type: choice
-
-env:
-  COMMIT_SHA: ${{ github.sha }}
-  PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
-  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
-  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+      image_tag:
+        description: "Immutable image tag to release. Required for production manual releases."
+        required: false
+        default: ""
+        type: string
+      image_digest:
+        description: "Optional image digest. When omitted, deployment uses the immutable image tag."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   release:
     name: 🚀 Release phase (1/1)
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')   }}
+    if: ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'workflow_dispatch')) }}
     environment:
-      name: ${{ inputs.environment || 'development'}}
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      name: ${{ inputs.environment || 'development' }}
+      url: ${{ steps.deploy-to-webapp.outputs.url }}
 
     steps:
-      - name: 🔐 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          persist-credentials: false
 
-      - name: 🔐 Performing auth against private Azure Container Registry...
-        working-directory: '.'
-        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+      - name: 📥 Download website image metadata
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v7
+        with:
+          name: website-image-${{ github.event.workflow_run.head_sha }}
+          path: artifacts/website-image
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: 🧾 Resolve release metadata
+        id: metadata
+        shell: bash
         env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_CONTAINER_NAME: ${{ inputs.container_name }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+          INPUT_IMAGE_DIGEST: ${{ inputs.image_digest }}
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          MANUAL_DEFAULT_SHA: ${{ github.sha }}
+        run: |
+          if [ "${EVENT_NAME}" = "workflow_run" ]; then
+            metadata_file="artifacts/website-image/website-image.json"
+            if [ ! -f "${metadata_file}" ]; then
+              echo "::error::Missing website image metadata artifact from build workflow."
+              exit 1
+            fi
 
-      - name: ⚓ Releasing docker container to Azure App Service...
+            image="$(node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.stdout.write(data.image);" "${metadata_file}")"
+            tag="$(node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.stdout.write(data.tag);" "${metadata_file}")"
+            digest="$(node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.stdout.write(data.digest);" "${metadata_file}")"
+            source_sha="$(node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.stdout.write(data.sourceSha);" "${metadata_file}")"
+
+            if [ "${source_sha}" != "${WORKFLOW_RUN_HEAD_SHA}" ]; then
+              echo "::error::Image metadata SHA '${source_sha}' does not match workflow_run head SHA '${WORKFLOW_RUN_HEAD_SHA}'."
+              exit 1
+            fi
+          else
+            image="${INPUT_CONTAINER_NAME}"
+            digest="${INPUT_IMAGE_DIGEST}"
+
+            if [ "${INPUT_ENVIRONMENT}" = "production" ] && [ -z "${INPUT_IMAGE_TAG}" ]; then
+              echo "::error::Production manual releases require an explicit image_tag."
+              exit 1
+            fi
+
+            tag="${INPUT_IMAGE_TAG:-${MANUAL_DEFAULT_SHA}}"
+          fi
+
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: ⚓ Release container to Azure App Service
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        env:
-          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
+        uses: ./.github/actions/azure-webapp-container-deploy
         with:
-          app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
-          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+          app-name: ${{ steps.metadata.outputs.image == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          image-name: ${{ steps.metadata.outputs.image }}
+          image-digest: ${{ steps.metadata.outputs.digest }}
+          image-tag: ${{ steps.metadata.outputs.tag }}
+          azure-client-id: ${{ secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 📊 Release summary
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Release Successful" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
-          echo "| Website URL | ${{ steps.deploy-to-webapp.outputs.webapp-url }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Live URL**: ${{ steps.deploy-to-webapp.outputs.webapp-url }}" >> $GITHUB_STEP_SUMMARY
-
-          echo ""
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ✅ RELEASE COMPLETED SUCCESSFULLY                          │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔗 URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
-          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "### ✅ Release Successful" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Metric | Value |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "|--------|-------|" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Image | \`${{ steps.deploy-to-webapp.outputs.deployed-image }}\` |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Website URL | ${{ steps.deploy-to-webapp.outputs.url }} |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "🔗 **Live URL**: ${{ steps.deploy-to-webapp.outputs.url }}" >> "${GITHUB_STEP_SUMMARY}"

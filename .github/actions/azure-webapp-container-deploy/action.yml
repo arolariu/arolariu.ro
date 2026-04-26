@@ -14,7 +14,8 @@ inputs:
     required: true
   image-digest:
     description: "Image digest to deploy."
-    required: true
+    required: false
+    default: ""
   image-tag:
     description: "Immutable commit tag fallback."
     required: false
@@ -49,6 +50,7 @@ runs:
 
     - name: 🚀 Deploy digest image
       id: deploy-digest
+      if: inputs.image-digest != ''
       continue-on-error: true
       uses: azure/webapps-deploy@v3
       with:
@@ -57,7 +59,7 @@ runs:
 
     - name: 🚀 Deploy commit-tag fallback
       id: deploy-tag
-      if: steps.deploy-digest.outcome == 'failure'
+      if: inputs.image-digest == '' || steps.deploy-digest.outcome == 'failure'
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ inputs.app-name }}

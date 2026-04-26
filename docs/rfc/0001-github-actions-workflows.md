@@ -272,22 +272,33 @@ Trigger: Push to preview (+ manual dispatch)
 │  └─ Upload test results
 └─ Job: build
    ├─ Setup workspace (Node.js 24, Playwright, Generate)
-   ├─ Build Docker image
-   ├─ Push to Azure Container Registry
-   └─ Tag with commit SHA
+   ├─ Build and push Docker image with Docker Buildx
+   ├─ Publish commit-SHA image tag only
+   ├─ Attest image provenance
+   └─ Upload website-image metadata artifact
 ```
 
 **Release Workflow** (`official-website-release.yml`):
 ```
 Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
-├─ Azure authentication
-└─ Deploy container to Azure App Service
+├─ Download website-image metadata artifact
+├─ Verify metadata SHA matches workflow_run head SHA
+├─ Deploy digest image to Azure App Service
+└─ Fall back to immutable commit tag only when digest deployment is unsupported
 ```
 
 **Why separate workflows?**
 - Build can be automated on every push
 - Release requires manual approval for production
 - Enables testing in preview environment before production release
+- Release uses the image digest produced by the build run instead of mutable tags
+
+**Immutable website handoff:**
+- Build workflow path filters include website code, shared components, root package locks, the frontend Dockerfile, and owned CI actions.
+- Website images are tagged as `${{ github.sha }}` only; `latest` is not used for CI/CD handoff.
+- The build workflow uploads `website-image.json` with image name, tag, digest, source run ID, and source SHA.
+- Automatic release reads that artifact from the completed build run and verifies the artifact source SHA matches `workflow_run.head_sha`.
+- Manual production releases require an explicit image tag; development manual releases may default to the dispatch commit SHA.
 
 ### 4.2 Trigger Pattern (API)
 
