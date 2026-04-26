@@ -105,13 +105,13 @@ runs:
     # Phase 2: SDK Setup (Node.js + .NET)
     # ─────────────────────────────────────────────────────────────────
     - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
 
     - name: 💾 Caching Node.js dependencies...
       id: cache-node
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         # Cache the package-manager store only. npm ci still runs every time.
         path: |
@@ -120,14 +120,14 @@ runs:
 
     - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
       if: inputs.dotnet-version != ''
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
     - name: 💾 Caching .NET packages...
       id: cache-dotnet
       if: inputs.dotnet-version != ''
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         # Cache NuGet global packages and the dotnet SDK cache locations.
         path: |

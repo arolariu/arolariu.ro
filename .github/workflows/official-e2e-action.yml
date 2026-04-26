@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -213,7 +213,7 @@ jobs:
 
       - name: 📦 Upload reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: warn
           name: e2e-reports-${{ matrix.target }}
@@ -238,7 +238,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -249,14 +249,14 @@ jobs:
           node-version: "24"
 
       - name: 📥 Download E2E artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           merge-multiple: true
           path: reports
           pattern: e2e-*
 
       - name: 🐛 Create GitHub issue for failures
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           ARTIFACTS_DIR: reports
           EVENT_NAME: ${{ github.event_name }}
