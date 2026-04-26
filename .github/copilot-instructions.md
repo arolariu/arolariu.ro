@@ -257,7 +257,7 @@ When making architectural changes:
 - **Framework**: Next.js 16.2 (App Router)
 - **React**: v19.2.4 (with React Server Components)
 - **TypeScript**: v6.0 (strict mode)
-- **Styling**: Tailwind CSS v4.2 + PostCSS
+- **Styling**: Sass + SCSS Modules + CSS Modules
 - **UI Components**: Base UI + CSS Modules
 - **State Management**: Zustand v5.0.12 (4 stores with IndexedDB persistence)
 - **Authentication**: Clerk (@clerk/nextjs v7.0)

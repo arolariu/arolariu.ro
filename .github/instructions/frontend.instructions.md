@@ -1007,7 +1007,7 @@ export function Component() {
 
 1. **Using "use client" unnecessarily**: Prefer Server Components by default
 2. **Prop Drilling**: Use Context API for shared state
-3. **Inline Styles**: Use Tailwind CSS classes or CSS modules
+3. **Inline Styles**: Use CSS modules or SCSS modules instead
 4. **Direct DOM Manipulation**: Use React patterns and refs
 5. **Memory Leaks**: Always clean up resources in useEffect cleanup
 6. **Missing Error Boundaries**: Implement proper error handling
