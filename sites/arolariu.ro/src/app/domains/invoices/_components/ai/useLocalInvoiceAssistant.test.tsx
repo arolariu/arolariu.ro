@@ -300,7 +300,7 @@ describe("useLocalInvoiceAssistant", () => {
 
   it("loads the recommended model from state, not the closed-over default", async () => {
     const adapter = createFakeAdapter();
-    const recommendedModelId = "Qwen3-0.6B-q4f16_1-MLC";
+    const recommendedModelId = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
     const hardwareWithGpu = {
       ...eligibleHardware,
       gpu: {
@@ -326,7 +326,7 @@ describe("useLocalInvoiceAssistant", () => {
       expect(result.current.state.lifecycle).toBe("not-downloaded");
     });
 
-    // Recommended model should be Qwen3-0.6B (smallest, no GPU features required)
+    // Recommended model should be Llama 3.2 1B (smallest balanced model, no GPU features required)
     expect(result.current.state.activeModel.id).toBe(recommendedModelId);
 
     await act(async () => {
@@ -343,7 +343,7 @@ describe("useLocalInvoiceAssistant", () => {
 
   it("deletes the current model from state cache, not the closed-over default", async () => {
     const adapter = createFakeAdapter();
-    const recommendedModelId = "Qwen3-0.6B-q4f16_1-MLC";
+    const recommendedModelId = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
     const hardwareWithGpu = {
       ...eligibleHardware,
       gpu: {
@@ -381,21 +381,27 @@ describe("useLocalInvoiceAssistant", () => {
 
   it("does not pass GPU limits as VRAM to model recommendation", async () => {
     const adapter = createFakeAdapter();
-    const hardwareWithLargeBufferLimit = {
-      ...eligibleHardware,
+    // Scenario: tiny storage where only SmolLM2 (376 MB × 1.5 = 564 MB) would fit,
+    // but SmolLM2 requires shader-f16 which is not available.
+    // Large maxBufferSize must NOT be treated as VRAM to allow larger models.
+    const hardwareWithTinyStorageAndLargeBuffer = {
+      availableStorageBytes: 600 * 1024 * 1024, // 600 MB (only SmolLM2 fits: 564 MB)
       gpu: {
-        features: ["shader-f16"],
+        features: [], // No shader-f16, so SmolLM2 is excluded
         limits: {
           maxBufferSize: 8 * 1024 * 1024 * 1024, // 8 GB (not VRAM!)
           maxStorageBufferBindingSize: 4 * 1024 * 1024 * 1024,
         },
       },
+      reasons: [],
+      requirements: DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS,
+      status: "eligible",
     } as const satisfies HardwareEligibilityResult;
 
     const {result} = renderHook(() =>
       useLocalInvoiceAssistant({
         adapter,
-        analyzeHardware: async () => hardwareWithLargeBufferLimit,
+        analyzeHardware: async () => hardwareWithTinyStorageAndLargeBuffer,
         createId: createSequentialIdFactory(),
         invoices: [],
         now: () => new Date("2026-01-01T00:00:00.000Z"),
@@ -406,10 +412,10 @@ describe("useLocalInvoiceAssistant", () => {
       expect(result.current.state.lifecycle).toBe("not-downloaded");
     });
 
-    // Should recommend gemma-2b-it (smallest balanced model with shader-f16)
-    // NOT a larger model based on mistaken 8GB "VRAM" from maxBufferSize
-    expect(result.current.state.activeModel.id).toBe("gemma-2b-it-q4f16_1-MLC");
-    expect(result.current.state.activeModel.requiredFeatures).toContain("shader-f16");
+    // Should recommend null (no compatible models) or fallback to default
+    // Because maxBufferSize is NOT used as VRAM, no models fit tiny storage without shader-f16
+    // The hook falls back to DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL when recommendation is null
+    expect(result.current.state.activeModel.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
   });
 });
 
