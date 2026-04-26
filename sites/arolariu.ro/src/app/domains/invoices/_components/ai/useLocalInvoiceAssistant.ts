@@ -257,6 +257,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const analyzeHardwareRef = useRef(input.analyzeHardware ?? analyzeLocalAiHardwareEligibility);
   const createIdRef = useRef(input.createId ?? createDefaultMessageId);
   const generationIdRef = useRef(0);
+  const generationInFlightRef = useRef(false);
   const isMountedRef = useRef(true);
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
@@ -498,6 +499,14 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         return;
       }
 
+      // Synchronous guard: prevent overlapping generations
+      if (generationInFlightRef.current) {
+        return;
+      }
+
+      // Mark generation as in-flight before any async work
+      generationInFlightRef.current = true;
+
       const timestamp = nowRef.current().toISOString();
       const userMessage = createMessage(trimmedContent, "user", timestamp, createIdRef.current);
       const assistantMessage = createMessage("", "assistant", timestamp, createIdRef.current);
@@ -565,6 +574,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         });
 
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
+          // Clear in-flight flag even if component unmounted or generation superseded
+          generationInFlightRef.current = false;
           return;
         }
 
@@ -578,8 +589,13 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           lifecycle: "ready",
           messages: replaceMessageContent(current.messages, assistantMessage.id, response),
         }));
+
+        // Clear in-flight flag after successful generation
+        generationInFlightRef.current = false;
       } catch (error) {
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
+          // Clear in-flight flag even if component unmounted or generation superseded
+          generationInFlightRef.current = false;
           return;
         }
 
@@ -593,6 +609,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           lifecycle: "error",
           messages: current.messages.filter((message) => message.id !== assistantMessage.id),
         }));
+
+        // Clear in-flight flag after error
+        generationInFlightRef.current = false;
       }
     },
     [context],

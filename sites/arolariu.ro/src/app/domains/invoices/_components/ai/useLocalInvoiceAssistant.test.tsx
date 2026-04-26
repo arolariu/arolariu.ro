@@ -1514,6 +1514,77 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.lifecycle).toBe("ready");
     expect(result.current.state.error).toBeNull();
   });
+
+  it("prevents overlapping generations from back-to-back sendMessage calls", async () => {
+    const deferred = createDeferred<string>();
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        // Simulate streaming tokens
+        options?.onToken?.("Hello", "Hello");
+        options?.onToken?.(" World", "Hello World");
+
+        return deferred.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+
+    // Fire two back-to-back sendMessage calls in the same render cycle
+    act(() => {
+      void result.current.sendMessage("First message");
+      void result.current.sendMessage("Second message");
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("generating");
+    });
+
+    // Adapter should only be called once (second call rejected by guard)
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+
+    // Should have only one user/assistant pair in state
+    const messages = result.current.state.messages;
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe("user");
+    expect(messages[0]?.content).toBe("First message");
+    expect(messages[1]?.role).toBe("assistant");
+
+    // Complete the first generation
+    await act(async () => {
+      deferred.resolve("Hello World");
+      await Promise.resolve();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.messages[1]?.content).toBe("Hello World");
+
+    // After settling, new sends should be accepted
+    await act(async () => {
+      await result.current.sendMessage("Third message");
+    });
+
+    // Adapter now called twice (first + third, second was rejected)
+    expect(adapter.generate).toHaveBeenCalledTimes(2);
+    expect(result.current.state.messages).toHaveLength(4);
+  });
 });
 
 function createSequentialIdFactory(): () => string {
