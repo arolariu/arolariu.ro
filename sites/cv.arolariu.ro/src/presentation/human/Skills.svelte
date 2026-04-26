@@ -162,7 +162,7 @@
           {#each skills.flatMap((c) => c.skills.filter((s) => (s.level ?? 0) >= 80).slice(0, 3)) as skill, i}
             <span
               class={styles.tag}
-              style="animation: fadeIn 0.3s ease-out {i * 50}ms both;">
+              style="--tag-delay: {i * 50}ms;">
               {skill.name}
             </span>
           {/each}

@@ -232,6 +232,8 @@
   border: 1px solid var(--cv-color-gray-200);
   transition: border-color var(--cv-transition-base);
   cursor: default;
+  animation: tagFadeIn 0.3s ease-out both;
+  animation-delay: var(--tag-delay, 0ms);
 
   :global(.dark) & {
     background: var(--cv-color-gray-800);
@@ -417,7 +419,7 @@
   }
 }
 
-@keyframes fadeIn {
+@keyframes tagFadeIn {
   from {
     opacity: 0;
     transform: translateY(8px);
