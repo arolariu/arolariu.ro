@@ -17,7 +17,7 @@ import type {LocalInvoiceAssistantModelMetadata} from "./types";
  * @remarks
  * Models are ordered by preference within tiers:
  * 1. Fallback: Smallest models for constrained devices
- * 2. Balanced: Default tier (Llama 3.2 1B, Gemma 3 1B)
+ * 2. Balanced: Default tier (Llama 3.2 1B, Gemma 2 2B)
  * 3. Quality: Larger models for capable hardware
  * 4. Experimental: Bleeding-edge models requiring validation
  *

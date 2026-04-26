@@ -1,3 +1,4 @@
+import {readFileSync} from "node:fs";
 import {describe, expect, it} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import {
@@ -35,6 +36,25 @@ const WEBLLM_0_2_82_REGISTRY_METADATA = {
 const WEBLLM_0_2_82_VERIFIED_IDS = Object.keys(WEBLLM_0_2_82_REGISTRY_METADATA) as ReadonlyArray<
   keyof typeof WEBLLM_0_2_82_REGISTRY_METADATA
 >;
+
+/**
+ * Helper to read installed @mlc-ai/web-llm package bundle text.
+ *
+ * @remarks
+ * Direct prebuiltAppConfig import may fail under Node due to browser globals.
+ * Instead, we resolve the package path and read the bundle as text to verify
+ * model IDs are present. This catches dependency drift when WebLLM is upgraded.
+ */
+function getInstalledWebLlmBundleText(): string {
+  try {
+    // Resolve the installed package entry point
+    const webLlmPath = require.resolve("@mlc-ai/web-llm");
+    // Read the bundle text
+    return readFileSync(webLlmPath, "utf-8");
+  } catch (error) {
+    throw new Error(`Failed to read installed @mlc-ai/web-llm package: ${error}`);
+  }
+}
 
 describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("exports a non-empty catalog of models", () => {
@@ -115,6 +135,25 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("does not include Gemma 3 1B in the selectable catalog", () => {
     const gemma3Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
     expect(gemma3Models).toHaveLength(0);
+  });
+
+  it("only references models present in installed @mlc-ai/web-llm package bundle", () => {
+    const bundleText = getInstalledWebLlmBundleText();
+
+    // All selectable models MUST appear in the installed package
+    LOCAL_INVOICE_ASSISTANT_MODELS.forEach((model) => {
+      expect(bundleText, `Selectable model ${model.id} not found in @mlc-ai/web-llm bundle`).toContain(model.id);
+    });
+
+    // Upgrade-gated models expected to be absent SHOULD NOT appear
+    // (this catches accidental downgrade where upgrade-gated models become available)
+    const upgradeGatedIdsNotInRegistry = UPGRADE_GATED_MODEL_CANDIDATES.filter(
+      (candidate) => !WEBLLM_0_2_82_VERIFIED_IDS.includes(candidate.id as never),
+    ).map((candidate) => candidate.id);
+
+    upgradeGatedIdsNotInRegistry.forEach((modelId) => {
+      expect(bundleText, `Upgrade-gated model ${modelId} unexpectedly found in bundle`).not.toContain(modelId);
+    });
   });
 });
 

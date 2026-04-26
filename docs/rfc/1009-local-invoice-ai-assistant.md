@@ -116,7 +116,7 @@ removing cached artifacts.
 
 `modelCatalog.ts` defines the curated catalog of local invoice assistant models
 and provides hardware-aware recommendation logic. The catalog includes 8
-selectable models verified to exist in WebLLM 0.2.82, across 4 families (Llama,
+selectable models verified to exist in WebLLM 0.2.82, across 5 families (Llama,
 Gemma, Phi, Qwen, SmolLM) and 4 tiers (fallback, balanced, quality,
 experimental). All models use q4f16_1 quantization for browser feasibility.
 
