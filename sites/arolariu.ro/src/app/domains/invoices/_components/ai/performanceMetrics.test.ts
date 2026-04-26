@@ -124,6 +124,25 @@ describe("performanceMetrics", () => {
 
       // Assert
       expect(metrics.modelId).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+      expect(metrics.benchmarkPromptVersion).toBeNull(); // Normal generation has null version
+    });
+
+    it("stores benchmark prompt version when provided", () => {
+      // Arrange
+      const clock = createFakeClock([0, 1000]);
+      const tracker = createGenerationMetricsTracker({
+        benchmarkPromptVersion: "v1.0",
+        clock,
+        modelId: "test-model",
+      });
+
+      // Act
+      tracker.onStart();
+      tracker.onChunk("Benchmark response");
+      const metrics = tracker.onEnd();
+
+      // Assert
+      expect(metrics.benchmarkPromptVersion).toBe("v1.0");
     });
 
     it("uses default performance.now() clock when none provided", () => {

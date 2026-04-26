@@ -457,6 +457,7 @@ describe("useLocalInvoiceAssistant", () => {
 
   it("stores benchmark metrics without adding messages to chat history", async () => {
     const mockMetrics = {
+      benchmarkPromptVersion: "1.0",
       characterCount: 180,
       charactersPerSecond: 90,
       chunkCount: 45,
@@ -502,6 +503,8 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.latestBenchmark).toEqual(mockMetrics);
     expect(result.current.state.messages).toEqual([]); // No messages added to chat
     expect(result.current.state.lifecycle).toBe("ready");
+    // Verify benchmark prompt version is recorded
+    expect(result.current.state.latestBenchmark?.benchmarkPromptVersion).toBe("1.0");
   });
 
   it("recovers from benchmark failure without losing chat history", async () => {
@@ -588,6 +591,7 @@ describe("useLocalInvoiceAssistant", () => {
 
   it("tracks latest generation metrics for normal chat messages", async () => {
     const mockMetrics = {
+      benchmarkPromptVersion: null, // Normal chat has null version
       characterCount: 50,
       charactersPerSecond: 25,
       chunkCount: 12,
@@ -625,6 +629,7 @@ describe("useLocalInvoiceAssistant", () => {
     });
 
     expect(result.current.state.latestGeneration).toEqual(mockMetrics);
+    expect(result.current.state.latestGeneration?.benchmarkPromptVersion).toBeNull(); // Normal chat
   });
 });
 

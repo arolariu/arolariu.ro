@@ -29,6 +29,8 @@ export const DEFAULT_PERFORMANCE_CLOCK: PerformanceClock = {
  * Input parameters for tracking a generation session.
  */
 export type GenerationMetricsTrackerInput = Readonly<{
+  /** Benchmark prompt version (null for normal chat). */
+  benchmarkPromptVersion?: string | null;
   /** Injectable clock for tests (defaults to performance.now()). */
   clock?: PerformanceClock;
   /** Model ID being benchmarked. */
@@ -41,6 +43,8 @@ export type GenerationMetricsTrackerInput = Readonly<{
  * @internal
  */
 type GenerationMetricsAccumulator = {
+  /** Benchmark prompt version (null for normal chat). */
+  benchmarkPromptVersion: string | null;
   /** Total characters streamed. */
   characterCount: number;
   /** Total chunks/deltas received. */
@@ -59,6 +63,8 @@ type GenerationMetricsAccumulator = {
  * Final calculated metrics after generation completes.
  */
 export type GenerationMetrics = Readonly<{
+  /** Benchmark prompt version (null for normal chat generation). */
+  benchmarkPromptVersion: string | null;
   /** Total characters generated. */
   characterCount: number;
   /** Characters per second throughput. */
@@ -133,6 +139,7 @@ export type GenerationMetricsTracker = Readonly<{
 export function createGenerationMetricsTracker(input: GenerationMetricsTrackerInput): GenerationMetricsTracker {
   const clock = input.clock ?? DEFAULT_PERFORMANCE_CLOCK;
   const accumulator: GenerationMetricsAccumulator = {
+    benchmarkPromptVersion: input.benchmarkPromptVersion ?? null,
     characterCount: 0,
     chunkCount: 0,
     endTimeMs: null,
@@ -165,6 +172,7 @@ export function createGenerationMetricsTracker(input: GenerationMetricsTrackerIn
       const totalDurationSeconds = totalDurationMs / 1000;
 
       return {
+        benchmarkPromptVersion: accumulator.benchmarkPromptVersion,
         characterCount: accumulator.characterCount,
         charactersPerSecond: totalDurationSeconds > 0 ? accumulator.characterCount / totalDurationSeconds : 0,
         chunkCount: accumulator.chunkCount,

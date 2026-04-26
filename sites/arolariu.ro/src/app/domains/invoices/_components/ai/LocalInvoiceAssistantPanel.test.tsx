@@ -51,6 +51,10 @@ vi.mock("next-intl", () => ({
       "model.host": "Model artifacts are downloaded from {host}.",
       "model.progress": "Download progress: {progress}%",
       "model.title": "Prepare local model",
+      "benchmark.title": "Benchmark your device",
+      "benchmark.description": "Test local model speed on your current browser and hardware.",
+      "benchmark.runButton": "Run benchmark",
+      "benchmark.running": "Running benchmark...",
       privacy: "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
       "status.compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
     };
@@ -283,6 +287,117 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(await screen.findByRole("button", {name: "Download local model"})).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(adapter.load).not.toHaveBeenCalled();
+  });
+
+  it("shows benchmark UI only after model is loaded, not before or after load failure", async () => {
+    const adapter = createFakeAdapter();
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Wait for hardware analysis to complete
+    await waitFor(() => {
+      expect(screen.queryByText("Prepare local model")).toBeInTheDocument();
+    });
+
+    // Benchmark UI should NOT be visible before model loads
+    expect(screen.queryByText("Benchmark your device")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Run benchmark"})).not.toBeInTheDocument();
+
+    // Load the model
+    fireEvent.click(screen.getByRole("button", {name: "Download local model"}));
+
+    // Wait for model to be ready
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // NOW benchmark UI should be visible
+    expect(screen.getByText("Benchmark your device")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Run benchmark"})).toBeInTheDocument();
+  });
+
+  it("does not show benchmark UI after model load failure", async () => {
+    const adapter = createFakeAdapter({
+      load: vi.fn(async () => {
+        throw new Error("Model download failed");
+      }),
+    });
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Wait for hardware analysis
+    await waitFor(() => {
+      expect(screen.queryByText("Prepare local model")).toBeInTheDocument();
+    });
+
+    // Attempt to load model
+    fireEvent.click(screen.getByRole("button", {name: "Download local model"}));
+
+    // Wait for error state
+    await waitFor(() => {
+      expect(screen.queryByRole("alert")).toHaveTextContent("Model download failed");
+    });
+
+    // Benchmark UI should NOT be visible after load failure
+    expect(screen.queryByText("Benchmark your device")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Run benchmark"})).not.toBeInTheDocument();
+  });
+
+  it("shows hardware summary in benchmark section after model loads", async () => {
+    const hardwareWithDetails = {
+      ...eligibleHardware,
+      device: {
+        deviceMemoryGB: 16,
+        logicalCores: 12,
+      },
+      gpu: {
+        features: ["shader-f16", "bgra8unorm-storage"],
+        limits: {
+          maxBufferSize: 512 * 1024 ** 2,
+          maxStorageBufferBindingSize: 256 * 1024 ** 2,
+        },
+      },
+    } as const satisfies HardwareEligibilityResult;
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => hardwareWithDetails}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Load model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+
+    // Wait for model to be ready
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // Hardware summary should appear in benchmark section
+    expect(screen.getByText("Benchmark your device")).toBeInTheDocument();
+    expect(screen.getByText("GPU features: shader-f16, bgra8unorm-storage")).toBeInTheDocument();
+    expect(screen.getByText("CPU cores: 12")).toBeInTheDocument();
+    expect(screen.getByText("Device memory: 16 GB")).toBeInTheDocument();
   });
 });
 

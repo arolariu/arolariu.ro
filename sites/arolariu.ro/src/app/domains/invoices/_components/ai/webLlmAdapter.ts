@@ -56,6 +56,8 @@ export type LocalInvoiceAssistantGenerationOptions = Readonly<{
  * Options for generating a local LLM response.
  */
 export type GenerateLocalInvoiceAssistantResponseOptions = Readonly<{
+  /** Benchmark prompt version (null for normal chat). */
+  benchmarkPromptVersion?: string | null;
   /** Optional generation parameter overrides. */
   generationOptions?: Partial<LocalInvoiceAssistantGenerationOptions>;
   /** Performance metrics callback (fired when generation completes). */
@@ -339,7 +341,11 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
       }
 
       const metricsTracker = activeModelId
-        ? createGenerationMetricsTracker({clock, modelId: activeModelId})
+        ? createGenerationMetricsTracker({
+            benchmarkPromptVersion: options.benchmarkPromptVersion ?? null,
+            clock,
+            modelId: activeModelId,
+          })
         : null;
 
       const generationOptions = {

@@ -70,6 +70,7 @@ type ChatShellProps = Readonly<{
 type BenchmarkSectionProps = Readonly<{
   canRunBenchmark: boolean;
   isRunning: boolean;
+  modelLoaded: boolean;
   onRunBenchmark: () => void;
   state: LocalInvoiceAssistantState;
 }>;
@@ -236,14 +237,15 @@ function ModelPreparationCard({
   return null;
 }
 
-function BenchmarkSection({canRunBenchmark, isRunning, onRunBenchmark, state}: BenchmarkSectionProps): React.JSX.Element | null {
+function BenchmarkSection({canRunBenchmark, isRunning, modelLoaded, onRunBenchmark, state}: BenchmarkSectionProps): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
 
-  if (!state.hardware || state.lifecycle === "hardware-ineligible" || state.lifecycle === "checking-hardware") {
+  // Only show if hardware is available and model was successfully loaded
+  if (!state.hardware || !modelLoaded) {
     return null;
   }
 
-  const shouldShowBenchmark = state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error";
+  const shouldShowBenchmark = state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "cancelled";
 
   if (!shouldShowBenchmark) {
     return null;
@@ -253,6 +255,9 @@ function BenchmarkSection({canRunBenchmark, isRunning, onRunBenchmark, state}: B
     <div className={styles["benchmarkSection"]}>
       <h3 className={styles["sectionTitle"]}>{t("benchmark.title")}</h3>
       <p className={styles["statusText"]}>{t("benchmark.description")}</p>
+
+      {/* Hardware summary */}
+      <DeviceCompatibilityDetails hardware={state.hardware} />
 
       {state.latestBenchmark && (
         <div className={styles["metricsBox"]}>
@@ -467,6 +472,7 @@ export function LocalInvoiceAssistantPanel({
     state,
   } = assistant;
   const isGenerating = state.lifecycle === "generating";
+  const modelLoaded = state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "cancelled";
   const progressPercent = Math.round(state.progress * 100);
 
   const handleLoadModel = useCallback((): void => {
@@ -540,6 +546,7 @@ export function LocalInvoiceAssistantPanel({
         <BenchmarkSection
           canRunBenchmark={canRunBenchmark}
           isRunning={isGenerating}
+          modelLoaded={modelLoaded}
           onRunBenchmark={handleRunBenchmark}
           state={state}
         />

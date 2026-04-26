@@ -103,6 +103,16 @@ const LOCAL_INVOICE_ASSISTANT_BENCHMARK_PROMPT =
   "In 3 short sentences, explain how local invoice analysis ensures privacy by running models entirely in the browser without server uploads.";
 
 /**
+ * Benchmark prompt version for tracking metrics.
+ *
+ * @remarks
+ * Increment when benchmark prompt changes to track results separately.
+ *
+ * @internal
+ */
+const LOCAL_INVOICE_ASSISTANT_BENCHMARK_PROMPT_VERSION = "1.0";
+
+/**
  * Fallback message ID counter for browsers without crypto.randomUUID.
  *
  * @internal
@@ -545,6 +555,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
     try {
       await adapter.generate(benchmarkMessages, {
+        benchmarkPromptVersion: LOCAL_INVOICE_ASSISTANT_BENCHMARK_PROMPT_VERSION,
         onMetrics: (metrics) => {
           if (!isMountedRef.current || generationIdRef.current !== generationId) {
             return;

@@ -278,6 +278,67 @@ prompt.
   adapter path.
 - Use a quantized 1B model to balance capability with browser feasibility.
 
+### 5.3 In-Browser Benchmark
+
+An in-app benchmark tool allows users to measure local model performance on their
+current browser and hardware without sending invoice data.
+
+**Manual Benchmark Instructions:**
+
+1. Navigate to the invoices domain and open the local AI assistant panel.
+2. Wait for hardware analysis and model download to complete (lifecycle: `ready`).
+3. Click the **"Run benchmark"** button in the benchmark section.
+4. The assistant generates a privacy-safe test response (~60 tokens) and displays:
+   - **First token latency** (ms) - time to first generated output
+   - **Estimated tokens/sec** (chunk-based proxy, not true token count)
+   - **Total duration** (ms)
+   - **Characters/sec**
+   - **Model ID**
+
+**Important Caveats:**
+
+- Benchmark results apply **only** to that exact device, browser, GPU, and thermal state.
+- Results vary based on:
+  - GPU model and driver version
+  - Available VRAM and system memory
+  - CPU performance and thermal throttling
+  - Browser WebGPU implementation (Chrome vs. Firefox vs. Edge)
+  - Background processes and system load
+- **Estimated tokens/sec** is a chunk/delta count proxy. WebLLM streaming API does not
+  currently expose true token usage. If true token counts become available in future
+  WebLLM versions, the metric will be updated.
+- Benchmark does NOT send invoice data - it uses a generic privacy-focused prompt.
+- Results are session-only and not persisted or sent to any server.
+- For comparable device benchmarks, document:
+  - Device model (e.g., "MacBook Pro M2 Max 32GB")
+  - Browser and version (e.g., "Chrome 125.0.6422.112")
+  - GPU (e.g., "Apple M2 Max integrated GPU")
+  - Model ID (e.g., "Llama-3.2-1B-Instruct-q4f16_1-MLC")
+  - Thermal state (e.g., "cool idle" vs. "warm after sustained load")
+
+**Recording Results:**
+
+When documenting benchmark results in PR descriptions or analysis notes, use this format:
+
+```
+Device: MacBook Pro M2 Max 32GB
+Browser: Chrome 125.0.6422.112
+GPU: Apple M2 Max (integrated)
+Model: Llama-3.2-1B-Instruct-q4f16_1-MLC
+Prompt Version: 1.0
+Thermal: Cool idle
+
+Results:
+- First token: 142ms
+- Tokens/sec: 23.4 (estimated, chunk-based)
+- Duration: 1920ms
+- Characters/sec: 95
+```
+
+This data helps understand real-world performance across different hardware configurations
+but should never be used for cross-device comparisons or performance claims.
+
+
 ---
 
 ## 6. Security Considerations
@@ -364,3 +425,4 @@ model artifacts are owned by browser/WebLLM cache storage.
 **Document Version**: 1.0.0
 **Last Updated**: 2026-04-25
 **Status**: Implemented
+
