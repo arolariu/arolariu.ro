@@ -62,6 +62,27 @@ Handles live/E2E test execution and result reporting.
 
 Handles unit test execution and coverage reporting.
 
+### runWorkflowInventory.ts
+
+Generates `artifacts/workflows/inventory.json` with workflow triggers,
+permissions, action references, environments, path filters, and concurrency
+metadata.
+
+```bash
+npm run workflow:inventory
+```
+
+### runWorkflowPolicyCheck.ts
+
+Enforces repository workflow policy: SHA-pinned external actions, exact cache
+keys without `restore-keys`, least-privilege permissions, reviewed
+`pull_request_target` usage, deployment environment gates, and Azure OIDC
+permissions.
+
+```bash
+npm run workflow:policy
+```
+
 ---
 
 ## Hygiene Check System (V2)
