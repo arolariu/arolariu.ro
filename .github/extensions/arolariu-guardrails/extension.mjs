@@ -98,8 +98,9 @@ const session = await joinSession({
 					if (/style\s*=\s*\{\{/.test(content)) {
 						return {
 							additionalContext:
-								"⚠️ Inline styles detected. This codebase uses Tailwind CSS exclusively. " +
-								"Replace inline style={{...}} with Tailwind utility classes.",
+								"⚠️ Inline styles detected. This codebase avoids inline style={{...}} objects. " +
+								"Use the project's established styling approach: CSS modules, SCSS modules, or utility classes from the component library. " +
+								"For shared components, use CSS modules. For site-specific components, follow the site's styling pattern.",
 						};
 					}
 				}
