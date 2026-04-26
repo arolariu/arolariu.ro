@@ -1,16 +1,68 @@
 @use "./tokens";
 
-html {
+html,
+.cv-html {
+  height: 100%;
   scroll-behavior: smooth;
   text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+body,
+.cv-body {
+  height: 100%;
   min-height: 100dvh;
   margin: 0;
   font-family: var(--cv-font-body);
+  background: var(--cv-color-white);
+  color: var(--cv-color-black);
+  transition: background-color var(--cv-transition-slow), color var(--cv-transition-slow);
+}
+
+:is(.dark) body,
+:is(.dark) .cv-body {
+  background: var(--cv-color-black);
+  color: var(--cv-color-white);
+}
+
+.cv-noscript {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cv-color-white);
+  z-index: 9999;
+}
+
+:is(.dark) .cv-noscript {
+  background: var(--cv-color-black);
+}
+
+.cv-noscript__content {
+  padding: 2rem;
+  text-align: center;
+}
+
+.cv-noscript__title {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cv-color-black);
+}
+
+:is(.dark) .cv-noscript__title {
+  color: var(--cv-color-white);
+}
+
+.cv-noscript__description {
+  margin: 0;
+  color: var(--cv-color-gray-600);
+}
+
+:is(.dark) .cv-noscript__description {
+  color: var(--cv-color-gray-400);
 }
 
 button,
