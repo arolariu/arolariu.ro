@@ -520,12 +520,17 @@ function AnalyticsPreview({analytics}: Readonly<{analytics: LocalInvoiceAssistan
  * @remarks
  * Displays localized suggested questions as clickable buttons,
  * helping users discover assistant capabilities.
+ * Buttons are disabled when the chat is not ready to send messages.
  */
 function SuggestedPrompts({
   analytics,
+  canSendMessage,
+  isGenerating,
   onPromptClick,
 }: Readonly<{
   analytics: LocalInvoiceAssistantAnalytics;
+  canSendMessage: boolean;
+  isGenerating: boolean;
   onPromptClick: (promptKey: SuggestedPromptKey) => void;
 }>): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
@@ -535,6 +540,7 @@ function SuggestedPrompts({
   }
 
   const promptKeys = getSuggestedPromptKeys(analytics);
+  const canUsePrompts = canSendMessage && !isGenerating;
 
   return (
     <div className={styles["suggestedPrompts"]}>
@@ -545,6 +551,7 @@ function SuggestedPrompts({
             key={key}
             type='button'
             variant='outline'
+            disabled={!canUsePrompts}
             onClick={() => {
               onPromptClick(key);
             }}>
@@ -617,6 +624,8 @@ function ChatShell({
 
         <SuggestedPrompts
           analytics={analytics}
+          canSendMessage={canSendMessage}
+          isGenerating={isGenerating}
           onPromptClick={onPromptClick}
         />
 
@@ -746,11 +755,16 @@ export function LocalInvoiceAssistantPanel({
 
   const handlePromptClick = useCallback(
     (promptKey: SuggestedPromptKey): void => {
+      // Defensive guard: only send if chat is ready and not generating
+      if (!canSendMessage || isGenerating) {
+        return;
+      }
+
       const promptText = t(`suggestedPrompts.${promptKey}`);
       setQuestion("");
       void sendMessage(promptText);
     },
-    [sendMessage, t],
+    [canSendMessage, isGenerating, sendMessage, t],
   );
 
   const handleSubmit = useCallback(

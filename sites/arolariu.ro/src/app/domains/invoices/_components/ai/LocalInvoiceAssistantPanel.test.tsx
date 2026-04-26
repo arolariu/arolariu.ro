@@ -641,7 +641,90 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(userMessages.length).toBeGreaterThanOrEqual(1); // At least one instance (in the chat history)
     expect(await screen.findByText("Summary result")).toBeInTheDocument(); // Assistant response
   });
+
+  it("disables prompt chips and blocks sending when model is generating", async () => {
+    const pendingResponse = createDeferred<string>();
+    const invoices = [new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build()];
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onToken?.("Partial answer", "Partial answer");
+
+        return pendingResponse.promise;
+      }),
+    });
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Load model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // Start generation via manual input
+    fireEvent.change(screen.getByLabelText("Ask a local invoice question"), {
+      target: {value: "Manual question"},
+    });
+    fireEvent.click(screen.getByRole("button", {name: "Send"}));
+
+    // Wait for generation to start
+    await waitFor(() => {
+      expect(screen.getByRole("button", {name: "Stop generating"})).toBeInTheDocument();
+    });
+
+    // Verify prompt chips are disabled during generation
+    const promptButton = screen.getByRole("button", {name: "Summarize my total spending"});
+    expect(promptButton).toBeDisabled();
+
+    // Attempt to click disabled prompt button
+    fireEvent.click(promptButton);
+
+    // Verify generate was NOT called again (still only once from manual input)
+    expect(adapter.generate).toHaveBeenCalledOnce();
+
+    // Complete the generation
+    pendingResponse.resolve("Final answer");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", {name: "Stop generating"})).not.toBeInTheDocument();
+    });
+
+    // Verify prompt chips are re-enabled after generation completes
+    expect(promptButton).not.toBeDisabled();
+  });
+
+  it("disables prompt chips when chat is not ready to send messages", async () => {
+    const invoices = [new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build()];
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Wait for hardware check to complete but do NOT load model
+    await waitFor(() => {
+      expect(screen.getByText("Prepare local model")).toBeInTheDocument();
+    });
+
+    // Suggested prompts should NOT appear because model is not loaded
+    expect(screen.queryByText("Suggested questions")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Summarize my total spending"})).not.toBeInTheDocument();
+  });
 });
+
 
 function createSequentialIdFactory(): () => string {
   let index = 0;
