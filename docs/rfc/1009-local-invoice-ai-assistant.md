@@ -76,10 +76,10 @@ downloads a model. The gate requires:
 - At least 4 GiB `deviceMemory` when that signal is available.
 - At least 4 logical cores when `hardwareConcurrency` is available.
 
-Unavailable storage estimates are treated as ineligible because model artifacts
-are large and failing late during download creates a worse recovery path.
-Unavailable memory or CPU signals are treated as `unknown`, allowing the user to
-try the feature with a compatibility warning.
+Unavailable storage, memory, or CPU signals are treated as `unknown`, allowing
+the user to try the feature with a compatibility warning and explicit download
+consent. Known low storage, memory, CPU, WebGPU, or Worker failures remain
+ineligible blockers.
 
 #### Prompt context and analytics
 
@@ -277,6 +277,8 @@ prompt.
 - Keep WebLLM out of the initial route bundle by dynamically importing it in the
   adapter path.
 - Use a quantized 1B model to balance capability with browser feasibility.
+- Never load or benchmark the model automatically; users must explicitly start
+  download and benchmark actions.
 
 ### 5.3 In-Browser Benchmark
 
@@ -440,16 +442,18 @@ or upgrade-gated model IDs before WebLLM initialization.
 
 ### 7.1 Unit Tests
 
-The focused unit suite covers:
+The unit suite covers the local assistant without downloading real WebLLM
+artifacts in CI:
 
 - hardware eligibility and ineligibility reasons
-- storage-estimate unavailability blocking the feature
+- storage-estimate unavailability as an `unknown` compatibility warning
 - model catalog structure, tier classification, and upgrade-gated exclusions
 - hardware-aware model recommendation (eligible, unknown, ineligible, storage/VRAM constraints)
 - prompt context sanitization, aliasing, limits, and analytics
 - WebLLM adapter loading, streaming, interruption, disposal, and cache deletion
 - hook lifecycle transitions, error recovery, retry, and late response guards
 - panel UI states, hardware fallback, retry, stop generation, and error dismiss
+- explicit-download behavior, including no model load on page render
 - route wiring for invoice list and invoice detail views
 
 ### 7.2 Integration Tests
@@ -460,13 +464,26 @@ active invoice.
 
 ### 7.3 Manual Checks
 
-Manual browser checks should cover:
+Manual browser checks should be run by a human on real target devices. They must
+not be executed by CI or automated live/E2E suites because real model download
+can fetch multi-GB artifacts and benchmark results are device-specific.
+
+Recommended targets:
+
+1. Chrome or Edge desktop with WebGPU enabled.
+2. Safari 18+ if available on macOS/iPadOS.
+3. A WebGPU-capable mobile browser, if available.
+4. A low-end laptop or constrained VM to verify fallback behavior.
+
+Manual flow:
 
 1. Ineligible device fallback.
 2. Compatibility warning on unknown CPU or memory signals.
 3. Explicit model download.
 4. Interrupting an in-progress answer.
 5. Clearing cached model artifacts.
+6. Benchmark run after the model is ready, recording first-token latency and
+   estimated tokens/sec with the device/browser/model caveats from section 5.3.
 
 ---
 

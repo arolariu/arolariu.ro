@@ -43,8 +43,7 @@ vi.mock("next-intl", () => ({
       "benchmark.runButton": "Run benchmark",
       "benchmark.running": "Running benchmark...",
       "benchmark.title": "Benchmark your device",
-      "cache.behavior":
-        "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
+      "cache.behavior": "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
       "cache.clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
       "cache.source": "Model artifacts downloaded from trusted source: {host}",
       "chat.inputLabel": "Ask a local invoice question",
@@ -135,10 +134,11 @@ describe("LocalInvoiceAssistantPanel", () => {
         },
       },
     } as const satisfies HardwareEligibilityResult;
+    const adapter = createFakeAdapter();
 
     render(
       <LocalInvoiceAssistantPanel
-        adapter={createFakeAdapter()}
+        adapter={adapter}
         analyzeHardware={async () => hardwareWithGpuLimits}
         createId={createSequentialIdFactory()}
         invoices={[]}
@@ -150,6 +150,7 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(screen.getByText("GPU features: shader-f16")).toBeInTheDocument();
     expect(screen.getByText("GPU buffer limit: 256 MB")).toBeInTheDocument();
     expect(screen.getByText("GPU storage buffer binding limit: 128 MB")).toBeInTheDocument();
+    expect(adapter.load).not.toHaveBeenCalled();
   });
 
   it("downloads the local model and sends sanitized invoice questions", async () => {
@@ -533,16 +534,8 @@ describe("LocalInvoiceAssistantPanel", () => {
 
   it("renders localized suggested prompt chips after model loads with invoices", async () => {
     const invoices = [
-      new InvoiceBuilder()
-        .withMerchantReference("merchant-a")
-        .withPaymentAmount(100)
-        .withPaymentCurrency("RON")
-        .build(),
-      new InvoiceBuilder()
-        .withMerchantReference("merchant-a")
-        .withPaymentAmount(50)
-        .withPaymentCurrency("USD")
-        .build(),
+      new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(100).withPaymentCurrency("RON").build(),
+      new InvoiceBuilder().withMerchantReference("merchant-a").withPaymentAmount(50).withPaymentCurrency("USD").build(),
     ];
 
     render(
@@ -597,9 +590,7 @@ describe("LocalInvoiceAssistantPanel", () => {
 
   it("sends the localized prompt text through the adapter when a chip is clicked", async () => {
     const capturedMessages: string[] = [];
-    const invoices = [
-      new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build(),
-    ];
+    const invoices = [new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build()];
     const adapter = createFakeAdapter({
       generate: vi.fn(async (messages, options) => {
         capturedMessages.push(JSON.stringify(messages));
@@ -724,7 +715,6 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(screen.queryByRole("button", {name: "Summarize my total spending"})).not.toBeInTheDocument();
   });
 });
-
 
 function createSequentialIdFactory(): () => string {
   let index = 0;
