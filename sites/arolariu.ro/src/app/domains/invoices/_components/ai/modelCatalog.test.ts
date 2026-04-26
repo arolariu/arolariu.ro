@@ -7,6 +7,18 @@ import {
   UPGRADE_GATED_MODEL_CANDIDATES,
   recommendLocalInvoiceAssistantModel,
 } from "./modelCatalog";
+import type {LocalInvoiceAssistantModelMetadata} from "./types";
+
+/**
+ * Widened views of catalog arrays for dynamic type-check compatibility.
+ *
+ * @remarks
+ * The catalog exports `as const` literal tuples to preserve type safety.
+ * Test assertions performing dynamic checks (`.includes()`, `.has()`, ID comparisons)
+ * require widened array types to avoid TypeScript literal-union constraints.
+ */
+const selectableModels: ReadonlyArray<LocalInvoiceAssistantModelMetadata> = LOCAL_INVOICE_ASSISTANT_MODELS;
+const upgradeGatedCandidates: ReadonlyArray<LocalInvoiceAssistantModelMetadata> = UPGRADE_GATED_MODEL_CANDIDATES;
 
 /**
  * WebLLM 0.2.82 verified model metadata from installed package registry.
@@ -58,55 +70,55 @@ function getInstalledWebLlmBundleText(): string {
 
 describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("exports a non-empty catalog of models", () => {
-    expect(LOCAL_INVOICE_ASSISTANT_MODELS).toBeDefined();
-    expect(LOCAL_INVOICE_ASSISTANT_MODELS.length).toBeGreaterThan(0);
+    expect(selectableModels).toBeDefined();
+    expect(selectableModels.length).toBeGreaterThan(0);
   });
 
   it("includes Llama 3.2 1B as the default model", () => {
-    const llama32 = LOCAL_INVOICE_ASSISTANT_MODELS.find((model) => model.id === "Llama-3.2-1B-Instruct-q4f16_1-MLC");
+    const llama32 = selectableModels.find((model) => model.id === "Llama-3.2-1B-Instruct-q4f16_1-MLC");
     expect(llama32).toBeDefined();
     expect(llama32?.displayName).toBe("Llama 3.2 1B Instruct");
     expect(llama32?.family).toBe("llama");
   });
 
   it("includes multiple model families in the catalog", () => {
-    const families = new Set(LOCAL_INVOICE_ASSISTANT_MODELS.map((model) => model.family));
+    const families = new Set(selectableModels.map((model) => model.family));
     expect(families.size).toBeGreaterThan(1);
     expect(families).toContain("llama");
     expect(families).toContain("gemma");
   });
 
   it("includes tier metadata for all models", () => {
-    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+    for (const model of selectableModels) {
       expect(model.tier).toBeDefined();
       expect(["fallback", "balanced", "quality", "experimental"]).toContain(model.tier);
     }
   });
 
   it("includes vramRequiredMB for all models", () => {
-    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+    for (const model of selectableModels) {
       expect(typeof model.vramRequiredMB).toBe("number");
       expect(model.vramRequiredMB).toBeGreaterThan(0);
     }
   });
 
   it("does not include Qwen 3.5 models in the selectable catalog", () => {
-    const qwen35Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id.includes("Qwen3.5"));
+    const qwen35Models = selectableModels.filter((model) => model.id.includes("Qwen3.5"));
     expect(qwen35Models).toHaveLength(0);
   });
 
   it("does not include Phi 4 Mini in the selectable catalog", () => {
-    const phi4Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id.includes("Phi-4"));
+    const phi4Models = selectableModels.filter((model) => model.id.includes("Phi-4"));
     expect(phi4Models).toHaveLength(0);
   });
 
   it("does not include Gemma 4 models in the selectable catalog", () => {
-    const gemma4Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id.includes("gemma-4") || model.id.includes("gemma4"));
+    const gemma4Models = selectableModels.filter((model) => model.id.includes("gemma-4") || model.id.includes("gemma4"));
     expect(gemma4Models).toHaveLength(0);
   });
 
   it("includes models with shader-f16 feature requirements", () => {
-    const shader16Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.requiredFeatures.includes("shader-f16"));
+    const shader16Models = selectableModels.filter((model) => model.requiredFeatures.includes("shader-f16"));
     // At least SmolLM2 360M and Gemma 2 2B should require shader-f16
     expect(shader16Models.length).toBeGreaterThan(0);
     const smolLm2 = shader16Models.find((model) => model.id === "SmolLM2-360M-Instruct-q4f16_1-MLC");
@@ -117,13 +129,13 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
 
   it("contains only WebLLM 0.2.82 verified model IDs", () => {
     const allowedIds = new Set(WEBLLM_0_2_82_VERIFIED_IDS);
-    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+    for (const model of selectableModels) {
       expect(allowedIds.has(model.id as (typeof WEBLLM_0_2_82_VERIFIED_IDS)[number])).toBe(true);
     }
   });
 
   it("matches WebLLM 0.2.82 registry metadata exactly", () => {
-    for (const model of LOCAL_INVOICE_ASSISTANT_MODELS) {
+    for (const model of selectableModels) {
       const registryMetadata = WEBLLM_0_2_82_REGISTRY_METADATA[model.id as keyof typeof WEBLLM_0_2_82_REGISTRY_METADATA];
       expect(registryMetadata).toBeDefined();
       expect(model.vramRequiredMB).toBe(registryMetadata.vramMB);
@@ -133,7 +145,7 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   });
 
   it("does not include Gemma 3 1B in the selectable catalog", () => {
-    const gemma3Models = LOCAL_INVOICE_ASSISTANT_MODELS.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
+    const gemma3Models = selectableModels.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
     expect(gemma3Models).toHaveLength(0);
   });
 
@@ -141,13 +153,13 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
     const bundleText = getInstalledWebLlmBundleText();
 
     // All selectable models MUST appear in the installed package
-    LOCAL_INVOICE_ASSISTANT_MODELS.forEach((model) => {
+    selectableModels.forEach((model) => {
       expect(bundleText, `Selectable model ${model.id} not found in @mlc-ai/web-llm bundle`).toContain(model.id);
     });
 
     // Upgrade-gated models expected to be absent SHOULD NOT appear
     // (this catches accidental downgrade where upgrade-gated models become available)
-    const upgradeGatedIdsNotInRegistry = UPGRADE_GATED_MODEL_CANDIDATES.filter(
+    const upgradeGatedIdsNotInRegistry = upgradeGatedCandidates.filter(
       (candidate) => !WEBLLM_0_2_82_VERIFIED_IDS.includes(candidate.id as never),
     ).map((candidate) => candidate.id);
 
@@ -159,28 +171,28 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
 
 describe("UPGRADE_GATED_MODEL_CANDIDATES", () => {
   it("exports upgrade-gated candidates as typed records", () => {
-    expect(UPGRADE_GATED_MODEL_CANDIDATES).toBeDefined();
-    expect(Array.isArray(UPGRADE_GATED_MODEL_CANDIDATES)).toBe(true);
+    expect(upgradeGatedCandidates).toBeDefined();
+    expect(Array.isArray(upgradeGatedCandidates)).toBe(true);
   });
 
   it("includes Qwen 3.5 models as upgrade-gated candidates", () => {
-    const qwen35Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id.includes("Qwen3.5"));
+    const qwen35Models = upgradeGatedCandidates.filter((model) => model.id.includes("Qwen3.5"));
     expect(qwen35Models.length).toBeGreaterThan(0);
   });
 
   it("includes Phi 4 Mini as upgrade-gated candidate", () => {
-    const phi4Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id.includes("Phi-4"));
+    const phi4Models = upgradeGatedCandidates.filter((model) => model.id.includes("Phi-4"));
     expect(phi4Models.length).toBeGreaterThan(0);
   });
 
   it("includes Gemma 3 1B as upgrade-gated candidate", () => {
-    const gemma3Models = UPGRADE_GATED_MODEL_CANDIDATES.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
+    const gemma3Models = upgradeGatedCandidates.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
     expect(gemma3Models.length).toBeGreaterThan(0);
   });
 
   it("ensures upgrade-gated candidates are not in selectable catalog", () => {
-    const selectableIds = new Set(LOCAL_INVOICE_ASSISTANT_MODELS.map((model) => model.id));
-    for (const candidate of UPGRADE_GATED_MODEL_CANDIDATES) {
+    const selectableIds = new Set(selectableModels.map((model) => model.id));
+    for (const candidate of upgradeGatedCandidates) {
       expect(selectableIds.has(candidate.id)).toBe(false);
     }
   });
