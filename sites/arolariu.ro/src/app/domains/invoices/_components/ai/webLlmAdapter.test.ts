@@ -376,6 +376,107 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
       "Load the local invoice assistant model before generating a response.",
     );
   });
+
+  describe("catalog enforcement", () => {
+    it("rejects load() for unsupported model ID not in catalog", async () => {
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
+      const unsupportedModel = {
+        id: "unsupported-model-12345",
+        displayName: "Unsupported Model",
+        artifactHost: "https://example.com/invalid",
+        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
+      };
+
+      await expect(
+        adapter.load({
+          model: unsupportedModel,
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrow("Unsupported model ID");
+      await expect(
+        adapter.load({
+          model: unsupportedModel,
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrow('Only models from the selectable catalog can be loaded');
+    });
+
+    it("rejects load() for upgrade-gated model not in selectable catalog", async () => {
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
+      // Use actual upgrade-gated model from catalog
+      const upgradedModel = {
+        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC-1k",
+        displayName: "Llama 3.2 3B",
+        artifactHost: "https://huggingface.co/mlc-ai",
+        estimatedVRAM: {gb: 2, bytes: 2_000_000_000},
+      };
+
+      await expect(
+        adapter.load({
+          model: upgradedModel,
+          onProgress: vi.fn(),
+        }),
+      ).rejects.toThrow("Unsupported model ID");
+    });
+
+    it("rejects deleteCachedModel() for unsupported model ID not in catalog", async () => {
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
+      const unsupportedModel = {
+        id: "unsupported-model-12345",
+        displayName: "Unsupported Model",
+        artifactHost: "https://example.com/invalid",
+        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
+      };
+
+      await expect(adapter.deleteCachedModel(unsupportedModel)).rejects.toThrow("Unsupported model ID");
+      await expect(adapter.deleteCachedModel(unsupportedModel)).rejects.toThrow(
+        'Only models from the selectable catalog can be deleted',
+      );
+    });
+
+    it("rejects deleteCachedModel() for upgrade-gated model not in selectable catalog", async () => {
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
+      const upgradedModel = {
+        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC-1k",
+        displayName: "Llama 3.2 3B",
+        artifactHost: "https://huggingface.co/mlc-ai",
+        estimatedVRAM: {gb: 2, bytes: 2_000_000_000},
+      };
+
+      await expect(adapter.deleteCachedModel(upgradedModel)).rejects.toThrow("Unsupported model ID");
+    });
+
+    it("allows load() for supported model from selectable catalog", async () => {
+      const worker = createFakeWorker();
+      const fakeEngine = createFakeEngine(["Response"]);
+      const mockCreateWebWorkerMLCEngine = vi.fn(async () => fakeEngine);
+
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+        createWorker: () => worker,
+        importWebLlm: async () => ({
+          CreateWebWorkerMLCEngine: mockCreateWebWorkerMLCEngine,
+          deleteModelAllInfoInCache: vi.fn(async () => undefined),
+        }),
+      });
+
+      // Use actual selectable model
+      const selectableModel = {
+        id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+        displayName: "Llama 3.2 1B",
+        artifactHost: "https://huggingface.co/mlc-ai",
+        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
+      };
+
+      // Should not throw, will call WebLLM (mocked)
+      await adapter.load({
+        model: selectableModel,
+        onProgress: vi.fn(),
+      });
+
+      // Verify WebLLM was called with catalog-verified ID
+      expect(mockCreateWebWorkerMLCEngine).toHaveBeenCalledWith(expect.anything(), selectableModel.id, expect.anything());
+    });
+  });
 });
 
 function createFakeEngine(tokens: ReadonlyArray<string>, requests: FakeChatCompletionRequest[] = []) {

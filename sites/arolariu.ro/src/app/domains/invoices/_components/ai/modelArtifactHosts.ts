@@ -69,10 +69,16 @@ export const WEBLLM_BINARY_LIBRARY_HOST = "https://raw.githubusercontent.com";
  *
  * @param artifactHosts - Array of full artifact host URLs from model catalog.
  * @returns Array of unique CSP origins (scheme + host).
+ * @throws Error if any artifact host is malformed or uses non-HTTPS protocol.
  *
  * @remarks
+ * **Fail-closed security:**
+ * - Throws for malformed URLs (prevents silent skipping of invalid entries)
+ * - Throws for non-HTTPS protocols (http:, ftp:, etc.)
+ * - Production CSP must be HTTPS-only for model artifact downloads
+ *
  * Converts full artifact URLs to CSP-compatible origins by extracting
- * scheme and host only (no path). Deduplicates in case multiple catalog
+ * origin (scheme + host). Deduplicates in case multiple catalog
  * entries share the same origin.
  *
  * **Example:**
@@ -96,15 +102,21 @@ export function deriveUniqueArtifactOrigins(artifactHosts: ReadonlyArray<string>
   const origins = new Set<string>();
 
   for (const host of artifactHosts) {
+    let url: URL;
+
     try {
-      const url = new URL(host);
-      // CSP origin: scheme + host (+ port if non-default)
-      const origin = `${url.protocol}//${url.host}`;
-      origins.add(origin);
-    } catch {
-      // Invalid URL, skip
-      continue;
+      url = new URL(host);
+    } catch (error) {
+      throw new Error(`Invalid artifact host URL: "${host}". Artifact hosts must be valid HTTPS URLs.`, {cause: error});
     }
+
+    // Enforce HTTPS-only for production CSP security
+    if (url.protocol !== "https:") {
+      throw new Error(`Invalid artifact host protocol: "${host}". Only HTTPS is allowed, found: ${url.protocol}`);
+    }
+
+    // Use url.origin for CSP (scheme + host + port)
+    origins.add(url.origin);
   }
 
   return Array.from(origins).sort();

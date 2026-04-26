@@ -57,7 +57,7 @@ type UseLocalInvoiceAssistantResult = Readonly<{
   canSendMessage: boolean;
   /** Sanitized invoice context for prompts. */
   context: LocalInvoiceAssistantContext;
-  /** Deletes cached model from IndexedDB. */
+  /** Deletes cached model from Cache API (WebLLM-managed). */
   deleteCachedModel: () => Promise<void>;
   /** Dismisses error and recovers to last valid state. */
   dismissError: () => void;

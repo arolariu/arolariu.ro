@@ -279,6 +279,15 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
     onProgress: LoadLocalInvoiceAssistantModelOptions["onProgress"],
     signal?: AbortSignal,
   ): Promise<void> {
+    // Enforce catalog lookup: reject arbitrary/upgrade-gated/unsupported models
+    const catalogModel = getLocalInvoiceAssistantModelById(model.id);
+    if (!catalogModel) {
+      throw new Error(
+        `Unsupported model ID: "${model.id}". Only models from the selectable catalog can be loaded. ` +
+          `Use getLocalInvoiceAssistantModelById() to verify model support before loading.`,
+      );
+    }
+
     const nextWorker = createWorker();
     worker = nextWorker;
 
@@ -313,7 +322,8 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         throw new Error("Model load aborted");
       }
 
-      const nextEngine = await webLlm.CreateWebWorkerMLCEngine(nextWorker, model.id, {
+      // Use catalog-verified model ID for WebLLM engine creation
+      const nextEngine = await webLlm.CreateWebWorkerMLCEngine(nextWorker, catalogModel.id, {
         initProgressCallback: onProgress,
         logLevel: "WARN",
       });
@@ -374,11 +384,21 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
 
   return {
     async deleteCachedModel(model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL): Promise<void> {
+      // Enforce catalog lookup: reject arbitrary/upgrade-gated/unsupported models
+      const catalogModel = getLocalInvoiceAssistantModelById(model.id);
+      if (!catalogModel) {
+        throw new Error(
+          `Unsupported model ID: "${model.id}". Only models from the selectable catalog can be deleted. ` +
+            `Use getLocalInvoiceAssistantModelById() to verify model support before deleting.`,
+        );
+      }
+
       // Increment generation to invalidate any pending loads
       loadGeneration += 1;
       await unloadActiveModel({interrupt: true});
       const webLlm = await importWebLlm();
-      await webLlm.deleteModelAllInfoInCache(model.id);
+      // Use catalog-verified model ID for cache deletion
+      await webLlm.deleteModelAllInfoInCache(catalogModel.id);
     },
     async dispose(): Promise<void> {
       // Increment generation to invalidate any pending loads

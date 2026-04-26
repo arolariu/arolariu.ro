@@ -19,6 +19,23 @@ const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" 
 const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
 
 /**
+ * Azure Blob Storage CSP origins for scan upload/download.
+ *
+ * @remarks
+ * Required for existing scan upload/download flows:
+ * - `upload-scans/_context/ScanUploadContext.tsx`: Direct `fetch(sasUrl)` to Azure Blob SAS URLs
+ * - `_components/ScanCard.tsx`: Direct `fetch(scan.blobUrl)` for scan image downloads
+ *
+ * Matches existing image remote pattern `**.blob.core.windows.net`.
+ *
+ * **Production**: Azure Blob Storage (*.blob.core.windows.net)
+ * **Development**: Azurite local emulator (localhost:10000) for testing
+ */
+const azureBlobOrigins = isProduction
+  ? "https://*.blob.core.windows.net"
+  : "https://*.blob.core.windows.net http://localhost:10000 http://127.0.0.1:10000";
+
+/**
  * Local AI assistant CSP origins for model artifacts and WebLLM libraries.
  *
  * @remarks
@@ -50,7 +67,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
     img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
     worker-src 'self' blob: data: ${trustedDomains};
-    connect-src 'self' ${trustedDomains} ${webLlmCspOrigins};
+    connect-src 'self' ${trustedDomains} ${azureBlobOrigins} ${webLlmCspOrigins};
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';

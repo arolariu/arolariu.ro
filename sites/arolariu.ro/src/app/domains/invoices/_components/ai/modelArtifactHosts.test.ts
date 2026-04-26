@@ -60,25 +60,28 @@ describe("modelArtifactHosts", () => {
       expect(origins).toEqual([]);
     });
 
-    it("skips malformed URLs that throw URL constructor errors", () => {
-      const origins = deriveUniqueArtifactOrigins([
-        "https://valid.com/path",
-        "not-a-url",
-        "://malformed",
-        "https://another-valid.com",
-      ]);
-      expect(origins).toEqual(["https://another-valid.com", "https://valid.com"]);
+    it("throws for malformed URLs", () => {
+      expect(() => deriveUniqueArtifactOrigins(["not-a-url"])).toThrow("Invalid artifact host URL");
+      expect(() => deriveUniqueArtifactOrigins(["://malformed"])).toThrow("Invalid artifact host URL");
     });
 
-    it("includes non-https schemes if they are valid URLs", () => {
-      // Note: URL constructor accepts any valid scheme, including ftp, http, etc.
-      // This test documents that behavior - deriveUniqueArtifactOrigins doesn't
-      // filter by scheme, only by URL validity
-      const origins = deriveUniqueArtifactOrigins([
-        "https://example.com/path",
-        "ftp://example.com/path",
-      ]);
-      expect(origins).toEqual(["ftp://example.com", "https://example.com"]);
+    it("throws for http:// protocol", () => {
+      expect(() => deriveUniqueArtifactOrigins(["http://example.com/path"])).toThrow("Invalid artifact host protocol");
+      expect(() => deriveUniqueArtifactOrigins(["http://example.com/path"])).toThrow("Only HTTPS is allowed");
+    });
+
+    it("throws for ftp:// protocol", () => {
+      expect(() => deriveUniqueArtifactOrigins(["ftp://example.com/path"])).toThrow("Invalid artifact host protocol");
+      expect(() => deriveUniqueArtifactOrigins(["ftp://example.com/path"])).toThrow("Only HTTPS is allowed");
+    });
+
+    it("throws for mixed valid and invalid protocols", () => {
+      expect(() =>
+        deriveUniqueArtifactOrigins([
+          "https://valid.com/path",
+          "http://invalid.com/path",
+        ]),
+      ).toThrow("Invalid artifact host protocol");
     });
 
     it("preserves custom ports in origin", () => {
@@ -86,12 +89,10 @@ describe("modelArtifactHosts", () => {
       expect(origins).toEqual(["https://example.com:8080"]);
     });
 
-    it("handles http and https as distinct origins", () => {
-      const origins = deriveUniqueArtifactOrigins([
-        "http://example.com/path",
-        "https://example.com/path",
-      ]);
-      expect(origins).toEqual(["http://example.com", "https://example.com"]);
+    it("uses url.origin for CSP origin extraction", () => {
+      const origins = deriveUniqueArtifactOrigins(["https://example.com:443/path?query=1#fragment"]);
+      // url.origin includes default port 443 implicitly as https://example.com
+      expect(origins).toEqual(["https://example.com"]);
     });
 
     it("strips path, query, and fragment from URLs", () => {

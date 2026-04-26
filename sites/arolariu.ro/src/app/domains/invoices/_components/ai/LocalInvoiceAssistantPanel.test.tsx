@@ -436,7 +436,8 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(
       screen.getByText("Clearing the cache removes the local model artifacts but does not delete your invoice data."),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Model artifacts downloaded from trusted source:/i)).toBeInTheDocument();
+    // Verify concrete catalog-derived artifact host appears (not just prefix)
+    expect(screen.getByText(/Model artifacts downloaded from trusted source: https:\/\/huggingface\.co/i)).toBeInTheDocument();
 
     // Clear cache button should show model name and size
     const clearButton = screen.getByRole("button", {name: /Clear cached model.*Llama 3.2 1B Instruct/i});
