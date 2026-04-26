@@ -33,6 +33,7 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
 <script lang="ts">
   import Header from "@/presentation/Header.svelte";
   import {onMount} from "svelte";
+  import styles from "./PdfView.module.scss";
 
   /** PDF file URL */
   const PDF_URL = "./cv.pdf";
@@ -122,23 +123,23 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
   });
 </script>
 
-<div class="min-h-screen transition-colors duration-300 bg-gradient-to-l from-blue-900 to-purple-900 via-pink-400">
+<div class={styles.shell}>
   <Header
     sticky
     showNavLinks={false}
     variant="inverse" />
 
-  <div class="flex justify-center items-center min-h-[calc(100vh-80px)] p-4 sm:p-8 print:p-0">
+  <div class={styles.viewerShell}>
     {#if isMounted}
       {#if isMobile && !useEmbeddedViewer}
         <!-- Mobile-optimized view with native PDF options -->
-        <div class="w-full max-w-md mx-auto">
-          <div class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20">
+        <div class={styles.mobileCardWrap}>
+          <div class={styles.mobileCard}>
             <!-- Icon -->
-            <div class="flex justify-center mb-6">
-              <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div class={styles.mobileIconWrap}>
+              <div class={styles.mobileIconFrame}>
                 <svg
-                  class="w-10 h-10 text-white"
+                  class={styles.mobileIcon}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -152,15 +153,15 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
             </div>
 
             <!-- Title -->
-            <h1 class="text-xl sm:text-2xl font-bold text-center text-gray-900 dark:text-white mb-2"> CV - PDF Format </h1>
-            <p class="text-sm text-center text-gray-600 dark:text-gray-400 mb-6"> Alexandru-Razvan Olariu </p>
+            <h1 class={styles.mobileTitle}> CV - PDF Format </h1>
+            <p class={styles.mobileSubtitle}> Alexandru-Razvan Olariu </p>
 
             <!-- Primary Action: Open in Native Viewer -->
             <button
               onclick={openInNativeViewer}
-              class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer mb-4 flex items-center justify-center gap-3">
+              class={styles.primaryButton}>
               <svg
-                class="w-6 h-6"
+                class={styles.primaryIcon}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -174,12 +175,12 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
             </button>
 
             <!-- Secondary Actions -->
-            <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class={styles.secondaryActions}>
               <button
                 onclick={downloadPdf}
-                class="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
+                class={styles.secondaryButton}>
                 <svg
-                  class="w-5 h-5"
+                  class={styles.secondaryIcon}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -193,9 +194,9 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
               </button>
               <button
                 onclick={showEmbeddedViewer}
-                class="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
+                class={styles.secondaryButton}>
                 <svg
-                  class="w-5 h-5"
+                  class={styles.secondaryIcon}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -215,23 +216,23 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
             </div>
 
             <!-- Info text -->
-            <p class="text-xs text-center text-gray-500 dark:text-gray-500">
+            <p class={styles.infoText}>
               For the best mobile experience, use your device's native PDF viewer
             </p>
           </div>
         </div>
       {:else}
         <!-- Desktop embedded viewer or mobile preview mode -->
-        <div class="hidden lg:block w-1/8 h-full print:hidden"></div>
+        <div class={styles.sideSpacer}></div>
 
-        <div class="w-full lg:w-3/4 flex flex-col items-center">
+        <div class={styles.viewerColumn}>
           {#if isMobile && useEmbeddedViewer}
             <!-- Mobile: Back to options button -->
             <button
               onclick={() => (useEmbeddedViewer = false)}
-              class="mb-4 py-2 px-4 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex items-center gap-2 text-sm">
+              class={styles.backButton}>
               <svg
-                class="w-4 h-4"
+                class={styles.backIcon}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -245,18 +246,18 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
             </button>
           {/if}
 
-          <div class="w-full flex justify-center">
+          <div class={styles.viewerFrame}>
             {#if isLoading}
               <div
-                class="flex items-center justify-center w-full h-[65vh] rounded-lg bg-white/20 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10"
+                class={styles.loadingPanel}
                 role="status"
                 aria-busy="true"
                 aria-live="polite">
-                <div class="flex flex-col items-center gap-3 text-white">
+                <div class={styles.loadingContent}>
                   <div
-                    class="h-8 w-8 border-2 border-white/60 border-t-transparent rounded-full animate-spin"
+                    class={styles.spinner}
                     aria-hidden="true"></div>
-                  <span class="text-sm opacity-80">Loading PDF viewer...</span>
+                  <span class={styles.loadingText}>Loading PDF viewer...</span>
                 </div>
               </div>
             {:else if PdfViewer}
@@ -267,12 +268,11 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
                 showTopButton={false} />
             {:else}
               <!-- Fallback if PDF viewer failed to load -->
-              <div
-                class="flex flex-col items-center justify-center w-full h-[65vh] rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 p-8">
-                <p class="text-white text-center mb-4"> PDF viewer could not be loaded. </p>
+              <div class={styles.fallbackPanel}>
+                <p class={styles.fallbackText}> PDF viewer could not be loaded. </p>
                 <button
                   onclick={openInNativeViewer}
-                  class="py-3 px-6 rounded-xl bg-white text-purple-700 font-semibold hover:bg-gray-100 transition-colors cursor-pointer">
+                  class={styles.fallbackButton}>
                   Open PDF Directly
                 </button>
               </div>
@@ -280,17 +280,17 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
           </div>
         </div>
 
-        <div class="hidden lg:block w-1/8 h-full print:hidden"></div>
+        <div class={styles.sideSpacer}></div>
       {/if}
     {:else}
       <!-- SSR placeholder -->
       <div
-        class="flex items-center justify-center w-full max-w-3xl h-[65vh] rounded-lg bg-white/20 backdrop-blur-sm border border-white/30"
+        class={styles.ssrPanel}
         role="status"
         aria-busy="true">
-        <div class="flex flex-col items-center gap-3 text-white">
-          <div class="h-8 w-8 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-sm opacity-80">Initializing...</span>
+        <div class={styles.loadingContent}>
+          <div class={styles.spinner}></div>
+          <span class={styles.loadingText}>Initializing...</span>
         </div>
       </div>
     {/if}

@@ -1,0 +1,10 @@
+.shell {
+  position: relative;
+  min-height: 100vh;
+  background: var(--cv-color-white);
+  transition: background-color var(--cv-transition-slow);
+}
+
+:global(.dark) .shell {
+  background: var(--cv-color-black);
+}
