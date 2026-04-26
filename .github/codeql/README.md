@@ -12,6 +12,7 @@ This directory contains the CodeQL configuration for the arolariu.ro monorepo.
 |----------|-------------|----------------|
 | JavaScript/TypeScript | `sites/arolariu.ro/`, `sites/cv.arolariu.ro/`, `packages/components/` | No (interpreted) |
 | C# / .NET | `sites/api.arolariu.ro/` | Yes (compiled) |
+| Python | `sites/exp.arolariu.ro/` | No (interpreted) |
 
 ## Configuration Files
 
@@ -24,20 +25,22 @@ Main configuration file that defines:
 - **Paths to ignore**: Build outputs, tests, generated files, and dependencies
 - **Threat models**: Remote flow sources for security analysis
 
-### Workflow: `.github/workflows/official-codeql-analysis.yml`
+### Workflow: `.github/workflows/official-security-analysis.yml`
 
-The GitHub Actions workflow that runs CodeQL analysis:
+The GitHub Actions workflow that runs CodeQL, dependency review, OpenSSF Scorecard,
+and repository workflow policy checks:
 
 - **Triggers**:
   - Push to `main` or `preview` branches
   - Pull requests targeting `main` or `preview`
-  - Weekly scheduled scan (Sundays at 00:00 UTC)
+  - Weekly scheduled scan (Mondays at 03:17 UTC)
   - Manual dispatch
 
 - **Jobs**:
-  - `analyze-javascript`: Scans JavaScript/TypeScript code
-  - `analyze-csharp`: Builds and scans .NET code
-  - `summary`: Generates analysis summary
+  - `codeql`: Matrix scan for JavaScript/TypeScript, C#, and Python
+  - `dependency-review`: PR dependency diff analysis
+  - `scorecard`: Scheduled/manual OpenSSF Scorecard SARIF upload
+  - `workflow-policy`: Repository-owned workflow policy enforcement
 
 ## Viewing Results
 
