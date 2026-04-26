@@ -17,7 +17,7 @@
 #   - Each check job produces a {check}-result.json artifact
 #   - Summary job downloads all artifacts in parallel
 #   - Comment builder consumes artifacts to generate rich PR comment
-#   - New comment created on each run (no update logic)
+#   - Existing hygiene comment is updated in place on each run
 #
 # Quality Gates:
 #   - Formatting: Must pass Prettier check
@@ -106,17 +106,17 @@ jobs:
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'true'
 
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
+        with:
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
       - name: 🔎 Detect changes
         id: detect
-        uses: actions/github-script@v8
         env:
+          CI_SCRIPT_MODE: "hygiene"
           CHECK_MODE: "detect"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+        run: node .github/scripts/src/runCiScript.ts
 
   # ============================================================================
   # FORMAT CHECK
@@ -127,7 +127,6 @@ jobs:
     timeout-minutes: 10
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v6
@@ -154,18 +153,19 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🎨 Run format check
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "format"
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
         with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
+      - name: 🎨 Run format check
+        env:
+          CI_SCRIPT_MODE: "hygiene"
+          CHECK_MODE: "format"
+        run: node .github/scripts/src/runCiScript.ts
 
       - name: 📤 Upload format result
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: format-result
@@ -181,7 +181,6 @@ jobs:
     timeout-minutes: 15
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v6
@@ -208,18 +207,19 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🔍 Run lint check
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "lint"
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
         with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
+      - name: 🔍 Run lint check
+        env:
+          CI_SCRIPT_MODE: "hygiene"
+          CHECK_MODE: "lint"
+        run: node .github/scripts/src/runCiScript.ts
 
       - name: 📤 Upload lint result
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: lint-result
@@ -235,7 +235,6 @@ jobs:
     timeout-minutes: 15
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    continue-on-error: true
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v6
@@ -262,21 +261,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
+        with:
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
       - name: 🔨 Build components package
         run: npm run build:components
 
       - name: 🧪 Run test check
-        uses: actions/github-script@v8
         env:
+          CI_SCRIPT_MODE: "hygiene"
           CHECK_MODE: "test"
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+        run: node .github/scripts/src/runCiScript.ts
 
       - name: 📤 Upload test result
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-result
@@ -329,16 +329,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 📊 Compute statistics
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "stats"
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
         with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
+      - name: 📊 Compute statistics
+        env:
+          CI_SCRIPT_MODE: "hygiene"
+          CHECK_MODE: "stats"
+        run: node .github/scripts/src/runCiScript.ts
 
       - name: 📤 Upload stats result
         uses: actions/upload-artifact@v7
@@ -382,6 +382,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
+        with:
+          cache-key-prefix: 'hygiene-scripts-${{ github.event.pull_request.number || github.run_id }}'
+
       - name: 📥 Download all artifacts
         uses: actions/download-artifact@v8
         with:
@@ -390,45 +395,38 @@ jobs:
           merge-multiple: true
 
       - name: 📋 Generate summary and post comment
-        uses: actions/github-script@v8
+        id: generate-summary
         env:
+          CI_SCRIPT_MODE: "hygiene"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHECK_MODE: "summary"
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-            const { default: runHygieneCheck } = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheckV2.ts');
-            await runHygieneCheck();
+        run: node .github/scripts/src/runCiScript.ts
 
       - name: 🎯 Determine final status
+        if: always()
         id: final-status
         run: |
-          # Check if any of the check jobs failed (not continue-on-error failures)
           FORMAT_STATUS="${{ needs.format.result }}"
           LINT_STATUS="${{ needs.lint.result }}"
           TEST_STATUS="${{ needs.test.result }}"
-          STATS_STATUS="${{ needs.stats.result }}"
+          SUMMARY_STATUS="${{ steps.generate-summary.outcome }}"
 
           echo "Format: $FORMAT_STATUS"
           echo "Lint: $LINT_STATUS"
           echo "Test: $TEST_STATUS"
-          echo "Stats: $STATS_STATUS"
+          echo "Summary: $SUMMARY_STATUS"
 
-          # Determine if any check failed
-          if [[ "$FORMAT_STATUS" == "failure" || "$LINT_STATUS" == "failure" || "$TEST_STATUS" == "failure" ]]; then
+          if [[ "$FORMAT_STATUS" == "failure" || "$LINT_STATUS" == "failure" || "$TEST_STATUS" == "failure" || "$SUMMARY_STATUS" == "failure" ]]; then
             echo "has-failures=true" >> $GITHUB_OUTPUT
           else
             echo "has-failures=false" >> $GITHUB_OUTPUT
           fi
 
-          # The actual pass/fail is determined by the artifacts
-          # This just logs the job-level results
           echo "✅ Summary job completed. See PR comment for detailed results."
 
       - name: 🏷️ Label Dependabot PR on failure
-        if: steps.final-status.outputs.has-failures == 'true' && github.actor == 'dependabot[bot]'
+        if: always() && steps.final-status.outputs.has-failures == 'true' && github.actor == 'dependabot[bot]'
         uses: actions/github-script@v8
         with:
           script: |
