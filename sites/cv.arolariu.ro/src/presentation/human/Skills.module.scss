@@ -68,7 +68,6 @@
 
   &:hover {
     box-shadow: var(--cv-shadow-lg);
-    border-color: currentColor;
 
     :global(.dark) & {
       box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
@@ -272,7 +271,7 @@
 }
 
 .paletteBlueBorder {
-  border-color: var(--cv-color-blue-200);
+  border-color: #bfdbfe;
 
   :global(.dark) & {
     border-color: var(--cv-color-blue-800);
@@ -300,10 +299,10 @@
 }
 
 .palettePurpleBorder {
-  border-color: var(--cv-color-purple-200);
+  border-color: #e9d5ff;
 
   :global(.dark) & {
-    border-color: var(--cv-color-purple-800);
+    border-color: #5b21b6;
   }
 }
 

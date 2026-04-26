@@ -250,7 +250,7 @@
   @include effects.hover-lift;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(to right, var(--cv-color-blue-700), var(--cv-color-purple-700));
+    background: linear-gradient(to right, var(--cv-color-blue-700), #6d28d9);
     box-shadow: 0 0 20px rgb(59 130 246 / 0.3);
     transform: scale(1.05) translateY(-2px);
   }
@@ -260,7 +260,7 @@
   }
 
   &:disabled {
-    background: linear-gradient(to right, var(--cv-color-blue-800), var(--cv-color-purple-800));
+    background: linear-gradient(to right, var(--cv-color-blue-800), #5b21b6);
     cursor: not-allowed;
     transform: none;
   }

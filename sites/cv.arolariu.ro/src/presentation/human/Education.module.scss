@@ -168,21 +168,21 @@
 
 .statusCompleted {
   background: var(--cv-color-green-100);
-  color: var(--cv-color-green-800);
+  color: #166534;
 
   :global(.dark) & {
     background: rgb(34 197 94 / 0.3);
-    color: var(--cv-color-green-300);
+    color: #86efac;
   }
 }
 
 .statusInProgress {
-  background: var(--cv-color-orange-100);
-  color: var(--cv-color-orange-800);
+  background: #fef3c7;
+  color: #92400e;
 
   :global(.dark) & {
-    background: rgb(249 115 22 / 0.3);
-    color: var(--cv-color-orange-300);
+    background: rgb(234 179 8 / 0.3);
+    color: #fde047;
   }
 }
 
