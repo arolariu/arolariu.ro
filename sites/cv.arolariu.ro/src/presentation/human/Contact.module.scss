@@ -219,8 +219,7 @@
 
   &:focus {
     outline: none;
-    ring: 2px;
-    ring-color: var(--cv-color-blue-500);
+    box-shadow: 0 0 0 2px var(--cv-color-blue-500);
     border-color: transparent;
   }
 
@@ -268,6 +267,11 @@
 
   &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cv-color-blue-400);
+    outline-offset: 2px;
   }
 }
 
