@@ -86,12 +86,12 @@
 
 .item {
   position: relative;
-  display: flex;
-  align-items: start;
-  margin-bottom: 3rem;
 
   @media (min-width: 768px) {
+    display: flex;
+    align-items: start;
     flex-direction: row;
+    margin-bottom: 3rem;
   }
 }
 
