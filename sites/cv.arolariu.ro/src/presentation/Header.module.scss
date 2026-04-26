@@ -2,8 +2,6 @@
 
 .header {
   z-index: 50;
-  border-bottom: 1px solid var(--cv-color-gray-200);
-  background: rgb(249 250 251 / 0.9);
   backdrop-filter: blur(4px);
   transition: all var(--cv-transition-slow);
 }
@@ -11,6 +9,11 @@
 .sticky {
   position: sticky;
   top: 0;
+}
+
+.default {
+  border-bottom: 1px solid var(--cv-color-gray-200);
+  background: rgb(249 250 251 / 0.9);
 }
 
 .inverse {
