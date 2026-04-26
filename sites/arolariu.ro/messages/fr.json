@@ -3155,6 +3155,7 @@
       "clearCache": "Effacer le modèle en cache",
       "dismissError": "Masquer l'erreur",
       "download": "Télécharger le modèle local",
+      "downloadWithWarning": "Télécharger quand même",
       "retryHardware": "Réessayer la vérification matérielle",
       "reset": "Réinitialiser le chat",
       "send": "Envoyer",
@@ -3165,6 +3166,14 @@
       "inputPlaceholder": "Posez une question sur vos factures locales...",
       "ready": "Le modèle local est prêt",
       "title": "Assistant de factures entièrement local"
+    },
+    "deviceCompatibility": {
+      "gpuFeatures": "Fonctionnalités GPU : {features}",
+      "gpuLimits": "Limite de tampon GPU : {maxBufferMB} Mo",
+      "logicalCores": "Cœurs CPU : {cores}",
+      "memoryGB": "Mémoire de l'appareil : {memory} Go",
+      "storageUnavailable": "Le quota de stockage ne peut pas être vérifié. Téléchargez à vos propres risques.",
+      "title": "Compatibilité de l'appareil"
     },
     "errors": {
       "title": "Erreur de l'assistant"
@@ -3178,11 +3187,13 @@
       "description": "Télécharge un petit modèle de langage pour discuter de vos factures en privé et uniquement localement.",
       "host": "Les artefacts du modèle sont téléchargés depuis {host}.",
       "progress": "Progression du téléchargement : {progress}%",
+      "recommendedModel": "Modèle recommandé : {modelName}",
       "title": "Préparer le modèle local"
     },
     "privacy": "Les données des factures restent dans ce navigateur. Les artefacts du modèle sont téléchargés depuis l'hôte externe approuvé.",
     "status": {
-      "compatibilityUnknown": "Certains détails matériels ne sont pas disponibles, les performances peuvent donc varier."
+      "compatibilityUnknown": "Certains détails matériels ne sont pas disponibles, les performances peuvent donc varier.",
+      "storageWarning": "La disponibilité du stockage ne peut pas être vérifiée. Assurez-vous d'avoir au moins 6 Go d'espace disque libre avant de télécharger."
     }
   },
   "IMS--List": {

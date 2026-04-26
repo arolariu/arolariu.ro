@@ -13,17 +13,14 @@ import type {Invoice} from "@/types/invoices";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {analyzeLocalAiHardwareEligibility, type HardwareEligibilityResult} from "./hardwareEligibility";
 import {createLocalInvoiceAssistantContext, type LocalInvoiceAssistantContext} from "./invoiceContext";
+import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, recommendLocalInvoiceAssistantModel} from "./modelCatalog";
 import type {
   LocalInvoiceAssistantMessage,
   LocalInvoiceAssistantModelMetadata,
   LocalInvoiceAssistantPromptMessage,
   LocalInvoiceAssistantState,
 } from "./types";
-import {
-  createWebLlmLocalInvoiceAssistantAdapter,
-  DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
-  type LocalInvoiceAssistantAdapter,
-} from "./webLlmAdapter";
+import {createWebLlmLocalInvoiceAssistantAdapter, type LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 
 /**
  * Input parameters for useLocalInvoiceAssistant hook.
@@ -289,9 +286,20 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         return;
       }
 
+      // Task 3: Recommend model based on enriched hardware capabilities
+      const recommendedModel =
+        recommendLocalInvoiceAssistantModel({
+          hardwareResult: hardware,
+          gpuFeatures: hardware.gpu?.features,
+          gpuLimits: hardware.gpu?.limits.maxBufferSize
+            ? {maxVramMB: hardware.gpu.limits.maxBufferSize / (1024 * 1024)}
+            : undefined,
+        }) ?? DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL;
+
       setState((current) => {
         const nextState = {
           ...current,
+          activeModel: input.model ?? recommendedModel,
           error: null,
           hardware,
           lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),

@@ -46,7 +46,9 @@ type HardwareStatusProps = Readonly<{
 
 type ModelPreparationCardProps = Readonly<{
   activeModelArtifactHost: string;
+  activeModelDisplayName: string;
   canLoadModel: boolean;
+  hardware: HardwareEligibilityResult | null;
   lifecycle: LocalInvoiceAssistantLifecycle;
   onLoadModel: () => void;
   progressPercent: number;
@@ -64,6 +66,51 @@ type ChatShellProps = Readonly<{
   question: string;
   state: LocalInvoiceAssistantState;
 }>;
+
+function DeviceCompatibilityDetails({hardware}: Readonly<{hardware: HardwareEligibilityResult}>): React.JSX.Element | null {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  // Only show if we have enriched data
+  if (!hardware.gpu && !hardware.device) {
+    return null;
+  }
+
+  return (
+    <div className={styles["deviceCompatibility"]}>
+      <h4 className={styles["subsectionTitle"]}>{t("deviceCompatibility.title")}</h4>
+      <ul className={styles["compatibilityList"]}>
+        {hardware.gpu?.features && hardware.gpu.features.length > 0 ? (
+          <li className={styles["compatibilityItem"]}>
+            {t("deviceCompatibility.gpuFeatures", {
+              features: hardware.gpu.features.join(", "),
+            })}
+          </li>
+        ) : null}
+        {hardware.gpu?.limits.maxBufferSize ? (
+          <li className={styles["compatibilityItem"]}>
+            {t("deviceCompatibility.gpuLimits", {
+              maxBufferMB: Math.round(hardware.gpu.limits.maxBufferSize / (1024 * 1024)),
+            })}
+          </li>
+        ) : null}
+        {hardware.device?.deviceMemoryGB ? (
+          <li className={styles["compatibilityItem"]}>
+            {t("deviceCompatibility.memoryGB", {
+              memory: hardware.device.deviceMemoryGB,
+            })}
+          </li>
+        ) : null}
+        {hardware.device?.logicalCores ? (
+          <li className={styles["compatibilityItem"]}>
+            {t("deviceCompatibility.logicalCores", {
+              cores: hardware.device.logicalCores,
+            })}
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
 
 function HardwareStatus({error, hardware, lifecycle, onRetryHardwareAnalysis}: HardwareStatusProps): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
@@ -113,7 +160,9 @@ function HardwareStatus({error, hardware, lifecycle, onRetryHardwareAnalysis}: H
 
 function ModelPreparationCard({
   activeModelArtifactHost,
+  activeModelDisplayName,
   canLoadModel,
+  hardware,
   lifecycle,
   onLoadModel,
   progressPercent,
@@ -121,6 +170,7 @@ function ModelPreparationCard({
   const t = useTranslations("IMS--LocalInvoiceAssistant");
   const isDownloading = lifecycle === "downloading";
   const shouldShowModelCard = lifecycle === "not-downloaded" || lifecycle === "compatibility-unknown" || isDownloading;
+  const hasStorageWarning = hardware?.reasons.includes("storage-estimate-unavailable") ?? false;
 
   if (shouldShowModelCard) {
     return (
@@ -128,12 +178,26 @@ function ModelPreparationCard({
         <div>
           <h3 className={styles["sectionTitle"]}>{t("model.title")}</h3>
           <p className={styles["statusText"]}>{t("model.description")}</p>
+          <p className={styles["statusText"]}>
+            {t("model.recommendedModel", {modelName: activeModelDisplayName})}
+          </p>
           <p className={styles["statusText"]}>{t("model.host", {host: activeModelArtifactHost})}</p>
+
+          {hardware ? <DeviceCompatibilityDetails hardware={hardware} /> : null}
+
           {lifecycle === "compatibility-unknown" && (
             <p
               className={styles["warningText"]}
               role='status'>
               {t("status.compatibilityUnknown")}
+            </p>
+          )}
+
+          {hasStorageWarning && (
+            <p
+              className={styles["warningText"]}
+              role='alert'>
+              {t("status.storageWarning")}
             </p>
           )}
         </div>
@@ -148,7 +212,7 @@ function ModelPreparationCard({
             type='button'
             onClick={onLoadModel}
             disabled={!canLoadModel}>
-            {t("actions.download")}
+            {hasStorageWarning ? t("actions.downloadWithWarning") : t("actions.download")}
           </Button>
         )}
       </div>
@@ -388,7 +452,9 @@ export function LocalInvoiceAssistantPanel({
         />
         <ModelPreparationCard
           activeModelArtifactHost={state.activeModel.artifactHost}
+          activeModelDisplayName={state.activeModel.displayName}
           canLoadModel={canLoadModel}
+          hardware={state.hardware}
           lifecycle={state.lifecycle}
           onLoadModel={handleLoadModel}
           progressPercent={progressPercent}

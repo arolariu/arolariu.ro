@@ -3155,6 +3155,7 @@
       "clearCache": "Clear cached model",
       "dismissError": "Dismiss error",
       "download": "Download local model",
+      "downloadWithWarning": "Download anyway",
       "retryHardware": "Retry hardware check",
       "reset": "Reset chat",
       "send": "Send",
@@ -3165,6 +3166,14 @@
       "inputPlaceholder": "Ask about your local invoices...",
       "ready": "Local model is ready",
       "title": "Local-only invoice assistant"
+    },
+    "deviceCompatibility": {
+      "gpuFeatures": "GPU features: {features}",
+      "gpuLimits": "GPU buffer limit: {maxBufferMB} MB",
+      "logicalCores": "CPU cores: {cores}",
+      "memoryGB": "Device memory: {memory} GB",
+      "storageUnavailable": "Storage quota cannot be verified. Download at your own risk.",
+      "title": "Device compatibility"
     },
     "errors": {
       "title": "Assistant error"
@@ -3178,11 +3187,13 @@
       "description": "Downloads a small language model for private, local-only invoice chat.",
       "host": "Model artifacts are downloaded from {host}.",
       "progress": "Download progress: {progress}%",
+      "recommendedModel": "Recommended model: {modelName}",
       "title": "Prepare local model"
     },
     "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
     "status": {
-      "compatibilityUnknown": "Some hardware details are unavailable, so performance may vary."
+      "compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
+      "storageWarning": "Storage availability cannot be verified. Ensure you have at least 6 GB of free disk space before downloading."
     }
   },
   "IMS--List": {

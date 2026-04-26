@@ -29,6 +29,13 @@
   font-weight: font-weight('semibold');
 }
 
+.subsectionTitle {
+  margin: space(2) 0 space(1);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+}
+
 .fallbackText,
 .statusText,
 .warningText,
@@ -107,4 +114,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: space(2);
+}
+
+.deviceCompatibility {
+  margin-top: space(3);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+}
+
+.compatibilityList {
+  margin: space(2) 0 0;
+  padding-left: space(4);
+  list-style-type: disc;
+}
+
+.compatibilityItem {
+  margin: space(1) 0;
+  font-size: font-size('sm');
+  color: color('muted-foreground');
 }

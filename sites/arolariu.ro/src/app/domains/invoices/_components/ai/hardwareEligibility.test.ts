@@ -1,10 +1,18 @@
 import {describe, expect, it, vi} from "vitest";
 import {analyzeLocalAiHardwareEligibility, DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
 
+type TestGpuAdapter = Readonly<{
+  features?: ReadonlySet<string>;
+  limits?: Readonly<{
+    maxBufferSize?: number;
+    maxStorageBufferBindingSize?: number;
+  }>;
+}>;
+
 type TestNavigator = Readonly<{
   deviceMemory?: number;
   gpu?: Readonly<{
-    requestAdapter: () => Promise<object | null>;
+    requestAdapter: () => Promise<TestGpuAdapter | null>;
   }>;
   hardwareConcurrency?: number;
   storage?: Readonly<{
@@ -33,7 +41,13 @@ function createNavigator(overrides: Partial<TestNavigator> = {}): TestNavigator 
   return {
     deviceMemory: 8,
     gpu: {
-      requestAdapter: vi.fn(async () => ({})),
+      requestAdapter: vi.fn(async () => ({
+        features: new Set(["shader-f16"]),
+        limits: {
+          maxBufferSize: 1024 * 1024 * 1024,
+          maxStorageBufferBindingSize: 512 * 1024 * 1024,
+        },
+      })),
     },
     hardwareConcurrency: 8,
     storage: {
@@ -91,7 +105,7 @@ describe("analyzeLocalAiHardwareEligibility", () => {
     expect(result.reasons).toContain("storage-quota-too-low");
   });
 
-  it("returns ineligible when storage quota cannot be verified before model download", async () => {
+  it("returns unknown when storage quota cannot be verified before model download", async () => {
     const result = await analyzeLocalAiHardwareEligibility({
       environment: {
         navigator: createNavigator({
@@ -101,7 +115,8 @@ describe("analyzeLocalAiHardwareEligibility", () => {
       },
     });
 
-    expect(result.status).toBe("ineligible");
+    // Task 3: storage-estimate-unavailable is now "unknown" (warning), not "ineligible" (blocker)
+    expect(result.status).toBe("unknown");
     expect(result.reasons).toContain("storage-estimate-unavailable");
   });
 
@@ -118,5 +133,102 @@ describe("analyzeLocalAiHardwareEligibility", () => {
 
     expect(result.status).toBe("unknown");
     expect(result.reasons).toEqual(["memory-unknown", "cpu-unknown"]);
+  });
+
+  it("surfaces GPU features when WebGPU adapter is available", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator(),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("eligible");
+    expect(result.gpu).toBeDefined();
+    expect(result.gpu?.features).toEqual(["shader-f16"]);
+  });
+
+  it("surfaces GPU limits when WebGPU adapter is available", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator(),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("eligible");
+    expect(result.gpu).toBeDefined();
+    expect(result.gpu?.limits).toBeDefined();
+    expect(result.gpu?.limits.maxBufferSize).toBe(1024 * 1024 * 1024);
+    expect(result.gpu?.limits.maxStorageBufferBindingSize).toBe(512 * 1024 * 1024);
+  });
+
+  it("does not collect raw GPU adapter identity information", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator(),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("eligible");
+    // Ensure no vendor, device ID, or adapter name is stored
+    const resultKeys = Object.keys(result);
+    expect(resultKeys).not.toContain("vendor");
+    expect(resultKeys).not.toContain("deviceId");
+    expect(resultKeys).not.toContain("adapterName");
+  });
+
+  it("surfaces device memory and logical cores when available", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator({
+          deviceMemory: 16,
+          hardwareConcurrency: 12,
+        }),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("eligible");
+    expect(result.device).toBeDefined();
+    expect(result.device?.deviceMemoryGB).toBe(16);
+    expect(result.device?.logicalCores).toBe(12);
+  });
+
+  it("marks storage-estimate unavailable as unknown warning and prevents automatic download", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator({
+          storage: undefined,
+        }),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    // Storage unavailable should now result in "unknown" status, not "ineligible"
+    expect(result.status).toBe("unknown");
+    expect(result.reasons).toContain("storage-estimate-unavailable");
+    // Should not have availableStorageBytes
+    expect(result.availableStorageBytes).toBeUndefined();
+  });
+
+  it("handles GPU adapter without features gracefully", async () => {
+    const result = await analyzeLocalAiHardwareEligibility({
+      environment: {
+        navigator: createNavigator({
+          gpu: {
+            requestAdapter: vi.fn(async () => ({
+              // No features or limits
+            })),
+          },
+        }),
+        Worker: createWorkerConstructor(),
+      },
+    });
+
+    expect(result.status).toBe("eligible");
+    expect(result.gpu).toBeDefined();
+    expect(result.gpu?.features).toEqual([]);
   });
 });

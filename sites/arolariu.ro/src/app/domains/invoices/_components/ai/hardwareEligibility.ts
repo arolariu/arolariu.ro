@@ -87,7 +87,26 @@ export type LocalAiHardwareRequirements = Readonly<{
  * Subset of WebGPU API used for adapter availability check.
  */
 type WebGpuLike = Readonly<{
-  requestAdapter: () => Promise<unknown | null>;
+  requestAdapter: () => Promise<WebGpuAdapterLike | null>;
+}>;
+
+/**
+ * Subset of WebGPU adapter with safe capability information.
+ *
+ * @remarks
+ * Only collects feature flags and resource limits needed for model selection.
+ * Does NOT collect vendor ID, device ID, or adapter name to avoid fingerprinting.
+ */
+type WebGpuAdapterLike = Readonly<{
+  /** GPU feature flags (e.g., shader-f16). */
+  features?: ReadonlySet<string>;
+  /** GPU resource limits. */
+  limits?: Readonly<{
+    /** Maximum buffer size in bytes. */
+    maxBufferSize?: number;
+    /** Maximum storage buffer binding size in bytes. */
+    maxStorageBufferBindingSize?: number;
+  }>;
 }>;
 
 /**
@@ -131,10 +150,33 @@ export type HardwareEligibilityEnvironment = Readonly<{
  * @remarks
  * Use `status` for primary decision-making and `reasons` for user messaging.
  * `availableStorageBytes` populated when storage API succeeds.
+ *
+ * **Privacy-preserving enrichment (Task 3):**
+ * - `gpu`: Safe GPU capability data (features, limits) without vendor/device IDs
+ * - `device`: Coarse device capabilities (memory GB, logical cores)
  */
 export type HardwareEligibilityResult = Readonly<{
   /** Available storage in bytes (if determinable). */
   availableStorageBytes?: number;
+  /** Device capability hints (memory, cores). */
+  device?: Readonly<{
+    /** Device memory in gigabytes (if available). */
+    deviceMemoryGB?: number;
+    /** Logical processor cores (if available). */
+    logicalCores?: number;
+  }>;
+  /** GPU capability data without fingerprintable identity. */
+  gpu?: Readonly<{
+    /** GPU feature flags (e.g., shader-f16). */
+    features: ReadonlyArray<string>;
+    /** GPU resource limits. */
+    limits: Readonly<{
+      /** Maximum buffer size in bytes. */
+      maxBufferSize?: number;
+      /** Maximum storage buffer binding size in bytes. */
+      maxStorageBufferBindingSize?: number;
+    }>;
+  }>;
   /** List of ineligibility or unknown reasons (empty if eligible). */
   reasons: ReadonlyArray<HardwareEligibilityReason>;
   /** Hardware requirements used for analysis. */
@@ -169,23 +211,53 @@ type StorageAvailabilityResult =
     }>;
 
 /**
- * Storage capability analysis with optional ineligibility reason.
+ * Storage capability analysis with optional warning reason.
+ *
+ * @remarks
+ * Task 3: storage-estimate-unavailable is now treated as "unknown" (warning)
+ * rather than "ineligible" (blocker). Only storage-quota-too-low is ineligible.
  */
 type StorageCapabilityResult = Readonly<{
   /** Available storage bytes (if known). */
   availableStorageBytes?: number;
-  /** Ineligibility reason if storage check failed. */
-  ineligibleReason?: "storage-estimate-unavailable" | "storage-quota-too-low";
+  /** Ineligibility reason if storage quota is too low. */
+  ineligibleReason?: "storage-quota-too-low";
+  /** Unknown/warning reason if storage estimate is unavailable. */
+  unknownReason?: "storage-estimate-unavailable";
 }>;
 
 function createResult(
   status: HardwareEligibilityStatus,
   reasons: ReadonlyArray<HardwareEligibilityReason>,
   requirements: LocalAiHardwareRequirements,
-  availableStorageBytes?: number,
+  options?: Readonly<{
+    availableStorageBytes?: number;
+    device?: Readonly<{
+      deviceMemoryGB?: number;
+      logicalCores?: number;
+    }>;
+    gpu?: Readonly<{
+      features: ReadonlyArray<string>;
+      limits: Readonly<{
+        maxBufferSize?: number;
+        maxStorageBufferBindingSize?: number;
+      }>;
+    }>;
+  }>,
 ): HardwareEligibilityResult {
   const result: {
     availableStorageBytes?: number;
+    device?: Readonly<{
+      deviceMemoryGB?: number;
+      logicalCores?: number;
+    }>;
+    gpu?: Readonly<{
+      features: ReadonlyArray<string>;
+      limits: Readonly<{
+        maxBufferSize?: number;
+        maxStorageBufferBindingSize?: number;
+      }>;
+    }>;
     reasons: ReadonlyArray<HardwareEligibilityReason>;
     requirements: LocalAiHardwareRequirements;
     status: HardwareEligibilityStatus;
@@ -195,8 +267,16 @@ function createResult(
     status,
   };
 
-  if (typeof availableStorageBytes === "number") {
-    result.availableStorageBytes = availableStorageBytes;
+  if (options?.availableStorageBytes !== undefined) {
+    result.availableStorageBytes = options.availableStorageBytes;
+  }
+
+  if (options?.gpu !== undefined) {
+    result.gpu = options.gpu;
+  }
+
+  if (options?.device !== undefined) {
+    result.device = options.device;
   }
 
   return result;
@@ -244,7 +324,8 @@ function collectStorageCapabilityReason(
   requirements: LocalAiHardwareRequirements,
 ): StorageCapabilityResult {
   if (storageResult.status === "unknown") {
-    return {ineligibleReason: "storage-estimate-unavailable"};
+    // Task 3: storage-estimate-unavailable is now a warning (unknown), not blocker
+    return {unknownReason: "storage-estimate-unavailable"};
   }
 
   const {availableStorageBytes} = storageResult;
@@ -255,17 +336,73 @@ function collectStorageCapabilityReason(
   return {availableStorageBytes};
 }
 
-async function collectGpuIneligibleReason(navigator: LocalAiHardwareNavigator): Promise<HardwareEligibilityReason | null> {
-  if (navigator.gpu) {
-    try {
-      const adapter = await navigator.gpu.requestAdapter();
-      return adapter ? null : "webgpu-adapter-unavailable";
-    } catch {
-      return "webgpu-adapter-unavailable";
-    }
+/**
+ * GPU capability collection result.
+ */
+type GpuCapabilityResult = Readonly<{
+  /** Enriched GPU data (features, limits) if adapter available. */
+  gpu?: Readonly<{
+    features: ReadonlyArray<string>;
+    limits: Readonly<{
+      maxBufferSize?: number;
+      maxStorageBufferBindingSize?: number;
+    }>;
+  }>;
+  /** Ineligibility reason if GPU check failed. */
+  ineligibleReason?: HardwareEligibilityReason;
+}>;
+
+/**
+ * Device capability collection result.
+ */
+type DeviceCapabilityResult = Readonly<{
+  deviceMemoryGB?: number;
+  logicalCores?: number;
+}>;
+
+async function collectGpuCapability(navigator: LocalAiHardwareNavigator): Promise<GpuCapabilityResult> {
+  if (!navigator.gpu) {
+    return {ineligibleReason: "webgpu-unavailable"};
   }
 
-  return "webgpu-unavailable";
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      return {ineligibleReason: "webgpu-adapter-unavailable"};
+    }
+
+    // Collect safe GPU capabilities without fingerprinting
+    const features = adapter.features ? Array.from(adapter.features) : [];
+    const limits = adapter.limits
+      ? {
+          maxBufferSize: adapter.limits.maxBufferSize,
+          maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize,
+        }
+      : {};
+
+    return {
+      gpu: {
+        features,
+        limits,
+      },
+    };
+  } catch {
+    return {ineligibleReason: "webgpu-adapter-unavailable"};
+  }
+}
+
+function collectDeviceCapability(navigator: LocalAiHardwareNavigator): DeviceCapabilityResult {
+  const result: DeviceCapabilityResult = {};
+
+  if (typeof navigator.deviceMemory === "number") {
+    result.deviceMemoryGB = navigator.deviceMemory;
+  }
+
+  if (typeof navigator.hardwareConcurrency === "number") {
+    result.logicalCores = navigator.hardwareConcurrency;
+  }
+
+  return result;
 }
 
 function collectMemoryReason(
@@ -312,7 +449,7 @@ function pushCapabilityReason(
  * Analyzes browser/device hardware capabilities for local AI assistant eligibility.
  *
  * @param input - Optional testable environment and hardware thresholds.
- * @returns Hardware eligibility result with status, reasons, and available storage.
+ * @returns Hardware eligibility result with status, reasons, enriched GPU/device data, and available storage.
  *
  * @remarks
  * **Checks performed:**
@@ -322,9 +459,15 @@ function pushCapabilityReason(
  * 4. Device memory (via `navigator.deviceMemory`, Chrome-only)
  * 5. Logical CPU cores (via `navigator.hardwareConcurrency`)
  *
+ * **Task 3 enrichment:**
+ * - Collects GPU features and limits (shader-f16, maxBufferSize, etc.) for model recommendation
+ * - Collects device memory and logical cores for capability reporting
+ * - Does NOT collect vendor ID, device ID, or adapter name (privacy-preserving)
+ * - Storage-estimate unavailable is now "unknown" (warning) not "ineligible" (blocker)
+ *
  * **Status logic:**
- * - `ineligible`: One or more hard requirements failed (storage, WebGPU, Workers)
- * - `unknown`: Some hints unavailable (memory/CPU unknown) but no hard failures
+ * - `ineligible`: One or more hard requirements failed (WebGPU unavailable, Workers missing, storage quota too low)
+ * - `unknown`: Some hints unavailable (memory/CPU/storage-estimate unknown) but no hard failures
  * - `eligible`: All requirements met
  *
  * **Privacy considerations:**
@@ -335,9 +478,13 @@ function pushCapabilityReason(
  * ```typescript
  * const result = await analyzeLocalAiHardwareEligibility();
  * if (result.status === 'eligible') {
- *   // Offer model download
+ *   // Offer model download with enriched GPU features
+ *   const model = recommendLocalInvoiceAssistantModel({
+ *     hardwareResult: result,
+ *     gpuFeatures: result.gpu?.features,
+ *   });
  * } else if (result.status === 'unknown') {
- *   // Show warning, allow user to proceed
+ *   // Show warning, require explicit user confirmation before download
  * } else {
  *   // Block download with reasons
  * }
@@ -360,29 +507,57 @@ export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEl
     ineligibleReasons.push("workers-unavailable");
   }
 
-  const gpuReason = await collectGpuIneligibleReason(environment.navigator);
-  if (gpuReason) {
-    ineligibleReasons.push(gpuReason);
+  // Collect GPU capability and enrichment data (Task 3)
+  const gpuCapabilityResult = await collectGpuCapability(environment.navigator);
+  if (gpuCapabilityResult.ineligibleReason) {
+    ineligibleReasons.push(gpuCapabilityResult.ineligibleReason);
   }
 
+  // Collect storage capability (Task 3: storage-estimate-unavailable is now unknown, not ineligible)
   const storageResult = await getAvailableStorageBytes(environment.navigator.storage);
   const storageReason = collectStorageCapabilityReason(storageResult, requirements);
-  const {availableStorageBytes, ineligibleReason} = storageReason;
+  const {availableStorageBytes, ineligibleReason, unknownReason} = storageReason;
 
   if (ineligibleReason) {
     ineligibleReasons.push(ineligibleReason);
   }
 
+  if (unknownReason) {
+    unknownReasons.push(unknownReason);
+  }
+
+  // Collect device capability data (Task 3)
+  const deviceCapability = collectDeviceCapability(environment.navigator);
+  const device =
+    Object.keys(deviceCapability).length > 0
+      ? {
+          deviceMemoryGB: deviceCapability.deviceMemoryGB,
+          logicalCores: deviceCapability.logicalCores,
+        }
+      : undefined;
+
   pushCapabilityReason(collectMemoryReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
   pushCapabilityReason(collectCpuReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
 
   if (ineligibleReasons.length > 0) {
-    return createResult("ineligible", ineligibleReasons, requirements, availableStorageBytes);
+    return createResult("ineligible", ineligibleReasons, requirements, {
+      availableStorageBytes,
+      device,
+      gpu: gpuCapabilityResult.gpu,
+    });
   }
 
   if (unknownReasons.length > 0) {
-    return createResult("unknown", unknownReasons, requirements, availableStorageBytes);
+    return createResult("unknown", unknownReasons, requirements, {
+      availableStorageBytes,
+      device,
+      gpu: gpuCapabilityResult.gpu,
+    });
   }
 
-  return createResult("eligible", [], requirements, availableStorageBytes);
+  return createResult("eligible", [], requirements, {
+    availableStorageBytes,
+    device,
+    gpu: gpuCapabilityResult.gpu,
+  });
 }
