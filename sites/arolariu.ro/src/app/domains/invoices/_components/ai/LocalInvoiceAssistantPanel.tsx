@@ -12,10 +12,10 @@
 import type {Invoice} from "@/types/invoices";
 import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Label, Progress, Textarea} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {memo, useCallback, useDeferredValue, useState} from "react";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import styles from "./LocalInvoiceAssistantPanel.module.scss";
-import type {LocalInvoiceAssistantLifecycle, LocalInvoiceAssistantState} from "./types";
+import type {LocalInvoiceAssistantLifecycle, LocalInvoiceAssistantMessage, LocalInvoiceAssistantState} from "./types";
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
 import type {LocalInvoiceAssistantAdapter} from "./webLlmAdapter";
 
@@ -299,6 +299,122 @@ function BenchmarkSection({canRunBenchmark, isRunning, modelLoaded, onRunBenchma
   );
 }
 
+/**
+ * Memoized message bubble component.
+ *
+ * @remarks
+ * Prevents re-rendering static messages when streaming new content.
+ */
+const MessageBubble = memo(function MessageBubble({
+  message,
+}: Readonly<{
+  message: LocalInvoiceAssistantMessage;
+}>): React.JSX.Element {
+  return (
+    <article
+      key={message.id}
+      className={message.role === "user" ? styles["userMessage"] : styles["assistantMessage"]}>
+      <p className={styles["messageContent"]}>{message.content}</p>
+    </article>
+  );
+});
+
+/**
+ * Memoized message list component.
+ *
+ * @remarks
+ * Uses useDeferredValue to keep UI responsive during streaming.
+ */
+const MessageList = memo(function MessageList({
+  messages,
+}: Readonly<{
+  messages: ReadonlyArray<LocalInvoiceAssistantMessage>;
+}>): React.JSX.Element {
+  const deferredMessages = useDeferredValue(messages);
+
+  return (
+    <div className={styles["messages"]}>
+      {deferredMessages.map((message) => (
+        <MessageBubble
+          key={message.id}
+          message={message}
+        />
+      ))}
+    </div>
+  );
+});
+
+/**
+ * Memoized message composer form.
+ *
+ * @remarks
+ * Isolated from message list to keep input responsive during streaming.
+ */
+const MessageComposer = memo(function MessageComposer({
+  canSendMessage,
+  isGenerating,
+  onDeleteCachedModel,
+  onQuestionChange,
+  onResetSession,
+  onStopGenerating,
+  onSubmit,
+  question,
+}: Readonly<{
+  canSendMessage: boolean;
+  isGenerating: boolean;
+  onDeleteCachedModel: () => void;
+  onQuestionChange: (event: Readonly<{currentTarget: Readonly<{value: string}>}>) => void;
+  onResetSession: () => void;
+  onStopGenerating: () => void;
+  onSubmit: (event: Readonly<{preventDefault: () => void}>) => void;
+  question: string;
+}>): React.JSX.Element {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  return (
+    <form
+      className={styles["form"]}
+      onSubmit={onSubmit}>
+      <Label htmlFor='local-invoice-assistant-input'>{t("chat.inputLabel")}</Label>
+      <Textarea
+        id='local-invoice-assistant-input'
+        value={question}
+        onChange={onQuestionChange}
+        placeholder={t("chat.inputPlaceholder")}
+        disabled={!canSendMessage || isGenerating}
+        className={styles["textarea"]}
+      />
+      <div className={styles["actions"]}>
+        <Button
+          type='submit'
+          disabled={!question.trim() || !canSendMessage || isGenerating}>
+          {t("actions.send")}
+        </Button>
+        {isGenerating ? (
+          <Button
+            type='button'
+            variant='outline'
+            onClick={onStopGenerating}>
+            {t("actions.stop")}
+          </Button>
+        ) : null}
+        <Button
+          type='button'
+          variant='outline'
+          onClick={onResetSession}>
+          {t("actions.reset")}
+        </Button>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={onDeleteCachedModel}>
+          {t("actions.clearCache")}
+        </Button>
+      </div>
+    </form>
+  );
+});
+
 function ChatShell({
   canSendMessage,
   isGenerating,
@@ -345,56 +461,18 @@ function ChatShell({
           </div>
         )}
 
-        <div className={styles["messages"]}>
-          {state.messages.map((message) => (
-            <article
-              key={message.id}
-              className={message.role === "user" ? styles["userMessage"] : styles["assistantMessage"]}>
-              <p className={styles["messageContent"]}>{message.content}</p>
-            </article>
-          ))}
-        </div>
+        <MessageList messages={state.messages} />
 
-        <form
-          className={styles["form"]}
-          onSubmit={onSubmit}>
-          <Label htmlFor='local-invoice-assistant-input'>{t("chat.inputLabel")}</Label>
-          <Textarea
-            id='local-invoice-assistant-input'
-            value={question}
-            onChange={onQuestionChange}
-            placeholder={t("chat.inputPlaceholder")}
-            disabled={!canSendMessage || isGenerating}
-            className={styles["textarea"]}
-          />
-          <div className={styles["actions"]}>
-            <Button
-              type='submit'
-              disabled={!question.trim() || !canSendMessage || isGenerating}>
-              {t("actions.send")}
-            </Button>
-            {isGenerating ? (
-              <Button
-                type='button'
-                variant='outline'
-                onClick={onStopGenerating}>
-                {t("actions.stop")}
-              </Button>
-            ) : null}
-            <Button
-              type='button'
-              variant='outline'
-              onClick={onResetSession}>
-              {t("actions.reset")}
-            </Button>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={onDeleteCachedModel}>
-              {t("actions.clearCache")}
-            </Button>
-          </div>
-        </form>
+        <MessageComposer
+          canSendMessage={canSendMessage}
+          isGenerating={isGenerating}
+          onDeleteCachedModel={onDeleteCachedModel}
+          onQuestionChange={onQuestionChange}
+          onResetSession={onResetSession}
+          onStopGenerating={onStopGenerating}
+          onSubmit={onSubmit}
+          question={question}
+        />
       </div>
     );
   }

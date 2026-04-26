@@ -10,10 +10,11 @@
 "use client";
 
 import type {Invoice} from "@/types/invoices";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {startTransition, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {analyzeLocalAiHardwareEligibility, type HardwareEligibilityResult} from "./hardwareEligibility";
 import {createLocalInvoiceAssistantContext, type LocalInvoiceAssistantContext} from "./invoiceContext";
 import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, recommendLocalInvoiceAssistantModel} from "./modelCatalog";
+import {createStreamingResponseBuffer} from "./streamingBuffer";
 import type {
   LocalInvoiceAssistantMessage,
   LocalInvoiceAssistantModelMetadata,
@@ -260,6 +261,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
   const inputModelRef = useRef<LocalInvoiceAssistantModelMetadata | undefined>(input.model);
+  const streamingBufferRef = useRef<ReturnType<typeof createStreamingResponseBuffer> | null>(null);
 
   if (adapterRef.current === null) {
     adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
@@ -453,6 +455,27 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         messages: [...current.messages, userMessage, assistantMessage],
       }));
 
+      // Create streaming buffer with requestAnimationFrame scheduler
+      const streamingBuffer = createStreamingResponseBuffer({
+        cancel: (id) => globalThis.cancelAnimationFrame(id),
+        flush: (accumulatedContent) => {
+          if (!isMountedRef.current || generationIdRef.current !== generationId) {
+            return;
+          }
+
+          // Use startTransition for non-urgent message updates
+          startTransition(() => {
+            setState((current) => ({
+              ...current,
+              messages: replaceMessageContent(current.messages, assistantMessage.id, accumulatedContent),
+            }));
+          });
+        },
+        schedule: (callback) => globalThis.requestAnimationFrame(callback),
+      });
+
+      streamingBufferRef.current = streamingBuffer;
+
       try {
         const response = await adapter.generate(promptMessages, {
           onMetrics: (metrics) => {
@@ -470,16 +493,18 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
               return;
             }
 
-            setState((current) => ({
-              ...current,
-              messages: replaceMessageContent(current.messages, assistantMessage.id, accumulatedResponse),
-            }));
+            // Append to buffer instead of setState on every token
+            streamingBuffer.append(accumulatedResponse);
           },
         });
 
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
           return;
         }
+
+        // Force flush final response before returning to ready state
+        streamingBuffer.forceFlush();
+        streamingBufferRef.current = null;
 
         setState((current) => ({
           ...current,
@@ -491,6 +516,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
           return;
         }
+
+        // Cancel pending flushes on error
+        streamingBuffer.interrupt();
+        streamingBufferRef.current = null;
 
         setState((current) => ({
           ...current,
@@ -514,6 +543,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const interrupt = useCallback((): void => {
     generationIdRef.current += 1;
     adapterRef.current?.interrupt();
+    streamingBufferRef.current?.interrupt();
+    streamingBufferRef.current = null;
     setState((current) => ({
       ...current,
       lifecycle: loadedRef.current ? "cancelled" : current.lifecycle,

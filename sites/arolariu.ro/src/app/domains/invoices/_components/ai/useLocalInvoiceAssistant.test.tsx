@@ -631,6 +631,74 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.latestGeneration).toEqual(mockMetrics);
     expect(result.current.state.latestGeneration?.benchmarkPromptVersion).toBeNull(); // Normal chat
   });
+
+  it("interrupts streaming and cancels pending buffer flushes", async () => {
+    let resolveGeneration: ((value: string) => void) | null = null;
+    const generationPromise = new Promise<string>((resolve) => {
+      resolveGeneration = resolve;
+    });
+    let tokenCallbackCount = 0;
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        // Simulate multiple token callbacks that would normally trigger setState
+        for (let index = 0; index < 10; index += 1) {
+          options?.onToken?.(`Token${index} `, `Token${index} `);
+          tokenCallbackCount += 1;
+        }
+
+        return generationPromise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    // Start generation without awaiting
+    act(() => {
+      void result.current.sendMessage("Test");
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("generating");
+    });
+
+    // Verify tokens were appended
+    expect(tokenCallbackCount).toBe(10);
+
+    // Interrupt before completion
+    act(() => {
+      result.current.interrupt();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("cancelled");
+    });
+
+    // Complete the generation (late)
+    act(() => {
+      resolveGeneration?.("Complete response");
+    });
+
+    // Lifecycle should remain cancelled, not change to ready
+    expect(result.current.state.lifecycle).toBe("cancelled");
+    expect(adapter.interrupt).toHaveBeenCalledOnce();
+  });
 });
 
 function createSequentialIdFactory(): () => string {
