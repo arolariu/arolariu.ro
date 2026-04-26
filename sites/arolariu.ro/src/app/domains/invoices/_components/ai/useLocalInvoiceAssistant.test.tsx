@@ -297,6 +297,120 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.canLoadModel).toBe(true);
     expect(attempts).toBe(2);
   });
+
+  it("loads the recommended model from state, not the closed-over default", async () => {
+    const adapter = createFakeAdapter();
+    const recommendedModelId = "Qwen3-0.6B-q4f16_1-MLC";
+    const hardwareWithGpu = {
+      ...eligibleHardware,
+      gpu: {
+        features: [],
+        limits: {
+          maxBufferSize: 1024 * 1024 * 1024,
+          maxStorageBufferBindingSize: 512 * 1024 * 1024,
+        },
+      },
+    } as const satisfies HardwareEligibilityResult;
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => hardwareWithGpu,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Recommended model should be Qwen3-0.6B (smallest, no GPU features required)
+    expect(result.current.state.activeModel.id).toBe(recommendedModelId);
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    // Adapter should be called with the recommended model from state, not default
+    expect(adapter.load).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.objectContaining({id: recommendedModelId}),
+      }),
+    );
+  });
+
+  it("deletes the current model from state cache, not the closed-over default", async () => {
+    const adapter = createFakeAdapter();
+    const recommendedModelId = "Qwen3-0.6B-q4f16_1-MLC";
+    const hardwareWithGpu = {
+      ...eligibleHardware,
+      gpu: {
+        features: [],
+        limits: {
+          maxBufferSize: 1024 * 1024 * 1024,
+          maxStorageBufferBindingSize: 512 * 1024 * 1024,
+        },
+      },
+    } as const satisfies HardwareEligibilityResult;
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => hardwareWithGpu,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+      await result.current.deleteCachedModel();
+    });
+
+    // Adapter should be called with the recommended model from state
+    expect(adapter.deleteCachedModel).toHaveBeenCalledWith(
+      expect.objectContaining({id: recommendedModelId}),
+    );
+  });
+
+  it("does not pass GPU limits as VRAM to model recommendation", async () => {
+    const adapter = createFakeAdapter();
+    const hardwareWithLargeBufferLimit = {
+      ...eligibleHardware,
+      gpu: {
+        features: ["shader-f16"],
+        limits: {
+          maxBufferSize: 8 * 1024 * 1024 * 1024, // 8 GB (not VRAM!)
+          maxStorageBufferBindingSize: 4 * 1024 * 1024 * 1024,
+        },
+      },
+    } as const satisfies HardwareEligibilityResult;
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => hardwareWithLargeBufferLimit,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Should recommend gemma-2b-it (smallest balanced model with shader-f16)
+    // NOT a larger model based on mistaken 8GB "VRAM" from maxBufferSize
+    expect(result.current.state.activeModel.id).toBe("gemma-2b-it-q4f16_1-MLC");
+    expect(result.current.state.activeModel.requiredFeatures).toContain("shader-f16");
+  });
 });
 
 function createSequentialIdFactory(): () => string {

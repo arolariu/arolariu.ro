@@ -287,13 +287,13 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       }
 
       // Task 3: Recommend model based on enriched hardware capabilities
+      // GPU limits (maxBufferSize) are NOT VRAM; only pass features, not limits
       const recommendedModel =
         recommendLocalInvoiceAssistantModel({
           hardwareResult: hardware,
           gpuFeatures: hardware.gpu?.features,
-          gpuLimits: hardware.gpu?.limits.maxBufferSize
-            ? {maxVramMB: hardware.gpu.limits.maxBufferSize / (1024 * 1024)}
-            : undefined,
+          // Do NOT map maxBufferSize to maxVramMB - it's not VRAM
+          // GPU limits kept for display/reporting only
         }) ?? DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL;
 
       setState((current) => {
@@ -351,6 +351,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       return;
     }
 
+    // Use current recommended model from state, not closed-over default
+    const currentModel = stateRef.current.activeModel;
+
     setState((current) => ({
       ...current,
       error: null,
@@ -360,7 +363,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
     try {
       await adapter.load({
-        model: activeModel,
+        model: currentModel,
         onProgress: (report) => {
           if (!isMountedRef.current) {
             return;
@@ -489,8 +492,11 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const deleteCachedModel = useCallback(async (): Promise<void> => {
     generationIdRef.current += 1;
+    // Use current model from state, not closed-over default
+    const currentModel = stateRef.current.activeModel;
+
     try {
-      await adapterRef.current?.deleteCachedModel(activeModel);
+      await adapterRef.current?.deleteCachedModel(currentModel);
       if (!isMountedRef.current) {
         return;
       }
