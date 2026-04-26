@@ -50,6 +50,8 @@ type UseLocalInvoiceAssistantInput = Readonly<{
 type UseLocalInvoiceAssistantResult = Readonly<{
   /** Whether model download can be initiated (hardware eligible, not loaded). */
   canLoadModel: boolean;
+  /** Whether benchmark can run (model loaded, not generating). */
+  canRunBenchmark: boolean;
   /** Whether user can send messages (model loaded, not generating). */
   canSendMessage: boolean;
   /** Sanitized invoice context for prompts. */
@@ -66,6 +68,8 @@ type UseLocalInvoiceAssistantResult = Readonly<{
   retryHardwareAnalysis: () => Promise<void>;
   /** Resets chat session (clears messages). */
   resetSession: () => void;
+  /** Runs a privacy-safe benchmark without adding to chat history. */
+  runBenchmark: () => Promise<void>;
   /** Sends user message and generates assistant response. */
   sendMessage: (content: string) => Promise<void>;
   /** Current assistant state. */
@@ -85,6 +89,18 @@ const LOCAL_INVOICE_ASSISTANT_SYSTEM_PROMPT =
   "You are a local-only invoice assistant. Answer using only the sanitized invoice JSON provided in this prompt. "
   + "Do not claim access to scans, raw OCR, hidden metadata, accounts, or remote services. "
   + "If the invoice data is insufficient, say what is missing and suggest a local-only next step.";
+
+/**
+ * Benchmark prompt that avoids invoice-specific content.
+ *
+ * @remarks
+ * Tests model performance without sending invoice data.
+ * Targets ~60 tokens for consistent benchmarking.
+ *
+ * @internal
+ */
+const LOCAL_INVOICE_ASSISTANT_BENCHMARK_PROMPT =
+  "In 3 short sentences, explain how local invoice analysis ensures privacy by running models entirely in the browser without server uploads.";
 
 /**
  * Fallback message ID counter for browsers without crypto.randomUUID.
@@ -259,6 +275,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     activeModel,
     error: null,
     hardware: null,
+    latestBenchmark: null,
+    latestGeneration: null,
     lifecycle: "checking-hardware",
     messages: [],
     progress: 0,
@@ -427,6 +445,16 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
       try {
         const response = await adapter.generate(promptMessages, {
+          onMetrics: (metrics) => {
+            if (!isMountedRef.current || generationIdRef.current !== generationId) {
+              return;
+            }
+
+            setState((current) => ({
+              ...current,
+              latestGeneration: metrics,
+            }));
+          },
           onToken: (_token, accumulatedResponse) => {
             if (!isMountedRef.current || generationIdRef.current !== generationId) {
               return;
@@ -492,6 +520,65 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     }));
   }, []);
 
+
+  const runBenchmark = useCallback(async (): Promise<void> => {
+    const adapter = adapterRef.current;
+
+    if (!adapter || !loadedRef.current || stateRef.current.lifecycle !== "ready") {
+      return;
+    }
+
+    const benchmarkMessages: LocalInvoiceAssistantPromptMessage[] = [
+      {
+        content: LOCAL_INVOICE_ASSISTANT_BENCHMARK_PROMPT,
+        role: "user",
+      },
+    ];
+    const generationId = generationIdRef.current + 1;
+    generationIdRef.current = generationId;
+
+    setState((current) => ({
+      ...current,
+      error: null,
+      lifecycle: "generating",
+    }));
+
+    try {
+      await adapter.generate(benchmarkMessages, {
+        onMetrics: (metrics) => {
+          if (!isMountedRef.current || generationIdRef.current !== generationId) {
+            return;
+          }
+
+          setState((current) => ({
+            ...current,
+            latestBenchmark: metrics,
+          }));
+        },
+      });
+
+      if (!isMountedRef.current || generationIdRef.current !== generationId) {
+        return;
+      }
+
+      setState((current) => ({
+        ...current,
+        error: null,
+        lifecycle: "ready",
+      }));
+    } catch (error) {
+      if (!isMountedRef.current || generationIdRef.current !== generationId) {
+        return;
+      }
+
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error),
+        lifecycle: "error",
+      }));
+    }
+  }, []);
+
   const deleteCachedModel = useCallback(async (): Promise<void> => {
     generationIdRef.current += 1;
     // Use current model from state, not closed-over default
@@ -531,10 +618,12 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     && (state.lifecycle === "not-downloaded"
       || state.lifecycle === "compatibility-unknown"
       || (state.lifecycle === "error" && !loadedRef.current));
+  const canRunBenchmark = state.lifecycle === "ready";
   const canSendMessage = state.lifecycle === "ready" || state.lifecycle === "cancelled";
 
   return {
     canLoadModel,
+    canRunBenchmark,
     canSendMessage,
     context,
     deleteCachedModel,
@@ -543,7 +632,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     loadModel,
     retryHardwareAnalysis,
     resetSession,
+    runBenchmark,
     sendMessage,
     state,
   };
 }
+

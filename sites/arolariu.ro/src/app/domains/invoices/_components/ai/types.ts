@@ -8,6 +8,7 @@
  */
 
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
+import type {GenerationMetrics} from "./performanceMetrics";
 
 /**
  * Role identifier for local invoice assistant messages.
@@ -122,6 +123,10 @@ export type LocalInvoiceAssistantState = Readonly<{
   error: string | null;
   /** Hardware eligibility result (null during initial check). */
   hardware: HardwareEligibilityResult | null;
+  /** Latest benchmark metrics (null if never run). */
+  latestBenchmark: GenerationMetrics | null;
+  /** Latest generation metrics (null if no generation yet). */
+  latestGeneration: GenerationMetrics | null;
   /** Current lifecycle state. */
   lifecycle: LocalInvoiceAssistantLifecycle;
   /** Session chat history (user + assistant messages). */

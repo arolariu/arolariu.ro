@@ -454,6 +454,178 @@ describe("useLocalInvoiceAssistant", () => {
     // Since buffer limits are display-only, Llama remains the selected balanced model.
     expect(result.current.state.activeModel.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
   });
+
+  it("stores benchmark metrics without adding messages to chat history", async () => {
+    const mockMetrics = {
+      characterCount: 180,
+      charactersPerSecond: 90,
+      chunkCount: 45,
+      estimatedChunksPerSecond: 22.5,
+      firstTokenLatencyMs: 120,
+      modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+      totalDurationMs: 2000,
+    };
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onMetrics?.(mockMetrics);
+
+        return "Benchmark response";
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.latestBenchmark).toBeNull();
+    expect(result.current.canRunBenchmark).toBe(true);
+
+    await act(async () => {
+      await result.current.runBenchmark();
+    });
+
+    expect(result.current.state.latestBenchmark).toEqual(mockMetrics);
+    expect(result.current.state.messages).toEqual([]); // No messages added to chat
+    expect(result.current.state.lifecycle).toBe("ready");
+  });
+
+  it("recovers from benchmark failure without losing chat history", async () => {
+    let callCount = 0;
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        callCount += 1;
+
+        // First call is sendMessage, second is benchmark
+        if (callCount === 1) {
+          options?.onMetrics?.({
+            characterCount: 10,
+            charactersPerSecond: 5,
+            chunkCount: 3,
+            estimatedChunksPerSecond: 1.5,
+            firstTokenLatencyMs: 100,
+            modelId: "test-model",
+            totalDurationMs: 2000,
+          });
+
+          return "Chat response";
+        }
+
+        // Benchmark call fails
+        throw new Error("Benchmark failed");
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+      await result.current.sendMessage("Test message");
+    });
+
+    const chatHistoryBeforeBenchmark = result.current.state.messages;
+    expect(chatHistoryBeforeBenchmark.length).toBe(2); // User + assistant
+
+    await act(async () => {
+      await result.current.runBenchmark();
+    });
+
+    expect(result.current.state.lifecycle).toBe("error");
+    expect(result.current.state.error).toBe("Benchmark failed");
+    expect(result.current.state.messages).toEqual(chatHistoryBeforeBenchmark); // History preserved
+  });
+
+  it("requires ready state to run benchmark", async () => {
+    const adapter = createFakeAdapter();
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Try benchmark before model loaded
+    await act(async () => {
+      await result.current.runBenchmark();
+    });
+
+    expect(adapter.generate).not.toHaveBeenCalled(); // Benchmark rejected
+  });
+
+  it("tracks latest generation metrics for normal chat messages", async () => {
+    const mockMetrics = {
+      characterCount: 50,
+      charactersPerSecond: 25,
+      chunkCount: 12,
+      estimatedChunksPerSecond: 6,
+      firstTokenLatencyMs: 150,
+      modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+      totalDurationMs: 2000,
+    };
+
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (_messages, options) => {
+        options?.onMetrics?.(mockMetrics);
+
+        return "Chat response";
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+      await result.current.sendMessage("Test");
+    });
+
+    expect(result.current.state.latestGeneration).toEqual(mockMetrics);
+  });
 });
 
 function createSequentialIdFactory(): () => string {

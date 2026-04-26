@@ -8,6 +8,7 @@
  */
 
 import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS, UPGRADE_GATED_MODEL_CANDIDATES} from "./modelCatalog";
+import {createGenerationMetricsTracker, DEFAULT_PERFORMANCE_CLOCK, type PerformanceClock} from "./performanceMetrics";
 import type {LocalInvoiceAssistantModelMetadata, LocalInvoiceAssistantPromptMessage} from "./types";
 
 // Re-export catalog for backward compatibility with existing imports
@@ -57,6 +58,8 @@ export type LocalInvoiceAssistantGenerationOptions = Readonly<{
 export type GenerateLocalInvoiceAssistantResponseOptions = Readonly<{
   /** Optional generation parameter overrides. */
   generationOptions?: Partial<LocalInvoiceAssistantGenerationOptions>;
+  /** Performance metrics callback (fired when generation completes). */
+  onMetrics?: (metrics: import("./performanceMetrics").GenerationMetrics) => void;
   /** Token-by-token streaming callback (for live UI updates). */
   onToken?: (token: string, accumulatedResponse: string) => void;
 }>;
@@ -173,6 +176,8 @@ type WebLlmRuntimeModule = Readonly<{
  * Injectable dependencies for WebLLM adapter (testability).
  */
 type CreateWebLlmLocalInvoiceAssistantAdapterOptions = Readonly<{
+  /** Optional performance clock (for test determinism). */
+  clock?: PerformanceClock;
   /** Optional worker factory (for test injection). */
   createWorker?: () => LocalInvoiceAssistantWebWorker;
   /** Optional WebLLM import function (for test mocking). */
@@ -234,12 +239,14 @@ async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
 export function createWebLlmLocalInvoiceAssistantAdapter(
   options: CreateWebLlmLocalInvoiceAssistantAdapterOptions = {},
 ): LocalInvoiceAssistantAdapter {
+  const clock = options.clock ?? DEFAULT_PERFORMANCE_CLOCK;
   const createWorker = options.createWorker ?? createDefaultWebLlmWorker;
   const importWebLlm = options.importWebLlm ?? importWebLlmRuntimeModule;
   let engine: WebLlmEngine | null = null;
   let worker: LocalInvoiceAssistantWebWorker | null = null;
   let loadingModel: Promise<void> | null = null;
   let isDisposed = false;
+  let activeModelId: string | null = null;
 
   async function unloadActiveModel({interrupt}: Readonly<{interrupt: boolean}>): Promise<void> {
     const loadedEngine = engine;
@@ -282,6 +289,7 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
 
       engine = nextEngine;
       worker = nextWorker;
+      activeModelId = model.id;
     } catch (error) {
       nextWorker.terminate();
       if (worker === nextWorker) {
@@ -330,10 +338,17 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         throw new Error("Load the local invoice assistant model before generating a response.");
       }
 
+      const metricsTracker = activeModelId
+        ? createGenerationMetricsTracker({clock, modelId: activeModelId})
+        : null;
+
       const generationOptions = {
         ...DEFAULT_LOCAL_INVOICE_ASSISTANT_GENERATION_OPTIONS,
         ...options.generationOptions,
       };
+
+      metricsTracker?.onStart();
+
       const stream = await engine.chat.completions.create({
         max_tokens: generationOptions.maxTokens,
         messages: messages.map((message) => ({
@@ -350,8 +365,14 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         const token = chunk.choices[0]?.delta.content;
         if (token) {
           accumulatedResponse += token;
+          metricsTracker?.onChunk(token);
           options.onToken?.(token, accumulatedResponse);
         }
+      }
+
+      if (metricsTracker) {
+        const metrics = metricsTracker.onEnd();
+        options.onMetrics?.(metrics);
       }
 
       return accumulatedResponse;

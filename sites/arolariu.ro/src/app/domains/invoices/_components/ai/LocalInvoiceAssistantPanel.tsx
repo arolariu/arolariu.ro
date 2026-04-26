@@ -67,6 +67,13 @@ type ChatShellProps = Readonly<{
   state: LocalInvoiceAssistantState;
 }>;
 
+type BenchmarkSectionProps = Readonly<{
+  canRunBenchmark: boolean;
+  isRunning: boolean;
+  onRunBenchmark: () => void;
+  state: LocalInvoiceAssistantState;
+}>;
+
 function DeviceCompatibilityDetails({hardware}: Readonly<{hardware: HardwareEligibilityResult}>): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
 
@@ -229,6 +236,64 @@ function ModelPreparationCard({
   return null;
 }
 
+function BenchmarkSection({canRunBenchmark, isRunning, onRunBenchmark, state}: BenchmarkSectionProps): React.JSX.Element | null {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  if (!state.hardware || state.lifecycle === "hardware-ineligible" || state.lifecycle === "checking-hardware") {
+    return null;
+  }
+
+  const shouldShowBenchmark = state.lifecycle === "ready" || state.lifecycle === "generating" || state.lifecycle === "error";
+
+  if (!shouldShowBenchmark) {
+    return null;
+  }
+
+  return (
+    <div className={styles["benchmarkSection"]}>
+      <h3 className={styles["sectionTitle"]}>{t("benchmark.title")}</h3>
+      <p className={styles["statusText"]}>{t("benchmark.description")}</p>
+
+      {state.latestBenchmark && (
+        <div className={styles["metricsBox"]}>
+          <h4 className={styles["subsectionTitle"]}>{t("benchmark.results.title")}</h4>
+          <ul className={styles["metricsList"]}>
+            <li>{t("benchmark.results.model", {modelName: state.latestBenchmark.modelId})}</li>
+            <li>{t("benchmark.results.firstToken", {latencyMs: Math.round(state.latestBenchmark.firstTokenLatencyMs)})}</li>
+            <li>
+              {t("benchmark.results.throughput", {chunksPerSec: state.latestBenchmark.estimatedChunksPerSecond.toFixed(1)})}
+            </li>
+            <li>{t("benchmark.results.duration", {durationMs: Math.round(state.latestBenchmark.totalDurationMs)})}</li>
+            <li>{t("benchmark.results.characters", {charsPerSec: Math.round(state.latestBenchmark.charactersPerSecond)})}</li>
+          </ul>
+        </div>
+      )}
+
+      {state.latestGeneration && (
+        <details className={styles["metricsDetails"]}>
+          <summary className={styles["subsectionTitle"]}>{t("benchmark.latestGeneration.title")}</summary>
+          <ul className={styles["metricsList"]}>
+            <li>{t("benchmark.latestGeneration.model", {modelName: state.latestGeneration.modelId})}</li>
+            <li>{t("benchmark.latestGeneration.firstToken", {latencyMs: Math.round(state.latestGeneration.firstTokenLatencyMs)})}</li>
+            <li>
+              {t("benchmark.latestGeneration.throughput", {chunksPerSec: state.latestGeneration.estimatedChunksPerSecond.toFixed(1)})}
+            </li>
+            <li>{t("benchmark.latestGeneration.duration", {durationMs: Math.round(state.latestGeneration.totalDurationMs)})}</li>
+            <li>{t("benchmark.latestGeneration.characters", {charsPerSec: Math.round(state.latestGeneration.charactersPerSecond)})}</li>
+          </ul>
+        </details>
+      )}
+
+      <Button
+        type='button'
+        onClick={onRunBenchmark}
+        disabled={!canRunBenchmark || isRunning}>
+        {isRunning ? t("benchmark.running") : t("benchmark.runButton")}
+      </Button>
+    </div>
+  );
+}
+
 function ChatShell({
   canSendMessage,
   isGenerating,
@@ -389,6 +454,7 @@ export function LocalInvoiceAssistantPanel({
   });
   const {
     canLoadModel,
+    canRunBenchmark,
     canSendMessage,
     deleteCachedModel,
     dismissError,
@@ -396,6 +462,7 @@ export function LocalInvoiceAssistantPanel({
     loadModel,
     resetSession,
     retryHardwareAnalysis,
+    runBenchmark,
     sendMessage,
     state,
   } = assistant;
@@ -429,6 +496,10 @@ export function LocalInvoiceAssistantPanel({
   const handleRetryHardwareAnalysis = useCallback((): void => {
     void retryHardwareAnalysis();
   }, [retryHardwareAnalysis]);
+
+  const handleRunBenchmark = useCallback((): void => {
+    void runBenchmark();
+  }, [runBenchmark]);
 
   const handleSubmit = useCallback(
     (event: Readonly<{preventDefault: () => void}>): void => {
@@ -465,6 +536,12 @@ export function LocalInvoiceAssistantPanel({
           lifecycle={state.lifecycle}
           onLoadModel={handleLoadModel}
           progressPercent={progressPercent}
+        />
+        <BenchmarkSection
+          canRunBenchmark={canRunBenchmark}
+          isRunning={isGenerating}
+          onRunBenchmark={handleRunBenchmark}
+          state={state}
         />
         <ChatShell
           canSendMessage={canSendMessage}
