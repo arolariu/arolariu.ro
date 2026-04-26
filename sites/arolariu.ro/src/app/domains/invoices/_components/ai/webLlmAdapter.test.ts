@@ -188,6 +188,81 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
     expect(worker.terminated).toBe(true);
   });
 
+  it("aborts pending model load by terminating the worker immediately", async () => {
+    const worker = createFakeWorker();
+    const fakeEngine = createFakeEngine(["unused"]);
+    const pendingEngine = createDeferred<typeof fakeEngine>();
+    const abortController = new AbortController();
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => pendingEngine.promise,
+        deleteModelAllInfoInCache: vi.fn(async () => undefined),
+      }),
+    });
+
+    const loadPromise = adapter.load({signal: abortController.signal});
+    await Promise.resolve();
+
+    // Abort while load is pending
+    abortController.abort();
+    await Promise.resolve();
+
+    // Worker should be terminated immediately
+    expect(worker.terminated).toBe(true);
+
+    // Resolve engine after abort
+    pendingEngine.resolve(fakeEngine);
+    await expect(loadPromise).rejects.toThrow();
+
+    // Late engine should be unloaded
+    expect(fakeEngine.unload).toHaveBeenCalledOnce();
+  });
+
+  it("does not mark adapter ready when late engine resolves after abort", async () => {
+    const worker = createFakeWorker();
+    const fakeEngine = createFakeEngine(["Response"]);
+    const pendingEngine = createDeferred<typeof fakeEngine>();
+    const abortController = new AbortController();
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => pendingEngine.promise,
+        deleteModelAllInfoInCache: vi.fn(async () => undefined),
+      }),
+    });
+
+    const loadPromise = adapter.load({signal: abortController.signal});
+    await Promise.resolve();
+
+    abortController.abort();
+    pendingEngine.resolve(fakeEngine);
+
+    await expect(loadPromise).rejects.toThrow();
+
+    // Adapter should not be ready - generate should reject
+    await expect(adapter.generate([{content: "Hello", role: "user"}])).rejects.toThrow(
+      "Load the local invoice assistant model before generating a response.",
+    );
+  });
+
+  it("throws immediately if signal is already aborted before load starts", async () => {
+    const worker = createFakeWorker();
+    const abortController = new AbortController();
+    abortController.abort();
+
+    const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+      createWorker: () => worker,
+      importWebLlm: async () => ({
+        CreateWebWorkerMLCEngine: async () => createFakeEngine(["unused"]),
+        deleteModelAllInfoInCache: vi.fn(async () => undefined),
+      }),
+    });
+
+    await expect(adapter.load({signal: abortController.signal})).rejects.toThrow();
+    expect(worker.terminated).toBe(true);
+  });
+
   it("deletes cached model artifacts without creating a worker", async () => {
     let workerCreated = false;
     const deleteModelAllInfoInCache = vi.fn(async () => undefined);

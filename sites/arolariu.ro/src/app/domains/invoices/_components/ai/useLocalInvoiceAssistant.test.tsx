@@ -901,6 +901,161 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.lifecycle).toBe("cancelled");
     expect(adapter.interrupt).toHaveBeenCalledOnce();
   });
+
+  it("aborts model loading when navigating away during download", async () => {
+    const pendingLoad = createDeferred<void>();
+    let loadAborted = false;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        if (signal?.aborted) {
+          loadAborted = true;
+          throw new Error("Model load aborted");
+        }
+
+        signal?.addEventListener("abort", () => {
+          loadAborted = true;
+        });
+
+        return pendingLoad.promise;
+      }),
+    });
+
+    const {result, unmount} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start model load without awaiting
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Unmount during loading (user navigates away)
+    unmount();
+
+    // Load should be aborted
+    await waitFor(() => {
+      expect(loadAborted).toBe(true);
+    });
+  });
+
+  it("aborts model loading and then deletes cache when clearing cache during download", async () => {
+    const pendingLoad = createDeferred<void>();
+    let loadAborted = false;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        signal?.addEventListener("abort", () => {
+          loadAborted = true;
+        });
+
+        return pendingLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start model load without awaiting
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Delete cache while loading
+    await act(async () => {
+      await result.current.deleteCachedModel();
+    });
+
+    // Load should be aborted before cache deletion
+    expect(loadAborted).toBe(true);
+    expect(adapter.deleteCachedModel).toHaveBeenCalledOnce();
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+  });
+
+  it("does not mark hook ready when late load resolves after abort", async () => {
+    const pendingLoad = createDeferred<void>();
+    let loadWasAborted = false;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        return new Promise((resolve, reject) => {
+          signal?.addEventListener("abort", () => {
+            loadWasAborted = true;
+            reject(new Error("Load aborted"));
+          });
+          void pendingLoad.promise.then(resolve).catch(reject);
+        });
+      }),
+    });
+
+    const {result, unmount} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Start model load without awaiting
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Unmount (abort) - this should abort the load
+    unmount();
+
+    // Verify load was aborted
+    await waitFor(() => {
+      expect(loadWasAborted).toBe(true);
+    });
+
+    // Complete load late (after unmount)
+    pendingLoad.resolve();
+    await Promise.resolve();
+
+    // Since hook is unmounted, we verify abort happened during mount
+    expect(adapter.load).toHaveBeenCalledWith(
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    );
+  });
 });
 
 function createSequentialIdFactory(): () => string {

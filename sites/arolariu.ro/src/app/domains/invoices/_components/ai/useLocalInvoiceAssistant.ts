@@ -262,6 +262,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const loadedRef = useRef(false);
   const inputModelRef = useRef<LocalInvoiceAssistantModelMetadata | undefined>(input.model);
   const streamingBufferRef = useRef<ReturnType<typeof createStreamingResponseBuffer> | null>(null);
+  const loadAbortControllerRef = useRef<AbortController | null>(null);
 
   if (adapterRef.current === null) {
     adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
@@ -372,6 +373,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   useEffect(
     () => () => {
       isMountedRef.current = false;
+      loadAbortControllerRef.current?.abort();
+      loadAbortControllerRef.current = null;
       streamingBufferRef.current?.interrupt();
       streamingBufferRef.current = null;
       void adapterRef.current?.dispose();
@@ -387,6 +390,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
     // Use current recommended model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;
+
+    // Create abort controller for this load
+    const abortController = new AbortController();
+    loadAbortControllerRef.current = abortController;
 
     setState((current) => ({
       ...current,
@@ -408,6 +415,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
             progress: report.progress,
           }));
         },
+        signal: abortController.signal,
       });
       if (!isMountedRef.current) {
         return;
@@ -426,11 +434,25 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       }
 
       loadedRef.current = false;
-      setState((current) => ({
-        ...current,
-        error: getErrorMessage(error),
-        lifecycle: "error",
-      }));
+
+      // If aborted, don't show scary error - just recover to not-downloaded
+      if (abortController.signal.aborted) {
+        setState((current) => ({
+          ...current,
+          error: null,
+          lifecycle: getRecoveredLifecycle(current.hardware, false),
+        }));
+      } else {
+        setState((current) => ({
+          ...current,
+          error: getErrorMessage(error),
+          lifecycle: "error",
+        }));
+      }
+    } finally {
+      if (loadAbortControllerRef.current === abortController) {
+        loadAbortControllerRef.current = null;
+      }
     }
   }, [activeModel]);
 
@@ -564,6 +586,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const resetSession = useCallback((): void => {
     generationIdRef.current += 1;
+    loadAbortControllerRef.current?.abort();
+    loadAbortControllerRef.current = null;
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
     setState((current) => ({
@@ -638,6 +662,11 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     generationIdRef.current += 1;
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
+
+    // Abort any active load before deleting cache
+    loadAbortControllerRef.current?.abort();
+    loadAbortControllerRef.current = null;
+
     // Use current model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;
 

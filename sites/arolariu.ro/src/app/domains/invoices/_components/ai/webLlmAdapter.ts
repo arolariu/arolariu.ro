@@ -74,6 +74,8 @@ export type LoadLocalInvoiceAssistantModelOptions = Readonly<{
   model?: LocalInvoiceAssistantModelMetadata;
   /** Progress callback for download UI. */
   onProgress?: (report: LocalInvoiceAssistantProgressReport) => void;
+  /** Optional abort signal to cancel loading. */
+  signal?: AbortSignal;
 }>;
 
 /**
@@ -269,23 +271,56 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
   async function loadModelOnce(
     model: LocalInvoiceAssistantModelMetadata,
     onProgress: LoadLocalInvoiceAssistantModelOptions["onProgress"],
+    signal?: AbortSignal,
   ): Promise<void> {
     const nextWorker = createWorker();
     worker = nextWorker;
 
+    // Check if already aborted before starting
+    if (signal?.aborted) {
+      nextWorker.terminate();
+      if (worker === nextWorker) {
+        worker = null;
+      }
+      throw new Error("Model load aborted");
+    }
+
+    // Register abort listener to terminate worker immediately
+    const abortHandler = (): void => {
+      nextWorker.terminate();
+    };
+
+    signal?.addEventListener("abort", abortHandler);
+
     try {
       const webLlm = await importWebLlm();
+
+      // Check again after async import
+      if (signal?.aborted) {
+        nextWorker.terminate();
+        if (worker === nextWorker) {
+          worker = null;
+        }
+        throw new Error("Model load aborted");
+      }
+
       const nextEngine = await webLlm.CreateWebWorkerMLCEngine(nextWorker, model.id, {
         initProgressCallback: onProgress,
         logLevel: "WARN",
       });
 
-      if (isDisposed || engine) {
+      // If aborted or disposed during engine creation, unload late engine
+      if (signal?.aborted || isDisposed || engine) {
         await nextEngine.unload();
         nextWorker.terminate();
         if (worker === nextWorker) {
           worker = null;
         }
+
+        if (signal?.aborted) {
+          throw new Error("Model load aborted");
+        }
+
         return;
       }
 
@@ -298,12 +333,15 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
         worker = null;
       }
       throw error;
+    } finally {
+      signal?.removeEventListener("abort", abortHandler);
     }
   }
 
   async function loadModel({
     model = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
     onProgress,
+    signal,
   }: LoadLocalInvoiceAssistantModelOptions = {}): Promise<void> {
     if (isDisposed) {
       throw new Error("The local invoice assistant adapter has already been disposed.");
@@ -313,7 +351,7 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
       return;
     }
 
-    const currentLoadingModel = loadingModel ?? loadModelOnce(model, onProgress);
+    const currentLoadingModel = loadingModel ?? loadModelOnce(model, onProgress, signal);
     loadingModel = currentLoadingModel;
 
     try {
