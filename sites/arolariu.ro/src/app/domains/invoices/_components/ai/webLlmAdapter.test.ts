@@ -1,5 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
-import {createWebLlmLocalInvoiceAssistantAdapter, DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL} from "./webLlmAdapter";
+import {createWebLlmLocalInvoiceAssistantAdapter, DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, UPGRADE_GATED_MODEL_CANDIDATES} from "./webLlmAdapter";
+import type {LocalInvoiceAssistantModelMetadata} from "./types";
 
 type FakeProgressReport = Readonly<{
   progress: number;
@@ -379,13 +380,15 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
 
   describe("catalog enforcement", () => {
     it("rejects load() for unsupported model ID not in catalog", async () => {
-      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
-      const unsupportedModel = {
+      const mockImportWebLlm = vi.fn();
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+        importWebLlm: mockImportWebLlm,
+      });
+
+      const unsupportedModel = createTestModelMetadata({
         id: "unsupported-model-12345",
         displayName: "Unsupported Model",
-        artifactHost: "https://example.com/invalid",
-        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
-      };
+      });
 
       await expect(
         adapter.load({
@@ -399,17 +402,19 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
           onProgress: vi.fn(),
         }),
       ).rejects.toThrow('Only models from the selectable catalog can be loaded');
+
+      // Verify WebLLM import was never called (rejection before import)
+      expect(mockImportWebLlm).not.toHaveBeenCalled();
     });
 
     it("rejects load() for upgrade-gated model not in selectable catalog", async () => {
-      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
-      // Use actual upgrade-gated model from catalog
-      const upgradedModel = {
-        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC-1k",
-        displayName: "Llama 3.2 3B",
-        artifactHost: "https://huggingface.co/mlc-ai",
-        estimatedVRAM: {gb: 2, bytes: 2_000_000_000},
-      };
+      const mockImportWebLlm = vi.fn();
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+        importWebLlm: mockImportWebLlm,
+      });
+
+      // Use actual upgrade-gated model from UPGRADE_GATED_MODEL_CANDIDATES
+      const upgradedModel = UPGRADE_GATED_MODEL_CANDIDATES[0]; // gemma3-1b-it-q4f16_1-MLC
 
       await expect(
         adapter.load({
@@ -417,33 +422,50 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
           onProgress: vi.fn(),
         }),
       ).rejects.toThrow("Unsupported model ID");
+
+      // Verify WebLLM import was never called (rejection before import)
+      expect(mockImportWebLlm).not.toHaveBeenCalled();
     });
 
     it("rejects deleteCachedModel() for unsupported model ID not in catalog", async () => {
-      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
-      const unsupportedModel = {
+      const mockDeleteModelAllInfoInCache = vi.fn();
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+        importWebLlm: async () => ({
+          CreateWebWorkerMLCEngine: vi.fn(),
+          deleteModelAllInfoInCache: mockDeleteModelAllInfoInCache,
+        }),
+      });
+
+      const unsupportedModel = createTestModelMetadata({
         id: "unsupported-model-12345",
         displayName: "Unsupported Model",
-        artifactHost: "https://example.com/invalid",
-        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
-      };
+      });
 
       await expect(adapter.deleteCachedModel(unsupportedModel)).rejects.toThrow("Unsupported model ID");
       await expect(adapter.deleteCachedModel(unsupportedModel)).rejects.toThrow(
         'Only models from the selectable catalog can be deleted',
       );
+
+      // Verify WebLLM cache delete was never called (rejection before WebLLM call)
+      expect(mockDeleteModelAllInfoInCache).not.toHaveBeenCalled();
     });
 
     it("rejects deleteCachedModel() for upgrade-gated model not in selectable catalog", async () => {
-      const adapter = createWebLlmLocalInvoiceAssistantAdapter();
-      const upgradedModel = {
-        id: "Llama-3.2-3B-Instruct-q4f16_1-MLC-1k",
-        displayName: "Llama 3.2 3B",
-        artifactHost: "https://huggingface.co/mlc-ai",
-        estimatedVRAM: {gb: 2, bytes: 2_000_000_000},
-      };
+      const mockDeleteModelAllInfoInCache = vi.fn();
+      const adapter = createWebLlmLocalInvoiceAssistantAdapter({
+        importWebLlm: async () => ({
+          CreateWebWorkerMLCEngine: vi.fn(),
+          deleteModelAllInfoInCache: mockDeleteModelAllInfoInCache,
+        }),
+      });
+
+      // Use actual upgrade-gated model from UPGRADE_GATED_MODEL_CANDIDATES
+      const upgradedModel = UPGRADE_GATED_MODEL_CANDIDATES[1]; // Qwen3.5-0.8B-q4f16_1-MLC
 
       await expect(adapter.deleteCachedModel(upgradedModel)).rejects.toThrow("Unsupported model ID");
+
+      // Verify WebLLM cache delete was never called (rejection before WebLLM call)
+      expect(mockDeleteModelAllInfoInCache).not.toHaveBeenCalled();
     });
 
     it("allows load() for supported model from selectable catalog", async () => {
@@ -459,13 +481,8 @@ describe("createWebLlmLocalInvoiceAssistantAdapter", () => {
         }),
       });
 
-      // Use actual selectable model
-      const selectableModel = {
-        id: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-        displayName: "Llama 3.2 1B",
-        artifactHost: "https://huggingface.co/mlc-ai",
-        estimatedVRAM: {gb: 1, bytes: 1_000_000_000},
-      };
+      // Use actual selectable model (default model from catalog)
+      const selectableModel = DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL;
 
       // Should not throw, will call WebLLM (mocked)
       await adapter.load({
@@ -507,4 +524,26 @@ function createDeferred<T>(): Readonly<{
   });
 
   return {promise, resolve};
+}
+
+/**
+ * Creates a fully-typed test model metadata fixture.
+ *
+ * @param overrides - Partial metadata to override defaults.
+ * @returns Complete LocalInvoiceAssistantModelMetadata for testing.
+ */
+function createTestModelMetadata(
+  overrides: Partial<LocalInvoiceAssistantModelMetadata> = {},
+): LocalInvoiceAssistantModelMetadata {
+  return {
+    artifactHost: "https://huggingface.co/mlc-ai",
+    contextWindowTokens: 4096,
+    displayName: "Test Model",
+    family: "llama",
+    id: "test-model-id",
+    requiredFeatures: [],
+    tier: "balanced",
+    vramRequiredMB: 1000,
+    ...overrides,
+  } satisfies LocalInvoiceAssistantModelMetadata;
 }

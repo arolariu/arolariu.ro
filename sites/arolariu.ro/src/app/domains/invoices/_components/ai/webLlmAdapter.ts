@@ -345,7 +345,7 @@ export function createWebLlmLocalInvoiceAssistantAdapter(
 
       engine = nextEngine;
       worker = nextWorker;
-      activeModelId = model.id;
+      activeModelId = catalogModel.id;
     } catch (error) {
       nextWorker.terminate();
       if (worker === nextWorker) {
