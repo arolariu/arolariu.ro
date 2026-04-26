@@ -56,6 +56,9 @@ type ModelPreparationCardProps = Readonly<{
 }>;
 
 type ChatShellProps = Readonly<{
+  activeModelDisplayName: string;
+  activeModelHost: string;
+  activeModelSizeMB: number;
   canSendMessage: boolean;
   isGenerating: boolean;
   onDeleteCachedModel: () => void;
@@ -243,6 +246,45 @@ function ModelPreparationCard({
   return null;
 }
 
+/**
+ * Cache information and management section.
+ *
+ * @remarks
+ * Displays model-specific cache information and clear-cache action.
+ * Only shown when model is loaded (ready, generating, cancelled, error after load).
+ */
+function CacheInfoSection({
+  modelDisplayName,
+  modelHost,
+  modelSizeMB,
+  onDeleteCachedModel,
+}: Readonly<{
+  modelDisplayName: string;
+  modelHost: string;
+  modelSizeMB: number;
+  onDeleteCachedModel: () => void;
+}>): React.JSX.Element {
+  const t = useTranslations("IMS--LocalInvoiceAssistant");
+
+  return (
+    <div className={styles["cacheInfo"]}>
+      <h4 className={styles["subsectionTitle"]}>{t("cache.behavior")}</h4>
+      <p className={styles["statusText"]}>
+        {t("cache.source", {host: modelHost})}
+      </p>
+      <p className={styles["statusText"]}>
+        {t("cache.clearImpact")}
+      </p>
+      <Button
+        type='button'
+        variant='outline'
+        onClick={onDeleteCachedModel}>
+        {t("actions.clearCache")} ({modelDisplayName}, ~{Math.round(modelSizeMB)} MB)
+      </Button>
+    </div>
+  );
+}
+
 function BenchmarkSection({canRunBenchmark, isRunning, modelLoaded, onRunBenchmark, state}: BenchmarkSectionProps): React.JSX.Element | null {
   const t = useTranslations("IMS--LocalInvoiceAssistant");
 
@@ -359,7 +401,6 @@ const MessageList = memo(function MessageList({
 const MessageComposer = memo(function MessageComposer({
   canSendMessage,
   isGenerating,
-  onDeleteCachedModel,
   onQuestionChange,
   onResetSession,
   onStopGenerating,
@@ -368,7 +409,6 @@ const MessageComposer = memo(function MessageComposer({
 }: Readonly<{
   canSendMessage: boolean;
   isGenerating: boolean;
-  onDeleteCachedModel: () => void;
   onQuestionChange: (event: Readonly<{currentTarget: Readonly<{value: string}>}>) => void;
   onResetSession: () => void;
   onStopGenerating: () => void;
@@ -410,18 +450,15 @@ const MessageComposer = memo(function MessageComposer({
           onClick={onResetSession}>
           {t("actions.reset")}
         </Button>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={onDeleteCachedModel}>
-          {t("actions.clearCache")}
-        </Button>
       </div>
     </form>
   );
 });
 
 function ChatShell({
+  activeModelDisplayName,
+  activeModelHost,
+  activeModelSizeMB,
   canSendMessage,
   isGenerating,
   onDeleteCachedModel,
@@ -450,6 +487,13 @@ function ChatShell({
           </p>
         ) : null}
 
+        <CacheInfoSection
+          modelDisplayName={activeModelDisplayName}
+          modelHost={activeModelHost}
+          modelSizeMB={activeModelSizeMB}
+          onDeleteCachedModel={onDeleteCachedModel}
+        />
+
         {state.error === null ? null : (
           <div
             className={styles["errorBox"]}
@@ -472,7 +516,6 @@ function ChatShell({
         <MessageComposer
           canSendMessage={canSendMessage}
           isGenerating={isGenerating}
-          onDeleteCachedModel={onDeleteCachedModel}
           onQuestionChange={onQuestionChange}
           onResetSession={onResetSession}
           onStopGenerating={onStopGenerating}
@@ -636,6 +679,9 @@ export function LocalInvoiceAssistantPanel({
           state={state}
         />
         <ChatShell
+          activeModelDisplayName={state.activeModel.displayName}
+          activeModelHost={state.activeModel.artifactHost}
+          activeModelSizeMB={state.activeModel.vramRequiredMB * 1.5}
           canSendMessage={canSendMessage}
           isGenerating={isGenerating}
           onDeleteCachedModel={handleDeleteCachedModel}

@@ -9,6 +9,7 @@
  */
 
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
+import {WEBLLM_ARTIFACT_HOST_FULL} from "./modelArtifactHosts";
 import type {LocalInvoiceAssistantModelMetadata} from "./types";
 
 /**
@@ -30,7 +31,7 @@ import type {LocalInvoiceAssistantModelMetadata} from "./types";
 export const LOCAL_INVOICE_ASSISTANT_MODELS = [
   // Fallback tier: Smallest models for constrained devices
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "SmolLM2 360M Instruct",
     family: "smollm",
@@ -40,7 +41,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     vramRequiredMB: 376.06,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Qwen 3 0.6B",
     family: "qwen",
@@ -52,7 +53,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
 
   // Balanced tier: Default models balancing performance and resources
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Llama 3.2 1B Instruct",
     family: "llama",
@@ -62,7 +63,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     vramRequiredMB: 879.04,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Gemma 2B Instruct",
     family: "gemma",
@@ -74,7 +75,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
 
   // Quality tier: Larger models for capable devices
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Gemma 2 2B Instruct",
     family: "gemma",
@@ -84,7 +85,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     vramRequiredMB: 1895.3,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Llama 3.2 3B Instruct",
     family: "llama",
@@ -94,7 +95,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
     vramRequiredMB: 2263.69,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Phi 3.5 Mini Instruct",
     family: "phi",
@@ -106,7 +107,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
 
   // Experimental tier: Context-optimized variant
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 1024,
     displayName: "Phi 3.5 Mini Instruct (1k context)",
     family: "phi",
@@ -130,7 +131,7 @@ export const LOCAL_INVOICE_ASSISTANT_MODELS = [
  */
 export const UPGRADE_GATED_MODEL_CANDIDATES = [
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 8192,
     displayName: "Gemma 3 1B Instruct",
     family: "gemma",
@@ -140,7 +141,7 @@ export const UPGRADE_GATED_MODEL_CANDIDATES = [
     vramRequiredMB: 1536,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Qwen 3.5 0.8B",
     family: "qwen",
@@ -150,7 +151,7 @@ export const UPGRADE_GATED_MODEL_CANDIDATES = [
     vramRequiredMB: 896,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 4096,
     displayName: "Qwen 3.5 2B",
     family: "qwen",
@@ -160,7 +161,7 @@ export const UPGRADE_GATED_MODEL_CANDIDATES = [
     vramRequiredMB: 2048,
   },
   {
-    artifactHost: "https://huggingface.co/mlc-ai",
+    artifactHost: WEBLLM_ARTIFACT_HOST_FULL,
     contextWindowTokens: 16384,
     displayName: "Phi 4 Mini Instruct",
     family: "phi",

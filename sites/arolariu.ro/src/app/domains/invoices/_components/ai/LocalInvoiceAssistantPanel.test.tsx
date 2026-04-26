@@ -55,6 +55,10 @@ vi.mock("next-intl", () => ({
       "benchmark.description": "Test local model speed on your current browser and hardware.",
       "benchmark.runButton": "Run benchmark",
       "benchmark.running": "Running benchmark...",
+      "cache.behavior":
+        "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
+      "cache.clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
+      "cache.source": "Model artifacts downloaded from trusted source: {host}",
       privacy: "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
       "status.compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
     };
@@ -398,6 +402,46 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(screen.getByText("GPU features: shader-f16, bgra8unorm-storage")).toBeInTheDocument();
     expect(screen.getByText("CPU cores: 12")).toBeInTheDocument();
     expect(screen.getByText("Device memory: 16 GB")).toBeInTheDocument();
+  });
+
+  it("displays model-specific cache information and clear-cache button after model loads", async () => {
+    const adapter = createFakeAdapter();
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Cache info should NOT be visible before model loads
+    expect(screen.queryByText(/Model artifacts are cached/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Clearing the cache removes/i)).not.toBeInTheDocument();
+
+    // Load model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+
+    // Wait for model to be ready
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // NOW cache info should be visible with model-specific details
+    expect(
+      screen.getByText("Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Clearing the cache removes the local model artifacts but does not delete your invoice data."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Model artifacts downloaded from trusted source:/i)).toBeInTheDocument();
+
+    // Clear cache button should show model name and size
+    const clearButton = screen.getByRole("button", {name: /Clear cached model.*Llama 3.2 1B Instruct/i});
+    expect(clearButton).toBeInTheDocument();
+    expect(clearButton).toHaveTextContent(/~1319 MB/); // 879 * 1.5 ≈ 1319
   });
 });
 

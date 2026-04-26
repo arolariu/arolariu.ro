@@ -99,7 +99,7 @@ export type LocalInvoiceAssistantWebWorker = Readonly<{
  * Manages model lifecycle: load → generate → interrupt → dispose.
  */
 export type LocalInvoiceAssistantAdapter = Readonly<{
-  /** Deletes cached model artifacts from IndexedDB. */
+  /** Deletes cached model artifacts from browser Cache API (WebLLM-managed). */
   deleteCachedModel: (model?: LocalInvoiceAssistantModelMetadata) => Promise<void>;
   /** Unloads model and terminates worker (cleanup on unmount). */
   dispose: () => Promise<void>;
@@ -215,7 +215,7 @@ async function importWebLlmRuntimeModule(): Promise<WebLlmRuntimeModule> {
  * @remarks
  * **Architecture:**
  * - WebLLM engine runs in dedicated Web Worker for non-blocking UI
- * - Model artifacts cached in IndexedDB (persistent across sessions)
+ * - Model artifacts cached in browser Cache API (WebLLM-managed, persistent across sessions)
  * - Streaming token generation for real-time chat UX
  *
  * **Lifecycle:**

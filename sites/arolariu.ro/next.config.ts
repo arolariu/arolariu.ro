@@ -10,23 +10,37 @@
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
+import {WEBLLM_ARTIFACT_HOST_CSP_ORIGIN} from "./src/app/domains/invoices/_components/ai/modelArtifactHosts";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
 const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
 const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" : "";
 const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
 
-// Local AI assistant model artifact hosts (derived from model catalog)
-// WebLLM downloads model weights and libraries from these approved sources
-const webLlmArtifactHosts = "https://huggingface.co";
+/**
+ * Local AI assistant model artifact hosts for CSP.
+ *
+ * @remarks
+ * Derived from model catalog's `WEBLLM_ARTIFACT_HOST_CSP_ORIGIN`.
+ * Single source of truth for allowed WebLLM model artifact download origins.
+ *
+ * **CSP usage:**
+ * - Added to `connect-src` to allow WebLLM model artifact downloads
+ * - Catalog verification ensures all selectable models use this host
+ *
+ * **Security:**
+ * - Explicit allowlist, not broad `https:`
+ * - Model catalog and CSP share same constant to prevent drift
+ */
+const webLlmArtifactHosts = WEBLLM_ARTIFACT_HOST_CSP_ORIGIN;
 
 const cspHeader = `
-    default-src 'self' blob: data: https: ${trustedDomains};
+    default-src 'self' blob: data: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
     img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
-    worker-src 'self' blob: data: https: ${trustedDomains};
-    connect-src 'self' https: ${trustedDomains} ${webLlmArtifactHosts};
+    worker-src 'self' blob: data: ${trustedDomains};
+    connect-src 'self' ${trustedDomains} ${webLlmArtifactHosts};
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';
