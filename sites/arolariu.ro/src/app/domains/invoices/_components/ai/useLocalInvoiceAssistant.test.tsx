@@ -1585,6 +1585,114 @@ describe("useLocalInvoiceAssistant", () => {
     expect(adapter.generate).toHaveBeenCalledTimes(2);
     expect(result.current.state.messages).toHaveLength(4);
   });
+
+  it("rejects sendMessage when lifecycle is error (boundary invariant)", async () => {
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async () => {
+        throw new Error("Generation failed");
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+
+    // Send a message that will fail
+    await act(async () => {
+      await result.current.sendMessage("Trigger error");
+    });
+
+    expect(result.current.state.lifecycle).toBe("error");
+    expect(result.current.state.error).toBeTruthy();
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+
+    // Attempt to send while in error state should be rejected
+    await act(async () => {
+      await result.current.sendMessage("Should be rejected");
+    });
+
+    // Generate should not be called again
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+    expect(result.current.state.lifecycle).toBe("error");
+  });
+
+  it("allows sendMessage after dismissError recovers from error state", async () => {
+    let shouldFail = true;
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async () => {
+        if (shouldFail) {
+          throw new Error("Generation failed");
+        }
+        return "Success";
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+
+    // Send a message that will fail
+    await act(async () => {
+      await result.current.sendMessage("Trigger error");
+    });
+
+    expect(result.current.state.lifecycle).toBe("error");
+    expect(adapter.generate).toHaveBeenCalledTimes(1);
+
+    // Dismiss error to recover
+    act(() => {
+      result.current.dismissError();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.error).toBeNull();
+
+    // Fix the adapter to succeed
+    shouldFail = false;
+
+    // Now sending should work again
+    await act(async () => {
+      await result.current.sendMessage("Should succeed");
+    });
+
+    expect(adapter.generate).toHaveBeenCalledTimes(2);
+    expect(result.current.state.lifecycle).toBe("ready");
+    // First message user, second message user + assistant (index 2)
+    expect(result.current.state.messages).toHaveLength(3);
+    expect(result.current.state.messages[2]?.content).toBe("Success");
+  });
 });
 
 function createSequentialIdFactory(): () => string {

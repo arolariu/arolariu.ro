@@ -264,6 +264,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const inputModelRef = useRef<LocalInvoiceAssistantModelMetadata | undefined>(input.model);
   const streamingBufferRef = useRef<ReturnType<typeof createStreamingResponseBuffer> | null>(null);
   const pendingLoadRef = useRef<{controller: AbortController; promise: Promise<void>} | null>(null);
+  const canSendMessageRef = useRef(false);
 
   if (adapterRef.current === null) {
     adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
@@ -449,6 +450,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         }
 
         loadedRef.current = true;
+        canSendMessageRef.current = true;
         setState((current) => ({
           ...current,
           error: null,
@@ -499,6 +501,11 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         return;
       }
 
+      // Synchronous guard: only accept sends from send-ready lifecycle states
+      if (!canSendMessageRef.current) {
+        return;
+      }
+
       // Synchronous guard: prevent overlapping generations
       if (generationInFlightRef.current) {
         return;
@@ -506,6 +513,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
       // Mark generation as in-flight before any async work
       generationInFlightRef.current = true;
+      canSendMessageRef.current = false;
 
       const timestamp = nowRef.current().toISOString();
       const userMessage = createMessage(trimmedContent, "user", timestamp, createIdRef.current);
@@ -590,12 +598,14 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           messages: replaceMessageContent(current.messages, assistantMessage.id, response),
         }));
 
-        // Clear in-flight flag after successful generation
+        // Clear in-flight flag and restore send readiness after successful generation
         generationInFlightRef.current = false;
+        canSendMessageRef.current = true;
       } catch (error) {
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
           // Clear in-flight flag even if component unmounted or generation superseded
           generationInFlightRef.current = false;
+          canSendMessageRef.current = false;
           return;
         }
 
@@ -610,18 +620,22 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           messages: current.messages.filter((message) => message.id !== assistantMessage.id),
         }));
 
-        // Clear in-flight flag after error
+        // Clear in-flight flag after error (but do NOT restore send readiness - error state is not send-ready)
         generationInFlightRef.current = false;
+        canSendMessageRef.current = false;
       }
     },
     [context],
   );
 
   const dismissError = useCallback((): void => {
+    const recoveredLifecycle = getRecoveredLifecycle(stateRef.current.hardware, loadedRef.current);
+    // Restore send readiness if recovered lifecycle is send-ready ("ready" or "cancelled")
+    canSendMessageRef.current = recoveredLifecycle === "ready" || recoveredLifecycle === "cancelled";
     setState((current) => ({
       ...current,
       error: null,
-      lifecycle: getRecoveredLifecycle(current.hardware, loadedRef.current),
+      lifecycle: recoveredLifecycle,
     }));
   }, []);
 
@@ -630,6 +644,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     adapterRef.current?.interrupt();
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
+    // Interrupt transitions to "cancelled" which is send-ready
+    if (loadedRef.current) {
+      canSendMessageRef.current = true;
+    }
     setState((current) => ({
       ...current,
       lifecycle: loadedRef.current ? "cancelled" : current.lifecycle,
@@ -643,10 +661,13 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     pendingLoadRef.current?.controller.abort();
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
+    const recoveredLifecycle = getRecoveredLifecycle(stateRef.current.hardware, loadedRef.current);
+    // Restore send readiness if recovered lifecycle is send-ready ("ready" or "cancelled")
+    canSendMessageRef.current = recoveredLifecycle === "ready" || recoveredLifecycle === "cancelled";
     setState((current) => ({
       ...current,
       error: null,
-      lifecycle: getRecoveredLifecycle(current.hardware, loadedRef.current),
+      lifecycle: recoveredLifecycle,
       messages: [],
     }));
   }, []);
