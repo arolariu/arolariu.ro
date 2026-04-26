@@ -262,7 +262,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const loadedRef = useRef(false);
   const inputModelRef = useRef<LocalInvoiceAssistantModelMetadata | undefined>(input.model);
   const streamingBufferRef = useRef<ReturnType<typeof createStreamingResponseBuffer> | null>(null);
-  const loadAbortControllerRef = useRef<AbortController | null>(null);
+  const pendingLoadRef = useRef<{controller: AbortController; promise: Promise<void>} | null>(null);
 
   if (adapterRef.current === null) {
     adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
@@ -373,8 +373,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   useEffect(
     () => () => {
       isMountedRef.current = false;
-      loadAbortControllerRef.current?.abort();
-      loadAbortControllerRef.current = null;
+      pendingLoadRef.current?.controller.abort();
+      pendingLoadRef.current = null;
       streamingBufferRef.current?.interrupt();
       streamingBufferRef.current = null;
       void adapterRef.current?.dispose();
@@ -391,9 +391,14 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     // Use current recommended model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;
 
+    // If there's already a pending load, reuse it to prevent controller race
+    const existingPendingLoad = pendingLoadRef.current;
+    if (existingPendingLoad) {
+      return existingPendingLoad.promise;
+    }
+
     // Create abort controller for this load
     const abortController = new AbortController();
-    loadAbortControllerRef.current = abortController;
 
     setState((current) => ({
       ...current,
@@ -402,60 +407,69 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       progress: 0,
     }));
 
-    try {
-      await adapter.load({
-        model: currentModel,
-        onProgress: (report) => {
-          if (!isMountedRef.current) {
-            return;
-          }
+    // Create the load promise
+    const loadPromise = (async (): Promise<void> => {
+      try {
+        await adapter.load({
+          model: currentModel,
+          onProgress: (report) => {
+            if (!isMountedRef.current) {
+              return;
+            }
 
-          setState((current) => ({
-            ...current,
-            progress: report.progress,
-          }));
-        },
-        signal: abortController.signal,
-      });
-      
-      // Check both mounted state and abort status before marking ready
-      if (!isMountedRef.current || abortController.signal.aborted) {
-        return;
-      }
+            setState((current) => ({
+              ...current,
+              progress: report.progress,
+            }));
+          },
+          signal: abortController.signal,
+        });
+        
+        // Check both mounted state and abort status before marking ready
+        if (!isMountedRef.current || abortController.signal.aborted) {
+          return;
+        }
 
-      loadedRef.current = true;
-      setState((current) => ({
-        ...current,
-        error: null,
-        lifecycle: "ready",
-        progress: 1,
-      }));
-    } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      loadedRef.current = false;
-
-      // If aborted, don't show scary error - just recover to not-downloaded
-      if (abortController.signal.aborted) {
+        loadedRef.current = true;
         setState((current) => ({
           ...current,
           error: null,
-          lifecycle: getRecoveredLifecycle(current.hardware, false),
+          lifecycle: "ready",
+          progress: 1,
         }));
-      } else {
-        setState((current) => ({
-          ...current,
-          error: getErrorMessage(error),
-          lifecycle: "error",
-        }));
+      } catch (error) {
+        if (!isMountedRef.current) {
+          return;
+        }
+
+        loadedRef.current = false;
+
+        // If aborted, don't show scary error - just recover to not-downloaded
+        if (abortController.signal.aborted) {
+          setState((current) => ({
+            ...current,
+            error: null,
+            lifecycle: getRecoveredLifecycle(current.hardware, false),
+          }));
+        } else {
+          setState((current) => ({
+            ...current,
+            error: getErrorMessage(error),
+            lifecycle: "error",
+          }));
+        }
+      } finally {
+        // Clean up pending load ref if it's still the current one
+        if (pendingLoadRef.current?.controller === abortController) {
+          pendingLoadRef.current = null;
+        }
       }
-    } finally {
-      if (loadAbortControllerRef.current === abortController) {
-        loadAbortControllerRef.current = null;
-      }
-    }
+    })();
+
+    // Store controller and promise together to prevent race
+    pendingLoadRef.current = {controller: abortController, promise: loadPromise};
+
+    return loadPromise;
   }, [activeModel]);
 
   const sendMessage = useCallback(
@@ -588,8 +602,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
   const resetSession = useCallback((): void => {
     generationIdRef.current += 1;
-    loadAbortControllerRef.current?.abort();
-    loadAbortControllerRef.current = null;
+    pendingLoadRef.current?.controller.abort();
+    pendingLoadRef.current = null;
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
     setState((current) => ({
@@ -666,8 +680,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     streamingBufferRef.current = null;
 
     // Abort any active load before deleting cache
-    loadAbortControllerRef.current?.abort();
-    loadAbortControllerRef.current = null;
+    pendingLoadRef.current?.controller.abort();
+    pendingLoadRef.current = null;
 
     // Use current model from state, not closed-over default
     const currentModel = stateRef.current.activeModel;

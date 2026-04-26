@@ -1124,6 +1124,144 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.canLoadModel).toBe(true);
     expect(result.current.canSendMessage).toBe(false);
   });
+
+  it("does not mark hook ready when duplicate loadModel calls then resetSession then late resolution", async () => {
+    const pendingLoad = createDeferred<void>();
+    let firstSignal: AbortSignal | null = null;
+    let secondSignal: AbortSignal | null = null;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        // Capture signals from both calls
+        if (!firstSignal) {
+          firstSignal = signal ?? null;
+        } else if (!secondSignal) {
+          secondSignal = signal ?? null;
+        }
+        // Track abort but don't reject - keep promise pending
+        return pendingLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // First loadModel call
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Second loadModel call while first is pending (race condition)
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    // Adapter should be called only once (coalesced)
+    expect(adapter.load).toHaveBeenCalledOnce();
+
+    // Reset session (should abort the actual in-flight controller)
+    act(() => {
+      result.current.resetSession();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // Late load resolution (after abort)
+    await act(async () => {
+      pendingLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Hook should NOT be marked ready after late resolution
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.canLoadModel).toBe(true);
+    expect(result.current.canSendMessage).toBe(false);
+
+    // The first signal (the one actually used by adapter) should be aborted
+    expect(firstSignal?.aborted).toBe(true);
+  });
+
+  it("does not mark hook ready when duplicate loadModel calls then deleteCachedModel then late resolution", async () => {
+    const pendingLoad = createDeferred<void>();
+    let firstSignal: AbortSignal | null = null;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        if (!firstSignal) {
+          firstSignal = signal ?? null;
+        }
+        return pendingLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    // First loadModel call
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    // Second loadModel call while first is pending (race condition)
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    // Adapter should be called only once (coalesced)
+    expect(adapter.load).toHaveBeenCalledOnce();
+
+    // Delete cache (should abort the actual in-flight controller)
+    await act(async () => {
+      await result.current.deleteCachedModel();
+    });
+
+    // Cache delete should have been called
+    expect(adapter.deleteCachedModel).toHaveBeenCalledOnce();
+
+    // Late load resolution (after abort)
+    await act(async () => {
+      pendingLoad.resolve();
+      await Promise.resolve();
+    });
+
+    // Hook should NOT be marked ready after late resolution
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.canLoadModel).toBe(true);
+    expect(result.current.canSendMessage).toBe(false);
+
+    // The first signal (the one actually used by adapter) should be aborted
+    expect(firstSignal?.aborted).toBe(true);
+  });
 });
 
 function createSequentialIdFactory(): () => string {
