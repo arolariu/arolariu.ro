@@ -48,6 +48,7 @@ const WEBLLM_0_2_82_REGISTRY_METADATA = {
 const WEBLLM_0_2_82_VERIFIED_IDS = Object.keys(WEBLLM_0_2_82_REGISTRY_METADATA) as ReadonlyArray<
   keyof typeof WEBLLM_0_2_82_REGISTRY_METADATA
 >;
+const verifiedWebLlmModelIds = new Set<string>(WEBLLM_0_2_82_VERIFIED_IDS);
 
 /**
  * Helper to read installed @mlc-ai/web-llm package bundle text.
@@ -128,9 +129,8 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   });
 
   it("contains only WebLLM 0.2.82 verified model IDs", () => {
-    const allowedIds = new Set(WEBLLM_0_2_82_VERIFIED_IDS);
     for (const model of selectableModels) {
-      expect(allowedIds.has(model.id as (typeof WEBLLM_0_2_82_VERIFIED_IDS)[number])).toBe(true);
+      expect(verifiedWebLlmModelIds.has(model.id)).toBe(true);
     }
   });
 
@@ -160,7 +160,7 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
     // Upgrade-gated models expected to be absent SHOULD NOT appear
     // (this catches accidental downgrade where upgrade-gated models become available)
     const upgradeGatedIdsNotInRegistry = upgradeGatedCandidates.filter(
-      (candidate) => !WEBLLM_0_2_82_VERIFIED_IDS.includes(candidate.id as never),
+      (candidate) => !verifiedWebLlmModelIds.has(candidate.id),
     ).map((candidate) => candidate.id);
 
     upgradeGatedIdsNotInRegistry.forEach((modelId) => {
