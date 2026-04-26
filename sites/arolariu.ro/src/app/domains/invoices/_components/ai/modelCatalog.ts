@@ -190,6 +190,42 @@ export const DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL = (() => {
 })();
 
 /**
+ * Retrieves a local invoice assistant model by ID from the selectable catalog.
+ *
+ * @param modelId - WebLLM model identifier to lookup.
+ * @returns Model metadata if found in selectable catalog, null otherwise.
+ *
+ * @remarks
+ * **Security:**
+ * - Only returns models from the curated selectable catalog (`LOCAL_INVOICE_ASSISTANT_MODELS`)
+ * - Returns null for upgrade-gated models, arbitrary user input, or unsupported IDs
+ * - Ensures artifact host URLs come from trusted catalog metadata, not user input
+ *
+ * **Prevents:**
+ * - Arbitrary model IDs from UI/user input reaching WebLLM
+ * - Malicious artifact host URLs bypassing CSP allowlist
+ * - Upgrade-gated models being loaded before verification
+ *
+ * **Use cases:**
+ * - Validating user-selected model ID before loading
+ * - Displaying model metadata in UI from trusted catalog source
+ * - Cache deletion with validated model reference
+ *
+ * @example
+ * ```typescript
+ * const model = getLocalInvoiceAssistantModelById(userSelectedId);
+ * if (model) {
+ *   await adapter.load({model});
+ * } else {
+ *   console.error("Invalid model selection");
+ * }
+ * ```
+ */
+export function getLocalInvoiceAssistantModelById(modelId: string): LocalInvoiceAssistantModelMetadata | null {
+  return LOCAL_INVOICE_ASSISTANT_MODELS.find((model) => model.id === modelId) ?? null;
+}
+
+/**
  * GPU feature flags for model compatibility filtering.
  */
 export type GpuFeatures = ReadonlyArray<string>;

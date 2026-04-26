@@ -5,6 +5,7 @@ import {
   DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
   LOCAL_INVOICE_ASSISTANT_MODELS,
   UPGRADE_GATED_MODEL_CANDIDATES,
+  getLocalInvoiceAssistantModelById,
   recommendLocalInvoiceAssistantModel,
 } from "./modelCatalog";
 import type {LocalInvoiceAssistantModelMetadata} from "./types";
@@ -211,6 +212,53 @@ describe("DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL", () => {
     expect(DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL.contextWindowTokens).toBe(4096);
     expect(DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL.vramRequiredMB).toBeGreaterThan(0);
     expect(DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL.requiredFeatures).toBeDefined();
+  });
+});
+
+describe("getLocalInvoiceAssistantModelById", () => {
+  it("returns model metadata for valid model ID", () => {
+    const result = getLocalInvoiceAssistantModelById("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+    expect(result?.displayName).toBe("Llama 3.2 1B Instruct");
+    expect(result?.artifactHost).toBe("https://huggingface.co/mlc-ai");
+  });
+
+  it("returns null for unsupported model ID", () => {
+    const result = getLocalInvoiceAssistantModelById("unsupported-model-id");
+    expect(result).toBeNull();
+  });
+
+  it("returns null for upgrade-gated model ID", () => {
+    const result = getLocalInvoiceAssistantModelById("gemma3-1b-it-q4f16_1-MLC");
+    expect(result).toBeNull();
+  });
+
+  it("returns null for arbitrary user-provided model ID", () => {
+    const result = getLocalInvoiceAssistantModelById("https://evil.com/custom-model");
+    expect(result).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    const result = getLocalInvoiceAssistantModelById("");
+    expect(result).toBeNull();
+  });
+
+  it("returns artifact host from catalog metadata, not arbitrary input", () => {
+    const result = getLocalInvoiceAssistantModelById("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+    expect(result?.artifactHost).toBe("https://huggingface.co/mlc-ai");
+    // Artifact host comes from catalog, not user input
+    expect(result?.artifactHost).not.toContain("evil.com");
+    expect(result?.artifactHost).not.toContain("malicious");
+  });
+
+  it("returns all supported model IDs from selectable catalog", () => {
+    for (const model of selectableModels) {
+      const result = getLocalInvoiceAssistantModelById(model.id);
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(model.id);
+      expect(result?.artifactHost).toBe(model.artifactHost);
+    }
   });
 });
 

@@ -15,12 +15,18 @@ const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accoun
 const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
 const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" : "";
 const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
+
+// Local AI assistant model artifact hosts (derived from model catalog)
+// WebLLM downloads model weights and libraries from these approved sources
+const webLlmArtifactHosts = "https://huggingface.co";
+
 const cspHeader = `
     default-src 'self' blob: data: https: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
     img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
     worker-src 'self' blob: data: https: ${trustedDomains};
+    connect-src 'self' https: ${trustedDomains} ${webLlmArtifactHosts};
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';

@@ -47,6 +47,7 @@ type HardwareStatusProps = Readonly<{
 type ModelPreparationCardProps = Readonly<{
   activeModelArtifactHost: string;
   activeModelDisplayName: string;
+  activeModelSizeMB: number;
   canLoadModel: boolean;
   hardware: HardwareEligibilityResult | null;
   lifecycle: LocalInvoiceAssistantLifecycle;
@@ -176,6 +177,7 @@ function HardwareStatus({error, hardware, lifecycle, onRetryHardwareAnalysis}: H
 function ModelPreparationCard({
   activeModelArtifactHost,
   activeModelDisplayName,
+  activeModelSizeMB,
   canLoadModel,
   hardware,
   lifecycle,
@@ -196,7 +198,11 @@ function ModelPreparationCard({
           <p className={styles["statusText"]}>
             {t("model.recommendedModel", {modelName: activeModelDisplayName})}
           </p>
-          <p className={styles["statusText"]}>{t("model.host", {host: activeModelArtifactHost})}</p>
+          <p className={styles["statusText"]}>
+            {t("model.size", {sizeMB: Math.round(activeModelSizeMB)})}
+          </p>
+          <p className={styles["statusText"]}>{t("cache.source", {host: activeModelArtifactHost})}</p>
+          <p className={styles["statusText"]}>{t("cache.behavior")}</p>
 
           {hardware ? <DeviceCompatibilityDetails hardware={hardware} /> : null}
 
@@ -615,6 +621,7 @@ export function LocalInvoiceAssistantPanel({
         <ModelPreparationCard
           activeModelArtifactHost={state.activeModel.artifactHost}
           activeModelDisplayName={state.activeModel.displayName}
+          activeModelSizeMB={state.activeModel.vramRequiredMB * 1.5}
           canLoadModel={canLoadModel}
           hardware={state.hardware}
           lifecycle={state.lifecycle}

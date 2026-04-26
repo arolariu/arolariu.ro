@@ -7,12 +7,17 @@
  * @module app/domains/invoices/_components/ai/webLlmAdapter
  */
 
-import {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS, UPGRADE_GATED_MODEL_CANDIDATES} from "./modelCatalog";
+import {
+  DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL,
+  LOCAL_INVOICE_ASSISTANT_MODELS,
+  UPGRADE_GATED_MODEL_CANDIDATES,
+  getLocalInvoiceAssistantModelById,
+} from "./modelCatalog";
 import {createGenerationMetricsTracker, DEFAULT_PERFORMANCE_CLOCK, type PerformanceClock} from "./performanceMetrics";
 import type {LocalInvoiceAssistantModelMetadata, LocalInvoiceAssistantPromptMessage} from "./types";
 
 // Re-export catalog for backward compatibility with existing imports
-export {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS, UPGRADE_GATED_MODEL_CANDIDATES};
+export {DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL, LOCAL_INVOICE_ASSISTANT_MODELS, UPGRADE_GATED_MODEL_CANDIDATES, getLocalInvoiceAssistantModelById};
 
 /**
  * Default LLM generation hyperparameters.

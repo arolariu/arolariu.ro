@@ -343,11 +343,72 @@ but should never be used for cross-device comparisons or performance claims.
 
 ## 6. Security Considerations
 
+### 6.1 Privacy and Data Isolation
+
 The feature does not send invoice prompt data to a server. However, model
 artifacts are downloaded from the approved external model host after explicit
 user action. The UI discloses this behavior before the download button is used.
 
 Prompt sanitization reduces the model-visible data surface by excluding user
+identifiers, sharing metadata, scans, raw OCR, and raw implementation IDs. The
+worker entry point accepts same-origin messages only, and the adapter owns
+worker termination during unload and disposal.
+
+### 6.2 Model Artifact Hosts and CSP
+
+**Allowed artifact hosts (from model catalog):**
+
+| Host | Purpose | CSP Directives |
+|------|---------|----------------|
+| `https://huggingface.co/mlc-ai` | WebLLM model weights and libraries | `connect-src` |
+
+All models in the selectable catalog (`LOCAL_INVOICE_ASSISTANT_MODELS`) use
+`https://huggingface.co/mlc-ai` as the artifact host. This host is explicitly
+allowed in the Next.js CSP configuration via the `webLlmArtifactHosts` variable.
+
+**CSP enforcement:**
+- `connect-src`: Allows WebLLM to fetch model artifacts from HuggingFace
+- `worker-src`: Allows Web Worker creation for WebLLM engine
+- `script-src`: Already includes `'unsafe-eval'` required for WASM modules
+
+**Security guarantees:**
+1. Arbitrary model IDs from UI/user input are rejected by catalog lookup
+2. Only curated models from `LOCAL_INVOICE_ASSISTANT_MODELS` are loadable
+3. Artifact host URLs come from trusted catalog metadata, not user input
+4. Upgrade-gated models are excluded until verification
+5. CSP blocks connections to arbitrary model artifact hosts
+
+**Preventing malicious model IDs:**
+The `getLocalInvoiceAssistantModelById(modelId: string)` helper ensures only
+catalog-verified model IDs can be loaded. Arbitrary user input, malicious URLs,
+or upgrade-gated model IDs return `null`, preventing WebLLM initialization.
+
+### 6.3 Cache and Storage Behavior
+
+**WebLLM model artifacts:**
+- Cached using browser **Cache API** (managed by WebLLM library)
+- Persistent across sessions until explicitly cleared or browser quota exceeded
+- Model size: ~1.5× VRAM requirement (e.g., Llama 3.2 1B ≈ 1.3 GB cached)
+- Cleared via `adapter.deleteCachedModel()` or browser settings
+
+**Invoice data (separate storage):**
+- Stored in **IndexedDB** via Zustand persistence middleware
+- Completely isolated from model artifact cache
+- Clearing model cache does **not** delete invoice data
+- Invoice data cleared only via explicit user action in invoice UI
+
+**Cache clearing impact:**
+- Removes model weights, tokenizer, and WASM libraries from Cache API
+- Requires re-download (~1-4 GB depending on model) to use assistant again
+- Does not affect chat history (session-only React state, not persisted)
+- Does not affect invoice data (remains in IndexedDB)
+
+**Storage quota considerations:**
+- Minimum 6 GB available storage required before download
+- Hardware eligibility check gates download if quota unavailable
+- Browser may evict cache if quota exceeded (WebLLM handles gracefully)
+
+---
 identifiers, sharing metadata, scans, raw OCR, and raw implementation IDs. The
 worker entry point accepts same-origin messages only, and the adapter owns
 worker termination during unload and disposal.

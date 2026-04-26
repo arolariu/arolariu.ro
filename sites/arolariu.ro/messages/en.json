@@ -3189,8 +3189,16 @@
       "host": "Model artifacts are downloaded from {host}.",
       "progress": "Download progress: {progress}%",
       "recommendedModel": "Recommended model: {modelName}",
+      "size": "Model size: ~{sizeMB} MB (cached in browser)",
       "title": "Prepare local model"
-    },      "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
+    },
+    "cache": {
+      "behavior": "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
+      "clearConfirm": "Clear cached model \"{modelName}\"? You will need to re-download it (~{sizeMB} MB) to use the assistant again.",
+      "clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
+      "source": "Model artifacts downloaded from trusted source: {host}"
+    },
+    "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
       "benchmark": {
         "title": "Benchmark your device",
         "description": "Test local model speed on your current browser and hardware.",

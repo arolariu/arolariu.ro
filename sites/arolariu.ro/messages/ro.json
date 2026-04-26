@@ -3189,8 +3189,16 @@
       "host": "Artefactele modelului sunt descărcate de la {host}.",
       "progress": "Progres descărcare: {progress}%",
       "recommendedModel": "Model recomandat: {modelName}",
+      "size": "Dimensiune model: ~{sizeMB} MB (stocat în cache în browser)",
       "title": "Pregătește modelul local"
-    },      "privacy": "Datele facturilor rămân în browser. Artefactele modelului sunt descărcate de la gazda externă aprobată.",
+    },
+    "cache": {
+      "behavior": "Artefactele modelului sunt stocate în cache în browser folosind Cache API. Datele facturilor tale rămân separate în IndexedDB.",
+      "clearConfirm": "Șterge modelul din cache \"{modelName}\"? Va trebui să îl descarci din nou (~{sizeMB} MB) pentru a folosi asistentul.",
+      "clearImpact": "Ștergerea cache-ului elimină artefactele modelului local dar nu șterge datele facturilor tale.",
+      "source": "Artefactele modelului descărcate de la sursa de încredere: {host}"
+    },
+    "privacy": "Datele facturilor rămân în browser. Artefactele modelului sunt descărcate de la gazda externă aprobată.",
       "benchmark": {
         "title": "Testează performanța dispozitivului",
         "description": "Testează viteza modelului local pe browserul și hardware-ul tău curent.",

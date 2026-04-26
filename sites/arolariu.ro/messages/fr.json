@@ -3189,8 +3189,16 @@
       "host": "Les artefacts du modèle sont téléchargés depuis {host}.",
       "progress": "Progression du téléchargement : {progress}%",
       "recommendedModel": "Modèle recommandé : {modelName}",
+      "size": "Taille du modèle : ~{sizeMB} Mo (mis en cache dans le navigateur)",
       "title": "Préparer le modèle local"
-    },      "privacy": "Les données de factures restent dans ce navigateur. Les artefacts du modèle sont téléchargés depuis l'hôte externe approuvé.",
+    },
+    "cache": {
+      "behavior": "Les artefacts du modèle sont mis en cache dans votre navigateur à l'aide de l'API Cache. Vos données de factures restent séparées dans IndexedDB.",
+      "clearConfirm": "Effacer le modèle en cache \"{modelName}\" ? Vous devrez le télécharger à nouveau (~{sizeMB} Mo) pour utiliser l'assistant.",
+      "clearImpact": "Effacer le cache supprime les artefacts du modèle local mais ne supprime pas vos données de factures.",
+      "source": "Artefacts du modèle téléchargés depuis une source de confiance : {host}"
+    },
+    "privacy": "Les données de factures restent dans ce navigateur. Les artefacts du modèle sont téléchargés depuis l'hôte externe approuvé.",
       "benchmark": {
         "title": "Évaluez votre appareil",
         "description": "Testez la vitesse du modèle local sur votre navigateur et matériel actuels.",
