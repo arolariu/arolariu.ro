@@ -37,7 +37,6 @@ import type {Config} from "prettier";
  * - `@prettier/plugin-oxc`: Faster parsing via Oxc
  * - `@prettier/plugin-hermes`: Hermes AST support
  * - `prettier-plugin-organize-imports`: Auto-sorts imports
- * - `prettier-plugin-tailwindcss`: Sorts Tailwind CSS classes
  * - `prettier-plugin-svelte`: Svelte file formatting
  *
  * **Usage**: Run via `npm run format` or integrated with editor save-on-format.
@@ -69,7 +68,6 @@ const prettierConfig: Config = {
     "@prettier/plugin-oxc",
     "@prettier/plugin-hermes",
     "prettier-plugin-organize-imports",
-    "prettier-plugin-tailwindcss",
     "prettier-plugin-svelte",
   ],
   printWidth: 140,

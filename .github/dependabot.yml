@@ -205,15 +205,6 @@ updates:
         update-types:
           - "minor"
           - "major"
-      # Tailwind CSS v4 ecosystem
-      tailwind:
-        patterns:
-          - "tailwindcss"
-          - "@tailwindcss/*"
-          - "tailwind-*"
-        update-types:
-          - "minor"
-          - "major"
       # OpenTelemetry observability stack
       opentelemetry:
         patterns:

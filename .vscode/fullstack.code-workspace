@@ -47,9 +47,6 @@
     "[python]": {
       "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "tailwindCSS.experimental.classRegex": [
-      ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-    ],
     "files.exclude": {
       "**/node_modules": true,
       "**/.next": true,
@@ -65,7 +62,6 @@
     "recommendations": [
       "esbenp.prettier-vscode",
       "dbaeumer.vscode-eslint",
-      "bradlc.vscode-tailwindcss",
       "usernamehw.errorlens",
       "yoavbls.pretty-ts-errors",
       "svelte.svelte-vscode",
