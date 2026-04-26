@@ -35,6 +35,26 @@ docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend .
 cd infra/containers && docker build -f Dockerfile.frontend .  # ❌
 ```
 
+## CI/CD Image Promotion
+
+GitHub Actions builds publish immutable commit tags only:
+
+```text
+<registry>/<image-name>:<github.sha>
+```
+
+The reusable container workflow also emits the registry digest returned by
+Docker Buildx. Deployment should prefer digest references:
+
+```text
+<registry>/<image-name>@sha256:<digest>
+```
+
+Azure App Service deployments use the digest reference first. If App Service
+rejects digest-based container references for the configured resource, the
+deployment action falls back to the immutable commit tag for the same build.
+Mutable tags such as `latest` are not used for CI/CD handoff.
+
 ## Build Commands
 
 ### Frontend (arolariu.ro)

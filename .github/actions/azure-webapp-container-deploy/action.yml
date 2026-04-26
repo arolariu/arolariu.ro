@@ -1,0 +1,74 @@
+name: "Azure Web App Container Deploy"
+description: "Deploys an immutable container image reference to Azure App Service."
+author: "arolariu.ro"
+
+inputs:
+  app-name:
+    description: "Azure App Service name."
+    required: true
+  registry:
+    description: "Azure Container Registry login server."
+    required: true
+  image-name:
+    description: "Repository path/name inside the registry."
+    required: true
+  image-digest:
+    description: "Image digest to deploy."
+    required: true
+  image-tag:
+    description: "Immutable commit tag fallback."
+    required: false
+    default: ""
+  azure-client-id:
+    description: "Azure federated managed identity client ID."
+    required: true
+  azure-tenant-id:
+    description: "Azure tenant ID."
+    required: true
+  azure-subscription-id:
+    description: "Azure subscription ID."
+    required: true
+
+outputs:
+  deployed-image:
+    description: "Container image reference deployed to App Service."
+    value: ${{ steps.select-image.outputs.deployed-image }}
+  url:
+    description: "Deployed Web App URL."
+    value: ${{ steps.deploy-digest.outputs.webapp-url || steps.deploy-tag.outputs.webapp-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: 🔐 Azure login
+      uses: azure/login@v3
+      with:
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
+        subscription-id: ${{ inputs.azure-subscription-id }}
+
+    - name: 🚀 Deploy digest image
+      id: deploy-digest
+      continue-on-error: true
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ inputs.app-name }}
+        images: "${{ inputs.registry }}/${{ inputs.image-name }}@${{ inputs.image-digest }}"
+
+    - name: 🚀 Deploy commit-tag fallback
+      id: deploy-tag
+      if: steps.deploy-digest.outcome == 'failure'
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ inputs.app-name }}
+        images: "${{ inputs.registry }}/${{ inputs.image-name }}:${{ inputs.image-tag || github.sha }}"
+
+    - name: 🧾 Select deployed image
+      id: select-image
+      shell: bash
+      run: |
+        if [ "${{ steps.deploy-digest.outcome }}" = "success" ]; then
+          echo "deployed-image=${{ inputs.registry }}/${{ inputs.image-name }}@${{ inputs.image-digest }}" >> "${GITHUB_OUTPUT}"
+        else
+          echo "deployed-image=${{ inputs.registry }}/${{ inputs.image-name }}:${{ inputs.image-tag || github.sha }}" >> "${GITHUB_OUTPUT}"
+        fi

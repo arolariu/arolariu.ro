@@ -135,8 +135,9 @@ function checkContent(file: string, content: string): readonly WorkflowPolicyVio
     }
   });
 
+  const isWorkflowFile = file.startsWith(".github/workflows/");
   const usesAzureLogin = lines.some((line) => AZURE_LOGIN_REGEX.test(line));
-  if (usesAzureLogin && !hasTopLevelPermission(content, "id-token", "write")) {
+  if (isWorkflowFile && usesAzureLogin && !hasTopLevelPermission(content, "id-token", "write")) {
     violations.push({
       file,
       line: findLineNumber(lines, (line) => AZURE_LOGIN_REGEX.test(line)),
@@ -146,7 +147,7 @@ function checkContent(file: string, content: string): readonly WorkflowPolicyVio
   }
 
   const hasDeployment = lines.some((line) => DEPLOYMENT_STEP_REGEX.test(line));
-  if (hasDeployment && file !== STATUS_PROBE_WORKFLOW && !workflowHasEnvironment(content)) {
+  if (isWorkflowFile && hasDeployment && file !== STATUS_PROBE_WORKFLOW && !workflowHasEnvironment(content)) {
     violations.push({
       file,
       line: findLineNumber(lines, (line) => DEPLOYMENT_STEP_REGEX.test(line)),

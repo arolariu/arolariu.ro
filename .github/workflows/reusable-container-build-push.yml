@@ -1,0 +1,84 @@
+name: "reusable-container-build-push"
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "Repository path/name inside the registry."
+        required: true
+        type: string
+      dockerfile:
+        description: "Dockerfile path."
+        required: true
+        type: string
+      context:
+        description: "Docker build context."
+        required: false
+        type: string
+        default: "."
+      build-args:
+        description: "Optional Docker build arguments."
+        required: false
+        type: string
+        default: ""
+      environment-name:
+        description: "GitHub Environment used to gate registry writes."
+        required: true
+        type: string
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      AZURE_CONTAINER_REGISTRY:
+        required: true
+    outputs:
+      image:
+        description: "Immutable image tag pushed to ACR."
+        value: ${{ jobs.build.outputs.image }}
+      digest:
+        description: "Image digest produced by Docker Buildx."
+        value: ${{ jobs.build.outputs.digest }}
+
+permissions:
+  attestations: write
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: 🐳 Build ${{ inputs.image-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment-name }}
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 🐳 Build and push image
+        id: build
+        uses: ./.github/actions/azure-container-build-push
+        with:
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          image-name: ${{ inputs.image-name }}
+          dockerfile: ${{ inputs.dockerfile }}
+          context: ${{ inputs.context }}
+          build-args: ${{ inputs.build-args }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 🧾 Attest image provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ steps.build.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
