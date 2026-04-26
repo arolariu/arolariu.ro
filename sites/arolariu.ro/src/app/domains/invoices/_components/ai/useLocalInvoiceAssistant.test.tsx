@@ -3,6 +3,7 @@ import {act, renderHook, waitFor} from "@testing-library/react";
 import {describe, expect, it, vi} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import {DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
+import {LOCAL_INVOICE_ASSISTANT_MODELS} from "./modelCatalog";
 import {useLocalInvoiceAssistant} from "./useLocalInvoiceAssistant";
 import type {LocalInvoiceAssistantAdapter, LocalInvoiceAssistantProgressReport} from "./webLlmAdapter";
 
@@ -338,6 +339,47 @@ describe("useLocalInvoiceAssistant", () => {
     expect(adapter.load).toHaveBeenCalledWith(
       expect.objectContaining({
         model: expect.objectContaining({id: recommendedModelId}),
+      }),
+    );
+  });
+
+  it("uses the latest model override when retrying hardware analysis", async () => {
+    const adapter = createFakeAdapter();
+    const initialModel = LOCAL_INVOICE_ASSISTANT_MODELS[0];
+    const updatedModel = LOCAL_INVOICE_ASSISTANT_MODELS[2];
+
+    const {rerender, result} = renderHook(
+      ({model}) =>
+        useLocalInvoiceAssistant({
+          adapter,
+          analyzeHardware: async () => eligibleHardware,
+          createId: createSequentialIdFactory(),
+          invoices: [],
+          model,
+          now: () => new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      {
+        initialProps: {model: initialModel},
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    expect(result.current.state.activeModel.id).toBe(initialModel.id);
+
+    rerender({model: updatedModel});
+    await act(async () => {
+      await result.current.retryHardwareAnalysis();
+    });
+
+    expect(result.current.state.activeModel.id).toBe(updatedModel.id);
+    await act(async () => {
+      await result.current.loadModel();
+    });
+    expect(adapter.load).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: expect.objectContaining({id: updatedModel.id}),
       }),
     );
   });

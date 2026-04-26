@@ -233,6 +233,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const isMountedRef = useRef(true);
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
+  const inputModelRef = useRef<LocalInvoiceAssistantModelMetadata | undefined>(input.model);
 
   if (adapterRef.current === null) {
     adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
@@ -241,6 +242,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   useEffect(() => {
     analyzeHardwareRef.current = input.analyzeHardware ?? analyzeLocalAiHardwareEligibility;
     createIdRef.current = input.createId ?? createDefaultMessageId;
+    inputModelRef.current = input.model;
     nowRef.current = input.now ?? (() => new Date());
   });
 
@@ -299,7 +301,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       setState((current) => {
         const nextState = {
           ...current,
-          activeModel: input.model ?? recommendedModel,
+          activeModel: inputModelRef.current ?? recommendedModel,
           error: null,
           hardware,
           lifecycle: getLifecycleAfterHardwareAnalysis(hardware, loadedRef.current),

@@ -375,8 +375,10 @@ async function collectGpuCapability(navigator: LocalAiHardwareNavigator): Promis
     const features = adapter.features ? Array.from(adapter.features) : [];
     const limits = adapter.limits
       ? {
-          maxBufferSize: adapter.limits.maxBufferSize,
-          maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize,
+          ...(typeof adapter.limits.maxBufferSize === "number" ? {maxBufferSize: adapter.limits.maxBufferSize} : {}),
+          ...(typeof adapter.limits.maxStorageBufferBindingSize === "number"
+            ? {maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize}
+            : {}),
         }
       : {};
 
@@ -392,17 +394,10 @@ async function collectGpuCapability(navigator: LocalAiHardwareNavigator): Promis
 }
 
 function collectDeviceCapability(navigator: LocalAiHardwareNavigator): DeviceCapabilityResult {
-  const result: DeviceCapabilityResult = {};
-
-  if (typeof navigator.deviceMemory === "number") {
-    result.deviceMemoryGB = navigator.deviceMemory;
-  }
-
-  if (typeof navigator.hardwareConcurrency === "number") {
-    result.logicalCores = navigator.hardwareConcurrency;
-  }
-
-  return result;
+  return {
+    ...(typeof navigator.deviceMemory === "number" ? {deviceMemoryGB: navigator.deviceMemory} : {}),
+    ...(typeof navigator.hardwareConcurrency === "number" ? {logicalCores: navigator.hardwareConcurrency} : {}),
+  };
 }
 
 function collectMemoryReason(
@@ -528,36 +523,23 @@ export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEl
 
   // Collect device capability data (Task 3)
   const deviceCapability = collectDeviceCapability(environment.navigator);
-  const device =
-    Object.keys(deviceCapability).length > 0
-      ? {
-          deviceMemoryGB: deviceCapability.deviceMemoryGB,
-          logicalCores: deviceCapability.logicalCores,
-        }
-      : undefined;
+  const device = Object.keys(deviceCapability).length > 0 ? deviceCapability : undefined;
+  const resultOptions = {
+    ...(availableStorageBytes !== undefined ? {availableStorageBytes} : {}),
+    ...(device !== undefined ? {device} : {}),
+    ...(gpuCapabilityResult.gpu !== undefined ? {gpu: gpuCapabilityResult.gpu} : {}),
+  };
 
   pushCapabilityReason(collectMemoryReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
   pushCapabilityReason(collectCpuReason(environment.navigator, requirements), ineligibleReasons, unknownReasons);
 
   if (ineligibleReasons.length > 0) {
-    return createResult("ineligible", ineligibleReasons, requirements, {
-      availableStorageBytes,
-      device,
-      gpu: gpuCapabilityResult.gpu,
-    });
+    return createResult("ineligible", ineligibleReasons, requirements, resultOptions);
   }
 
   if (unknownReasons.length > 0) {
-    return createResult("unknown", unknownReasons, requirements, {
-      availableStorageBytes,
-      device,
-      gpu: gpuCapabilityResult.gpu,
-    });
+    return createResult("unknown", unknownReasons, requirements, resultOptions);
   }
 
-  return createResult("eligible", [], requirements, {
-    availableStorageBytes,
-    device,
-    gpu: gpuCapabilityResult.gpu,
-  });
+  return createResult("eligible", [], requirements, resultOptions);
 }
