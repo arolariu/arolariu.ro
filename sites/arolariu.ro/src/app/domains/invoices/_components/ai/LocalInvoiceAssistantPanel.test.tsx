@@ -32,6 +32,20 @@ vi.mock("next-intl", () => ({
       "actions.reset": "Reset chat",
       "actions.send": "Send",
       "actions.stop": "Stop generating",
+      "analyticsPreview.currencyBreakdown": "By currency",
+      "analyticsPreview.invoiceCountLabel": "Invoices",
+      "analyticsPreview.noData": "No invoice data available",
+      "analyticsPreview.title": "Quick insights",
+      "analyticsPreview.topMerchantLabel": "Top merchant",
+      "analyticsPreview.totalSpendLabel": "Total spending",
+      "benchmark.description": "Test local model speed on your current browser and hardware.",
+      "benchmark.runButton": "Run benchmark",
+      "benchmark.running": "Running benchmark...",
+      "benchmark.title": "Benchmark your device",
+      "cache.behavior":
+        "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
+      "cache.clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
+      "cache.source": "Model artifacts downloaded from trusted source: {host}",
       "chat.inputLabel": "Ask a local invoice question",
       "chat.inputPlaceholder": "Ask about your local invoices...",
       "chat.ready": "Local model is ready",
@@ -51,16 +65,13 @@ vi.mock("next-intl", () => ({
       "model.host": "Model artifacts are downloaded from {host}.",
       "model.progress": "Download progress: {progress}%",
       "model.title": "Prepare local model",
-      "benchmark.title": "Benchmark your device",
-      "benchmark.description": "Test local model speed on your current browser and hardware.",
-      "benchmark.runButton": "Run benchmark",
-      "benchmark.running": "Running benchmark...",
-      "cache.behavior":
-        "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
-      "cache.clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
-      "cache.source": "Model artifacts downloaded from trusted source: {host}",
       privacy: "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
       "status.compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
+      "suggestedPrompts.largestInvoice": "Which invoice is largest?",
+      "suggestedPrompts.spendingByCurrency": "Show spending by currency",
+      "suggestedPrompts.summarizeSpending": "Summarize my total spending",
+      "suggestedPrompts.title": "Suggested questions",
+      "suggestedPrompts.topMerchant": "Which merchant appears most often?",
     };
 
     return (key: string, values?: Record<string, string | number>) => {
@@ -443,6 +454,178 @@ describe("LocalInvoiceAssistantPanel", () => {
     const clearButton = screen.getByRole("button", {name: /Clear cached model.*Llama 3.2 1B Instruct/i});
     expect(clearButton).toBeInTheDocument();
     expect(clearButton).toHaveTextContent(/~1319 MB/); // 879 * 1.5 ≈ 1319
+  });
+
+  it("shows analytics preview before model loads when hardware is available and invoices exist", async () => {
+    const invoices = [
+      new InvoiceBuilder().withName("Grocery 1").withPaymentAmount(100).withPaymentCurrency("RON").build(),
+      new InvoiceBuilder().withName("Grocery 2").withPaymentAmount(50).withPaymentCurrency("USD").build(),
+    ];
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Wait for hardware analysis to complete
+    await waitFor(() => {
+      expect(screen.getByText("Prepare local model")).toBeInTheDocument();
+    });
+
+    // Analytics preview should be visible BEFORE model loads
+    expect(screen.getByText("Quick insights")).toBeInTheDocument();
+    expect(screen.getByText("Invoices: 2")).toBeInTheDocument();
+    expect(screen.getByText("Total spending:")).toBeInTheDocument();
+
+    // Verify the model is NOT loaded yet
+    expect(screen.queryByText("Local model is ready")).not.toBeInTheDocument();
+  });
+
+  it("displays analytics preview with totals by currency separately and no cross-currency sum", async () => {
+    const invoices = [
+      new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build(),
+      new InvoiceBuilder().withPaymentAmount(50).withPaymentCurrency("USD").build(),
+      new InvoiceBuilder().withPaymentAmount(75).withPaymentCurrency("EUR").build(),
+    ];
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Quick insights")).toBeInTheDocument();
+    });
+
+    // Verify each currency displays separately
+    expect(screen.getByText(/RON: 100\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/USD: 50\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/EUR: 75\.00/)).toBeInTheDocument();
+
+    // Ensure NO cross-currency total exists
+    expect(screen.queryByText(/225\.00/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Total: 225/)).not.toBeInTheDocument();
+  });
+
+  it("renders localized suggested prompt chips after model loads with invoices", async () => {
+    const invoices = [
+      new InvoiceBuilder()
+        .withMerchantReference("merchant-a")
+        .withPaymentAmount(100)
+        .withPaymentCurrency("RON")
+        .build(),
+      new InvoiceBuilder()
+        .withMerchantReference("merchant-a")
+        .withPaymentAmount(50)
+        .withPaymentCurrency("USD")
+        .build(),
+    ];
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Load the model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // Suggested prompts section should appear
+    expect(screen.getByText("Suggested questions")).toBeInTheDocument();
+
+    // Verify localized prompt chips are rendered
+    expect(screen.getByRole("button", {name: "Summarize my total spending"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Which invoice is largest?"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Which merchant appears most often?"})).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Show spending by currency"})).toBeInTheDocument();
+  });
+
+  it("does not render suggested prompt chips when there are no invoices", async () => {
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={createFakeAdapter()}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={[]}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Load the model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // Suggested prompts section should NOT appear
+    expect(screen.queryByText("Suggested questions")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: "Summarize my total spending"})).not.toBeInTheDocument();
+  });
+
+  it("sends the localized prompt text through the adapter when a chip is clicked", async () => {
+    const capturedMessages: string[] = [];
+    const invoices = [
+      new InvoiceBuilder().withPaymentAmount(100).withPaymentCurrency("RON").build(),
+    ];
+    const adapter = createFakeAdapter({
+      generate: vi.fn(async (messages, options) => {
+        capturedMessages.push(JSON.stringify(messages));
+        options?.onToken?.("Summary result", "Summary result");
+
+        return "Summary result";
+      }),
+    });
+
+    render(
+      <LocalInvoiceAssistantPanel
+        adapter={adapter}
+        analyzeHardware={async () => eligibleHardware}
+        createId={createSequentialIdFactory()}
+        invoices={invoices}
+        now={() => new Date("2026-01-01T00:00:00.000Z")}
+      />,
+    );
+
+    // Load the model
+    fireEvent.click(await screen.findByRole("button", {name: "Download local model"}));
+
+    await waitFor(() => {
+      expect(screen.getByText("Local model is ready")).toBeInTheDocument();
+    });
+
+    // Click the "Summarize my total spending" prompt chip
+    fireEvent.click(screen.getByRole("button", {name: "Summarize my total spending"}));
+
+    // Verify the localized prompt text was sent to the adapter
+    await waitFor(() => {
+      expect(adapter.generate).toHaveBeenCalledOnce();
+    });
+
+    expect(capturedMessages[0]).toContain("Summarize my total spending");
+
+    // Verify both the user message and assistant response appear
+    const userMessages = screen.getAllByText("Summarize my total spending");
+    expect(userMessages.length).toBeGreaterThanOrEqual(1); // At least one instance (in the chat history)
+    expect(await screen.findByText("Summary result")).toBeInTheDocument(); // Assistant response
   });
 });
 

@@ -133,3 +133,48 @@
   font-size: font-size('sm');
   color: color('muted-foreground');
 }
+
+.cacheInfo,
+.benchmarkSection,
+.analyticsPreview,
+.suggestedPrompts {
+  margin-top: space(3);
+  padding-top: space(3);
+  border-top: 1px solid color('border');
+}
+
+.metricsBox {
+  margin-top: space(2);
+  padding: space(3);
+  background-color: color-alpha('muted', 0.3);
+  border-radius: radius('md');
+}
+
+.metricsList {
+  margin: space(2) 0 0;
+  padding-left: space(4);
+  list-style-type: disc;
+  font-size: font-size('sm');
+  color: color('foreground');
+
+  li {
+    margin: space(1) 0;
+  }
+}
+
+.metricsDetails {
+  margin-top: space(2);
+  cursor: pointer;
+
+  summary {
+    font-weight: font-weight('medium');
+    cursor: pointer;
+  }
+}
+
+.promptChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  margin-top: space(2);
+}

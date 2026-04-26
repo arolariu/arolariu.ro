@@ -614,8 +614,6 @@ function ChatShell({
           </div>
         )}
 
-        <AnalyticsPreview analytics={analytics} />
-
         <SuggestedPrompts
           analytics={analytics}
           onPromptClick={onPromptClick}
@@ -791,6 +789,11 @@ export function LocalInvoiceAssistantPanel({
           onLoadModel={handleLoadModel}
           progressPercent={progressPercent}
         />
+        {state.hardware !== null && context.analytics.invoiceCount > 0 ? (
+          <div>
+            <AnalyticsPreview analytics={context.analytics} />
+          </div>
+        ) : null}
         <BenchmarkSection
           canRunBenchmark={canRunBenchmark}
           isRunning={isGenerating}
