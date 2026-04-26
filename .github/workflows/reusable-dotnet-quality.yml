@@ -1,0 +1,57 @@
+name: "reusable-dotnet-quality"
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        description: "Display name for the quality job."
+        required: false
+        type: string
+        default: "API"
+      cache-key-prefix:
+        description: "Cache key prefix passed to setup-workspace."
+        required: false
+        type: string
+        default: "api"
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet-quality:
+    name: 🧪 ${{ inputs.project-name }} quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 🚀 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: "24"
+          dotnet-version: "10.0.x"
+          install-node-dependencies: "false"
+          install-dotnet-dependencies: "true"
+          cache-key-prefix: ${{ inputs.cache-key-prefix }}
+
+      - name: 🧪 Test .NET solution
+        run: >
+          dotnet test
+          --configuration Release
+          --logger trx
+          --results-directory ./sites/api.arolariu.ro/TestResults
+          --collect:"XPlat Code Coverage"
+          ./arolariu.slnx
+
+      - name: 📦 Upload .NET test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.cache-key-prefix }}-dotnet-test-results
+          path: sites/api.arolariu.ro/TestResults/
+          if-no-files-found: ignore
+          retention-days: 14

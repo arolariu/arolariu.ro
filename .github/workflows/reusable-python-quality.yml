@@ -1,0 +1,68 @@
+name: "reusable-python-quality"
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        description: "Display name for the quality job."
+        required: false
+        type: string
+        default: "Exp"
+      working-directory:
+        description: "Python service working directory."
+        required: false
+        type: string
+        default: "sites/exp.arolariu.ro"
+
+permissions:
+  contents: read
+
+jobs:
+  python-quality:
+    name: 🧪 ${{ inputs.project-name }} quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            sites/exp.arolariu.ro/requirements.txt
+            sites/exp.arolariu.ro/requirements-dev.txt
+
+      - name: 📦 Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: 🔍 Lint
+        working-directory: ${{ inputs.working-directory }}
+        run: python -m ruff check .
+
+      - name: 🔐 Security scan
+        working-directory: ${{ inputs.working-directory }}
+        run: python -m bandit -q -r . --exclude "./*test*"
+
+      - name: 🧪 Test
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          INFRA: local
+        run: python -m pytest -v --tb=short --cov=. --cov-report=term-missing --cov-fail-under=85
+
+      - name: 📦 Upload Python coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.project-name }}-python-coverage
+          path: ${{ inputs.working-directory }}/.coverage
+          if-no-files-found: ignore
+          retention-days: 14
