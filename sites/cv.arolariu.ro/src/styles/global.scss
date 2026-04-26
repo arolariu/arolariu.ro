@@ -1,0 +1,113 @@
+@use "./tokens";
+
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  font-family: var(--cv-font-body);
+}
+
+button,
+a[role="button"],
+.btn {
+  transition:
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+button:active,
+a[role="button"]:active,
+.btn:active {
+  transform: scale(0.98);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cv-color-white), 0 0 0 4px var(--cv-color-blue-500);
+}
+
+:is(.dark) :focus-visible {
+  box-shadow: 0 0 0 2px var(--cv-color-black), 0 0 0 4px var(--cv-color-blue-400);
+}
+
+::selection {
+  background-color: rgb(59 130 246 / 0.3);
+  color: inherit;
+}
+
+:is(.dark) ::selection {
+  background-color: rgb(96 165 250 / 0.3);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+@media print {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

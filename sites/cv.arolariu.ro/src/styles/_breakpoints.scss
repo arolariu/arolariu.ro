@@ -1,0 +1,28 @@
+$breakpoints: (
+  "2xsm": 320px,
+  "xsm": 480px,
+  "sm": 640px,
+  "md": 768px,
+  "lg": 1024px,
+  "xl": 1280px,
+  "2xl": 1440px,
+  "3xl": 1976px,
+);
+
+@mixin at($name) {
+  @media (min-width: map-get($breakpoints, $name)) {
+    @content;
+  }
+}
+
+@mixin until($name) {
+  @media (max-width: (map-get($breakpoints, $name) - 1px)) {
+    @content;
+  }
+}
+
+@mixin print {
+  @media print {
+    @content;
+  }
+}
