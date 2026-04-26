@@ -36,6 +36,7 @@ vi.mock("next-intl", () => ({
       "analyticsPreview.invoiceCountLabel": "Invoices",
       "analyticsPreview.noData": "No invoice data available",
       "analyticsPreview.title": "Quick insights",
+      "analyticsPreview.topMerchantInvoiceCount": "{count} invoices",
       "analyticsPreview.topMerchantLabel": "Top merchant",
       "analyticsPreview.totalSpendLabel": "Total spending",
       "benchmark.description": "Test local model speed on your current browser and hardware.",
@@ -458,8 +459,18 @@ describe("LocalInvoiceAssistantPanel", () => {
 
   it("shows analytics preview before model loads when hardware is available and invoices exist", async () => {
     const invoices = [
-      new InvoiceBuilder().withName("Grocery 1").withPaymentAmount(100).withPaymentCurrency("RON").build(),
-      new InvoiceBuilder().withName("Grocery 2").withPaymentAmount(50).withPaymentCurrency("USD").build(),
+      new InvoiceBuilder()
+        .withMerchantReference("merchant-alpha")
+        .withName("Grocery 1")
+        .withPaymentAmount(100)
+        .withPaymentCurrency("RON")
+        .build(),
+      new InvoiceBuilder()
+        .withMerchantReference("merchant-alpha")
+        .withName("Grocery 2")
+        .withPaymentAmount(50)
+        .withPaymentCurrency("USD")
+        .build(),
     ];
 
     render(
@@ -481,6 +492,9 @@ describe("LocalInvoiceAssistantPanel", () => {
     expect(screen.getByText("Quick insights")).toBeInTheDocument();
     expect(screen.getByText("Invoices: 2")).toBeInTheDocument();
     expect(screen.getByText("Total spending:")).toBeInTheDocument();
+
+    // Verify top merchant uses localized invoice count (not hardcoded "invoices")
+    expect(screen.getByText(/Top merchant: merchant-1 \(2 invoices\)/)).toBeInTheDocument();
 
     // Verify the model is NOT loaded yet
     expect(screen.queryByText("Local model is ready")).not.toBeInTheDocument();

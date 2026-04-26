@@ -3238,7 +3238,8 @@
       "invoiceCountLabel": "Invoices",
       "noData": "No invoice data available",
       "currencyBreakdown": "By currency",
-      "topMerchantLabel": "Top merchant"
+      "topMerchantLabel": "Top merchant",
+      "topMerchantInvoiceCount": "{count} invoices"
     }
   },
   "IMS--List": {

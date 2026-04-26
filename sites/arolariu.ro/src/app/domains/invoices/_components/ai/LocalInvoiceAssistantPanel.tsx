@@ -505,7 +505,8 @@ function AnalyticsPreview({analytics}: Readonly<{analytics: LocalInvoiceAssistan
         </li>
         {topMerchantEntry ? (
           <li>
-            {t("analyticsPreview.topMerchantLabel")}: {topMerchantEntry[0]} ({topMerchantEntry[1].invoiceCount} invoices)
+            {t("analyticsPreview.topMerchantLabel")}: {topMerchantEntry[0]} (
+            {t("analyticsPreview.topMerchantInvoiceCount", {count: topMerchantEntry[1].invoiceCount})})
           </li>
         ) : null}
       </ul>

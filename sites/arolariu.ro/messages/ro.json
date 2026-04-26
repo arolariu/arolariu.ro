@@ -3238,7 +3238,8 @@
       "invoiceCountLabel": "Facturi",
       "noData": "Nu există date de factură disponibile",
       "currencyBreakdown": "Pe monedă",
-      "topMerchantLabel": "Comerciant principal"
+      "topMerchantLabel": "Comerciant principal",
+      "topMerchantInvoiceCount": "{count} facturi"
     }
   },
   "IMS--List": {

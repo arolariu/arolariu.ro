@@ -3238,7 +3238,8 @@
       "invoiceCountLabel": "Factures",
       "noData": "Aucune donnée de facture disponible",
       "currencyBreakdown": "Par devise",
-      "topMerchantLabel": "Commerçant principal"
+      "topMerchantLabel": "Commerçant principal",
+      "topMerchantInvoiceCount": "{count} factures"
     }
   },
   "IMS--List": {
