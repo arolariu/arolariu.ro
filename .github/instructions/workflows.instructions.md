@@ -296,6 +296,18 @@ permissions:
 
 ---
 
+### Azure Static Web Apps token exception
+
+Azure Static Web Apps deployments are the only repository deployment workflows
+allowed to use SWA deployment tokens instead of Azure OIDC because the
+`Azure/static-web-apps-deploy` action requires an `azure_static_web_apps_api_token`.
+Those tokens must be scoped through GitHub Environments and passed only through
+the reusable static web app workflow or the `static-web-app-build-deploy`
+composite action. Do not introduce SWA tokens into container, App Service, npm
+publishing, or validation workflows.
+
+---
+
 ## Workflow Inventory
 
 ### 1. Website Build (`official-website-build.yml`)

@@ -1,198 +1,41 @@
-# =============================================================================
-# CV/Resume Website Build and Deployment Workflow
-# =============================================================================
-# This workflow handles the CI/CD pipeline for the CV/Resume website
-# (cv.arolariu.ro), built with SvelteKit and deployed to Azure Static Web Apps.
-#
-# Architecture:
-#   - Single Job: Build and deploy in one step for simplicity
-#   - Static Generation: SvelteKit builds static files for optimal performance
-#   - Serverless: Deployed to Azure Static Web Apps (global CDN included)
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch with changes in sites/cv.arolariu.ro/
-#   - Manual: workflow_dispatch for on-demand deployments
-#
-# Technology Stack:
-#   - SvelteKit v2.46.2 with Azure Static Web Apps adapter
-#   - Node.js 24 for build environment
-#   - Azure Static Web Apps for hosting
-#
-# Security:
-#   - Uses OIDC for Azure authentication
-#   - Static Web Apps deployment token stored in GitHub Secrets
-#
-# Prerequisites:
-#   1. Azure Static Web Apps resource provisioned
-#   2. GitHub Secrets configured:
-#      - AZURE_STATIC_WEB_APPS_CV_TOKEN
-#
-# Output:
-#   - URL: https://cv.arolariu.ro
-# =============================================================================
-
 name: "official-cv-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
-
-defaults:
-  run:
-    working-directory: ./sites/cv.arolariu.ro
+  contents: read
 
 on:
-  # Automatic trigger on main branch changes to CV site
   push:
     branches: ["main"]
-    paths: ["sites/cv.arolariu.ro/**"]
+    paths:
+      - "sites/cv.arolariu.ro/**"
+      - ".github/actions/setup-workspace/**"
+      - ".github/actions/static-web-app-build-deploy/**"
+      - ".github/workflows/official-cv-trigger.yml"
+      - ".github/workflows/reusable-static-webapp.yml"
 
-  # Manual trigger for on-demand deployments
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment for deployment"
+        description: "Target environment for deployment."
         options:
           - "production"
         default: "production"
         type: choice
 
-env:
-  COMMIT_SHA: ${{ github.sha }}
-
 jobs:
-  test:
+  deploy:
+    name: 🚀 CV static web app
     if: github.repository == 'arolariu/arolariu.ro'
-    name: 🧪 Testing the CV platform...
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
-      - name: 📝 Display workflow context
-        run: |
-          echo "::group::🔍 Workflow Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 📄 CV/RESUME WEBSITE PIPELINE                              │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Test phase                               │"
-          echo "│ 🌍 Framework:     SvelteKit                                │"
-          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-          # Write initial summary
-          echo "## 📄 CV/Resume Website Pipeline" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Framework | SvelteKit |" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | https://cv.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'cv'
-
-      - name: 🧪 Running unit tests...
-        working-directory: './sites/cv.arolariu.ro'
-        run: |
-          echo "::group::🧪 Running SvelteKit Tests"
-          START_TIME=$(date +%s)
-          npm run test:unit
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Tests completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-
-  build-and-deploy:
-    if: github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')
-    needs: test
-    name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
-    runs-on: ubuntu-latest
-    environment:
-      name: "cv-resume"
-      url: "https://cv.arolariu.ro"
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
-      - name: 📋 Display deployment context
-        run: |
-          echo "::group::🔍 Deployment Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🚀 CV WEBSITE DEPLOYMENT                                   │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
-          echo "│ 🔗 URL:           https://cv.arolariu.ro                   │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'cv'
-
-      - name: 📦 Prepare and build...
-        working-directory: './sites/cv.arolariu.ro'
-        run: |
-          echo "::group::🏗️ Building CV Website"
-          echo "📍 Framework: SvelteKit"
-          echo "📍 Adapter: Azure Static Web Apps"
-          echo ""
-          START_TIME=$(date +%s)
-          npm run prepare
-          npm run build
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Build completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Output | build/static |" >> $GITHUB_STEP_SUMMARY
-
-      - name: "🚀 Deploying CV website..."
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "./sites/cv.arolariu.ro/"
-          api_location: "./sites/cv.arolariu.ro/build/server"
-          output_location: "build/static"
-
-      - name: 📊 Deployment summary
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Live URL**: https://cv.arolariu.ro" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-
-          echo ""
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ✅ CV WEBSITE DEPLOYED SUCCESSFULLY                        │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔗 URL: https://cv.arolariu.ro                             │"
-          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
+    uses: ./.github/workflows/reusable-static-webapp.yml
+    with:
+      site-name: "cv"
+      working-directory: "sites/cv.arolariu.ro"
+      test-command: "npm run test:unit"
+      build-command: "npm run prepare && npm run build"
+      app-location: "./sites/cv.arolariu.ro/"
+      api-location: "./sites/cv.arolariu.ro/build/server"
+      output-location: "build/static"
+      environment-name: "cv-resume"
+      site-url: "https://cv.arolariu.ro"
+    secrets:
+      SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
