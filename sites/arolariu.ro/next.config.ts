@@ -10,7 +10,8 @@
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
-import {WEBLLM_ARTIFACT_HOST_CSP_ORIGIN} from "./src/app/domains/invoices/_components/ai/modelArtifactHosts";
+import {deriveUniqueArtifactOrigins, WEBLLM_BINARY_LIBRARY_HOST} from "./src/app/domains/invoices/_components/ai/modelArtifactHosts";
+import {LOCAL_INVOICE_ASSISTANT_MODELS} from "./src/app/domains/invoices/_components/ai/modelCatalog";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
 const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
@@ -18,21 +19,30 @@ const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" 
 const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
 
 /**
- * Local AI assistant model artifact hosts for CSP.
+ * Local AI assistant CSP origins for model artifacts and WebLLM libraries.
  *
  * @remarks
- * Derived from model catalog's `WEBLLM_ARTIFACT_HOST_CSP_ORIGIN`.
- * Single source of truth for allowed WebLLM model artifact download origins.
+ * **Model artifact origins (derived from catalog):**
+ * Extracts unique CSP origins from all selectable model `artifactHost` URLs.
+ * Ensures CSP stays in sync with catalog changes.
+ *
+ * **WebLLM binary library origin (explicit):**
+ * Required for WebLLM 0.2.82 prebuilt WASM model libraries.
+ * Source: `@mlc-ai/web-llm/lib/index.js` modelLibURLPrefix.
+ * Not derived from catalog because it's a runtime dependency.
  *
  * **CSP usage:**
- * - Added to `connect-src` to allow WebLLM model artifact downloads
- * - Catalog verification ensures all selectable models use this host
+ * - Model artifacts (HuggingFace): model weights, tokenizer, config
+ * - Binary libraries (GitHub raw): WebLLM WASM execution libraries
  *
  * **Security:**
  * - Explicit allowlist, not broad `https:`
- * - Model catalog and CSP share same constant to prevent drift
+ * - Derived origins update automatically when catalog changes
+ * - Binary library origin is explicit and documented
  */
-const webLlmArtifactHosts = WEBLLM_ARTIFACT_HOST_CSP_ORIGIN;
+const modelArtifactOrigins = deriveUniqueArtifactOrigins(LOCAL_INVOICE_ASSISTANT_MODELS.map((model) => model.artifactHost));
+const webLlmBinaryLibraryOrigin = WEBLLM_BINARY_LIBRARY_HOST;
+const webLlmCspOrigins = [...modelArtifactOrigins, webLlmBinaryLibraryOrigin].join(" ");
 
 const cspHeader = `
     default-src 'self' blob: data: ${trustedDomains};
@@ -40,7 +50,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
     img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
     worker-src 'self' blob: data: ${trustedDomains};
-    connect-src 'self' ${trustedDomains} ${webLlmArtifactHosts};
+    connect-src 'self' ${trustedDomains} ${webLlmCspOrigins};
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';

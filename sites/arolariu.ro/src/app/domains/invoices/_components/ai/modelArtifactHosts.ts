@@ -21,10 +21,10 @@
  * - Full artifact URL: `https://huggingface.co/mlc-ai/...`
  * - CSP origin: `https://huggingface.co` (origin without path)
  *
- * **WebLLM behavior:**
- * - Downloads model weights (*.bin, *.safetensors)
- * - Downloads tokenizer config (tokenizer.json)
- * - Downloads model config (config.json, params.json)
+ * **HuggingFace artifact types:**
+ * - Model weights (*.bin, *.safetensors)
+ * - Tokenizer config (tokenizer.json, tokenizer_config.json)
+ * - Model config (config.json, params.json)
  * - All artifacts stored in browser Cache API
  */
 export const WEBLLM_ARTIFACT_HOST_FULL = "https://huggingface.co/mlc-ai";
@@ -42,3 +42,71 @@ export const WEBLLM_ARTIFACT_HOST_FULL = "https://huggingface.co/mlc-ai";
  * allow the entire origin rather than specific paths.
  */
 export const WEBLLM_ARTIFACT_HOST_CSP_ORIGIN = "https://huggingface.co";
+
+/**
+ * WebLLM prebuilt WASM model library host.
+ *
+ * @remarks
+ * **Security constraint:**
+ * - Required for WebLLM 0.2.82 runtime WASM model libraries
+ * - Separate from model artifact host (HuggingFace)
+ * - Source: `node_modules/@mlc-ai/web-llm/lib/index.js` line ~920
+ *   `modelLibURLPrefix = "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/"`
+ *
+ * **GitHub raw.githubusercontent.com artifact types:**
+ * - WebLLM prebuilt WASM model libraries (*.wasm)
+ * - Model-specific execution libraries
+ * - Compiled by MLC AI team, hosted on GitHub
+ *
+ * **CSP usage:**
+ * - Added to `connect-src` for WebLLM library downloads
+ * - Not derived from catalog (runtime dependency, not model metadata)
+ */
+export const WEBLLM_BINARY_LIBRARY_HOST = "https://raw.githubusercontent.com";
+
+/**
+ * Derives unique CSP origins from model catalog artifact hosts.
+ *
+ * @param artifactHosts - Array of full artifact host URLs from model catalog.
+ * @returns Array of unique CSP origins (scheme + host).
+ *
+ * @remarks
+ * Converts full artifact URLs to CSP-compatible origins by extracting
+ * scheme and host only (no path). Deduplicates in case multiple catalog
+ * entries share the same origin.
+ *
+ * **Example:**
+ * - Input: `["https://huggingface.co/mlc-ai", "https://huggingface.co/other"]`
+ * - Output: `["https://huggingface.co"]`
+ *
+ * **CSP usage:**
+ * Used by Next.js config to dynamically derive allowed model artifact origins
+ * from the selectable catalog, ensuring CSP stays in sync with catalog changes.
+ *
+ * @example
+ * ```typescript
+ * const origins = deriveUniqueArtifactOrigins([
+ *   "https://huggingface.co/mlc-ai",
+ *   "https://huggingface.co/mlc-ai",
+ * ]);
+ * // Returns: ["https://huggingface.co"]
+ * ```
+ */
+export function deriveUniqueArtifactOrigins(artifactHosts: ReadonlyArray<string>): ReadonlyArray<string> {
+  const origins = new Set<string>();
+
+  for (const host of artifactHosts) {
+    try {
+      const url = new URL(host);
+      // CSP origin: scheme + host (+ port if non-default)
+      const origin = `${url.protocol}//${url.host}`;
+      origins.add(origin);
+    } catch {
+      // Invalid URL, skip
+      continue;
+    }
+  }
+
+  return Array.from(origins).sort();
+}
+

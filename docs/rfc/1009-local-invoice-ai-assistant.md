@@ -356,27 +356,40 @@ worker termination during unload and disposal.
 
 ### 6.2 Model Artifact Hosts and CSP
 
-**Allowed artifact hosts (from model catalog):**
+**Allowed external hosts:**
 
-| Host | Purpose | CSP Directives |
-|------|---------|----------------|
-| `https://huggingface.co/mlc-ai` | WebLLM model weights and libraries | `connect-src` |
+| Host | Purpose | Artifact Types | CSP Directive |
+|------|---------|----------------|---------------|
+| `https://huggingface.co/mlc-ai` | Model artifacts | Weights (*.bin, *.safetensors), tokenizer config, model config | `connect-src` |
+| `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs` | WebLLM prebuilt libraries | WASM model execution libraries (*.wasm) | `connect-src` |
+
+**Model artifact hosts (derived from catalog):**
 
 All models in the selectable catalog (`LOCAL_INVOICE_ASSISTANT_MODELS`) use
-`https://huggingface.co/mlc-ai` as the artifact host. This host is explicitly
-allowed in the Next.js CSP configuration via the `webLlmArtifactHosts` variable.
+`https://huggingface.co/mlc-ai` as the artifact host for model weights, tokenizer,
+and config files. CSP origins are dynamically derived from catalog entries via
+`deriveUniqueArtifactOrigins()` to ensure CSP stays synchronized with catalog changes.
+
+**WebLLM binary library host (explicit runtime dependency):**
+
+WebLLM 0.2.82 fetches prebuilt WASM model execution libraries from
+`https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/`.
+This host is explicitly allowed in CSP as `WEBLLM_BINARY_LIBRARY_HOST` constant.
+Source: `@mlc-ai/web-llm/lib/index.js` modelLibURLPrefix (line ~920).
 
 **CSP enforcement:**
-- `connect-src`: Allows WebLLM to fetch model artifacts from HuggingFace
-- `worker-src`: Allows Web Worker creation for WebLLM engine
-- `script-src`: Already includes `'unsafe-eval'` required for WASM modules
+- `connect-src`: Explicit allowlist of model artifact origins (HuggingFace) + WebLLM binary library origin (GitHub raw)
+- `worker-src`: Allows Web Worker creation for WebLLM engine (blob: + trusted domains)
+- `script-src`: Includes `'unsafe-eval'` required for WASM module instantiation
 
 **Security guarantees:**
 1. Arbitrary model IDs from UI/user input are rejected by catalog lookup
 2. Only curated models from `LOCAL_INVOICE_ASSISTANT_MODELS` are loadable
 3. Artifact host URLs come from trusted catalog metadata, not user input
 4. Upgrade-gated models are excluded until verification
-5. CSP blocks connections to arbitrary model artifact hosts
+5. CSP `connect-src` blocks connections to arbitrary origins (no broad `https:`)
+6. Model artifact origins derived from catalog, ensuring CSP/catalog consistency
+7. WebLLM binary library origin explicit and documented (runtime dependency)
 
 **Preventing malicious model IDs:**
 The `getLocalInvoiceAssistantModelById(modelId: string)` helper ensures only
@@ -407,11 +420,6 @@ or upgrade-gated model IDs return `null`, preventing WebLLM initialization.
 - Minimum 6 GB available storage required before download
 - Hardware eligibility check gates download if quota unavailable
 - Browser may evict cache if quota exceeded (WebLLM handles gracefully)
-
----
-identifiers, sharing metadata, scans, raw OCR, and raw implementation IDs. The
-worker entry point accepts same-origin messages only, and the adapter owns
-worker termination during unload and disposal.
 
 ---
 

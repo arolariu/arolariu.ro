@@ -8,6 +8,7 @@ import {
   getLocalInvoiceAssistantModelById,
   recommendLocalInvoiceAssistantModel,
 } from "./modelCatalog";
+import {deriveUniqueArtifactOrigins, WEBLLM_ARTIFACT_HOST_CSP_ORIGIN, WEBLLM_ARTIFACT_HOST_FULL} from "./modelArtifactHosts";
 import type {LocalInvoiceAssistantModelMetadata} from "./types";
 
 /**
@@ -148,6 +149,19 @@ describe("LOCAL_INVOICE_ASSISTANT_MODELS", () => {
   it("does not include Gemma 3 1B in the selectable catalog", () => {
     const gemma3Models = selectableModels.filter((model) => model.id === "gemma3-1b-it-q4f16_1-MLC");
     expect(gemma3Models).toHaveLength(0);
+  });
+
+  it("all models use the same artifact host", () => {
+    const uniqueHosts = new Set(selectableModels.map((model) => model.artifactHost));
+    expect(uniqueHosts.size).toBe(1);
+    expect(uniqueHosts.has(WEBLLM_ARTIFACT_HOST_FULL)).toBe(true);
+  });
+
+  it("derives a single unique CSP origin from all selectable models", () => {
+    const artifactHosts = selectableModels.map((model) => model.artifactHost);
+    const origins = deriveUniqueArtifactOrigins(artifactHosts);
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toBe(WEBLLM_ARTIFACT_HOST_CSP_ORIGIN);
   });
 
   it("only references models present in installed @mlc-ai/web-llm package bundle", () => {
