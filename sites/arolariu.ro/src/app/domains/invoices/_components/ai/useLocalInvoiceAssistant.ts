@@ -582,7 +582,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         });
 
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
-          // Clear in-flight flag even if component unmounted or generation superseded
+          // Clear in-flight flag for stale/superseded generation
+          // Do NOT overwrite canSendMessageRef - preserve readiness from interrupt/resetSession
           generationInFlightRef.current = false;
           return;
         }
@@ -603,9 +604,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         canSendMessageRef.current = true;
       } catch (error) {
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
-          // Clear in-flight flag even if component unmounted or generation superseded
+          // Clear in-flight flag for stale/superseded generation
+          // Do NOT overwrite canSendMessageRef - preserve readiness from interrupt/resetSession
           generationInFlightRef.current = false;
-          canSendMessageRef.current = false;
           return;
         }
 

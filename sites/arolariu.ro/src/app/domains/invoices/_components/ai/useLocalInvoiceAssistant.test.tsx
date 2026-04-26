@@ -1693,6 +1693,129 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.messages).toHaveLength(3);
     expect(result.current.state.messages[2]?.content).toBe("Success");
   });
+
+  it("should preserve send readiness after interrupt when stale generation rejects", async () => {
+    // Arrange: Setup hook and load model
+    const mockAdapter = createMockAdapter();
+    const mockInvoices = [InvoiceBuilder.default().withIdentifier("inv-1").build()];
+    let generationResolve: (value: string) => void;
+    let generationReject: (error: Error) => void;
+    const deferredGeneration = new Promise<string>((resolve, reject) => {
+      generationResolve = resolve;
+      generationReject = reject;
+    });
+
+    mockAdapter.generate.mockReturnValue(deferredGeneration);
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter: mockAdapter,
+        invoices: mockInvoices,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    const initialAdapterCalls = mockAdapter.generate.mock.calls.length;
+
+    // Act: Start generation, then interrupt before promise settles
+    act(() => {
+      void result.current.sendMessage("First message");
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("generating"));
+
+    act(() => {
+      result.current.interrupt();
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("cancelled"));
+
+    // Simulate old promise rejecting after interrupt
+    await act(async () => {
+      generationReject?.(new Error("Generation interrupted"));
+      // Give React time to process the error
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    // Assert: Lifecycle should still be cancelled (send-ready), and subsequent send should work
+    expect(result.current.state.lifecycle).toBe("cancelled");
+
+    // Try sending a new message - should succeed
+    mockAdapter.generate.mockResolvedValueOnce("Response after interrupt");
+    await act(async () => {
+      await result.current.sendMessage("Second message after interrupt");
+    });
+
+    // Verify adapter was called for second message (not blocked by stale rejection)
+    const finalAdapterCalls = mockAdapter.generate.mock.calls.length;
+    expect(finalAdapterCalls).toBe(initialAdapterCalls + 2); // First send + second send
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.messages).toHaveLength(4); // user1, user2, assistant2 cancelled, user3, assistant3
+  });
+
+  it("should preserve send readiness after resetSession when stale generation rejects", async () => {
+    // Arrange: Setup hook and load model
+    const mockAdapter = createMockAdapter();
+    const mockInvoices = [InvoiceBuilder.default().withIdentifier("inv-1").build()];
+    let generationResolve: (value: string) => void;
+    let generationReject: (error: Error) => void;
+    const deferredGeneration = new Promise<string>((resolve, reject) => {
+      generationResolve = resolve;
+      generationReject = reject;
+    });
+
+    mockAdapter.generate.mockReturnValue(deferredGeneration);
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter: mockAdapter,
+        invoices: mockInvoices,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    const initialAdapterCalls = mockAdapter.generate.mock.calls.length;
+
+    // Act: Start generation, then reset session before promise settles
+    act(() => {
+      void result.current.sendMessage("First message");
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("generating"));
+
+    act(() => {
+      result.current.resetSession();
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("ready"));
+
+    // Simulate old promise rejecting after reset
+    await act(async () => {
+      generationReject?.(new Error("Session reset"));
+      // Give React time to process the error
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    // Assert: Lifecycle should still be ready (send-ready), and subsequent send should work
+    expect(result.current.state.lifecycle).toBe("ready");
+
+    // Try sending a new message - should succeed
+    mockAdapter.generate.mockResolvedValueOnce("Response after reset");
+    await act(async () => {
+      await result.current.sendMessage("Second message after reset");
+    });
+
+    // Verify adapter was called for second message (not blocked by stale rejection)
+    const finalAdapterCalls = mockAdapter.generate.mock.calls.length;
+    expect(finalAdapterCalls).toBe(initialAdapterCalls + 2); // First send + second send
+    expect(result.current.state.lifecycle).toBe("ready");
+    // After reset, messages cleared, so should only have second exchange
+    expect(result.current.state.messages).toHaveLength(2); // user, assistant
+  });
 });
 
 function createSequentialIdFactory(): () => string {
