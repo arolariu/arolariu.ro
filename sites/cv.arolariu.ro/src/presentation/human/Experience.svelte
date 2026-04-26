@@ -149,7 +149,7 @@
                               color="blue"
                               size="sm"
                               variant="outline"
-                              class="stagger-animation"
+                              class={styles.badgeStagger}
                               style={`--delay:${skillIndex * 30 + 200}ms`} />
                           {/each}
                         </div>

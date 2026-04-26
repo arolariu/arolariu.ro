@@ -423,6 +423,20 @@
 .expandedListItem {
   display: flex;
   align-items: start;
+  opacity: 0;
+  animation: listItemStagger 0.5s ease forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes listItemStagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .listIcon {
@@ -471,6 +485,23 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.badgeStagger {
+  opacity: 0;
+  animation: badgeStagger 0.5s ease forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes badgeStagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes expand {
