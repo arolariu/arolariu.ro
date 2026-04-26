@@ -1349,6 +1349,87 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.error).toBeNull();
   });
 
+  it("coalesces concurrent retry after resetSession before old load settles", async () => {
+    const firstLoad = createDeferred<void>();
+    const secondLoad = createDeferred<void>();
+    let loadCallCount = 0;
+    let retrySignal: AbortSignal | null = null;
+    const adapter = createFakeAdapter({
+      load: vi.fn(async ({signal}) => {
+        loadCallCount += 1;
+
+        if (loadCallCount === 1) {
+          return firstLoad.promise;
+        }
+
+        retrySignal = signal ?? null;
+
+        return secondLoad.promise;
+      }),
+    });
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    act(() => {
+      void result.current.loadModel();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("downloading");
+    });
+
+    act(() => {
+      result.current.resetSession();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    let firstRetryPromise: Promise<void> | undefined;
+    let secondRetryPromise: Promise<void> | undefined;
+    act(() => {
+      firstRetryPromise = result.current.loadModel();
+      secondRetryPromise = result.current.loadModel();
+    });
+
+    expect(adapter.load).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      firstLoad.reject(new Error("Aborted load"));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(adapter.load).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      result.current.resetSession();
+    });
+
+    expect(retrySignal?.aborted).toBe(true);
+
+    await act(async () => {
+      secondLoad.resolve();
+      await Promise.allSettled([firstRetryPromise, secondRetryPromise]);
+    });
+
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.canSendMessage).toBe(false);
+  });
+
   it("does not surface scary error when retry after deleteCachedModel before old load settles", async () => {
     const firstLoad = createDeferred<void>();
     const secondLoad = createDeferred<void>();

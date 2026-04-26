@@ -400,7 +400,14 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         await existingPendingLoad.promise.catch(() => {
           // Intentional abort errors are expected, ignore them
         });
-        // After settlement, continue to start a new load
+        const settledPendingLoad = pendingLoadRef.current;
+        if (settledPendingLoad && settledPendingLoad !== existingPendingLoad) {
+          return settledPendingLoad.promise;
+        }
+
+        if (settledPendingLoad === existingPendingLoad) {
+          pendingLoadRef.current = null;
+        }
       } else {
         // Existing load is still active, reuse it to prevent controller race
         return existingPendingLoad.promise;
