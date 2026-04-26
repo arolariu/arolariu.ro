@@ -1,0 +1,75 @@
+# =============================================================================
+# GitHub Actions Workflow Policy Validation
+# =============================================================================
+# Validates repository-owned workflows, composite actions, and CI helper scripts.
+# This workflow is intentionally separate from hygiene so workflow-policy failures
+# are visible even when application validation is skipped or unaffected.
+# =============================================================================
+
+name: "official-workflow-lint"
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+      - preview
+    paths:
+      - ".github/actions/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - "docs/rfc/0001-github-actions-workflows.md"
+
+  push:
+    branches:
+      - main
+      - preview
+    paths:
+      - ".github/actions/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - "docs/rfc/0001-github-actions-workflows.md"
+
+  workflow_dispatch: {}
+
+concurrency:
+  group: workflow-policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workflow-policy:
+    name: 🔐 Workflow policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
+        with:
+          cache-key-prefix: "workflow-policy-${{ github.run_id }}"
+
+      - name: 📋 Generate workflow inventory
+        env:
+          CI_SCRIPT_MODE: "workflow-inventory"
+        run: node .github/scripts/src/runCiScript.ts
+
+      - name: 🔐 Enforce workflow policy
+        env:
+          CI_SCRIPT_MODE: "workflow-policy"
+        run: node .github/scripts/src/runCiScript.ts
+
+      - name: 📦 Upload workflow inventory
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          if-no-files-found: warn
+          name: workflow-inventory
+          path: artifacts/workflows/
+          retention-days: 14

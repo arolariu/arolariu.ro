@@ -88,14 +88,21 @@ Trigger (push/PR) → Lint → Format → Test → Report
 
 | Workflow | Pattern | Trigger | Purpose | Tech Stack |
 |----------|---------|---------|---------|------------|
-| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build and test Next.js website | Node.js 24, Playwright |
-| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website to Azure | Azure deployment |
-| `official-api-trigger.yml` | Trigger | Push to main + Manual | Build, test, and deploy .NET API | .NET 10, Azure |
-| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site | Node.js 24, Azure SWA |
-| `official-docs-trigger.yml` | Trigger | Push to main | Generate and deploy DocFX docs | .NET 10, DocFX |
-| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
-| `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end API and frontend test runs | Node.js 24, Newman |
-| `official-components-publish.yml` | Trigger | Tag push (`components-v*`) + Manual | Publish component library to npm | Node.js 24, RSLib |
+| `copilot-setup-steps.yml` | Setup | Workflow changes + Manual | Bootstrap Copilot coding agent workspace | Node.js 24, .NET 10 |
+| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build/test website and publish immutable image metadata | Node.js 24, Playwright, Docker Buildx |
+| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website image digest or immutable commit tag | Azure App Service |
+| `official-api-trigger.yml` | Trigger | Push to main/preview + Manual | Quality, image build, attestation, and API deploy | .NET 10, Docker Buildx, Azure |
+| `official-exp-trigger.yml` | Trigger | Push to main/preview + Manual | Quality, image build, attestation, and experimental API deploy | Python 3.12, Docker Buildx, Azure |
+| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site via reusable SWA workflow | Node.js 24, Azure SWA |
+| `official-status-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit status site via reusable SWA workflow | Node.js 24, Azure SWA |
+| `official-docs-trigger.yml` | Trigger | Push to main | Assemble and deploy docs through reusable SWA workflow | Node.js 24, .NET 10, Python 3.12 |
+| `official-status-probe.yml` | Data Publisher | Schedule, Manual | Probe live services and publish status-data branch | Node.js 24 |
+| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (format, lint, tests, stats) | Node.js 24, ESLint, Prettier |
+| `official-e2e-action.yml` | Validation | Schedule, Manual | Live end-to-end target checks and failure issue updates | Node.js 24, Newman |
+| `official-security-analysis.yml` | Security | PR, Push, Schedule, Manual | CodeQL, Dependency Review, Scorecard, workflow policy | CodeQL, Scorecard |
+| `official-workflow-lint.yml` | Governance | PR, Push, Manual | Workflow inventory and policy validation | Node.js 24 |
+| `official-components-publish.yml` | Publish | Tag push (`components-v*`) + Manual | Publish component library to npm with Trusted Publishing | Node.js 24, RSLib |
+| `reusable-*.yml` | Reusable | `workflow_call` | Shared quality, container, and SWA primitives | Node.js, .NET, Python, Azure |
 
 ---
 
@@ -233,10 +240,10 @@ jobs:
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       
       - name: 🔐 Azure authentication (if needed)
-        uses: azure/login@v2
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
           # ...
       
@@ -306,15 +313,11 @@ Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 ```
 Trigger: Push to main (+ manual dispatch)
 ├─ Job: test
-│  ├─ Setup workspace (.NET 10)
-│  ├─ Run unit tests
-│  └─ Report coverage
-└─ Job: build-and-deploy
-   ├─ Setup workspace (.NET 10)
-   ├─ Build .NET application
-   ├─ Publish artifacts
-   ├─ Azure authentication
-   └─ Deploy to Azure App Service
+│  └─ Call reusable-dotnet-quality.yml
+├─ Job: build
+│  └─ Call reusable-container-build-push.yml
+└─ Job: deploy
+   └─ Deploy immutable digest/tag via azure-webapp-container-deploy
 ```
 
 **Why single workflow?**
@@ -322,6 +325,7 @@ Trigger: Push to main (+ manual dispatch)
 - Faster feedback loop
 - Preview environment for testing
 - Direct path from build to deploy
+- Container build and deploy details stay centralized in reusable workflow/action primitives
 
 ### 4.3 Validation Pattern (Hygiene)
 
@@ -353,6 +357,18 @@ Trigger: PR
 - Independent validation checks
 - Each job can potentially reuse cache from other jobs running in parallel
 - Summary job aggregates results
+
+### 4.4 Reusable Workflow and Composite Action Layers
+
+Job orchestration lives in reusable `workflow_call` workflows; step mechanics live in local composite actions.
+
+| Layer | Files | Responsibility |
+|-------|-------|----------------|
+| Reusable quality workflows | `reusable-node-quality.yml`, `reusable-dotnet-quality.yml`, `reusable-python-quality.yml` | Build/test/security primitives for project families |
+| Reusable deployment workflows | `reusable-container-build-push.yml`, `reusable-static-webapp.yml` | Container image publication and SWA deployment orchestration |
+| Composite setup/actions | `.github/actions/setup-workspace`, `.github/actions/setup-ci-scripts`, `.github/actions/azure-*`, `.github/actions/static-web-app-build-deploy` | Deterministic setup and reusable step mechanics |
+
+External actions in all workflows and composite actions must be pinned to full 40-character commit SHAs with a readable version comment. Local actions and local reusable workflows remain path references.
 
 ---
 
@@ -515,10 +531,24 @@ The composite action provides clear visual feedback:
 ### 8.2 Secret Management
 
 **Approach:**
-- Azure credentials via GitHub Secrets
-- OIDC for Azure authentication (where supported)
+- Azure App Service and ACR authentication via OIDC-backed GitHub Secrets
+- Static Web Apps deployment tokens are an explicit exception because the SWA deploy action requires `azure_static_web_apps_api_token`; tokens must be GitHub Environment-scoped and isolated to SWA workflows
 - No secrets in cache keys or logs
 - Environment-specific secret scoping
+- Artifact attestations are enabled for container images and npm publishing where supported
+
+### 8.3 Workflow Policy Enforcement
+
+The repository enforces workflow policy through `.github/scripts/src/runWorkflowPolicyCheck.ts` and `official-workflow-lint.yml`.
+
+Policy rejects:
+- External actions not pinned to full commit SHAs.
+- Cache `restore-keys`.
+- Top-level `permissions: write-all`.
+- Unreviewed `pull_request_target`.
+- Deployment workflows without GitHub Environments.
+- Azure login workflows without `id-token: write`.
+- Top-level `contents: write` outside the allowlisted `official-status-probe.yml` status-data publisher.
 
 ---
 
@@ -531,6 +561,9 @@ The composite action provides clear visual feedback:
 - ✅ Composite action syntax validation
 - ✅ Cache key generation logic
 - ✅ All workflow paths reviewed
+- ✅ `.github/scripts` tests pass
+- ✅ Workflow inventory generation succeeds
+- ✅ Workflow policy check passes
 
 **After Merge:**
 - ✅ Monitor first few workflow runs
