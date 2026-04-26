@@ -62,6 +62,16 @@ Handles live/E2E test execution and result reporting.
 
 Handles unit test execution and coverage reporting.
 
+### runCiScript.ts
+
+Dispatches repository-owned CI helper scripts from one stable workflow entrypoint.
+Set `CI_SCRIPT_MODE` to one of `hygiene`, `live-test`, `unit-test-comment`,
+`workflow-inventory`, or `workflow-policy`.
+
+```bash
+CI_SCRIPT_MODE=workflow-policy node src/runCiScript.ts
+```
+
 ### runWorkflowInventory.ts
 
 Generates `artifacts/workflows/inventory.json` with workflow triggers,
