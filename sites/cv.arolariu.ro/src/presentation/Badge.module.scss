@@ -1,0 +1,199 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--cv-radius-full);
+  font-weight: 500;
+  user-select: none;
+  transition: color var(--cv-transition-base), background-color var(--cv-transition-base), border-color var(--cv-transition-base);
+}
+
+.sm {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.md {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.blueSolid,
+.greenSolid,
+.purpleSolid,
+.pinkSolid,
+.orangeSolid,
+.graySolid {
+  color: var(--cv-color-white);
+}
+
+.blueSolid {
+  background: var(--cv-color-blue-600);
+}
+
+.blueSolid:hover {
+  background: var(--cv-color-blue-500);
+}
+
+.blueSoft {
+  color: var(--cv-color-blue-600);
+  background: rgb(59 130 246 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(59 130 246 / 0.2);
+}
+
+:global(.dark) .blueSoft,
+:global(.dark) .blueOutline {
+  color: var(--cv-color-blue-400);
+}
+
+.blueOutline {
+  border: 1px solid rgb(59 130 246 / 0.4);
+  color: var(--cv-color-blue-600);
+}
+
+.blueOutline:hover {
+  background: rgb(59 130 246 / 0.1);
+}
+
+.greenSolid {
+  background: var(--cv-color-green-600);
+}
+
+.greenSolid:hover {
+  background: var(--cv-color-green-500);
+}
+
+.greenSoft {
+  color: var(--cv-color-green-600);
+  background: rgb(34 197 94 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(34 197 94 / 0.2);
+}
+
+:global(.dark) .greenSoft,
+:global(.dark) .greenOutline {
+  color: var(--cv-color-green-400);
+}
+
+.greenOutline {
+  border: 1px solid rgb(34 197 94 / 0.4);
+  color: var(--cv-color-green-600);
+}
+
+.greenOutline:hover {
+  background: rgb(34 197 94 / 0.1);
+}
+
+.purpleSolid {
+  background: var(--cv-color-purple-600);
+}
+
+.purpleSolid:hover {
+  background: var(--cv-color-purple-500);
+}
+
+.purpleSoft {
+  color: var(--cv-color-purple-600);
+  background: rgb(139 92 246 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(139 92 246 / 0.2);
+}
+
+:global(.dark) .purpleSoft,
+:global(.dark) .purpleOutline {
+  color: var(--cv-color-purple-400);
+}
+
+.purpleOutline {
+  border: 1px solid rgb(139 92 246 / 0.4);
+  color: var(--cv-color-purple-600);
+}
+
+.purpleOutline:hover {
+  background: rgb(139 92 246 / 0.1);
+}
+
+.pinkSolid {
+  background: var(--cv-color-pink-600);
+}
+
+.pinkSolid:hover {
+  background: var(--cv-color-pink-500);
+}
+
+.pinkSoft {
+  color: var(--cv-color-pink-600);
+  background: rgb(236 72 153 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(236 72 153 / 0.2);
+}
+
+:global(.dark) .pinkSoft,
+:global(.dark) .pinkOutline {
+  color: var(--cv-color-pink-400);
+}
+
+.pinkOutline {
+  border: 1px solid rgb(236 72 153 / 0.4);
+  color: var(--cv-color-pink-600);
+}
+
+.pinkOutline:hover {
+  background: rgb(236 72 153 / 0.1);
+}
+
+.orangeSolid {
+  background: var(--cv-color-orange-500);
+}
+
+.orangeSolid:hover {
+  background: var(--cv-color-orange-400);
+}
+
+.orangeSoft {
+  color: var(--cv-color-orange-600);
+  background: rgb(249 115 22 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(249 115 22 / 0.2);
+}
+
+:global(.dark) .orangeSoft,
+:global(.dark) .orangeOutline {
+  color: var(--cv-color-orange-400);
+}
+
+.orangeOutline {
+  border: 1px solid rgb(249 115 22 / 0.4);
+  color: var(--cv-color-orange-600);
+}
+
+.orangeOutline:hover {
+  background: rgb(249 115 22 / 0.1);
+}
+
+.graySolid {
+  background: var(--cv-color-gray-700);
+}
+
+.graySolid:hover {
+  background: var(--cv-color-gray-600);
+}
+
+.graySoft {
+  color: var(--cv-color-gray-700);
+  background: rgb(107 114 128 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(107 114 128 / 0.2);
+}
+
+:global(.dark) .graySoft,
+:global(.dark) .grayOutline {
+  color: var(--cv-color-gray-300);
+}
+
+.grayOutline {
+  border: 1px solid rgb(156 163 175 / 0.4);
+  color: var(--cv-color-gray-700);
+}
+
+:global(.dark) .grayOutline {
+  border-color: var(--cv-color-gray-600);
+}
+
+.grayOutline:hover {
+  background: rgb(107 114 128 / 0.1);
+}
