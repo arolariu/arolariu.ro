@@ -119,8 +119,8 @@ Trigger (push/PR) → Lint → Format → Test → Report
 ```yaml
 inputs:
   node-version:                    # Node.js version (default: '24')
-  dotnet-version:                  # .NET version (default: '10.x')
-  install-node-dependencies:       # Toggle npm install (default: 'true')
+  dotnet-version:                  # .NET SDK version (default: '10.0.x')
+  install-node-dependencies:       # Toggle deterministic npm ci (default: 'true')
   install-dotnet-dependencies:     # Toggle dotnet restore (default: 'true')
   cache-key-prefix:                # Workflow-specific cache key (e.g., 'website', 'api')
   working-directory:               # Custom directory for npm commands (default: '.')
@@ -137,7 +137,7 @@ outputs:
 
 ### 3.2 Caching Strategy
 
-**Philosophy:** Hash-based exact matching, no fallback keys
+**Philosophy:** Hash-based exact matching, no fallback keys, deterministic installs
 
 #### **Node.js Caching**
 ```yaml
@@ -146,9 +146,11 @@ Example: linux-node-website-a3f9b2c1d4e5...
 ```
 
 **Behavior:**
-- **Cache hit**: When `package-lock.json` hasn't changed
-- **Cache miss**: When `package-lock.json` changes (due to package updates)
-- **No fallback**: Ensures fresh installation when dependencies change
+- **Cache hit**: When `package-lock.json` hasn't changed and the npm package-manager cache can be reused
+- **Cache miss**: When `package-lock.json` changes and the npm package-manager cache must be repopulated
+- **Install**: `npm ci --prefer-offline --no-audit` runs on every dependency-enabled job, even on cache hit
+- **Cached paths**: `~/.npm` only; `node_modules` is intentionally not cached
+- **No fallback**: Ensures dependency changes cannot reuse stale package-manager cache entries through broad prefixes
 
 #### **.NET Caching**
 ```yaml
@@ -184,18 +186,20 @@ restore-keys: |
 ```yaml
 # SAFE (current approach)
 key: linux-node-website-{hash}
+path: ~/.npm
 # NO restore-keys
 ```
 
 **Benefits:**
 - ✅ No stale cache reuse when lock files are out of sync
-- ✅ Forces fresh installation when dependencies change
+- ✅ Forces lockfile-verified `npm ci` installation on every run
 - ✅ Prevents cache pollution between workflows
-- ✅ Clear: cache hit = exact match, cache miss = fresh install
+- ✅ Avoids persisting `node_modules`, which can contain platform-specific or lifecycle-script side effects
+- ✅ Clear: cache hit = exact npm download cache match, cache miss = cache repopulation
 
 **Trade-off:**
-- More frequent cache misses (but correct behavior)
-- Slightly longer execution time on first run after dependency update
+- More frequent package downloads when lock files change (but correct behavior)
+- Slightly longer execution time than restoring a `node_modules` archive
 - BUT: Guarantees correctness over speed
 
 **When cache invalidates (as expected):**
@@ -410,11 +414,13 @@ The composite action provides clear visual feedback:
 ```
 🚀 Starting workspace setup...
 📦 Setup Node.js 24
-💾 Cache Node.js dependencies
-  ✅ Using cached Node.js dependencies (cache hit)
+💾 Cache npm package store
+  ✅ npm package cache hit
   OR
-  ⚠️ Cache miss - installing dependencies...
-📦 Setup .NET 10.x
+  ⚠️ npm package cache miss
+📥 Install Node.js dependencies
+  ✅ npm ci completed successfully
+📦 Setup .NET 10.0.x
 💾 Cache .NET packages
   ✅ Using cached .NET packages (cache hit)
 📥 Restore .NET dependencies

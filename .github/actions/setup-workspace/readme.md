@@ -30,7 +30,7 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
   uses: ./.github/actions/setup-workspace
   with:
     node-version: '24'
-    dotnet-version: '10.x'
+    dotnet-version: '10.0.x'
 ```
 
 ### With Azure and Playwright
@@ -61,7 +61,7 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `node-version` | Node.js version to use | No | `24` |
-| `dotnet-version` | .NET version to use (leave empty to skip) | No | `10.x` |
+| `dotnet-version` | .NET SDK version to use; leave empty to skip .NET setup | No | `10.0.x` |
 | `install-node-dependencies` | Whether to install npm dependencies | No | `true` |
 | `install-dotnet-dependencies` | Whether to restore .NET dependencies | No | `true` |
 | `cache-key-prefix` | Prefix for cache key customization | No | `default` |
@@ -83,7 +83,13 @@ The action uses hash-based exact matching for cache keys (no fallback keys):
 ### Node.js Cache
 ```
 Key: {os}-node-{prefix}-{hash(package-lock.json)}
+Path: ~/.npm
 ```
+
+The cache stores the npm package-manager cache only. The action always runs
+`npm ci --prefer-offline --no-audit`, even on a cache hit, so CI installs are
+lockfile-enforced and deterministic while still benefiting from cached package
+downloads.
 
 ### .NET Cache
 ```
@@ -94,9 +100,9 @@ Key: {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx, packages.lock.json)}
 
 Fallback keys can cause cache pollution when lock files are out of sync with package files. The hash-based approach ensures:
 - ✅ Cache hit only when dependencies are exactly the same
-- ✅ Fresh installation when any dependency changes
+- ✅ Deterministic `npm ci` installation on every run
 - ✅ No risk of using stale cached dependencies
-- ✅ Clear behavior: exact match = cache hit, no match = fresh install
+- ✅ Clear behavior: exact match = package download cache hit, no match = cache repopulation
 
 **When does cache invalidate?**
 - a) No version bumps → Lock file unchanged → **Cache HIT**
@@ -123,7 +129,7 @@ Fallback keys can cause cache pollution when lock files are out of sync with pac
   uses: ./.github/actions/setup-workspace
   with:
     node-version: '24'
-    dotnet-version: '10.x'
+    dotnet-version: '10.0.x'
     install-node-dependencies: 'false'
     install-dotnet-dependencies: 'true'
     cache-key-prefix: 'api'
