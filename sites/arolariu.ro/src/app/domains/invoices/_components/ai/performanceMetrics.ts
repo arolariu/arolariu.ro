@@ -123,7 +123,7 @@ export type GenerationMetricsTracker = Readonly<{
  * **Limitations:**
  * - Chunk count is a proxy for tokens (WebLLM may not expose true token usage)
  * - Label as "estimated" in UI when true token count unavailable
- * - Zero-duration generations return Infinity throughput (guard in UI)
+ * - Zero-duration generations return zero throughput to avoid non-finite UI values
  *
  * @example
  * ```typescript
