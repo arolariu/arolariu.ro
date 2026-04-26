@@ -418,9 +418,7 @@ describe("useLocalInvoiceAssistant", () => {
     });
 
     // Adapter should be called with the recommended model from state
-    expect(adapter.deleteCachedModel).toHaveBeenCalledWith(
-      expect.objectContaining({id: recommendedModelId}),
-    );
+    expect(adapter.deleteCachedModel).toHaveBeenCalledWith(expect.objectContaining({id: recommendedModelId}));
   });
 
   it("does not pass GPU limits as VRAM to model recommendation", async () => {
@@ -587,6 +585,87 @@ describe("useLocalInvoiceAssistant", () => {
     });
 
     expect(adapter.generate).not.toHaveBeenCalled(); // Benchmark rejected
+  });
+
+  it("rejects overlapping benchmark runs before the first benchmark settles", async () => {
+    const benchmarkGeneration = createDeferred<string>();
+    const generate = vi.fn<LocalInvoiceAssistantAdapter["generate"]>().mockReturnValueOnce(benchmarkGeneration.promise);
+    const adapter = createFakeAdapter({generate});
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    let firstBenchmarkPromise: Promise<void> = Promise.resolve();
+    let secondBenchmarkPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      firstBenchmarkPromise = result.current.runBenchmark();
+      secondBenchmarkPromise = result.current.runBenchmark();
+    });
+
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      benchmarkGeneration.resolve("Benchmark response");
+      await firstBenchmarkPromise;
+      await secondBenchmarkPromise;
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+  });
+
+  it("rejects benchmark runs while chat generation is already in flight", async () => {
+    const chatGeneration = createDeferred<string>();
+    const generate = vi.fn<LocalInvoiceAssistantAdapter["generate"]>().mockReturnValueOnce(chatGeneration.promise);
+    const adapter = createFakeAdapter({generate});
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    let sendPromise: Promise<void> = Promise.resolve();
+    let benchmarkPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      sendPromise = result.current.sendMessage("Summarize spending");
+      benchmarkPromise = result.current.runBenchmark();
+    });
+
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      chatGeneration.resolve("Chat response");
+      await sendPromise;
+      await benchmarkPromise;
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.messages).toHaveLength(2);
   });
 
   it("tracks latest generation metrics for normal chat messages", async () => {
@@ -1747,6 +1826,75 @@ describe("useLocalInvoiceAssistant", () => {
     expect(result.current.state.messages).toHaveLength(4);
   });
 
+  it("allows a new send immediately after interrupt without stale settlement releasing the new send lock", async () => {
+    const staleGeneration = createDeferred<string>();
+    const secondGeneration = createDeferred<string>();
+    const generate = vi
+      .fn<LocalInvoiceAssistantAdapter["generate"]>()
+      .mockReturnValueOnce(staleGeneration.promise)
+      .mockReturnValueOnce(secondGeneration.promise)
+      .mockResolvedValueOnce("Third response");
+    const adapter = createFakeAdapter({generate});
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    let staleSendPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      staleSendPromise = result.current.sendMessage("First message");
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("generating"));
+
+    act(() => {
+      result.current.interrupt();
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("cancelled"));
+
+    let secondSendPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      secondSendPromise = result.current.sendMessage("Second message after interrupt");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      staleGeneration.reject(new Error("Generation interrupted"));
+      await staleSendPromise;
+    });
+
+    act(() => {
+      void result.current.sendMessage("Third message should wait for second response");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      secondGeneration.resolve("Second response");
+      await secondSendPromise;
+    });
+
+    await act(async () => {
+      await result.current.sendMessage("Third message after second response");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(3);
+    expect(result.current.state.lifecycle).toBe("ready");
+  });
+
   it("should preserve send readiness after resetSession when stale generation rejects", async () => {
     const staleGeneration = createDeferred<string>();
     const generate = vi
@@ -1798,6 +1946,76 @@ describe("useLocalInvoiceAssistant", () => {
     expect(generate).toHaveBeenCalledTimes(2);
     expect(result.current.state.lifecycle).toBe("ready");
     expect(result.current.state.messages).toHaveLength(2);
+  });
+
+  it("allows a new send immediately after reset without stale settlement releasing the new send lock", async () => {
+    const staleGeneration = createDeferred<string>();
+    const secondGeneration = createDeferred<string>();
+    const generate = vi
+      .fn<LocalInvoiceAssistantAdapter["generate"]>()
+      .mockReturnValueOnce(staleGeneration.promise)
+      .mockReturnValueOnce(secondGeneration.promise)
+      .mockResolvedValueOnce("Third response");
+    const adapter = createFakeAdapter({generate});
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware: async () => eligibleHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    let staleSendPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      staleSendPromise = result.current.sendMessage("First message");
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("generating"));
+
+    act(() => {
+      result.current.resetSession();
+    });
+    await waitFor(() => expect(result.current.state.lifecycle).toBe("ready"));
+
+    let secondSendPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      secondSendPromise = result.current.sendMessage("Second message after reset");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      staleGeneration.reject(new Error("Session reset"));
+      await staleSendPromise;
+    });
+
+    act(() => {
+      void result.current.sendMessage("Third message should wait for second response");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      secondGeneration.resolve("Second response");
+      await secondSendPromise;
+    });
+
+    await act(async () => {
+      await result.current.sendMessage("Third message after second response");
+    });
+
+    expect(generate).toHaveBeenCalledTimes(3);
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(result.current.state.messages).toHaveLength(4);
   });
 });
 

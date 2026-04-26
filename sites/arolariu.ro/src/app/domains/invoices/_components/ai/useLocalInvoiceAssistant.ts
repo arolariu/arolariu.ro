@@ -257,7 +257,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const analyzeHardwareRef = useRef(input.analyzeHardware ?? analyzeLocalAiHardwareEligibility);
   const createIdRef = useRef(input.createId ?? createDefaultMessageId);
   const generationIdRef = useRef(0);
-  const generationInFlightRef = useRef(false);
+  const generationInFlightRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
@@ -443,7 +443,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
           },
           signal: abortController.signal,
         });
-        
+
         // Check both mounted state and abort status before marking ready
         if (!isMountedRef.current || abortController.signal.aborted) {
           return;
@@ -507,20 +507,21 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       }
 
       // Synchronous guard: prevent overlapping generations
-      if (generationInFlightRef.current) {
+      if (generationInFlightRef.current !== null) {
         return;
       }
 
+      const generationId = generationIdRef.current + 1;
+      generationIdRef.current = generationId;
+
       // Mark generation as in-flight before any async work
-      generationInFlightRef.current = true;
+      generationInFlightRef.current = generationId;
       canSendMessageRef.current = false;
 
       const timestamp = nowRef.current().toISOString();
       const userMessage = createMessage(trimmedContent, "user", timestamp, createIdRef.current);
       const assistantMessage = createMessage("", "assistant", timestamp, createIdRef.current);
       const promptMessages = createPromptMessages(context, [...stateRef.current.messages, userMessage]);
-      const generationId = generationIdRef.current + 1;
-      generationIdRef.current = generationId;
 
       setState((current) => ({
         ...current,
@@ -584,7 +585,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
           // Clear in-flight flag for stale/superseded generation
           // Do NOT overwrite canSendMessageRef - preserve readiness from interrupt/resetSession
-          generationInFlightRef.current = false;
+          if (generationInFlightRef.current === generationId) {
+            generationInFlightRef.current = null;
+          }
           return;
         }
 
@@ -600,13 +603,15 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         }));
 
         // Clear in-flight flag and restore send readiness after successful generation
-        generationInFlightRef.current = false;
+        generationInFlightRef.current = null;
         canSendMessageRef.current = true;
       } catch (error) {
         if (!isMountedRef.current || generationIdRef.current !== generationId) {
           // Clear in-flight flag for stale/superseded generation
           // Do NOT overwrite canSendMessageRef - preserve readiness from interrupt/resetSession
-          generationInFlightRef.current = false;
+          if (generationInFlightRef.current === generationId) {
+            generationInFlightRef.current = null;
+          }
           return;
         }
 
@@ -622,7 +627,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         }));
 
         // Clear in-flight flag after error (but do NOT restore send readiness - error state is not send-ready)
-        generationInFlightRef.current = false;
+        generationInFlightRef.current = null;
         canSendMessageRef.current = false;
       }
     },
@@ -645,6 +650,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     adapterRef.current?.interrupt();
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
+    generationInFlightRef.current = null;
     // Interrupt transitions to "cancelled" which is send-ready
     if (loadedRef.current) {
       canSendMessageRef.current = true;
@@ -660,8 +666,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     // Abort the pending load but keep the ref until promise settles
     // This prevents retry from binding to stale adapter load
     pendingLoadRef.current?.controller.abort();
+    adapterRef.current?.interrupt();
     streamingBufferRef.current?.interrupt();
     streamingBufferRef.current = null;
+    generationInFlightRef.current = null;
     const recoveredLifecycle = getRecoveredLifecycle(stateRef.current.hardware, loadedRef.current);
     // Restore send readiness if recovered lifecycle is send-ready ("ready" or "cancelled")
     canSendMessageRef.current = recoveredLifecycle === "ready" || recoveredLifecycle === "cancelled";
@@ -673,11 +681,10 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     }));
   }, []);
 
-
   const runBenchmark = useCallback(async (): Promise<void> => {
     const adapter = adapterRef.current;
 
-    if (!adapter || !loadedRef.current || stateRef.current.lifecycle !== "ready") {
+    if (!adapter || !loadedRef.current || stateRef.current.lifecycle !== "ready" || generationInFlightRef.current !== null) {
       return;
     }
 
@@ -689,6 +696,8 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     ];
     const generationId = generationIdRef.current + 1;
     generationIdRef.current = generationId;
+    generationInFlightRef.current = generationId;
+    canSendMessageRef.current = false;
 
     setState((current) => ({
       ...current,
@@ -712,6 +721,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
       });
 
       if (!isMountedRef.current || generationIdRef.current !== generationId) {
+        if (generationInFlightRef.current === generationId) {
+          generationInFlightRef.current = null;
+        }
         return;
       }
 
@@ -720,8 +732,14 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         error: null,
         lifecycle: "ready",
       }));
+
+      generationInFlightRef.current = null;
+      canSendMessageRef.current = true;
     } catch (error) {
       if (!isMountedRef.current || generationIdRef.current !== generationId) {
+        if (generationInFlightRef.current === generationId) {
+          generationInFlightRef.current = null;
+        }
         return;
       }
 
@@ -730,6 +748,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         error: getErrorMessage(error),
         lifecycle: "error",
       }));
+
+      generationInFlightRef.current = null;
+      canSendMessageRef.current = false;
     }
   }, []);
 
@@ -779,8 +800,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     && (state.lifecycle === "not-downloaded"
       || state.lifecycle === "compatibility-unknown"
       || (state.lifecycle === "error" && !loadedRef.current));
-  const canRunBenchmark = state.lifecycle === "ready";
-  const canSendMessage = state.lifecycle === "ready" || state.lifecycle === "cancelled";
+  const generationInFlight = generationInFlightRef.current !== null;
+  const canRunBenchmark = state.lifecycle === "ready" && !generationInFlight;
+  const canSendMessage = (state.lifecycle === "ready" || state.lifecycle === "cancelled") && !generationInFlight;
 
   return {
     canLoadModel,
@@ -798,4 +820,3 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
     state,
   };
 }
-
