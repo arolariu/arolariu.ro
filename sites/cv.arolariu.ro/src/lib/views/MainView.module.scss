@@ -168,6 +168,7 @@
   cursor: pointer;
   text-align: left;
   transform: translateZ(0);
+  animation: panelFadeIn 0.5s ease-out var(--panel-delay, 0ms) both;
   backdrop-filter: blur(4px);
   transition: transform var(--cv-transition-slow), box-shadow var(--cv-transition-slow), border-color var(--cv-transition-slow);
 }

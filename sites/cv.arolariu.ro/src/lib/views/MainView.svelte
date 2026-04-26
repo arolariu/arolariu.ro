@@ -127,7 +127,7 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
         <button
           type="button"
           class={styles.panelCard}
-          style="animation: panelFadeIn 0.5s ease-out {i * 100}ms both;"
+          style="--panel-delay: {i * 100}ms;"
           aria-label={panel.title}
           onclick={panel.action}
           data-panel={panel.id}>
