@@ -432,8 +432,9 @@ or upgrade-gated model IDs before WebLLM initialization.
 - Does not affect invoice data (remains in IndexedDB)
 
 **Storage quota considerations:**
-- Minimum 6 GB available storage required before download
-- Hardware eligibility check gates download if quota unavailable
+- At least 6 GiB available storage is required when the browser can report quota
+- Known storage below the minimum blocks model download
+- Unavailable storage estimates show a compatibility warning and still require explicit download consent
 - Browser may evict cache if quota exceeded (WebLLM handles gracefully)
 
 ---
@@ -478,7 +479,7 @@ Recommended targets:
 Manual flow:
 
 1. Ineligible device fallback.
-2. Compatibility warning on unknown CPU or memory signals.
+2. Compatibility warning on unknown storage, CPU, or memory signals.
 3. Explicit model download.
 4. Interrupting an in-progress answer.
 5. Clearing cached model artifacts.
