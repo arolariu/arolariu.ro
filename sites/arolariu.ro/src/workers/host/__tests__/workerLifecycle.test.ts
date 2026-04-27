@@ -131,6 +131,40 @@ describe("createWorkerLifecycle", () => {
     });
   });
 
+  describe("defensive guards", () => {
+    it("bootBegin is a no-op after dispose", () => {
+      const lifecycle = createWorkerLifecycle({idleTimeoutMs: 0});
+      lifecycle.dispose();
+      lifecycle.bootBegin();
+      expect(lifecycle.state).toBe("disposed");
+    });
+
+    it("bootComplete is a no-op when not in starting state", () => {
+      const lifecycle = createWorkerLifecycle({idleTimeoutMs: 0});
+      // state is "idle", not "starting"
+      lifecycle.bootComplete();
+      expect(lifecycle.state).toBe("idle");
+    });
+
+    it("crash is a no-op when already disposed", () => {
+      const lifecycle = createWorkerLifecycle({idleTimeoutMs: 0});
+      lifecycle.dispose();
+      lifecycle.crash();
+      expect(lifecycle.state).toBe("disposed");
+    });
+
+    it("setState early-returns and skips notification when next state equals current", () => {
+      const lifecycle = createWorkerLifecycle({idleTimeoutMs: 0});
+      const fn = vi.fn();
+      lifecycle.subscribe(fn);
+      lifecycle.dispose();
+      fn.mockClear();
+      // calling dispose again: state is already "disposed" → no notification
+      lifecycle.dispose();
+      expect(fn).not.toHaveBeenCalled();
+    });
+  });
+
   describe("inflight tracking", () => {
     it("increments and decrements correctly", () => {
       const lifecycle = createWorkerLifecycle({idleTimeoutMs: 1000});

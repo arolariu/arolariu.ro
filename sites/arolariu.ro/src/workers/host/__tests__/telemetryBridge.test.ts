@@ -16,6 +16,17 @@ describe("createTelemetryBridge", () => {
       await expect(bridge.wrapCall("greet", async () => Promise.reject(err))).rejects.toBe(err);
     });
 
+    it("uses String(error) for non-Error rejections in the error log attrs", async () => {
+      const error = vi.fn();
+      const bridge = createTelemetryBridge("ai", {logger: {debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error}});
+      // Reject with a plain string (not an Error instance)
+      await expect(bridge.wrapCall("greet", async () => Promise.reject("plain-string-cause"))).rejects.toBe("plain-string-cause");
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining("worker.ai.greet"),
+        expect.objectContaining({status: "error", error: "plain-string-cause"}),
+      );
+    });
+
     it("logs a debug span line on success when an injected logger is provided", async () => {
       const debug = vi.fn();
       const bridge = createTelemetryBridge("ai", {logger: {debug, info: vi.fn(), warn: vi.fn(), error: vi.fn()}});
@@ -36,6 +47,52 @@ describe("createTelemetryBridge", () => {
         expect.stringContaining("worker.ai.greet"),
         expect.objectContaining({status: "error"}),
       );
+    });
+  });
+
+  describe("default logger (console.*)", () => {
+    it("uses console.info by default when no logger is injected", () => {
+      const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+      try {
+        const bridge = createTelemetryBridge("ai");
+        bridge.ingestEvent({kind: "log", level: "info", msg: "default-info"});
+        expect(infoSpy).toHaveBeenCalledWith("[worker:ai] default-info", undefined);
+      } finally {
+        infoSpy.mockRestore();
+      }
+    });
+
+    it("uses console.warn by default when no logger is injected", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        const bridge = createTelemetryBridge("ai");
+        bridge.ingestEvent({kind: "log", level: "warn", msg: "default-warn"});
+        expect(warnSpy).toHaveBeenCalledWith("[worker:ai] default-warn", undefined);
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+
+    it("uses console.debug by default for wrapCall success", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      try {
+        const bridge = createTelemetryBridge("ai");
+        await bridge.wrapCall("greet", async () => "ok");
+        expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("worker.ai.greet"), expect.objectContaining({status: "ok"}));
+      } finally {
+        debugSpy.mockRestore();
+      }
+    });
+
+    it("uses console.error by default for wrapCall failure", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const bridge = createTelemetryBridge("ai");
+        await expect(bridge.wrapCall("greet", async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("worker.ai.greet"), expect.objectContaining({status: "error"}));
+      } finally {
+        errorSpy.mockRestore();
+      }
     });
   });
 
