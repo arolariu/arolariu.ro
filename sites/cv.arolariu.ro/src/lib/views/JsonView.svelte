@@ -31,8 +31,9 @@ for maximum compatibility with resume processing tools.
 <script lang="ts">
   import {ui} from "@/data";
   import Header, {type ActionConfig} from "@/presentation/Header.svelte";
-  import {copyText, downloadText} from "@/lib/utils";
+  import {copyText, cx, downloadText} from "@/lib/utils";
   import {jsonCVData} from "@/data/json";
+  import styles from "./JsonView.module.scss";
 
   /** Tracks whether the copy action succeeded (resets after 2 seconds). */
   let copySuccess = $state<boolean>(false);
@@ -151,68 +152,63 @@ for maximum compatibility with resume processing tools.
   {actionsConfig} />
 
 <!-- Stats Cards -->
-<section class="mt-4 px-6">
-  <div class="max-w-6xl mx-auto">
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-      <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.sections}</div>
-        <div class="text-xs text-blue-700 dark:text-blue-300">Sections</div>
+<section class={styles.statsSection}>
+  <div class={styles.container}>
+    <div class={styles.statsGrid}>
+      <div class={cx(styles.statCard, styles.statBlue)}>
+        <div class={styles.statValue}>{stats.sections}</div>
+        <div class={styles.statLabel}>Sections</div>
       </div>
-      <div class="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{stats.workEntries}</div>
-        <div class="text-xs text-green-700 dark:text-green-300">Work Entries</div>
+      <div class={cx(styles.statCard, styles.statGreen)}>
+        <div class={styles.statValue}>{stats.workEntries}</div>
+        <div class={styles.statLabel}>Work Entries</div>
       </div>
-      <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.educationEntries}</div>
-        <div class="text-xs text-purple-700 dark:text-purple-300">Education</div>
+      <div class={cx(styles.statCard, styles.statPurple)}>
+        <div class={styles.statValue}>{stats.educationEntries}</div>
+        <div class={styles.statLabel}>Education</div>
       </div>
-      <div class="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
-        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.skillCategories}</div>
-        <div class="text-xs text-orange-700 dark:text-orange-300">Skill Groups</div>
+      <div class={cx(styles.statCard, styles.statOrange)}>
+        <div class={styles.statValue}>{stats.skillCategories}</div>
+        <div class={styles.statLabel}>Skill Groups</div>
       </div>
-      <div class="p-3 rounded-lg bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800">
-        <div class="text-2xl font-bold text-pink-600 dark:text-pink-400">{stats.certificates}</div>
-        <div class="text-xs text-pink-700 dark:text-pink-300">Certificates</div>
+      <div class={cx(styles.statCard, styles.statPink)}>
+        <div class={styles.statValue}>{stats.certificates}</div>
+        <div class={styles.statLabel}>Certificates</div>
       </div>
-      <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-        <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.compressionRatio}%</div>
-        <div class="text-xs text-gray-700 dark:text-gray-300">Compressible</div>
+      <div class={cx(styles.statCard, styles.statGray)}>
+        <div class={styles.statValue}>{stats.compressionRatio}%</div>
+        <div class={styles.statLabel}>Compressible</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Tabs Bar -->
-<section class="mt-4 px-6">
-  <div class="max-w-6xl mx-auto flex flex-wrap items-center gap-4">
+<section class={styles.tabsSection}>
+  <div class={cx(styles.container, styles.tabsContainer)}>
     <div
-      class="inline-flex rounded-lg p-1 border bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+      class={styles.tabList}
       role="tablist"
       aria-label="Format toggle">
       {#each tabsConfig.options as opt}
+        {@const isActive = tabsConfig.active === opt.id}
         <button
           role="tab"
-          aria-selected={tabsConfig.active === opt.id}
+          aria-selected={isActive}
           aria-controls={`tab-panel-${opt.id}`}
           onclick={() => tabsConfig.onChange(opt.id)}
-          class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
-          class:bg-white={tabsConfig.active === opt.id}
-          class:text-blue-600={tabsConfig.active === opt.id}
-          class:text-gray-600={tabsConfig.active !== opt.id}
-          class:dark:bg-gray-900={tabsConfig.active === opt.id}
-          class:dark:text-blue-400={tabsConfig.active === opt.id}
-          class:dark:text-gray-300={tabsConfig.active !== opt.id}>
+          class={cx(styles.tabButton, isActive ? styles.tabButtonActive : styles.tabButtonIdle)}>
           {opt.label}
         </button>
       {/each}
     </div>
 
     {#if activeTab === "formatted"}
-      <label class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+      <label class={styles.highlightToggle}>
         <input
           type="checkbox"
           bind:checked={showHighlighting}
-          class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+          class={styles.highlightCheckbox} />
         <span>Syntax Highlighting</span>
       </label>
     {/if}
@@ -221,43 +217,41 @@ for maximum compatibility with resume processing tools.
 
 <main
   id="main-content"
-  class="min-h-screen transition-colors duration-300">
-  <div class="max-w-6xl mx-auto p-6">
+  class={styles.main}>
+  <div class={styles.containerWithPadding}>
     <!-- JSON Code Block -->
-    <div
-      class="rounded-lg border overflow-hidden shadow-lg transition-all duration-300 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-      <div class="px-4 py-2 border-b transition-colors duration-300 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-mono transition-colors duration-300 text-gray-600 dark:text-gray-400">alexandru-olariu-cv.json</span>
-            <span class="px-2 py-0.5 text-xs rounded bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+    <div class={styles.codePanel}>
+      <div class={styles.codeHeader}>
+        <div class={styles.codeHeaderContent}>
+          <div class={styles.fileMeta}>
+            <span class={styles.fileName}>alexandru-olariu-cv.json</span>
+            <span class={styles.schemaBadge}>
               JSON Resume v1.0.0
             </span>
           </div>
-          <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+          <div class={styles.sizeMeta}>
             <span>{activeTab === "formatted" ? formattedJSON.length.toLocaleString() : rawJSON.length.toLocaleString()} chars</span>
-            <span class="hidden sm:inline"
+            <span class={styles.kilobytes}
               >{(activeTab === "formatted" ? formattedJSON.length / 1024 : rawJSON.length / 1024).toFixed(1)} KB</span>
           </div>
         </div>
       </div>
-      <div class="p-4 overflow-auto max-h-[60vh] json-container">
+      <div class={styles.jsonContainer}>
         {#if activeTab === "formatted" && showHighlighting}
-          <pre class="text-sm font-mono whitespace-pre-wrap break-words">{@html highlightedJSON}</pre>
+          <pre class={styles.pre}>{@html highlightedJSON}</pre>
         {:else}
-          <pre class="text-sm font-mono whitespace-pre-wrap break-words transition-colors duration-300 text-gray-900 dark:text-gray-100"
+          <pre class={styles.prePlain}
             >{activeTab === "formatted" ? formattedJSON : rawJSON}</pre>
         {/if}
       </div>
     </div>
 
     <!-- API Endpoints Documentation -->
-    <div
-      class="mt-6 rounded-lg border overflow-hidden transition-all duration-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-      <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+    <div class={styles.apiPanel}>
+      <div class={styles.apiHeader}>
+        <h3 class={styles.apiTitle}>
           <svg
-            class="w-5 h-5"
+            class={styles.apiIcon}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor">
@@ -269,26 +263,25 @@ for maximum compatibility with resume processing tools.
           </svg>
           API Endpoints
         </h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1"> Access this CV programmatically via the REST API </p>
+        <p class={styles.apiDescription}> Access this CV programmatically via the REST API </p>
       </div>
-      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+      <div class={styles.endpointList}>
         {#each apiEndpoints as endpoint}
-          <div
-            class="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-            <span class="px-2 py-0.5 text-xs font-mono rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 w-fit">
+          <div class={styles.endpointRow}>
+            <span class={styles.methodBadge}>
               {endpoint.method}
             </span>
-            <code class="text-sm font-mono text-gray-800 dark:text-gray-200 flex-1 break-all">
+            <code class={styles.endpointPath}>
               {endpoint.path}
             </code>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
+            <span class={styles.endpointDescription}>
               {endpoint.description}
             </span>
             <a
               href="https://cv.arolariu.ro{endpoint.path}"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap">
+              class={styles.tryLink}>
               Try it
             </a>
           </div>
@@ -297,64 +290,26 @@ for maximum compatibility with resume processing tools.
     </div>
 
     <!-- JSON Resume Schema Info -->
-    <div class="mt-6 rounded-lg p-4 border transition-all duration-300 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
-      <h3 class="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300">JSON Resume Schema</h3>
-      <p class="text-sm mb-3 transition-colors duration-300 text-gray-600 dark:text-gray-400">
+    <div class={styles.schemaPanel}>
+      <h3 class={styles.schemaTitle}>JSON Resume Schema</h3>
+      <p class={styles.schemaDescription}>
         This JSON follows the standardized JSON Resume schema v1.0.0, making it compatible with various resume builders, parsers, and ATS
         systems that support this format.
       </p>
-      <div class="flex flex-wrap gap-2">
-        <span
-          class="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+      <div class={styles.schemaBadgeList}>
+        <span class={cx(styles.schemaChip, styles.schemaChipBlue)}>
           JSON Resume Compatible
         </span>
-        <span
-          class="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span class={cx(styles.schemaChip, styles.schemaChipGreen)}>
           ATS Friendly
         </span>
-        <span
-          class="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span class={cx(styles.schemaChip, styles.schemaChipPurple)}>
           ETag Caching
         </span>
-        <span
-          class="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span class={cx(styles.schemaChip, styles.schemaChipOrange)}>
           CORS Enabled
         </span>
       </div>
     </div>
   </div>
 </main>
-
-<style>
-  .json-container :global(.json-key) {
-    color: #0550ae;
-  }
-  .json-container :global(.json-string) {
-    color: #0a3069;
-  }
-  .json-container :global(.json-number) {
-    color: #0550ae;
-  }
-  .json-container :global(.json-boolean) {
-    color: #cf222e;
-  }
-  .json-container :global(.json-null) {
-    color: #6e7781;
-  }
-
-  :global(.dark) .json-container :global(.json-key) {
-    color: #79c0ff;
-  }
-  :global(.dark) .json-container :global(.json-string) {
-    color: #a5d6ff;
-  }
-  :global(.dark) .json-container :global(.json-number) {
-    color: #79c0ff;
-  }
-  :global(.dark) .json-container :global(.json-boolean) {
-    color: #ff7b72;
-  }
-  :global(.dark) .json-container :global(.json-null) {
-    color: #8b949e;
-  }
-</style>

@@ -1,8 +1,8 @@
 <!--
 @component PdfView
 
-Displays the CV as an embedded PDF with print and download capabilities.
-On mobile devices, provides options for native PDF viewing.
+Displays the CV as a browser-native PDF with print and download capabilities.
+On mobile devices, attempts native PDF rendering before showing fallback actions.
 
 @remarks
 **Rendering Context**: SvelteKit page component (SSR + CSR).
@@ -14,11 +14,8 @@ On mobile devices, provides options for native PDF viewing.
 
 **Mobile Optimization**:
 - Detects mobile/tablet devices via screen width and touch capability
-- Offers prominent "Open in PDF Viewer" button for native experience
-- Falls back to embedded viewer with mobile-friendly controls
-
-**PDF Viewer**: Uses `svelte-pdf` library on desktop, dynamically imported
-on mount to avoid SSR issues (PDF.js requires browser APIs).
+- Tries the browser's native PDF renderer first
+- Keeps open, download, and retry actions visible when the native surface stalls
 
 **Accessibility**:
 - Loading state uses `role="status"`, `aria-busy`, `aria-live="polite"`
@@ -33,13 +30,18 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
 <script lang="ts">
   import Header from "@/presentation/Header.svelte";
   import {onMount} from "svelte";
-
-  /** PDF file URL */
-  const PDF_URL = "./cv.pdf";
-  const PDF_FILENAME = "CV_AlexandruRazvan_Olariu.pdf";
-
-  /** Dynamically imported PDF viewer component. */
-  let PdfViewer = $state<any>(null);
+  import {
+    PDF_ASSET_URL,
+    PDF_DOWNLOAD_FILENAME,
+    PDF_NATIVE_ASSISTANCE_DELAY_MS,
+    PDF_PRINT_ACTION_LABEL,
+    PDF_PRINT_ASSISTANCE_TEXT,
+    detectPdfDevice,
+    getNextPdfSurfaceStatus,
+    shouldShowPdfAssistance,
+    type PdfSurfaceStatus,
+  } from "@/lib/pdf/pdfViewerState";
+  import styles from "./PdfView.module.scss";
 
   /** Track if component is mounted (client-side). */
   let isMounted = $state(false);
@@ -47,29 +49,44 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
   /** Detect mobile device. */
   let isMobile = $state(false);
 
-  /** User preference: whether to use embedded viewer even on mobile. */
-  let useEmbeddedViewer = $state(false);
+  /** Current status of the browser-native PDF surface. */
+  let surfaceStatus = $state<PdfSurfaceStatus>("loading");
 
-  /** Loading state for PDF viewer. */
-  let isLoading = $state(true);
+  /** Forces the native PDF element to remount when the user retries. */
+  let nativeFrameKey = $state(0);
+
+  /** Timer used to reveal fallback actions if native rendering stalls. */
+  let assistanceTimer: ReturnType<typeof window.setTimeout> | undefined;
+
+  const showAssistance = $derived(shouldShowPdfAssistance(surfaceStatus));
+  const statusMessage = $derived(
+    surfaceStatus === "loading"
+      ? "Loading native PDF preview..."
+      : surfaceStatus === "needs-assistance"
+        ? "The browser PDF preview is still loading."
+        : surfaceStatus === "failed"
+          ? "The browser PDF preview could not be loaded."
+          : "",
+  );
 
   /**
-   * Detects if the current device is mobile/tablet.
-   * Uses a combination of screen width and touch capability.
+   * Reads browser signals and updates route-level mobile affordances.
    */
-  function detectMobile(): boolean {
-    if (typeof window === "undefined") return false;
-    const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth < 768;
-    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    return (hasTouch && isSmallScreen) || isMobileUA;
+  function syncDevicePreference(): void {
+    const device = detectPdfDevice({
+      innerWidth: window.innerWidth,
+      maxTouchPoints: navigator.maxTouchPoints,
+      userAgent: navigator.userAgent,
+    });
+
+    isMobile = device.isMobile;
   }
 
   /**
    * Opens the PDF in a new tab for native viewing.
    */
   function openInNativeViewer(): void {
-    window.open(PDF_URL, "_blank", "noopener,noreferrer");
+    window.open(PDF_ASSET_URL, "_blank", "noopener,noreferrer");
   }
 
   /**
@@ -77,90 +94,108 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
    */
   function downloadPdf(): void {
     const link = document.createElement("a");
-    link.href = PDF_URL;
-    link.download = PDF_FILENAME;
+    link.href = PDF_ASSET_URL;
+    link.download = PDF_DOWNLOAD_FILENAME;
     link.click();
   }
 
   /**
-   * Switch to embedded viewer on mobile.
+   * Opens the PDF in the browser-native viewer where the print command is reliable.
    */
-  function showEmbeddedViewer(): void {
-    useEmbeddedViewer = true;
-    loadPdfViewer();
+  function openPdfForPrinting(): void {
+    window.open(PDF_ASSET_URL, "_blank", "noopener,noreferrer");
   }
 
   /**
-   * Loads the PDF viewer dynamically.
+   * Clears any pending assistance timer.
    */
-  async function loadPdfViewer(): Promise<void> {
-    try {
-      const module = await import("svelte-pdf");
-      PdfViewer = module.default;
-    } finally {
-      isLoading = false;
+  function clearAssistanceTimer(): void {
+    if (assistanceTimer !== undefined) {
+      window.clearTimeout(assistanceTimer);
+      assistanceTimer = undefined;
     }
+  }
+
+  /**
+   * Starts a timer that reveals assistance actions if native rendering stalls.
+   */
+  function startAssistanceTimer(): void {
+    clearAssistanceTimer();
+    assistanceTimer = window.setTimeout(() => {
+      surfaceStatus = getNextPdfSurfaceStatus(surfaceStatus, "timeout");
+    }, PDF_NATIVE_ASSISTANCE_DELAY_MS);
+  }
+
+  /**
+   * Marks the browser-native PDF surface as ready.
+   */
+  function handleNativeLoad(): void {
+    clearAssistanceTimer();
+    surfaceStatus = getNextPdfSurfaceStatus(surfaceStatus, "load");
+  }
+
+  /**
+   * Marks the browser-native PDF surface as failed and shows fallback actions.
+   */
+  function handleNativeError(): void {
+    clearAssistanceTimer();
+    surfaceStatus = getNextPdfSurfaceStatus(surfaceStatus, "error");
+  }
+
+  /**
+   * Remounts the browser-native PDF surface after a failed or stalled load.
+   */
+  function retryNativeViewer(): void {
+    surfaceStatus = getNextPdfSurfaceStatus(surfaceStatus, "retry");
+    nativeFrameKey += 1;
+    startAssistanceTimer();
   }
 
   onMount(() => {
     isMounted = true;
-    isMobile = detectMobile();
+    syncDevicePreference();
+    startAssistanceTimer();
 
-    // Auto-load PDF viewer on desktop
-    if (!isMobile) {
-      loadPdfViewer();
-    } else {
-      isLoading = false;
-    }
-
-    // Handle resize events
     const handleResize = () => {
-      isMobile = detectMobile();
+      syncDevicePreference();
     };
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () => {
+      clearAssistanceTimer();
+      window.removeEventListener("resize", handleResize);
+    };
   });
 </script>
 
-<div class="min-h-screen transition-colors duration-300 bg-gradient-to-l from-blue-900 to-purple-900 via-pink-400">
+<div class={styles.shell}>
   <Header
     sticky
     showNavLinks={false}
     variant="inverse" />
 
-  <div class="flex justify-center items-center min-h-[calc(100vh-80px)] p-4 sm:p-8 print:p-0">
+  <div class={styles.viewerShell}>
     {#if isMounted}
-      {#if isMobile && !useEmbeddedViewer}
-        <!-- Mobile-optimized view with native PDF options -->
-        <div class="w-full max-w-md mx-auto">
-          <div class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20">
-            <!-- Icon -->
-            <div class="flex justify-center mb-6">
-              <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <svg
-                  class="w-10 h-10 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
+      <div class={styles.sideSpacer}></div>
 
-            <!-- Title -->
-            <h1 class="text-xl sm:text-2xl font-bold text-center text-gray-900 dark:text-white mb-2"> CV - PDF Format </h1>
-            <p class="text-sm text-center text-gray-600 dark:text-gray-400 mb-6"> Alexandru-Razvan Olariu </p>
+      <div class={styles.viewerColumn}>
+        <div class={styles.viewerHeader}>
+          <div>
+            <h1 class={styles.viewerTitle}>CV - PDF Format</h1>
+            <p class={styles.viewerSubtitle}>
+              {isMobile
+                ? "Trying your browser's native PDF viewer first."
+                : "Rendered with your browser's native PDF capabilities."}
+            </p>
+          </div>
 
-            <!-- Primary Action: Open in Native Viewer -->
+          <div class={styles.headerActions}>
             <button
               onclick={openInNativeViewer}
-              class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer mb-4 flex items-center justify-center gap-3">
+              class={styles.secondaryButton}>
               <svg
-                class="w-6 h-6"
+                class={styles.secondaryIcon}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -170,68 +205,14 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
                   stroke-width="2"
                   d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
-              Open in PDF Viewer
+              Open
             </button>
 
-            <!-- Secondary Actions -->
-            <div class="grid grid-cols-2 gap-3 mb-6">
-              <button
-                onclick={downloadPdf}
-                class="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </button>
-              <button
-                onclick={showEmbeddedViewer}
-                class="py-3 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2">
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Preview
-              </button>
-            </div>
-
-            <!-- Info text -->
-            <p class="text-xs text-center text-gray-500 dark:text-gray-500">
-              For the best mobile experience, use your device's native PDF viewer
-            </p>
-          </div>
-        </div>
-      {:else}
-        <!-- Desktop embedded viewer or mobile preview mode -->
-        <div class="hidden lg:block w-1/8 h-full print:hidden"></div>
-
-        <div class="w-full lg:w-3/4 flex flex-col items-center">
-          {#if isMobile && useEmbeddedViewer}
-            <!-- Mobile: Back to options button -->
             <button
-              onclick={() => (useEmbeddedViewer = false)}
-              class="mb-4 py-2 px-4 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer flex items-center gap-2 text-sm">
+              onclick={downloadPdf}
+              class={styles.secondaryButton}>
               <svg
-                class="w-4 h-4"
+                class={styles.secondaryIcon}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -239,58 +220,120 @@ on mount to avoid SSR issues (PDF.js requires browser APIs).
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Back to options
+              Download
             </button>
-          {/if}
 
-          <div class="w-full flex justify-center">
-            {#if isLoading}
-              <div
-                class="flex items-center justify-center w-full h-[65vh] rounded-lg bg-white/20 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10"
-                role="status"
-                aria-busy="true"
-                aria-live="polite">
-                <div class="flex flex-col items-center gap-3 text-white">
-                  <div
-                    class="h-8 w-8 border-2 border-white/60 border-t-transparent rounded-full animate-spin"
-                    aria-hidden="true"></div>
-                  <span class="text-sm opacity-80">Loading PDF viewer...</span>
-                </div>
-              </div>
-            {:else if PdfViewer}
-              <PdfViewer
-                url={PDF_URL}
-                downloadFileName={PDF_FILENAME}
-                showButtons={["print", "download", "timeInfo", "pageInfo", "zoom"]}
-                showTopButton={false} />
-            {:else}
-              <!-- Fallback if PDF viewer failed to load -->
-              <div
-                class="flex flex-col items-center justify-center w-full h-[65vh] rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 p-8">
-                <p class="text-white text-center mb-4"> PDF viewer could not be loaded. </p>
-                <button
-                  onclick={openInNativeViewer}
-                  class="py-3 px-6 rounded-xl bg-white text-purple-700 font-semibold hover:bg-gray-100 transition-colors cursor-pointer">
-                  Open PDF Directly
-                </button>
-              </div>
-            {/if}
+            <button
+              onclick={openPdfForPrinting}
+              class={styles.secondaryButton}
+              title={PDF_PRINT_ASSISTANCE_TEXT}>
+              <svg
+                class={styles.secondaryIcon}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12 0h12v4H6v-4zm12-5h.01" />
+              </svg>
+              {PDF_PRINT_ACTION_LABEL}
+            </button>
           </div>
         </div>
 
-        <div class="hidden lg:block w-1/8 h-full print:hidden"></div>
-      {/if}
+        <div class={styles.viewerFrame}>
+          {#key nativeFrameKey}
+            <object
+              class={styles.nativeObject}
+              data={PDF_ASSET_URL}
+              type="application/pdf"
+              title="Alexandru-Razvan Olariu CV PDF preview"
+              aria-label="Alexandru-Razvan Olariu CV PDF preview"
+              onload={handleNativeLoad}
+              onerror={handleNativeError}>
+              <div class={styles.fallbackPanel}>
+                <p class={styles.fallbackText}>
+                  Your browser did not expose an inline PDF viewer for this page.
+                </p>
+                <button
+                  onclick={openInNativeViewer}
+                  class={styles.fallbackButton}>
+                  Open PDF Directly
+                </button>
+              </div>
+            </object>
+          {/key}
+
+          {#if surfaceStatus === "loading"}
+            <div
+              class={styles.statusBadge}
+              role="status"
+              aria-busy="true"
+              aria-live="polite">
+              <div
+                class={styles.spinner}
+                aria-hidden="true"></div>
+              <span>{statusMessage}</span>
+            </div>
+          {/if}
+        </div>
+
+        {#if showAssistance}
+          <div
+            class={styles.assistancePanel}
+            role="status"
+            aria-live="polite">
+            <div>
+              <h2 class={styles.assistanceTitle}>
+                {surfaceStatus === "failed" ? "Native PDF preview unavailable" : "Still loading the PDF preview?"}
+              </h2>
+              <p class={styles.assistanceText}>
+                {statusMessage} You can open the PDF in your browser viewer, download it, print it, or retry the inline
+                preview. {PDF_PRINT_ASSISTANCE_TEXT}
+              </p>
+            </div>
+
+            <div class={styles.assistanceActions}>
+              <button
+                onclick={openInNativeViewer}
+                class={styles.primaryButton}>
+                Open PDF
+              </button>
+              <button
+                onclick={downloadPdf}
+                class={styles.secondaryButton}>
+                Download
+              </button>
+              <button
+                onclick={openPdfForPrinting}
+                class={styles.secondaryButton}
+                title={PDF_PRINT_ASSISTANCE_TEXT}>
+                {PDF_PRINT_ACTION_LABEL}
+              </button>
+              <button
+                onclick={retryNativeViewer}
+                class={styles.secondaryButton}>
+                Retry Preview
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <div class={styles.sideSpacer}></div>
     {:else}
       <!-- SSR placeholder -->
       <div
-        class="flex items-center justify-center w-full max-w-3xl h-[65vh] rounded-lg bg-white/20 backdrop-blur-sm border border-white/30"
+        class={styles.ssrPanel}
         role="status"
         aria-busy="true">
-        <div class="flex flex-col items-center gap-3 text-white">
-          <div class="h-8 w-8 border-2 border-white/60 border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-sm opacity-80">Initializing...</span>
+        <div class={styles.loadingContent}>
+          <div class={styles.spinner}></div>
+          <span class={styles.loadingText}>Initializing native PDF viewer...</span>
         </div>
       </div>
     {/if}

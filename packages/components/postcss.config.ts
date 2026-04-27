@@ -1,6 +1,6 @@
 /**
  * @fileoverview PostCSS configuration for the shared components package (V2).
- * Uses only cssnano for minification — no Tailwind CSS.
+ * Uses only cssnano for minification.
  * @module packages/components/postcss.config
  */
 

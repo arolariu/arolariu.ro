@@ -1,0 +1,41 @@
+@mixin focus-ring($color: rgb(59 130 246 / 0.4)) {
+  outline: none;
+  box-shadow: 0 0 0 4px $color;
+}
+
+@mixin card-surface {
+  border: 1px solid var(--cv-color-gray-200);
+  background: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: var(--cv-radius-xl);
+  box-shadow: var(--cv-shadow-lg);
+
+  :global(.dark) & {
+    border-color: var(--cv-color-gray-700);
+    background: rgb(0 0 0 / 0.4);
+  }
+}
+
+@mixin hover-lift {
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 250ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.1), 0 4px 10px -5px rgb(0 0 0 / 0.04);
+  }
+
+  :global(.dark) &:hover {
+    box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.3), 0 4px 10px -5px rgb(0 0 0 / 0.2);
+  }
+}
+
+@mixin gradient-section {
+  background: linear-gradient(135deg, rgb(59 130 246 / 0.05), rgb(139 92 246 / 0.04), rgb(236 72 153 / 0.03));
+
+  :global(.dark) & {
+    background: linear-gradient(135deg, rgb(59 130 246 / 0.08), rgb(139 92 246 / 0.06), rgb(236 72 153 / 0.04));
+  }
+}

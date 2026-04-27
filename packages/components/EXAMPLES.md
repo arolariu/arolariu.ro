@@ -28,7 +28,7 @@ import { Button, Card } from "@arolariu/components";
 import styles from "./my-component.module.css";
 ```
 
-`tailwindcss` is not a peer dependency in v1.0.0.
+No utility CSS framework is required as a peer dependency in v1.0.0.
 
 ### Useful Subpath Imports
 

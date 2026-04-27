@@ -1,0 +1,53 @@
+@use "../styles/breakpoints";
+
+.footer {
+  padding: 2rem 1.5rem;
+}
+
+.container {
+  width: min(100%, 80rem);
+  margin-inline: auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  @include breakpoints.at("md") {
+    flex-direction: row;
+  }
+}
+
+.copyrightWrap {
+  margin-bottom: 1rem;
+
+  @include breakpoints.at("md") {
+    margin-bottom: 0;
+  }
+}
+
+.copyright {
+  margin: 0;
+  color: var(--cv-color-gray-400);
+}
+
+.links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.link {
+  color: var(--cv-color-gray-400);
+  transition: color var(--cv-transition-base);
+}
+
+.link:hover {
+  color: var(--cv-color-blue-400);
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}

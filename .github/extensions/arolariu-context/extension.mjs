@@ -17,7 +17,7 @@ function getVersions() {
 		versions.zustand = deps["zustand"]?.replace("^", "") || "unknown";
 		versions.nextIntl = deps["next-intl"]?.replace("^", "") || "unknown";
 		versions.vitest = deps["vitest"]?.replace("^", "") || "unknown";
-		versions.tailwind = deps["tailwindcss"]?.replace("^", "") || "unknown";
+		versions.sass = deps["sass"]?.replace("^", "") || "unknown";
 		versions.node = rootPkg.engines?.node || ">=24";
 	} catch {
 		/* ignore */
@@ -132,7 +132,7 @@ const session = await joinSession({
 			const v = getVersions();
 			const context = [
 				"=== arolariu.ro Monorepo — Live Codebase Context ===",
-				`Versions (from package.json): Next.js ${v.nextjs}, React ${v.react}, TypeScript ${v.typescript}, Zustand ${v.zustand}, next-intl ${v.nextIntl}, Vitest ${v.vitest}, Tailwind CSS ${v.tailwind}, Node ${v.node}`,
+				`Versions (from package.json): Next.js ${v.nextjs}, React ${v.react}, TypeScript ${v.typescript}, Zustand ${v.zustand}, next-intl ${v.nextIntl}, Vitest ${v.vitest}, Sass ${v.sass}, Node ${v.node}`,
 				`Backend: .NET ${v.dotnet || "10.0"} (C# 13)`,
 				"Zustand stores: invoicesStore, merchantsStore, scansStore, preferencesStore (all IndexedDB-persisted)",
 				"Bounded contexts: General (Core), Auth (Core.Auth), Invoices (Domain), Common (Shared)",

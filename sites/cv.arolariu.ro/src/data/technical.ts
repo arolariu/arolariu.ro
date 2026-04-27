@@ -23,7 +23,7 @@ export const techInfo = {
   }),
   dependencies: [
     {name: "Svelte", version: "5"},
-    {name: "Tailwind CSS", version: "4"},
+    {name: "Sass", version: "SCSS Modules"},
     {name: "Vite", version: "7"},
     {name: "TypeScript", version: "5.9.2"},
   ],

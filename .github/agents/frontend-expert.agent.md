@@ -57,7 +57,7 @@ npm run generate             # Generate env, i18n, GraphQL types
 
 ## Project Knowledge
 
-- **Tech Stack:** Next.js 16.1.6, React 19.2.4, TypeScript 5.9.3, Tailwind CSS 4.1.18, Zustand 5.0.11, Clerk (@clerk/nextjs 6.37.4), next-intl 4.8.3
+- **Tech Stack:** Next.js 16.2, React 19.2, TypeScript 6.0, Sass, Zustand 5.0, Clerk 7.0, next-intl 4.9
 - **Node Version:** >=24.x
 - **Package Manager:** npm (not yarn or pnpm)
 
@@ -225,7 +225,7 @@ When implementing a feature, ensure all artifacts are created:
 1. **NEVER** commit API keys, tokens, secrets, or credentials
 2. **NEVER** use `any` type—TypeScript strict mode is enforced
 3. **NEVER** skip tests for new code
-4. **NEVER** use inline styles—use Tailwind CSS classes
+4. **NEVER** use inline styles—use CSS modules, SCSS modules, or shared component classes
 5. **NEVER** prop drill more than 2 levels—use Context or Zustand
 6. **NEVER** use raw strings in UI—use next-intl for i18n
 7. **ALWAYS** run `npm run lint` and `npm run format` before committing
@@ -265,14 +265,14 @@ Before finalizing any implementation, verify:
 - Modifying shared component library (`packages/components/`)
 - Changing routing structure
 - Adding new Context providers
-- Modifying `next.config.ts` or `tailwind.config.ts`
+- Modifying `next.config.ts`
 
 ### Never Do
 - Use `any` type (TypeScript strict mode enforced)
 - Commit secrets or API keys
 - Modify `node_modules/` or generated files
 - Skip writing tests for new code
-- Use inline styles instead of Tailwind
+- Use inline styles (use CSS modules, SCSS modules, or shared component classes)
 - Prop drill more than 2 levels
 - Use raw strings in UI (use i18n)
 - Auto-create files without user confirmation
