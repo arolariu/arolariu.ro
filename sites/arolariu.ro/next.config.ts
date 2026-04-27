@@ -3,29 +3,13 @@
  * @module sites/arolariu.ro/next.config
  *
  * @remarks
- * Centralizes security headers (CSP), image remote patterns, build-time env injection,
+ * Centralizes browser safety headers, image remote patterns, build-time env injection,
  * and plugin configuration (e.g., next-intl).
  */
 
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
-
-const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
-const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
-const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" : "";
-const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
-const cspHeader = `
-    default-src 'self' blob: data: https: ${trustedDomains};
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
-    style-src 'self' 'unsafe-inline' https: ${trustedDomains};
-    img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
-    worker-src 'self' blob: data: https: ${trustedDomains};
-    base-uri 'none';
-    object-src 'none';
-    frame-ancestors 'self';
-    ${upgradeInsecure}
-`;
 
 const isCdnEnabled = process.env["USE_CDN"] === "true";
 console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
@@ -105,15 +89,6 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          isDebugBuild
-            ? {
-                key: "Content-Security-Policy-Report-Only",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              }
-            : {
-                key: "Content-Security-Policy",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",

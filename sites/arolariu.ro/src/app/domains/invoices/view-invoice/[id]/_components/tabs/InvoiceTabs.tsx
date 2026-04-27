@@ -1,10 +1,20 @@
+/**
+ * @fileoverview Invoice detail tabs component with recipes, metadata, and AI assistant.
+ *
+ * Displays AI-generated recipes, invoice metadata, and local AI assistant panel
+ * in tabbed layout for invoice detail view.
+ *
+ * @module app/domains/invoices/view-invoice/[id]/_components/tabs/InvoiceTabs
+ */
+
 "use client";
 
 import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbToolsKitchen2} from "react-icons/tb";
+import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle, TbMessage, TbToolsKitchen2} from "react-icons/tb";
+import {LocalInvoiceAssistantPanel} from "../../../../_components/ai/LocalInvoiceAssistantPanel";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
 
@@ -46,22 +56,50 @@ function getComplexityEmoji(complexity: RecipeComplexity): string {
   }
 }
 
+function createIngredientListItems(ingredients: ReadonlyArray<string>): Array<Readonly<{ingredient: string; key: string}>> {
+  const occurrenceCounts = new Map<string, number>();
+
+  return ingredients.map((ingredient) => {
+    const occurrence = (occurrenceCounts.get(ingredient) ?? 0) + 1;
+    occurrenceCounts.set(ingredient, occurrence);
+
+    return {
+      ingredient,
+      key: `${ingredient}-${occurrence}`,
+    };
+  });
+}
+
 /**
- * Invoice tabs component displaying possible recipes and additional metadata.
+ * Invoice detail tabs component with recipes, metadata, and AI assistant.
+ *
+ * @returns Tabbed interface with three views: recipes, metadata, and local AI chat.
  *
  * @remarks
- * Renders two tabs:
- * - **Possible Recipes**: AI-generated recipe suggestions with full details
- * - **Additional Info**: Invoice metadata key-value pairs
+ * **Tabs:**
+ * 1. **Possible Recipes**: AI-generated recipe suggestions with full details
+ *    - Recipe name, description, complexity badge
+ *    - Time breakdown (preparation + cooking)
+ *    - Ingredients list from invoice line items
+ *    - Cooking instructions (if available)
+ *    - External recipe link (if valid URL)
+ * 2. **Additional Info**: Invoice metadata key-value pairs
+ * 3. **AI Assistant**: Local-only AI chat scoped to current invoice
  *
- * **Recipe Features**:
- * - Full recipe cards with name, description, complexity badge
- * - Time breakdown (preparation + cooking)
- * - Ingredients list from invoice products
- * - Instructions display
- * - External recipe link (if available)
+ * **Privacy:**
+ * - AI assistant scoped to single invoice (`activeInvoiceId`)
+ * - All processing client-side (no server requests)
  *
- * @returns Invoice tabs component with recipe and metadata display
+ * **Accessibility:**
+ * - Icon + text labels for tabs
+ * - Empty states with descriptive messages
+ * - Semantic HTML for recipe cards
+ *
+ * @example
+ * ```tsx
+ * // Used in invoice detail page
+ * <InvoiceTabs />
+ * ```
  */
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
@@ -86,6 +124,12 @@ export function InvoiceTabs(): React.JSX.Element {
               <TbInfoCircle className={styles["tabIcon"]} />
               {t("tabs.additionalInfo")}
             </TabsTrigger>
+            <TabsTrigger
+              value='assistant'
+              className={styles["tabsTrigger"]}>
+              <TbMessage className={styles["tabIcon"]} />
+              {t("tabs.aiAssistant")}
+            </TabsTrigger>
           </TabsList>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
@@ -95,10 +139,13 @@ export function InvoiceTabs(): React.JSX.Element {
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
                 {invoice.possibleRecipes.map((recipe) => {
-                  const hasValidReference =
+                  const hasInstructions = recipe.instructions.trim().length > 0;
+                  const hasValidReference = Boolean(
                     recipe.referenceForMoreDetails
                     && recipe.referenceForMoreDetails !== "https://arolariu.ro"
-                    && recipe.referenceForMoreDetails !== "";
+                    && recipe.referenceForMoreDetails !== "",
+                  );
+                  const ingredientItems = createIngredientListItems(recipe.ingredients);
 
                   return (
                     <Card
@@ -121,42 +168,42 @@ export function InvoiceTabs(): React.JSX.Element {
                             <TbClock className={styles["tabIcon"]} />
                             <span>{t("recipe.duration", {minutes: String(recipe.approximateTotalDuration)})}</span>
                           </div>
-                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
+                          {recipe.preparationTime > 0 && recipe.cookingTime > 0 ? (
                             <div className={styles["recipeDetailMuted"]}>
                               {t("recipe.prepCook", {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
                             </div>
-                          )}
+                          ) : null}
                         </div>
 
                         {/* Ingredients List */}
-                        {recipe.ingredients.length > 0 && (
+                        {ingredientItems.length > 0 ? (
                           <div className={styles["ingredientsSection"]}>
                             <div className={styles["ingredientsHeader"]}>
                               <TbToolsKitchen2 className={styles["sectionIcon"]} />
                               <h4 className={styles["sectionTitle"]}>{t("recipe.ingredients")}</h4>
                             </div>
                             <ul className={styles["ingredientsList"]}>
-                              {recipe.ingredients.map((ingredient, index) => (
+                              {ingredientItems.map(({ingredient, key}) => (
                                 <li
-                                  key={`${ingredient}-${index}`}
+                                  key={key}
                                   className={styles["ingredientItem"]}>
                                   {ingredient}
                                 </li>
                               ))}
                             </ul>
                           </div>
-                        )}
+                        ) : null}
 
                         {/* Instructions */}
-                        {recipe.instructions && (
+                        {hasInstructions ? (
                           <div className={styles["instructionsSection"]}>
                             <h4 className={styles["sectionTitle"]}>{t("recipe.instructions")}</h4>
                             <p className={styles["instructionsText"]}>{recipe.instructions}</p>
                           </div>
-                        )}
+                        ) : null}
 
                         {/* External Link */}
-                        {hasValidReference && (
+                        {hasValidReference ? (
                           <Button
                             variant='link'
                             className={styles["recipeLink"]}
@@ -169,7 +216,7 @@ export function InvoiceTabs(): React.JSX.Element {
                               <TbExternalLink className={styles["externalLinkIcon"]} />
                             </a>
                           </Button>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   );
@@ -202,6 +249,14 @@ export function InvoiceTabs(): React.JSX.Element {
                 <p className={styles["emptyStateText"]}>{t("empty.additionalInfo")}</p>
               </div>
             )}
+          </TabsContent>
+          <TabsContent
+            value='assistant'
+            className={styles["tabsContent"]}>
+            <LocalInvoiceAssistantPanel
+              activeInvoiceId={invoice.id}
+              invoices={[invoice]}
+            />
           </TabsContent>
         </CardContent>
       </Tabs>

@@ -3150,6 +3150,98 @@
       "title": "How It Works"
     }
   },
+  "IMS--LocalInvoiceAssistant": {
+    "actions": {
+      "clearCache": "Clear cached model",
+      "dismissError": "Dismiss error",
+      "download": "Download local model",
+      "downloadWithWarning": "Download anyway",
+      "retryHardware": "Retry hardware check",
+      "reset": "Reset chat",
+      "send": "Send",
+      "stop": "Stop generating"
+    },
+    "chat": {
+      "inputLabel": "Ask a local invoice question",
+      "inputPlaceholder": "Ask about your local invoices...",
+      "ready": "Local model is ready",
+      "title": "Local-only invoice assistant"
+    },
+    "deviceCompatibility": {
+      "gpuFeatures": "GPU features: {features}",
+      "gpuLimits": "GPU buffer limit: {maxBufferMB} MB",
+      "gpuStorageBufferLimit": "GPU storage buffer binding limit: {maxStorageBufferMB} MB",
+      "logicalCores": "CPU cores: {cores}",
+      "memoryGB": "Device memory: {memory} GB",
+      "storageUnavailable": "Storage quota cannot be verified. Download at your own risk.",
+      "title": "Device compatibility"
+    },
+    "errors": {
+      "title": "Assistant error"
+    },
+    "hardware": {
+      "checking": "Checking whether this device can run the local assistant...",
+      "ineligibleMessage": "Your device does not meet the minimum hardware requirements for the local-only AI assistant. Use another device or wait until the remote AI assistant feature is available.",
+      "ineligibleTitle": "Local AI assistant unavailable"
+    },
+    "model": {
+      "description": "Downloads a small language model for private, local-only invoice chat.",
+      "host": "Model artifacts are downloaded from {host}.",
+      "progress": "Download progress: {progress}%",
+      "recommendedModel": "Recommended model: {modelName}",
+      "size": "Model size: ~{sizeMB} MB (cached in browser)",
+      "title": "Prepare local model"
+    },
+    "cache": {
+      "behavior": "Model artifacts are cached in your browser using the Cache API. Your invoice data remains separate in IndexedDB.",
+      "clearConfirm": "Clear cached model \"{modelName}\"? You will need to re-download it (~{sizeMB} MB) to use the assistant again.",
+      "clearImpact": "Clearing the cache removes the local model artifacts but does not delete your invoice data.",
+      "source": "Model artifacts downloaded from trusted source: {host}"
+    },
+    "privacy": "Invoice data stays in this browser. Model artifacts are downloaded from the approved external host.",
+    "benchmark": {
+      "title": "Benchmark your device",
+      "description": "Test local model speed on your current browser and hardware.",
+      "runButton": "Run benchmark",
+      "running": "Running benchmark...",
+      "results": {
+        "title": "Latest benchmark",
+        "model": "Model: {modelName}",
+        "firstToken": "First token: {latencyMs}ms",
+        "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
+        "duration": "Duration: {durationMs}ms",
+        "characters": "{charsPerSec} chars/sec"
+      },
+      "latestGeneration": {
+        "title": "Latest generation stats",
+        "model": "Model: {modelName}",
+        "firstToken": "First token: {latencyMs}ms",
+        "throughput": "Throughput: {chunksPerSec} tokens/sec (estimated)",
+        "duration": "Duration: {durationMs}ms",
+        "characters": "{charsPerSec} chars/sec"
+      }
+    },
+    "status": {
+      "compatibilityUnknown": "Some hardware details are unavailable, so performance may vary.",
+      "storageWarning": "Storage availability cannot be verified. Ensure you have at least 6 GB of free disk space before downloading."
+    },
+    "suggestedPrompts": {
+      "summarizeSpending": "Summarize my total spending",
+      "largestInvoice": "Which invoice is largest?",
+      "topMerchant": "Which merchant appears most often?",
+      "spendingByCurrency": "Show spending by currency",
+      "title": "Suggested questions"
+    },
+    "analyticsPreview": {
+      "title": "Quick insights",
+      "totalSpendLabel": "Total spending",
+      "invoiceCountLabel": "Invoices",
+      "noData": "No invoice data available",
+      "currencyBreakdown": "By currency",
+      "topMerchantLabel": "Top merchant",
+      "topMerchantInvoiceCount": "{count} invoices"
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {
@@ -3806,6 +3898,7 @@
       },
       "tabs": {
         "additionalInfo": "Additional Info",
+        "aiAssistant": "AI Assistant",
         "possibleRecipes": "Possible Recipes"
       }
     },
