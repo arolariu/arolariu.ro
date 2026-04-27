@@ -379,9 +379,7 @@
           placeholder="Type a command or search..."
           class={styles.input}
           aria-label="Search commands" />
-        <kbd class={styles.escapeKey}>
-          ESC
-        </kbd>
+        <kbd class={styles.escapeKey}> ESC </kbd>
       </div>
 
       <!-- Command list -->
@@ -417,9 +415,7 @@
                     {/if}
                   </div>
                   {#if isSelected}
-                    <kbd class={styles.enterKey}>
-                      Enter
-                    </kbd>
+                    <kbd class={styles.enterKey}> Enter </kbd>
                   {/if}
                 </button>
               {/each}

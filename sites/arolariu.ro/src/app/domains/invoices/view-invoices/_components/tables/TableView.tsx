@@ -197,7 +197,9 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <span className={styles["printOnly"]}>{invoice.id}</span>
             </TableCell>
             <TableCell>
-              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{formatEnum(InvoiceCategory, invoice.category) || "NOT_DEFINED"}</Badge>
+              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>
+                {formatEnum(InvoiceCategory, invoice.category) || "NOT_DEFINED"}
+              </Badge>
             </TableCell>
             <TableCell>
               {invoice.paymentInformation?.transactionDate ? (

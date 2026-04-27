@@ -58,20 +58,16 @@
           <nav class={styles.nav}>
             <a
               href="#about"
-              class={styles.navLink}
-              >{ui.navigation.about}</a>
+              class={styles.navLink}>{ui.navigation.about}</a>
             <a
               href="#experience"
-              class={styles.navLink}
-              >{ui.navigation.experience}</a>
+              class={styles.navLink}>{ui.navigation.experience}</a>
             <a
               href="#skills"
-              class={styles.navLink}
-              >{ui.navigation.skills}</a>
+              class={styles.navLink}>{ui.navigation.skills}</a>
             <a
               href="#contact"
-              class={styles.navLink}
-              >{ui.navigation.contact}</a>
+              class={styles.navLink}>{ui.navigation.contact}</a>
           </nav>
         {/if}
         <ThemeToggle />

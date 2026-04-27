@@ -364,8 +364,7 @@
                   <p class={styles.proTipTitle}>Pro Tip</p>
                   <p class={styles.proTipText}>
                     Press <kbd class={styles.proTipKey}>⌘</kbd> +
-                    <kbd class={styles.proTipKey}>K</kbd> anywhere to quickly access any action
-                    or navigate to any section.
+                    <kbd class={styles.proTipKey}>K</kbd> anywhere to quickly access any action or navigate to any section.
                   </p>
                 </div>
               </div>
@@ -417,4 +416,3 @@
     </div>
   </div>
 {/if}
-

@@ -4,11 +4,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchant} from "./useMerchant";
 
 // Type alias for store selector to improve readability
-type MerchantsStoreSelector = (state: {
-  entities: Merchant[];
-  upsertEntity: (merchant: Merchant) => void;
-  hasHydrated: boolean;
-}) => unknown;
+type MerchantsStoreSelector = (state: {entities: Merchant[]; upsertEntity: (merchant: Merchant) => void; hasHydrated: boolean}) => unknown;
 
 // Create mock function using vi.hoisted
 const {mockFetchMerchant, mockUpsertEntity, mockUseMerchantsStore} = vi.hoisted(() => ({

@@ -64,10 +64,7 @@ export function detectPdfDevice(signals: Readonly<PdfDeviceSignals>): PdfDeviceP
  * @param event - Browser or user event that affects the native PDF surface.
  * @returns The next native PDF surface status.
  */
-export function getNextPdfSurfaceStatus(
-  currentStatus: PdfSurfaceStatus,
-  event: PdfSurfaceEvent,
-): PdfSurfaceStatus {
+export function getNextPdfSurfaceStatus(currentStatus: PdfSurfaceStatus, event: PdfSurfaceEvent): PdfSurfaceStatus {
   switch (event) {
     case "load":
       return "ready";

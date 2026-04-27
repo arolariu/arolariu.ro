@@ -16,7 +16,10 @@ export default function ProfileError({error, reset}: ProfileErrorProps): React.J
   }, [error]);
 
   return (
-    <section role="alert" aria-live="assertive" data-scope="my-profile">
+    <section
+      role='alert'
+      aria-live='assertive'
+      data-scope='my-profile'>
       <h1>{t("hero.title")}</h1>
       <p>{t("hero.subtitle")}</p>
       {error.digest ? (
@@ -24,7 +27,9 @@ export default function ProfileError({error, reset}: ProfileErrorProps): React.J
           <span>{t("details.errorIdLabel")}</span> <code>{error.digest}</code>
         </p>
       ) : null}
-      <button type="button" onClick={reset}>
+      <button
+        type='button'
+        onClick={reset}>
         {t("buttons.tryAgain")}
       </button>
     </section>

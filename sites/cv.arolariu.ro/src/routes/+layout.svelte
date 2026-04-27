@@ -47,7 +47,6 @@
 <ScrollProgress />
 <CommandPalette />
 
-<main
-  id="main-content">
+<main id="main-content">
   <slot />
 </main>

@@ -57,8 +57,7 @@
         <span class={styles.separator}>|</span>
         <span class={styles.taglineItem}>
           Solution Architect
-          <span
-            class={cx(styles.taglineUnderline, styles.underlinePurple, heroVisible ? styles.underlineVisible : styles.underlineHidden)}
+          <span class={cx(styles.taglineUnderline, styles.underlinePurple, heroVisible ? styles.underlineVisible : styles.underlineHidden)}
           ></span>
         </span>
         <span class={styles.separator}>|</span>
@@ -72,8 +71,8 @@
 
     <div class={cx(styles.descriptionWrapper, heroVisible ? styles.fadeVisible : styles.fadeHidden)}>
       <p class={styles.description}>
-        {new Date().getFullYear() - 2000}-year-old passionate software engineer based in {author.location}, dedicated to creating
-        innovative solutions and building exceptional digital experiences.
+        {new Date().getFullYear() - 2000}-year-old passionate software engineer based in {author.location}, dedicated to creating innovative
+        solutions and building exceptional digital experiences.
       </p>
     </div>
 

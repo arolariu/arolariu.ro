@@ -121,9 +121,13 @@ export function NutritionCard(): React.JSX.Element {
 
   // Calculate basket composition
   const wholeFood = items.filter((i) =>
-    ([ProductCategory.FRUITS, ProductCategory.VEGETABLES, ProductCategory.MEAT, ProductCategory.FISH] as ProductCategory[]).includes(i.category),
+    ([ProductCategory.FRUITS, ProductCategory.VEGETABLES, ProductCategory.MEAT, ProductCategory.FISH] as ProductCategory[]).includes(
+      i.category,
+    ),
   );
-  const processed = items.filter((i) => ([ProductCategory.BEVERAGES, ProductCategory.BAKED_GOODS] as ProductCategory[]).includes(i.category));
+  const processed = items.filter((i) =>
+    ([ProductCategory.BEVERAGES, ProductCategory.BAKED_GOODS] as ProductCategory[]).includes(i.category),
+  );
   const cleaningOther = items.filter((i) =>
     ([ProductCategory.CLEANING_SUPPLIES, ProductCategory.PERSONAL_CARE, ProductCategory.OTHER] as ProductCategory[]).includes(i.category),
   );

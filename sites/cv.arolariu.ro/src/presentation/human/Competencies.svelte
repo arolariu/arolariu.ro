@@ -44,9 +44,7 @@
           class={styles.heading}>
           Core <span class={styles.accent}>Competencies</span>
         </h2>
-        <p class={styles.description}>
-          A showcase of Alexandru's technical skills and professional competencies that drive his success.
-        </p>
+        <p class={styles.description}> A showcase of Alexandru's technical skills and professional competencies that drive his success. </p>
       </div>
     </AnimatedSection>
 

@@ -184,9 +184,7 @@ On mobile devices, attempts native PDF rendering before showing fallback actions
           <div>
             <h1 class={styles.viewerTitle}>CV - PDF Format</h1>
             <p class={styles.viewerSubtitle}>
-              {isMobile
-                ? "Trying your browser's native PDF viewer first."
-                : "Rendered with your browser's native PDF capabilities."}
+              {isMobile ? "Trying your browser's native PDF viewer first." : "Rendered with your browser's native PDF capabilities."}
             </p>
           </div>
 
@@ -256,9 +254,7 @@ On mobile devices, attempts native PDF rendering before showing fallback actions
               onload={handleNativeLoad}
               onerror={handleNativeError}>
               <div class={styles.fallbackPanel}>
-                <p class={styles.fallbackText}>
-                  Your browser did not expose an inline PDF viewer for this page.
-                </p>
+                <p class={styles.fallbackText}> Your browser did not expose an inline PDF viewer for this page. </p>
                 <button
                   onclick={openInNativeViewer}
                   class={styles.fallbackButton}>
@@ -292,8 +288,7 @@ On mobile devices, attempts native PDF rendering before showing fallback actions
                 {surfaceStatus === "failed" ? "Native PDF preview unavailable" : "Still loading the PDF preview?"}
               </h2>
               <p class={styles.assistanceText}>
-                {statusMessage} You can open the PDF in your browser viewer, download it, print it, or retry the inline
-                preview. {PDF_PRINT_ASSISTANCE_TEXT}
+                {statusMessage} You can open the PDF in your browser viewer, download it, print it, or retry the inline preview. {PDF_PRINT_ASSISTANCE_TEXT}
               </p>
             </div>
 
