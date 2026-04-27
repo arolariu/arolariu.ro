@@ -1,5 +1,9 @@
 import {describe, expect, it, vi} from "vitest";
-import {analyzeLocalAiHardwareEligibility, DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
+import {
+  analyzeLocalAiHardwareEligibility,
+  DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS,
+  type HardwareEligibilityResult,
+} from "./hardwareEligibility";
 
 type TestGpuAdapter = Readonly<{
   features?: ReadonlySet<string>;
@@ -230,5 +234,59 @@ describe("analyzeLocalAiHardwareEligibility", () => {
     expect(result.status).toBe("eligible");
     expect(result.gpu).toBeDefined();
     expect(result.gpu?.features).toEqual([]);
+  });
+
+  it("returns ineligible when the WebGPU adapter probe does not settle", async () => {
+    vi.useFakeTimers();
+    try {
+      let settledResult: HardwareEligibilityResult | null = null;
+
+      void analyzeLocalAiHardwareEligibility({
+        environment: {
+          navigator: createNavigator({
+            gpu: {
+              requestAdapter: vi.fn(() => new Promise<never>(() => {})),
+            },
+          }),
+          Worker: createWorkerConstructor(),
+        },
+      }).then((result) => {
+        settledResult = result;
+      });
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(settledResult?.status).toBe("ineligible");
+      expect(settledResult?.reasons).toContain("webgpu-adapter-unavailable");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("returns unknown when the storage estimate probe does not settle", async () => {
+    vi.useFakeTimers();
+    try {
+      let settledResult: HardwareEligibilityResult | null = null;
+
+      void analyzeLocalAiHardwareEligibility({
+        environment: {
+          navigator: createNavigator({
+            storage: {
+              estimate: vi.fn(() => new Promise<never>(() => {})),
+            },
+          }),
+          Worker: createWorkerConstructor(),
+        },
+      }).then((result) => {
+        settledResult = result;
+      });
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(settledResult?.status).toBe("unknown");
+      expect(settledResult?.reasons).toContain("storage-estimate-unavailable");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

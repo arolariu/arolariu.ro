@@ -13,6 +13,16 @@
 const BYTES_PER_GIB = 1024 ** 3;
 
 /**
+ * Maximum time to wait for browser capability probes before recovering.
+ *
+ * @remarks
+ * Some WebGPU drivers or storage implementations can leave capability probes
+ * pending indefinitely. The assistant must surface an actionable status instead
+ * of keeping the user on the hardware-checking screen forever.
+ */
+const HARDWARE_CAPABILITY_PROBE_TIMEOUT_MS = 3000;
+
+/**
  * Default hardware requirements for local invoice AI assistant.
  *
  * @remarks
@@ -305,7 +315,7 @@ async function getAvailableStorageBytes(storage: StorageManagerLike | undefined)
   }
 
   try {
-    const estimate = await storage.estimate();
+    const estimate = await withHardwareProbeTimeout(storage.estimate());
     if (typeof estimate.quota !== "number") {
       return {status: "unknown"};
     }
@@ -317,6 +327,34 @@ async function getAvailableStorageBytes(storage: StorageManagerLike | undefined)
   } catch {
     return {status: "unknown"};
   }
+}
+
+async function withHardwareProbeTimeout<T>(operation: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
+      timeoutId = undefined;
+      reject(new Error("Hardware capability probe timed out."));
+    }, HARDWARE_CAPABILITY_PROBE_TIMEOUT_MS);
+
+    operation.then(
+      (value) => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+
+        resolve(value);
+      },
+      (error: unknown) => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+
+        reject(error);
+      },
+    );
+  });
 }
 
 function collectStorageCapabilityReason(
@@ -366,7 +404,7 @@ async function collectGpuCapability(navigator: LocalAiHardwareNavigator): Promis
   }
 
   try {
-    const adapter = await navigator.gpu.requestAdapter();
+    const adapter = await withHardwareProbeTimeout(navigator.gpu.requestAdapter());
     if (!adapter) {
       return {ineligibleReason: "webgpu-adapter-unavailable"};
     }
