@@ -55,10 +55,7 @@
                 <div class={cx(styles.cardWrapper, isEven ? styles.cardWrapperLeft : styles.cardWrapperRight)}>
                   <button
                     onclick={() => toggleExpanded(index)}
-                    class={cx(
-                      styles.cardButton,
-                      isExpanded ? styles.cardButtonExpanded : styles.cardButtonCollapsed,
-                    )}
+                    class={cx(styles.cardButton, isExpanded ? styles.cardButtonExpanded : styles.cardButtonCollapsed)}
                     aria-expanded={isExpanded}>
                     <div class={styles.cardHeader}>
                       <div class={styles.cardHeaderContent}>

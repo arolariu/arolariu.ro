@@ -17,9 +17,7 @@
           class={styles.heading}>
           What <span class={styles.accent}>Colleagues Say</span>
         </h2>
-        <p class={styles.description}>
-          Authentic testimonials from Microsoft colleagues who have worked alongside Alexandru.
-        </p>
+        <p class={styles.description}> Authentic testimonials from Microsoft colleagues who have worked alongside Alexandru. </p>
       </div>
     </AnimatedSection>
 

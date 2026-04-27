@@ -119,9 +119,7 @@ This component is automatically rendered by SvelteKit when an error occurs.
     <!-- Debug Info (Development Only) -->
     {#if error?.message && status >= 500}
       <details class={styles.debugSection}>
-        <summary class={styles.debugSummary}>
-          Technical Details
-        </summary>
+        <summary class={styles.debugSummary}> Technical Details </summary>
         <pre class={styles.debugContent}>{error.message}</pre>
       </details>
     {/if}

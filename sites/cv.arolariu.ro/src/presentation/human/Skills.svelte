@@ -140,8 +140,8 @@
                     aria-valuemax={100}>
                     <div
                       class={cx(styles.progressFill, colors.bg)}
-                      style="transform: scaleX({skillBarsVisible ? level / 100 : 0}); transition-delay: {categoryIndex * 100 +
-                        skillIndex * 50}ms;">
+                      style="transform: scaleX({skillBarsVisible ? level / 100 : 0}); transition-delay: {categoryIndex * 100
+                        + skillIndex * 50}ms;">
                     </div>
                   </div>
                 </div>

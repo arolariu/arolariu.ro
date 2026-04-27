@@ -225,9 +225,7 @@ for maximum compatibility with resume processing tools.
         <div class={styles.codeHeaderContent}>
           <div class={styles.fileMeta}>
             <span class={styles.fileName}>alexandru-olariu-cv.json</span>
-            <span class={styles.schemaBadge}>
-              JSON Resume v1.0.0
-            </span>
+            <span class={styles.schemaBadge}> JSON Resume v1.0.0 </span>
           </div>
           <div class={styles.sizeMeta}>
             <span>{activeTab === "formatted" ? formattedJSON.length.toLocaleString() : rawJSON.length.toLocaleString()} chars</span>
@@ -240,8 +238,7 @@ for maximum compatibility with resume processing tools.
         {#if activeTab === "formatted" && showHighlighting}
           <pre class={styles.pre}>{@html highlightedJSON}</pre>
         {:else}
-          <pre class={styles.prePlain}
-            >{activeTab === "formatted" ? formattedJSON : rawJSON}</pre>
+          <pre class={styles.prePlain}>{activeTab === "formatted" ? formattedJSON : rawJSON}</pre>
         {/if}
       </div>
     </div>
@@ -297,18 +294,10 @@ for maximum compatibility with resume processing tools.
         systems that support this format.
       </p>
       <div class={styles.schemaBadgeList}>
-        <span class={cx(styles.schemaChip, styles.schemaChipBlue)}>
-          JSON Resume Compatible
-        </span>
-        <span class={cx(styles.schemaChip, styles.schemaChipGreen)}>
-          ATS Friendly
-        </span>
-        <span class={cx(styles.schemaChip, styles.schemaChipPurple)}>
-          ETag Caching
-        </span>
-        <span class={cx(styles.schemaChip, styles.schemaChipOrange)}>
-          CORS Enabled
-        </span>
+        <span class={cx(styles.schemaChip, styles.schemaChipBlue)}> JSON Resume Compatible </span>
+        <span class={cx(styles.schemaChip, styles.schemaChipGreen)}> ATS Friendly </span>
+        <span class={cx(styles.schemaChip, styles.schemaChipPurple)}> ETag Caching </span>
+        <span class={cx(styles.schemaChip, styles.schemaChipOrange)}> CORS Enabled </span>
       </div>
     </div>
   </div>

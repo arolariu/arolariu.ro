@@ -7,7 +7,7 @@ export default function NotFound(): React.JSX.Element {
     <section>
       <h1>{t("title")}</h1>
       <p>{t("subtitle")}</p>
-      <Link href="/">{t("buttons.returnButton")}</Link>
+      <Link href='/'>{t("buttons.returnButton")}</Link>
     </section>
   );
 }

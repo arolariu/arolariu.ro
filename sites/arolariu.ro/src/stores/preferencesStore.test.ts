@@ -503,5 +503,4 @@ describe("preferencesStore", () => {
       expect(result.current.getState().customThemeColors).toBeNull();
     });
   });
-
 });

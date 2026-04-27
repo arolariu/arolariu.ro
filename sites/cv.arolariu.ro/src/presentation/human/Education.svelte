@@ -57,10 +57,7 @@
                       {education.period}
                     </div>
                     <span
-                      class={cx(
-                        styles.statusBadge,
-                        education.status === "Completed" ? styles.statusCompleted : styles.statusInProgress,
-                      )}>
+                      class={cx(styles.statusBadge, education.status === "Completed" ? styles.statusCompleted : styles.statusInProgress)}>
                       {education.status}
                     </span>
                   </div>

@@ -1,13 +1,8 @@
 "use client";
 
+import {THEME_CSS_PROPS, toPersistedPreferencesState, usePreferencesStore, type PreferencesPersistedState} from "@/stores/preferencesStore";
 import {useRouter} from "next/navigation";
 import {useEffect} from "react";
-import {
-  THEME_CSS_PROPS,
-  toPersistedPreferencesState,
-  usePreferencesStore,
-  type PreferencesPersistedState,
-} from "@/stores/preferencesStore";
 
 /**
  * Client-side subscriber that owns the browser-only effects previously registered
