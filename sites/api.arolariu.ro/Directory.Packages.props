@@ -14,35 +14,35 @@
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
   </ItemGroup>
   <ItemGroup Label="ASP.NET Core Packages">
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.7" />
   </ItemGroup>
   <ItemGroup Label="Entity Framework Core Packages">
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Analyzers" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Cosmos" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Analyzers" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Cosmos" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7" />
   </ItemGroup>
   <ItemGroup Label="Microsoft Extensions Packages">
-    <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.13.1" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.6" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.14.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.7" />
   </ItemGroup>
   <ItemGroup Label="Azure SDK Packages">
-    <PackageVersion Include="Azure.Core" Version="1.53.0" />
+    <PackageVersion Include="Azure.Core" Version="1.54.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
   </ItemGroup>
@@ -55,7 +55,7 @@
     <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
   </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
-    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.58.0" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.59.0" />
   </ItemGroup>
   <ItemGroup Label="Health Checks Packages">
     <PackageVersion Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
@@ -67,13 +67,13 @@
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry Packages">
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
   </ItemGroup>
   <ItemGroup Label="Application Insights Packages">
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="3.1.0" />
