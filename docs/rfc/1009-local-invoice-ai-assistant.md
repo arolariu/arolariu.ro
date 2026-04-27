@@ -376,54 +376,55 @@ identifiers, sharing metadata, scans, raw OCR, and raw implementation IDs. The
 worker entry point accepts same-origin messages only, and the adapter owns
 worker termination during unload and disposal.
 
-### 6.2 Model Artifact Hosts and CSP
+### 6.2 Model Artifact Hosts and Third-Party Compatibility
 
 **Allowed external hosts:**
 
-| Host | Purpose | Artifact Types | CSP Directive |
-|------|---------|----------------|---------------|
-| `https://huggingface.co/mlc-ai` | Model artifacts | Weights (*.bin, *.safetensors), tokenizer config, model config | `connect-src` |
-| `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs` | WebLLM prebuilt libraries | WASM model execution libraries (*.wasm) | `connect-src` |
-| `https://*.blob.core.windows.net` | Azure Blob Storage | Scan upload/download for existing invoice scan flows | `connect-src` |
+| Host | Purpose | Artifact Types |
+|------|---------|----------------|
+| `https://huggingface.co/mlc-ai` | Model artifacts | Weights (*.bin, *.safetensors), tokenizer config, model config |
+| `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs` | WebLLM prebuilt libraries | WASM model execution libraries (*.wasm) |
+| `https://*.blob.core.windows.net` | Azure Blob Storage | Scan upload/download for existing invoice scan flows |
 
-**Model artifact hosts (derived from catalog):**
+The website intentionally does **not** emit a Content Security Policy header for
+now. The previous strict CSP allowlist blocked legitimate analytics and
+experience tooling such as Microsoft Clarity and Hotjar, and required constant
+maintenance as WebLLM, Clerk, scan storage, and third-party browser SDK hosts
+changed. The active policy is therefore simple: no CSP header, plus explicit
+runtime validation at the local AI adapter boundary.
+
+**Model artifact hosts (catalog metadata):**
 
 All models in the selectable catalog (`LOCAL_INVOICE_ASSISTANT_MODELS`) use
 `https://huggingface.co/mlc-ai` as the artifact host for model weights, tokenizer,
-and config files. CSP origins are dynamically derived from catalog entries via
-`deriveUniqueArtifactOrigins()` to ensure CSP stays synchronized with catalog changes.
+and config files. Artifact host metadata remains catalog-owned so future CSP or
+network policy work can be reintroduced without accepting arbitrary user input.
 
 **WebLLM binary library host (explicit runtime dependency):**
 
 WebLLM 0.2.82 fetches prebuilt WASM model execution libraries from
 `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/`.
-This host is explicitly allowed in CSP as `WEBLLM_BINARY_LIBRARY_HOST` constant.
-Source: `@mlc-ai/web-llm/lib/index.js` modelLibURLPrefix (line ~920).
+This host is documented as `WEBLLM_BINARY_LIBRARY_HOST` for transparency. Source:
+`@mlc-ai/web-llm/lib/index.js` modelLibURLPrefix (line ~920).
 
 **Azure Blob Storage (existing invoice scan flows):**
 
-Azure Blob Storage (`https://*.blob.core.windows.net`) is allowed in `connect-src`
-for existing scan upload/download flows:
+Azure Blob Storage (`https://*.blob.core.windows.net`) remains used by existing
+scan upload/download flows:
 - **Upload:** `upload-scans/_context/ScanUploadContext.tsx` uses `fetch(sasUrl)` to upload scans directly to Azure Blob SAS URLs
 - **Download:** `_components/ScanCard.tsx` uses `fetch(scan.blobUrl)` to download scan images for display
 
 This is separate from local AI assistant functionality and predates this RFC.
 Development environments also allow Azurite local emulator (`http://localhost:10000`).
 
-**CSP enforcement:**
-- `connect-src`: Explicit allowlist of model artifact origins (HuggingFace) + WebLLM binary library origin (GitHub raw) + Azure Blob Storage (scan uploads/downloads)
-- `worker-src`: Allows Web Worker creation for WebLLM engine (blob: + trusted domains)
-- `script-src`: Includes `'unsafe-eval'` required for WASM module instantiation
-
 **Security guarantees:**
 1. Arbitrary model IDs from UI/user input are rejected by catalog lookup at adapter boundary
 2. Only curated models from `LOCAL_INVOICE_ASSISTANT_MODELS` are loadable
 3. Artifact host URLs come from trusted catalog metadata, not user input
 4. Upgrade-gated models are excluded until verification
-5. CSP `connect-src` blocks connections to arbitrary origins (no broad `https:`)
-6. Model artifact origins derived from catalog, ensuring CSP/catalog consistency
-7. WebLLM binary library origin explicit and documented (runtime dependency)
-8. Artifact origin derivation is fail-closed: rejects malformed URLs and non-HTTPS protocols
+5. WebLLM binary library origin explicit and documented (runtime dependency)
+6. Artifact origin derivation remains fail-closed for future network policy use:
+   rejects malformed URLs and non-HTTPS protocols
 
 **Preventing malicious model IDs:**
 The `getLocalInvoiceAssistantModelById(modelId: string)` helper ensures only

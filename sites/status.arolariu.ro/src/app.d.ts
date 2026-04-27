@@ -6,6 +6,13 @@
 // this file only tells TypeScript the module is a known extension.
 declare module "*.css";
 
+declare module "*.module.scss" {
+  const classes: Record<string, string>;
+  export default classes;
+}
+
+declare module "*.scss";
+
 declare global {
   namespace App {
     interface Error {}

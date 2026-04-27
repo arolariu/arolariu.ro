@@ -1,0 +1,130 @@
+@use "../styles/breakpoints";
+
+.header {
+  z-index: 50;
+  backdrop-filter: blur(4px);
+  transition: all var(--cv-transition-slow);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+}
+
+.default {
+  border-bottom: 1px solid var(--cv-color-gray-200);
+  background: rgb(249 250 251 / 0.9);
+}
+
+.inverse {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.05);
+  color: var(--cv-color-white);
+  box-shadow: var(--cv-shadow-lg);
+  backdrop-filter: blur(12px);
+}
+
+:global(.dark) .default {
+  border-color: var(--cv-color-gray-700);
+  background: rgb(17 24 39 / 0.9);
+}
+
+.inner {
+  width: min(100%, 80rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+
+  @include breakpoints.at("sm") {
+    padding-inline: 1.5rem;
+  }
+
+  @include breakpoints.at("lg") {
+    padding-inline: 2rem;
+  }
+}
+
+.content {
+  display: flex;
+  height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brandGroup,
+.titleWrap,
+.actions,
+.nav,
+.actionButtons {
+  display: flex;
+  align-items: center;
+}
+
+.brandGroup {
+  gap: 1rem;
+}
+
+.actions {
+  gap: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--cv-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  transition: color var(--cv-transition-slow);
+}
+
+.titleDefault {
+  color: var(--cv-color-gray-900);
+}
+
+:global(.dark) .titleDefault {
+  color: var(--cv-color-gray-100);
+}
+
+.titleInverse {
+  color: var(--cv-color-white);
+}
+
+.nav {
+  display: none;
+  gap: 1.5rem;
+
+  @include breakpoints.at("md") {
+    display: flex;
+  }
+}
+
+.navLink {
+  color: var(--cv-color-gray-700);
+  text-decoration: none;
+  transition: color var(--cv-transition-base);
+}
+
+:global(.dark) .navLink {
+  color: var(--cv-color-gray-300);
+}
+
+.navLink:hover {
+  color: var(--cv-color-blue-600);
+}
+
+:global(.dark) .navLink:hover {
+  color: var(--cv-color-blue-400);
+}
+
+.actionButtons {
+  display: none;
+  gap: 0.75rem;
+
+  @include breakpoints.at("md") {
+    display: flex;
+  }
+}
+
+@media print {
+  .header {
+    display: none;
+  }
+}

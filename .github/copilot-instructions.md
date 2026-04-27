@@ -257,7 +257,7 @@ When making architectural changes:
 - **Framework**: Next.js 16.2 (App Router)
 - **React**: v19.2.4 (with React Server Components)
 - **TypeScript**: v6.0 (strict mode)
-- **Styling**: Tailwind CSS v4.2 + PostCSS
+- **Styling**: Sass + SCSS Modules + CSS Modules
 - **UI Components**: Base UI + CSS Modules
 - **State Management**: Zustand v5.0.12 (4 stores with IndexedDB persistence)
 - **Authentication**: Clerk (@clerk/nextjs v7.0)
@@ -286,7 +286,7 @@ When making architectural changes:
 
 - **ESLint**: 20+ plugins (typescript-eslint, react, sonarjs, security, jsx-a11y, jsdoc, etc.) — see `eslint.config.ts`
 - **TypeScript**: Strictest settings (`strict`, `noImplicitAny`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
-- **Prettier**: v3.8 with organize-imports, svelte, tailwindcss plugins
+- **Prettier**: v3.8 with organize-imports, svelte plugins
 
 > **Details**: See `typescript.instructions.md` for TypeScript configuration and `react.instructions.md` for React/JSX rules.
 

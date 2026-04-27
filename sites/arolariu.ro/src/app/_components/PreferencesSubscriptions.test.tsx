@@ -1,6 +1,6 @@
+import {usePreferencesStore} from "@/stores/preferencesStore";
 import {render} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {usePreferencesStore} from "@/stores/preferencesStore";
 import PreferencesSubscriptions from "./PreferencesSubscriptions";
 
 // Top-level mock so Vitest intercepts the dynamic import("@/lib/actions/cookies") inside the
@@ -81,10 +81,7 @@ describe("PreferencesSubscriptions", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     // The error should be logged (not thrown as unhandled rejection).
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "[PreferencesSubscriptions] locale sync failed",
-      expect.any(Error),
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith("[PreferencesSubscriptions] locale sync failed", expect.any(Error));
 
     consoleErrorSpy.mockRestore();
   });

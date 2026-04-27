@@ -14,7 +14,6 @@
     "@prettier/plugin-oxc",
     "@prettier/plugin-hermes",
     "prettier-plugin-organize-imports",
-    "prettier-plugin-tailwindcss",
     "prettier-plugin-svelte"
   ],
   "printWidth": 140,

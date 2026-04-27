@@ -1,0 +1,69 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--cv-radius-full);
+  background: var(--cv-color-gray-200);
+  cursor: pointer;
+  transition: background-color var(--cv-transition-slow);
+}
+
+.button:hover {
+  background: var(--cv-color-gray-300);
+}
+
+:global(.dark) .button {
+  background: var(--cv-color-gray-800);
+}
+
+:global(.dark) .button:hover {
+  background: var(--cv-color-gray-700);
+}
+
+.iconFrame {
+  position: relative;
+  width: 1.5rem;
+  height: 1.5rem;
+  overflow: hidden;
+}
+
+.sunIcon,
+.moonIcon {
+  position: absolute;
+  inset: 0;
+  transition: transform 500ms ease-in-out;
+}
+
+.sunIcon {
+  transform: translateY(0);
+}
+
+:global(.dark) .sunIcon {
+  transform: translateY(-100%);
+}
+
+.moonIcon {
+  transform: translateY(100%);
+}
+
+:global(.dark) .moonIcon {
+  transform: translateY(0);
+}
+
+.sunSvg,
+.moonSvg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.sunSvg {
+  color: #facc15;
+}
+
+.moonSvg {
+  color: var(--cv-color-blue-500);
+}

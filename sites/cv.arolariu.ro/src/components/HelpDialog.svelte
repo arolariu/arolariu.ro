@@ -1,5 +1,7 @@
 <script lang="ts">
+  import {cx} from "@/lib/utils";
   import {help, techInfo, ui} from "@/data";
+  import styles from "./HelpDialog.module.scss";
 
   // Bindable open flag; parent can bind:open, and we set open=false to close
   let {open = $bindable(false)} = $props();
@@ -131,7 +133,7 @@
       timeline: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
       accessibility: "M13 10V3L4 14h7v7l9-11h-7z",
     };
-    return icons[icon] || icons.document;
+    return icons[icon] ?? icons["document"] ?? "";
   }
 </script>
 
@@ -139,7 +141,7 @@
   <!-- Overlay -->
   <div
     bind:this={container}
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+    class={styles.overlay}
     role="presentation"
     onclick={handleOverlayClick}
     onkeydown={handleKeydown}>
@@ -150,16 +152,15 @@
       aria-modal="true"
       aria-labelledby="help-dialog-title"
       aria-describedby="help-dialog-description"
-      class="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden max-h-[90vh] animate-slide-up"
+      class={styles.panel}
       tabindex="-1"
       onkeydown={handleKeydown}>
       <!-- Header -->
-      <header
-        class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+      <header class={styles.header}>
+        <div class={styles.headerTitleGroup}>
+          <div class={styles.headerIconFrame}>
             <svg
-              class="w-5 h-5 text-white"
+              class={styles.headerIcon}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24">
@@ -173,19 +174,19 @@
           <div>
             <h3
               id="help-dialog-title"
-              class="text-xl font-bold text-gray-900 dark:text-white">
+              class={styles.title}>
               {help.title}
             </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Learn about this CV website</p>
+            <p class={styles.subtitle}>Learn about this CV website</p>
           </div>
         </div>
         <button
           bind:this={closeBtn}
           onclick={() => (open = false)}
-          class="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          class={styles.closeButton}
           aria-label={ui.buttons.close}>
           <svg
-            class="w-5 h-5"
+            class={styles.closeIcon}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24">
@@ -199,68 +200,62 @@
       </header>
 
       <!-- Tabs -->
-      <div class="flex border-b border-gray-200 dark:border-gray-700 px-6">
+      <div class={styles.tabs}>
         <button
           onclick={() => (activeTab = "info")}
-          class="px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer {activeTab === 'info'
-            ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
+          class={cx(styles.tab, activeTab === "info" ? styles.tabActive : styles.tabIdle)}>
           Technical Info
         </button>
         <button
           onclick={() => (activeTab = "shortcuts")}
-          class="px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer {activeTab === 'shortcuts'
-            ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
+          class={cx(styles.tab, activeTab === "shortcuts" ? styles.tabActive : styles.tabIdle)}>
           Keyboard Shortcuts
         </button>
         <button
           onclick={() => (activeTab = "features")}
-          class="px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer {activeTab === 'features'
-            ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
+          class={cx(styles.tab, activeTab === "features" ? styles.tabActive : styles.tabIdle)}>
           Features
         </button>
       </div>
 
       <!-- Content -->
-      <div class="p-6 overflow-y-auto max-h-[60vh]">
+      <div class={styles.content}>
         <p
           id="help-dialog-description"
-          class="sr-only">{help.title}</p>
+          class={styles.screenReaderOnly}>{help.title}</p>
 
         {#if activeTab === "info"}
           <!-- Technical Information -->
-          <div class="space-y-6">
+          <div class={styles.stackLarge}>
             <!-- Quick Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{techInfo.version}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Version</div>
+            <div class={styles.statsGrid}>
+              <div class={styles.statCard}>
+                <div class={cx(styles.statValue, styles.statPurple)}>{techInfo.version}</div>
+                <div class={styles.statLabel}>Version</div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{techInfo.framework}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Framework</div>
+              <div class={styles.statCard}>
+                <div class={cx(styles.statValue, styles.statBlue)}>{techInfo.framework}</div>
+                <div class={styles.statLabel}>Framework</div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-green-600 dark:text-green-400">100</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Lighthouse Score</div>
+              <div class={styles.statCard}>
+                <div class={cx(styles.statValue, styles.statGreen)}>100</div>
+                <div class={styles.statLabel}>Lighthouse Score</div>
               </div>
-              <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-                <div class="text-2xl font-bold text-pink-600 dark:text-pink-400">PWA</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Installable</div>
+              <div class={styles.statCard}>
+                <div class={cx(styles.statValue, styles.statPink)}>PWA</div>
+                <div class={styles.statLabel}>Installable</div>
               </div>
             </div>
 
             <!-- Info Table -->
-            <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{ui.labels.cloudProvider}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+            <div class={styles.tableFrame}>
+              <table class={styles.table}>
+                <tbody>
+                  <tr class={styles.tableRow}>
+                    <td class={styles.tableLabel}>{ui.labels.cloudProvider}</td>
+                    <td class={styles.tableValueInline}>
                       <svg
-                        class="w-4 h-4 text-blue-500"
+                        class={styles.inlineIconBlue}
                         viewBox="0 0 96 96"
                         fill="currentColor">
                         <path d="M47.5 24.2L25.9 37.1v25.7l21.6 12.9 21.6-12.9V37.1L47.5 24.2z" />
@@ -268,28 +263,28 @@
                       {techInfo.cloudProvider} ({techInfo.region})
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{ui.labels.commitSha}</td>
-                    <td class="px-4 py-3 text-sm">
-                      <code class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-700 dark:text-gray-300 font-mono text-xs">
+                  <tr class={styles.tableRow}>
+                    <td class={styles.tableLabel}>{ui.labels.commitSha}</td>
+                    <td class={styles.tableValue}>
+                      <code class={styles.code}>
                         {techInfo.commitSha}
                       </code>
                     </td>
                   </tr>
-                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{ui.labels.buildTime}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{techInfo.buildTime}</td>
+                  <tr class={styles.tableRow}>
+                    <td class={styles.tableLabel}>{ui.labels.buildTime}</td>
+                    <td class={styles.tableValue}>{techInfo.buildTime}</td>
                   </tr>
-                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{ui.labels.sourceCode}</td>
-                    <td class="px-4 py-3 text-sm">
+                  <tr class={styles.tableRow}>
+                    <td class={styles.tableLabel}>{ui.labels.sourceCode}</td>
+                    <td class={styles.tableValue}>
                       <a
                         href={techInfo.sourceCodeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                        class={styles.sourceLink}>
                         <svg
-                          class="w-4 h-4"
+                          class={styles.sourceIcon}
                           fill="currentColor"
                           viewBox="0 0 24 24">
                           <path
@@ -297,7 +292,7 @@
                         </svg>
                         View Repository
                         <svg
-                          class="w-3 h-3"
+                          class={styles.externalIcon}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24">
@@ -316,12 +311,12 @@
 
             <!-- Dependencies -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{ui.labels.dependencies}</h4>
-              <div class="flex flex-wrap gap-2">
+              <h4 class={styles.subheading}>{ui.labels.dependencies}</h4>
+              <div class={styles.dependencyList}>
                 {#each techInfo.dependencies as dep}
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
-                    <span class="font-medium text-gray-900 dark:text-white">{dep.name}</span>
-                    <span class="text-gray-500 dark:text-gray-400">{dep.version}</span>
+                  <span class={styles.dependencyPill}>
+                    <span class={styles.dependencyName}>{dep.name}</span>
+                    <span class={styles.dependencyVersion}>{dep.version}</span>
                   </span>
                 {/each}
               </div>
@@ -329,35 +324,33 @@
           </div>
         {:else if activeTab === "shortcuts"}
           <!-- Keyboard Shortcuts -->
-          <div class="space-y-4">
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4"> Use these keyboard shortcuts for faster navigation and actions. </p>
-            <div class="space-y-2">
+          <div class={styles.stackMedium}>
+            <p class={styles.helperText}> Use these keyboard shortcuts for faster navigation and actions. </p>
+            <div class={styles.shortcutList}>
               {#each shortcuts as shortcut}
-                <div
-                  class="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1">
+                <div class={styles.shortcutRow}>
+                  <div class={styles.shortcutKeyGroup}>
+                    <div class={styles.keyGroup}>
                       {#each shortcut.keys as key}
-                        <kbd
-                          class="px-2 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs font-mono text-gray-700 dark:text-gray-300 min-w-[24px] text-center">
+                        <kbd class={styles.shortcutKey}>
                           {key}
                         </kbd>
                       {/each}
                     </div>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">{shortcut.description}</span>
-                    <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-500 dark:text-gray-400">
+                  <div class={styles.shortcutDescription}>
+                    <span class={styles.shortcutText}>{shortcut.description}</span>
+                    <span class={styles.shortcutCategory}>
                       {shortcut.category}
                     </span>
                   </div>
                 </div>
               {/each}
             </div>
-            <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-              <div class="flex items-start gap-3">
+            <div class={styles.proTip}>
+              <div class={styles.proTipContent}>
                 <svg
-                  class="w-5 h-5 text-blue-500 mt-0.5"
+                  class={styles.proTipIcon}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -368,11 +361,10 @@
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p class="text-sm font-medium text-blue-900 dark:text-blue-100">Pro Tip</p>
-                  <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                    Press <kbd class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">⌘</kbd> +
-                    <kbd class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs font-mono">K</kbd> anywhere to quickly access any action
-                    or navigate to any section.
+                  <p class={styles.proTipTitle}>Pro Tip</p>
+                  <p class={styles.proTipText}>
+                    Press <kbd class={styles.proTipKey}>⌘</kbd> +
+                    <kbd class={styles.proTipKey}>K</kbd> anywhere to quickly access any action or navigate to any section.
                   </p>
                 </div>
               </div>
@@ -380,16 +372,15 @@
           </div>
         {:else if activeTab === "features"}
           <!-- Features Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class={styles.featureGrid}>
             {#each features as feature, i}
               <div
-                class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-purple-500/50 dark:hover:border-purple-400/50 transition-all hover:shadow-md group"
+                class={styles.featureCard}
                 style="animation-delay: {i * 50}ms;">
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div class={styles.featureCardContent}>
+                  <div class={styles.featureIconFrame}>
                     <svg
-                      class="w-5 h-5 text-purple-600 dark:text-purple-400"
+                      class={styles.featureIcon}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor">
@@ -401,8 +392,8 @@
                     </svg>
                   </div>
                   <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">{feature.title}</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{feature.description}</p>
+                    <h4 class={styles.featureTitle}>{feature.title}</h4>
+                    <p class={styles.featureDescription}>{feature.description}</p>
                   </div>
                 </div>
               </div>
@@ -412,12 +403,12 @@
       </div>
 
       <!-- Footer -->
-      <footer class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-500 dark:text-gray-400"> Built with care using modern web technologies </p>
+      <footer class={styles.footer}>
+        <div class={styles.footerContent}>
+          <p class={styles.footerText}> Built with care using modern web technologies </p>
           <button
             onclick={() => (open = false)}
-            class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-medium rounded-lg transition-all hover:shadow-lg cursor-pointer">
+            class={styles.footerButton}>
             {ui.buttons.close}
           </button>
         </div>
@@ -425,40 +416,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.2s ease-out;
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.3s ease-out;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .animate-fade-in,
-    .animate-slide-up {
-      animation: none;
-    }
-  }
-</style>

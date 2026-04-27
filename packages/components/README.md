@@ -28,7 +28,7 @@ _A comprehensive collection of 71+ beautifully crafted React components built on
 
 - **🎨 Beautiful by Default** - Carefully designed components that look great out of the box
 - **♿ Accessibility First** - Built on Base UI primitives with strong keyboard and screen reader support
-- **🧩 CSS Modules Architecture** - Scoped `.module.css` styling with no Tailwind dependency inside the library
+- **🧩 CSS Modules Architecture** - Scoped `.module.css` styling inside the library
 - **🌈 OKLCH Design Tokens** - Theme every component with `--ac-*` CSS custom properties such as `--ac-primary` and `--ac-radius-md`
 - **⚡ Performance Optimized** - Tree-shakeable exports, minimal bundle impact, and source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools

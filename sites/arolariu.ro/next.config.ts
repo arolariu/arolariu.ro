@@ -3,76 +3,13 @@
  * @module sites/arolariu.ro/next.config
  *
  * @remarks
- * Centralizes security headers (CSP), image remote patterns, build-time env injection,
+ * Centralizes browser safety headers, image remote patterns, build-time env injection,
  * and plugin configuration (e.g., next-intl).
  */
 
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
-import {deriveUniqueArtifactOrigins, WEBLLM_BINARY_LIBRARY_HOST} from "./src/app/domains/invoices/_components/ai/modelArtifactHosts";
-import {LOCAL_INVOICE_ASSISTANT_MODELS} from "./src/app/domains/invoices/_components/ai/modelCatalog";
-
-const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
-const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
-const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" : "";
-const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
-
-/**
- * Azure Blob Storage CSP origins for scan upload/download.
- *
- * @remarks
- * Required for existing scan upload/download flows:
- * - `upload-scans/_context/ScanUploadContext.tsx`: Direct `fetch(sasUrl)` to Azure Blob SAS URLs
- * - `_components/ScanCard.tsx`: Direct `fetch(scan.blobUrl)` for scan image downloads
- *
- * Matches existing image remote pattern `**.blob.core.windows.net`.
- *
- * **Production**: Azure Blob Storage (*.blob.core.windows.net)
- * **Development**: Azurite local emulator (localhost:10000) for testing
- */
-const azureBlobOrigins = isProduction
-  ? "https://*.blob.core.windows.net"
-  : "https://*.blob.core.windows.net http://localhost:10000 http://127.0.0.1:10000";
-
-/**
- * Local AI assistant CSP origins for model artifacts and WebLLM libraries.
- *
- * @remarks
- * **Model artifact origins (derived from catalog):**
- * Extracts unique CSP origins from all selectable model `artifactHost` URLs.
- * Ensures CSP stays in sync with catalog changes.
- *
- * **WebLLM binary library origin (explicit):**
- * Required for WebLLM 0.2.82 prebuilt WASM model libraries.
- * Source: `@mlc-ai/web-llm/lib/index.js` modelLibURLPrefix.
- * Not derived from catalog because it's a runtime dependency.
- *
- * **CSP usage:**
- * - Model artifacts (HuggingFace): model weights, tokenizer, config
- * - Binary libraries (GitHub raw): WebLLM WASM execution libraries
- *
- * **Security:**
- * - Explicit allowlist, not broad `https:`
- * - Derived origins update automatically when catalog changes
- * - Binary library origin is explicit and documented
- */
-const modelArtifactOrigins = deriveUniqueArtifactOrigins(LOCAL_INVOICE_ASSISTANT_MODELS.map((model) => model.artifactHost));
-const webLlmBinaryLibraryOrigin = WEBLLM_BINARY_LIBRARY_HOST;
-const webLlmCspOrigins = [...modelArtifactOrigins, webLlmBinaryLibraryOrigin].join(" ");
-
-const cspHeader = `
-    default-src 'self' blob: data: ${trustedDomains};
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
-    style-src 'self' 'unsafe-inline' https: ${trustedDomains};
-    img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
-    worker-src 'self' blob: data: ${trustedDomains};
-    connect-src 'self' ${trustedDomains} ${azureBlobOrigins} ${webLlmCspOrigins};
-    base-uri 'none';
-    object-src 'none';
-    frame-ancestors 'self';
-    ${upgradeInsecure}
-`;
 
 const isCdnEnabled = process.env["USE_CDN"] === "true";
 console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
@@ -152,15 +89,6 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          isDebugBuild
-            ? {
-                key: "Content-Security-Policy-Report-Only",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              }
-            : {
-                key: "Content-Security-Policy",
-                value: cspHeader.replace(/\n/gu, "").trim(),
-              },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",

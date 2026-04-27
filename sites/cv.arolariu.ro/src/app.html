@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-US" class="h-full">
+<html lang="en-US" class="cv-html">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -175,14 +175,14 @@
 	</head>
 	<body
 		data-sveltekit-preload-data="hover"
-		class="h-full bg-white dark:bg-black transition-colors duration-300"
+		class="cv-body"
 	>
 		%sveltekit.body%
 		<noscript>
-			<div class="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
-				<div class="text-center p-8">
-					<h1 class="text-2xl font-bold mb-4">JavaScript Required</h1>
-					<p class="text-gray-600 dark:text-gray-400">
+			<div class="cv-noscript">
+				<div class="cv-noscript__content">
+					<h1 class="cv-noscript__title">JavaScript Required</h1>
+					<p class="cv-noscript__description">
 						This CV website requires JavaScript to function properly. Please enable JavaScript in
 						your browser.
 					</p>

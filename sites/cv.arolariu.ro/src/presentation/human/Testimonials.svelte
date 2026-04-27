@@ -1,38 +1,35 @@
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {testimonialsAsArray} from "@/data/testimonials";
+  import styles from "./Testimonials.module.scss";
 </script>
 
 <section
   id="testimonials"
-  class="py-16 px-6">
-  <div class="container mx-auto">
+  class={styles.section}>
+  <div class={styles.container}>
     <AnimatedSection
       id="testimonials-title"
       animation="fade-up">
-      <div class="mb-12 text-center">
+      <div class={styles.title}>
         <h2
           id="testimonials-heading"
-          class="font-bold text-3xl">
-          What <span class="text-blue-600 dark:text-blue-400">Colleagues Say</span>
+          class={styles.heading}>
+          What <span class={styles.accent}>Colleagues Say</span>
         </h2>
-        <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-3xl mx-auto text-sm">
-          Authentic testimonials from Microsoft colleagues who have worked alongside Alexandru.
-        </p>
+        <p class={styles.description}> Authentic testimonials from Microsoft colleagues who have worked alongside Alexandru. </p>
       </div>
     </AnimatedSection>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class={styles.grid}>
       {#each testimonialsAsArray as testimonial, index}
         <AnimatedSection
           animation="fade-up"
           delay={100 * index}>
-          <div
-            class="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-xl border border-gray-200/50 dark:border-gray-700/50 h-full flex flex-col">
-            <!-- Quote Icon -->
-            <div class="flex justify-center mb-4">
+          <div class={styles.card}>
+            <div class={styles.quoteIcon}>
               <svg
-                class="w-8 h-8 text-blue-500 dark:text-blue-400 opacity-50"
+                class={styles.quoteSvg}
                 fill="currentColor"
                 viewBox="0 0 24 24">
                 <path
@@ -40,27 +37,23 @@
               </svg>
             </div>
 
-            <!-- Testimonial Content -->
-            <div class="text-center flex-grow flex flex-col justify-center">
-              <blockquote class="text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-6 italic">
-                "{testimonial.quote}"
-              </blockquote>
+            <div class={styles.content}>
+              <blockquote class={styles.quote}> "{testimonial.quote}" </blockquote>
             </div>
 
-            <div class="flex flex-col items-center mt-auto pt-6">
-              <div
-                class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mb-3 hover-scale">
-                <span class="text-white font-bold text-lg">
+            <div class={styles.authorSection}>
+              <div class={styles.avatar}>
+                <span class={styles.avatarInitial}>
                   {testimonial.author.charAt(0)}
                 </span>
               </div>
-              <h4 class="font-semibold text-gray-900 dark:text-white text-base">
+              <h4 class={styles.authorName}>
                 {testimonial.author}
               </h4>
-              <p class="text-blue-600 dark:text-blue-400 font-medium text-sm">
+              <p class={styles.authorPosition}>
                 {testimonial.position}
               </p>
-              <p class="text-gray-600 dark:text-gray-400 text-xs">
+              <p class={styles.authorCompany}>
                 {testimonial.company}
               </p>
             </div>

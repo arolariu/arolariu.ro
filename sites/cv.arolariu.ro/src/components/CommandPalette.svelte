@@ -1,7 +1,9 @@
 <script lang="ts">
   import {goto} from "$app/navigation";
+  import {cx} from "@/lib/utils";
   import {useTheme} from "@/hooks/useTheme.svelte";
   import {onMount} from "svelte";
+  import styles from "./CommandPalette.module.scss";
 
   const theme = useTheme();
   const isDark = $derived(theme.current === "dark");
@@ -22,7 +24,7 @@
   let inputRef = $state<HTMLInputElement | null>(null);
 
   // Define all available commands
-  const commands: CommandAction[] = [
+  const commands = $derived((): CommandAction[] => [
     // Navigation
     {
       id: "nav-home",
@@ -203,14 +205,15 @@
         close();
       },
     },
-  ];
+  ]);
 
   // Filter commands based on search query
   const filteredCommands = $derived(() => {
-    if (!searchQuery.trim()) return commands;
+    const allCommands = commands();
+    if (!searchQuery.trim()) return allCommands;
 
     const query = searchQuery.toLowerCase();
-    return commands.filter((cmd) => {
+    return allCommands.filter((cmd) => {
       const labelMatch = cmd.label.toLowerCase().includes(query);
       const descMatch = cmd.description?.toLowerCase().includes(query);
       const keywordMatch = cmd.keywords?.some((k) => k.includes(query));
@@ -284,8 +287,11 @@
         break;
       case "Enter":
         e.preventDefault();
-        if (cmds[selectedIndex]) {
-          cmds[selectedIndex].action();
+        {
+          const selectedCommand = cmds[selectedIndex];
+          if (selectedCommand) {
+            selectedCommand.action();
+          }
         }
         break;
     }
@@ -325,7 +331,7 @@
       github:
         "M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z",
     };
-    return icons[name] || icons.info;
+    return icons[name] ?? icons["info"] ?? "";
   }
 
   const categoryLabels: Record<string, string> = {
@@ -338,7 +344,7 @@
 {#if isOpen}
   <!-- Backdrop -->
   <div
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in cursor-pointer"
+    class={styles.backdrop}
     onclick={close}
     onkeydown={(e) => e.key === "Escape" && close()}
     role="button"
@@ -348,15 +354,15 @@
 
   <!-- Command Palette Modal -->
   <div
-    class="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg z-50 animate-slide-up"
+    class={styles.modal}
     role="dialog"
     aria-modal="true"
     aria-label="Command palette">
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class={styles.panel}>
       <!-- Search input -->
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+      <div class={styles.searchRow}>
         <svg
-          class="w-5 h-5 text-gray-400"
+          class={styles.searchIcon}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor">
@@ -371,33 +377,28 @@
           bind:value={searchQuery}
           type="text"
           placeholder="Type a command or search..."
-          class="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400"
+          class={styles.input}
           aria-label="Search commands" />
-        <kbd class="hidden sm:inline-flex items-center px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-800 rounded">
-          ESC
-        </kbd>
+        <kbd class={styles.escapeKey}> ESC </kbd>
       </div>
 
       <!-- Command list -->
-      <div class="max-h-80 overflow-y-auto py-2">
+      <div class={styles.commandList}>
         {#each Object.entries(groupedCommands()) as [category, cmds]}
           {#if cmds.length > 0}
-            <div class="px-3 py-1">
-              <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                {categoryLabels[category]}
+            <div class={styles.commandGroup}>
+              <div class={styles.categoryLabel}>
+                {categoryLabels[category] ?? category}
               </div>
-              {#each cmds as cmd, i}
+              {#each cmds as cmd}
                 {@const globalIndex = flatCommands().indexOf(cmd)}
                 {@const isSelected = globalIndex === selectedIndex}
                 <button
                   onclick={() => cmd.action()}
                   onmouseenter={() => (selectedIndex = globalIndex)}
-                  class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors duration-150 cursor-pointer
-                    {isSelected
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}">
+                  class={cx(styles.commandItem, isSelected ? styles.commandItemSelected : styles.commandItemIdle)}>
                   <svg
-                    class="w-5 h-5 flex-shrink-0 {isSelected ? 'text-blue-500' : 'text-gray-400'}"
+                    class={cx(styles.commandIcon, isSelected ? styles.commandIconSelected : styles.commandIconIdle)}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -407,17 +408,14 @@
                       stroke-width="2"
                       d={getIcon(cmd.icon)} />
                   </svg>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-medium truncate">{cmd.label}</div>
+                  <div class={styles.commandText}>
+                    <div class={styles.commandLabel}>{cmd.label}</div>
                     {#if cmd.description}
-                      <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{cmd.description}</div>
+                      <div class={styles.commandDescription}>{cmd.description}</div>
                     {/if}
                   </div>
                   {#if isSelected}
-                    <kbd
-                      class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs text-gray-400 bg-gray-200 dark:bg-gray-700 rounded">
-                      Enter
-                    </kbd>
+                    <kbd class={styles.enterKey}> Enter </kbd>
                   {/if}
                 </button>
               {/each}
@@ -426,29 +424,29 @@
         {/each}
 
         {#if flatCommands().length === 0}
-          <div class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+          <div class={styles.emptyState}>
             <p>No commands found for "{searchQuery}"</p>
           </div>
         {/if}
       </div>
 
       <!-- Footer -->
-      <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-        <div class="flex items-center justify-between text-xs text-gray-400">
-          <div class="flex items-center gap-3">
-            <span class="flex items-center gap-1">
-              <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↑</kbd>
-              <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">↓</kbd>
+      <div class={styles.footer}>
+        <div class={styles.footerContent}>
+          <div class={styles.footerGroup}>
+            <span class={styles.footerHint}>
+              <kbd class={styles.key}>↑</kbd>
+              <kbd class={styles.key}>↓</kbd>
               <span>to navigate</span>
             </span>
-            <span class="flex items-center gap-1">
-              <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd>
+            <span class={styles.footerHint}>
+              <kbd class={styles.key}>Enter</kbd>
               <span>to select</span>
             </span>
           </div>
-          <span class="flex items-center gap-1">
-            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">⌘</kbd>
-            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">K</kbd>
+          <span class={styles.footerHint}>
+            <kbd class={styles.key}>⌘</kbd>
+            <kbd class={styles.key}>K</kbd>
             <span>to toggle</span>
           </span>
         </div>
@@ -460,10 +458,10 @@
 <!-- Keyboard shortcut hint (always visible) -->
 <button
   onclick={open}
-  class="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400 transition-all duration-200 hover:shadow-xl group cursor-pointer"
+  class={styles.trigger}
   aria-label="Open command palette (Cmd+K)">
   <svg
-    class="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
+    class={styles.triggerIcon}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor">
@@ -473,46 +471,8 @@
       stroke-width="2"
       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
-  <span class="hidden sm:inline">Quick actions</span>
-  <kbd
-    class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded">
+  <span class={styles.triggerLabel}>Quick actions</span>
+  <kbd class={styles.triggerKey}>
     <span>⌘</span><span>K</span>
   </kbd>
 </button>
-
-<style>
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-10px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(1);
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.15s ease-out;
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.2s ease-out;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .animate-fade-in,
-    .animate-slide-up {
-      animation: none;
-    }
-  }
-</style>

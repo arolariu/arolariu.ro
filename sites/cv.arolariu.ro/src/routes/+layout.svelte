@@ -1,5 +1,5 @@
 <script lang="ts">
-  import "@/app.css";
+  import "@/styles/global.scss";
   import {onNavigate, preloadData} from "$app/navigation";
   import {page} from "$app/stores";
   import ScrollProgress from "@/components/ScrollProgress.svelte";
@@ -47,8 +47,6 @@
 <ScrollProgress />
 <CommandPalette />
 
-<main
-  id="main-content"
-  class="dark:text-white">
+<main id="main-content">
   <slot />
 </main>

@@ -1,6 +1,8 @@
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {author} from "@/data";
+  import {cx} from "@/lib/utils/classNames";
+  import styles from "./Contact.module.scss";
 
   let formData = $state({
     name: "",
@@ -42,44 +44,40 @@
 
 <section
   id="contact"
-  class="py-16 px-6 relative overflow-hidden">
-  <!-- Theme-aware gradient background -->
-  <div
-    class="absolute inset-0 transition-all duration-500 bg-gradient-to-br from-blue-500/5 via-purple-500/4 to-pink-500/3 dark:from-blue-500/8 dark:via-purple-500/6 dark:to-pink-500/4"
-  ></div>
+  class={styles.section}>
+  <div class={styles.background}></div>
 
-  <div class="container mx-auto relative z-10">
+  <div class={styles.container}>
     <AnimatedSection
       id="contact-title"
       animation="fade-up">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">
-        Get In <span class="text-blue-600 dark:text-blue-400">Touch</span>
+      <h2 class={styles.title}>
+        Get In <span class={styles.accent}>Touch</span>
       </h2>
     </AnimatedSection>
 
-    <div class="max-w-6xl mx-auto">
-      <div class="grid md:grid-cols-2 gap-12">
+    <div class={styles.contentWrapper}>
+      <div class={styles.grid}>
         <!-- Contact Information -->
         <AnimatedSection
           id="contact-info"
           animation="fade-right"
           delay={200}>
-          <div class="backdrop-blur-sm rounded-xl p-8 shadow-lg transition-all duration-300 bg-white/80 dark:bg-black/40">
-            <h3 class="text-2xl font-semibold mb-6 text-blue-600 dark:text-blue-400"> Let's Connect </h3>
-            <p class="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+          <div class={styles.card}>
+            <h3 class={cx(styles.cardTitle, styles.accent)}> Let's Connect </h3>
+            <p class={styles.cardDescription}>
               I'm always interested in new opportunities and exciting projects. Whether you have a question, want to collaborate, or just
               want to say hello, feel free to reach out!
             </p>
 
-            <div class="space-y-6">
+            <div class={styles.infoList}>
               {#each contactInfo as info, index}
                 <div
-                  class="flex items-center hover-lift stagger-animation"
+                  class={styles.infoItem}
                   style="--delay: {400 + index * 100}ms">
-                  <div
-                    class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-4 hover-scale hover-glow">
+                  <div class={styles.infoIcon}>
                     <svg
-                      class="w-6 h-6 text-white"
+                      class={styles.infoIconSvg}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24">
@@ -91,8 +89,8 @@
                     </svg>
                   </div>
                   <div>
-                    <h4 class="text-gray-900 dark:text-white font-semibold">{info.title}</h4>
-                    <p class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                    <h4 class={styles.infoTitle}>{info.title}</h4>
+                    <p class={styles.infoValue}>
                       {info.value}
                     </p>
                   </div>
@@ -107,17 +105,14 @@
           id="contact-form"
           animation="fade-left"
           delay={400}>
-          <div class="backdrop-blur-sm rounded-xl p-8 shadow-lg transition-all duration-300 bg-white/80 dark:bg-black/40">
+          <div class={styles.card}>
             <form
               onsubmit={handleSubmit}
-              class="space-y-6">
-              <div class="relative">
+              class={styles.form}>
+              <div class={styles.formGroup}>
                 <label
                   for="name"
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200 {focusedField
-                  === 'name'
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : ''}">
+                  class={cx(styles.label, focusedField === "name" && styles.labelFocused)}>
                   Name
                 </label>
                 <input
@@ -127,17 +122,14 @@
                   onfocus={() => (focusedField = "name")}
                   onblur={() => (focusedField = "")}
                   required
-                  class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-500"
+                  class={styles.input}
                   placeholder="Your Name" />
               </div>
 
-              <div class="relative">
+              <div class={styles.formGroup}>
                 <label
                   for="email"
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200 {focusedField
-                  === 'email'
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : ''}">
+                  class={cx(styles.label, focusedField === "email" && styles.labelFocused)}>
                   Email
                 </label>
                 <input
@@ -147,17 +139,14 @@
                   onfocus={() => (focusedField = "email")}
                   onblur={() => (focusedField = "")}
                   required
-                  class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-500"
+                  class={styles.input}
                   placeholder="your.email@example.com" />
               </div>
 
-              <div class="relative">
+              <div class={styles.formGroup}>
                 <label
                   for="message"
-                  class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200 {focusedField
-                  === 'message'
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : ''}">
+                  class={cx(styles.label, focusedField === "message" && styles.labelFocused)}>
                   Message
                 </label>
                 <textarea
@@ -167,30 +156,30 @@
                   onblur={() => (focusedField = "")}
                   required
                   rows="5"
-                  class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-500"
+                  class={styles.textarea}
                   placeholder="Your message..."></textarea>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-blue-800 disabled:to-purple-800 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover-lift hover-glow transform hover:scale-105 disabled:hover:scale-100 disabled:hover:transform-none relative overflow-hidden cursor-pointer">
+                class={styles.submitButton}>
                 {#if isSubmitting}
-                  <span class="flex items-center justify-center">
+                  <span class={styles.buttonContent}>
                     <svg
-                      class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      class={styles.spinner}
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24">
                       <circle
-                        class="opacity-25"
+                        class={styles.spinnerCircle}
                         cx="12"
                         cy="12"
                         r="10"
                         stroke="currentColor"
                         stroke-width="4"></circle>
                       <path
-                        class="opacity-75"
+                        class={styles.spinnerPath}
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
@@ -203,7 +192,7 @@
               </button>
 
               {#if submitMessage}
-                <div class="text-green-600 dark:text-green-400 text-center animate-pulse">
+                <div class={styles.successMessage}>
                   {submitMessage}
                 </div>
               {/if}

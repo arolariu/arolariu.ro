@@ -1,6 +1,7 @@
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {competencies} from "@/data";
+  import styles from "./Competencies.module.scss";
 
   const displayedCompetencies = [
     {
@@ -30,42 +31,35 @@
   ];
 </script>
 
-<section class="py-16 px-6 relative overflow-hidden">
-  <!-- Theme-aware gradient background -->
-  <div
-    class="absolute inset-0 transition-all duration-500 bg-gradient-to-br from-blue-500/5 via-purple-500/4 to-pink-500/3 dark:from-blue-500/8 dark:via-purple-500/6 dark:to-pink-500/4"
-  ></div>
+<section class={styles.section}>
+  <div class={styles.background}></div>
 
-  <div class="container mx-auto relative z-10">
+  <div class={styles.container}>
     <AnimatedSection
       id="competencies-title"
       animation="fade-up">
-      <div class="mb-12 text-center">
+      <div class={styles.title}>
         <h2
           id="competencies"
-          class="font-bold text-3xl">
-          Core <span class="text-blue-600 dark:text-blue-400">Competencies</span>
+          class={styles.heading}>
+          Core <span class={styles.accent}>Competencies</span>
         </h2>
-        <p class="mt-3 text-gray-600 dark:text-gray-400 max-w-3xl mx-auto text-sm">
-          A showcase of Alexandru's technical skills and professional competencies that drive his success.
-        </p>
+        <p class={styles.description}> A showcase of Alexandru's technical skills and professional competencies that drive his success. </p>
       </div>
     </AnimatedSection>
 
-    <div class="max-w-6xl mx-auto">
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class={styles.contentWrapper}>
+      <div class={styles.grid}>
         {#each displayedCompetencies as competency, index}
           <AnimatedSection
             id="competency-{index}"
             animation="fade-up"
             delay={index * 150}>
-            <div
-              class="backdrop-blur-sm rounded-xl p-6 shadow-lg hover-lift border border-gray-200 dark:border-gray-700 h-full transition-all duration-300 bg-white/80 dark:bg-black/40">
-              <div class="flex items-center mb-4">
-                <div
-                  class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+            <div class={styles.card}>
+              <div class={styles.cardHeader}>
+                <div class={styles.icon}>
                   <svg
-                    class="w-6 h-6 text-white"
+                    class={styles.iconSvg}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24">
@@ -76,11 +70,11 @@
                       d={competency.icon}></path>
                   </svg>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 class={styles.cardTitle}>
                   {competency.title}
                 </h3>
               </div>
-              <p class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
+              <p class={styles.cardDescription}>
                 {competency.description}
               </p>
             </div>

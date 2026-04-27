@@ -15,13 +15,13 @@
       "name": "Frontend (arolariu.ro)",
       "entityType": "Project",
       "observations": [
-        "Next.js 16.1.6 with App Router, React 19.2.4, TypeScript 5.9.3 strict mode",
+        "Next.js 16.2 with App Router, React 19.2, TypeScript 6.0 strict mode",
         "Island Pattern: page.tsx (RSC) → island.tsx (Client) → _components/ (local)",
-        "State: Zustand 5.0.11 (4 stores with IndexedDB persistence) → Context (scoped) → useState (local)",
-        "i18n: next-intl 4.8.3 with en.json, ro.json, fr.json",
-        "Auth: Clerk (@clerk/nextjs 6.37.4)",
-        "Styling: Tailwind CSS 4.1.18, NO inline styles",
-        "Testing: Vitest 4.0.18, 90%+ coverage target",
+        "State: Zustand 5.0.12 (4 stores with IndexedDB persistence) → Context (scoped) → useState (local)",
+        "i18n: next-intl 4.9 with en.json, ro.json, fr.json",
+        "Auth: Clerk (@clerk/nextjs 7.0)",
+        "Styling: CSS Modules + Sass + @arolariu/components, NO inline styles",
+        "Testing: Vitest 4.1, 90%+ coverage target",
         "Components: @arolariu/components shared library",
         "Zero any types — TypeScript strict mode enforced"
       ]
@@ -78,7 +78,7 @@
       "entityType": "Package",
       "observations": [
         "Package: @arolariu/components at packages/components/",
-        "60+ Radix UI + shadcn/ui components with Tailwind CSS",
+        "60+ Radix UI + shadcn/ui components with CSS Modules",
         "Built with RSLib + Rsbuild, documented with Storybook",
         "Barrel export: src/index.ts (MUST update when adding components)",
         "Domain-agnostic — NO business logic, NO imports from sites/",

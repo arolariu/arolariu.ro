@@ -1,44 +1,42 @@
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {biography} from "@/data";
+  import styles from "./About.module.scss";
 </script>
 
 <section
   id="about"
-  class="py-16 px-6 relative overflow-hidden">
-  <div
-    class="absolute inset-0 transition-all duration-500 bg-gradient-to-br from-blue-500/5 via-purple-500/4 to-pink-500/3 dark:from-blue-500/8 dark:via-purple-500/6 dark:to-pink-500/4"
-  ></div>
+  class={styles.section}>
+  <div class={styles.background}></div>
 
-  <div class="container mx-auto relative z-10">
+  <div class={styles.container}>
     <AnimatedSection
       id="about-title"
       animation="fade-up">
-      <div class="mb-12 text-center">
+      <div class={styles.title}>
         <h2
           id="about-heading"
-          class="font-bold text-3xl">
-          About <span class="text-blue-600 dark:text-blue-400">Me</span>
+          class={styles.heading}>
+          About <span class={styles.accent}>Me</span>
         </h2>
       </div>
     </AnimatedSection>
 
-    <div class="max-w-6xl mx-auto">
-      <div class="grid md:grid-cols-2 gap-12 items-start">
+    <div class={styles.contentWrapper}>
+      <div class={styles.grid}>
         <AnimatedSection
           id="about-left"
           animation="fade-right"
           delay={200}>
-          <div
-            class="backdrop-blur-sm rounded-xl p-8 shadow-lg hover-lift border border-gray-200 dark:border-gray-700 transition-all duration-300 bg-white/80 dark:bg-black/40">
-            <div class="mb-6">
+          <div class={styles.card}>
+            <div class={styles.cardTitle}>
               <h3
                 id="about-professional"
-                class="font-bold text-2xl">
-                Professional <span class="text-blue-600 dark:text-blue-400">Journey</span>
+                class={styles.cardHeading}>
+                Professional <span class={styles.accent}>Journey</span>
               </h3>
             </div>
-            <div class="space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div class={styles.cardContent}>
               <p>{biography.firstPoint}</p>
               <p>{biography.secondPoint}</p>
             </div>
@@ -49,16 +47,15 @@
           id="about-right"
           animation="fade-left"
           delay={400}>
-          <div
-            class="backdrop-blur-sm rounded-xl p-8 shadow-lg hover-lift border border-gray-200 dark:border-gray-700 transition-all duration-300 bg-white/80 dark:bg-black/40">
-            <div class="mb-6">
+          <div class={styles.card}>
+            <div class={styles.cardTitle}>
               <h3
                 id="about-interests"
-                class="font-bold text-2xl">
-                Interests <span class="text-blue-600 dark:text-blue-400">& Passion</span>
+                class={styles.cardHeading}>
+                Interests <span class={styles.accent}>& Passion</span>
               </h3>
             </div>
-            <div class="space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div class={styles.cardContent}>
               <p>{biography.thirdPoint}</p>
               <p>{biography.fourthPoint}</p>
             </div>
@@ -70,16 +67,15 @@
         id="about-collaboration"
         animation="fade-up"
         delay={600}>
-        <div
-          class="mt-12 backdrop-blur-sm rounded-xl p-8 shadow-lg text-center border border-gray-200 dark:border-gray-700 transition-all duration-300 bg-gradient-to-br from-blue-500/5 via-purple-500/4 to-pink-500/3 dark:from-blue-500/8 dark:via-purple-500/6 dark:to-pink-500/4">
-          <div class="mb-4 text-center">
+        <div class={styles.collaborationCard}>
+          <div class={styles.collaborationTitle}>
             <h3
               id="about-collaboration-heading"
-              class="font-bold text-2xl">
-              Open for <span class="text-blue-600 dark:text-blue-400">Collaboration</span>
+              class={styles.cardHeading}>
+              Open for <span class={styles.accent}>Collaboration</span>
             </h3>
           </div>
-          <p class="text-gray-700 dark:text-gray-300 leading-relaxed max-w-4xl mx-auto">
+          <p class={styles.collaborationContent}>
             {biography.fifthPoint}
           </p>
         </div>

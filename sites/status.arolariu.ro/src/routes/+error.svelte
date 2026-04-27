@@ -10,9 +10,10 @@
   // deprecated `$app/stores`. `page` is already reactive — no `$` prefix
   // needed at the template site.
   import {page} from "$app/state";
+  import styles from "./ErrorPage.module.scss";
 </script>
 
-<main class="p-8">
-  <h1 class="text-xl font-semibold">Error {page.status}</h1>
-  <p class="mt-2 opacity-60">{page.error?.message ?? "Something went wrong."}</p>
+<main class={styles.shell}>
+  <h1 class={styles.title}>Error {page.status}</h1>
+  <p class={styles.message}>{page.error?.message ?? "Something went wrong."}</p>
 </main>
