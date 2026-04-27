@@ -3,22 +3,37 @@
 /**
  * @fileoverview Client interactive UI for the worker playground.
  * @module app/playground/workers/island
+ *
+ * @remarks
+ * User-facing strings are routed through `next-intl`'s `useTranslations`
+ * hook with literal English fall-throughs (`t.has(key) ? t(key) : "..."`)
+ * so the page stays functional without locale-file edits while still
+ * matching the rest of the site's i18n convention.
  */
 
+import {createWorkerHost, type WorkerCapabilities, type WorkerEvent, type WorkerHostState} from "@/workers";
+import {useTranslations} from "next-intl";
 import {useEffect, useMemo, useRef, useState} from "react";
 
-import {createWorkerHost, type WorkerCapabilities, type WorkerEvent, type WorkerHostState} from "@/workers";
 import type {PlaygroundWorkerApi} from "./playground.worker";
 
 type Log = Readonly<{ts: number; level: string; line: string}>;
 
 export function WorkerPlaygroundIsland(): React.JSX.Element {
+  const t = useTranslations();
   const [state, setState] = useState<WorkerHostState>("idle");
   const [logs, setLogs] = useState<ReadonlyArray<Log>>([]);
   const [echoOut, setEchoOut] = useState<string>("");
   const [caps, setCaps] = useState<WorkerCapabilities | null>(null);
   const echoInputRef = useRef<HTMLInputElement>(null);
   const sleepAcRef = useRef<AbortController | null>(null);
+
+  /**
+   * Translate `key` if present in the active locale, otherwise return
+   * `fallback`. Lets the playground render with English defaults when
+   * `messages/*.json` does not (yet) carry the playground keys.
+   */
+  const tr = (key: string, fallback: string): string => (t.has(key) ? t(key) : fallback);
 
   const host = useMemo(() => {
     return createWorkerHost<PlaygroundWorkerApi>({
@@ -78,57 +93,62 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
   return (
     <div data-testid="playground-root" style={{padding: 16, fontFamily: "monospace"}}>
-      <h1>Worker Playground</h1>
+      <h1>{tr("Playground.Workers.title", "Worker Playground")}</h1>
       <section data-testid="state-section">
-        <h2>State</h2>
+        <h2>{tr("Playground.Workers.sections.state", "State")}</h2>
         <p>
-          state: <strong data-testid="host-state">{state}</strong>
+          {tr("Playground.Workers.labels.state", "state")}:{" "}
+          <strong data-testid="host-state">{state}</strong>
         </p>
       </section>
 
       <section data-testid="calls-section">
-        <h2>Calls</h2>
-        <input ref={echoInputRef} data-testid="echo-input" placeholder="echo me" />
+        <h2>{tr("Playground.Workers.sections.calls", "Calls")}</h2>
+        <input
+          ref={echoInputRef}
+          data-testid="echo-input"
+          placeholder={tr("Playground.Workers.placeholders.echo", "echo me")}
+        />
         <button data-testid="echo-button" onClick={onEcho}>
-          echo
+          {tr("Playground.Workers.actions.echo", "echo")}
         </button>
         <p data-testid="echo-result">{echoOut}</p>
       </section>
 
       <section data-testid="cancellation-section">
-        <h2>Cancellation</h2>
+        <h2>{tr("Playground.Workers.sections.cancellation", "Cancellation")}</h2>
         <button data-testid="sleep-button" onClick={onSleep10s}>
-          sleep 10s
+          {tr("Playground.Workers.actions.sleep", "sleep 10s")}
         </button>
         <button data-testid="abort-button" onClick={onAbortSleep}>
-          abort
+          {tr("Playground.Workers.actions.abort", "abort")}
         </button>
       </section>
 
       <section data-testid="error-section">
-        <h2>Error paths</h2>
+        <h2>{tr("Playground.Workers.sections.errors", "Error paths")}</h2>
         <button data-testid="crash-button" onClick={onCrash}>
-          crash
+          {tr("Playground.Workers.actions.crash", "crash")}
         </button>
         <button data-testid="restart-button" onClick={onRestart}>
-          restart
+          {tr("Playground.Workers.actions.restart", "restart")}
         </button>
       </section>
 
       <section data-testid="capabilities-section">
-        <h2>Capabilities</h2>
+        <h2>{tr("Playground.Workers.sections.capabilities", "Capabilities")}</h2>
         <button data-testid="caps-button" onClick={onCapabilities}>
-          read
+          {tr("Playground.Workers.actions.readCapabilities", "read")}
         </button>
         <pre data-testid="caps-output">{caps ? JSON.stringify(caps, null, 2) : ""}</pre>
         <p>
-          crossOriginIsolated:{" "}
+          {tr("Playground.Workers.labels.crossOriginIsolated", "crossOriginIsolated")}:{" "}
           <span data-testid="coi">{String(host.capabilities.crossOriginIsolated)}</span>
         </p>
       </section>
 
       <section data-testid="event-log-section">
-        <h2>Event log</h2>
+        <h2>{tr("Playground.Workers.sections.eventLog", "Event log")}</h2>
         <pre data-testid="event-log" style={{maxHeight: 200, overflow: "auto"}}>
           {logs.map((l) => `[${l.level}] ${l.line}\n`).join("")}
         </pre>

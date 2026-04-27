@@ -3,5 +3,5 @@
  * @module workers/runtime
  */
 
-export {expose, getEventPort} from "./exposeWorker";
+export {expose, getBootstrapCapabilities, getEventPort} from "./exposeWorker";
 export {emitEvent} from "./emitEvent";

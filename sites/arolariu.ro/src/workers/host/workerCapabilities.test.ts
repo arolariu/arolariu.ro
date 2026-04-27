@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {getCapabilities} from "../workerCapabilities";
+import {getCapabilities} from "./workerCapabilities";
 
 describe("getCapabilities", () => {
   let originalCrossOriginIsolated: boolean;

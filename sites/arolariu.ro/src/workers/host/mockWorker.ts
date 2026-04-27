@@ -1,7 +1,7 @@
 /**
  * @fileoverview Test utility: a controllable `Worker`-shaped object backed by
  * the worker-side `expose` runtime, with no real worker thread involved.
- * @module workers/host/__tests__/mockWorker
+ * @module workers/host/mockWorker
  *
  * @remarks
  * Used exclusively by foundation unit tests. Lets us drive the host through
@@ -11,7 +11,7 @@
  * Not exported from any barrel; not bundled in production.
  */
 
-import {expose, type ExposeOptions} from "../../runtime/exposeWorker";
+import {expose, type ExposeOptions} from "../runtime/exposeWorker";
 
 export type CreateMockWorkerOptions<TApi extends Record<string, unknown>> = Readonly<{
   /** The api the mock worker will expose, identical to what a real worker would expose. */

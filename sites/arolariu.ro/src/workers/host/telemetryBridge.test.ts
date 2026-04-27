@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 
-import {createTelemetryBridge} from "../telemetryBridge";
+import {createTelemetryBridge} from "./telemetryBridge";
 
 describe("createTelemetryBridge", () => {
   describe("wrapCall", () => {

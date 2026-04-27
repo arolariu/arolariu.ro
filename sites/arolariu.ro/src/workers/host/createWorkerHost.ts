@@ -50,8 +50,6 @@ export type CreateWorkerHostOptions<TApi> = Readonly<{
   load: () => Worker;
   /** Idle timeout in ms after which the worker is silently torn down. Default 5 min. */
   idleTimeoutMs?: number;
-  /** Reserved for per-call timeouts; wired in a follow-up. */
-  defaultCallTimeoutMs?: number;
   /** Hook called for every `WorkerEvent` emitted by the worker. */
   onEvent?: (event: WorkerEvent) => void;
 }>;
@@ -111,8 +109,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   // preventing leaks across reboots.
   let currentErrorListener: {worker: Worker; handler: (e: ErrorEvent) => void} | null = null;
 
-  // I3: Allow `dispose()` to cancel an in-flight bootstrap promise.
+  // I3: Allow `dispose()`/`restart()` to cancel an in-flight bootstrap promise.
   let rejectBoot: ((err: Error) => void) | null = null;
+
+  // G: Hoist the bootstrap timeout handle so teardown/restart can clear it
+  // before it ever fires. Otherwise a stale boot would resolve against a
+  // dead lifecycle and surface as a misleading `WorkerCrashError`.
+  let bootTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const onIdleHandler = (): void => {
     tearDownWorker("lazy-reboot");
@@ -147,11 +150,20 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
    * Lifecycle transitions are the caller's responsibility — `crash` is
    * driven by `lifecycle.crash()` in `handleCrash`, `dispose` by
    * `lifecycle.dispose()` here, and `lazy-reboot` leaves state untouched.
+   *
+   * G: Always clears any in-flight bootstrap timeout so a stale boot can't
+   * resolve after teardown.
    */
   function tearDownWorker(mode: TeardownMode): void {
     const w = worker;
     worker = null;
     proxy = null;
+    // G: Clear the bootstrap timeout if pending so it can never fire after
+    // teardown and resolve against a dead lifecycle.
+    if (bootTimeoutId !== null) {
+      clearTimeout(bootTimeoutId);
+      bootTimeoutId = null;
+    }
     // I1: Remove the error listener before terminating to avoid leaks.
     if (currentErrorListener) {
       try {
@@ -211,11 +223,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     currentErrorListener = {worker: w, handler: onError};
 
     const ready = new Promise<void>((resolve, reject) => {
-      // I3: Expose this `reject` so `dispose()` can cancel a pending boot.
+      // I3: Expose this `reject` so `dispose()`/`restart()` can cancel a
+      // pending boot.
       rejectBoot = reject;
 
-      const timeoutId = setTimeout(() => {
+      bootTimeoutId = setTimeout(() => {
         eventChannel.port1.onmessage = null;
+        bootTimeoutId = null;
         // I3: If we were disposed while the timer was pending, surface a
         // `WorkerDeadError` rather than a misleading `WorkerCrashError`.
         if (lifecycle.state === "disposed") {
@@ -229,11 +243,15 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       eventChannel.port1.onmessage = (e: MessageEvent): void => {
         const event = e.data as WorkerEvent;
         if (event.kind === "ready") {
-          clearTimeout(timeoutId);
+          if (bootTimeoutId !== null) {
+            clearTimeout(bootTimeoutId);
+            bootTimeoutId = null;
+          }
           // Swap to the steady-state listener that ingests events.
           eventChannel.port1.onmessage = (next: MessageEvent): void => {
             const ev = next.data as WorkerEvent;
             // I4: Filter stray `ready` events that arrive after bootstrap.
+            // Bootstrap-ready is consumed by the boot promise itself; never forward.
             if (ev.kind === "ready") return;
             opts.onEvent?.(ev);
             bridge.ingestEvent(ev);
@@ -241,7 +259,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           resolve();
           return;
         }
-        // Forward any other events that arrive before "ready" (defensive).
+        // E: Bootstrap `ready` is handled in the branch above (consumed by the
+        // boot promise; never forwarded). Anything else that arrives before
+        // the handshake is forwarded defensively to keep behavior parity with
+        // the steady-state listener for non-`ready` events.
         opts.onEvent?.(event);
         bridge.ingestEvent(event);
       };
@@ -348,20 +369,25 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
                   }
                 })();
 
-                // C3: Mid-flight abort — race the body promise against an
+                // C3/H: Mid-flight abort — race the body promise against an
                 // abort promise so an `AbortSignal` that fires after the call
                 // has begun rejects the consumer's promise. The worker
                 // continues running until its handler completes; this is the
                 // documented v1 limitation. See README "Known limitations".
+                //
+                // H: Clean up the abort listener once the race settles so we
+                // don't leak listeners on the consumer's signal across many
+                // calls.
                 if (signal) {
+                  let onAbort: (() => void) | null = null;
                   const abortPromise = new Promise<never>((_, reject) => {
-                    const onAbort = (): void => {
+                    onAbort = (): void => {
                       reject(signal!.reason ?? new Error("aborted"));
                     };
-                    if (signal.aborted) {
+                    if (signal!.aborted) {
                       onAbort();
                     } else {
-                      signal.addEventListener("abort", onAbort, {once: true});
+                      signal!.addEventListener("abort", onAbort, {once: true});
                     }
                   });
                   // Suppress "unhandled rejection" on whichever side loses.
@@ -371,7 +397,16 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
                   abortPromise.catch(() => {
                     /* loser */
                   });
-                  return await Promise.race([callPromise, abortPromise]);
+                  try {
+                    return await Promise.race([callPromise, abortPromise]);
+                  } finally {
+                    // H: Detach the abort listener if it never fired (call
+                    // completed first). `{once: true}` already self-removes
+                    // on fire; this branch is the body-wins path.
+                    if (onAbort && !signal.aborted) {
+                      signal.removeEventListener("abort", onAbort);
+                    }
+                  }
                 }
 
                 return await callPromise;
@@ -420,21 +455,68 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         throw signal.reason ?? new Error("aborted");
       }
       if (restartLock) return restartLock;
+
+      // C: Capture the pending boot rejector so we can abort it before tear-down.
+      // tearDownWorker also clears the bootstrap timeout, but rejecting the
+      // boot promise here unblocks any in-flight `ensureReady()` callers that
+      // would otherwise wait the full bootstrap timeout.
+      const bootRejector = rejectBoot;
+      rejectBoot = null;
+
+      // D: Snapshot all in-flight calls and reject them with `WorkerCrashError`
+      // before the worker is terminated. Without this the calls would reject
+      // with Comlink port-closed errors (or hang forever) once the underlying
+      // worker is gone.
+      const drainEntries = Array.from(inFlight);
+      const drainMethods = drainEntries.map((entry) => entry.method);
+      inFlight.clear();
+
       const promise = (async (): Promise<void> => {
-        tearDownWorker("dispose");
-        // Rebuild the lifecycle so we can transition idle → starting → ready again.
-        lifecycle = createWorkerLifecycle({
+        // C: Reject the in-flight boot first so `ensureReady()` consumers
+        // don't await stale state.
+        if (bootRejector) {
+          bootRejector(new WorkerDeadError("Restarted during boot."));
+        }
+        bootPromise = null;
+
+        // D: Reject all calls that were past `lifecycle.beginCall()` with a
+        // `WorkerCrashError` listing their methods.
+        if (drainEntries.length > 0) {
+          const crashError = new WorkerCrashError(drainMethods);
+          for (const entry of drainEntries) {
+            entry.reject(crashError);
+          }
+        }
+
+        // J: Swap the lifecycle pointer BEFORE tearing down the old one so
+        // public subscribers see `dead → starting → ready` rather than
+        // `dead → disposed → starting → ready`. The temporary swap-back is
+        // necessary because `tearDownWorker("dispose")` calls
+        // `lifecycle.dispose()` on whichever lifecycle is currently active.
+        const previousLifecycle = lifecycle;
+        const nextLifecycle = createWorkerLifecycle({
           idleTimeoutMs,
           onIdle: onIdleHandler,
         });
-        // C1: re-attach the host-level proxy subscription to the new lifecycle.
+        lifecycle = nextLifecycle;
+        // C1: re-attach the host-level proxy subscription to the new lifecycle
+        // BEFORE disposing the old one, so subscribers see only the new
+        // lifecycle's transitions during the rest of restart.
         attachLifecycleSubscription();
 
+        // Tear down the old worker against its original lifecycle so the
+        // private `disposed` transition is invisible to public subscribers.
+        lifecycle = previousLifecycle;
+        tearDownWorker("dispose");
+        lifecycle = nextLifecycle;
+
         const readyPromise = ensureReady();
-        // I2: Race against signal-abort during boot.
+        // I2: Race against signal-abort during boot, with cleanup on the
+        // body-wins path so we don't leak the abort listener.
         if (signal) {
+          let onAbort: (() => void) | null = null;
           const abortPromise = new Promise<never>((_, reject) => {
-            const onAbort = (): void => {
+            onAbort = (): void => {
               reject(signal.reason ?? new Error("aborted"));
             };
             if (signal.aborted) {
@@ -449,7 +531,16 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           abortPromise.catch(() => {
             /* swallow loser */
           });
-          await Promise.race([readyPromise, abortPromise]);
+          try {
+            await Promise.race([readyPromise, abortPromise]);
+          } finally {
+            // I: Detach the abort listener if it never fired (boot won the
+            // race). `{once: true}` self-removes on fire; this is the
+            // body-wins path.
+            if (onAbort && !signal.aborted) {
+              signal.removeEventListener("abort", onAbort);
+            }
+          }
         } else {
           await readyPromise;
         }

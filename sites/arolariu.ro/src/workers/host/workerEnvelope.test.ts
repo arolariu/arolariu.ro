@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 
-import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "../workerEnvelope";
+import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "./workerEnvelope";
 
 describe("WORKER_PROTOCOL_VERSION", () => {
   it("is the integer 1", () => {

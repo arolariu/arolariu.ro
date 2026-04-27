@@ -1,11 +1,11 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {__resetForTesting, getEventPort} from "../../runtime/exposeWorker";
-import {emitEvent} from "../../runtime/emitEvent";
-import {createWorkerHost} from "../createWorkerHost";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError} from "../workerErrors";
-import {type WorkerHostState} from "../workerLifecycle";
+import {__resetForTesting, getEventPort} from "../runtime/exposeWorker";
+import {emitEvent} from "../runtime/emitEvent";
+import {createWorkerHost} from "./createWorkerHost";
 import {createMockWorker} from "./mockWorker";
+import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError} from "./workerErrors";
+import {type WorkerHostState} from "./workerLifecycle";
 
 type GreetApi = {
   greet: (name: string) => Promise<string>;
@@ -261,6 +261,70 @@ describe("createWorkerHost", () => {
       setTimeout(() => ac.abort(new Error("boot aborted")), 10);
       await expect(restartPromise).rejects.toThrowError("boot aborted");
     });
+
+    // Regression: C — restart() while in `starting` discards the in-flight
+    // initial boot rather than awaiting the orphaned old bootstrap (which
+    // would otherwise wait the full bootstrap timeout).
+    it("restart while in 'starting' discards the old boot and completes against a fresh worker", async () => {
+      let useStalling = true;
+      let healthyMock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "restart-during-boot",
+        load: () => {
+          if (useStalling) return createStallingWorker();
+          healthyMock = createMockWorker({api: greetImpl});
+          return healthyMock.worker;
+        },
+      });
+      // Kick off a warmUp that will hang against the stalling worker.
+      const warmUpPromise = host.warmUp();
+      warmUpPromise.catch(() => {
+        /* expected: rejected with WorkerDeadError("Restarted during boot.") */
+      });
+      // Yield so the bootstrap promise is registered and `bootPromise` is set.
+      await Promise.resolve();
+      expect(host.state).toBe("starting");
+      // Switch to a healthy worker for the next boot attempt.
+      useStalling = false;
+      // restart() must abandon the stalled boot and complete against the
+      // fresh worker, not wait the full 10s bootstrap timeout.
+      await host.restart();
+      expect(host.state).toBe("ready");
+      // The original warmUp must have settled (rejected) — not hung.
+      await expect(warmUpPromise).rejects.toThrow();
+      // And the host is fully usable on the new worker.
+      const greeting = await host.api.greet("after-stall");
+      expect(greeting).toBe("hi, after-stall");
+    });
+
+    // Regression: D — restart() while a slow call is in-flight rejects that
+    // call with `WorkerCrashError` rather than letting it dangle until
+    // Comlink emits a port-closed error (or hang forever).
+    it("restart() while a slow call is in flight rejects that call with WorkerCrashError before the new worker is ready", async () => {
+      let mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "restart-with-inflight",
+        load: () => {
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      await host.warmUp();
+      // Start a long-running call that the worker will keep busy.
+      const slow = host.api.sleep(1_000_000);
+      slow.catch(() => {
+        /* expected */
+      });
+      // Yield so the call is past `lifecycle.beginCall()` and registered in inFlight.
+      await Promise.resolve();
+      // Restart while the call is in flight.
+      const restartPromise = host.restart();
+      // The slow call must reject with WorkerCrashError listing its method.
+      await expect(slow).rejects.toThrowError(WorkerCrashError);
+      // And the restart itself completes with the new worker ready.
+      await restartPromise;
+      expect(host.state).toBe("ready");
+    });
   });
 
   describe("dispose", () => {
@@ -383,6 +447,28 @@ describe("createWorkerHost", () => {
       const ac = new AbortController();
       ac.abort(); // no reason
       await expect(host.api.sleep(1000, ac.signal)).rejects.toThrow();
+    });
+
+    // Regression: H — a call that completes before its `AbortSignal` ever
+    // fires must still detach the listener it registered, so we don't leak
+    // a listener on the consumer's signal across many calls.
+    it("removes the mid-flight abort listener when the call completes first", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      await host.warmUp();
+      const ac = new AbortController();
+      // Spy `removeEventListener` on the signal so we can verify cleanup.
+      const removeSpy = vi.spyOn(ac.signal, "removeEventListener");
+      // Fast call that completes well before any abort.
+      const out = await host.api.echo("done");
+      expect(out).toBe("done");
+      // Now make a SECOND call that uses the signal so the abort listener
+      // path is taken; the call still wins and the listener must be detached.
+      const out2 = await host.api.echo("done-with-signal", ac.signal);
+      expect(out2).toBe("done-with-signal");
+      // The body-wins cleanup branch must have called removeEventListener.
+      expect(removeSpy).toHaveBeenCalledWith("abort", expect.any(Function));
+      removeSpy.mockRestore();
     });
   });
 
@@ -570,27 +656,12 @@ describe("createWorkerHost", () => {
   });
 
   describe("non-__workerError rejection path", () => {
-    it("re-throws cause as-is when it is not a __workerError", async () => {
-      // greetImpl.fail throws a plain Error (not __workerError), which gets wrapped by
-      // Comlink and arrives as a __workerError on the other side.
-      // To exercise the raw `throw cause` path (line 295), we need to make the inner
-      // callPromise reject with something that has no __workerError flag.
-      // The easiest way: call `fail` which throws internally; Comlink adds __workerError,
-      // so WorkerError is thrown. The `throw cause` path is for errors that are NOT
-      // __workerError — e.g. a plain rejection thrown synchronously by the proxy wrapper.
-      // This is already covered by the AbortSignal test rejecting before the body.
-      // The remaining uncovered branch (non-__workerError cause) is exercised when an
-      // error without the flag is rethrown. Confirm it re-throws correctly:
-      const mock = createMockWorker({api: greetImpl});
-      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
-      try {
-        await host.api.fail("E_CODE");
-        expect.fail("expected to throw");
-      } catch (err) {
-        // Comlink wraps the error as __workerError → WorkerError
-        expect(err).toBeInstanceOf(WorkerError);
-      }
-    });
+    // U: removed "re-throws cause as-is when it is not a __workerError" — it
+    // claimed to exercise the non-`__workerError` branch but `greetImpl.fail`
+    // throws a plain Error which Comlink normalizes into a `__workerError`,
+    // so the test never actually reached the targeted branch. The defensive
+    // re-throw will be covered when a real non-`__workerError` rejection
+    // surfaces.
 
     it("error serialization fallback: non-Error thrown values produce String(cause) as message", async () => {
       // API throws a non-Error object (no .name/.message/.stack) — exercises

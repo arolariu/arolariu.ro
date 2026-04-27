@@ -64,7 +64,7 @@
     "@react-email/components": "*",
     "@react-email/render": "*",
     "@react-pdf/renderer": "*",
-    "comlink": "^4.4.2",
+    "comlink": "*",
     "dexie": "*",
     "jose": "*",
     "motion": "*",

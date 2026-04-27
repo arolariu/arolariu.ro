@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 
-import {emitEvent} from "../emitEvent";
+import {emitEvent} from "./emitEvent";
 
 describe("emitEvent", () => {
   it("posts a typed event on the given port", () => {

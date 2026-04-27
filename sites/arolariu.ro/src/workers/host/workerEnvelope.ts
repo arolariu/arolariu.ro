@@ -64,9 +64,18 @@ export function validateBootstrap(message: unknown): message is WorkerBootstrap 
   const m = message as Record<string, unknown>;
   if (m.kind !== "bootstrap") return false;
   if (m.version !== WORKER_PROTOCOL_VERSION) return false;
-  // Check for MessagePort by duck typing: should have onmessage and postMessage
-  if (typeof m.rpcPort !== "object" || m.rpcPort === null || typeof (m.rpcPort as {postMessage?: unknown}).postMessage !== "function") return false;
-  if (typeof m.eventPort !== "object" || m.eventPort === null || typeof (m.eventPort as {postMessage?: unknown}).postMessage !== "function") return false;
+
+  // Check for MessagePort by duck typing: require a callable postMessage method.
+  const isRpcPortObject = typeof m.rpcPort === "object" && m.rpcPort !== null;
+  if (!isRpcPortObject) return false;
+  const hasRpcPostMessage = typeof (m.rpcPort as {postMessage?: unknown}).postMessage === "function";
+  if (!hasRpcPostMessage) return false;
+
+  const isEventPortObject = typeof m.eventPort === "object" && m.eventPort !== null;
+  if (!isEventPortObject) return false;
+  const hasEventPostMessage = typeof (m.eventPort as {postMessage?: unknown}).postMessage === "function";
+  if (!hasEventPostMessage) return false;
+
   if (typeof m.capabilities !== "object" || m.capabilities === null) return false;
   return true;
 }

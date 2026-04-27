@@ -6,7 +6,7 @@ import {
   WorkerError,
   WorkerNotAvailableError,
   WorkerTimeoutError,
-} from "../workerErrors";
+} from "./workerErrors";
 
 describe("WorkerError", () => {
   it("captures cause and method, and is an Error instance", () => {

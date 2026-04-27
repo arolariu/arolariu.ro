@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "../../host/workerEnvelope";
-import {__resetForTesting, expose, getEventPort} from "../exposeWorker";
+import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "../host/workerEnvelope";
+import {__resetForTesting, expose, getEventPort} from "./exposeWorker";
 
 /**
  * Build a minimal `self`-like object for the test, with `addEventListener`
@@ -112,58 +112,14 @@ describe("expose", () => {
     expect(getEventPort()).not.toBeNull();
   });
 
-  it("serializes error with non-string name/message/stack as fallback strings", async () => {
-    const fakeSelf = makeFakeSelf();
-    // Expose a method that throws an object with no name/message/stack properties
-    expose(
-      {
-        fail: async () => {
-          // Throw a non-Error object: no .name, .message, or .stack
-          // eslint-disable-next-line @typescript-eslint/only-throw-error
-          throw {code: 42};
-        },
-      },
-      {self: fakeSelf as unknown as DedicatedWorkerGlobalScope},
-    );
-    const {message, parentRpcPort} = makeBootstrap();
-    fakeSelf.fire(new MessageEvent("message", {data: message}));
-
-    // Call the wrapped method via the rpc port and observe the serialized error
-    return new Promise<void>((resolve) => {
-      parentRpcPort.onmessage = (e: MessageEvent) => {
-        // Comlink's internal protocol — we just verify no crash occurred
-        void e;
-        resolve();
-      };
-      parentRpcPort.start();
-      // Trigger the call so the error branch is exercised
-      resolve();
-    });
-  });
-
-  it("error serialization uses String(cause) for non-string message (fallback branch)", async () => {
-    const fakeSelf = makeFakeSelf();
-    let capturedError: unknown = null;
-    expose(
-      {
-        fail: async () => {
-          // Throw a plain string (no .name/.message/.stack)
-          // eslint-disable-next-line @typescript-eslint/only-throw-error
-          throw "raw-string-error";
-        },
-      },
-      {self: fakeSelf as unknown as DedicatedWorkerGlobalScope},
-    );
-    const {message, parentRpcPort} = makeBootstrap();
-    fakeSelf.fire(new MessageEvent("message", {data: message}));
-    parentRpcPort.start();
-    parentRpcPort.onmessage = (e) => {
-      capturedError = e.data;
-    };
-    // Small delay to let the port deliver
-    await new Promise<void>((res) => setTimeout(res, 10));
-    void capturedError; // we just care that no crash occurred
-  });
+  // V & W: removed two error-serialization tests that captured messages on
+  // the parent RPC port but never actually drove a Comlink RPC call, so
+  // their `parentRpcPort.onmessage` capture and any `capturedError`
+  // observation would never be exercised — the tests would pass even if
+  // Comlink-side serialization were broken. The error-normalization path is
+  // exercised end-to-end via `MockWorker` in `createWorkerHost.test.ts`
+  // (see "error serialization fallback: non-Error thrown values produce
+  // String(cause) as message").
 
   it("uses globalThis as default scope when options.self is not provided", () => {
     // Calling expose() with no options exercises the `options.self ?? globalThis` branch.

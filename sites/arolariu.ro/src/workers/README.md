@@ -3,9 +3,10 @@
 This module is the shared substrate for off-main-thread work in `sites/arolariu.ro`.
 All workers in this codebase use the `createWorkerHost` factory from `@/workers`.
 
-> **Background:** Architectural decisions and rationale are in
-> `docs/superpowers/specs/2026-04-27-web-workers-foundation-design.md`. Read it
-> before adding non-trivial workers.
+> **Background:** Architectural decisions and rationale live in the team's
+> design-spec workspace (gitignored locally). For an overview of the
+> contract this module exposes, read the rest of this README — it covers
+> the public API, lifecycle, errors, and known limitations.
 
 ## Quick start
 
@@ -53,8 +54,11 @@ const result = await host.api.doThing("hello");
 
 ## Rules
 
-1. **`createWorkerHost` is the only sanctioned path to spin up a worker.**
-   Do not write `new Worker(...)` outside `src/workers/host/createWorkerHost.ts`.
+1. **Construct workers only inside the `load` callback you pass to
+   `createWorkerHost`.** No `new Worker(...)` outside `createWorkerHost`'s
+   call sites — the foundation owns lifecycle, error handling, and
+   teardown for every worker. Anywhere else, hold a `WorkerHost<T>` and
+   use its proxy.
 
 2. **Worker entry files end in `.worker.ts`.** It's a bundler signal and a
    grep-able convention.
@@ -98,7 +102,7 @@ Default idle timeout: 5 minutes. Override with `idleTimeoutMs`.
 
 ## Capabilities
 
-`host.capabilities` is a snapshot taken at first boot:
+`host.capabilities` is a snapshot taken at host construction:
 
 ```typescript
 {
@@ -120,7 +124,9 @@ http://localhost:3000/playground/workers/
 ```
 
 It exercises every state transition and is the canonical worked example.
-It returns 404 in production builds.
+It returns **404 in production** (the route is gated). The playground
+worker chunk itself is still emitted by the bundler, but it's tiny and
+only reachable via the gated route.
 
 ## Known limitations
 

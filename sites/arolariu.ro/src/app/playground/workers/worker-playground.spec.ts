@@ -3,18 +3,23 @@
  * @module app/playground/workers/worker-playground.spec
  *
  * @remarks
- * Six scenarios covering boot, echo round-trip, AbortSignal, crash/restart,
- * idle reboot transparency, and capabilities. Runs against the dev server
- * (Playwright's `webServer` config handles startup).
+ * Covers boot-after-interaction, echo round-trip, AbortSignal,
+ * crash/restart, and capabilities. Uses the project's shared Playwright
+ * fixture barrel so the spec inherits the standard `safeNavigate`,
+ * accessibility, and base behavior wiring rather than reaching directly
+ * into `@playwright/test`.
  */
 
-import {expect, test} from "@playwright/test";
+import {expect, test} from "../../../../tests/fixtures";
 
 test.describe("Worker playground", () => {
-  test("boots from idle to ready within 2s", async ({page}) => {
+  test("boots to ready within 2s after first interaction", async ({page}) => {
     await page.goto("/playground/workers/");
     await expect(page.getByTestId("playground-root")).toBeVisible();
-    await expect(page.getByTestId("host-state")).toHaveText(/ready|idle/, {timeout: 2000});
+    // Trigger boot by interacting (echo is the cheapest interaction).
+    await page.getByTestId("echo-input").fill("boot-trigger");
+    await page.getByTestId("echo-button").click();
+    await expect(page.getByTestId("host-state")).toHaveText("ready", {timeout: 2000});
   });
 
   test("echoes a round-trip message", async ({page}) => {

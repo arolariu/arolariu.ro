@@ -12,11 +12,20 @@
 
 import * as Comlink from "comlink";
 
+import type {WorkerCapabilities} from "../host/workerCapabilities";
 import {validateBootstrap, type WorkerBootstrap} from "../host/workerEnvelope";
 import {emitEvent} from "./emitEvent";
 
 /** Module-level slot for the event port; populated after bootstrap. */
 let eventPort: MessagePort | null = null;
+
+/**
+ * Module-level slot for the parent-supplied capability snapshot. Populated
+ * after bootstrap so worker code can branch on host-side capability flags
+ * (e.g., `crossOriginIsolated`, `hasWebGpu`) without reaching back into the
+ * raw bootstrap message.
+ */
+let cachedCapabilities: WorkerCapabilities | null = null;
 
 /**
  * Returns the event port granted to this worker during bootstrap.
@@ -33,11 +42,22 @@ export function getEventPort(): MessagePort | null {
 }
 
 /**
+ * Returns the host-supplied capability snapshot from the bootstrap handshake.
+ * Returns `null` until bootstrap has completed. Worker code should use this
+ * helper rather than peeking at the raw bootstrap message to keep layering
+ * clean.
+ */
+export function getBootstrapCapabilities(): WorkerCapabilities | null {
+  return cachedCapabilities;
+}
+
+/**
  * Reset module-level state. **Test-only.** Production code must not call this.
  * @internal
  */
 export function __resetForTesting(): void {
   eventPort = null;
+  cachedCapabilities = null;
 }
 
 /** Options for `expose`. The `self` parameter is for testability only. */
@@ -64,6 +84,9 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
     const bootstrap = data as WorkerBootstrap;
     eventPort = bootstrap.eventPort;
     eventPort.start();
+    // X: Cache capabilities so worker handlers can read them via
+    // `getBootstrapCapabilities()` instead of duplicating bootstrap parsing.
+    cachedCapabilities = bootstrap.capabilities;
 
     // Wrap each method so thrown errors become plain serializable objects.
     const wrapped: Record<string, unknown> = {};

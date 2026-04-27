@@ -1,6 +1,6 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {createWorkerLifecycle, type WorkerHostState} from "../workerLifecycle";
+import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
 describe("createWorkerLifecycle", () => {
   beforeEach(() => {

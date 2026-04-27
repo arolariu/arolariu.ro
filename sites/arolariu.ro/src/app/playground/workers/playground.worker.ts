@@ -5,13 +5,15 @@
  * @module app/playground/workers/playground.worker
  *
  * @remarks
- * This file is dev-only — the parent route is gated with `notFound()` outside
- * development, so the worker module is unreachable in production runtimes
- * (and can be tree-shaken by Turbopack from prod bundles).
+ * The parent route is gated with `notFound()` outside development, so the
+ * playground is unreachable at runtime in production. The worker chunk
+ * itself is still emitted by Turbopack because the import graph from
+ * `island.tsx` is statically reachable from `page.tsx` regardless of
+ * `NODE_ENV` — but the chunk is small and only loaded by the gated route.
  */
 
-import {emitEvent, expose, getEventPort} from "@/workers/runtime";
 import type {WorkerCapabilities} from "@/workers";
+import {emitEvent, expose, getBootstrapCapabilities, getEventPort} from "@/workers/runtime";
 
 export type PlaygroundWorkerApi = {
   echo: (msg: string) => Promise<string>;
@@ -21,8 +23,6 @@ export type PlaygroundWorkerApi = {
   reportCapabilities: () => Promise<WorkerCapabilities | null>;
   emitEvents: (count: number) => Promise<void>;
 };
-
-let cachedCapabilities: WorkerCapabilities | null = null;
 
 const api: PlaygroundWorkerApi = {
   echo: async (msg) => msg,
@@ -45,7 +45,7 @@ const api: PlaygroundWorkerApi = {
       /* never resolves */
     });
   },
-  reportCapabilities: async () => cachedCapabilities,
+  reportCapabilities: async () => getBootstrapCapabilities(),
   emitEvents: async (count) => {
     const port = getEventPort();
     if (!port) return;
@@ -54,17 +54,5 @@ const api: PlaygroundWorkerApi = {
     }
   },
 };
-
-// Capture capabilities from the bootstrap message into a module-level cache.
-// Register this listener BEFORE `expose` so it runs first when the bootstrap
-// arrives (listeners fire in registration order). `expose` will remove only
-// its own listener after handshake; ours stays attached but no further messages
-// match the shape, so it's a no-op afterward.
-self.addEventListener("message", (event) => {
-  const data = event.data as {capabilities?: WorkerCapabilities} | null;
-  if (data && typeof data === "object" && data.capabilities) {
-    cachedCapabilities = data.capabilities;
-  }
-});
 
 expose<PlaygroundWorkerApi>(api);
