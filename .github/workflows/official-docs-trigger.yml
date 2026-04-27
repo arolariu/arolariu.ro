@@ -110,7 +110,7 @@ jobs:
           cache-key-prefix: 'docs'
 
       - name: 🐍 Setting up Python 3.12 for pydoc-markdown...
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
