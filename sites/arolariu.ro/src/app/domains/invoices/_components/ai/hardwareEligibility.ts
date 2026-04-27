@@ -540,14 +540,15 @@ export async function analyzeLocalAiHardwareEligibility(input: AnalyzeHardwareEl
     ineligibleReasons.push("workers-unavailable");
   }
 
-  // Collect GPU capability and enrichment data (Task 3)
-  const gpuCapabilityResult = await collectGpuCapability(environment.navigator);
+  const [gpuCapabilityResult, storageResult] = await Promise.all([
+    collectGpuCapability(environment.navigator),
+    getAvailableStorageBytes(environment.navigator.storage),
+  ]);
+
   if (gpuCapabilityResult.ineligibleReason) {
     ineligibleReasons.push(gpuCapabilityResult.ineligibleReason);
   }
 
-  // Collect storage capability (Task 3: storage-estimate-unavailable is now unknown, not ineligible)
-  const storageResult = await getAvailableStorageBytes(environment.navigator.storage);
   const storageReason = collectStorageCapabilityReason(storageResult, requirements);
   const {availableStorageBytes, ineligibleReason, unknownReason} = storageReason;
 

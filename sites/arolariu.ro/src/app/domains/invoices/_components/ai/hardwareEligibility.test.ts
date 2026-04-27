@@ -289,4 +289,34 @@ describe("analyzeLocalAiHardwareEligibility", () => {
       vi.useRealTimers();
     }
   });
+
+  it("settles within five seconds when WebGPU and storage probes both hang", async () => {
+    vi.useFakeTimers();
+    try {
+      let settledResult: HardwareEligibilityResult | null = null;
+
+      void analyzeLocalAiHardwareEligibility({
+        environment: {
+          navigator: createNavigator({
+            gpu: {
+              requestAdapter: vi.fn(() => new Promise<never>(() => {})),
+            },
+            storage: {
+              estimate: vi.fn(() => new Promise<never>(() => {})),
+            },
+          }),
+          Worker: createWorkerConstructor(),
+        },
+      }).then((result) => {
+        settledResult = result;
+      });
+
+      await vi.advanceTimersByTimeAsync(4999);
+
+      expect(settledResult?.status).toBe("ineligible");
+      expect(settledResult?.reasons).toContain("webgpu-adapter-unavailable");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

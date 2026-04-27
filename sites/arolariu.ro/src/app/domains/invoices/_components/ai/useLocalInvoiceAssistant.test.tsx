@@ -1,5 +1,6 @@
 import {InvoiceBuilder} from "@/data/mocks";
 import {act, renderHook, waitFor} from "@testing-library/react";
+import {StrictMode} from "react";
 import {describe, expect, it, vi} from "vitest";
 import type {HardwareEligibilityResult} from "./hardwareEligibility";
 import {DEFAULT_LOCAL_AI_HARDWARE_REQUIREMENTS} from "./hardwareEligibility";
@@ -22,6 +23,153 @@ const ineligibleHardware = {
 } as const satisfies HardwareEligibilityResult;
 
 describe("useLocalInvoiceAssistant", () => {
+  it("finishes hardware analysis under React StrictMode remounts", async () => {
+    const adapter = createFakeAdapter();
+
+    const {result} = renderHook(
+      () =>
+        useLocalInvoiceAssistant({
+          adapter,
+          analyzeHardware: async () => eligibleHardware,
+          createId: createSequentialIdFactory(),
+          invoices: [],
+          now: () => new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      {
+        wrapper: StrictMode,
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+    expect(result.current.canLoadModel).toBe(true);
+  });
+
+  it("loads the model under React StrictMode after the first owned adapter is disposed", async () => {
+    const adapters = [
+      createFakeAdapter(),
+      createFakeAdapter({
+        load: vi.fn(async () => undefined),
+      }),
+    ];
+    const createAdapter = vi.fn(() => {
+      const adapter = adapters.shift();
+      if (!adapter) {
+        throw new Error("Unexpected adapter creation.");
+      }
+
+      return adapter;
+    });
+
+    const {result} = renderHook(
+      () =>
+        useLocalInvoiceAssistant({
+          analyzeHardware: async () => eligibleHardware,
+          createAdapter,
+          createId: createSequentialIdFactory(),
+          invoices: [],
+          now: () => new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      {
+        wrapper: StrictMode,
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(createAdapter).toHaveBeenCalledTimes(2);
+    expect(adapters).toHaveLength(0);
+    expect(result.current.state.lifecycle).toBe("ready");
+  });
+
+  it("loads an explicit adapter under React StrictMode without disposing it before load", async () => {
+    let disposed = false;
+    const adapter = createFakeAdapter({
+      dispose: vi.fn(async () => {
+        disposed = true;
+      }),
+      load: vi.fn(async () => {
+        if (disposed) {
+          throw new Error("Explicit adapter was disposed before load.");
+        }
+      }),
+    });
+
+    const {result} = renderHook(
+      () =>
+        useLocalInvoiceAssistant({
+          adapter,
+          analyzeHardware: async () => eligibleHardware,
+          createId: createSequentialIdFactory(),
+          invoices: [],
+          now: () => new Date("2026-01-01T00:00:00.000Z"),
+        }),
+      {
+        wrapper: StrictMode,
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      await result.current.loadModel();
+    });
+
+    expect(result.current.state.lifecycle).toBe("ready");
+    expect(adapter.dispose).not.toHaveBeenCalled();
+  });
+
+  it("ignores stale hardware analysis results after a newer retry settles", async () => {
+    const firstHardwareAnalysis = createDeferred<HardwareEligibilityResult>();
+    const secondHardwareAnalysis = createDeferred<HardwareEligibilityResult>();
+    const analyzeHardware = vi
+      .fn<() => Promise<HardwareEligibilityResult>>()
+      .mockReturnValueOnce(firstHardwareAnalysis.promise)
+      .mockReturnValueOnce(secondHardwareAnalysis.promise);
+    const adapter = createFakeAdapter();
+
+    const {result} = renderHook(() =>
+      useLocalInvoiceAssistant({
+        adapter,
+        analyzeHardware,
+        createId: createSequentialIdFactory(),
+        invoices: [],
+        now: () => new Date("2026-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    let retryPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      retryPromise = result.current.retryHardwareAnalysis();
+    });
+
+    await act(async () => {
+      secondHardwareAnalysis.resolve(eligibleHardware);
+      await retryPromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.lifecycle).toBe("not-downloaded");
+    });
+
+    await act(async () => {
+      firstHardwareAnalysis.resolve(ineligibleHardware);
+      await firstHardwareAnalysis.promise;
+    });
+
+    expect(result.current.state.lifecycle).toBe("not-downloaded");
+    expect(result.current.state.hardware?.status).toBe("eligible");
+  });
+
   it("marks hardware-ineligible devices as unavailable before model loading", async () => {
     const adapter = createFakeAdapter();
 

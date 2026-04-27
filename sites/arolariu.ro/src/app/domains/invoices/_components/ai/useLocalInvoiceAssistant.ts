@@ -255,9 +255,13 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const activeModel = input.model ?? DEFAULT_LOCAL_INVOICE_ASSISTANT_MODEL;
   const adapterRef = useRef<LocalInvoiceAssistantAdapter | null>(null);
   const analyzeHardwareRef = useRef(input.analyzeHardware ?? analyzeLocalAiHardwareEligibility);
+  const createAdapterRef = useRef(input.createAdapter);
   const createIdRef = useRef(input.createId ?? createDefaultMessageId);
+  const explicitAdapterRef = useRef(input.adapter);
+  const ownsAdapterRef = useRef(false);
   const generationIdRef = useRef(0);
   const generationInFlightRef = useRef<number | null>(null);
+  const hardwareAnalysisRunRef = useRef(0);
   const isMountedRef = useRef(true);
   const nowRef = useRef(input.now ?? (() => new Date()));
   const loadedRef = useRef(false);
@@ -266,13 +270,27 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   const pendingLoadRef = useRef<{controller: AbortController; promise: Promise<void>} | null>(null);
   const canSendMessageRef = useRef(false);
 
+  const createAdapterForCurrentInput = useCallback((): LocalInvoiceAssistantAdapter => {
+    if (explicitAdapterRef.current) {
+      ownsAdapterRef.current = false;
+
+      return explicitAdapterRef.current;
+    }
+
+    ownsAdapterRef.current = true;
+
+    return createAdapterRef.current?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
+  }, []);
+
   if (adapterRef.current === null) {
-    adapterRef.current = input.adapter ?? input.createAdapter?.() ?? createWebLlmLocalInvoiceAssistantAdapter();
+    adapterRef.current = createAdapterForCurrentInput();
   }
 
   useEffect(() => {
     analyzeHardwareRef.current = input.analyzeHardware ?? analyzeLocalAiHardwareEligibility;
+    createAdapterRef.current = input.createAdapter;
     createIdRef.current = input.createId ?? createDefaultMessageId;
+    explicitAdapterRef.current = input.adapter;
     inputModelRef.current = input.model;
     nowRef.current = input.now ?? (() => new Date());
   });
@@ -303,6 +321,9 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, [state]);
 
   const retryHardwareAnalysis = useCallback(async (): Promise<void> => {
+    const hardwareAnalysisRun = hardwareAnalysisRunRef.current + 1;
+    hardwareAnalysisRunRef.current = hardwareAnalysisRun;
+
     setState((current) => {
       const nextState = {
         ...current,
@@ -317,7 +338,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
 
     try {
       const hardware = await analyzeHardwareRef.current();
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || hardwareAnalysisRunRef.current !== hardwareAnalysisRun) {
         return;
       }
 
@@ -344,7 +365,7 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
         return nextState;
       });
     } catch (error) {
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || hardwareAnalysisRunRef.current !== hardwareAnalysisRun) {
         return;
       }
 
@@ -367,22 +388,24 @@ export function useLocalInvoiceAssistant(input: UseLocalInvoiceAssistantInput): 
   }, [retryHardwareAnalysis]);
 
   useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+    isMountedRef.current = true;
+    adapterRef.current ??= createAdapterForCurrentInput();
 
-  useEffect(
-    () => () => {
+    return () => {
       isMountedRef.current = false;
       pendingLoadRef.current?.controller.abort();
       pendingLoadRef.current = null;
       streamingBufferRef.current?.interrupt();
       streamingBufferRef.current = null;
-      void adapterRef.current?.dispose();
-    },
-    [],
-  );
+      const adapter = adapterRef.current;
+      const shouldDisposeAdapter = ownsAdapterRef.current;
+      adapterRef.current = null;
+      ownsAdapterRef.current = false;
+      if (shouldDisposeAdapter) {
+        void adapter?.dispose();
+      }
+    };
+  }, [createAdapterForCurrentInput]);
 
   const loadModel = useCallback(async (): Promise<void> => {
     const adapter = adapterRef.current;
