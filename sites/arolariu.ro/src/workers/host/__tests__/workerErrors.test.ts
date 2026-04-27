@@ -26,11 +26,14 @@ describe("WorkerCrashError", () => {
     expect(err).toBeInstanceOf(Error);
     expect(err.inFlightMethods).toEqual(["generate", "load"]);
     expect(err.name).toBe("WorkerCrashError");
+    expect(err.message).toContain("generate");
+    expect(err.message).toContain("load");
   });
 
   it("accepts an empty list", () => {
     const err = new WorkerCrashError([]);
     expect(err.inFlightMethods).toEqual([]);
+    expect(err.message).toContain("[]");
   });
 });
 
@@ -51,6 +54,11 @@ describe("WorkerDeadError", () => {
     expect(err).toBeInstanceOf(Error);
     expect(err.name).toBe("WorkerDeadError");
   });
+
+  it("accepts a custom message", () => {
+    const err = new WorkerDeadError("ai worker is dead");
+    expect(err.message).toBe("ai worker is dead");
+  });
 });
 
 describe("WorkerNotAvailableError", () => {
@@ -58,5 +66,10 @@ describe("WorkerNotAvailableError", () => {
     const err = new WorkerNotAvailableError();
     expect(err).toBeInstanceOf(Error);
     expect(err.name).toBe("WorkerNotAvailableError");
+  });
+
+  it("accepts a custom message", () => {
+    const err = new WorkerNotAvailableError("not in this build");
+    expect(err.message).toBe("not in this build");
   });
 });

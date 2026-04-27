@@ -13,13 +13,11 @@
  * The original error info is preserved on `cause`; the worker stays alive.
  */
 export class WorkerError extends Error {
-  public readonly cause: unknown;
   public readonly method: string;
 
   constructor(cause: unknown, method: string) {
-    super(`Worker handler "${method}" threw an error.`);
+    super(`Worker handler "${method}" threw an error.`, {cause});
     this.name = "WorkerError";
-    this.cause = cause;
     this.method = method;
   }
 }
@@ -33,7 +31,7 @@ export class WorkerCrashError extends Error {
   public readonly inFlightMethods: ReadonlyArray<string>;
 
   constructor(inFlightMethods: ReadonlyArray<string>) {
-    super(`Worker crashed with ${inFlightMethods.length} in-flight call(s).`);
+    super(`Worker crashed with ${inFlightMethods.length} in-flight call(s): [${inFlightMethods.join(", ")}].`);
     this.name = "WorkerCrashError";
     this.inFlightMethods = inFlightMethods;
   }
