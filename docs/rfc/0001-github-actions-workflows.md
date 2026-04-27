@@ -88,14 +88,21 @@ Trigger (push/PR) → Lint → Format → Test → Report
 
 | Workflow | Pattern | Trigger | Purpose | Tech Stack |
 |----------|---------|---------|---------|------------|
-| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build and test Next.js website | Node.js 24, Playwright |
-| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website to Azure | Azure deployment |
-| `official-api-trigger.yml` | Trigger | Push to main + Manual | Build, test, and deploy .NET API | .NET 10, Azure |
-| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site | Node.js 24, Azure SWA |
-| `official-docs-trigger.yml` | Trigger | Push to main | Generate and deploy DocFX docs | .NET 10, DocFX |
-| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
-| `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end API and frontend test runs | Node.js 24, Newman |
-| `official-components-publish.yml` | Trigger | Tag push (`components-v*`) + Manual | Publish component library to npm | Node.js 24, RSLib |
+| `copilot-setup-steps.yml` | Setup | Workflow changes + Manual | Bootstrap Copilot coding agent workspace | Node.js 24, .NET 10 |
+| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build/test website and publish immutable image metadata | Node.js 24, Playwright, Docker Buildx |
+| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website image digest or immutable commit tag | Azure App Service |
+| `official-api-trigger.yml` | Trigger | Push to main/preview + Manual | Quality, image build, attestation, and API deploy | .NET 10, Docker Buildx, Azure |
+| `official-exp-trigger.yml` | Trigger | Push to main/preview + Manual | Quality, image build, attestation, and experimental API deploy | Python 3.12, Docker Buildx, Azure |
+| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site via reusable SWA workflow | Node.js 24, Azure SWA |
+| `official-status-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit status site via reusable SWA workflow | Node.js 24, Azure SWA |
+| `official-docs-trigger.yml` | Trigger | Push to main | Assemble and deploy docs through reusable SWA workflow | Node.js 24, .NET 10, Python 3.12 |
+| `official-status-probe.yml` | Data Publisher | Schedule, Manual | Probe live services and publish status-data branch | Node.js 24 |
+| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (format, lint, tests, stats) | Node.js 24, ESLint, Prettier |
+| `official-e2e-action.yml` | Validation | Schedule, Manual | Live end-to-end target checks and failure issue updates | Node.js 24, Newman |
+| `official-security-analysis.yml` | Security | PR, Push, Schedule, Manual | CodeQL, Dependency Review, Scorecard, workflow policy | CodeQL, Scorecard |
+| `official-workflow-lint.yml` | Governance | PR, Push, Manual | Workflow inventory and policy validation | Node.js 24 |
+| `official-components-publish.yml` | Publish | Tag push (`components-v*`) + Manual | Publish component library to npm with Trusted Publishing | Node.js 24, RSLib |
+| `reusable-*.yml` | Reusable | `workflow_call` | Shared quality, container, and SWA primitives | Node.js, .NET, Python, Azure |
 
 ---
 
@@ -119,8 +126,8 @@ Trigger (push/PR) → Lint → Format → Test → Report
 ```yaml
 inputs:
   node-version:                    # Node.js version (default: '24')
-  dotnet-version:                  # .NET version (default: '10.x')
-  install-node-dependencies:       # Toggle npm install (default: 'true')
+  dotnet-version:                  # .NET SDK version (default: '10.0.x')
+  install-node-dependencies:       # Toggle deterministic npm ci (default: 'true')
   install-dotnet-dependencies:     # Toggle dotnet restore (default: 'true')
   cache-key-prefix:                # Workflow-specific cache key (e.g., 'website', 'api')
   working-directory:               # Custom directory for npm commands (default: '.')
@@ -137,7 +144,7 @@ outputs:
 
 ### 3.2 Caching Strategy
 
-**Philosophy:** Hash-based exact matching, no fallback keys
+**Philosophy:** Hash-based exact matching, no fallback keys, deterministic installs
 
 #### **Node.js Caching**
 ```yaml
@@ -146,9 +153,11 @@ Example: linux-node-website-a3f9b2c1d4e5...
 ```
 
 **Behavior:**
-- **Cache hit**: When `package-lock.json` hasn't changed
-- **Cache miss**: When `package-lock.json` changes (due to package updates)
-- **No fallback**: Ensures fresh installation when dependencies change
+- **Cache hit**: When `package-lock.json` hasn't changed and the npm package-manager cache can be reused
+- **Cache miss**: When `package-lock.json` changes and the npm package-manager cache must be repopulated
+- **Install**: `npm ci --prefer-offline --no-audit` runs on every dependency-enabled job, even on cache hit
+- **Cached paths**: `~/.npm` only; `node_modules` is intentionally not cached
+- **No fallback**: Ensures dependency changes cannot reuse stale package-manager cache entries through broad prefixes
 
 #### **.NET Caching**
 ```yaml
@@ -184,18 +193,20 @@ restore-keys: |
 ```yaml
 # SAFE (current approach)
 key: linux-node-website-{hash}
+path: ~/.npm
 # NO restore-keys
 ```
 
 **Benefits:**
 - ✅ No stale cache reuse when lock files are out of sync
-- ✅ Forces fresh installation when dependencies change
+- ✅ Forces lockfile-verified `npm ci` installation on every run
 - ✅ Prevents cache pollution between workflows
-- ✅ Clear: cache hit = exact match, cache miss = fresh install
+- ✅ Avoids persisting `node_modules`, which can contain platform-specific or lifecycle-script side effects
+- ✅ Clear: cache hit = exact npm download cache match, cache miss = cache repopulation
 
 **Trade-off:**
-- More frequent cache misses (but correct behavior)
-- Slightly longer execution time on first run after dependency update
+- More frequent package downloads when lock files change (but correct behavior)
+- Slightly longer execution time than restoring a `node_modules` archive
 - BUT: Guarantees correctness over speed
 
 **When cache invalidates (as expected):**
@@ -229,10 +240,10 @@ jobs:
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       
       - name: 🔐 Azure authentication (if needed)
-        uses: azure/login@v2
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
           # ...
       
@@ -268,22 +279,33 @@ Trigger: Push to preview (+ manual dispatch)
 │  └─ Upload test results
 └─ Job: build
    ├─ Setup workspace (Node.js 24, Playwright, Generate)
-   ├─ Build Docker image
-   ├─ Push to Azure Container Registry
-   └─ Tag with commit SHA
+   ├─ Build and push Docker image with Docker Buildx
+   ├─ Publish commit-SHA image tag only
+   ├─ Attest image provenance
+   └─ Upload website-image metadata artifact
 ```
 
 **Release Workflow** (`official-website-release.yml`):
 ```
 Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
-├─ Azure authentication
-└─ Deploy container to Azure App Service
+├─ Download website-image metadata artifact
+├─ Verify metadata SHA matches workflow_run head SHA
+├─ Deploy digest image to Azure App Service
+└─ Fall back to immutable commit tag only when digest deployment is unsupported
 ```
 
 **Why separate workflows?**
 - Build can be automated on every push
 - Release requires manual approval for production
 - Enables testing in preview environment before production release
+- Release uses the image digest produced by the build run instead of mutable tags
+
+**Immutable website handoff:**
+- Build workflow path filters include website code, shared components, root package locks, the frontend Dockerfile, and owned CI actions.
+- Website images are tagged as `${{ github.sha }}` only; `latest` is not used for CI/CD handoff.
+- The build workflow uploads `website-image.json` with image name, tag, digest, source run ID, and source SHA.
+- Automatic release reads that artifact from the completed build run and verifies the artifact source SHA matches `workflow_run.head_sha`.
+- Manual production releases require an explicit image tag; development manual releases may default to the dispatch commit SHA.
 
 ### 4.2 Trigger Pattern (API)
 
@@ -291,15 +313,11 @@ Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 ```
 Trigger: Push to main (+ manual dispatch)
 ├─ Job: test
-│  ├─ Setup workspace (.NET 10)
-│  ├─ Run unit tests
-│  └─ Report coverage
-└─ Job: build-and-deploy
-   ├─ Setup workspace (.NET 10)
-   ├─ Build .NET application
-   ├─ Publish artifacts
-   ├─ Azure authentication
-   └─ Deploy to Azure App Service
+│  └─ Call reusable-dotnet-quality.yml
+├─ Job: build
+│  └─ Call reusable-container-build-push.yml
+└─ Job: deploy
+   └─ Deploy immutable digest/tag via azure-webapp-container-deploy
 ```
 
 **Why single workflow?**
@@ -307,6 +325,7 @@ Trigger: Push to main (+ manual dispatch)
 - Faster feedback loop
 - Preview environment for testing
 - Direct path from build to deploy
+- Container build and deploy details stay centralized in reusable workflow/action primitives
 
 ### 4.3 Validation Pattern (Hygiene)
 
@@ -338,6 +357,18 @@ Trigger: PR
 - Independent validation checks
 - Each job can potentially reuse cache from other jobs running in parallel
 - Summary job aggregates results
+
+### 4.4 Reusable Workflow and Composite Action Layers
+
+Job orchestration lives in reusable `workflow_call` workflows; step mechanics live in local composite actions.
+
+| Layer | Files | Responsibility |
+|-------|-------|----------------|
+| Reusable quality workflows | `reusable-node-quality.yml`, `reusable-dotnet-quality.yml`, `reusable-python-quality.yml` | Build/test/security primitives for project families |
+| Reusable deployment workflows | `reusable-container-build-push.yml`, `reusable-static-webapp.yml` | Container image publication and SWA deployment orchestration |
+| Composite setup/actions | `.github/actions/setup-workspace`, `.github/actions/setup-ci-scripts`, `.github/actions/azure-*`, `.github/actions/static-web-app-build-deploy` | Deterministic setup and reusable step mechanics |
+
+External actions in all workflows and composite actions must be pinned to full 40-character commit SHAs with a readable version comment. Local actions and local reusable workflows remain path references.
 
 ---
 
@@ -410,11 +441,13 @@ The composite action provides clear visual feedback:
 ```
 🚀 Starting workspace setup...
 📦 Setup Node.js 24
-💾 Cache Node.js dependencies
-  ✅ Using cached Node.js dependencies (cache hit)
+💾 Cache npm package store
+  ✅ npm package cache hit
   OR
-  ⚠️ Cache miss - installing dependencies...
-📦 Setup .NET 10.x
+  ⚠️ npm package cache miss
+📥 Install Node.js dependencies
+  ✅ npm ci completed successfully
+📦 Setup .NET 10.0.x
 💾 Cache .NET packages
   ✅ Using cached .NET packages (cache hit)
 📥 Restore .NET dependencies
@@ -498,10 +531,24 @@ The composite action provides clear visual feedback:
 ### 8.2 Secret Management
 
 **Approach:**
-- Azure credentials via GitHub Secrets
-- OIDC for Azure authentication (where supported)
+- Azure App Service and ACR authentication via OIDC-backed GitHub Secrets
+- Static Web Apps deployment tokens are an explicit exception because the SWA deploy action requires `azure_static_web_apps_api_token`; tokens must be GitHub Environment-scoped and isolated to SWA workflows
 - No secrets in cache keys or logs
 - Environment-specific secret scoping
+- Artifact attestations are enabled for container images and npm publishing where supported
+
+### 8.3 Workflow Policy Enforcement
+
+The repository enforces workflow policy through `.github/scripts/src/runWorkflowPolicyCheck.ts` and `official-workflow-lint.yml`.
+
+Policy rejects:
+- External actions not pinned to full commit SHAs.
+- Cache `restore-keys`.
+- Top-level `permissions: write-all`.
+- Unreviewed `pull_request_target`.
+- Deployment workflows without GitHub Environments.
+- Azure login workflows without `id-token: write`.
+- Top-level `contents: write` outside the allowlisted `official-status-probe.yml` status-data publisher.
 
 ---
 
@@ -514,6 +561,9 @@ The composite action provides clear visual feedback:
 - ✅ Composite action syntax validation
 - ✅ Cache key generation logic
 - ✅ All workflow paths reviewed
+- ✅ `.github/scripts` tests pass
+- ✅ Workflow inventory generation succeeds
+- ✅ Workflow policy check passes
 
 **After Merge:**
 - ✅ Monitor first few workflow runs

@@ -38,6 +38,8 @@ paths:
   - sites/cv.arolariu.ro/src/**
   # Backend - .NET API
   - sites/api.arolariu.ro/src/**
+  # Python - experimental FastAPI service
+  - sites/exp.arolariu.ro/**
   # Shared components library
   - packages/components/src/**
   # Build/utility scripts

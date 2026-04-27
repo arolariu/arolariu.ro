@@ -39,7 +39,8 @@ updates:
   # GITHUB ACTIONS WORKFLOWS
   # ===========================================================================
   # Keep GitHub Actions workflows up to date for security and features.
-  # Scans: /.github/workflows/*.yml and /.github/actions/*/action.yml
+  # Scans all repository-owned workflows and composite actions, including
+  # official-security-analysis.yml, reusable-*.yml, and .github/actions/**.
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "preview"

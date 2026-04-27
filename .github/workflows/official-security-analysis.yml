@@ -1,0 +1,141 @@
+name: "official-security-analysis"
+
+on:
+  push:
+    branches: ["main", "preview"]
+    paths:
+      - ".github/**"
+      - "infra/**"
+      - "packages/**"
+      - "scripts/**"
+      - "sites/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    branches: ["main", "preview"]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: 🔎 CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: "javascript-typescript"
+            build-mode: "none"
+          - language: "csharp"
+            build-mode: "manual"
+          - language: "python"
+            build-mode: "none"
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🔎 Initialize CodeQL
+        uses: github/codeql-action/init@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: security-and-quality
+
+      - name: 🚀 Setup .NET for CodeQL
+        if: matrix.language == 'csharp'
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: "24"
+          dotnet-version: "10.0.x"
+          install-node-dependencies: "false"
+          install-dotnet-dependencies: "true"
+          cache-key-prefix: "security-codeql"
+
+      - name: 🏗️ Build .NET solution for CodeQL
+        if: matrix.language == 'csharp'
+        run: dotnet build ./arolariu.slnx --configuration Release --no-restore
+
+      - name: 📊 Analyze with CodeQL
+        uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  dependency-review:
+    name: 📦 Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 📦 Review dependency changes
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+
+  scorecard:
+    name: 🛡️ OpenSSF Scorecard
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      security-events: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🛡️ Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: 📤 Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225 # v4
+        with:
+          sarif_file: scorecard-results.sarif
+
+  workflow-policy:
+    name: 🔐 Workflow policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🚀 Setup CI scripts
+        uses: ./.github/actions/setup-ci-scripts
+
+      - name: 🔐 Enforce workflow policy
+        env:
+          CI_SCRIPT_MODE: "workflow-policy"
+        run: node .github/scripts/src/runCiScript.ts

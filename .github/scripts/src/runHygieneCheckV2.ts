@@ -66,6 +66,13 @@ export type CheckMode = "detect" | "format" | "lint" | "test" | "stats" | "summa
  * The workflow downloads artifacts into this folder before `summary` mode runs.
  */
 const ARTIFACT_DIR = "artifacts/hygiene";
+const BLOCKING_CHECKS = ["format", "lint", "test"] as const;
+
+type BlockingCheckType = (typeof BLOCKING_CHECKS)[number];
+
+function isBlockingCheck(check: string): check is BlockingCheckType {
+  return BLOCKING_CHECKS.includes(check as BlockingCheckType);
+}
 
 // =============================================================================
 // CHANGE DETECTION (unchanged from v1)
@@ -142,6 +149,68 @@ async function loadCheckResult(checkType: string): Promise<HygieneCheckResult | 
   }
 }
 
+export function getBlockingHygieneFailures(checks: {
+  readonly format?: HygieneCheckResult;
+  readonly lint?: HygieneCheckResult;
+  readonly test?: HygieneCheckResult;
+}): readonly string[] {
+  return BLOCKING_CHECKS.flatMap((check) => {
+    const result = checks[check];
+    if (!result) {
+      return [`${check}: missing result artifact`];
+    }
+
+    if (result.status === "failure" || result.status === "error") {
+      return [`${check}: ${result.summary}`];
+    }
+
+    return [];
+  });
+}
+
+function failBlockingCheckIfNeeded(mode: CheckMode, result: HygieneCheckResult): void {
+  if (isBlockingCheck(mode) && (result.status === "failure" || result.status === "error")) {
+    core.setFailed(`${mode} check ${result.status}: ${result.summary}`);
+  }
+}
+
+function createChecksMap(
+  format: HygieneCheckResult | undefined,
+  lint: HygieneCheckResult | undefined,
+  test: HygieneCheckResult | undefined,
+  stats: HygieneCheckResult | undefined,
+): {
+  format?: HygieneCheckResult;
+  lint?: HygieneCheckResult;
+  test?: HygieneCheckResult;
+  stats?: HygieneCheckResult;
+} {
+  const checks: {
+    format?: HygieneCheckResult;
+    lint?: HygieneCheckResult;
+    test?: HygieneCheckResult;
+    stats?: HygieneCheckResult;
+  } = {};
+
+  if (format) {
+    checks.format = format;
+  }
+
+  if (lint) {
+    checks.lint = lint;
+  }
+
+  if (test) {
+    checks.test = test;
+  }
+
+  if (stats) {
+    checks.stats = stats;
+  }
+
+  return checks;
+}
+
 /**
  * Aggregates all check results and posts PR comment
  *
@@ -172,18 +241,17 @@ async function runSummary(): Promise<void> {
   const workflowRunUrl = `${serverUrl}/${repository}/actions/runs/${runId}`;
 
   // Create the report
-  const report: HygieneReport = createHygieneReport({
-    checks: {
-      format: formatResult,
-      lint: lintResult,
-      test: testResult,
-      stats: statsResult,
-    },
+  const checks = createChecksMap(formatResult, lintResult, testResult, statsResult);
+
+  const reportOptions = {
+    checks,
     commitSha,
-    prNumber,
     workflowRunId: runId,
     workflowRunUrl,
-  });
+    ...(prNumber ? {prNumber} : {}),
+  };
+
+  const report: HygieneReport = createHygieneReport(reportOptions);
 
   // Log summary
   core.info(`Overall status: ${report.overallStatus}`);
@@ -218,9 +286,10 @@ async function runSummary(): Promise<void> {
   core.setOutput("overall-status", report.overallStatus);
   core.setOutput("report", JSON.stringify(report));
 
-  // Fail if any check failed
-  if (report.overallStatus === "failure" || report.overallStatus === "error") {
-    core.setFailed(`Hygiene checks ${report.overallStatus}`);
+  const blockingFailures = getBlockingHygieneFailures(checks);
+
+  if (blockingFailures.length > 0) {
+    core.setFailed(`Blocking hygiene checks failed: ${blockingFailures.join("; ")}`);
   }
 }
 
@@ -251,15 +320,15 @@ export default async function runHygieneCheck(): Promise<void> {
         break;
 
       case "format":
-        await runFormatCheck();
+        failBlockingCheckIfNeeded(mode, await runFormatCheck());
         break;
 
       case "lint":
-        await runLintCheck();
+        failBlockingCheckIfNeeded(mode, await runLintCheck());
         break;
 
       case "test":
-        await runTestCheck();
+        failBlockingCheckIfNeeded(mode, await runTestCheck());
         break;
 
       case "stats":

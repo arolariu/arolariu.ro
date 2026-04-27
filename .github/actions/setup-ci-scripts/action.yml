@@ -1,0 +1,20 @@
+name: "Setup CI Scripts"
+description: "Installs repository-owned GitHub Actions helper scripts deterministically."
+author: "arolariu.ro"
+
+inputs:
+  cache-key-prefix:
+    description: "Workflow-specific cache key prefix"
+    required: false
+    default: "ci-scripts"
+
+runs:
+  using: "composite"
+  steps:
+    - name: 🚀 Setup CI script workspace
+      uses: ./.github/actions/setup-workspace
+      with:
+        node-version: "24"
+        dotnet-version: ""
+        working-directory: ".github/scripts"
+        cache-key-prefix: ${{ inputs.cache-key-prefix }}

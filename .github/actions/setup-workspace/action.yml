@@ -28,11 +28,11 @@ inputs:
   # .NET SDK version to install via actions/setup-dotnet.
   # Set to an empty string to disable .NET steps entirely.
   dotnet-version:
-    description: ".NET version to use (leave empty to skip .NET setup)"
+    description: ".NET SDK version to use; leave empty to skip .NET setup"
     required: false
-    default: "10"
+    default: "10.0.x"
 
-  # When true, runs `npm ci` if the npm cache was not a hit.
+  # When true, always runs `npm ci` after restoring the package-manager cache.
   install-node-dependencies:
     description: "Whether to install npm dependencies"
     required: false
@@ -105,32 +105,29 @@ runs:
     # Phase 2: SDK Setup (Node.js + .NET)
     # ─────────────────────────────────────────────────────────────────
     - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
 
     - name: 💾 Caching Node.js dependencies...
       id: cache-node
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
-        # Cache both root and workspace node_modules to support Nx workspaces.
-        # Trade-off: broader paths can increase cache size but reduce CI time.
+        # Cache the package-manager store only. npm ci still runs every time.
         path: |
-          node_modules
           ~/.npm
-          **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
 
     - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
       if: inputs.dotnet-version != ''
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
     - name: 💾 Caching .NET packages...
       id: cache-dotnet
       if: inputs.dotnet-version != ''
-      uses: actions/cache@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         # Cache NuGet global packages and the dotnet SDK cache locations.
         path: |
@@ -143,14 +140,10 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
-          echo "::group::📦 Installing Node.js dependencies..."
-          npm install --prefer-offline --no-audit
-          echo "::endgroup::"
-          echo "✅ Dependencies installed successfully"
-        else
-          echo "✅ Using cached Node.js dependencies"
-        fi
+        echo "::group::📦 Installing Node.js dependencies deterministically..."
+        npm ci --prefer-offline --no-audit
+        echo "::endgroup::"
+        echo "✅ Dependencies installed successfully"
 
     - name: 📥 Restore .NET dependencies
       if: inputs.dotnet-version != '' && inputs.install-dotnet-dependencies == 'true'
@@ -207,5 +200,5 @@ runs:
         echo "│  Cache Status:                                           │"
         printf "│    • Node.js:    %-40s│\n" "${{ steps.cache-node.outputs.cache-hit == 'true' && '✅ HIT' || '❌ MISS' }}"
         printf "│    • .NET:       %-40s│\n" "${{ steps.cache-dotnet.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.dotnet-version == '' && '⏭️  SKIPPED' || '❌ MISS') }}"
-        printf "│    • Playwright: %-40s│\n" "${{ steps.cache-playwright.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.playwright != 'true' && '⏭️  SKIPPED' || '❌ MISS') }}"
+        printf "│    • Playwright: %-40s│\n" "${{ inputs.playwright == 'true' && '✅ INSTALLED' || '⏭️  SKIPPED' }}"
         echo "└──────────────────────────────────────────────────────────┘"

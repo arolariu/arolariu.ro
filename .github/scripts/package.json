@@ -10,7 +10,9 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "workflow:inventory": "node src/runWorkflowInventory.ts",
+    "workflow:policy": "node src/runWorkflowPolicyCheck.ts"
   },
   "dependencies": {
     "@actions/artifact": "6.2.1",

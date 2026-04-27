@@ -25,7 +25,9 @@ Applies to GitHub Actions workflows and automation under `.github/workflows/`.
 
 ### Required Verification Commands
 ```bash
-npm run lint
+npm test --prefix .github/scripts
+npm run workflow:inventory --prefix .github/scripts
+npm run workflow:policy --prefix .github/scripts
 ```
 
 ### Failure Handling
@@ -47,19 +49,28 @@ This document provides guidelines for developing and maintaining GitHub Actions 
 
 | Workflow | Purpose | Trigger | Pattern |
 |----------|---------|---------|---------|
-| `official-website-build.yml` | Build & test Next.js website | Push to main/preview | Build-Release |
-| `official-website-release.yml` | Deploy website container | workflow_run (after build) | Build-Release |
-| `official-api-trigger.yml` | Build, test & deploy .NET API | Push to main/preview | Trigger |
-| `official-hygiene-check.yml` | Format, lint, test validation | PR, Push | Validation |
+| `official-website-build.yml` | Build, test, attest, and publish website image metadata | Push to preview, manual | Build-Release |
+| `official-website-release.yml` | Deploy immutable website image digest/tag | workflow_run, manual | Build-Release |
+| `official-api-trigger.yml` | Quality, container build, and API App Service deployment | Push to main/preview, manual | Trigger |
+| `official-exp-trigger.yml` | Quality, container build, and experimental API deployment | Push to main/preview, manual | Trigger |
+| `official-hygiene-check-v2.yml` | Format, lint, unit-test, stats, and PR summary | PR, manual | Validation |
 | `official-e2e-action.yml` | Newman E2E API tests | Manual, Schedule | E2E Testing |
-| `official-cv-trigger.yml` | Deploy SvelteKit CV site | Push to main | Trigger |
-| `official-docs-trigger.yml` | Deploy DocFX documentation | Push to main | Trigger |
+| `official-status-probe.yml` | Probe live services and publish status-data branch | Schedule, manual | Data Publisher |
+| `official-cv-trigger.yml` | Deploy SvelteKit CV site through reusable SWA workflow | Push to main | Trigger |
+| `official-status-trigger.yml` | Deploy status SWA through reusable SWA workflow | Push to main | Trigger |
+| `official-docs-trigger.yml` | Assemble and deploy documentation SWA | Push to main | Trigger |
 | `official-components-publish.yml` | Publish npm package | Tag push, Manual | Publish |
+| `official-security-analysis.yml` | CodeQL, Dependency Review, Scorecard, workflow policy | PR, push, schedule, manual | Security |
+| `official-workflow-lint.yml` | Workflow inventory and policy validation | PR, push, manual | Governance |
+| `copilot-setup-steps.yml` | Copilot coding agent bootstrap | Workflow changes, manual | Setup |
+| `reusable-*.yml` | Shared quality, container, and SWA primitives | workflow_call | Reusable |
 
 **Key Patterns:**
 - Use `setup-workspace` composite action for all workspace setup
 - OIDC for Azure authentication - NO long-lived secrets
 - Hash-based caching only - NO fallback keys (intentional)
+- External actions must be pinned to full 40-character SHAs with version comments
+- Prefer reusable workflows for job orchestration and composite actions for step mechanics
 - Progress emojis: 📥 🔐 🚀 🏗️ 🧪 ✅ ⚠️
 
 ---
@@ -266,7 +277,7 @@ jobs:
   deploy:
     steps:
       - name: 🔐 Azure authentication
-        uses: azure/login@v2
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -293,6 +304,18 @@ permissions:
   run: npm publish --provenance --tag ${{ inputs.tag || 'latest' }} --access public
   # No NODE_AUTH_TOKEN needed - using Trusted Publishing
 ```
+
+---
+
+### Azure Static Web Apps token exception
+
+Azure Static Web Apps deployments are the only repository deployment workflows
+allowed to use SWA deployment tokens instead of Azure OIDC because the
+`Azure/static-web-apps-deploy` action requires an `azure_static_web_apps_api_token`.
+Those tokens must be scoped through GitHub Environments and passed only through
+the reusable static web app workflow or the `static-web-app-build-deploy`
+composite action. Do not introduce SWA tokens into container, App Service, npm
+publishing, or validation workflows.
 
 ---
 
@@ -371,7 +394,7 @@ on:
       - 'infra/containers/Dockerfile.backend'
 ```
 
-### 4. Hygiene Check (`official-hygiene-check.yml`)
+### 4. Hygiene Check (`official-hygiene-check-v2.yml`)
 
 **Purpose:** Code quality validation on PRs
 
@@ -393,21 +416,17 @@ concurrency:
 
 **Purpose:** Run Newman E2E tests against deployed API
 
-**Key Feature:** Automatic issue creation on failure
+**Key Feature:** Automatic issue creation on failure, with target-keyed de-duplication via the `e2e-failure` label
 
 ```yaml
-- name: 🐛 Create issue on failure
-  if: failure()
-  uses: actions/github-script@v7
+- name: 🐛 Create GitHub issue for failures
+  uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+  env:
+    CI_SCRIPT_MODE: "live-test"
   with:
     script: |
-      await github.rest.issues.create({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        title: '🔴 E2E Tests Failed',
-        body: '...',
-        labels: ['bug', 'e2e-failure']
-      });
+      const {default: runLiveTestAction} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
+      await runLiveTestAction();
 ```
 
 ### 6. CV Trigger (`official-cv-trigger.yml`)
@@ -438,6 +457,38 @@ concurrency:
 - Provenance attestations
 - Version validation (prevent duplicate publishes)
 - Distribution tag selection (latest, beta, next, canary)
+
+### 9. Exp Trigger (`official-exp-trigger.yml`)
+
+**Purpose:** Build, test, publish, and deploy the Python experimental service container.
+
+**Pattern:** Calls `reusable-python-quality.yml`, `reusable-container-build-push.yml`, and the local App Service deploy composite action.
+
+### 10. Status Trigger (`official-status-trigger.yml`)
+
+**Purpose:** Build and deploy the SvelteKit status site through `reusable-static-webapp.yml`.
+
+### 11. Status Probe (`official-status-probe.yml`)
+
+**Purpose:** Poll production health endpoints and publish generated aggregates to the `status-data` orphan branch.
+
+**Permission exception:** This is the only workflow allowlisted for top-level `contents: write`.
+
+### 12. Security Analysis (`official-security-analysis.yml`)
+
+**Purpose:** Run CodeQL, Dependency Review, OpenSSF Scorecard, and workflow policy checks.
+
+### 13. Workflow Policy (`official-workflow-lint.yml`)
+
+**Purpose:** Generate workflow inventory and enforce workflow policy on workflow/action/script changes.
+
+### Reusable workflows
+
+- `reusable-node-quality.yml` - Node.js project build/test primitive.
+- `reusable-dotnet-quality.yml` - .NET restore/build/test primitive.
+- `reusable-python-quality.yml` - Python lint/security/test primitive.
+- `reusable-container-build-push.yml` - Azure ACR Buildx push, digest, and attestation primitive.
+- `reusable-static-webapp.yml` - Azure Static Web Apps build/deploy primitive.
 
 ---
 
@@ -483,10 +534,10 @@ jobs:
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🔐 Azure authentication
-        uses: azure/login@v2
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -545,24 +596,23 @@ AZURE_TENANT_ID
 AZURE_SUBSCRIPTION_ID
 
 # Container Registry
-AZURE_ACR_NAME
-AZURE_ACR_USERNAME
-AZURE_ACR_PASSWORD
+AZURE_CONTAINER_REGISTRY
 
 # App Service
 AZURE_WEBSITE_APP_NAME
 AZURE_API_APP_NAME
 
 # Static Web Apps
-AZURE_SWA_CV_TOKEN
-AZURE_SWA_DOCS_TOKEN
+AZURE_STATIC_WEB_APPS_CV_TOKEN
+AZURE_STATIC_WEB_APPS_STATUS_TOKEN
+AZURE_STATIC_WEB_APPS_DOCS_TOKEN
 ```
 
 **Security Rules:**
 1. **Never hardcode secrets** - Use `${{ secrets.NAME }}`
 2. **Use OIDC** - Prefer OIDC over long-lived credentials
 3. **Scope permissions** - Request minimum required permissions
-4. **Pin actions** - Use `@v4` tags, not `@main`
+4. **Pin actions** - Use full 40-character commit SHAs with version comments, not tags or branches
 5. **Validate inputs** - Sanitize `workflow_dispatch` inputs
 
 ### Permission Patterns
@@ -666,7 +716,7 @@ paths-ignore:
     CI: true
 
 - name: 📊 Upload coverage
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
   with:
     name: coverage-report
     path: coverage/
@@ -685,7 +735,7 @@ paths-ignore:
 
 - name: 📸 Upload test artifacts
   if: failure()
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
   with:
     name: playwright-report
     path: playwright-report/
@@ -698,7 +748,7 @@ paths-ignore:
   run: dotnet test --configuration Release --logger trx --collect:"XPlat Code Coverage"
 
 - name: 📊 Upload test results
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
   with:
     name: test-results
     path: TestResults/
@@ -712,30 +762,27 @@ paths-ignore:
 
 ```yaml
 - name: 🏗️ Build Docker image
-  run: |
-    docker build \
-      -f infra/containers/Dockerfile.frontend \
-      -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/arolariu-website:${{ github.sha }} \
-      .
-
-- name: 📤 Push to ACR
-  run: |
-    docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/arolariu-website:${{ github.sha }}
+  uses: ./.github/actions/azure-container-build-push
+  with:
+    image-name: frontend/dev.arolariu
+    dockerfile: infra/containers/Dockerfile.frontend
+    context: .
 
 - name: 🚀 Deploy to App Service
-  uses: azure/webapps-deploy@v3
+  uses: ./.github/actions/azure-webapp-container-deploy
   with:
     app-name: ${{ secrets.AZURE_WEBSITE_APP_NAME }}
-    images: ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/arolariu-website:${{ github.sha }}
+    image-name: frontend/dev.arolariu
+    image-tag: ${{ github.sha }}
 ```
 
 ### Static Deployment (Static Web Apps)
 
 ```yaml
 - name: 🚀 Deploy to Azure Static Web Apps
-  uses: Azure/static-web-apps-deploy@v1
+  uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
   with:
-    azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_TOKEN }}
+    azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
     action: 'upload'
     app_location: 'build'
     skip_app_build: true
@@ -796,7 +843,7 @@ jobs:
 
 ```yaml
 - name: 📤 Upload build artifacts
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
   with:
     name: build-output
     path: |
@@ -809,7 +856,7 @@ jobs:
 
 ```yaml
 - name: 📥 Download build artifacts
-  uses: actions/download-artifact@v4
+  uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
   with:
     name: build-output
     path: dist/
@@ -825,7 +872,7 @@ jobs:
     steps:
       - name: 📤 Upload artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: app-build
           path: dist/
@@ -834,7 +881,7 @@ jobs:
     needs: build
     steps:
       - name: 📥 Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: app-build
 ```
@@ -890,7 +937,7 @@ steps:
 | OIDC auth fails | Wrong tenant/client ID | Verify Azure AD app registration |
 | Path filter not triggering | Wrong glob pattern | Test pattern at [glob tester](https://globster.xyz/) |
 | Concurrency not working | Missing `github.ref` | Include ref in group key |
-| Action version mismatch | Using `@main` instead of tag | Pin to `@v4` |
+| Action version mismatch | Using a tag or branch instead of a full SHA | Pin to a 40-character SHA and keep a version comment |
 
 ### Debug Mode
 
@@ -938,8 +985,11 @@ official-<project>-<action>.yml
 Examples:
 - official-website-build.yml
 - official-api-trigger.yml
-- official-hygiene-check.yml
+- official-hygiene-check-v2.yml
 - official-e2e-action.yml
+- official-security-analysis.yml
+- official-workflow-lint.yml
+- reusable-*.yml
 ```
 
 ### Job Names

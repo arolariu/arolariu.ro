@@ -47,6 +47,7 @@
 name: "official-website-build"
 
 permissions:
+  attestations: write # Required for container provenance attestations
   id-token: write # Required for OIDC authentication with Azure
   contents: read # Required to checkout repository
   issues: write # Required for PR comments on test results
@@ -60,7 +61,18 @@ on:
   # Automatic trigger on preview branch changes to main website
   push:
     branches: ["preview"]
-    paths: ["sites/arolariu.ro/**"]
+    paths:
+      - "sites/arolariu.ro/**"
+      - "packages/components/**"
+      - "scripts/generate*.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "nx.json"
+      - "tsconfig.json"
+      - "infra/containers/Dockerfile.frontend"
+      - ".github/actions/setup-workspace/**"
+      - ".github/actions/azure-container-build-push/**"
+      - ".github/workflows/official-website-build.yml"
 
   # Manual trigger for controlled builds
   workflow_dispatch:
@@ -117,7 +129,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: 📝 Display workflow context
         run: |
@@ -138,9 +152,9 @@ jobs:
           echo "::endgroup::"
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
+        uses: Azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-id: ${{ secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
@@ -200,7 +214,7 @@ jobs:
 
       - name: 📤 Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
           path: sites/arolariu.ro/code-cov/
@@ -208,7 +222,7 @@ jobs:
           retention-days: 7
 
       - name: 💬 Create PR Comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -230,7 +244,7 @@ jobs:
             await runUnitTestAction();
 
       - name: ☂️ Uploading code coverage report to CodeCov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: "sites/arolariu.ro/code-cov"
@@ -243,7 +257,9 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: 📋 Display build context
         run: |
@@ -253,7 +269,7 @@ jobs:
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Build phase (2/2)                        │"
           echo "│ 🐳 Container:     ${{ inputs.container_name || 'frontend/dev.arolariu' }}"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🏷️ Tag:          ${{ github.sha }}"
           echo "│ 🌍 Environment:   ${{ inputs.environment || 'development' }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "│ 🧪 Tests:         ${{ needs.test.result }}"
@@ -267,12 +283,11 @@ jobs:
           echo "::warning::Environment: ${{ inputs.environment || 'development' }}"
           echo "::warning::Triggered by: ${{ github.actor }}"
 
-      - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: 🛑 Block production test bypass
+        if: inputs.skip_tests == true && inputs.environment == 'production'
+        run: |
+          echo "::error::Production website builds cannot skip tests."
+          exit 1
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -280,12 +295,6 @@ jobs:
           node-version: '24'
           generate: 'true'
           cache-key-prefix: 'website'
-
-      - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
-        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📋 Verify generated .env file exists
         run: |
@@ -298,73 +307,52 @@ jobs:
         shell: bash
         working-directory: '.'
 
-      - name: 🏗️ Building the docker container...
-        working-directory: '.'
-        env:
-          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
+      - name: 🐳 Build and push immutable image
+        id: build-image
+        uses: ./.github/actions/azure-container-build-push
+        with:
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          image-name: ${{ inputs.container_name || 'frontend/dev.arolariu' }}
+          dockerfile: "infra/containers/Dockerfile.frontend"
+          context: "."
+          build-args: |
+            AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }}
+            AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }}
+            COMMIT_SHA=${{ env.COMMIT_SHA }}
+            INFRA=${{ env.INFRA }}
+            SITE_ENV=${{ env.SITE_ENV }}
+            SITE_URL=${{ env.SITE_URL }}
+            SITE_NAME=${{ env.SITE_NAME }}
+          azure-client-id: ${{ secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 🧾 Attest image provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-name: ${{ steps.build-image.outputs.image }}
+          subject-digest: ${{ steps.build-image.outputs.digest }}
+          push-to-registry: true
+
+      - name: 📝 Write website image metadata
+        working-directory: "."
         run: |
-          echo "::group::🐳 Docker Build"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
-          echo "│ 📁 Dockerfile: infra/containers/Dockerfile.frontend"
-          echo "│ 🔧 Build args:"
-          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
-          echo "│    - INFRA=${{ env.INFRA }}"
-          echo "│    - SITE_ENV=${{ env.SITE_ENV }}"
-          echo "│    - SITE_NAME=${{ env.SITE_NAME }}"
-          echo "│    - SITE_URL=${{ env.SITE_URL }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo ""
+          mkdir -p artifacts
+          cat > artifacts/website-image.json <<EOF
+          {
+            "image": "${{ inputs.container_name || 'frontend/dev.arolariu' }}",
+            "tag": "${{ github.sha }}",
+            "digest": "${{ steps.build-image.outputs.digest }}",
+            "sourceRunId": "${{ github.run_id }}",
+            "sourceSha": "${{ github.sha }}"
+          }
+          EOF
 
-          START_TIME=$(date +%s)
-          docker build -f infra/containers/Dockerfile.frontend \
-            --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
-            --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
-            --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \
-            --build-arg COMMIT_SHA=${{ env.COMMIT_SHA }} \
-            --build-arg INFRA=${{ env.INFRA }} \
-            --build-arg SITE_ENV=${{ env.SITE_ENV }} \
-            --build-arg SITE_URL=${{ env.SITE_URL }} \
-            --build-arg SITE_NAME=${{ env.SITE_NAME }} \
-            -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Docker build completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          # Get image size
-          IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
-          echo "📦 Image size: $IMAGE_SIZE"
-
-          # Write to job summary
-          echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
-
-      - name: ⏫ Pushing the docker container...
-        env:
-          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
-        run: |
-          echo "::group::⏫ Docker Push"
-          echo "📤 Pushing to Azure Container Registry..."
-          START_TIME=$(date +%s)
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Docker push completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          echo "## ⏫ Docker Push Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Push Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Registry | Azure Container Registry |" >> $GITHUB_STEP_SUMMARY
+      - name: 📤 Upload website image metadata
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: website-image-${{ github.sha }}
+          path: artifacts/website-image.json
+          if-no-files-found: error
+          retention-days: 14

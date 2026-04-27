@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -129,12 +129,37 @@ jobs:
         if: matrix.target == 'backend'
         shell: bash
         run: |
-          http_code=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
-          if [ "$http_code" != "200" ]; then
-            echo "::error::Backend health check failed with HTTP $http_code"
-            cat backend-health.json
-            exit 1
-          fi
+          health_url="https://api.arolariu.ro/health"
+          for attempt in 1 2 3 4 5; do
+            status_code=$(curl -sS -o backend-health.json -w "%{http_code}" "$health_url" || echo "000")
+            echo "Backend health attempt ${attempt}/5 -> HTTP ${status_code}"
+            if [ "$status_code" = "200" ]; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+
+          echo "::error::Health check failed after 5 attempts for ${health_url}"
+          cat backend-health.json
+          exit 1
+
+      - name: 🌡️ Frontend health check
+        if: matrix.target == 'frontend'
+        shell: bash
+        run: |
+          health_url="https://arolariu.ro/"
+          for attempt in 1 2 3 4 5; do
+            status_code=$(curl -sS -o frontend-health.html -w "%{http_code}" "$health_url" || echo "000")
+            echo "Frontend health attempt ${attempt}/5 -> HTTP ${status_code}"
+            if [ "$status_code" = "200" ]; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+
+          echo "::error::Health check failed after 5 attempts for ${health_url}"
+          head -c 4000 frontend-health.html || true
+          exit 1
 
       - name: 🚀 Warm up frontend runtime
         if: matrix.target == 'frontend'
@@ -213,7 +238,7 @@ jobs:
 
       - name: 📦 Upload reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: warn
           name: e2e-reports-${{ matrix.target }}
@@ -224,6 +249,7 @@ jobs:
             e2e-${{ matrix.target }}.log
             e2e-status-${{ matrix.target }}.json
             backend-health.json
+            frontend-health.html
           retention-days: 14
 
   raise-issue-on-failure:
@@ -238,7 +264,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -249,14 +275,14 @@ jobs:
           node-version: "24"
 
       - name: 📥 Download E2E artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           merge-multiple: true
           path: reports
           pattern: e2e-*
 
       - name: 🐛 Create GitHub issue for failures
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           ARTIFACTS_DIR: reports
           EVENT_NAME: ${{ github.event_name }}

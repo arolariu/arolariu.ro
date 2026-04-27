@@ -1,59 +1,34 @@
 # =============================================================================
 # Backend API Build and Deployment Workflow
 # =============================================================================
-# This workflow handles the complete CI/CD pipeline for the .NET backend API
-# (api.arolariu.ro), including testing, containerization, and Azure deployment.
-#
-# Architecture:
-#   - Phase 1: Test - Runs unit tests to validate code quality
-#   - Phase 2: Build - Containerizes the .NET API using Docker
-#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure App Service
-#
-# Triggers:
-#   - Automatic: Push to 'main' branch with changes in sites/api.arolariu.ro/
-#   - Manual: workflow_dispatch with environment and infrastructure selection
-#
-# Security:
-#   - Uses OIDC (OpenID Connect) for Azure authentication (no long-lived secrets)
-#   - Azure Container Registry auth via OIDC (no admin credentials)
-#   - Federated identity via Azure Managed Identity
-#
-# Prerequisites:
-#   1. Azure Managed Identity configured with Federated Credentials
-#   2. Azure Container Registry with push/pull access
-#   3. Azure App Service configured for container deployment
-#   4. GitHub Secrets configured:
-#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_ADDRESS
-#
-# Documentation:
-#   - RFC 2001: Domain-Driven Design Architecture
-#   - RFC 2002: OpenTelemetry Backend Observability
-#   - RFC 2003: The Standard Implementation
+# Runs reusable .NET quality checks, builds an immutable API container image,
+# and deploys that exact digest/tag to Azure App Service.
 # =============================================================================
 
 name: "official-api-trigger"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
+  attestations: write # Required for container provenance attestations
   contents: read # Required to checkout repository
-
-defaults:
-  run:
-    working-directory: ./sites/api.arolariu.ro
+  id-token: write # Required for OIDC authentication with Azure
 
 on:
-  # Automatic trigger on main branch changes to backend API
   push:
     branches: ["main"]
-    paths: ["sites/api.arolariu.ro/**"]
+    paths:
+      - "sites/api.arolariu.ro/**"
+      - "infra/containers/Dockerfile.backend"
+      - ".github/actions/setup-workspace/**"
+      - ".github/actions/azure-container-build-push/**"
+      - ".github/actions/azure-webapp-container-deploy/**"
+      - ".github/workflows/official-api-trigger.yml"
+      - ".github/workflows/reusable-dotnet-quality.yml"
+      - ".github/workflows/reusable-container-build-push.yml"
 
-  # Manual trigger for controlled deployments
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        description: "The environment to deploy to."
         options:
           - "development"
           - "production"
@@ -61,242 +36,69 @@ on:
         required: true
         type: choice
       infrastructure:
-        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
+        description: "The infrastructure where it will be deployed."
         options:
-          - 'local'
-          - 'azure'
+          - "local"
+          - "azure"
         default: "azure"
         required: true
         type: choice
 
-env:
-  API_NAME: "api.arolariu.ro"
-  API_URL: "https://api.arolariu.ro"
-  COMMIT_SHA: ${{ github.sha }}
-  INFRA: ${{ inputs.infrastructure || 'azure' }}
-  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
-  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-  AZURE_CLIENT_ID: ${{secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID}}
-
 jobs:
   test:
+    name: 🧪 API quality
     if: github.repository == 'arolariu/arolariu.ro'
-    name: 🧪 Test phase (1/3)
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'production' }}
-    timeout-minutes: 10
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
-      - name: 📝 Display workflow context
-        run: |
-          echo "::group::🔍 Workflow Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🎯 BACKEND API CI/CD PIPELINE                              │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Test phase (1/3)                         │"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
-          echo "│ 🔧 Infrastructure: ${{ env.INFRA }}"
-          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "│ 🔢 Run Number:    ${{ github.run_number }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          dotnet-version: '10'
-          install-node-dependencies: 'false'
-          install-dotnet-dependencies: 'true'
-          cache-key-prefix: 'api'
-
-      - name: 🧪 Running unit tests...
-        working-directory: .
-        run: |
-          echo "::group::🧪 Running .NET Unit Tests"
-          echo "📍 Solution: arolariu.slnx"
-          echo "📍 Configuration: Release"
-          echo "📍 Test framework: xUnit"
-          echo ""
-          START_TIME=$(date +%s)
-          dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Unit tests completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          # Write to job summary
-          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Configuration | Release |" >> $GITHUB_STEP_SUMMARY
-          echo "| Results Directory | ./sites/api.arolariu.ro/TestResults |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📤 Upload test results...
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-results-${{ github.run_id }}
-          path: sites/api.arolariu.ro/TestResults/
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: 📊 Test phase summary
-        if: always()
-        run: |
-          echo "::group::📊 Test Phase Summary"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ✅ TEST PHASE COMPLETED                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📁 Artifacts: test-results-${{ github.run_id }}"
-          echo "│ 📅 Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 🔗 Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
+    uses: ./.github/workflows/reusable-dotnet-quality.yml
+    with:
+      project-name: "API"
+      cache-key-prefix: "api"
 
   build:
+    name: 🐳 API image
     if: github.repository == 'arolariu/arolariu.ro'
-    name: 🛠️ Build phase (2/3)
     needs: test
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'production' }}
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
-      - name: 📝 Display build context
-        run: |
-          echo "::group::🔍 Build Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🏗️ BUILD PHASE                                            │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Build phase (2/3)                        │"
-          echo "│ 🐳 Container:     backend/api.arolariu                     │"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          dotnet-version: '10.x'
-          install-node-dependencies: 'false'
-          install-dotnet-dependencies: 'false'
-          cache-key-prefix: 'api'
-
-      - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
-        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: 🏗️ Building the docker container...
-        env:
-          CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
-        run: |
-          echo "::group::🐳 Docker Build"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
-          echo "│ 📁 Context: ./sites/api.arolariu.ro"
-          echo "│ 🔧 Build args:"
-          echo "│    - API_NAME=${{ env.API_NAME }}"
-          echo "│    - API_URL=${{ env.API_URL }}"
-          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
-          echo "│    - INFRA=${{ env.INFRA }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo ""
-          START_TIME=$(date +%s)
-          docker build \
-            --build-arg API_NAME="${{ env.API_NAME }}" \
-            --build-arg API_URL="${{ env.API_URL }}" \
-            --build-arg COMMIT_SHA="${{ env.COMMIT_SHA }}" \
-            --build-arg INFRA="${{ env.INFRA }}" \
-            --build-arg AZURE_TENANT_ID="${{ env.AZURE_TENANT_ID }}" \
-            --build-arg AZURE_SUBSCRIPTION_ID="${{ env.AZURE_SUBSCRIPTION_ID }}" \
-            --build-arg AZURE_CLIENT_ID="${{ env.AZURE_CLIENT_ID }}" \
-            -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} \
-            .
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo ""
-          echo "::notice::✅ Docker build completed in ${DURATION}s"
-          echo "::endgroup::"
-
-          # Get image size
-          IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
-          echo "📦 Image size: $IMAGE_SIZE"
-
-          # Write to job summary
-          echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
-
-      - name: ⏫ Pushing the docker container...
-        env:
-          CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
-        run: |
-          echo "::group::⏫ Docker Push"
-          echo "📤 Pushing to Azure Container Registry..."
-          START_TIME=$(date +%s)
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-          echo "::notice::✅ Docker push completed in ${DURATION}s"
-          echo "::endgroup::"
+    uses: ./.github/workflows/reusable-container-build-push.yml
+    with:
+      image-name: "backend/api.arolariu"
+      dockerfile: "infra/containers/Dockerfile.backend"
+      context: "."
+      build-args: |
+        API_NAME=api.arolariu.ro
+        API_URL=https://api.arolariu.ro
+        COMMIT_SHA=${{ github.sha }}
+        INFRA=${{ inputs.infrastructure || 'azure' }}
+      environment-name: ${{ inputs.environment || 'production' }}
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
   deploy:
+    name: 🚀 API deploy
     if: github.repository == 'arolariu/arolariu.ro'
-    name: 🚀 Deploy phase (3/3)
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: ${{ inputs.environment || 'production' }}
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      url: ${{ steps.deploy-to-webapp.outputs.url }}
 
     steps:
-      - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v3
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          persist-credentials: false
 
-      - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
-        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: ⚓ Deploying docker container to Azure App Service...
+      - name: ⚓ Deploy API container
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        env:
-          CONTAINER_NAME: "backend/api.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+        uses: ./.github/actions/azure-webapp-container-deploy
         with:
           app-name: "api-arolariu-ro"
-          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          image-name: "backend/api.arolariu"
+          image-digest: ${{ needs.build.outputs.digest }}
+          image-tag: ${{ github.sha }}
+          azure-client-id: ${{ secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

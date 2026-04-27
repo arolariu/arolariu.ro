@@ -1,0 +1,70 @@
+name: "reusable-node-quality"
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        description: "Display name for the quality job."
+        required: true
+        type: string
+      working-directory:
+        description: "Directory where build/test commands run."
+        required: true
+        type: string
+      test-command:
+        description: "Optional test command to run."
+        required: false
+        type: string
+        default: ""
+      build-command:
+        description: "Optional build command to run."
+        required: false
+        type: string
+        default: ""
+      cache-key-prefix:
+        description: "Cache key prefix passed to setup-workspace."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  node-quality:
+    name: 🧪 ${{ inputs.project-name }} quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🚀 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: "24"
+          dotnet-version: ""
+          cache-key-prefix: ${{ inputs.cache-key-prefix }}
+
+      - name: 🏗️ Build
+        if: inputs.build-command != ''
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.build-command }}
+
+      - name: 🧪 Test
+        if: inputs.test-command != ''
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.test-command }}
+
+      - name: 📦 Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ inputs.cache-key-prefix }}-coverage
+          path: |
+            ${{ inputs.working-directory }}/coverage
+            ${{ inputs.working-directory }}/test-results
+          if-no-files-found: ignore
+          retention-days: 7

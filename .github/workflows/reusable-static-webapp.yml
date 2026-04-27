@@ -1,0 +1,79 @@
+name: "reusable-static-webapp"
+
+on:
+  workflow_call:
+    inputs:
+      site-name:
+        required: true
+        type: string
+      working-directory:
+        required: true
+        type: string
+      build-command:
+        required: true
+        type: string
+      test-command:
+        required: false
+        type: string
+        default: ""
+      app-location:
+        required: false
+        type: string
+        default: ""
+      api-location:
+        required: false
+        type: string
+        default: ""
+      output-location:
+        required: true
+        type: string
+      environment-name:
+        required: true
+        type: string
+      site-url:
+        required: true
+        type: string
+      dotnet-version:
+        required: false
+        type: string
+        default: ""
+      python-version:
+        required: false
+        type: string
+        default: ""
+    secrets:
+      SWA_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  static-webapp:
+    name: 🚀 ${{ inputs.site-name }} static web app
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: ${{ inputs.environment-name }}
+      url: ${{ inputs.site-url }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 🚀 Build and deploy static site
+        uses: ./.github/actions/static-web-app-build-deploy
+        with:
+          site-name: ${{ inputs.site-name }}
+          working-directory: ${{ inputs.working-directory }}
+          build-command: ${{ inputs.build-command }}
+          test-command: ${{ inputs.test-command }}
+          app-location: ${{ inputs.app-location || inputs.working-directory }}
+          api-location: ${{ inputs.api-location }}
+          output-location: ${{ inputs.output-location }}
+          site-url: ${{ inputs.site-url }}
+          swa-token: ${{ secrets.SWA_TOKEN }}
+          dotnet-version: ${{ inputs.dotnet-version }}
+          python-version: ${{ inputs.python-version }}
