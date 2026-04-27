@@ -1,7 +1,7 @@
-import {describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "../../host/workerEnvelope";
-import {expose, getEventPort} from "../exposeWorker";
+import {__resetForTesting, expose, getEventPort} from "../exposeWorker";
 
 /**
  * Build a minimal `self`-like object for the test, with `addEventListener`
@@ -48,6 +48,10 @@ function makeBootstrap(): {
 }
 
 describe("expose", () => {
+  beforeEach(() => {
+    __resetForTesting();
+  });
+
   it("attaches a single message listener on self", () => {
     const fakeSelf = makeFakeSelf();
     expose({greet: async (n: string) => `hi, ${n}`}, {self: fakeSelf as unknown as DedicatedWorkerGlobalScope});

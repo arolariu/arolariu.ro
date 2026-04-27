@@ -32,6 +32,14 @@ export function getEventPort(): MessagePort | null {
   return eventPort;
 }
 
+/**
+ * Reset module-level state. **Test-only.** Production code must not call this.
+ * @internal
+ */
+export function __resetForTesting(): void {
+  eventPort = null;
+}
+
 /** Options for `expose`. The `self` parameter is for testability only. */
 export type ExposeOptions = Readonly<{
   /** Override the global scope. Test-only; production code omits this. */
