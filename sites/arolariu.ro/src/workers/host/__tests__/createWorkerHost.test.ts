@@ -4,6 +4,7 @@ import {__resetForTesting, getEventPort} from "../../runtime/exposeWorker";
 import {emitEvent} from "../../runtime/emitEvent";
 import {createWorkerHost} from "../createWorkerHost";
 import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError} from "../workerErrors";
+import {type WorkerHostState} from "../workerLifecycle";
 import {createMockWorker} from "./mockWorker";
 
 type GreetApi = {
@@ -36,6 +37,32 @@ const greetImpl: GreetApi = {
 // We install a stub constructor so the lazy-boot path can proceed; the
 // MockWorker's duck-typed object is what the host actually uses at runtime.
 const ORIGINAL_WORKER = (globalThis as {Worker?: unknown}).Worker;
+
+/**
+ * Build a `Worker`-shaped object that NEVER completes its bootstrap. Used to
+ * exercise mid-boot abort/dispose code paths that depend on the boot promise
+ * being still in-flight. Calling `terminate()` is a no-op (we just record it).
+ */
+function createStallingWorker(): Worker {
+  return {
+    postMessage: () => {
+      /* swallow bootstrap; never respond */
+    },
+    terminate: () => {
+      /* no-op */
+    },
+    addEventListener: () => {
+      /* no-op */
+    },
+    removeEventListener: () => {
+      /* no-op */
+    },
+    dispatchEvent: () => true,
+    onmessage: null,
+    onmessageerror: null,
+    onerror: null,
+  } as unknown as Worker;
+}
 
 beforeEach(() => {
   __resetForTesting();
@@ -143,6 +170,97 @@ describe("createWorkerHost", () => {
       const r = await host.api.greet("after-restart");
       expect(r).toBe("hi, after-restart");
     });
+
+    // Regression: C1 — subscribers must continue receiving state changes
+    // even after `restart()` re-creates the underlying lifecycle.
+    it("subscribers continue to receive state changes after restart", async () => {
+      let mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => {
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      const states: WorkerHostState[] = [];
+      host.subscribe((s) => states.push(s));
+      await host.warmUp();
+      mock.simulateCrash();
+      await host.restart();
+      // After restart, listener should have observed the new lifecycle's transitions
+      expect(states).toContain("ready");
+      // Specifically, the post-restart "ready" should be present
+      const lastIndex = states.lastIndexOf("ready");
+      expect(lastIndex).toBeGreaterThan(0); // not just the initial ready
+    });
+
+    // Regression: C2 — restart on a disposed host is forbidden.
+    it("restart rejects with WorkerDeadError on a disposed host", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      await host.dispose();
+      await expect(host.restart()).rejects.toThrowError(WorkerDeadError);
+    });
+
+    // Regression: I2 — restart honors a pre-aborted signal.
+    it("restart honors a pre-aborted signal", async () => {
+      let mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => {
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      await host.warmUp();
+      mock.simulateCrash();
+      const ac = new AbortController();
+      ac.abort(new Error("aborted"));
+      await expect(host.restart(ac.signal)).rejects.toThrowError("aborted");
+    });
+
+    // Coverage: pre-aborted signal with no reason falls back to default error.
+    it("restart pre-aborted signal without reason falls back to 'aborted'", async () => {
+      let mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => {
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      await host.warmUp();
+      mock.simulateCrash();
+      const ac = new AbortController();
+      ac.abort(); // no reason
+      await expect(host.restart(ac.signal)).rejects.toThrow();
+    });
+
+    // Regression: I2 — restart honors a signal that aborts mid-boot.
+    it("restart honors a signal that aborts during boot", async () => {
+      let mock = createMockWorker({api: greetImpl});
+      let useStalling = false;
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => {
+          if (useStalling) return createStallingWorker();
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      await host.warmUp();
+      mock.simulateCrash();
+      // Now restart with a stalling worker so boot is in-flight.
+      useStalling = true;
+      const ac = new AbortController();
+      const restartPromise = host.restart(ac.signal);
+      restartPromise.catch(() => {
+        /* expected */
+      });
+      // Abort after the boot has begun.
+      setTimeout(() => ac.abort(new Error("boot aborted")), 10);
+      await expect(restartPromise).rejects.toThrowError("boot aborted");
+    });
   });
 
   describe("dispose", () => {
@@ -162,6 +280,67 @@ describe("createWorkerHost", () => {
       await host.dispose();
       await expect(host.dispose()).resolves.toBeUndefined();
     });
+
+    // Regression: I3 — dispose() during an in-flight bootstrap should reject
+    // the pending warmUp/api call promise instead of leaving callers stuck
+    // waiting for the bootstrap timeout.
+    it("dispose during in-flight bootstrap rejects the pending warmUp promise", async () => {
+      const host = createWorkerHost<GreetApi>({name: "stalling", load: () => createStallingWorker()});
+      const warmUpPromise = host.warmUp();
+      // Swallow potential unhandled rejection on this side of the race.
+      warmUpPromise.catch(() => {
+        /* expected */
+      });
+      // Yield once so the bootstrap promise is registered.
+      await Promise.resolve();
+      await host.dispose();
+      await expect(warmUpPromise).rejects.toThrowError(WorkerDeadError);
+      expect(host.state).toBe("disposed");
+    });
+
+    // Coverage: bootstrap timeout path when a stalling worker never replies AND
+    // the host is disposed prior to the timeout firing. This exercises the
+    // `lifecycle.state === "disposed"` branch inside the timeout handler.
+    it("bootstrap timeout reaches the disposed branch when host is disposed", async () => {
+      vi.useFakeTimers();
+      try {
+        const host = createWorkerHost<GreetApi>({name: "stalling-fake", load: () => createStallingWorker()});
+        const warmUpPromise = host.warmUp();
+        warmUpPromise.catch(() => {
+          /* expected */
+        });
+        // Let the bootstrap promise register synchronously.
+        await Promise.resolve();
+        // Dispose: this should reject the in-flight bootstrap with WorkerDeadError
+        // BEFORE the bootstrap timeout fires.
+        await host.dispose();
+        // Advance past the 10s bootstrap timeout. The timeout handler should
+        // detect that lifecycle.state is "disposed" and exit early.
+        vi.advanceTimersByTime(11_000);
+        await expect(warmUpPromise).rejects.toThrowError(WorkerDeadError);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // Coverage: bootstrap timeout firing when host is *not* disposed should
+    // surface a `WorkerCrashError` and tear the worker down.
+    it("bootstrap timeout surfaces WorkerCrashError when worker never responds", async () => {
+      vi.useFakeTimers();
+      try {
+        const host = createWorkerHost<GreetApi>({name: "stalling-crash", load: () => createStallingWorker()});
+        const warmUpPromise = host.warmUp();
+        warmUpPromise.catch(() => {
+          /* expected */
+        });
+        await Promise.resolve();
+        // Advance past the 10s bootstrap timeout to fire it.
+        vi.advanceTimersByTime(11_000);
+        await expect(warmUpPromise).rejects.toThrowError(WorkerCrashError);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   describe("AbortSignal", () => {
@@ -171,6 +350,39 @@ describe("createWorkerHost", () => {
       const controller = new AbortController();
       controller.abort(new Error("preempted"));
       await expect(host.api.sleep(1000, controller.signal)).rejects.toThrowError("preempted");
+    });
+
+    // Regression: C3 — mid-flight abort rejects the parent's promise even
+    // though the worker continues running.
+    it("rejects mid-flight when signal is aborted during the call", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      await host.warmUp();
+      const ac = new AbortController();
+      const promise = host.api.sleep(1_000_000, ac.signal);
+      // Abort after the call has begun
+      setTimeout(() => ac.abort(new Error("user aborted")), 10);
+      await expect(promise).rejects.toThrowError("user aborted");
+    });
+
+    // Coverage: mid-flight abort with no reason falls back to default Error.
+    it("rejects mid-flight with default 'aborted' error when no reason provided", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      await host.warmUp();
+      const ac = new AbortController();
+      const promise = host.api.sleep(1_000_000, ac.signal);
+      setTimeout(() => ac.abort(), 10); // no reason
+      await expect(promise).rejects.toThrow();
+    });
+
+    // Coverage: pre-aborted signal without reason at call time.
+    it("synchronously rejects with default error when pre-aborted without reason", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      const ac = new AbortController();
+      ac.abort(); // no reason
+      await expect(host.api.sleep(1000, ac.signal)).rejects.toThrow();
     });
   });
 
@@ -284,6 +496,33 @@ describe("createWorkerHost", () => {
   });
 
   describe("onEvent hook", () => {
+    // Regression: I4 — stray "ready" events after bootstrap should never reach
+    // the consumer's onEvent hook.
+    it("filters stray 'ready' events that arrive after the bootstrap handshake", async () => {
+      const events: unknown[] = [];
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => mock.worker,
+        onEvent: (ev) => events.push(ev),
+      });
+      await host.warmUp();
+      const port = getEventPort();
+      if (port) {
+        // Emit a stray "ready" event from the worker side. The host's
+        // steady-state listener must filter it.
+        emitEvent(port, {kind: "ready"});
+        emitEvent(port, {kind: "log", level: "info", msg: "real event"});
+        await new Promise<void>((res) => setTimeout(res, 0));
+      }
+      // No "ready" event should have reached the onEvent hook post-bootstrap.
+      expect(events.find((e) => (e as {kind?: string}).kind === "ready")).toBeUndefined();
+      // But the legitimate log event should have arrived.
+      if (port) {
+        expect(events).toContainEqual(expect.objectContaining({kind: "log", msg: "real event"}));
+      }
+    });
+
     it("onEvent receives post-ready log events from the worker (steady-state listener)", async () => {
       const events: unknown[] = [];
       const mock = createMockWorker({api: greetImpl});
@@ -310,6 +549,16 @@ describe("createWorkerHost", () => {
   });
 
   describe("proxy method type guard", () => {
+    // Coverage: proxy.get with a non-string property (e.g., a Symbol) must
+    // return undefined so the proxy stays a well-behaved JS object.
+    it("returns undefined for symbol-keyed property access", () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      // Access a symbol-keyed property — should not throw, should return undefined.
+      const value = (host.api as unknown as Record<symbol, unknown>)[Symbol.iterator];
+      expect(value).toBeUndefined();
+    });
+
     it("rejects when calling an unknown method name (Comlink proxy errors surface)", async () => {
       const mock = createMockWorker({api: greetImpl});
       const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});

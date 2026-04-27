@@ -26,14 +26,11 @@ let cachedCapabilities: WorkerCapabilities | null = null;
 
 const api: PlaygroundWorkerApi = {
   echo: async (msg) => msg,
-  sleep: async (ms, signal) => {
-    await new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => resolve(), ms);
-      signal?.addEventListener("abort", () => {
-        clearTimeout(t);
-        reject(signal.reason ?? new Error("aborted"));
-      });
-    });
+  sleep: async (ms, _signal) => {
+    // Note: AbortSignal is parent-side only in v1; the worker never receives a real signal.
+    // The parent rejects the call when the signal aborts; this handler keeps running
+    // until the timer completes. See README "Known limitations".
+    await new Promise<void>((resolve) => setTimeout(resolve, ms));
   },
   throwError: async (code) => {
     throw new Error(`playground:${code}`);

@@ -68,8 +68,10 @@ const result = await host.api.doThing("hello");
    Next.js page file: trivial entry, not unit-tested.
 
 5. **`AbortSignal` is always the last argument** to a method that supports
-   cancellation. The host detects it and rejects synchronously when already
-   aborted; in-worker honoring of the signal is cooperative.
+   cancellation. The host detects it and rejects the consumer's promise — both
+   when the signal is already aborted at call time AND when it aborts mid-flight.
+   The signal is **not forwarded to the worker**; in-worker handlers run to
+   completion. This is a documented limitation; see "Known limitations" below.
 
 ## Lifecycle
 
@@ -122,10 +124,12 @@ It returns 404 in production builds.
 
 ## Known limitations
 
-- **Worker-side `AbortSignal` propagation is parent-side-only in v1.** When the
-  consumer aborts, the host stops awaiting the call but the worker handler
-  doesn't currently receive the signal. This is a tracked follow-up; see the
-  spec's "Open questions" section.
+- **Worker-side `AbortSignal` propagation is parent-side-only in v1.** The
+  parent rejects the consumer's promise when the signal aborts (synchronously
+  if pre-aborted, asynchronously if mid-flight). The worker handler never
+  receives the signal, so it runs to completion. To stop in-worker work, the
+  worker must use its own internal cancellation mechanism (e.g., a worker-scope
+  flag updated via a separate RPC).
 
 - **No worker-side OpenTelemetry SDK.** Workers emit structured events via
   `emitEvent`; the parent forwards them to the existing logger. Full W3C trace

@@ -13,10 +13,10 @@
  * worker → parent telemetry events. The worker emits `{kind: "ready"}` on the
  * event port to signal that it is ready for RPC traffic.
  *
- * **Cancellation:** synchronous-already-aborted `AbortSignal`s reject the call
- * before it leaves the parent. Mid-flight worker-side cancellation (sending a
- * cancel message and aborting the in-worker AbortSignal) is deferred — see the
- * spec §10.2 OUT-of-scope items.
+ * **Cancellation:** `AbortSignal` is honored on the parent side both when
+ * already-aborted at call time and when it aborts mid-flight. Worker-side
+ * cancellation (sending a cancel message and aborting the in-worker
+ * AbortSignal) is deferred — see the README "Known limitations" section.
  */
 
 import * as Comlink from "comlink";
@@ -101,6 +101,19 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   let restartLock: Promise<void> | null = null;
   const inFlight = new Set<InFlightEntry>();
 
+  // C1: Host-level subscriber registry. Subscribers register here and are
+  // proxied through to the underlying lifecycle. This lets subscriptions
+  // survive a `restart()` that re-creates the lifecycle instance.
+  const hostListeners = new Set<(state: WorkerHostState) => void>();
+  let lifecycleUnsubscribe: (() => void) | null = null;
+
+  // I1: Track the active error listener so we can detach it on teardown,
+  // preventing leaks across reboots.
+  let currentErrorListener: {worker: Worker; handler: (e: ErrorEvent) => void} | null = null;
+
+  // I3: Allow `dispose()` to cancel an in-flight bootstrap promise.
+  let rejectBoot: ((err: Error) => void) | null = null;
+
   const onIdleHandler = (): void => {
     tearDownWorker("lazy-reboot");
   };
@@ -109,6 +122,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     idleTimeoutMs,
     onIdle: onIdleHandler,
   });
+
+  /** Wire the lifecycle's state changes into the host-level listener set. */
+  function attachLifecycleSubscription(): void {
+    if (lifecycleUnsubscribe) lifecycleUnsubscribe();
+    lifecycleUnsubscribe = lifecycle.subscribe((state) => {
+      for (const listener of hostListeners) listener(state);
+    });
+  }
+
+  // Initial wiring.
+  attachLifecycleSubscription();
 
   /** True when `Worker` is defined in this environment (i.e., not SSR). */
   function isWorkerAvailable(): boolean {
@@ -128,6 +152,15 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     const w = worker;
     worker = null;
     proxy = null;
+    // I1: Remove the error listener before terminating to avoid leaks.
+    if (currentErrorListener) {
+      try {
+        currentErrorListener.worker.removeEventListener("error", currentErrorListener.handler);
+      } catch {
+        // ignore listener removal errors
+      }
+      currentErrorListener = null;
+    }
     if (w) {
       try {
         w.terminate();
@@ -174,10 +207,21 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       handleCrash();
     };
     w.addEventListener("error", onError);
+    // I1: Track the listener so teardown can remove it.
+    currentErrorListener = {worker: w, handler: onError};
 
     const ready = new Promise<void>((resolve, reject) => {
+      // I3: Expose this `reject` so `dispose()` can cancel a pending boot.
+      rejectBoot = reject;
+
       const timeoutId = setTimeout(() => {
         eventChannel.port1.onmessage = null;
+        // I3: If we were disposed while the timer was pending, surface a
+        // `WorkerDeadError` rather than a misleading `WorkerCrashError`.
+        if (lifecycle.state === "disposed") {
+          reject(new WorkerDeadError("Host disposed during boot."));
+          return;
+        }
         handleCrash();
         reject(new WorkerCrashError([]));
       }, BOOTSTRAP_TIMEOUT_MS);
@@ -189,6 +233,8 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           // Swap to the steady-state listener that ingests events.
           eventChannel.port1.onmessage = (next: MessageEvent): void => {
             const ev = next.data as WorkerEvent;
+            // I4: Filter stray `ready` events that arrive after bootstrap.
+            if (ev.kind === "ready") return;
             opts.onEvent?.(ev);
             bridge.ingestEvent(ev);
           };
@@ -200,6 +246,9 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         bridge.ingestEvent(event);
       };
       eventChannel.port1.start();
+    }).finally(() => {
+      // Clear the rejectBoot reference once boot settles either way.
+      rejectBoot = null;
     });
 
     const bootstrap: WorkerBootstrap = {
@@ -247,11 +296,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           // 1) AbortSignal-as-last-arg detection — synchronous so already-aborted
           //    signals reject before any state is touched.
           const last = args[args.length - 1];
+          let signal: AbortSignal | undefined;
           let callArgs = args;
           if (last instanceof AbortSignal) {
+            signal = last;
             callArgs = args.slice(0, -1);
-            if (last.aborted) {
-              return Promise.reject(last.reason ?? new Error("aborted"));
+            if (signal.aborted) {
+              return Promise.reject(signal.reason ?? new Error("aborted"));
             }
           }
 
@@ -280,20 +331,50 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
             lifecycle.beginCall();
             try {
               return await bridge.wrapCall(prop, async () => {
-                const callPromise = (target as (...a: unknown[]) => Promise<unknown>)(...callArgs);
-                try {
-                  return await callPromise;
-                } catch (cause) {
-                  // 3) Normalize worker-thrown errors.
-                  if (
-                    typeof cause === "object" &&
-                    cause !== null &&
-                    (cause as {__workerError?: unknown}).__workerError === true
-                  ) {
-                    throw new WorkerError(cause, prop);
+                const callPromise = (async (): Promise<unknown> => {
+                  const result = (target as (...a: unknown[]) => Promise<unknown>)(...callArgs);
+                  try {
+                    return await result;
+                  } catch (cause) {
+                    // 3) Normalize worker-thrown errors.
+                    if (
+                      typeof cause === "object" &&
+                      cause !== null &&
+                      (cause as {__workerError?: unknown}).__workerError === true
+                    ) {
+                      throw new WorkerError(cause, prop);
+                    }
+                    throw cause;
                   }
-                  throw cause;
+                })();
+
+                // C3: Mid-flight abort — race the body promise against an
+                // abort promise so an `AbortSignal` that fires after the call
+                // has begun rejects the consumer's promise. The worker
+                // continues running until its handler completes; this is the
+                // documented v1 limitation. See README "Known limitations".
+                if (signal) {
+                  const abortPromise = new Promise<never>((_, reject) => {
+                    const onAbort = (): void => {
+                      reject(signal!.reason ?? new Error("aborted"));
+                    };
+                    if (signal.aborted) {
+                      onAbort();
+                    } else {
+                      signal.addEventListener("abort", onAbort, {once: true});
+                    }
+                  });
+                  // Suppress "unhandled rejection" on whichever side loses.
+                  callPromise.catch(() => {
+                    /* loser */
+                  });
+                  abortPromise.catch(() => {
+                    /* loser */
+                  });
+                  return await Promise.race([callPromise, abortPromise]);
                 }
+
+                return await callPromise;
               });
             } finally {
               lifecycle.endCall();
@@ -322,10 +403,22 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       return lifecycle.state;
     },
     subscribe(listener) {
-      return lifecycle.subscribe(listener);
+      // C1: register on the host-level set so subscriptions survive `restart()`.
+      hostListeners.add(listener);
+      return () => {
+        hostListeners.delete(listener);
+      };
     },
     capabilities,
-    async restart(_signal?: AbortSignal): Promise<void> {
+    async restart(signal?: AbortSignal): Promise<void> {
+      // C2: Disposed hosts are terminal — refuse to resurrect.
+      if (lifecycle.state === "disposed") {
+        throw new WorkerDeadError("Cannot restart a disposed host. Construct a new host instead.");
+      }
+      // I2: Honor a pre-aborted signal immediately.
+      if (signal?.aborted) {
+        throw signal.reason ?? new Error("aborted");
+      }
       if (restartLock) return restartLock;
       const promise = (async (): Promise<void> => {
         tearDownWorker("dispose");
@@ -334,7 +427,32 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           idleTimeoutMs,
           onIdle: onIdleHandler,
         });
-        await ensureReady();
+        // C1: re-attach the host-level proxy subscription to the new lifecycle.
+        attachLifecycleSubscription();
+
+        const readyPromise = ensureReady();
+        // I2: Race against signal-abort during boot.
+        if (signal) {
+          const abortPromise = new Promise<never>((_, reject) => {
+            const onAbort = (): void => {
+              reject(signal.reason ?? new Error("aborted"));
+            };
+            if (signal.aborted) {
+              onAbort();
+            } else {
+              signal.addEventListener("abort", onAbort, {once: true});
+            }
+          });
+          readyPromise.catch(() => {
+            /* swallow loser */
+          });
+          abortPromise.catch(() => {
+            /* swallow loser */
+          });
+          await Promise.race([readyPromise, abortPromise]);
+        } else {
+          await readyPromise;
+        }
       })().finally(() => {
         restartLock = null;
       });
@@ -345,7 +463,14 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       await ensureReady();
     },
     async dispose(): Promise<void> {
+      // I3: Eagerly reject any in-flight bootstrap so callers waiting on
+      // `ensureReady()`/`warmUp()` unblock instead of timing out.
+      const bootRejector = rejectBoot;
       tearDownWorker("dispose");
+      if (bootRejector) {
+        rejectBoot = null;
+        bootRejector(new WorkerDeadError("Host disposed during boot."));
+      }
     },
   };
 }
