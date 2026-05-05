@@ -139,5 +139,17 @@ describe("createTelemetryBridge", () => {
         expect.objectContaining({worker: "ai", name: "load", durationMs: 50}),
       );
     });
+
+    it("warns on unknown WorkerEvent kinds (defense-in-depth for stale worker bundles)", () => {
+      const warn = vi.fn();
+      const bridge = createTelemetryBridge("ai", {logger: {debug: vi.fn(), info: vi.fn(), warn, error: vi.fn()}});
+      // Force an event whose kind is not in the WorkerEvent union. This
+      // simulates an out-of-date worker bundle running against a newer host.
+      bridge.ingestEvent({kind: "unknown-future-kind", payload: 42} as unknown as Parameters<typeof bridge.ingestEvent>[0]);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("Unknown WorkerEvent kind"),
+        expect.objectContaining({event: expect.objectContaining({kind: "unknown-future-kind"})}),
+      );
+    });
   });
 });

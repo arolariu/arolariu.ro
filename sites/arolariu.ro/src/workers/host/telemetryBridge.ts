@@ -81,6 +81,16 @@ export function createTelemetryBridge(name: string, options: CreateTelemetryBrid
         case "span":
           logger.debug(`[worker:${name}] span`, {worker: name, name: event.name, startMs: event.startMs, durationMs: event.durationMs, attrs: event.attrs});
           return;
+        default: {
+          // Exhaustiveness check: if a new kind is added to the WorkerEvent
+          // union without updating this switch, the `never` assignment
+          // becomes a TypeScript error at compile time. The runtime warn
+          // is a defense-in-depth signal for cases where the event arrives
+          // from an out-of-date worker bundle.
+          const exhaustive: never = event;
+          logger.warn(`[worker:${name}] Unknown WorkerEvent kind`, {event: exhaustive});
+          return;
+        }
       }
     },
   };
