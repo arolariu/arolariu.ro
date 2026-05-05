@@ -407,7 +407,14 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
                   try {
                     return await result;
                   } catch (cause) {
-                    // 3) Normalize worker-thrown errors.
+                    // 3) Normalize worker-thrown errors. The worker side
+                    //    throws a plain `__workerError` envelope (see
+                    //    exposeWorker.ts ENVELOPE comment) because Comlink's
+                    //    default throwTransferHandler only round-trips
+                    //    name/message/stack and HTML S2.7.3 normalizes
+                    //    Error.name. We rewrap into `WorkerError` here so
+                    //    consumers see a typed exception with the original
+                    //    method name attached.
                     if (
                       typeof cause === "object" &&
                       cause !== null &&

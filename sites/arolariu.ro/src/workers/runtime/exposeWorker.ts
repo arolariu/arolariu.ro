@@ -97,8 +97,16 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
           try {
             return await (value as (...a: unknown[]) => unknown)(...args);
           } catch (cause) {
-            // Re-throw as a plain object Comlink can serialize.
-            // Parent rewraps as WorkerError with name/message/stack preserved.
+            // ENVELOPE: We throw a plain `__workerError` object rather than
+            // re-throwing the original `Error` because Comlink's default
+            // `throwTransferHandler` (comlink/src/comlink.ts) only preserves
+            // `name`, `message`, and `stack`. WHATWG HTML S2.7.3
+            // (StructuredSerialize) further normalizes `Error.name` to one
+            // of the seven standard names, so a custom subclass loses its
+            // identity over the port. Our envelope round-trips the fields
+            // we care about (`name`, `message`, `stack`) losslessly. The
+            // host rewraps the envelope as `WorkerError` in its proxy
+            // handler (see createWorkerHost.ts).
             const err = cause as {name?: string; message?: string; stack?: string};
             throw {
               __workerError: true,
