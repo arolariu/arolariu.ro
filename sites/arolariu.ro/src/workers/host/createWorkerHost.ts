@@ -419,7 +419,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
             if (!proxy) {
               throw new WorkerDeadError();
             }
-            const target = (proxy as Record<string, unknown>)[prop];
+            // Use Reflect.get rather than a Record<string,unknown> cast so
+            // prototype lookup semantics are preserved and we don't widen
+            // the proxy's static type.
+            const target = Reflect.get(proxy as object, prop) as unknown;
             if (typeof target !== "function") {
               throw new Error(`Worker host has no method "${prop}"`);
             }
