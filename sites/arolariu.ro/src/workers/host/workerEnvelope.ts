@@ -56,6 +56,14 @@ export type WorkerEvent =
  * Validate that an unknown value is a well-formed `WorkerBootstrap`.
  * Used by both worker (incoming bootstrap) and host (defensive sanity check
  * before sending).
+ *
+ * SECURITY: This is the trust boundary between the worker realm and the
+ * host. Even though we own the worker source, structured-clone deserialization
+ * can yield unexpected shapes (extra fields, wrong types, prototype-pollution
+ * attempts). This predicate must reject anything that does not strictly
+ * match `WorkerBootstrap`, and callers must NEVER spread or pass through
+ * unvalidated fields. New fields added to `WorkerBootstrap` MUST be
+ * validated here before they are read elsewhere.
  */
 export function validateBootstrap(message: unknown): message is WorkerBootstrap {
   if (typeof message !== "object" || message === null) {
