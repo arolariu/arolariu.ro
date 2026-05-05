@@ -230,8 +230,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     if (lifecycle.state === "dead" || lifecycle.state === "disposed") return;
     const methods = Array.from(inFlight, (entry) => entry.method);
     const crashError = new WorkerCrashError(methods);
-    // Snapshot and clear before rejecting so endCall() in finally is a no-op
-    // for these entries.
+    // SAFETY: Snapshot and clear in-flight entries BEFORE `tearDownWorker`
+    // terminates the worker. Comlink's `requestResponseMessage`
+    // (comlink/src/comlink.ts) only stores the call's `resolve` callback —
+    // there is no `reject`. If we let the worker terminate while a call is
+    // in-flight, the consumer's `await proxy.method()` hangs forever
+    // (see GoogleChromeLabs/comlink#601). Manually rejecting `inFlight` here
+    // is therefore load-bearing — do not remove or reorder.
     const entries = Array.from(inFlight);
     inFlight.clear();
     lifecycle.crash();
@@ -512,6 +517,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       // before the worker is terminated. Without this the calls would reject
       // with Comlink port-closed errors (or hang forever) once the underlying
       // worker is gone.
+      //
+      // SAFETY: Comlink's `requestResponseMessage` stores only the call's
+      // `resolve` callback — there is no `reject`. If we let the port close
+      // while a call is mid-flight the consumer's `await proxy.method()`
+      // hangs forever (see GoogleChromeLabs/comlink#601). Rejecting the
+      // snapshot here is load-bearing — do not reorder relative to
+      // `tearDownWorker`.
       const drainEntries = Array.from(inFlight);
       const drainMethods = drainEntries.map((entry) => entry.method);
       inFlight.clear();
