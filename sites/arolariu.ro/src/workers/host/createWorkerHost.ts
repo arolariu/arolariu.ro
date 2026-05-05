@@ -333,7 +333,9 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         opts.onEvent?.(event);
         bridge.ingestEvent(event);
       };
-      eventChannel.port1.start();
+      // SPEC: `port.start()` is implicitly called when assigning
+      // `port.onmessage` (WHATWG HTML §9.4.5). The explicit call previously
+      // here was a no-op; left as a comment for clarity.
     }).finally(() => {
       // Clear the rejectBoot reference once boot settles either way.
       rejectBoot = null;
@@ -390,6 +392,11 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
             signal = last;
             callArgs = args.slice(0, -1);
             if (signal.aborted) {
+              // Belt-and-suspenders: per WHATWG DOM, `signal.reason` on an
+              // aborted signal is always defined (defaults to AbortError
+              // DOMException). The `??` fallback is unreachable on a
+              // spec-compliant runtime but guards against polyfills that
+              // diverge from spec.
               return Promise.reject(signal.reason ?? new Error("aborted"));
             }
           }
@@ -456,6 +463,8 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
                   let onAbort: (() => void) | null = null;
                   const abortPromise = new Promise<never>((_, reject) => {
                     onAbort = (): void => {
+                      // Belt-and-suspenders: `signal.reason` is always
+                      // defined on an aborted signal per WHATWG DOM.
                       reject(signal!.reason ?? new Error("aborted"));
                     };
                     if (signal!.aborted) {
@@ -526,6 +535,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       }
       // I2: Honor a pre-aborted signal immediately.
       if (signal?.aborted) {
+        // Belt-and-suspenders: `signal.reason` is always defined per WHATWG DOM.
         throw signal.reason ?? new Error("aborted");
       }
       if (restartLock) return restartLock;
@@ -598,6 +608,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           let onAbort: (() => void) | null = null;
           const abortPromise = new Promise<never>((_, reject) => {
             onAbort = (): void => {
+              // Belt-and-suspenders: `signal.reason` is always defined per WHATWG DOM.
               reject(signal.reason ?? new Error("aborted"));
             };
             if (signal.aborted) {

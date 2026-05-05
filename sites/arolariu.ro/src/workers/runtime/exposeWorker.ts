@@ -83,7 +83,10 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
     }
     const bootstrap = data as WorkerBootstrap;
     eventPort = bootstrap.eventPort;
-    eventPort.start();
+    // SPEC: The event port is send-only on the worker side (we only
+    // postMessage on it; never addEventListener). Per WHATWG HTML §9.4.5
+    // `port.start()` is only required for the receiving side. Omitted as
+    // a no-op.
     // X: Cache capabilities so worker handlers can read them via
     // `getBootstrapCapabilities()` instead of duplicating bootstrap parsing.
     cachedCapabilities = bootstrap.capabilities;
