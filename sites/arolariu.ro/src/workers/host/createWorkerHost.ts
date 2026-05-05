@@ -172,8 +172,25 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
    * release the strong cross-realm references those ports hold while their
    * `onmessage` handlers are registered (WHATWG HTML §9.4.5). Without this,
    * the parent's `port1`s linger until GC even after `worker.terminate()`.
+   *
+   * COOPERATIVE: For `lazy-reboot` and `dispose` we attempt
+   * `Comlink.releaseProxy()` before `terminate()` so the worker side gets a
+   * chance to flush. We deliberately SKIP this for `crash` because the
+   * proxy is already wedged — `releaseProxy` is itself an RPC and would
+   * hang on a closed port (see SAFETY note in `handleCrash`).
    */
   function tearDownWorker(mode: TeardownMode): void {
+    // COOPERATIVE: Best-effort cooperative shutdown for graceful teardowns.
+    // Fire-and-forget; we don't await because terminate() is the hard
+    // backstop and we don't want a hung worker to block teardown.
+    if ((mode === "dispose" || mode === "lazy-reboot") && proxy !== null) {
+      try {
+        const releaseable = proxy as unknown as {[Comlink.releaseProxy]?: () => void};
+        releaseable[Comlink.releaseProxy]?.();
+      } catch {
+        // Ignore: the proxy may already be wedged; terminate() will free it.
+      }
+    }
     const w = worker;
     worker = null;
     proxy = null;
