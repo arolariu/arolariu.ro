@@ -4,7 +4,7 @@ import {__resetForTesting, getEventPort} from "../runtime/exposeWorker";
 import {emitEvent} from "../runtime/emitEvent";
 import {createWorkerHost} from "./createWorkerHost";
 import {createMockWorker} from "./mockWorker";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError} from "./workerErrors";
+import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {type WorkerHostState} from "./workerLifecycle";
 
 type GreetApi = {
@@ -700,6 +700,87 @@ describe("createWorkerHost", () => {
       } finally {
         Object.defineProperty(globalThis, "Worker", {value: original, configurable: true});
       }
+    });
+  });
+
+  describe("per-call timeout", () => {
+    // Regression: K — calls that exceed defaultCallTimeoutMs reject with
+    // WorkerTimeoutError, with the method name + measured elapsed time.
+    it("rejects with WorkerTimeoutError when a call exceeds defaultCallTimeoutMs", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => mock.worker,
+        defaultCallTimeoutMs: 25,
+      });
+      try {
+        await host.api.sleep(1_000_000);
+        expect.fail("expected WorkerTimeoutError");
+      } catch (err) {
+        expect(err).toBeInstanceOf(WorkerTimeoutError);
+        expect((err as WorkerTimeoutError).method).toBe("sleep");
+        expect((err as WorkerTimeoutError).elapsedMs).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    // Regression: K — defaultCallTimeoutMs of 0 disables the timeout.
+    it("does not time out when defaultCallTimeoutMs is 0", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => mock.worker,
+        defaultCallTimeoutMs: 0,
+      });
+      const result = await host.api.greet("no-timeout");
+      expect(result).toBe("hi, no-timeout");
+    });
+
+    // Regression: K — defaultCallTimeoutMs of Infinity (or any non-finite
+    // value) disables the timeout.
+    it("does not time out when defaultCallTimeoutMs is Infinity", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => mock.worker,
+        defaultCallTimeoutMs: Infinity,
+      });
+      const result = await host.api.greet("infinite");
+      expect(result).toBe("hi, infinite");
+    });
+
+    // Regression: K — successful calls under the timeout budget resolve
+    // normally and the timeout handle is cleared (no leaked setTimeout).
+    it("clears the timeout handle when the call resolves before the timeout fires", async () => {
+      vi.useFakeTimers();
+      try {
+        const mock = createMockWorker({api: greetImpl});
+        const host = createWorkerHost<GreetApi>({
+          name: "test",
+          load: () => mock.worker,
+          defaultCallTimeoutMs: 30_000,
+        });
+        // Warm up first so the lifecycle's idle-reboot timer is already
+        // counted in the baseline. Otherwise the boot itself would create
+        // a long-lived timer that inflates the diff.
+        await host.warmUp();
+        const baselineTimerCount = vi.getTimerCount();
+        await host.api.greet("fast");
+        // Yield microtasks so the per-call try/finally has run.
+        await Promise.resolve();
+        // No new pending timers from the call should remain.
+        expect(vi.getTimerCount()).toBe(baselineTimerCount);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // Regression: K — the default (no option provided) is 30 seconds; a call
+    // that completes in < 30s under the default budget must resolve.
+    it("uses the 30s default budget when defaultCallTimeoutMs is not specified", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      const result = await host.api.greet("default-budget");
+      expect(result).toBe("hi, default-budget");
     });
   });
 });

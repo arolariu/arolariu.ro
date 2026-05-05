@@ -25,13 +25,15 @@ import {type Remote} from "comlink";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
 import {WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError} from "./workerErrors";
+import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
 /** Maximum time (ms) we wait for the worker to emit `{kind: "ready"}`. */
 const BOOTSTRAP_TIMEOUT_MS = 10_000;
 /** Default idle timeout for lazy-reboot: 5 minutes. */
 const DEFAULT_IDLE_TIMEOUT_MS = 5 * 60_000;
+/** Default per-call timeout: 30 seconds. Set to 0 or `Infinity` to disable. */
+const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 
 export {type WorkerCapabilities} from "./workerCapabilities";
 export type {WorkerEvent} from "./workerEnvelope";
@@ -50,6 +52,18 @@ export type CreateWorkerHostOptions<TApi> = Readonly<{
   load: () => Worker;
   /** Idle timeout in ms after which the worker is silently torn down. Default 5 min. */
   idleTimeoutMs?: number;
+  /**
+   * Per-call timeout in ms. Each proxy method call rejects with
+   * {@link WorkerTimeoutError} if it exceeds this duration (measured from
+   * after the boot handshake completes, so boot latency is excluded).
+   *
+   * Default `30000` (30 seconds). Set to `0` or `Infinity` to disable.
+   *
+   * NOTE: The timeout rejects the consumer's promise but does NOT cancel
+   * the worker-side computation — Comlink has no cancellation protocol.
+   * If a hung handler must be reclaimed, call `host.restart()`.
+   */
+  defaultCallTimeoutMs?: number;
   /** Hook called for every `WorkerEvent` emitted by the worker. */
   onEvent?: (event: WorkerEvent) => void;
 }>;
@@ -90,6 +104,7 @@ type InFlightEntry = Readonly<{
  */
 export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): WorkerHost<TApi> {
   const idleTimeoutMs = opts.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
+  const defaultCallTimeoutMs = opts.defaultCallTimeoutMs ?? DEFAULT_CALL_TIMEOUT_MS;
   const capabilities = getCapabilities();
   const bridge = createTelemetryBridge(opts.name);
 
@@ -427,8 +442,32 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
               throw new Error(`Worker host has no method "${prop}"`);
             }
             lifecycle.beginCall();
+
+            // K: Per-call timeout. Measured from AFTER ensureReady so boot
+            // latency is not charged to the consumer's budget. Disabled for
+            // 0, negative, NaN, or Infinity (Number.isFinite gate).
+            //
+            // NOTE: The timeout rejects the consumer's promise but does NOT
+            // abort the worker-side handler — Comlink has no cancellation
+            // protocol. If a hung handler must be reclaimed, the consumer
+            // should call host.restart().
+            const callStartMs = performance.now();
+            let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+            let timeoutPromise: Promise<never> | null = null;
+            if (defaultCallTimeoutMs > 0 && Number.isFinite(defaultCallTimeoutMs)) {
+              timeoutPromise = new Promise<never>((_, reject) => {
+                timeoutHandle = setTimeout(() => {
+                  reject(new WorkerTimeoutError(prop, Math.round(performance.now() - callStartMs)));
+                }, defaultCallTimeoutMs);
+              });
+              // Suppress "unhandled rejection" if the call wins the race.
+              timeoutPromise.catch(() => {
+                /* loser */
+              });
+            }
+
             try {
-              return await bridge.wrapCall(prop, async () => {
+              const wrapped = bridge.wrapCall(prop, async () => {
                 const callPromise = (async (): Promise<unknown> => {
                   const result = (target as (...a: unknown[]) => Promise<unknown>)(...callArgs);
                   try {
@@ -497,7 +536,21 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
 
                 return await callPromise;
               });
+
+              // K: Race against the per-call timeout if enabled. Suppress
+              // the loser's rejection so neither outcome surfaces as an
+              // unhandled-rejection warning.
+              if (timeoutPromise) {
+                wrapped.catch(() => {
+                  /* loser; bridge.wrapCall has already logged via telemetry */
+                });
+                return await Promise.race([wrapped, timeoutPromise]);
+              }
+              return await wrapped;
             } finally {
+              // K: Always clear the timeout handle whether the call won,
+              // the timeout won, or the call threw.
+              if (timeoutHandle !== null) clearTimeout(timeoutHandle);
               lifecycle.endCall();
             }
           };
