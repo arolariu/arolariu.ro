@@ -99,6 +99,14 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   let restartLock: Promise<void> | null = null;
   const inFlight = new Set<InFlightEntry>();
 
+  // M1: Track the parent-side ports of both `MessageChannel`s so teardown can
+  // explicitly `close()` them. Per WHATWG HTML §9.4.5, a `MessagePort` with
+  // active listeners is a strong cross-realm reference. Worker termination
+  // collects the worker realm, but the parent's `port1`s with `onmessage`
+  // handlers stay alive until GC unless we close them here.
+  let parentRpcPort: MessagePort | null = null;
+  let parentEventPort: MessagePort | null = null;
+
   // C1: Host-level subscriber registry. Subscribers register here and are
   // proxied through to the underlying lifecycle. This lets subscriptions
   // survive a `restart()` that re-creates the lifecycle instance.
@@ -153,6 +161,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
    *
    * G: Always clears any in-flight bootstrap timeout so a stale boot can't
    * resolve after teardown.
+   *
+   * SPEC (WHATWG HTML §10.2.4): The worker's `error` event delivery is a
+   * parallel algorithm; an `error` task can be queued and then run to
+   * completion AFTER `terminate()` returns. We detach our error listener
+   * BEFORE calling `terminate()` so any late event hits a no-op listener
+   * set instead of re-entering the host state machine.
+   *
+   * M1: Calls `parentRpcPort.close()` and `parentEventPort.close()` to
+   * release the strong cross-realm references those ports hold while their
+   * `onmessage` handlers are registered (WHATWG HTML §9.4.5). Without this,
+   * the parent's `port1`s linger until GC even after `worker.terminate()`.
    */
   function tearDownWorker(mode: TeardownMode): void {
     const w = worker;
@@ -164,7 +183,9 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       clearTimeout(bootTimeoutId);
       bootTimeoutId = null;
     }
-    // I1: Remove the error listener before terminating to avoid leaks.
+    // I1: Remove the error listener before terminating to avoid leaks AND so
+    // that any post-terminate `error` event (HTML §10.2.4 parallel delivery)
+    // never re-enters host state machine logic.
     if (currentErrorListener) {
       try {
         currentErrorListener.worker.removeEventListener("error", currentErrorListener.handler);
@@ -179,6 +200,25 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       } catch {
         // ignore termination errors
       }
+    }
+    // M1: Explicitly close the parent's `MessagePort`s so they release their
+    // strong cross-realm references (WHATWG HTML §9.4.5) instead of waiting
+    // for GC.
+    if (parentRpcPort) {
+      try {
+        parentRpcPort.close();
+      } catch {
+        // ignore close errors (port may already be detached)
+      }
+      parentRpcPort = null;
+    }
+    if (parentEventPort) {
+      try {
+        parentEventPort.close();
+      } catch {
+        // ignore close errors (port may already be detached)
+      }
+      parentEventPort = null;
     }
     if (mode === "dispose") {
       lifecycle.dispose();
@@ -213,6 +253,11 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
 
     const rpcChannel = new MessageChannel();
     const eventChannel = new MessageChannel();
+    // M1: Capture the parent-side ports so `tearDownWorker` can close them.
+    // The `port2` halves are transferred to the worker via `postMessage`
+    // below and become unreachable from this realm immediately after.
+    parentRpcPort = rpcChannel.port1;
+    parentEventPort = eventChannel.port1;
 
     // Listen for unexpected `error` events on the worker.
     const onError = (): void => {
