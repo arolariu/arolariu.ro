@@ -20,4 +20,10 @@ export {
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./host";
+
+// Re-export the Comlink markers we use so consumers don't dual-import from
+// "comlink" directly. Bundler chunk-splitting can otherwise produce two
+// distinct Comlink instances with incompatible internal symbols, leading
+// to silent breakage when a `proxy()`-marked value crosses chunks.
+export {proxy, transfer, releaseProxy} from "comlink";
 export {type Remote} from "comlink";
