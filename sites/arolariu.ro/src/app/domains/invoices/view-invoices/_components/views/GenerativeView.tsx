@@ -20,44 +20,27 @@ import {
   TabsList,
   TabsTrigger,
 } from "@arolariu/components";
+import {AssistantPanel} from "@/app/domains/invoices/_components/ai";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
-import {MessageList} from "../MessageList";
 import styles from "./GenerativeView.module.scss";
-
-type Message = {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: string;
-};
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice>;
 }>;
 
 /**
- * This function renders the generative view for invoice analysis.
- * It allows users to chat with an AI assistant to analyze invoices and get insights.
- * @returns This function renders the generative view for invoice analysis.
+ * Generative view for invoice analysis. The chat tab hosts the local
+ * Invoice AI Assistant (Layer 1 embedding classifier + Layer 2 slot LLM).
+ * The settings tab continues to expose retention + data-access toggles.
+ *
+ * @remarks
+ * The `invoices` prop is preserved for API compatibility but the assistant
+ * reads directly from `useInvoicesStore` so no prop wiring is needed.
  */
-export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
+export default function RenderGenerativeView({invoices: _invoices}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--List.generativeView");
-  const [messages, setMessages] = useState<Message[]>(() => [
-    {
-      id: "welcome",
-      content: t("welcomeMessage"),
-      role: "assistant",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // todo: complete this.
-  console.log(invoices);
-  console.log(setMessages);
 
   return (
     <motion.div
@@ -99,21 +82,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
         <TabsContent
           value='chat'
           className={styles["tabContent"]}>
-          <Card className={styles["fullWidth"]}>
-            <CardHeader>
-              <CardTitle>{t("title")}</CardTitle>
-              <CardDescription>{t("chatDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className={styles["chatContainer"]}>
-                <div className={styles["chatMessages"]}>
-                  <MessageList messages={messages} />
-                  <div ref={messagesEndRef} />
-                </div>
-                <div className={styles["chatInput"]} />
-              </div>
-            </CardContent>
-          </Card>
+          <AssistantPanel />
         </TabsContent>
         <TabsContent
           value='settings'
