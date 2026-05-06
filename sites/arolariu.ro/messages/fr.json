@@ -4367,6 +4367,51 @@
     "uploadScans": "Télécharger des Scans",
     "viewScans": "Voir les Scans"
   },
+  "Playground": {
+    "Workers": {
+      "metadata": {
+        "title": "Bac à sable Workers"
+      },
+      "title": "Bac à sable Web Workers",
+      "description": "Démarrez, appelez, annulez, plantez et redémarrez interactivement un Web Worker. Disponible uniquement en développement.",
+      "sections": {
+        "state": "État de l'hôte",
+        "calls": "Appels",
+        "cancellation": "Annulation",
+        "errors": "Chemins d'erreur",
+        "capabilities": "Capacités",
+        "stress": "Tests de charge",
+        "eventLog": "Journal d'événements"
+      },
+      "labels": {
+        "state": "état",
+        "crossOriginIsolated": "crossOriginIsolated",
+        "callStatus": "Statut du dernier appel",
+        "noCalls": "Aucun appel n'a encore été effectué."
+      },
+      "placeholders": {
+        "echo": "Tapez quelque chose à renvoyer"
+      },
+      "actions": {
+        "echo": "Echo",
+        "sleep": "Dormir 10s",
+        "abort": "Annuler",
+        "crash": "Forcer le plantage",
+        "restart": "Redémarrer",
+        "readCapabilities": "Lire les capacités",
+        "timeoutSlow": "Déclencher timeout (sleep 5s, budget 100ms)",
+        "emitEvents": "Émettre 5 événements",
+        "throwError": "Lancer une erreur handler",
+        "clearLog": "Effacer le journal"
+      },
+      "status": {
+        "idle": "Inactif",
+        "pending": "Appel du worker en cours…",
+        "success": "Succès",
+        "error": "Erreur"
+      }
+    }
+  },
   "Profile": {
     "header": {
       "completionHint": "Complétez votre profil pour débloquer toutes les fonctionnalités",
