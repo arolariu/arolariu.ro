@@ -345,6 +345,25 @@ describe("createWorkerHost", () => {
       await expect(host.dispose()).resolves.toBeUndefined();
     });
 
+    // Regression: dispose() while a slow call is in flight must reject the
+    // call with WorkerDeadError rather than letting it hang forever per the
+    // Comlink-hangs-on-closed-port hazard (GoogleChromeLabs/comlink#601).
+    it("rejects in-flight calls with WorkerDeadError on dispose", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "dispose-with-inflight", load: () => mock.worker});
+      await host.warmUp();
+      // Start a long-running call so it's registered in inFlight.
+      const slow = host.api.sleep(1_000_000);
+      slow.catch(() => {
+        /* expected */
+      });
+      // Yield so the call is past `lifecycle.beginCall()` and registered.
+      await Promise.resolve();
+      await host.dispose();
+      await expect(slow).rejects.toThrowError(WorkerDeadError);
+      expect(host.state).toBe("disposed");
+    });
+
     // Regression: I3 — dispose() during an in-flight bootstrap should reject
     // the pending warmUp/api call promise instead of leaving callers stuck
     // waiting for the bootstrap timeout.
@@ -700,6 +719,52 @@ describe("createWorkerHost", () => {
       } finally {
         Object.defineProperty(globalThis, "Worker", {value: original, configurable: true});
       }
+    });
+  });
+
+  describe("synchronous boot failure recovery", () => {
+    // Regression: a throw from opts.load() must transition the host to
+    // 'dead' rather than leaving it stranded in 'starting'.
+    it("recovers to 'dead' when opts.load() throws synchronously", async () => {
+      const host = createWorkerHost<GreetApi>({
+        name: "load-throws",
+        load: () => {
+          throw new Error("simulated CSP failure");
+        },
+      });
+      await expect(host.api.greet("x")).rejects.toThrowError("simulated CSP failure");
+      expect(host.state).toBe("dead");
+      // Subsequent calls should reject with WorkerDeadError, not retry boot.
+      await expect(host.api.greet("y")).rejects.toThrowError(WorkerDeadError);
+    });
+
+    // Regression: a throw from worker.postMessage() (e.g., DataCloneError)
+    // must tear down + transition to 'dead', not hang on the bootstrap
+    // timeout for the full 10 seconds.
+    it("recovers to 'dead' when worker.postMessage() throws synchronously", async () => {
+      const throwingPostMessageWorker = (): Worker =>
+        ({
+          postMessage: (): void => {
+            throw new Error("simulated DataCloneError");
+          },
+          terminate: () => {
+            /* no-op */
+          },
+          addEventListener: () => {
+            /* no-op */
+          },
+          removeEventListener: () => {
+            /* no-op */
+          },
+          dispatchEvent: () => true,
+          onmessage: null,
+          onmessageerror: null,
+          onerror: null,
+        }) as unknown as Worker;
+
+      const host = createWorkerHost<GreetApi>({name: "postmessage-throws", load: throwingPostMessageWorker});
+      await expect(host.api.greet("x")).rejects.toThrowError("simulated DataCloneError");
+      expect(host.state).toBe("dead");
     });
   });
 

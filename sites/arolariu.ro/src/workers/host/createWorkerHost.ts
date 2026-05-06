@@ -25,7 +25,7 @@ import {type Remote} from "comlink";
 import {createPortPair} from "./createPortPair";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
-import {WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
+import {validateBootstrap, WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
 import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
@@ -315,8 +315,19 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     }
     lifecycle.bootBegin();
 
-    const w = opts.load();
-    worker = w;
+    // SAFETY: Wrap the synchronous boot setup so a throw from `opts.load()`
+    // (CSP failure, bad worker URL, factory bug) doesn't leave the host
+    // stranded in `starting`. We transition to `dead` and rethrow so
+    // callers see a deterministic failure and can recover via restart()
+    // or construct a fresh host.
+    let w: Worker;
+    try {
+      w = opts.load();
+      worker = w;
+    } catch (err) {
+      lifecycle.crash();
+      throw err;
+    }
 
     // M1+naming: Build the two channels via createPortPair so the host vs.
     // transferable halves are syntactically obvious. The `parent` halves
@@ -395,7 +406,34 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       eventPort: event.transferable,
       capabilities,
     };
-    w.postMessage(bootstrap, [rpc.transferable, event.transferable]);
+    // SECURITY: Self-validate the constructed bootstrap before posting it
+    // to the worker. If a future change to the host (e.g., a capability
+    // detection bug) ships a malformed shape, we want to catch it here
+    // rather than at the worker boundary where the symptom would be the
+    // worker silently never replying with `ready` and the bootstrap
+    // timeout firing 10 seconds later.
+    if (!validateBootstrap(bootstrap)) {
+      ready.catch(() => {
+        /* avoid unhandled rejection on the unawaited ready promise */
+      });
+      tearDownWorker("crash");
+      lifecycle.crash();
+      throw new Error("Worker host produced an invalid bootstrap message; check capabilities snapshot.");
+    }
+    // SAFETY: postMessage can throw synchronously — DataCloneError if a
+    // payload field somehow isn't structured-cloneable, or other host-
+    // platform errors. Treat that as a hard crash so the host doesn't
+    // sit in `starting` waiting on a handshake that will never arrive.
+    try {
+      w.postMessage(bootstrap, [rpc.transferable, event.transferable]);
+    } catch (err) {
+      ready.catch(() => {
+        /* avoid unhandled rejection on the unawaited ready promise */
+      });
+      tearDownWorker("crash");
+      lifecycle.crash();
+      throw err;
+    }
 
     await ready;
 
@@ -734,6 +772,15 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       await ensureReady();
     },
     async dispose(): Promise<void> {
+      // SAFETY: Drain in-flight calls BEFORE tearing down the worker — the
+      // same Comlink-hangs-on-closed-port hazard documented in handleCrash()
+      // and restart() applies here. Without this drain, any consumer
+      // currently awaiting `host.api.foo()` would hang forever once the
+      // ports close (Comlink's requestResponseMessage tracks only `resolve`,
+      // not `reject`; see GoogleChromeLabs/comlink#601).
+      const drainEntries = Array.from(inFlight);
+      inFlight.clear();
+
       // I3: Eagerly reject any in-flight bootstrap so callers waiting on
       // `ensureReady()`/`warmUp()` unblock instead of timing out.
       const bootRejector = rejectBoot;
@@ -741,6 +788,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       if (bootRejector) {
         rejectBoot = null;
         bootRejector(new WorkerDeadError("Host disposed during boot."));
+      }
+
+      // SAFETY: Reject the snapshotted in-flight calls AFTER tearDown so
+      // they observe the disposed state, with a deterministic error.
+      if (drainEntries.length > 0) {
+        const disposeError = new WorkerDeadError(
+          `Worker host was disposed with ${drainEntries.length} in-flight call(s): [${drainEntries.map((e) => e.method).join(", ")}].`,
+        );
+        for (const entry of drainEntries) {
+          entry.reject(disposeError);
+        }
       }
     },
   };
