@@ -22,6 +22,7 @@
 import * as Comlink from "comlink";
 import {type Remote} from "comlink";
 
+import {createPortPair} from "./createPortPair";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
 import {WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
@@ -288,13 +289,15 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     const w = opts.load();
     worker = w;
 
-    const rpcChannel = new MessageChannel();
-    const eventChannel = new MessageChannel();
-    // M1: Capture the parent-side ports so `tearDownWorker` can close them.
-    // The `port2` halves are transferred to the worker via `postMessage`
-    // below and become unreachable from this realm immediately after.
-    parentRpcPort = rpcChannel.port1;
-    parentEventPort = eventChannel.port1;
+    // M1+naming: Build the two channels via createPortPair so the host vs.
+    // transferable halves are syntactically obvious. The `parent` halves
+    // stay in this realm (we attach onmessage and must close() on teardown);
+    // the `transferable` halves are handed to the worker via postMessage and
+    // become unreachable from this realm immediately after.
+    const rpc = createPortPair();
+    const event = createPortPair();
+    parentRpcPort = rpc.parent;
+    parentEventPort = event.parent;
 
     // Listen for unexpected `error` events on the worker.
     const onError = (): void => {
@@ -310,7 +313,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       rejectBoot = reject;
 
       bootTimeoutId = setTimeout(() => {
-        eventChannel.port1.onmessage = null;
+        event.parent.onmessage = null;
         bootTimeoutId = null;
         // I3: If we were disposed while the timer was pending, surface a
         // `WorkerDeadError` rather than a misleading `WorkerCrashError`.
@@ -322,21 +325,21 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         reject(new WorkerCrashError([]));
       }, BOOTSTRAP_TIMEOUT_MS);
 
-      eventChannel.port1.onmessage = (e: MessageEvent): void => {
-        const event = e.data as WorkerEvent;
-        if (event.kind === "ready") {
+      event.parent.onmessage = (e: MessageEvent): void => {
+        const ev = e.data as WorkerEvent;
+        if (ev.kind === "ready") {
           if (bootTimeoutId !== null) {
             clearTimeout(bootTimeoutId);
             bootTimeoutId = null;
           }
           // Swap to the steady-state listener that ingests events.
-          eventChannel.port1.onmessage = (next: MessageEvent): void => {
-            const ev = next.data as WorkerEvent;
+          event.parent.onmessage = (next: MessageEvent): void => {
+            const nextEv = next.data as WorkerEvent;
             // I4: Filter stray `ready` events that arrive after bootstrap.
             // Bootstrap-ready is consumed by the boot promise itself; never forward.
-            if (ev.kind === "ready") return;
-            opts.onEvent?.(ev);
-            bridge.ingestEvent(ev);
+            if (nextEv.kind === "ready") return;
+            opts.onEvent?.(nextEv);
+            bridge.ingestEvent(nextEv);
           };
           resolve();
           return;
@@ -345,8 +348,8 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         // boot promise; never forwarded). Anything else that arrives before
         // the handshake is forwarded defensively to keep behavior parity with
         // the steady-state listener for non-`ready` events.
-        opts.onEvent?.(event);
-        bridge.ingestEvent(event);
+        opts.onEvent?.(ev);
+        bridge.ingestEvent(ev);
       };
       // SPEC: `port.start()` is implicitly called when assigning
       // `port.onmessage` (WHATWG HTML §9.4.5). The explicit call previously
@@ -359,15 +362,15 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     const bootstrap: WorkerBootstrap = {
       kind: "bootstrap",
       version: WORKER_PROTOCOL_VERSION,
-      rpcPort: rpcChannel.port2,
-      eventPort: eventChannel.port2,
+      rpcPort: rpc.transferable,
+      eventPort: event.transferable,
       capabilities,
     };
-    w.postMessage(bootstrap, [rpcChannel.port2, eventChannel.port2]);
+    w.postMessage(bootstrap, [rpc.transferable, event.transferable]);
 
     await ready;
 
-    proxy = Comlink.wrap<TApi>(rpcChannel.port1);
+    proxy = Comlink.wrap<TApi>(rpc.parent);
     lifecycle.bootComplete();
   }
 
