@@ -142,7 +142,7 @@ export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element 
             disabled={state.status === "classifying" || state.status === "slot-extracting"}
             aria-busy={state.status === "classifying" || state.status === "slot-extracting"}
           />
-          <Button type="submit" disabled={!draft.trim() || state.status === "classifying"}>
+          <Button type="submit" disabled={!draft.trim() || state.status === "classifying" || state.status === "slot-extracting"}>
             {t("InvoiceAssistant.panel.submit" as never)}
           </Button>
         </form>
