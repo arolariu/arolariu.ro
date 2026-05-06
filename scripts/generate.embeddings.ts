@@ -17,9 +17,9 @@
 import {pipeline} from "@xenova/transformers";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import {SEED_PHRASES_EN} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.en";
-import {SEED_PHRASES_RO} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.ro";
-import {SEED_PHRASES_FR} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.fr";
+import {SEED_PHRASES_EN} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.en.ts";
+import {SEED_PHRASES_RO} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.ro.ts";
+import {SEED_PHRASES_FR} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.fr.ts";
 
 type Locale = "en" | "ro" | "fr";
 
