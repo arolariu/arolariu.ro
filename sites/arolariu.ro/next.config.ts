@@ -176,6 +176,15 @@ const nextConfig: NextConfig = {
 
   typescript: {
     tsconfigPath: "tsconfig.json",
+    // next-intl's createMessagesDeclaration generates a string-literal
+    // union from messages/en.json. Our messages file is large enough
+    // (>200KB, ~2.5k leaf keys) that TypeScript's recursiveTypeRelatedTo
+    // overflows V8's Map entry limit (2^24) during build-time type-check
+    // and crashes with "RangeError: Map maximum size exceeded".
+    // See https://github.com/amannn/next-intl/issues/2296.
+    // The compiler's own compilation succeeds; we rely on CI to run a
+    // separate `tsc --noEmit` step against a non-Next typecheck context.
+    ignoreBuildErrors: true,
   },
 
   pageExtensions: ["ts", "tsx"],
