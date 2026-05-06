@@ -111,6 +111,7 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
             // host rewraps the envelope as `WorkerError` in its proxy
             // handler (see createWorkerHost.ts).
             const err = cause as {name?: string; message?: string; stack?: string};
+            // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentional plain-object envelope; see ENVELOPE comment above
             throw {
               __workerError: true,
               name: typeof err?.name === "string" ? err.name : "Error",
