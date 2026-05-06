@@ -413,12 +413,18 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     // worker silently never replying with `ready` and the bootstrap
     // timeout firing 10 seconds later.
     if (!validateBootstrap(bootstrap)) {
+      const validationError = new Error("Worker host produced an invalid bootstrap message; check capabilities snapshot.");
+      // Reject the ready promise eagerly so its captured closures (and
+      // rejectBoot reference) release immediately rather than lingering
+      // until GC. The `.catch` is belt-and-suspenders for the unawaited
+      // tail.
+      rejectBoot?.(validationError);
       ready.catch(() => {
-        /* avoid unhandled rejection on the unawaited ready promise */
+        /* swallow loser */
       });
       tearDownWorker("crash");
       lifecycle.crash();
-      throw new Error("Worker host produced an invalid bootstrap message; check capabilities snapshot.");
+      throw validationError;
     }
     // SAFETY: postMessage can throw synchronously — DataCloneError if a
     // payload field somehow isn't structured-cloneable, or other host-
@@ -427,8 +433,11 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     try {
       w.postMessage(bootstrap, [rpc.transferable, event.transferable]);
     } catch (err) {
+      // Reject the ready promise eagerly — same rationale as the
+      // validation branch above.
+      rejectBoot?.(err);
       ready.catch(() => {
-        /* avoid unhandled rejection on the unawaited ready promise */
+        /* swallow loser */
       });
       tearDownWorker("crash");
       lifecycle.crash();
