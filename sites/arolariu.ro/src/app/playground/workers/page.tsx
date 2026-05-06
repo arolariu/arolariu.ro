@@ -4,31 +4,29 @@
  *
  * @remarks
  * Gated at the route level so Next.js returns 404 outside of development /
- * staging environments. Metadata is produced via the shared
- * `createMetadata` helper with i18n fall-through to literal English so
- * the playground works without locale-file edits.
+ * staging environments. All UI strings here (and on the rendered island)
+ * are hardcoded English because the page is never reachable in production
+ * and routing them through `next-intl` would only pollute the message
+ * catalogs.
  */
 
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
 import {notFound} from "next/navigation";
 
 import {WorkerPlaygroundIsland} from "./island";
 
 /**
- * Build localized metadata for the playground. Falls back to literal
- * English when translation keys are not present so a fresh checkout
- * works without `messages/*.json` edits.
+ * Build localized-but-hardcoded metadata for the playground. Title is a
+ * literal because this route is dev-only.
  *
  * @returns Metadata for the gated dev-only worker playground route.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  const titleKey = "Playground.Workers.metadata.title";
   return createMetadata({
     locale: await getLocale(),
-    title: t.has(titleKey) ? t(titleKey) : "Worker Playground",
+    title: "Worker Playground",
     robots: "noindex",
   });
 }

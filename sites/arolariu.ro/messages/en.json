@@ -4367,51 +4367,6 @@
     "uploadScans": "Upload Scans",
     "viewScans": "View Scans"
   },
-  "Playground": {
-    "Workers": {
-      "metadata": {
-        "title": "Worker Playground"
-      },
-      "title": "Web Workers Playground",
-      "description": "Interactively boot, call, abort, crash, and restart a Web Worker. Available in development only.",
-      "sections": {
-        "state": "Host state",
-        "calls": "Calls",
-        "cancellation": "Cancellation",
-        "errors": "Error paths",
-        "capabilities": "Capabilities",
-        "stress": "Stress tests",
-        "eventLog": "Event log"
-      },
-      "labels": {
-        "state": "state",
-        "crossOriginIsolated": "crossOriginIsolated",
-        "callStatus": "Last call status",
-        "noCalls": "No calls have been made yet."
-      },
-      "placeholders": {
-        "echo": "Type something to echo"
-      },
-      "actions": {
-        "echo": "Echo",
-        "sleep": "Sleep 10s",
-        "abort": "Abort",
-        "crash": "Force crash",
-        "restart": "Restart",
-        "readCapabilities": "Read capabilities",
-        "timeoutSlow": "Trigger timeout (sleep 5s, budget 100ms)",
-        "emitEvents": "Emit 5 events",
-        "throwError": "Throw handler error",
-        "clearLog": "Clear event log"
-      },
-      "status": {
-        "idle": "Idle",
-        "pending": "Calling worker…",
-        "success": "Success",
-        "error": "Error"
-      }
-    }
-  },
   "Profile": {
     "header": {
       "completionHint": "Complete your profile to unlock all features",

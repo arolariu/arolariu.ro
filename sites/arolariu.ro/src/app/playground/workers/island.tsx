@@ -5,23 +5,26 @@
  * @module app/playground/workers/island
  *
  * @remarks
- * Hardened UX (Phase 7 of the cross-review refactor):
- * - Replaces inline styles with `@arolariu/components` primitives (Card,
- *   Button, Badge, Alert) so styling matches the rest of the site.
- * - Tracks a `CallState` discriminated union per call so loading, success,
- *   and error are each rendered explicitly.
- * - Adds an `aria-live="polite"` status region so screen readers announce
- *   call outcomes; `aria-busy` flips on action buttons during pending.
- * - Routes all user-facing strings through `next-intl`'s `useTranslations`
- *   hook with literal English fall-throughs so the page stays functional
- *   even if `messages/*.json` is stale.
- * - Adds Phase 7/8 stress-test buttons for the Playwright suite to drive
- *   timeout, parallel-dispose, realm-isolation, and event-stream scenarios.
+ * This page is **dev-only** (`/playground/workers/`) and is gated to
+ * 404 in production by the parent route. Because of that, all UI strings
+ * here are hardcoded English — they are never seen by end users, and
+ * routing them through `next-intl` would only add noise to the message
+ * catalogs without any user-facing benefit.
+ *
+ * Structure:
+ * - `@arolariu/components` primitives (Card, Button, Badge, Alert) for
+ *   visual consistency with the rest of the site.
+ * - Discriminated `CallState` machine (idle/pending/success/error) so
+ *   each branch is rendered explicitly.
+ * - `aria-live="polite"` status region announces call outcomes; `aria-busy`
+ *   flips on action buttons during pending.
+ * - Stress-test buttons drive scenarios that MockWorker cannot fake
+ *   (real boot latency, realm isolation, per-call timeout) — see the
+ *   Playwright suite for the assertions.
  */
 
 import {Alert, AlertDescription, AlertTitle, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerTimeoutError, createWorkerHost, type WorkerCapabilities, type WorkerEvent, type WorkerHostState} from "@/workers";
-import {useTranslations} from "next-intl";
 import {useEffect, useMemo, useRef, useState} from "react";
 
 import type {PlaygroundWorkerApi} from "./playground.worker";
@@ -62,7 +65,6 @@ function asError(err: unknown): Error {
 const MAX_LOG_ENTRIES = 200;
 
 export function WorkerPlaygroundIsland(): React.JSX.Element {
-  const t = useTranslations();
   const [state, setState] = useState<WorkerHostState>("idle");
   const [logs, setLogs] = useState<ReadonlyArray<Log>>([]);
   const [callState, setCallState] = useState<CallState>({status: "idle"});
@@ -70,21 +72,6 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const [windowProbe, setWindowProbe] = useState<string | null>(null);
   const echoInputRef = useRef<HTMLInputElement>(null);
   const sleepAcRef = useRef<AbortController | null>(null);
-
-  /**
-   * Translate `key` if present in the active locale, otherwise return
-   * `fallback`. Lets the playground render with English defaults when
-   * `messages/*.json` does not (yet) carry the playground keys.
-   *
-   * The `as never` cast bypasses next-intl's typed-key inference, which
-   * would otherwise force every key to be a literal known to the
-   * generated `messages/en.json` schema. Acceptable here because the
-   * fallback path keeps the call safe at runtime.
-   */
-  const tr = (key: string, fallback: string): string => {
-    const typedKey = key as never;
-    return t.has(typedKey) ? t(typedKey) : fallback;
-  };
 
   const host = useMemo(() => {
     return createWorkerHost<PlaygroundWorkerApi>({
@@ -188,29 +175,33 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
   const onClearLog = (): void => setLogs([]);
 
-  const stateLabel = tr(`Playground.Workers.status.${callState.status}`, callState.status);
   const isPending = callState.status === "pending";
   const errorCategory = callState.status === "error" ? classifyError(callState.error) : null;
+  const stateLabel = callState.status;
+  const stateBadgeVariant: "default" | "secondary" | "destructive" =
+    state === "ready" ? "default" : state === "dead" || state === "disposed" ? "destructive" : "secondary";
 
   return (
     <div data-testid="playground-root" className="container mx-auto max-w-5xl space-y-4 p-4">
       <Card>
         <CardHeader>
-          <CardTitle data-testid="page-title">{tr("Playground.Workers.title", "Web Workers Playground")}</CardTitle>
-          <CardDescription>{tr("Playground.Workers.description", "Interactively boot, call, abort, crash, and restart a Web Worker. Available in development only.")}</CardDescription>
+          <CardTitle data-testid="page-title">Web Workers Playground</CardTitle>
+          <CardDescription>
+            Interactively boot, call, abort, crash, and restart a Web Worker. Available in development only.
+          </CardDescription>
         </CardHeader>
       </Card>
 
       <Card data-testid="state-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.state", "Host state")}</CardTitle>
+          <CardTitle>Host state</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted-foreground">{tr("Playground.Workers.labels.state", "state")}:</span>
-          <Badge data-testid="host-state" variant={state === "ready" ? "default" : state === "dead" || state === "disposed" ? "destructive" : "secondary"}>
+          <span className="text-sm text-muted-foreground">state:</span>
+          <Badge data-testid="host-state" variant={stateBadgeVariant}>
             {state}
           </Badge>
-          <span className="text-sm text-muted-foreground">{tr("Playground.Workers.labels.crossOriginIsolated", "crossOriginIsolated")}:</span>
+          <span className="text-sm text-muted-foreground">crossOriginIsolated:</span>
           <Badge data-testid="coi" variant="outline">
             {String(host.capabilities.crossOriginIsolated)}
           </Badge>
@@ -219,13 +210,13 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
       <Card>
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.labels.callStatus", "Last call status")}</CardTitle>
+          <CardTitle>Last call status</CardTitle>
         </CardHeader>
         <CardContent>
           <div role="status" aria-live="polite" aria-atomic="true" data-testid="call-status">
             {callState.status === "idle" && (
               <p className="text-sm text-muted-foreground" data-testid="call-status-idle">
-                {tr("Playground.Workers.labels.noCalls", "No calls have been made yet.")}
+                No calls have been made yet.
               </p>
             )}
             {callState.status === "pending" && (
@@ -234,7 +225,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
                   <Badge variant="secondary">{stateLabel}</Badge>
                 </AlertTitle>
                 <AlertDescription data-testid="call-status-pending">
-                  {tr("Playground.Workers.status.pending", "Calling worker…")} ({callState.method})
+                  Calling worker… ({callState.method})
                 </AlertDescription>
               </Alert>
             )}
@@ -263,7 +254,8 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
                 </AlertTitle>
                 <AlertDescription data-testid="call-status-error">
                   <div>
-                    <strong>{callState.method}:</strong> <span data-testid="error-name">{callState.error.name}</span> — <span data-testid="error-message">{callState.error.message}</span>
+                    <strong>{callState.method}:</strong> <span data-testid="error-name">{callState.error.name}</span> —{" "}
+                    <span data-testid="error-message">{callState.error.message}</span>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -274,12 +266,12 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
       <Card data-testid="calls-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.calls", "Calls")}</CardTitle>
+          <CardTitle>Calls</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <label htmlFor="echo-input" className="text-sm">
-              {tr("Playground.Workers.placeholders.echo", "Type something to echo")}
+              Type something to echo
             </label>
             <input
               id="echo-input"
@@ -287,13 +279,13 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
               data-testid="echo-input"
               type="text"
               className="flex-1 rounded-md border px-3 py-2 text-sm"
-              placeholder={tr("Playground.Workers.placeholders.echo", "Type something to echo")}
+              placeholder="Type something to echo"
             />
             <Button data-testid="echo-button" onClick={onEcho} disabled={isPending} aria-busy={isPending}>
-              {tr("Playground.Workers.actions.echo", "Echo")}
+              Echo
             </Button>
             <Button data-testid="ping-button" variant="secondary" onClick={onPing} disabled={isPending} aria-busy={isPending}>
-              ping
+              Ping
             </Button>
           </div>
         </CardContent>
@@ -301,42 +293,42 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
       <Card data-testid="cancellation-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.cancellation", "Cancellation")}</CardTitle>
+          <CardTitle>Cancellation</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button data-testid="sleep-button" onClick={onSleep10s} disabled={isPending} aria-busy={isPending}>
-            {tr("Playground.Workers.actions.sleep", "Sleep 10s")}
+            Sleep 10s
           </Button>
           <Button data-testid="abort-button" variant="outline" onClick={onAbortSleep}>
-            {tr("Playground.Workers.actions.abort", "Abort")}
+            Abort
           </Button>
         </CardContent>
       </Card>
 
       <Card data-testid="error-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.errors", "Error paths")}</CardTitle>
+          <CardTitle>Error paths</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button data-testid="throw-error-button" variant="outline" onClick={onThrowHandlerError} disabled={isPending} aria-busy={isPending}>
-            {tr("Playground.Workers.actions.throwError", "Throw handler error")}
+            Throw handler error
           </Button>
           <Button data-testid="crash-button" variant="destructive" onClick={onCrash} disabled={isPending} aria-busy={isPending}>
-            {tr("Playground.Workers.actions.crash", "Force crash")}
+            Force crash
           </Button>
           <Button data-testid="restart-button" onClick={onRestart} disabled={isPending} aria-busy={isPending}>
-            {tr("Playground.Workers.actions.restart", "Restart")}
+            Restart
           </Button>
         </CardContent>
       </Card>
 
       <Card data-testid="capabilities-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.capabilities", "Capabilities")}</CardTitle>
+          <CardTitle>Capabilities</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Button data-testid="caps-button" onClick={onCapabilities} disabled={isPending} aria-busy={isPending}>
-            {tr("Playground.Workers.actions.readCapabilities", "Read capabilities")}
+            Read capabilities
           </Button>
           <pre data-testid="caps-output" className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
             {caps ? JSON.stringify(caps, null, 2) : ""}
@@ -346,21 +338,21 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
       <Card data-testid="stress-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.stress", "Stress tests")}</CardTitle>
+          <CardTitle>Stress tests</CardTitle>
           <CardDescription>
-            Phase 8 scenarios that exercise behaviors MockWorker cannot fake (timeout, realm isolation, event streaming).
+            Scenarios that exercise behaviors MockWorker cannot fake (real boot latency, realm isolation, per-call timeout, end-to-end event streaming).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Button data-testid="timeout-button" variant="outline" onClick={onTriggerTimeout}>
-              {tr("Playground.Workers.actions.timeoutSlow", "Trigger timeout (sleep 5s, budget 100ms)")}
+              Trigger timeout (sleep 5s, budget 100ms)
             </Button>
             <Button data-testid="emit-events-button" variant="outline" onClick={onEmitEvents} disabled={isPending} aria-busy={isPending}>
-              {tr("Playground.Workers.actions.emitEvents", "Emit 5 events")}
+              Emit 5 events
             </Button>
             <Button data-testid="window-probe-button" variant="outline" onClick={onProbeWindow} disabled={isPending} aria-busy={isPending}>
-              typeof window
+              Probe typeof window
             </Button>
           </div>
           {windowProbe !== null && (
@@ -373,12 +365,14 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
 
       <Card data-testid="event-log-section">
         <CardHeader>
-          <CardTitle>{tr("Playground.Workers.sections.eventLog", "Event log")}</CardTitle>
-          <CardDescription>{logs.length === 0 ? "No events yet." : `${logs.length} entr${logs.length === 1 ? "y" : "ies"}.`}</CardDescription>
+          <CardTitle>Event log</CardTitle>
+          <CardDescription>
+            {logs.length === 0 ? "No events yet." : `${logs.length} entr${logs.length === 1 ? "y" : "ies"}.`}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <Button data-testid="clear-log-button" variant="outline" size="sm" onClick={onClearLog} disabled={logs.length === 0}>
-            {tr("Playground.Workers.actions.clearLog", "Clear event log")}
+            Clear event log
           </Button>
           <pre data-testid="event-log" className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs" aria-label="Worker event log">
             {logs.map((l) => `[${l.level}] ${l.line}\n`).join("")}

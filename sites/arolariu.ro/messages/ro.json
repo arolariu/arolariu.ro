@@ -4367,51 +4367,6 @@
     "uploadScans": "Încarcă scanări",
     "viewScans": "Vezi scanările"
   },
-  "Playground": {
-    "Workers": {
-      "metadata": {
-        "title": "Worker Playground"
-      },
-      "title": "Playground pentru Web Workers",
-      "description": "Pornește, apelează, anulează, blochează și repornește interactiv un Web Worker. Disponibil doar în mediul de dezvoltare.",
-      "sections": {
-        "state": "Starea host-ului",
-        "calls": "Apeluri",
-        "cancellation": "Anulare",
-        "errors": "Căi de eroare",
-        "capabilities": "Capabilități",
-        "stress": "Teste de stres",
-        "eventLog": "Jurnal de evenimente"
-      },
-      "labels": {
-        "state": "stare",
-        "crossOriginIsolated": "crossOriginIsolated",
-        "callStatus": "Stare ultim apel",
-        "noCalls": "Nu s-a făcut niciun apel încă."
-      },
-      "placeholders": {
-        "echo": "Tastați ceva pentru a fi trimis înapoi"
-      },
-      "actions": {
-        "echo": "Echo",
-        "sleep": "Așteaptă 10s",
-        "abort": "Anulează",
-        "crash": "Forțează blocare",
-        "restart": "Repornește",
-        "readCapabilities": "Citește capabilități",
-        "timeoutSlow": "Declanșează timeout (sleep 5s, buget 100ms)",
-        "emitEvents": "Emite 5 evenimente",
-        "throwError": "Aruncă eroare handler",
-        "clearLog": "Șterge jurnalul"
-      },
-      "status": {
-        "idle": "Inactiv",
-        "pending": "Se apelează worker-ul…",
-        "success": "Succes",
-        "error": "Eroare"
-      }
-    }
-  },
   "Profile": {
     "header": {
       "completionHint": "Completați profilul pentru a debloca toate funcțiile",
