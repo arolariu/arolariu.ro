@@ -504,7 +504,7 @@ describe("createWorkerHost", () => {
         },
       });
       // Fire two restarts concurrently — only the first should call load()
-      const [, ] = await Promise.all([hostStalled.restart(), hostStalled.restart()]);
+      await Promise.all([hostStalled.restart(), hostStalled.restart()]);
       // load() should only have been called once because the lock prevents double-boot
       expect(loadCount).toBe(1);
     });
