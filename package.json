@@ -92,7 +92,7 @@
     "@azure/storage-blob": "12.31.0",
     "@base-ui/react": "1.4.1",
     "@clerk/localizations": "4.5.5",
-    "@clerk/nextjs": "7.2.7",
+    "@clerk/nextjs": "7.3.1",
     "@docusaurus/core": "3.10.0",
     "@docusaurus/module-type-aliases": "3.10.0",
     "@docusaurus/preset-classic": "3.10.0",
