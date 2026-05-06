@@ -101,11 +101,13 @@ describe("expose", () => {
 
   it("passes non-function API values through unwrapped (else branch)", () => {
     const fakeSelf = makeFakeSelf();
-    // Include a non-function value — expose() should pass it through as-is
-    expose(
-      {greet: async () => "hi", version: "1.0.0" as unknown as () => Promise<unknown>},
-      {self: fakeSelf as unknown as DedicatedWorkerGlobalScope},
-    );
+    // Include a non-function value (a plain string). Cast the WHOLE record
+    // so the type system accepts the heterogeneous shape — keeping `version`
+    // a real string (not a fake function) makes the intent of exercising
+    // the `typeof value !== "function"` branch obvious.
+    expose({greet: async () => "hi", version: "1.0.0"} as unknown as Record<string, () => Promise<unknown>>, {
+      self: fakeSelf as unknown as DedicatedWorkerGlobalScope,
+    });
     const {message} = makeBootstrap();
     // Just verify bootstrap proceeds without error when non-function values are present
     expect(() => fakeSelf.fire(new MessageEvent("message", {data: message}))).not.toThrow();
