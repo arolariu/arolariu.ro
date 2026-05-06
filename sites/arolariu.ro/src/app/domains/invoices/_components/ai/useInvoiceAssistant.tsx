@@ -13,19 +13,19 @@
  * 5. Auto-restart of the slot host when consecutiveTimeouts >= 2.
  */
 
-import {useCallback, useEffect, useReducer, useState} from "react";
 import {useInvoicesStore} from "@/stores";
 import {WorkerCrashError, WorkerTimeoutError, type WorkerHost} from "@/workers";
+import {useCallback, useEffect, useReducer, useState} from "react";
+import {runAggregator} from "./aggregators";
 import {assistantReducer, initialState, type State} from "./assistantReducer";
 import {checkHardwareEligibility} from "./hardwareEligibility";
 import {createEmbeddingHost} from "./hosts/embeddingHost";
 import {createSlotExtractorHost} from "./hosts/slotExtractorHost";
-import type {EmbeddingWorkerApi} from "./workers/embedding.api";
-import type {SlotExtractorWorkerApi} from "./workers/slotExtractor.api";
 import {resolveIntent} from "./intents/intentResolver";
-import {runAggregator} from "./aggregators";
 import {renderAnswer, type Translator} from "./renderer/answerRenderer";
 import {CONFIDENCE_THRESHOLDS, type AssistantLocale, type IntentId} from "./types";
+import type {EmbeddingWorkerApi} from "./workers/embedding.api";
+import type {SlotExtractorWorkerApi} from "./workers/slotExtractor.api";
 
 export type UseInvoiceAssistantOptions = Readonly<{
   locale: AssistantLocale;
@@ -80,58 +80,69 @@ export function useInvoiceAssistant(opts: UseInvoiceAssistantOptions): UseInvoic
     }
   }, [state.shouldRestartSlotHost, slotHost]);
 
-  const submitQuestion = useCallback(async (question: string): Promise<void> => {
-    dispatch({type: "questionSubmitted", question, locale: opts.locale});
-    try {
-      const c = await embedHost.api.classify({question, locale: opts.locale});
-      let resolved: ReturnType<typeof resolveIntent>;
-      if (c.topScore >= CONFIDENCE_THRESHOLDS.canonical) {
-        resolved = resolveIntent({intent: c.topIntent as IntentId, slots: {}, question, locale: opts.locale});
-      } else if (c.topScore >= CONFIDENCE_THRESHOLDS.uncertain && slotHost) {
-        dispatch({type: "slotExtracting"});
-        try {
-          const ext = await slotHost.api.extract({
-            question,
-            locale: opts.locale,
-            candidateIntents: c.candidates.map((x) => x.intent),
-          });
-          resolved = resolveIntent({intent: ext.intent as IntentId, slots: ext.slots, question, locale: opts.locale});
-        } catch (err) {
-          if (err instanceof WorkerTimeoutError) {
-            dispatch({type: "slotLlmTimeout"});
-            return;
+  // Dispose the slot host (Layer 2 LLM, ~1 GB resident) on unmount or replacement.
+  // Without this the Worker thread + MLCEngine survive every navigation.
+  useEffect(() => {
+    return () => {
+      void slotHost?.dispose();
+    };
+  }, [slotHost]);
+
+  const submitQuestion = useCallback(
+    async (question: string): Promise<void> => {
+      dispatch({type: "questionSubmitted", question, locale: opts.locale});
+      try {
+        const c = await embedHost.api.classify({question, locale: opts.locale});
+        let resolved: ReturnType<typeof resolveIntent>;
+        if (c.topScore >= CONFIDENCE_THRESHOLDS.canonical) {
+          resolved = resolveIntent({intent: c.topIntent as IntentId, slots: {}, question, locale: opts.locale});
+        } else if (c.topScore >= CONFIDENCE_THRESHOLDS.uncertain && slotHost) {
+          dispatch({type: "slotExtracting"});
+          try {
+            const ext = await slotHost.api.extract({
+              question,
+              locale: opts.locale,
+              candidateIntents: c.candidates.map((x) => x.intent),
+            });
+            resolved = resolveIntent({intent: ext.intent as IntentId, slots: ext.slots, question, locale: opts.locale});
+          } catch (err) {
+            if (err instanceof WorkerTimeoutError) {
+              dispatch({type: "slotLlmTimeout"});
+              return;
+            }
+            throw err;
           }
-          throw err;
+        } else {
+          dispatch({type: "outOfScope", reason: "low-confidence"});
+          return;
         }
-      } else {
-        dispatch({type: "outOfScope", reason: "low-confidence"});
-        return;
+        if (resolved.status === "out-of-scope") {
+          dispatch({type: "outOfScope", reason: resolved.reason});
+          return;
+        }
+        const invoices = useInvoicesStore.getState().entities;
+        const answer = runAggregator(resolved.intent, invoices, resolved.slots, new Date());
+        const t: Translator = opts.t ?? ((key: string) => key);
+        const rendered = renderAnswer(answer, t);
+        dispatch({
+          type: "answerReady",
+          question,
+          intent: resolved.intent,
+          slots: resolved.slots,
+          prose: rendered.prose,
+          viz: rendered.viz,
+          payload: rendered.payload,
+        });
+      } catch (err) {
+        if (err instanceof WorkerCrashError) {
+          dispatch({type: "aggregatorError", error: "Worker crashed"});
+          return;
+        }
+        dispatch({type: "aggregatorError", error: String(err)});
       }
-      if (resolved.status === "out-of-scope") {
-        dispatch({type: "outOfScope", reason: resolved.reason});
-        return;
-      }
-      const invoices = useInvoicesStore.getState().entities;
-      const answer = runAggregator(resolved.intent, invoices, resolved.slots, new Date());
-      const t: Translator = opts.t ?? ((key: string) => key);
-      const rendered = renderAnswer(answer, t);
-      dispatch({
-        type: "answerReady",
-        question,
-        intent: resolved.intent,
-        slots: resolved.slots,
-        prose: rendered.prose,
-        viz: rendered.viz,
-        payload: rendered.payload,
-      });
-    } catch (err) {
-      if (err instanceof WorkerCrashError) {
-        dispatch({type: "aggregatorError", error: "Worker crashed"});
-        return;
-      }
-      dispatch({type: "aggregatorError", error: String(err)});
-    }
-  }, [embedHost, slotHost, opts.locale, opts.t]);
+    },
+    [embedHost, slotHost, opts.locale, opts.t],
+  );
 
   const enableLayer2 = useCallback(async (): Promise<void> => {
     if (slotHost) return;
@@ -142,6 +153,10 @@ export function useInvoiceAssistant(opts: UseInvoiceAssistantOptions): UseInvoic
       await newHost.api.ensureLoaded();
       dispatch({type: "layer2Loaded"});
     } catch (err) {
+      // Tear down the dead host so the user can retry — the slotHost null check
+      // would otherwise permanently block enableLayer2 after a failed load.
+      void newHost.dispose();
+      setSlotHost(null);
       dispatch({type: "layer2Failed", error: String(err)});
     }
   }, [slotHost]);
