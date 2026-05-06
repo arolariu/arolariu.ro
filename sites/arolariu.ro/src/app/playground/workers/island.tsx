@@ -24,8 +24,8 @@
  */
 
 import {Alert, AlertDescription, AlertTitle, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerTimeoutError, createWorkerHost, type WorkerCapabilities, type WorkerEvent, type WorkerHostState} from "@/workers";
-import {useEffect, useMemo, useRef, useState} from "react";
+import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerTimeoutError, createWorkerHost, type WorkerCapabilities, type WorkerEvent, type WorkerHost, type WorkerHostState} from "@/workers";
+import {useEffect, useRef, useState} from "react";
 
 import type {PlaygroundWorkerApi} from "./playground.worker";
 
@@ -73,8 +73,24 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
   const echoInputRef = useRef<HTMLInputElement>(null);
   const sleepAcRef = useRef<AbortController | null>(null);
 
-  const host = useMemo(() => {
-    return createWorkerHost<PlaygroundWorkerApi>({
+  /**
+   * Host instance is held in `useState` (not `useMemo`) so React 19 / Next 16
+   * Strict Mode's mount → unmount → remount cycle in development doesn't
+   * trap us with a permanently-disposed singleton.
+   *
+   * Why this pattern: `useMemo([], () => create())` returns the SAME instance
+   * across the strict-mode remount, but the first effect cleanup calls
+   * `host.dispose()` — which is terminal (`restart()` rejects on disposed
+   * hosts). The second mount would inherit the dead host and every
+   * `host.api.*` call would reject with `WorkerDeadError`. Using `useState`
+   * with a lazy initializer + a "is-disposed → re-create" branch in the
+   * effect lets each strict-mode cycle have its own fresh host.
+   *
+   * In production (no Strict Mode double-mount) this collapses to the
+   * normal create-once-dispose-on-unmount lifecycle.
+   */
+  const buildHost = (): WorkerHost<PlaygroundWorkerApi> =>
+    createWorkerHost<PlaygroundWorkerApi>({
       name: "playground",
       load: () => new Worker(new URL("./playground.worker.ts", import.meta.url), {type: "module"}),
       idleTimeoutMs: 60_000,
@@ -86,15 +102,26 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
         });
       },
     });
-  }, []);
+
+  const [host, setHost] = useState<WorkerHost<PlaygroundWorkerApi>>(buildHost);
 
   useEffect(() => {
+    if (host.state === "disposed") {
+      // Strict-mode remount inherited a host disposed by the previous
+      // cycle's cleanup. Replace it with a fresh instance and let the
+      // re-render trigger this effect again with the new host.
+      setHost(buildHost());
+      return;
+    }
     const unsub = host.subscribe(setState);
     setState(host.state);
     return () => {
       unsub();
       void host.dispose();
     };
+    // buildHost is stable closure; intentional [host] only so the effect
+    // re-runs when the strict-mode remount swaps in a fresh host above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [host]);
 
   /**
