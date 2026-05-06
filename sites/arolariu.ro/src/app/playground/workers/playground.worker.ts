@@ -22,6 +22,18 @@ export type PlaygroundWorkerApi = {
   crash: () => Promise<never>;
   reportCapabilities: () => Promise<WorkerCapabilities | null>;
   emitEvents: (count: number) => Promise<void>;
+  /**
+   * Always returns the string 'pong'. Useful as the cheapest possible RPC
+   * round-trip for health-checks and to demonstrate boot latency in the
+   * playground without committing to a 10s sleep.
+   */
+  ping: () => Promise<string>;
+  /**
+   * Returns `typeof window`. In a real Worker realm this is `"undefined"`;
+   * inside MockWorker (which shares the host realm) it is `"object"`. Used
+   * by the playground to demonstrate realm isolation in production builds.
+   */
+  whatIsWindow: () => Promise<string>;
 };
 
 const api: PlaygroundWorkerApi = {
@@ -53,6 +65,8 @@ const api: PlaygroundWorkerApi = {
       emitEvent(port, {kind: "log", level: "info", msg: `event-${i}`});
     }
   },
+  ping: async () => "pong",
+  whatIsWindow: async () => typeof (globalThis as {window?: unknown}).window,
 };
 
 expose<PlaygroundWorkerApi>(api);
