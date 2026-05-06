@@ -96,9 +96,54 @@ Default idle timeout: 5 minutes. Override with `idleTimeoutMs`.
 
 - `WorkerError` — your handler threw. Has `.cause` and `.method`.
 - `WorkerCrashError` — worker terminated unexpectedly.
-- `WorkerTimeoutError` — per-call timeout fired (opt-in).
+- `WorkerTimeoutError` — per-call timeout fired. Has `.method` and `.elapsedMs`.
 - `WorkerDeadError` — call attempted on dead/disposed host.
 - `WorkerNotAvailableError` — SSR or `globalThis.Worker` missing.
+
+### Why we wrap handler errors in a `__workerError` envelope
+
+The worker side of the foundation deliberately throws a plain
+`{__workerError: true, name, message, stack}` object instead of re-throwing
+the original `Error`. This is **not** an oversight — it is the only way we
+can preserve the original error's identity across the structured-clone
+boundary that Comlink uses internally:
+
+- Comlink's default `throwTransferHandler`
+  ([`comlink/src/comlink.ts`](https://github.com/GoogleChromeLabs/comlink))
+  only round-trips `name`, `message`, and `stack`. Anything else on the
+  thrown `Error` (custom subclass identity, `cause`, additional fields) is
+  silently dropped.
+- WHATWG HTML §2.7.3 (StructuredSerialize) further normalizes `Error.name`
+  to one of the seven standard names (`Error`, `TypeError`, etc.) on the
+  receiving side. A custom `MyDomainError` becomes a generic `Error`.
+
+The host's proxy unwraps the envelope into a `WorkerError` whose `.cause`
+holds the original payload. **Don't "simplify" this back to a real Error
+throw** — you'll lose every field that isn't one of the three above.
+
+## Per-call timeout
+
+Every proxy method call runs against a `defaultCallTimeoutMs` budget
+(default **30 seconds**). When the budget fires, the consumer's promise
+rejects with `WorkerTimeoutError(method, elapsedMs)`. Configure per-host:
+
+```typescript
+createWorkerHost({
+  name: "feature-x",
+  load: () => new Worker(/* ... */),
+  defaultCallTimeoutMs: 5_000, // 5s
+});
+```
+
+Set to `0` or `Infinity` (or any non-finite value) to disable.
+
+The timer starts **after** the boot handshake completes, so boot latency
+is not charged to the consumer's budget. Boot has its own 10-second
+budget that surfaces as `WorkerCrashError` when exceeded.
+
+> **NOTE:** The timeout rejects the consumer's promise but does **not**
+> cancel the worker-side handler — Comlink has no cancellation protocol.
+> A hung handler keeps occupying the worker until the next `restart()`.
 
 ## Capabilities
 
@@ -113,7 +158,26 @@ Default idle timeout: 5 minutes. Override with `idleTimeoutMs`.
 }
 ```
 
-Workers receive the same shape via the bootstrap message.
+Workers receive the same shape via the bootstrap message and can read it
+via `getBootstrapCapabilities()` from `@/workers/runtime`.
+
+## Lifecycle hooks
+
+`host.subscribe(listener)` returns an `unsubscribe` function.
+
+> **MUST contract:** Consumers MUST call `unsubscribe` before the
+> subscribing scope unmounts. Subscriber callbacks hold strong references
+> to their captured closures; failing to unsubscribe leaks the closure
+> and any DOM nodes it captured.
+
+In React, the canonical pattern is:
+
+```tsx
+useEffect(() => {
+  const unsubscribe = host.subscribe(setState);
+  return unsubscribe;
+}, [host]);
+```
 
 ## Playground
 
@@ -130,6 +194,11 @@ only reachable via the gated route.
 
 ## Known limitations
 
+- **Per-call timeout cancels the consumer, not the worker.**
+  `WorkerTimeoutError` rejects the proxy promise; the worker-side handler
+  continues to run because Comlink has no cancellation protocol. Use
+  `host.restart()` to reclaim a hung worker.
+
 - **Worker-side `AbortSignal` propagation is parent-side-only in v1.** The
   parent rejects the consumer's promise when the signal aborts (synchronously
   if pre-aborted, asynchronously if mid-flight). The worker handler never
@@ -140,3 +209,33 @@ only reachable via the gated route.
 - **No worker-side OpenTelemetry SDK.** Workers emit structured events via
   `emitEvent`; the parent forwards them to the existing logger. Full W3C trace
   propagation is on the roadmap.
+
+- **`Error.cause` does not survive the worker boundary.** The `__workerError`
+  envelope round-trips `name`, `message`, and `stack` but does not include
+  `cause` (Comlink's transfer handler can't traverse it reliably). If your
+  handler needs to communicate structured failure context, return a
+  `Result<T, E>`-style discriminated union from the API method instead of
+  throwing.
+
+- **Comlink's `AsyncIterable` proxying is not officially documented.** Treat
+  any cross-port iterable as accidental and prefer the dedicated `eventPort`
+  for streaming worker → parent updates.
+
+## Testing
+
+Foundation unit tests use an in-memory `MockWorker` that runs the worker
+runtime synchronously inside the test process. **MockWorker has known
+fidelity gaps** vs. a real `Worker`:
+
+- **Realm isolation:** closures share the host realm; non-cloneable values
+  pass through silently rather than throwing the way structured-clone would.
+- **`messageerror` event:** never fired by MockWorker; tests must dispatch
+  manually if needed.
+- **Boot latency:** synchronous; real workers have ~1–10ms startup.
+- **Parallel `terminate()`:** synchronous; real `terminate()` is an async
+  task per WHATWG HTML §10.2.4.
+- **Off-thread execution:** runs on the main thread, so racy worker code
+  may pass MockWorker tests and fail in production.
+
+End-to-end coverage of these gaps lives in the Playwright suite at
+`src/app/playground/workers/worker-playground.spec.ts`.

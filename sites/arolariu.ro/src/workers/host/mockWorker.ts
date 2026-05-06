@@ -9,6 +9,23 @@
  * `MessagePort`s so error normalization round-trips end-to-end.
  *
  * Not exported from any barrel; not bundled in production.
+ *
+ * **KNOWN FIDELITY GAPS vs. a real `Worker`** — these are exercised in the
+ * Playwright suite at `src/app/playground/workers/worker-playground.spec.ts`,
+ * not here:
+ *
+ * - **Realm isolation:** closures share the host realm. Passing a
+ *   non-cloneable value (e.g., a function) does NOT throw the way structured
+ *   clone would in a real Worker.
+ * - **`messageerror` event:** never fired by MockWorker. Tests that need
+ *   this event must dispatch it manually via `errorHandler`.
+ * - **Boot latency:** synchronous. Real workers have ~1–10ms startup.
+ * - **Parallel `terminate()`:** synchronous. Per WHATWG HTML §10.2.4,
+ *   real `terminate()` queues a task; an `error` event can fire after
+ *   `terminate()` returns.
+ * - **Off-thread execution:** runs on the main thread. Race conditions
+ *   that depend on actual parallelism may pass MockWorker tests and
+ *   regress in production.
  */
 
 import {expose, type ExposeOptions} from "../runtime/exposeWorker";

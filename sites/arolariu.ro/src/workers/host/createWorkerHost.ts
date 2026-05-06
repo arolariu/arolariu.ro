@@ -78,7 +78,16 @@ export type WorkerHost<TApi> = Readonly<{
   api: Remote<TApi>;
   /** Current host state. Read live; not a snapshot. */
   readonly state: WorkerHostState;
-  /** Subscribe to state changes. Returns an unsubscribe function. */
+  /**
+   * Subscribe to state changes. Returns an unsubscribe function.
+   *
+   * **MUST contract:** Consumers MUST call the returned `unsubscribe`
+   * before the subscribing scope unmounts. Listener callbacks hold strong
+   * references to their captured closures; failing to unsubscribe leaks
+   * the closure (and any DOM nodes it references) for the lifetime of the
+   * host. In React, the canonical pattern is to return `unsubscribe`
+   * directly from a `useEffect` callback.
+   */
   subscribe: (listener: (state: WorkerHostState) => void) => () => void;
   /** Capabilities sampled at host construction. */
   readonly capabilities: WorkerCapabilities;
@@ -102,6 +111,26 @@ type InFlightEntry = Readonly<{
  * @typeParam TApi - The typed API exposed by the worker.
  * @param opts - Host configuration; see {@link CreateWorkerHostOptions}.
  * @returns A {@link WorkerHost} instance.
+ *
+ * @example
+ * ```ts
+ * import {createWorkerHost} from "@/workers";
+ * import type {FeatureXApi} from "./feature-x.api";
+ *
+ * const host = createWorkerHost<FeatureXApi>({
+ *   name: "feature-x",
+ *   load: () => new Worker(new URL("./feature-x.worker.ts", import.meta.url), {type: "module"}),
+ *   defaultCallTimeoutMs: 5_000,
+ * });
+ *
+ * try {
+ *   const result = await host.api.doThing("hello");
+ * } catch (err) {
+ *   if (err instanceof WorkerCrashError) {
+ *     await host.restart();
+ *   }
+ * }
+ * ```
  */
 export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): WorkerHost<TApi> {
   const idleTimeoutMs = opts.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
