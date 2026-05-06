@@ -4367,6 +4367,84 @@
     "uploadScans": "Încarcă scanări",
     "viewScans": "Vezi scanările"
   },
+  "InvoiceAssistant": {
+    "panel": {
+      "title": "Întreabă-ți facturile",
+      "subtitle": "Întrebări analitice asupra chitanțelor tale locale. Datele tale rămân în browser.",
+      "inputPlaceholder": "Pune o întrebare — ex: 'Topul magazinelor luna trecută'",
+      "submit": "Întreabă",
+      "callStatus": "Ultimul răspuns"
+    },
+    "states": {
+      "capabilityCheck": "Pregătesc asistentul…",
+      "embeddingLoading": "Descarc analizatorul multilingv ({progress}%) — funcționează pe majoritatea dispozitivelor.",
+      "embeddingFailed": "Nu am putut încărca analizatorul. Verifică conexiunea și încearcă din nou.",
+      "embeddingReady": "Asistent pregătit.",
+      "classifying": "Analizez întrebarea ta…",
+      "slotExtracting": "Lucrez la parafrazare — durează câteva secunde pentru formulări complexe.",
+      "slotLlmTimeout": "A durat prea mult să înțeleg. Încerci din nou?",
+      "slotLlmUnavailable": "Nu am înțeles întocmai. Încearcă o formulare mai clară sau activează înțelegerea avansată (~1 GB) pentru suport de parafrazare.",
+      "aggregatorError": "Ceva nu a mers bine la calcularea răspunsului. Încearcă o altă întrebare.",
+      "workersUnavailable": "Browserul tău nu suportă Web Workers. Folosește un browser modern pentru a accesa asistentul.",
+      "outOfScope": "Pot răspunde la întrebări despre: top categorii, top magazine, totaluri, comparații, medii, defalcări. Încearcă una dintre acestea:"
+    },
+    "layer2": {
+      "ctaTitle": "Înțelegere avansată disponibilă",
+      "ctaSubtitle": "Descarcă modelul lingvistic opțional de 1 GB pentru a debloca suportul de parafrazare.",
+      "ctaButton": "Activează",
+      "downloading": "Descarc modelul avansat ({progress}%)…",
+      "ready": "Înțelegere avansată activă",
+      "failed": "Descărcarea modelului avansat a eșuat",
+      "retry": "Reîncearcă",
+      "unavailableTooltip": "Înțelegerea avansată necesită WebGPU + cel puțin 4 GB memorie + 2 GB spațiu liber."
+    },
+    "actions": {
+      "retry": "Încearcă din nou",
+      "reset": "Resetează asistentul",
+      "cancel": "Anulează",
+      "useExample": "Încearcă această întrebare"
+    },
+    "answers": {
+      "totalSpend": "În {timeframe} ai cheltuit un total de {amount} pe {count, plural, one {# chitanță} few {# chitanțe} other {# de chitanțe}}.",
+      "totalSpendEmpty": "Nu ai chitanțe în {timeframe}. Încearcă {alternatives}.",
+      "totalSpendCategory": "În {timeframe} ai cheltuit {amount} pe {category} pe {count, plural, one {# chitanță} few {# chitanțe} other {# de chitanțe}}.",
+      "invoiceCount": "Ai {count, plural, one {# chitanță} few {# chitanțe} other {# de chitanțe}} din {timeframe}.",
+      "invoiceCountWithBreakdown": "Ai {count, plural, one {# chitanță} few {# chitanțe} other {# de chitanțe}} din {timeframe} — {breakdown}.",
+      "invoiceCountEmpty": "Nu ai chitanțe în {timeframe}. Încearcă {alternatives}.",
+      "topSpendingByCategory": "În {timeframe} ai cheltuit cel mai mult pe {topList}.",
+      "topMerchantsByCount": "În {timeframe}, topul {topK} magazine după vizite: {topList}.",
+      "topMerchantsBySpend": "Magazinele cu cele mai mari cheltuieli în {timeframe}: {topList}.",
+      "topProductsByCount": "Cele mai cumpărate articole în {timeframe}: {topList}.",
+      "topProductsBySpend": "Ai cheltuit cel mai mult pe: {topList}.",
+      "spendComparison": "Ai cheltuit {amountA} în {timeframeA} vs {amountB} în {timeframeB} — adică {direction} ({deltaPct}%).",
+      "spendComparisonNoChange": "Ai cheltuit {amountA} în {timeframeA} vs {amountB} în {timeframeB} — aproximativ la fel.",
+      "averageSpendPerVisit": "În {sampleSize, plural, one {# vizită} few {# vizite} other {# de vizite}} în {timeframe}, coșul tău mediu a fost {amount}.",
+      "averageSpendPerVisitMerchant": "În {sampleSize, plural, one {# vizită} few {# vizite} other {# de vizite}} la {merchantName} în {timeframe}, coșul tău mediu a fost {amount}.",
+      "categoryBreakdown": "Defalcarea cheltuielilor tale din {timeframe}: {topList}."
+    },
+    "timeframes": {
+      "this-week": "săptămâna aceasta",
+      "last-week": "săptămâna trecută",
+      "this-month": "luna aceasta",
+      "last-month": "luna trecută",
+      "last-3-months": "ultimele 3 luni",
+      "last-6-months": "ultimele 6 luni",
+      "this-quarter": "trimestrul acesta",
+      "last-quarter": "trimestrul trecut",
+      "this-year": "anul acesta",
+      "last-year": "anul trecut",
+      "all-time": "din totdeauna",
+      "custom": "perioada selectată"
+    },
+    "exampleChips": {
+      "topMerchantsThisMonth": "Topul magazinelor luna aceasta",
+      "totalGrocerySpendLastMonth": "Cheltuieli totale alimente luna trecută",
+      "topCategoriesLastQuarter": "Top categorii trimestrul trecut",
+      "averageBasketSize": "Dimensiune medie a coșului",
+      "monthVsLastMonth": "Luna aceasta vs luna trecută",
+      "topProducts": "Cele mai cumpărate produse"
+    }
+  },
   "Profile": {
     "header": {
       "completionHint": "Completați profilul pentru a debloca toate funcțiile",

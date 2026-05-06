@@ -4367,6 +4367,84 @@
     "uploadScans": "Télécharger des Scans",
     "viewScans": "Voir les Scans"
   },
+  "InvoiceAssistant": {
+    "panel": {
+      "title": "Interrogez vos factures",
+      "subtitle": "Questions analytiques sur vos reçus locaux. Vos données restent dans votre navigateur.",
+      "inputPlaceholder": "Posez une question — ex : 'Top marchands le mois dernier'",
+      "submit": "Demander",
+      "callStatus": "Dernière réponse"
+    },
+    "states": {
+      "capabilityCheck": "Préparation de l'assistant…",
+      "embeddingLoading": "Téléchargement de l'analyseur multilingue ({progress}%) — fonctionne sur la plupart des appareils.",
+      "embeddingFailed": "Impossible de charger l'analyseur. Vérifiez votre connexion et réessayez.",
+      "embeddingReady": "Assistant prêt.",
+      "classifying": "Analyse de votre question…",
+      "slotExtracting": "Travail sur la paraphrase — cela prend quelques secondes pour les formulations complexes.",
+      "slotLlmTimeout": "Trop long à comprendre. Voulez-vous réessayer ?",
+      "slotLlmUnavailable": "Je n'ai pas tout à fait saisi. Essayez une formulation plus claire ou activez la compréhension améliorée (~1 Go) pour le support de paraphrase.",
+      "aggregatorError": "Quelque chose s'est mal passé lors du calcul de votre réponse. Essayez une autre question.",
+      "workersUnavailable": "Votre navigateur ne prend pas en charge les Web Workers. Utilisez un navigateur moderne pour accéder à l'assistant.",
+      "outOfScope": "Je peux répondre aux questions sur : top catégories, top marchands, totaux, comparaisons, moyennes, répartitions. Essayez l'une de celles-ci :"
+    },
+    "layer2": {
+      "ctaTitle": "Compréhension améliorée disponible",
+      "ctaSubtitle": "Téléchargez le modèle linguistique optionnel de 1 Go pour débloquer le support de paraphrase.",
+      "ctaButton": "Activer",
+      "downloading": "Téléchargement du modèle amélioré ({progress}%)…",
+      "ready": "Compréhension améliorée active",
+      "failed": "Échec du téléchargement du modèle amélioré",
+      "retry": "Réessayer",
+      "unavailableTooltip": "La compréhension améliorée nécessite WebGPU + au moins 4 Go de mémoire + 2 Go d'espace libre."
+    },
+    "actions": {
+      "retry": "Réessayer",
+      "reset": "Réinitialiser l'assistant",
+      "cancel": "Annuler",
+      "useExample": "Essayer cette question"
+    },
+    "answers": {
+      "totalSpend": "En {timeframe} vous avez dépensé un total de {amount} sur {count, plural, one {# reçu} other {# reçus}}.",
+      "totalSpendEmpty": "Vous n'avez aucun reçu pour {timeframe}. Essayez {alternatives}.",
+      "totalSpendCategory": "En {timeframe} vous avez dépensé {amount} en {category} sur {count, plural, one {# reçu} other {# reçus}}.",
+      "invoiceCount": "Vous avez {count, plural, one {# reçu} other {# reçus}} pour {timeframe}.",
+      "invoiceCountWithBreakdown": "Vous avez {count, plural, one {# reçu} other {# reçus}} pour {timeframe} — {breakdown}.",
+      "invoiceCountEmpty": "Vous n'avez aucun reçu pour {timeframe}. Essayez {alternatives}.",
+      "topSpendingByCategory": "En {timeframe} vous avez le plus dépensé en {topList}.",
+      "topMerchantsByCount": "En {timeframe}, vos {topK} meilleurs magasins par visites : {topList}.",
+      "topMerchantsBySpend": "Vos marchands aux dépenses les plus élevées en {timeframe} : {topList}.",
+      "topProductsByCount": "Articles les plus achetés en {timeframe} : {topList}.",
+      "topProductsBySpend": "Vous avez le plus dépensé en : {topList}.",
+      "spendComparison": "Vous avez dépensé {amountA} en {timeframeA} vs {amountB} en {timeframeB} — soit {direction} ({deltaPct}%).",
+      "spendComparisonNoChange": "Vous avez dépensé {amountA} en {timeframeA} vs {amountB} en {timeframeB} — à peu près identique.",
+      "averageSpendPerVisit": "Sur {sampleSize, plural, one {# visite} other {# visites}} en {timeframe}, votre panier moyen était de {amount}.",
+      "averageSpendPerVisitMerchant": "Sur {sampleSize, plural, one {# visite} other {# visites}} chez {merchantName} en {timeframe}, votre panier moyen était de {amount}.",
+      "categoryBreakdown": "Répartition de vos dépenses pour {timeframe} : {topList}."
+    },
+    "timeframes": {
+      "this-week": "cette semaine",
+      "last-week": "la semaine dernière",
+      "this-month": "ce mois",
+      "last-month": "le mois dernier",
+      "last-3-months": "les 3 derniers mois",
+      "last-6-months": "les 6 derniers mois",
+      "this-quarter": "ce trimestre",
+      "last-quarter": "le trimestre dernier",
+      "this-year": "cette année",
+      "last-year": "l'année dernière",
+      "all-time": "depuis toujours",
+      "custom": "la période sélectionnée"
+    },
+    "exampleChips": {
+      "topMerchantsThisMonth": "Top marchands ce mois",
+      "totalGrocerySpendLastMonth": "Dépenses totales en alimentaire le mois dernier",
+      "topCategoriesLastQuarter": "Top catégories le trimestre dernier",
+      "averageBasketSize": "Taille moyenne du panier",
+      "monthVsLastMonth": "Ce mois vs le mois dernier",
+      "topProducts": "Produits les plus achetés"
+    }
+  },
   "Profile": {
     "header": {
       "completionHint": "Complétez votre profil pour débloquer toutes les fonctionnalités",
