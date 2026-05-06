@@ -64,6 +64,12 @@ export type WorkerEvent =
  * match `WorkerBootstrap`, and callers must NEVER spread or pass through
  * unvalidated fields. New fields added to `WorkerBootstrap` MUST be
  * validated here before they are read elsewhere.
+ *
+ * The `capabilities` object is also strictly validated — required fields
+ * must be present with the right primitive types, and optional fields, if
+ * present, must be the right primitive type. Workers consume the snapshot
+ * via `getBootstrapCapabilities()`, so a malformed value flowing through
+ * here would silently corrupt downstream `if (caps.hasWebGpu)` branches.
  */
 export function validateBootstrap(message: unknown): message is WorkerBootstrap {
   if (typeof message !== "object" || message === null) {
@@ -85,5 +91,13 @@ export function validateBootstrap(message: unknown): message is WorkerBootstrap 
   if (!hasEventPostMessage) return false;
 
   if (typeof m.capabilities !== "object" || m.capabilities === null) return false;
+  // SECURITY: validate capabilities fields strictly so untrusted snapshots
+  // can't leak into worker code via getBootstrapCapabilities().
+  const caps = m.capabilities as Record<string, unknown>;
+  if (typeof caps.crossOriginIsolated !== "boolean") return false;
+  if (typeof caps.hasWebGpu !== "boolean") return false;
+  // Optional numeric fields: if present, must be a number.
+  if (caps.hardwareConcurrency !== undefined && typeof caps.hardwareConcurrency !== "number") return false;
+  if (caps.deviceMemory !== undefined && typeof caps.deviceMemory !== "number") return false;
   return true;
 }

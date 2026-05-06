@@ -74,4 +74,42 @@ describe("validateBootstrap", () => {
     delete m.capabilities;
     expect(validateBootstrap(m)).toBe(false);
   });
+
+  it("rejects messages where capabilities.crossOriginIsolated is missing or non-boolean", () => {
+    const a = makeValid() as Record<string, unknown>;
+    a.capabilities = {hasWebGpu: false};
+    expect(validateBootstrap(a)).toBe(false);
+
+    const b = makeValid() as Record<string, unknown>;
+    b.capabilities = {crossOriginIsolated: "no", hasWebGpu: false};
+    expect(validateBootstrap(b)).toBe(false);
+  });
+
+  it("rejects messages where capabilities.hasWebGpu is missing or non-boolean", () => {
+    const a = makeValid() as Record<string, unknown>;
+    a.capabilities = {crossOriginIsolated: false};
+    expect(validateBootstrap(a)).toBe(false);
+
+    const b = makeValid() as Record<string, unknown>;
+    b.capabilities = {crossOriginIsolated: false, hasWebGpu: 1};
+    expect(validateBootstrap(b)).toBe(false);
+  });
+
+  it("rejects messages where capabilities.hardwareConcurrency is present but not a number", () => {
+    const m = makeValid() as Record<string, unknown>;
+    m.capabilities = {crossOriginIsolated: false, hasWebGpu: false, hardwareConcurrency: "8"};
+    expect(validateBootstrap(m)).toBe(false);
+  });
+
+  it("rejects messages where capabilities.deviceMemory is present but not a number", () => {
+    const m = makeValid() as Record<string, unknown>;
+    m.capabilities = {crossOriginIsolated: false, hasWebGpu: false, deviceMemory: "16"};
+    expect(validateBootstrap(m)).toBe(false);
+  });
+
+  it("accepts capabilities with valid optional numeric fields present", () => {
+    const m = makeValid() as Record<string, unknown>;
+    m.capabilities = {crossOriginIsolated: true, hasWebGpu: true, hardwareConcurrency: 8, deviceMemory: 16};
+    expect(validateBootstrap(m)).toBe(true);
+  });
 });
