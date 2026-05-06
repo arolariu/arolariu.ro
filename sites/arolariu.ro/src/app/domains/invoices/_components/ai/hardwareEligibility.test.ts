@@ -4,7 +4,13 @@ import {checkHardwareEligibility} from "./hardwareEligibility";
 const ORIGINAL_NAVIGATOR = globalThis.navigator;
 const ORIGINAL_WORKER = (globalThis as {Worker?: unknown}).Worker;
 
-function withNavigator(stub: Partial<Navigator & {gpu?: unknown; deviceMemory?: number; storage?: {estimate: () => Promise<{quota?: number; usage?: number}>}}>): void {
+type NavigatorStub = Partial<Navigator> & {
+  gpu?: unknown;
+  deviceMemory?: number;
+  storage?: {estimate: () => Promise<{quota?: number; usage?: number}>};
+};
+
+function withNavigator(stub: NavigatorStub): void {
   Object.defineProperty(globalThis, "navigator", {value: stub, configurable: true, writable: true});
 }
 
@@ -102,5 +108,58 @@ describe("checkHardwareEligibility", () => {
     });
     const result = await checkHardwareEligibility();
     expect(result.status).toBe("unknown");
+  });
+
+  it("returns ineligible(webgpu-adapter-unavailable) when requestAdapter throws", async () => {
+    withNavigator({
+      hardwareConcurrency: 8,
+      deviceMemory: 16,
+      gpu: {requestAdapter: async () => { throw new Error("GPU init failed"); }},
+      storage: {estimate: async () => ({quota: 8e9, usage: 1e9})},
+    });
+    const result = await checkHardwareEligibility();
+    expect(result.status).toBe("ineligible");
+    expect(result.reasons).toContain("webgpu-adapter-unavailable");
+  });
+
+  it("returns ineligible(webgpu-adapter-unavailable) when navigator.gpu exists but requestAdapter is not a function", async () => {
+    withNavigator({
+      hardwareConcurrency: 8,
+      deviceMemory: 16,
+      gpu: {},
+      storage: {estimate: async () => ({quota: 8e9, usage: 1e9})},
+    });
+    const result = await checkHardwareEligibility();
+    expect(result.status).toBe("ineligible");
+    expect(result.reasons).toContain("webgpu-adapter-unavailable");
+  });
+
+  it("treats storage.estimate failure as non-blocking (still eligible)", async () => {
+    withNavigator({
+      hardwareConcurrency: 8,
+      deviceMemory: 16,
+      gpu: {requestAdapter: async () => ({})},
+      storage: {estimate: async () => { throw new Error("quota denied"); }},
+    });
+    const result = await checkHardwareEligibility();
+    expect(result.status).toBe("eligible");
+    expect(result.reasons).not.toContain("storage-quota-too-low");
+  });
+
+  it("returns ineligible(workers-unavailable) when navigator is absent", async () => {
+    Object.defineProperty(globalThis, "navigator", {value: undefined, configurable: true, writable: true});
+    const result = await checkHardwareEligibility();
+    expect(result).toEqual({status: "ineligible", reasons: ["workers-unavailable"]});
+  });
+
+  it("treats threshold boundaries correctly (deviceMemory === 4 and hardwareConcurrency === 4 are eligible)", async () => {
+    withNavigator({
+      hardwareConcurrency: 4,
+      deviceMemory: 4,
+      gpu: {requestAdapter: async () => ({})},
+      storage: {estimate: async () => ({quota: 8e9, usage: 1e9})},
+    });
+    const result = await checkHardwareEligibility();
+    expect(result.status).toBe("eligible");
   });
 });

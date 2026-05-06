@@ -10,10 +10,27 @@
  * SECURITY: All signals are read locally and NEVER transmitted.
  */
 
-const STORAGE_QUOTA_MIN_BYTES = 2_000_000_000; // 2 GB free
+// Layer-2 model weight is ~1 GB; budget another ~1 GB for runtime/cache. 2 GB free minimum.
+const STORAGE_QUOTA_MIN_BYTES = 2_000_000_000;
+// Empirical floor below which inference latency degrades unacceptably for a 1.5B-param model.
 const DEVICE_MEMORY_MIN_GB = 4;
+// Inference + UI thread + worker host overhead. Anything less and the page stalls during decode.
 const CPU_MIN_LOGICAL_CORES = 4;
 
+/**
+ * Machine-readable codes explaining why a device is ineligible for the
+ * Layer-2 (in-browser slot LLM) opt-in CTA.
+ *
+ * @remarks
+ * - `workers-unavailable`: Web Workers API or `globalThis.navigator` is absent.
+ * - `webgpu-unavailable`: `navigator.gpu` is missing entirely.
+ * - `webgpu-adapter-unavailable`: WebGPU is exposed but no adapter could be acquired
+ *   (returned `null`, threw, or `requestAdapter` is not a callable function).
+ * - `storage-quota-too-low`: Less than the 2 GB free-storage minimum is available;
+ *   the model weights wouldn't fit.
+ * - `memory-too-low`: `navigator.deviceMemory` reported a value below the 4 GB floor.
+ * - `cpu-too-low`: `navigator.hardwareConcurrency` reported fewer than 4 logical cores.
+ */
 export type HardwareEligibilityReason =
   | "workers-unavailable"
   | "webgpu-unavailable"
@@ -22,11 +39,45 @@ export type HardwareEligibilityReason =
   | "memory-too-low"
   | "cpu-too-low";
 
+/**
+ * Outcome of a hardware-eligibility probe.
+ *
+ * @remarks
+ * - `eligible`: All hard gates passed AND at least one soft signal was reported.
+ * - `ineligible`: At least one gate failed; see `reasons` for codes.
+ * - `unknown`: All hard gates passed but neither soft signal (RAM, CPU) was
+ *   reported by the browser. The Layer-2 CTA SHOULD still be offered with a
+ *   "best-effort" disclaimer in this case.
+ */
 export type HardwareEligibilityResult = Readonly<{
   status: "eligible" | "ineligible" | "unknown";
   reasons: ReadonlyArray<HardwareEligibilityReason>;
 }>;
 
+interface NavigatorWithHardwareHints extends Navigator {
+  readonly gpu?: {requestAdapter?: () => Promise<unknown>};
+  readonly deviceMemory?: number;
+  readonly storage?: {estimate?: () => Promise<{quota?: number; usage?: number}>};
+}
+
+/**
+ * Probes the current device for the hardware capabilities required to run the
+ * Layer-2 in-browser slot LLM (~1 GB Qwen-1.5B over WebGPU).
+ *
+ * @remarks
+ * SECURITY: All signals are read locally via standard browser APIs and are
+ * NEVER transmitted to any remote service. This function is client-side only;
+ * calling it on the server returns
+ * `{status: "ineligible", reasons: ["workers-unavailable"]}` because `Worker`
+ * is undefined in Node.
+ *
+ * Layer 1 (the multilingual embedding model on WASM) ships to every device and
+ * does NOT consult this gate. Use the result here only to decide whether to
+ * surface the Layer-2 opt-in CTA.
+ *
+ * @returns A {@link HardwareEligibilityResult} describing eligibility status
+ *   and any failing-gate codes.
+ */
 export async function checkHardwareEligibility(): Promise<HardwareEligibilityResult> {
   const reasons: HardwareEligibilityReason[] = [];
 
@@ -35,7 +86,7 @@ export async function checkHardwareEligibility(): Promise<HardwareEligibilityRes
     return {status: "ineligible", reasons: ["workers-unavailable"]};
   }
 
-  const nav = (globalThis as {navigator?: Navigator & {gpu?: {requestAdapter?: () => Promise<unknown>}; deviceMemory?: number; storage?: {estimate?: () => Promise<{quota?: number; usage?: number}>}}}).navigator;
+  const nav = (globalThis as {navigator?: NavigatorWithHardwareHints}).navigator;
   if (!nav) {
     return {status: "ineligible", reasons: ["workers-unavailable"]};
   }
@@ -49,6 +100,9 @@ export async function checkHardwareEligibility(): Promise<HardwareEligibilityRes
     } catch {
       reasons.push("webgpu-adapter-unavailable");
     }
+  } else {
+    // gpu object exists but requestAdapter is not callable (partial polyfill / future API drift).
+    reasons.push("webgpu-adapter-unavailable");
   }
 
   if (nav.storage?.estimate) {
