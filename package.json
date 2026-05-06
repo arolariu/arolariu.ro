@@ -184,7 +184,7 @@
     "jose": "6.2.2",
     "lucide-react": "1.11.0",
     "motion": "12.38.0",
-    "msw": "2.13.6",
+    "msw": "2.14.3",
     "nanospinner": "1.2.2",
     "next": "16.2.4",
     "next-intl": "4.9.1",
