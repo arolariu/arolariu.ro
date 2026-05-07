@@ -29,7 +29,7 @@ import {raceWithSignal} from "./raceWithSignal";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
 import {type WorkerEvent} from "./workerEnvelope";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
+import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerMessageError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
 /** Maximum time (ms) we wait for the worker to emit `{kind: "ready"}`. */
@@ -41,7 +41,7 @@ const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 
 export {type WorkerCapabilities} from "./workerCapabilities";
 export type {WorkerEvent} from "./workerEnvelope";
-export {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
+export {WorkerCrashError, WorkerDeadError, WorkerError, WorkerMessageError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 export {type WorkerHostState} from "./workerLifecycle";
 export {type Remote} from "comlink";
 
@@ -159,9 +159,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   const hostListeners = new Set<(state: WorkerHostState) => void>();
   let lifecycleUnsubscribe: (() => void) | null = null;
 
-  // I1: Track the active error listener so we can detach it on teardown,
-  // preventing leaks across reboots.
-  let currentErrorListener: {worker: Worker; handler: (e: ErrorEvent) => void} | null = null;
+  // I1: Track the active error/messageerror listeners so we can detach them on
+  // teardown, preventing leaks across reboots.
+  let currentListeners: {
+    worker: Worker;
+    onError: (e: ErrorEvent) => void;
+    onMessageError: (e: MessageEvent) => void;
+  } | null = null;
 
   const onIdleHandler = (): void => {
     tearDownWorker("lazy-reboot");
@@ -232,16 +236,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     const w = worker;
     worker = null;
     proxy = null;
-    // I1: Remove the error listener before terminating to avoid leaks AND so
-    // that any post-terminate `error` event (HTML §10.2.4 parallel delivery)
-    // never re-enters host state machine logic.
-    if (currentErrorListener) {
+    // I1: Remove the error/messageerror listeners before terminating to avoid
+    // leaks AND so that any post-terminate `error`/`messageerror` event
+    // (HTML §10.2.4 parallel delivery) never re-enters host state machine logic.
+    if (currentListeners) {
       try {
-        currentErrorListener.worker.removeEventListener("error", currentErrorListener.handler);
+        currentListeners.worker.removeEventListener("error", currentListeners.onError);
+        currentListeners.worker.removeEventListener("messageerror", currentListeners.onMessageError);
       } catch {
         // ignore listener removal errors
       }
-      currentErrorListener = null;
+      currentListeners = null;
     }
     if (w) {
       try {
@@ -307,8 +312,24 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       handleCrash();
     };
     w.addEventListener("error", onError);
-    // I1: Track the listener so teardown can remove it.
-    currentErrorListener = {worker: w, handler: onError};
+    const onMessageError = (e: MessageEvent): void => {
+      // SPEC: WHATWG HTML §10.2.4 — fired when structured-clone deserialization
+      // of a posted message fails. Treat as a crash so consumers get a typed
+      // error and the host transitions to `dead` deterministically.
+      if (lifecycle.state === "dead" || lifecycle.state === "disposed") return;
+      // Snapshot before tearDown nulls currentBoot — if `messageerror` arrives
+      // mid-bootstrap, we MUST reject the ready promise so warmUp/ensureReady
+      // callers don't hang waiting on a torn-down handshake.
+      const pendingBoot = currentBoot;
+      const err = new WorkerMessageError("Worker emitted messageerror.", {data: e.data});
+      inFlight.drainWithFactory(() => err);
+      pendingBoot?.rejectIfPending(err);
+      lifecycle.crash();
+      tearDownWorker("crash");
+    };
+    w.addEventListener("messageerror", onMessageError);
+    // I1: Track the listeners so teardown can remove them.
+    currentListeners = {worker: w, onError, onMessageError};
 
     // Forward sink for non-`ready` events. The handshake helper invokes
     // this for both pre-bootstrap defensive forwards and post-bootstrap

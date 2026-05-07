@@ -13,6 +13,7 @@ export {
   WorkerCrashError,
   WorkerDeadError,
   WorkerError,
+  WorkerMessageError,
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./workerErrors";

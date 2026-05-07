@@ -17,6 +17,7 @@ export {
   WorkerCrashError,
   WorkerDeadError,
   WorkerError,
+  WorkerMessageError,
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./host";

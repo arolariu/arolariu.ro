@@ -73,6 +73,14 @@ export type BootHandshake = Readonly<{
    *   currently uses this for `WorkerDeadError` (host-driven cancellation
    *   during boot).
    *
+   * Not produced by the helper (handled at the host layer):
+   * - `messageerror` events fire on the underlying `Worker` and are handled
+   *   in `createWorkerHost.ts` via a separate listener; they do not flow
+   *   through this `ready` promise. The host's listener calls
+   *   {@link BootHandshake.rejectIfPending} with a `WorkerMessageError` when
+   *   the event arrives mid-bootstrap, which is what unblocks consumers
+   *   awaiting `warmUp()`/`ensureReady()`.
+   *
    * **Maintainer note:** any new internal rejection path added below
    * (e.g., a `messageerror` listener that rejects with
    * `WorkerMessageError`) MUST be added to this list AND the host's
