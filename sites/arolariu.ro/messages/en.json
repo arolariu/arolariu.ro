@@ -4367,6 +4367,88 @@
     "uploadScans": "Upload Scans",
     "viewScans": "View Scans"
   },
+  "InvoiceAssistant": {
+    "panel": {
+      "title": "Ask your invoices",
+      "subtitle": "Analytical questions over your local receipts. Your data stays in your browser.",
+      "inputPlaceholder": "Ask a question — e.g. 'Top merchants last month'",
+      "submit": "Ask",
+      "callStatus": "Last answer"
+    },
+    "states": {
+      "capabilityCheck": "Preparing assistant…",
+      "embeddingLoading": "Downloading multilingual analyzer ({progress}%) — works on most devices.",
+      "embeddingFailed": "Couldn't load the analyzer. Check your connection and try again.",
+      "embeddingReady": "Assistant ready.",
+      "classifying": "Analyzing your question…",
+      "slotExtracting": "Working through paraphrasing — this takes a few seconds for tricky phrasings.",
+      "slotLlmTimeout": "Took too long to understand that one. Want to try again?",
+      "slotLlmUnavailable": "I couldn't quite catch that. Try a clearer phrasing, or enable enhanced understanding (~1 GB) for paraphrase support.",
+      "aggregatorError": "Something went wrong calculating your answer. Try a different question.",
+      "workersUnavailable": "Your browser doesn't support Web Workers. Use a modern browser to access the assistant.",
+      "outOfScope": "I can answer questions about: top categories, top merchants, totals, comparisons, averages, breakdowns. Try one of these:"
+    },
+    "layer2": {
+      "ctaTitle": "Enhanced understanding available",
+      "ctaSubtitle": "Download the optional 1 GB language model to unlock paraphrase support.",
+      "ctaButton": "Enable",
+      "downloading": "Downloading enhanced model ({progress}%)…",
+      "ready": "Enhanced understanding active",
+      "failed": "Enhanced model download failed",
+      "retry": "Retry",
+      "unavailableTooltip": "Enhanced understanding requires WebGPU + at least 4 GB device memory + 2 GB free storage."
+    },
+    "actions": {
+      "retry": "Try again",
+      "reset": "Reset assistant",
+      "cancel": "Cancel",
+      "useExample": "Try this question"
+    },
+    "answers": {
+      "totalSpend": "In {timeframe} you spent a total of {amount} across {count, plural, one {# receipt} other {# receipts}}.",
+      "totalSpendEmpty": "You have no receipts in {timeframe}. Try {alternatives}.",
+      "totalSpendCategory": "In {timeframe} you spent {amount} on {category} across {count, plural, one {# receipt} other {# receipts}}.",
+      "invoiceCount": "You have {count, plural, one {# receipt} other {# receipts}} from {timeframe}.",
+      "invoiceCountWithBreakdown": "You have {count, plural, one {# receipt} other {# receipts}} from {timeframe} — {breakdown}.",
+      "invoiceCountEmpty": "You have no receipts in {timeframe}. Try {alternatives}.",
+      "topSpendingByCategory": "In {timeframe} you spent the most on {topList}.",
+      "topMerchantsByCount": "In {timeframe}, your top {topK} stores by visit count: {topList}.",
+      "topMerchantsBySpend": "Your highest-spend merchants in {timeframe}: {topList}.",
+      "topProductsByCount": "Most-purchased items in {timeframe}: {topList}.",
+      "topProductsBySpend": "You spent the most on: {topList}.",
+      "spendComparison": "You spent {amountA} in {timeframeA} vs {amountB} in {timeframeB} — that's {direction} ({deltaPct}%).",
+      "spendComparisonNoChange": "You spent {amountA} in {timeframeA} vs {amountB} in {timeframeB} — about the same.",
+      "averageSpendPerVisit": "Across {sampleSize, plural, one {# visit} other {# visits}} in {timeframe}, your average basket was {amount}.",
+      "averageSpendPerVisitMerchant": "Across {sampleSize, plural, one {# visit} other {# visits}} at {merchantName} in {timeframe}, your average basket was {amount}.",
+      "categoryBreakdown": "Your {timeframe} spending breakdown: {topList}."
+    },
+    "timeframes": {
+      "this-week": "this week",
+      "last-week": "last week",
+      "this-month": "this month",
+      "last-month": "last month",
+      "last-3-months": "the past 3 months",
+      "last-6-months": "the past 6 months",
+      "this-quarter": "this quarter",
+      "last-quarter": "last quarter",
+      "this-year": "this year",
+      "last-year": "last year",
+      "all-time": "all time",
+      "custom": "the selected period"
+    },
+    "emptyCorpus": {
+      "title": "No invoices yet",
+      "description": "Upload some receipts first — the assistant analyzes invoices already in your local store. Until then there's nothing to compute over."
+    },
+    "exampleChips": {
+      "topMerchantsThisMonth": "Top merchants this month",
+      "totalGrocerySpendLastMonth": "Total grocery spend last month",
+      "topCategoriesLastQuarter": "Top categories last quarter",
+      "averageBasketSize": "Average basket size",
+      "monthVsLastMonth": "This month vs last month",
+      "topProducts": "Most-purchased products"
+    }
+  },
   "Profile": {
     "header": {
       "completionHint": "Complete your profile to unlock all features",

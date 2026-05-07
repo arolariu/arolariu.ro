@@ -50,6 +50,8 @@
     "@azure/storage-blob": "*",
     "@clerk/localizations": "*",
     "@clerk/nextjs": "*",
+    "@huggingface/transformers": "4.2.0",
+    "@mlc-ai/web-llm": "0.2.79",
     "@opentelemetry/api": "*",
     "@opentelemetry/auto-instrumentations-node": "*",
     "@opentelemetry/exporter-logs-otlp-http": "*",
