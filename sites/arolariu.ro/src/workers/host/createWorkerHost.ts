@@ -22,12 +22,12 @@
 import * as Comlink from "comlink";
 import {type Remote} from "comlink";
 
+import {createBootHandshake, type BootHandshake} from "./bootHandshake";
 import {createInFlightRegistry} from "./inFlightRegistry";
-import {createPortPair} from "./createPortPair";
 import {raceWithSignal} from "./raceWithSignal";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
-import {validateBootstrap, WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
+import {type WorkerEvent} from "./workerEnvelope";
 import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
@@ -140,13 +140,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   let restartLock: Promise<void> | null = null;
   const inFlight = createInFlightRegistry();
 
-  // M1: Track the parent-side ports of both `MessageChannel`s so teardown can
-  // explicitly `close()` them. Per WHATWG HTML §9.4.5, a `MessagePort` with
-  // active listeners is a strong cross-realm reference. Worker termination
-  // collects the worker realm, but the parent's `port1`s with `onmessage`
-  // handlers stay alive until GC unless we close them here.
-  let parentRpcPort: MessagePort | null = null;
-  let parentEventPort: MessagePort | null = null;
+  // BOOT-HANDSHAKE: Single host-scope handle for the active two-channel
+  // bootstrap handshake. Owns:
+  //   - the parent halves of the rpc + event `MessageChannel`s (M1: closed
+  //     on teardown to release strong cross-realm references — WHATWG HTML
+  //     §9.4.5),
+  //   - the bootstrap timeout (G: cleared on teardown so a stale boot can't
+  //     resolve against a dead lifecycle),
+  //   - the boot-promise rejector (I3: invoked from `dispose()`/`restart()`
+  //     so an in-flight bootstrap unblocks immediately).
+  // Replaces what used to be four separate host-scope slots.
+  let currentBoot: BootHandshake | null = null;
 
   // C1: Host-level subscriber registry. Subscribers register here and are
   // proxied through to the underlying lifecycle. This lets subscriptions
@@ -157,14 +161,6 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   // I1: Track the active error listener so we can detach it on teardown,
   // preventing leaks across reboots.
   let currentErrorListener: {worker: Worker; handler: (e: ErrorEvent) => void} | null = null;
-
-  // I3: Allow `dispose()`/`restart()` to cancel an in-flight bootstrap promise.
-  let rejectBoot: ((err: Error) => void) | null = null;
-
-  // G: Hoist the bootstrap timeout handle so teardown/restart can clear it
-  // before it ever fires. Otherwise a stale boot would resolve against a
-  // dead lifecycle and surface as a misleading `WorkerCrashError`.
-  let bootTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   const onIdleHandler = (): void => {
     tearDownWorker("lazy-reboot");
@@ -235,12 +231,6 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     const w = worker;
     worker = null;
     proxy = null;
-    // G: Clear the bootstrap timeout if pending so it can never fire after
-    // teardown and resolve against a dead lifecycle.
-    if (bootTimeoutId !== null) {
-      clearTimeout(bootTimeoutId);
-      bootTimeoutId = null;
-    }
     // I1: Remove the error listener before terminating to avoid leaks AND so
     // that any post-terminate `error` event (HTML §10.2.4 parallel delivery)
     // never re-enters host state machine logic.
@@ -259,24 +249,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         // ignore termination errors
       }
     }
-    // M1: Explicitly close the parent's `MessagePort`s so they release their
-    // strong cross-realm references (WHATWG HTML §9.4.5) instead of waiting
-    // for GC.
-    if (parentRpcPort) {
-      try {
-        parentRpcPort.close();
-      } catch {
-        // ignore close errors (port may already be detached)
-      }
-      parentRpcPort = null;
-    }
-    if (parentEventPort) {
-      try {
-        parentEventPort.close();
-      } catch {
-        // ignore close errors (port may already be detached)
-      }
-      parentEventPort = null;
+    // BOOT-HANDSHAKE: Clear the active handshake last. `teardown()` is
+    // idempotent: it clears the bootstrap timeout (G) and closes both
+    // parent ports (M1) so they release their strong cross-realm references
+    // (WHATWG HTML §9.4.5) instead of waiting for GC.
+    if (currentBoot) {
+      currentBoot.teardown();
+      currentBoot = null;
     }
     if (mode === "dispose") {
       lifecycle.dispose();
@@ -319,17 +298,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       throw err;
     }
 
-    // M1+naming: Build the two channels via createPortPair so the host vs.
-    // transferable halves are syntactically obvious. The `parent` halves
-    // stay in this realm (we attach onmessage and must close() on teardown);
-    // the `transferable` halves are handed to the worker via postMessage and
-    // become unreachable from this realm immediately after.
-    const rpc = createPortPair();
-    const event = createPortPair();
-    parentRpcPort = rpc.parent;
-    parentEventPort = event.parent;
-
-    // Listen for unexpected `error` events on the worker.
+    // Listen for unexpected `error` events on the worker. This is wired
+    // BEFORE the bootstrap handshake is constructed so an `error` event
+    // arriving during boot still triggers `handleCrash()` instead of being
+    // silently dropped.
     const onError = (): void => {
       handleCrash();
     };
@@ -337,106 +309,69 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     // I1: Track the listener so teardown can remove it.
     currentErrorListener = {worker: w, handler: onError};
 
-    const ready = new Promise<void>((resolve, reject) => {
-      // I3: Expose this `reject` so `dispose()`/`restart()` can cancel a
-      // pending boot.
-      rejectBoot = reject;
-
-      bootTimeoutId = setTimeout(() => {
-        event.parent.onmessage = null;
-        bootTimeoutId = null;
-        // I3: If we were disposed while the timer was pending, surface a
-        // `WorkerDeadError` rather than a misleading `WorkerCrashError`.
-        if (lifecycle.state === "disposed") {
-          reject(new WorkerDeadError("Host disposed during boot."));
-          return;
-        }
-        handleCrash();
-        reject(new WorkerCrashError([]));
-      }, BOOTSTRAP_TIMEOUT_MS);
-
-      event.parent.onmessage = (e: MessageEvent): void => {
-        const ev = e.data as WorkerEvent;
-        if (ev.kind === "ready") {
-          if (bootTimeoutId !== null) {
-            clearTimeout(bootTimeoutId);
-            bootTimeoutId = null;
-          }
-          // Swap to the steady-state listener that ingests events.
-          event.parent.onmessage = (next: MessageEvent): void => {
-            const nextEv = next.data as WorkerEvent;
-            // I4: Filter stray `ready` events that arrive after bootstrap.
-            // Bootstrap-ready is consumed by the boot promise itself; never forward.
-            if (nextEv.kind === "ready") return;
-            opts.onEvent?.(nextEv);
-            bridge.ingestEvent(nextEv);
-          };
-          resolve();
-          return;
-        }
-        // E: Bootstrap `ready` is handled in the branch above (consumed by the
-        // boot promise; never forwarded). Anything else that arrives before
-        // the handshake is forwarded defensively to keep behavior parity with
-        // the steady-state listener for non-`ready` events.
-        opts.onEvent?.(ev);
-        bridge.ingestEvent(ev);
-      };
-      // SPEC: `port.start()` is implicitly called when assigning
-      // `port.onmessage` (WHATWG HTML §9.4.5). The explicit call previously
-      // here was a no-op; left as a comment for clarity.
-    }).finally(() => {
-      // Clear the rejectBoot reference once boot settles either way.
-      rejectBoot = null;
-    });
-
-    const bootstrap: WorkerBootstrap = {
-      kind: "bootstrap",
-      version: WORKER_PROTOCOL_VERSION,
-      rpcPort: rpc.transferable,
-      eventPort: event.transferable,
-      capabilities,
+    // Forward sink for non-`ready` events. The handshake helper invokes
+    // this for both pre-bootstrap defensive forwards and post-bootstrap
+    // steady-state events; both `opts.onEvent` and the telemetry bridge
+    // see the event so behavior parity with the previous inline listener
+    // is preserved.
+    const forwardEvent = (ev: WorkerEvent): void => {
+      opts.onEvent?.(ev);
+      bridge.ingestEvent(ev);
     };
-    // SECURITY: Self-validate the constructed bootstrap before posting it
-    // to the worker. If a future change to the host (e.g., a capability
-    // detection bug) ships a malformed shape, we want to catch it here
-    // rather than at the worker boundary where the symptom would be the
-    // worker silently never replying with `ready` and the bootstrap
-    // timeout firing 10 seconds later.
-    if (!validateBootstrap(bootstrap)) {
-      const validationError = new Error("Worker host produced an invalid bootstrap message; check capabilities snapshot.");
-      // Reject the ready promise eagerly so its captured closures (and
-      // rejectBoot reference) release immediately rather than lingering
-      // until GC. The `.catch` is belt-and-suspenders for the unawaited
-      // tail.
-      rejectBoot?.(validationError);
-      ready.catch(() => {
-        /* swallow loser */
-      });
-      tearDownWorker("crash");
-      lifecycle.crash();
-      throw validationError;
-    }
-    // SAFETY: postMessage can throw synchronously — DataCloneError if a
-    // payload field somehow isn't structured-cloneable, or other host-
-    // platform errors. Treat that as a hard crash so the host doesn't
-    // sit in `starting` waiting on a handshake that will never arrive.
+
+    // BOOT-HANDSHAKE: All channel construction, port lifetimes, the boot
+    // promise, the bootstrap timeout, and listener-mode swap are owned by
+    // `createBootHandshake`. Synchronous failures (validation, postMessage
+    // throw) propagate as exceptions; the helper has already rejected its
+    // own `ready` promise and closed its ports before throwing. We still
+    // need to clean up the host-level error listener and lifecycle.
+    let handshake: BootHandshake;
     try {
-      w.postMessage(bootstrap, [rpc.transferable, event.transferable]);
-    } catch (err) {
-      // Reject the ready promise eagerly — same rationale as the
-      // validation branch above.
-      rejectBoot?.(err);
-      ready.catch(() => {
-        /* swallow loser */
+      handshake = createBootHandshake({
+        worker: w,
+        capabilities,
+        onEvent: forwardEvent,
+        bootstrapTimeoutMs: BOOTSTRAP_TIMEOUT_MS,
       });
+    } catch (err) {
+      // Synchronous failure path (validation or postMessage throw). The
+      // handshake has already closed its ports; we still must drop the
+      // error listener, terminate the worker, and crash the lifecycle so
+      // the host transitions to `dead` deterministically rather than
+      // sitting in `starting`.
       tearDownWorker("crash");
       lifecycle.crash();
       throw err;
     }
+    currentBoot = handshake;
 
-    await ready;
+    try {
+      await handshake.ready;
+    } catch (err) {
+      // I3: If the host was disposed while the bootstrap timer was pending,
+      // surface a `WorkerDeadError` rather than the helper's generic
+      // `WorkerCrashError`. The helper intentionally does not see host-
+      // level state; this translation lives here.
+      if (lifecycle.state === "disposed") {
+        throw new WorkerDeadError("Host disposed during boot.");
+      }
+      // Discriminate by error type to preserve the original semantics:
+      // - `WorkerCrashError`: the helper's bootstrap timeout fired. Treat
+      //   as a hard crash — drain in-flight calls, mark dead, tear down.
+      // - `WorkerDeadError` (or anything else): driven externally by
+      //   `dispose()`/`restart()`, which have already taken responsibility
+      //   for tearing down the worker and managing lifecycle transitions.
+      //   Calling `handleCrash` here would mutate the wrong lifecycle —
+      //   `restart()` swaps `lifecycle` to a fresh instance synchronously
+      //   before the catch block's microtask runs, so the crashed lifecycle
+      //   would be the NEW one rather than the abandoned one.
+      if (err instanceof WorkerCrashError) {
+        handleCrash();
+      }
+      throw err;
+    }
 
-    proxy = Comlink.wrap<TApi>(rpc.parent);
+    proxy = Comlink.wrap<TApi>(handshake.parentRpcPort);
     lifecycle.bootComplete();
   }
 
@@ -629,19 +564,18 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       }
       if (restartLock) return restartLock;
 
-      // C: Capture the pending boot rejector so we can abort it before tear-down.
-      // tearDownWorker also clears the bootstrap timeout, but rejecting the
-      // boot promise here unblocks any in-flight `ensureReady()` callers that
-      // would otherwise wait the full bootstrap timeout.
-      const bootRejector = rejectBoot;
-      rejectBoot = null;
+      // C: Capture the pending boot handle so we can abort it before tear-down.
+      // tearDownWorker also clears the bootstrap timeout (via the handshake's
+      // own teardown), but rejecting the boot promise here unblocks any
+      // in-flight `ensureReady()` callers that would otherwise wait the full
+      // bootstrap timeout.
+      const bootToReject = currentBoot;
 
       const promise = (async (): Promise<void> => {
         // C: Reject the in-flight boot first so `ensureReady()` consumers
-        // don't await stale state.
-        if (bootRejector) {
-          bootRejector(new WorkerDeadError("Restarted during boot."));
-        }
+        // don't await stale state. `rejectIfPending` is idempotent and a
+        // no-op once boot has settled.
+        bootToReject?.rejectIfPending(new WorkerDeadError("Restarted during boot."));
         bootPromise = null;
 
         // D: Drain all calls that were past `lifecycle.beginCall()` with a
@@ -695,18 +629,16 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     },
     async dispose(): Promise<void> {
       // I3: Eagerly reject any in-flight bootstrap so callers waiting on
-      // `ensureReady()`/`warmUp()` unblock instead of timing out.
-      const bootRejector = rejectBoot;
+      // `ensureReady()`/`warmUp()` unblock instead of timing out. Snapshot
+      // the handle BEFORE `tearDownWorker` clears it.
+      const bootToReject = currentBoot;
       // SAFETY: Comlink's `requestResponseMessage` tracks only `resolve`, not
       // `reject` (GoogleChromeLabs/comlink#601), so we MUST drain in-flight
       // calls explicitly. Drain after tearDown so callers observe the disposed
       // state when their rejection callback runs. Snapshot timing is irrelevant
       // — `tearDownWorker` is synchronous and never mutates `inFlight`.
       tearDownWorker("dispose");
-      if (bootRejector) {
-        rejectBoot = null;
-        bootRejector(new WorkerDeadError("Host disposed during boot."));
-      }
+      bootToReject?.rejectIfPending(new WorkerDeadError("Host disposed during boot."));
       if (inFlight.size > 0) {
         inFlight.drainWithFactory(
           (m) => new WorkerDeadError(`Worker host was disposed with ${m.length} in-flight call(s): [${m.join(", ")}].`),
