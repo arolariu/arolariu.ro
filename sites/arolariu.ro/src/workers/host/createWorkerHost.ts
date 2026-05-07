@@ -24,6 +24,7 @@ import {type Remote} from "comlink";
 
 import {createInFlightRegistry} from "./inFlightRegistry";
 import {createPortPair} from "./createPortPair";
+import {raceWithSignal} from "./raceWithSignal";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
 import {validateBootstrap, WORKER_PROTOCOL_VERSION, type WorkerBootstrap, type WorkerEvent} from "./workerEnvelope";
@@ -564,44 +565,9 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
                 // has begun rejects the consumer's promise. The worker
                 // continues running until its handler completes; this is the
                 // documented v1 limitation. See README "Known limitations".
-                //
-                // H: Clean up the abort listener once the race settles so we
-                // don't leak listeners on the consumer's signal across many
-                // calls.
-                if (signal) {
-                  let onAbort: (() => void) | null = null;
-                  const abortPromise = new Promise<never>((_, reject) => {
-                    onAbort = (): void => {
-                      // Belt-and-suspenders: `signal.reason` is always
-                      // defined on an aborted signal per WHATWG DOM.
-                      reject(signal!.reason ?? new Error("aborted"));
-                    };
-                    if (signal!.aborted) {
-                      onAbort();
-                    } else {
-                      signal!.addEventListener("abort", onAbort, {once: true});
-                    }
-                  });
-                  // Suppress "unhandled rejection" on whichever side loses.
-                  callPromise.catch(() => {
-                    /* loser */
-                  });
-                  abortPromise.catch(() => {
-                    /* loser */
-                  });
-                  try {
-                    return await Promise.race([callPromise, abortPromise]);
-                  } finally {
-                    // H: Detach the abort listener if it never fired (call
-                    // completed first). `{once: true}` already self-removes
-                    // on fire; this branch is the body-wins path.
-                    if (onAbort && !signal.aborted) {
-                      signal.removeEventListener("abort", onAbort);
-                    }
-                  }
-                }
-
-                return await callPromise;
+                // `raceWithSignal` centralizes the listener cleanup so we
+                // don't leak listeners on the consumer's signal across calls.
+                return await raceWithSignal(callPromise, signal);
               });
 
               // K: Race against the per-call timeout if enabled. Suppress
@@ -714,40 +680,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         lifecycle = nextLifecycle;
 
         const readyPromise = ensureReady();
-        // I2: Race against signal-abort during boot, with cleanup on the
-        // body-wins path so we don't leak the abort listener.
-        if (signal) {
-          let onAbort: (() => void) | null = null;
-          const abortPromise = new Promise<never>((_, reject) => {
-            onAbort = (): void => {
-              // Belt-and-suspenders: `signal.reason` is always defined per WHATWG DOM.
-              reject(signal.reason ?? new Error("aborted"));
-            };
-            if (signal.aborted) {
-              onAbort();
-            } else {
-              signal.addEventListener("abort", onAbort, {once: true});
-            }
-          });
-          readyPromise.catch(() => {
-            /* swallow loser */
-          });
-          abortPromise.catch(() => {
-            /* swallow loser */
-          });
-          try {
-            await Promise.race([readyPromise, abortPromise]);
-          } finally {
-            // I: Detach the abort listener if it never fired (boot won the
-            // race). `{once: true}` self-removes on fire; this is the
-            // body-wins path.
-            if (onAbort && !signal.aborted) {
-              signal.removeEventListener("abort", onAbort);
-            }
-          }
-        } else {
-          await readyPromise;
-        }
+        // I2: Race against signal-abort during boot. `raceWithSignal`
+        // centralizes the listener cleanup so we don't leak the abort
+        // listener on the body-wins path.
+        await raceWithSignal(readyPromise, signal);
       })().finally(() => {
         restartLock = null;
       });
