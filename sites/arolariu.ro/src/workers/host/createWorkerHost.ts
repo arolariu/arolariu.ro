@@ -23,6 +23,7 @@ import * as Comlink from "comlink";
 import {type Remote} from "comlink";
 
 import {createBootHandshake, type BootHandshake} from "./bootHandshake";
+import {buildCallProxy} from "./buildCallProxy";
 import {createInFlightRegistry} from "./inFlightRegistry";
 import {raceWithSignal} from "./raceWithSignal";
 import {createTelemetryBridge} from "./telemetryBridge";
@@ -389,155 +390,17 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     await bootPromise;
   }
 
-  /**
-   * Build the proxy that intercepts every API method call. Each invocation:
-   * 1. Detects an `AbortSignal` last-arg and rejects synchronously if aborted.
-   * 2. Awaits {@link ensureReady}.
-   * 3. Registers the call in `inFlight` so `handleCrash` can reject it.
-   * 4. Wraps the call in a telemetry span and races it against the crash promise.
-   * 5. Normalizes worker-thrown errors into {@link WorkerError}.
-   */
-  function buildProxy(): Remote<TApi> {
-    return new Proxy({} as Remote<TApi>, {
-      get(_target, prop): unknown {
-        if (typeof prop !== "string") return undefined;
-        return (...args: unknown[]): Promise<unknown> => {
-          // 1) AbortSignal-as-last-arg detection — synchronous so already-aborted
-          //    signals reject before any state is touched.
-          const last = args[args.length - 1];
-          let signal: AbortSignal | undefined;
-          let callArgs = args;
-          if (last instanceof AbortSignal) {
-            signal = last;
-            callArgs = args.slice(0, -1);
-            if (signal.aborted) {
-              // Belt-and-suspenders: per WHATWG DOM, `signal.reason` on an
-              // aborted signal is always defined (defaults to AbortError
-              // DOMException). The `??` fallback is unreachable on a
-              // spec-compliant runtime but guards against polyfills that
-              // diverge from spec.
-              return Promise.reject(signal.reason ?? new Error("aborted"));
-            }
-          }
-
-          // 2) Register in-flight synchronously. This is critical: a crash
-          //    triggered while we're still queued past `await ensureReady()`
-          //    must still see this call in the registry and reject it.
-          let removeFromInFlight: (() => void) | null = null;
-          const crashPromise = new Promise<never>((_resolve, reject) => {
-            removeFromInFlight = inFlight.register(prop, reject);
-          });
-          // Avoid "unhandled rejection" warnings when only the body path
-          // rejects — we always race against `crashPromise`, so any rejection
-          // is observed somewhere.
-          crashPromise.catch(() => {});
-
-          const body = async (): Promise<unknown> => {
-            await ensureReady();
-            if (!proxy) {
-              throw new WorkerDeadError();
-            }
-            // Use Reflect.get rather than a Record<string,unknown> cast so
-            // prototype lookup semantics are preserved and we don't widen
-            // the proxy's static type.
-            const target = Reflect.get(proxy as object, prop) as unknown;
-            if (typeof target !== "function") {
-              throw new Error(`Worker host has no method "${prop}"`);
-            }
-            lifecycle.beginCall();
-
-            // K: Per-call timeout. Measured from AFTER ensureReady so boot
-            // latency is not charged to the consumer's budget. Disabled for
-            // 0, negative, NaN, or Infinity (Number.isFinite gate).
-            //
-            // NOTE: The timeout rejects the consumer's promise but does NOT
-            // abort the worker-side handler — Comlink has no cancellation
-            // protocol. If a hung handler must be reclaimed, the consumer
-            // should call host.restart().
-            const callStartMs = performance.now();
-            let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-            let timeoutPromise: Promise<never> | null = null;
-            if (defaultCallTimeoutMs > 0 && Number.isFinite(defaultCallTimeoutMs)) {
-              timeoutPromise = new Promise<never>((_, reject) => {
-                timeoutHandle = setTimeout(() => {
-                  reject(new WorkerTimeoutError(prop, Math.round(performance.now() - callStartMs)));
-                }, defaultCallTimeoutMs);
-              });
-              // Suppress "unhandled rejection" if the call wins the race.
-              timeoutPromise.catch(() => {
-                /* loser */
-              });
-            }
-
-            try {
-              const wrapped = bridge.wrapCall(prop, async () => {
-                const callPromise = (async (): Promise<unknown> => {
-                  const result = (target as (...a: unknown[]) => Promise<unknown>)(...callArgs);
-                  try {
-                    return await result;
-                  } catch (cause) {
-                    // 3) Normalize worker-thrown errors. The worker side
-                    //    throws a plain `__workerError` envelope (see
-                    //    exposeWorker.ts ENVELOPE comment) because Comlink's
-                    //    default throwTransferHandler only round-trips
-                    //    name/message/stack and HTML S2.7.3 normalizes
-                    //    Error.name. We rewrap into `WorkerError` here so
-                    //    consumers see a typed exception with the original
-                    //    method name attached.
-                    if (
-                      typeof cause === "object" &&
-                      cause !== null &&
-                      (cause as {__workerError?: unknown}).__workerError === true
-                    ) {
-                      throw new WorkerError(cause, prop);
-                    }
-                    throw cause;
-                  }
-                })();
-
-                // C3/H: Mid-flight abort — race the body promise against an
-                // abort promise so an `AbortSignal` that fires after the call
-                // has begun rejects the consumer's promise. The worker
-                // continues running until its handler completes; this is the
-                // documented v1 limitation. See README "Known limitations".
-                // `raceWithSignal` centralizes the listener cleanup so we
-                // don't leak listeners on the consumer's signal across calls.
-                return await raceWithSignal(callPromise, signal);
-              });
-
-              // K: Race against the per-call timeout if enabled. Suppress
-              // the loser's rejection so neither outcome surfaces as an
-              // unhandled-rejection warning.
-              if (timeoutPromise) {
-                wrapped.catch(() => {
-                  /* loser; bridge.wrapCall has already logged via telemetry */
-                });
-                return await Promise.race([wrapped, timeoutPromise]);
-              }
-              return await wrapped;
-            } finally {
-              // K: Always clear the timeout handle whether the call won,
-              // the timeout won, or the call threw.
-              if (timeoutHandle !== null) clearTimeout(timeoutHandle);
-              lifecycle.endCall();
-            }
-          };
-
-          // Race the whole body against the crash signal so a crash that
-          // fires before/during `ensureReady()` still surfaces as
-          // `WorkerCrashError`. Swallow the loser's rejection to avoid
-          // unhandled-rejection noise.
-          const bodyPromise = body();
-          bodyPromise.catch(() => {});
-          return Promise.race([bodyPromise, crashPromise]).finally(() => {
-            removeFromInFlight?.();
-          });
-        };
-      },
-    });
-  }
-
-  const api = buildProxy();
+  const api = buildCallProxy<TApi>({
+    inFlight,
+    bridge,
+    defaultCallTimeoutMs,
+    ensureReady,
+    getTarget: () => proxy,
+    lifecycle: {
+      beginCall: () => lifecycle.beginCall(),
+      endCall: () => lifecycle.endCall(),
+    },
+  });
 
   return {
     api,
