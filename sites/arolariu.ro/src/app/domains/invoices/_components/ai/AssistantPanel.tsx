@@ -13,6 +13,8 @@
 import {Alert, AlertDescription, AlertTitle, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import {useState} from "react";
+import {useShallow} from "zustand/react/shallow";
+import {useInvoicesStore} from "@/stores";
 import {AssistantMessage} from "./AssistantMessage";
 import {useInvoiceAssistant} from "./useInvoiceAssistant";
 import type {AssistantLocale} from "./types";
@@ -31,6 +33,7 @@ const EXAMPLE_CHIPS_KEYS = [
 export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element {
   const t = useTranslations();
   const locale = (useLocale() as AssistantLocale) ?? "en";
+  const invoiceCount = useInvoicesStore(useShallow((s) => s.entities.length));
 
   const {state, submitQuestion, enableLayer2, resetConversation, retryEmbeddingLoad} = useInvoiceAssistant({
     locale,
@@ -117,13 +120,15 @@ export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element 
             </span>
           )}
           {state.layer2.status === "ineligible" && (
-            <Badge
+            <Button
+              data-testid="enable-layer2-disabled"
               variant="outline"
+              size="sm"
+              disabled
               title={t("InvoiceAssistant.layer2.unavailableTooltip" as never)}
-              aria-label={t("InvoiceAssistant.layer2.unavailableTooltip" as never)}
-            >
-              i
-            </Badge>
+              aria-label={t("InvoiceAssistant.layer2.unavailableTooltip" as never)}>
+              {t("InvoiceAssistant.layer2.ctaButton" as never)} ⓘ
+            </Button>
           )}
           {state.layer2.status === "failed" && (
             <Badge variant="destructive" data-testid="layer2-failed">
@@ -133,6 +138,13 @@ export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {invoiceCount === 0 && state.status !== "classifying" && state.status !== "slot-extracting" && (
+          <Alert data-testid="empty-corpus" role="status" aria-live="polite">
+            <AlertTitle>{t("InvoiceAssistant.emptyCorpus.title" as never)}</AlertTitle>
+            <AlertDescription>{t("InvoiceAssistant.emptyCorpus.description" as never)}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={onSubmit} className="flex gap-2">
           <input
             data-testid="assistant-input"

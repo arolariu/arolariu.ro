@@ -4436,6 +4436,10 @@
       "all-time": "din totdeauna",
       "custom": "perioada selectată"
     },
+    "emptyCorpus": {
+      "title": "Nicio factură încă",
+      "description": "Încarcă mai întâi câteva chitanțe — asistentul analizează facturile deja existente în stocarea ta locală. Până atunci nu există nimic de calculat."
+    },
     "exampleChips": {
       "topMerchantsThisMonth": "Topul magazinelor luna aceasta",
       "totalGrocerySpendLastMonth": "Cheltuieli totale alimente luna trecută",

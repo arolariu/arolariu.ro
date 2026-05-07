@@ -4436,6 +4436,10 @@
       "all-time": "all time",
       "custom": "the selected period"
     },
+    "emptyCorpus": {
+      "title": "No invoices yet",
+      "description": "Upload some receipts first — the assistant analyzes invoices already in your local store. Until then there's nothing to compute over."
+    },
     "exampleChips": {
       "topMerchantsThisMonth": "Top merchants this month",
       "totalGrocerySpendLastMonth": "Total grocery spend last month",
