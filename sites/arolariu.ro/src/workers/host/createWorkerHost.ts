@@ -22,6 +22,7 @@
 import * as Comlink from "comlink";
 import {type Remote} from "comlink";
 
+import {createInFlightRegistry} from "./inFlightRegistry";
 import {createPortPair} from "./createPortPair";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
@@ -99,12 +100,6 @@ export type WorkerHost<TApi> = Readonly<{
   dispose: () => Promise<void>;
 }>;
 
-/** Tracks an in-flight call so we can reject it on crash. */
-type InFlightEntry = Readonly<{
-  method: string;
-  reject: (err: unknown) => void;
-}>;
-
 /**
  * Build a typed {@link WorkerHost}.
  *
@@ -142,7 +137,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   let proxy: Remote<TApi> | null = null;
   let bootPromise: Promise<void> | null = null;
   let restartLock: Promise<void> | null = null;
-  const inFlight = new Set<InFlightEntry>();
+  const inFlight = createInFlightRegistry();
 
   // M1: Track the parent-side ports of both `MessageChannel`s so teardown can
   // explicitly `close()` them. Per WHATWG HTML §9.4.5, a `MessagePort` with
@@ -290,22 +285,16 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   /** Reject all in-flight calls with `WorkerCrashError` and tear down. */
   function handleCrash(): void {
     if (lifecycle.state === "dead" || lifecycle.state === "disposed") return;
-    const methods = Array.from(inFlight, (entry) => entry.method);
-    const crashError = new WorkerCrashError(methods);
-    // SAFETY: Snapshot and clear in-flight entries BEFORE `tearDownWorker`
-    // terminates the worker. Comlink's `requestResponseMessage`
-    // (comlink/src/comlink.ts) only stores the call's `resolve` callback —
-    // there is no `reject`. If we let the worker terminate while a call is
-    // in-flight, the consumer's `await proxy.method()` hangs forever
-    // (see GoogleChromeLabs/comlink#601). Manually rejecting `inFlight` here
-    // is therefore load-bearing — do not remove or reorder.
-    const entries = Array.from(inFlight);
-    inFlight.clear();
+    // SAFETY: Drain BEFORE `tearDownWorker` terminates the worker. Comlink's
+    // `requestResponseMessage` (comlink/src/comlink.ts) only stores the
+    // call's `resolve` callback — there is no `reject`. If we let the worker
+    // terminate while a call is in-flight, the consumer's
+    // `await proxy.method()` hangs forever (see GoogleChromeLabs/comlink#601).
+    // Manually rejecting via the registry is therefore load-bearing — see
+    // `InFlightRegistry` remarks.
+    inFlight.drainWithFactory((m) => new WorkerCrashError(m));
     lifecycle.crash();
     tearDownWorker("crash");
-    for (const entry of entries) {
-      entry.reject(crashError);
-    }
   }
 
   /** Perform the bootstrap handshake. Sets `worker` and `proxy` on success. */
@@ -497,11 +486,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
 
           // 2) Register in-flight synchronously. This is critical: a crash
           //    triggered while we're still queued past `await ensureReady()`
-          //    must still see this call in `inFlight` and reject it.
-          let entry: InFlightEntry | null = null;
+          //    must still see this call in the registry and reject it.
+          let removeFromInFlight: (() => void) | null = null;
           const crashPromise = new Promise<never>((_resolve, reject) => {
-            entry = {method: prop, reject};
-            inFlight.add(entry);
+            removeFromInFlight = inFlight.register(prop, reject);
           });
           // Avoid "unhandled rejection" warnings when only the body path
           // rejects — we always race against `crashPromise`, so any rejection
@@ -641,7 +629,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
           const bodyPromise = body();
           bodyPromise.catch(() => {});
           return Promise.race([bodyPromise, crashPromise]).finally(() => {
-            if (entry) inFlight.delete(entry);
+            removeFromInFlight?.();
           });
         };
       },
@@ -682,21 +670,6 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       const bootRejector = rejectBoot;
       rejectBoot = null;
 
-      // D: Snapshot all in-flight calls and reject them with `WorkerCrashError`
-      // before the worker is terminated. Without this the calls would reject
-      // with Comlink port-closed errors (or hang forever) once the underlying
-      // worker is gone.
-      //
-      // SAFETY: Comlink's `requestResponseMessage` stores only the call's
-      // `resolve` callback — there is no `reject`. If we let the port close
-      // while a call is mid-flight the consumer's `await proxy.method()`
-      // hangs forever (see GoogleChromeLabs/comlink#601). Rejecting the
-      // snapshot here is load-bearing — do not reorder relative to
-      // `tearDownWorker`.
-      const drainEntries = Array.from(inFlight);
-      const drainMethods = drainEntries.map((entry) => entry.method);
-      inFlight.clear();
-
       const promise = (async (): Promise<void> => {
         // C: Reject the in-flight boot first so `ensureReady()` consumers
         // don't await stale state.
@@ -705,14 +678,18 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
         }
         bootPromise = null;
 
-        // D: Reject all calls that were past `lifecycle.beginCall()` with a
-        // `WorkerCrashError` listing their methods.
-        if (drainEntries.length > 0) {
-          const crashError = new WorkerCrashError(drainMethods);
-          for (const entry of drainEntries) {
-            entry.reject(crashError);
-          }
-        }
+        // D: Drain all calls that were past `lifecycle.beginCall()` with a
+        // `WorkerCrashError` listing their methods, BEFORE the worker is
+        // terminated. Without this the calls would reject with Comlink
+        // port-closed errors (or hang forever) once the underlying worker is
+        // gone.
+        //
+        // SAFETY: Comlink's `requestResponseMessage` stores only the call's
+        // `resolve` callback — there is no `reject`. If we let the port close
+        // while a call is mid-flight the consumer's `await proxy.method()`
+        // hangs forever (see GoogleChromeLabs/comlink#601). Draining via the
+        // registry here is load-bearing — see `InFlightRegistry` remarks.
+        inFlight.drainWithFactory((m) => new WorkerCrashError(m));
 
         // J: Swap the lifecycle pointer BEFORE tearing down the old one so
         // public subscribers see `dead → starting → ready` rather than
@@ -781,33 +758,23 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       await ensureReady();
     },
     async dispose(): Promise<void> {
-      // SAFETY: Drain in-flight calls BEFORE tearing down the worker — the
-      // same Comlink-hangs-on-closed-port hazard documented in handleCrash()
-      // and restart() applies here. Without this drain, any consumer
-      // currently awaiting `host.api.foo()` would hang forever once the
-      // ports close (Comlink's requestResponseMessage tracks only `resolve`,
-      // not `reject`; see GoogleChromeLabs/comlink#601).
-      const drainEntries = Array.from(inFlight);
-      inFlight.clear();
-
       // I3: Eagerly reject any in-flight bootstrap so callers waiting on
       // `ensureReady()`/`warmUp()` unblock instead of timing out.
       const bootRejector = rejectBoot;
+      // SAFETY: Comlink's `requestResponseMessage` tracks only `resolve`, not
+      // `reject` (GoogleChromeLabs/comlink#601), so we MUST drain in-flight
+      // calls explicitly. Drain after tearDown so callers observe the disposed
+      // state when their rejection callback runs. Snapshot timing is irrelevant
+      // — `tearDownWorker` is synchronous and never mutates `inFlight`.
       tearDownWorker("dispose");
       if (bootRejector) {
         rejectBoot = null;
         bootRejector(new WorkerDeadError("Host disposed during boot."));
       }
-
-      // SAFETY: Reject the snapshotted in-flight calls AFTER tearDown so
-      // they observe the disposed state, with a deterministic error.
-      if (drainEntries.length > 0) {
-        const disposeError = new WorkerDeadError(
-          `Worker host was disposed with ${drainEntries.length} in-flight call(s): [${drainEntries.map((e) => e.method).join(", ")}].`,
+      if (inFlight.size > 0) {
+        inFlight.drainWithFactory(
+          (m) => new WorkerDeadError(`Worker host was disposed with ${m.length} in-flight call(s): [${m.join(", ")}].`),
         );
-        for (const entry of drainEntries) {
-          entry.reject(disposeError);
-        }
       }
     },
   };
