@@ -15,7 +15,7 @@ vi.mock("./seedEmbeddings.json", () => ({
   ],
 }));
 
-vi.mock("@xenova/transformers", () => ({
+vi.mock("@huggingface/transformers", () => ({
   pipeline: vi.fn(async () => mockedExtractor),
 }));
 

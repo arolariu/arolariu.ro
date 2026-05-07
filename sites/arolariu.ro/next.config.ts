@@ -144,21 +144,6 @@ const nextConfig: NextConfig = {
 
   transpilePackages: ["import-in-the-middle", "require-in-the-middle"],
 
-  // Turbopack: alias Node builtins to a no-op stub for the browser/worker bundle.
-  // @xenova/transformers v2 statically imports fs/path/url at module load and
-  // calls `Object.keys` on them to detect Node — Turbopack doesn't honor the
-  // package's `browser: false` mappings for these, so we substitute explicitly.
-  // The stub at @/lib/empty-module exports the surface our deps actually touch.
-  turbopack: {
-    resolveAlias: {
-      fs: "@/lib/empty-module",
-      path: "@/lib/empty-module",
-      url: "@/lib/empty-module",
-      sharp: "@/lib/empty-module",
-      "onnxruntime-node": "@/lib/empty-module",
-    },
-  },
-
   experimental: {
     // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,

@@ -14,7 +14,7 @@
  * Manual: node scripts/generate.embeddings.ts
  */
 
-import {pipeline} from "@xenova/transformers";
+import {pipeline} from "@huggingface/transformers";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import {SEED_PHRASES_EN} from "../sites/arolariu.ro/src/app/domains/invoices/_components/ai/intents/seedPhrases.en.ts";

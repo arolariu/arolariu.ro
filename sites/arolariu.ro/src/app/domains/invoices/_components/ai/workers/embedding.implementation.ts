@@ -7,12 +7,11 @@
  * the user's question on each classify() call and returns the top-N intents
  * by cosine similarity over the locale-filtered seed rows.
  *
- * IMPORTANT: Transformers.js is loaded via dynamic import inside ensureLoaded()
- * rather than a static top-level import. The static path triggers the
- * package's environment-detection code (Object.keys on fs/path/url) at
- * module-eval time, which crashes under Turbopack's worker bundler when
- * those Node builtins resolve to undefined. Dynamic import lets us catch
- * the failure and surface it to the user via the embedding-failed state.
+ * Uses `@huggingface/transformers` v4 (the official rename of the legacy
+ * `@xenova/transformers` package) which works cleanly under Turbopack's
+ * worker bundler without Node-builtin polyfills. Loaded via dynamic import
+ * inside ensureLoaded() so any future package-init crash surfaces as
+ * `embedding-failed` state rather than a hard module-eval throw.
  */
 
 import seedRows from "./seedEmbeddings.json";
@@ -21,8 +20,9 @@ import type {AssistantLocale} from "../types";
 
 type SeedRow = {locale: AssistantLocale; intent: string; phrase: string; embedding: number[]};
 
-// `unknown` because we lazy-import the type and don't want to drag the static type binding in.
-let extractor: ((text: string, opts: {pooling: string; normalize: boolean}) => Promise<{data: Float32Array}>) | null = null;
+type ExtractorFn = (text: string, opts: {pooling: string; normalize: boolean}) => Promise<{data: Float32Array}>;
+
+let extractor: ExtractorFn | null = null;
 
 function cosineSim(a: ReadonlyArray<number>, b: ReadonlyArray<number>): number {
   let dot = 0;
@@ -42,10 +42,10 @@ export function createEmbeddingImpl(): EmbeddingWorkerApi {
   return {
     ensureLoaded: async (): Promise<void> => {
       if (extractor) return;
-      const transformers = (await import("@xenova/transformers")) as {
+      const transformers = (await import("@huggingface/transformers")) as {
         pipeline: (task: string, model: string) => Promise<unknown>;
       };
-      extractor = (await transformers.pipeline("feature-extraction", "Xenova/multilingual-e5-small")) as typeof extractor;
+      extractor = (await transformers.pipeline("feature-extraction", "Xenova/multilingual-e5-small")) as ExtractorFn;
     },
     classify: async ({question, locale}): Promise<ClassifyOutput> => {
       if (!extractor) throw new Error("Embedding model not loaded; call ensureLoaded first.");
