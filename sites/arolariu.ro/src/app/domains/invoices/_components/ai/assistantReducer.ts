@@ -73,7 +73,8 @@ export type Action =
   | Readonly<{type: "layer2Loaded"}>
   | Readonly<{type: "layer2Failed"; error: string}>
   | Readonly<{type: "resetConversation"}>
-  | Readonly<{type: "resetSlotHostFlag"}>;
+  | Readonly<{type: "resetSlotHostFlag"}>
+  | Readonly<{type: "retryEmbeddingLoad"}>;
 
 export const initialState: State = {
   status: "capability-check",
@@ -172,5 +173,10 @@ export function assistantReducer(state: State, action: Action): State {
       } as State;
     case "resetSlotHostFlag":
       return {...state, shouldRestartSlotHost: false};
+    case "retryEmbeddingLoad":
+      // Allow the user to retry from the embedding-failed terminal.
+      // The hook will dispose+recreate the embed host so the load cycle
+      // restarts; the reducer just resets the visible status.
+      return {...state, status: "capability-check"};
   }
 }

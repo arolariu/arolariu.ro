@@ -6,16 +6,23 @@
  * Reads the precomputed seedEmbeddings.json matrix at module load; encodes
  * the user's question on each classify() call and returns the top-N intents
  * by cosine similarity over the locale-filtered seed rows.
+ *
+ * IMPORTANT: Transformers.js is loaded via dynamic import inside ensureLoaded()
+ * rather than a static top-level import. The static path triggers the
+ * package's environment-detection code (Object.keys on fs/path/url) at
+ * module-eval time, which crashes under Turbopack's worker bundler when
+ * those Node builtins resolve to undefined. Dynamic import lets us catch
+ * the failure and surface it to the user via the embedding-failed state.
  */
 
-import {pipeline, type FeatureExtractionPipeline} from "@xenova/transformers";
 import seedRows from "./seedEmbeddings.json";
 import type {EmbeddingWorkerApi, ClassifyOutput} from "./embedding.api";
 import type {AssistantLocale} from "../types";
 
 type SeedRow = {locale: AssistantLocale; intent: string; phrase: string; embedding: number[]};
 
-let extractor: FeatureExtractionPipeline | null = null;
+// `unknown` because we lazy-import the type and don't want to drag the static type binding in.
+let extractor: ((text: string, opts: {pooling: string; normalize: boolean}) => Promise<{data: Float32Array}>) | null = null;
 
 function cosineSim(a: ReadonlyArray<number>, b: ReadonlyArray<number>): number {
   let dot = 0;
@@ -35,12 +42,15 @@ export function createEmbeddingImpl(): EmbeddingWorkerApi {
   return {
     ensureLoaded: async (): Promise<void> => {
       if (extractor) return;
-      extractor = (await pipeline("feature-extraction", "Xenova/multilingual-e5-small")) as FeatureExtractionPipeline;
+      const transformers = (await import("@xenova/transformers")) as {
+        pipeline: (task: string, model: string) => Promise<unknown>;
+      };
+      extractor = (await transformers.pipeline("feature-extraction", "Xenova/multilingual-e5-small")) as typeof extractor;
     },
     classify: async ({question, locale}): Promise<ClassifyOutput> => {
       if (!extractor) throw new Error("Embedding model not loaded; call ensureLoaded first.");
       const out = await extractor(`query: ${question}`, {pooling: "mean", normalize: true});
-      const qVec = Array.from(out.data as Float32Array);
+      const qVec = Array.from(out.data);
       const localeRows = (seedRows as SeedRow[]).filter((r) => r.locale === locale);
       const scoresByIntent = new Map<string, number>();
       for (const row of localeRows) {

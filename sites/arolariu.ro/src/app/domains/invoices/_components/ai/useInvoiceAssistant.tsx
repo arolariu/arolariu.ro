@@ -37,6 +37,7 @@ export type UseInvoiceAssistantReturn = Readonly<{
   submitQuestion: (question: string) => Promise<void>;
   enableLayer2: () => Promise<void>;
   resetConversation: () => void;
+  retryEmbeddingLoad: () => void;
 }>;
 
 export function useInvoiceAssistant(opts: UseInvoiceAssistantOptions): UseInvoiceAssistantReturn {
@@ -163,5 +164,13 @@ export function useInvoiceAssistant(opts: UseInvoiceAssistantOptions): UseInvoic
 
   const resetConversation = useCallback(() => dispatch({type: "resetConversation"}), []);
 
-  return {state, submitQuestion, enableLayer2, resetConversation};
+  const retryEmbeddingLoad = useCallback((): void => {
+    dispatch({type: "retryEmbeddingLoad"});
+    // Dispose the failed host. The lifecycle useEffect detects the disposed
+    // state on its next run and creates a fresh host, restarting the load.
+    void embedHost.dispose();
+    setEmbedHost(createEmbeddingHost());
+  }, [embedHost]);
+
+  return {state, submitQuestion, enableLayer2, resetConversation, retryEmbeddingLoad};
 }

@@ -32,7 +32,7 @@ export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element 
   const t = useTranslations();
   const locale = (useLocale() as AssistantLocale) ?? "en";
 
-  const {state, submitQuestion, enableLayer2, resetConversation} = useInvoiceAssistant({
+  const {state, submitQuestion, enableLayer2, resetConversation, retryEmbeddingLoad} = useInvoiceAssistant({
     locale,
     t: (key: string, params?: Record<string, unknown>) => t(key as never, params as never),
   });
@@ -89,7 +89,9 @@ export function AssistantPanel(_props?: AssistantPanelProps): React.JSX.Element 
       <Alert role="alert" variant="destructive">
         <AlertTitle>{t("InvoiceAssistant.states.embeddingFailed" as never)}</AlertTitle>
         <AlertDescription>
-          <Button onClick={resetConversation}>{t("InvoiceAssistant.actions.retry" as never)}</Button>
+          <Button onClick={retryEmbeddingLoad} data-testid="retry-embedding-load">
+            {t("InvoiceAssistant.actions.retry" as never)}
+          </Button>
         </AlertDescription>
       </Alert>
     );
