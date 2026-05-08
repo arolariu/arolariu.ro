@@ -27,7 +27,7 @@ Instructions are automatically loaded when you edit files matching their `applyT
 | `backend.instructions.md` | `**/*.cs, **/*.csproj` | DDD, The Standard |
 | `react.instructions.md` | `**/*.tsx, **/*.jsx` | React components, hooks |
 | `typescript.instructions.md` | `**/*.ts` | TypeScript strict mode |
-| `csharp.instructions.md` | `**/*.cs` | C# 13 patterns |
+| `csharp.instructions.md` | `**/*.cs` | C# patterns |
 | `components.instructions.md` | `packages/components/**` | Shared UI library |
 | `bicep.instructions.md` | `**/*.bicep` | Azure IaC |
 | `workflows.instructions.md` | `.github/workflows/*.yml` | GitHub Actions |

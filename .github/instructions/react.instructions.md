@@ -52,7 +52,7 @@ Core React patterns for the arolariu.ro monorepo. These guidelines apply to **al
 
 | Aspect | Standard |
 |--------|----------|
-| **React Version** | 19.2.4 |
+| **React Version** | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 | **Component Style** | Functional only (no classes) |
 | **Props** | Always `Readonly<Props>` |
 | **Return Type** | Explicit `React.JSX.Element` |
