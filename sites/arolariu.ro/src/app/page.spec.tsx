@@ -95,7 +95,7 @@ test.describe("Homepage @homepage", () => {
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({page}) => {
+    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({page}) => {
       await page.setViewportSize({width: 375, height: 667});
 
       await expect(page.locator("main")).toBeVisible();

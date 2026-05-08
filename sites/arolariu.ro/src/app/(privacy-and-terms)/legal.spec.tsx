@@ -125,7 +125,7 @@ test.describe("Legal Pages @legal", () => {
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
+    test(tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/privacy-policy/");
 
@@ -133,7 +133,7 @@ test.describe("Legal Pages @legal", () => {
       await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
-    test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
+    test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/terms-of-service/");
 

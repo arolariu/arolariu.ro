@@ -71,7 +71,7 @@ test.describe("Header Component Tests @header", () => {
   });
 
   test.describe("Header Responsive Behavior", () => {
-    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER, BROWSER_TIER_TAGS.CROSS_BROWSER), async () => {
+    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async () => {
       await header.setMobileViewport();
 
       // Mobile menu button should exist (even if not visible without interaction)
