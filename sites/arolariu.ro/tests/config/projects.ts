@@ -107,6 +107,8 @@ export interface CreateProjectOptions {
   readonly dependencies?: string[];
   /** Test directory */
   readonly testDir?: string;
+  /** Tag-based filter (Playwright `grep`) — runs only matching tests in this project */
+  readonly grep?: RegExp;
 }
 
 /**
@@ -143,6 +145,7 @@ export function createProject(name: string, preset: DevicePresetName, options?: 
     testIgnore: options?.testIgnore,
     testDir: options?.testDir,
     dependencies: options?.dependencies,
+    grep: options?.grep,
   };
 }
 
@@ -197,12 +200,22 @@ export function getProjectsForEnvironment(): PlaywrightTestProject[] {
       break;
 
     case "local-full":
-      // Full local testing: All major browsers + mobile
+      // Tiered cross-browser coverage:
+      // - Chromium runs the full suite.
+      // - Firefox + WebKit run only @cross-browser tests (browser-engine-dependent behavior).
+      // - Mobile iPhone runs only @responsive tests (small-viewport-specific).
+      // Projects run concurrently when fullyParallel is true, so wall-clock is gated by Chromium.
       projects = [
         createProject("chromium-desktop-e2e", "desktop-chrome"),
-        createProject("firefox-desktop-e2e", "desktop-firefox"),
-        createProject("webkit-desktop-e2e", "desktop-safari"),
-        createProject("mobile-iphone-e2e", "mobile-iphone-14"),
+        createProject("firefox-desktop-e2e", "desktop-firefox", {
+          grep: /@cross-browser/,
+        }),
+        createProject("webkit-desktop-e2e", "desktop-safari", {
+          grep: /@cross-browser/,
+        }),
+        createProject("mobile-iphone-e2e", "mobile-iphone-14", {
+          grep: /@responsive/,
+        }),
       ];
       break;
 
