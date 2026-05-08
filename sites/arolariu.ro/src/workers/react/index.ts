@@ -9,3 +9,5 @@
 import "../client-only";
 
 export {useWorker} from "./useWorker";
+export {useWorkerEvent} from "./useWorkerEvent";
+export {createWorkerHook} from "./createWorkerHook";

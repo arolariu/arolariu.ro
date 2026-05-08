@@ -92,6 +92,17 @@ export type WorkerHost<TApi> = Readonly<{
    * directly from a `useEffect` callback.
    */
   subscribe: (listener: (state: WorkerHostState) => void) => () => void;
+  /**
+   * Subscribe to the worker's `WorkerEvent` stream. Returns an unsubscribe
+   * function.
+   *
+   * **MUST contract:** Consumers MUST call the returned `unsubscribe` before
+   * the subscribing scope unmounts. Listener callbacks hold strong references
+   * to their captured closures; failing to unsubscribe leaks the closure for
+   * the lifetime of the host. The `useWorkerEvent` React hook wraps this
+   * helper and returns the unsubscribe directly from `useEffect`.
+   */
+  subscribeToEvents: (listener: (event: WorkerEvent) => void) => () => void;
   /** Capabilities sampled at host construction. */
   readonly capabilities: WorkerCapabilities;
   /** Tear down the current worker (if any) and boot a fresh one. */
@@ -157,6 +168,11 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
   // proxied through to the underlying lifecycle. This lets subscriptions
   // survive a `restart()` that re-creates the lifecycle instance.
   const hostListeners = new Set<(state: WorkerHostState) => void>();
+  // Event-listener registry. Mirrors `hostListeners` but for `WorkerEvent`s
+  // dispatched on the worker's event channel. Lives at host scope so the
+  // subscription survives `restart()` and a single fresh boot fans events
+  // back into the same listeners.
+  const eventListeners = new Set<(event: WorkerEvent) => void>();
   let lifecycleUnsubscribe: (() => void) | null = null;
 
   // I1: Track the active error/messageerror listeners so we can detach them on
@@ -338,6 +354,16 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     // is preserved.
     const forwardEvent = (ev: WorkerEvent): void => {
       opts.onEvent?.(ev);
+      // Fan out to host-scope `subscribeToEvents` listeners. Wrapped in a
+      // try/catch so a misbehaving listener can't poison sibling listeners
+      // or the telemetry bridge.
+      for (const listener of eventListeners) {
+        try {
+          listener(ev);
+        } catch {
+          // ignore listener errors
+        }
+      }
       bridge.ingestEvent(ev);
     };
 
@@ -433,6 +459,12 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       hostListeners.add(listener);
       return () => {
         hostListeners.delete(listener);
+      };
+    },
+    subscribeToEvents(listener) {
+      eventListeners.add(listener);
+      return () => {
+        eventListeners.delete(listener);
       };
     },
     capabilities,
