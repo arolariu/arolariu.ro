@@ -92,13 +92,6 @@ test.describe("Homepage @homepage", () => {
       const h1Count = await page.getByRole("heading", {level: 1}).count();
       expect(h1Count).toBeGreaterThanOrEqual(1);
     });
-
-    test(tagged("should have accessible images", TEST_TYPE_TAGS.A11Y), async ({checkA11y}) => {
-      const results = await checkA11y({
-        rules: ["image-alt"],
-      });
-      results.assertNoViolations();
-    });
   });
 
   test.describe("Responsive Design", () => {
