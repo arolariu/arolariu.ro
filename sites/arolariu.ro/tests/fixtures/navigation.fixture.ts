@@ -1,6 +1,9 @@
 /**
- * @fileoverview Navigation fixtures with retry logic and warmup capabilities.
- * Handles Next.js on-demand compilation issues gracefully.
+ * @fileoverview Navigation fixtures for Playwright E2E tests.
+ * Provides `safeNavigate`, `navigateAndAssert`, and `checkUrl` helpers that wrap
+ * `page.goto` with structured result reporting. Tests run as a single attempt
+ * — retries previously existed only to mask dev-mode 500s and slow on-demand
+ * compilation, which the production-build web server eliminates.
  * @module tests/fixtures/navigation
  */
 
@@ -14,18 +17,12 @@ const log = loggers.navigation;
 /* eslint-disable no-magic-numbers, unicorn/numeric-separators-style -- Test utilities use explicit numeric values */
 
 /**
- * Navigation options with retry configuration.
+ * Navigation options.
  */
 export interface NavigateOptions {
-  /** Maximum number of retry attempts (default: 3) */
-  maxAttempts?: number;
-  /** Initial delay in ms before retrying (default: 1000) */
-  initialDelay?: number;
-  /** Maximum total wait time in ms (default: 30000) */
-  maxTotalWait?: number;
   /** Wait until strategy (default: "domcontentloaded") */
   waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
-  /** Timeout per navigation attempt in ms (default: 15000) */
+  /** Timeout for the navigation in ms (default: 30000 — generous for dev-mode cold compile) */
   navigationTimeout?: number;
 }
 
@@ -39,7 +36,7 @@ export interface NavigationResult {
   status: number | null;
   /** Whether the navigation was successful (status 200) */
   success: boolean;
-  /** Number of attempts made */
+  /** Always 1 — kept for back-compat with callers that logged retry counts */
   attempts: number;
   /** Error message if navigation failed */
   error?: string;
@@ -58,9 +55,6 @@ const HTTP_OK = 200;
  * complete in <1s so the ceiling is irrelevant on that path.
  */
 export const NAVIGATION_DEFAULTS = {
-  maxAttempts: 1,
-  initialDelay: 0,
-  maxTotalWait: 0,
   waitUntil: "domcontentloaded" as const,
   navigationTimeout: 30000,
 } as const;
@@ -124,8 +118,7 @@ export async function navigateWithRetry(
  */
 export interface NavigationFixtures {
   /**
-   * Navigate to a URL with automatic retry logic.
-   * Handles Next.js on-demand compilation gracefully.
+   * Navigate to a URL and report a structured `NavigationResult`.
    */
   safeNavigate: (url: string, options?: NavigateOptions) => Promise<NavigationResult>;
 
@@ -142,33 +135,21 @@ export interface NavigationFixtures {
   checkUrl: (url: string, options?: NavigateOptions) => Promise<NavigationResult>;
 
   /**
-   * Pre-warm routes by navigating to them.
-   * Useful in beforeAll hooks.
-   */
-  warmupRoutes: (routes: string[]) => Promise<void>;
-
-  /**
-   * Current navigation options based on environment.
+   * Default navigation options.
    */
   navigationOptions: NavigateOptions;
 }
 
 /**
- * Navigation test fixture with retry logic.
+ * Navigation test fixture.
  */
 export const navigationTest = baseTest.extend<NavigationFixtures>({
-  /**
-   * Safe navigation with retry.
-   */
   safeNavigate: async ({page}, use) => {
     await use(async (url: string, options?: NavigateOptions) => {
       return navigateWithRetry(page, url, options);
     });
   },
 
-  /**
-   * Navigate and assert success.
-   */
   navigateAndAssert: async ({page}, use) => {
     await use(async (url: string, options?: NavigateOptions) => {
       const result = await navigateWithRetry(page, url, options);
@@ -179,9 +160,6 @@ export const navigationTest = baseTest.extend<NavigationFixtures>({
     });
   },
 
-  /**
-   * Check URL accessibility in new page.
-   */
   checkUrl: async ({context}, use) => {
     await use(async (url: string, options?: NavigateOptions) => {
       const newPage = await context.newPage();
@@ -193,39 +171,9 @@ export const navigationTest = baseTest.extend<NavigationFixtures>({
     });
   },
 
-  /**
-   * Warmup routes for faster test execution.
-   */
-  warmupRoutes: async ({page}, use) => {
-    await use(async (routes: string[]) => {
-      const warmupOptions: NavigateOptions = {
-        maxAttempts: 2,
-        initialDelay: 500,
-        maxTotalWait: 10000,
-        navigationTimeout: 10000,
-      };
-
-      for (const route of routes) {
-        try {
-          await navigateWithRetry(page, route, warmupOptions);
-        } catch {
-          // Ignore warmup failures
-        }
-      }
-    });
-  },
-
-  /**
-   * Environment-aware navigation options.
-   */
   navigationOptions: async ({}, use) => {
     await use(getDefaultNavigationOptions());
   },
 });
-
-/**
- * Routes commonly needing warmup.
- */
-export const WARMUP_ROUTES = ["/", "/about", "/domains", "/auth"];
 
 /* eslint-enable no-magic-numbers, unicorn/numeric-separators-style */
