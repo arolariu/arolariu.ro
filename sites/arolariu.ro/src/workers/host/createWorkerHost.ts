@@ -19,8 +19,7 @@
  * AbortSignal) is deferred — see the README "Known limitations" section.
  */
 
-import * as Comlink from "comlink";
-import {type Remote} from "comlink";
+import {releaseProxy, wrap, type Remote} from "comlink";
 
 import {createBootHandshake, type BootHandshake} from "./bootHandshake";
 import {buildCallProxy} from "./buildCallProxy";
@@ -243,8 +242,8 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
     // backstop and we don't want a hung worker to block teardown.
     if ((mode === "dispose" || mode === "lazy-reboot") && proxy !== null) {
       try {
-        const releaseable = proxy as unknown as {[Comlink.releaseProxy]?: () => void};
-        releaseable[Comlink.releaseProxy]?.();
+        const releaseable = proxy as unknown as {[releaseProxy]?: () => void};
+        releaseable[releaseProxy]?.();
       } catch {
         // Ignore: the proxy may already be wedged; terminate() will free it.
       }
@@ -419,7 +418,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): Wor
       throw err;
     }
 
-    proxy = Comlink.wrap<TApi>(handshake.parentRpcPort);
+    proxy = wrap<TApi>(handshake.parentRpcPort);
     lifecycle.bootComplete();
   }
 
