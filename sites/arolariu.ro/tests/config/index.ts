@@ -5,6 +5,8 @@
  */
 
 // Environment utilities
+import {isCI} from "./environment";
+
 export {
   getBaseURL,
   getEnvironment,
@@ -45,12 +47,18 @@ export {
 } from "./reporters";
 
 /**
- * Web server configuration for local development.
+ * Web server configuration.
+ * - CI and `E2E_USE_PROD=true` use a production build (`next build && next start`),
+ *   which eliminates on-demand compilation and ~3-5x navigation latency.
+ * - Local default stays on `next dev` so developers keep HMR while iterating.
  */
 export const WEB_SERVER_CONFIG = {
-  command: "npx next dev --experimental-https",
+  command:
+    isCI() || process.env["E2E_USE_PROD"] === "true"
+      ? "npm run build && npx next start --experimental-https -p 3000"
+      : "npx next dev --experimental-https",
   url: "https://localhost:3000",
-  timeout: 300_000, // 5 minutes
+  timeout: 120_000, // 2 min — prod build starts in <30s; dev compile lag was the original justification for 5 min
   ignoreHTTPSErrors: true,
 } as const;
 
