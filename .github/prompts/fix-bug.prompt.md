@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: 'Systematic debugging workflow for reproducing, diagnosing, and fixing bugs'
+lastReviewed: 2026-05-08
 ---
 
 # Bug Fix Workflow

@@ -1,6 +1,7 @@
 ---
 name: react-component
 description: 'Creates React components following arolariu.ro patterns: Server Components by default, Island pattern for interactivity, strict TypeScript, Readonly props, accessibility-first, with Vitest tests achieving 90%+ coverage.'
+lastReviewed: 2026-05-08
 ---
 
 # React Component Scaffolding

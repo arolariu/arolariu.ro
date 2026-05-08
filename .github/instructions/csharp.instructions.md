@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'C# Coding Standards'
 description: 'C# coding standards and patterns for .NET development (versions in AGENTS.md > Versions)'
 applyTo: '**/*.cs'
+lastReviewed: 2026-05-08
 ---
 
 # C# Coding Standards

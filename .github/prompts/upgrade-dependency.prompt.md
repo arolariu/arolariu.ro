@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: 'Safe dependency upgrade workflow with compatibility checks and rollback strategy'
+lastReviewed: 2026-05-08
 ---
 
 # Dependency Upgrade Workflow

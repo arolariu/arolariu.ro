@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'Backend Architecture'
 description: 'DDD and .NET architecture guidelines following The Standard pattern'
 applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/appsettings.json'
+lastReviewed: 2026-05-08
 ---
 
 # Backend Architecture Guidelines

@@ -4,6 +4,7 @@ description: 'Scaffolds a complete API endpoint following The Standard architect
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
+lastReviewed: 2026-05-08
 ---
 
 # API Endpoint Generator

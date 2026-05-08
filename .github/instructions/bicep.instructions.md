@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'Azure Bicep IaC'
 description: 'Infrastructure as Code (IaC) with Bicep DSL - Best Practices and Guidelines'
 applyTo: '**/*.bicep'
+lastReviewed: 2026-05-08
 ---
 
 # Azure Bicep Infrastructure Guidelines

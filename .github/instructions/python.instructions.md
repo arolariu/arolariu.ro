@@ -4,6 +4,7 @@ lastUpdated: "2026-03-12"
 name: 'Python Standards'
 description: 'Python development guidelines for exp.arolariu.ro FastAPI service'
 applyTo: 'sites/exp.arolariu.ro/**/*.py'
+lastReviewed: 2026-05-08
 ---
 
 # Python Development Guidelines (exp.arolariu.ro)

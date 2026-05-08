@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'GitHub Actions Workflows'
 applyTo: '.github/workflows/*.yml'
 description: 'GitHub Actions workflow development guidelines for the arolariu.ro monorepo. Covers workflow patterns, composite actions, caching strategy, OIDC authentication, and deployment patterns.'
+lastReviewed: 2026-05-08
 ---
 
 # GitHub Actions Workflow Development Guidelines

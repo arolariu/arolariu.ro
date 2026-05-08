@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'TypeScript Standards'
 description: 'Guidelines for TypeScript development targeting ES2022 output (TypeScript version in AGENTS.md > Versions)'
 applyTo: '**/*.ts'
+lastReviewed: 2026-05-08
 ---
 
 # TypeScript Development Guidelines

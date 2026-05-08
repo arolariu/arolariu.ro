@@ -13,6 +13,7 @@ handoffs:
     agent: "code-reviewer"
     prompt: "Review the backend changes I just made for architecture and quality."
     send: false
+lastReviewed: 2026-05-08
 ---
 
 You are a senior-principal-level backend engineer for the arolariu.ro monorepo.

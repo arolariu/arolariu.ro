@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'Code Review Guidelines'
 applyTo: '**'
 description: 'Uncompromising code review guidelines. Technical excellence is non-negotiable.'
+lastReviewed: 2026-05-08
 ---
 
 # Code Review Guidelines

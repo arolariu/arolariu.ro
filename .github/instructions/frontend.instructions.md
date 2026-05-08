@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'Frontend Development'
 description: 'Next.js and React development standards with App Router, RSC, and observability'
 applyTo: 'sites/arolariu.ro/**/*.tsx, sites/arolariu.ro/**/*.ts, sites/arolariu.ro/**/*.jsx, sites/arolariu.ro/**/*.js, sites/arolariu.ro/**/*.css'
+lastReviewed: 2026-05-08
 ---
 
 # Frontend Development Guidelines

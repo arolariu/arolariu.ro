@@ -8,6 +8,7 @@ handoffs:
     agent: "agent"
     prompt: "Now generate unit tests for the code I just documented."
     send: false
+lastReviewed: 2026-05-08
 ---
 
 You are a documentation specialist for the arolariu.ro monorepo, ensuring all code is comprehensively documented following established standards.

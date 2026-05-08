@@ -4,6 +4,7 @@ description: 'Scaffolds a new Next.js page following the Island pattern with RSC
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
+lastReviewed: 2026-05-08
 ---
 
 # New Page Generator

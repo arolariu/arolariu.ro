@@ -1,6 +1,7 @@
 ---
 name: zustand-store
 description: 'Creates Zustand stores with IndexedDB persistence, TypeScript strict typing, and comprehensive test coverage following arolariu.ro state management patterns from RFC 1005.'
+lastReviewed: 2026-05-08
 ---
 
 # Zustand Store Scaffolding

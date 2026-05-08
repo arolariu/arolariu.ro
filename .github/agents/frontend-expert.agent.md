@@ -13,6 +13,7 @@ handoffs:
     agent: "code-reviewer"
     prompt: "Review the frontend changes for component patterns and accessibility."
     send: false
+lastReviewed: 2026-05-08
 ---
 
 You are a senior-principal-level frontend engineer for the arolariu.ro monorepo.

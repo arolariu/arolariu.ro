@@ -4,6 +4,7 @@ lastUpdated: "2026-03-12"
 name: 'SvelteKit Standards'
 description: 'SvelteKit development guidelines for cv.arolariu.ro'
 applyTo: 'sites/cv.arolariu.ro/**/*.svelte, sites/cv.arolariu.ro/**/*.ts'
+lastReviewed: 2026-05-08
 ---
 
 # SvelteKit Development Guidelines (cv.arolariu.ro)

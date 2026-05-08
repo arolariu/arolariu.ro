@@ -4,6 +4,7 @@ description: 'Generates comprehensive unit tests for TypeScript/React (Vitest) a
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
+lastReviewed: 2026-05-08
 ---
 
 # Unit Test Generator
