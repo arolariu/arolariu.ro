@@ -149,13 +149,12 @@ Protocols:
 
 ## MCP Servers
 
-The `.mcp.json` configures 8 MCP servers for enhanced AI capabilities:
+The `.mcp.json` configures 7 MCP servers for enhanced AI capabilities:
 
 | Server | Package | Capability |
 |--------|---------|-----------|
 | `sequential-thinking` | `@modelcontextprotocol/server-sequential-thinking` | Multi-step reasoning and planning |
 | `playwright` | `@playwright/mcp` | Browser automation for E2E testing |
-| `eslint` | `@eslint/mcp` | Real-time linting feedback |
 | `memory` | `@modelcontextprotocol/server-memory` | Persistent knowledge graph (→ `.github/memory/memory.json`) |
 | `github` | `github-mcp` | GitHub PRs, issues, actions, code search |
 | `context7` | `@upstash/context7-mcp` | Live library/framework documentation (say "use context7") |
