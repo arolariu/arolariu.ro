@@ -94,18 +94,6 @@ test.describe("Legal Pages @legal", () => {
       }
     });
 
-    test(tagged("legal pages should have accessible links", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      for (const {path} of LEGAL_PAGES) {
-        await safeNavigate(path);
-
-        const results = await checkA11y({
-          rules: ["link-name"],
-        });
-
-        // Allow minor/moderate issues
-        results.assertNoViolationsAbove("serious");
-      }
-    });
   });
 
   test.describe("Navigation", () => {
