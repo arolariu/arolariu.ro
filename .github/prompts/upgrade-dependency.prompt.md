@@ -11,7 +11,7 @@ Safely upgrade npm or NuGet dependencies with compatibility validation.
 
 1. **Check current version**: `npm ls <package>` or check Directory.Packages.props
 2. **Read changelog**: Check for breaking changes between current and target version
-3. **Check peer dependencies**: Ensure compatibility with React 19.2.4, Next.js 16.1.6, TypeScript 5.9.3
+3. **Check peer dependencies**: Ensure compatibility with the framework versions in [AGENTS.md > Versions](../../AGENTS.md#versions) (React, Next.js, TypeScript). Verify against `package.json` for minor version exactness.
 
 ## Steps
 
