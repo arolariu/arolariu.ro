@@ -20,6 +20,7 @@ import * as Comlink from "comlink";
 import type {WorkerCapabilities} from "../host/workerCapabilities";
 import {validateBootstrap, type WorkerBootstrap} from "../host/workerEnvelope";
 import {emitEvent} from "./emitEvent";
+import {installUnhandledRejectionBridge} from "./installUnhandledRejectionBridge";
 import {wrapHandlerError} from "./wrapHandlerError";
 
 /** Per-`expose()` runtime state, populated after bootstrap. */
@@ -93,6 +94,11 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
     // a no-op.
     runtime.capabilities = bootstrap.capabilities;
     activeRuntime = runtime;
+
+    // Forward unhandled promise rejections inside the worker as structured
+    // log events. No uninstall: the bridge's lifetime equals the worker's
+    // realm — `terminate()` destroys both.
+    installUnhandledRejectionBridge(scope, bootstrap.eventPort);
 
     // Wrap each method so thrown errors become serializable envelopes.
     const wrapped: Record<string, unknown> = {};
