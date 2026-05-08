@@ -49,148 +49,72 @@ export interface NavigationResult {
 
 /** HTTP status constants */
 const HTTP_OK = 200;
-const HTTP_SERVER_ERROR = 500;
 
 /**
- * Default navigation options for different environments.
+ * Default navigation options. Tests run against a production build, so a
+ * single navigation attempt is enough — retries previously existed to mask
+ * dev-mode compile failures.
  */
 export const NAVIGATION_DEFAULTS = {
-  ci: {
-    maxAttempts: 3,
-    initialDelay: 2000,
-    maxTotalWait: 25000,
-    waitUntil: "domcontentloaded" as const,
-    navigationTimeout: 15000,
-  },
-  local: {
-    maxAttempts: 3,
-    initialDelay: 500,
-    maxTotalWait: 15000,
-    waitUntil: "domcontentloaded" as const,
-    navigationTimeout: 15000,
-  },
+  maxAttempts: 1,
+  initialDelay: 0,
+  maxTotalWait: 0,
+  waitUntil: "domcontentloaded" as const,
+  navigationTimeout: 15000,
 } as const;
 
 /**
- * Get default navigation options based on environment.
+ * Get default navigation options. Kept as a function for back-compat with
+ * callers that expected env-aware defaults.
  */
 export function getDefaultNavigationOptions(): NavigateOptions {
-  return process.env["CI"] ? NAVIGATION_DEFAULTS.ci : NAVIGATION_DEFAULTS.local;
+  return NAVIGATION_DEFAULTS;
 }
 
 /**
- * Check if a status code indicates a server error.
+ * Navigate to a URL once and report the outcome.
+ * No retries — a 500 from a static production page is a real bug.
  */
-function isServerError(status: number | undefined): boolean {
-  return typeof status === "number" && status >= HTTP_SERVER_ERROR;
-}
-
-/**
- * Safe wait that handles page closure.
- */
-async function safeWait(page: Page, delay: number): Promise<boolean> {
-  try {
-    await page.waitForTimeout(delay);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Navigate to a URL with automatic retry for server warmup issues.
- * Uses linear backoff to stay within test timeout limits.
- */
-export async function navigateWithRetry(page: Page, url: string, options: NavigateOptions = {}): Promise<NavigationResult> {
-  const defaults = getDefaultNavigationOptions();
-  const {
-    maxAttempts = defaults.maxAttempts ?? 3,
-    initialDelay = defaults.initialDelay ?? 1000,
-    maxTotalWait = defaults.maxTotalWait ?? 30000,
-    waitUntil = defaults.waitUntil ?? "domcontentloaded",
-    navigationTimeout = defaults.navigationTimeout ?? 15000,
-  } = options;
+export async function navigateWithRetry(
+  page: Page,
+  url: string,
+  options: NavigateOptions = {},
+): Promise<NavigationResult> {
+  const {waitUntil = NAVIGATION_DEFAULTS.waitUntil, navigationTimeout = NAVIGATION_DEFAULTS.navigationTimeout} = options;
 
   const startTime = performance.now();
-  log.debug(`Navigating to: ${url}`, {maxAttempts, waitUntil, navigationTimeout});
+  log.debug(`Navigating to: ${url}`, {waitUntil, navigationTimeout});
 
-  let totalWaitTime = 0;
-  let lastError: Error | undefined;
-  let lastResponse: Response | null = null;
-  let attempts = 0;
+  try {
+    const response = await page.goto(url, {waitUntil, timeout: navigationTimeout});
+    const status = response?.status() ?? null;
+    const success = status === HTTP_OK;
+    const duration = performance.now() - startTime;
 
-  for (let attempt = 0; attempt < maxAttempts && totalWaitTime < maxTotalWait; attempt++) {
-    attempts++;
-    log.debug(`Attempt ${attempts}/${maxAttempts} for ${url}`);
+    log.debug(`Navigation completed: ${url}`, {status, success, durationMs: duration.toFixed(2)});
 
-    try {
-      const response = await page.goto(url, {waitUntil, timeout: navigationTimeout});
-      lastResponse = response;
+    return {
+      response,
+      status,
+      success,
+      attempts: 1,
+      url,
+      ...(success ? {} : {error: `Received status ${status}`}),
+    };
+  } catch (error) {
+    const err = error as Error;
+    const duration = performance.now() - startTime;
+    log.error(`Navigation failed: ${url}`, {durationMs: duration.toFixed(2), error: err.message});
 
-      if (response) {
-        const status = response.status();
-
-        // Success - return immediately
-        if (status === HTTP_OK) {
-          const duration = performance.now() - startTime;
-          log.debug(`✅ Navigation successful: ${url}`, {status, attempts, durationMs: duration.toFixed(2)});
-          return {response, status, success: true, attempts, url};
-        }
-
-        // Server error (5xx) - retry with backoff
-        if (isServerError(status)) {
-          log.warn(`Server error ${status} for ${url}, will retry`, {attempt: attempts, maxAttempts});
-          const delay = Math.min(initialDelay * (attempt + 1), maxTotalWait - totalWaitTime);
-          if (delay > 0 && attempt < maxAttempts - 1) {
-            log.debug(`Waiting ${delay}ms before retry`);
-            const waited = await safeWait(page, delay);
-            if (!waited) break;
-            totalWaitTime += delay;
-            continue;
-          }
-        }
-
-        // Client error (4xx) or redirect - return as-is
-        const duration = performance.now() - startTime;
-        log.debug(`Navigation completed with status ${status}: ${url}`, {attempts, durationMs: duration.toFixed(2)});
-        return {
-          response,
-          status,
-          success: false,
-          attempts,
-          url,
-          error: `Received status ${status}`,
-        };
-      }
-    } catch (error) {
-      lastError = error as Error;
-      log.warn(`Navigation error for ${url}: ${lastError.message}`, {attempt: attempts});
-      const delay = Math.min(initialDelay * (attempt + 1), maxTotalWait - totalWaitTime);
-      if (delay > 0 && attempt < maxAttempts - 1) {
-        log.debug(`Waiting ${delay}ms before retry after error`);
-        const waited = await safeWait(page, delay);
-        if (!waited) break;
-        totalWaitTime += delay;
-      }
-    }
+    return {
+      response: null,
+      status: null,
+      success: false,
+      attempts: 1,
+      url,
+      error: err.message,
+    };
   }
-
-  const duration = performance.now() - startTime;
-  log.error(`❌ Navigation failed: ${url}`, {
-    attempts,
-    totalWaitTime,
-    durationMs: duration.toFixed(2),
-    error: lastError?.message,
-  });
-
-  return {
-    response: lastResponse,
-    status: lastResponse?.status() ?? null,
-    success: false,
-    attempts,
-    url,
-    error: lastError?.message ?? "Navigation failed after all attempts",
-  };
 }
 
 /**
