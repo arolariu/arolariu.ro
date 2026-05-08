@@ -10,12 +10,18 @@ import {chromium, type FullConfig} from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import {isProdBuild} from "./config/environment";
+
 /** Storage state file path for sharing auth state across tests */
 export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
 
 /**
  * Writes the EULA-accepted cookie so tests bypass the consent dialog.
  * Runs once before the suite, in a single short-lived browser context.
+ *
+ * The cookie's `secure` flag tracks the test server's scheme: prod build
+ * runs over HTTP (cookie must be non-secure to apply), dev runs over HTTPS
+ * via `next dev --experimental-https` (cookie can stay secure).
  */
 export default async function globalSetup(_config: FullConfig): Promise<void> {
   const browser = await chromium.launch();
@@ -28,7 +34,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       domain: "localhost",
       path: "/",
       httpOnly: false,
-      secure: true,
+      secure: !isProdBuild(),
       sameSite: "Lax",
     },
   ]);

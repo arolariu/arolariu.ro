@@ -5,7 +5,7 @@
  */
 
 // Environment utilities
-import {isCI} from "./environment";
+import {isProdBuild} from "./environment";
 
 export {
   getBaseURL,
@@ -48,17 +48,20 @@ export {
 
 /**
  * Web server configuration.
- * - CI and `E2E_USE_PROD=true` use a production build (`next build && next start`),
- *   which eliminates on-demand compilation and ~3-5x navigation latency.
- * - Local default stays on `next dev` so developers keep HMR while iterating.
+ * - CI and `E2E_USE_PROD=true` use a production build then run the standalone
+ *   bundle (`node .next/standalone/sites/arolariu.ro/server.js`). The project
+ *   uses `output: "standalone"` for Docker, so `next start` is a no-op — we
+ *   invoke the bundled runner directly. Plain HTTP because the standalone
+ *   server doesn't auto-generate certs.
+ * - Local default stays on `next dev --experimental-https` so developers keep
+ *   HMR + auto-generated HTTPS while iterating.
  */
 export const WEB_SERVER_CONFIG = {
-  command:
-    isCI() || process.env["E2E_USE_PROD"] === "true"
-      ? "npm run build && npx next start --experimental-https -p 3000"
-      : "npx next dev --experimental-https",
-  url: "https://localhost:3000",
-  timeout: 120_000, // 2 min — prod build starts in <30s; dev compile lag was the original justification for 5 min
+  command: isProdBuild()
+    ? "npm run build && node scripts/prepareStandalone.ts && cross-env PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/sites/arolariu.ro/server.js"
+    : "npx next dev --experimental-https",
+  url: isProdBuild() ? "http://localhost:3000" : "https://localhost:3000",
+  timeout: 240_000, // 4 min — accommodates `next build` (~30-90s) plus standalone startup
   ignoreHTTPSErrors: true,
 } as const;
 

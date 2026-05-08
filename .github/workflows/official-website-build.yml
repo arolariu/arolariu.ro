@@ -197,6 +197,9 @@ jobs:
           echo "| Framework | Playwright |" >> $GITHUB_STEP_SUMMARY
         env: # We will use local assets for the tests
           USE_CDN: "false"
+          # Run Playwright against `next build && next start` instead of `next dev`.
+          # This also disables `output: "standalone"` in next.config.ts (incompatible with next start).
+          E2E_USE_PROD: "true"
 
       - name: 📤 Upload Test Reports
         if: always()
