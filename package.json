@@ -156,6 +156,7 @@
     "@vitest/coverage-v8": "4.1.5",
     "@vitest/ui": "4.1.5",
     "clsx": "2.1.1",
+    "comlink": "4.4.2",
     "cross-env": "10.1.0",
     "cssnano": "7.1.7",
     "dexie": "4.4.2",
