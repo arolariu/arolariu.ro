@@ -51,16 +51,18 @@ export interface NavigationResult {
 const HTTP_OK = 200;
 
 /**
- * Default navigation options. Tests run against a production build, so a
- * single navigation attempt is enough — retries previously existed to mask
- * dev-mode compile failures.
+ * Default navigation options. Tests run as a single attempt — retries previously
+ * existed to mask dev-mode 500s and slow on-demand compilation. The 30s navigation
+ * timeout is generous enough to absorb dev-mode cold-compile (Clerk routes, the
+ * global 404 page) without reintroducing retry logic; prod-build navigations
+ * complete in <1s so the ceiling is irrelevant on that path.
  */
 export const NAVIGATION_DEFAULTS = {
   maxAttempts: 1,
   initialDelay: 0,
   maxTotalWait: 0,
   waitUntil: "domcontentloaded" as const,
-  navigationTimeout: 15000,
+  navigationTimeout: 30000,
 } as const;
 
 /**
