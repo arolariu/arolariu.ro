@@ -28,7 +28,7 @@ import {raceWithSignal} from "./raceWithSignal";
 import {createTelemetryBridge} from "./telemetryBridge";
 import {getCapabilities, type WorkerCapabilities} from "./workerCapabilities";
 import {type WorkerEvent} from "./workerEnvelope";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerMessageError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
+import {WorkerCrashError, WorkerDeadError, WorkerMessageError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
 import {createWorkerLifecycle, type WorkerHostState} from "./workerLifecycle";
 
 /** Maximum time (ms) we wait for the worker to emit `{kind: "ready"}`. */
@@ -46,9 +46,14 @@ export {type Remote} from "comlink";
 
 /**
  * Options for {@link createWorkerHost}.
- * @typeParam TApi - The typed API the worker exposes.
+ *
+ * @remarks
+ * Not parameterized over the worker's API: none of the option fields depend
+ * on the API shape, and tying the generic here would be cosmetic. The API
+ * shape is bound at the {@link createWorkerHost} call site via its own
+ * `<TApi>` parameter.
  */
-export type CreateWorkerHostOptions<TApi> = Readonly<{
+export type CreateWorkerHostOptions = Readonly<{
   /** Stable name for telemetry/logs (e.g. `"ai"`). */
   name: string;
   /** Factory that constructs the underlying `Worker`. Lazy; called on first need. */
@@ -139,7 +144,7 @@ export type WorkerHost<TApi> = Readonly<{
  * }
  * ```
  */
-export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions<TApi>): WorkerHost<TApi> {
+export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHost<TApi> {
   const idleTimeoutMs = opts.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
   const defaultCallTimeoutMs = opts.defaultCallTimeoutMs ?? DEFAULT_CALL_TIMEOUT_MS;
   const capabilities = getCapabilities();

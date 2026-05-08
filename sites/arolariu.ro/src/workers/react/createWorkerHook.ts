@@ -43,7 +43,7 @@ import {useWorker} from "./useWorker";
  * @returns A zero-arg React hook that returns a live `WorkerHost`.
  */
 export function createWorkerHook<TApi>(
-  options: CreateWorkerHostOptions<TApi>,
+  options: CreateWorkerHostOptions,
 ): () => WorkerHost<TApi> {
   return function useFeatureWorker(): WorkerHost<TApi> {
     return useWorker(() => createWorkerHost<TApi>(options));

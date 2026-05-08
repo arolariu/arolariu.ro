@@ -15,18 +15,25 @@ import {WorkerError, WorkerTimeoutError} from "./workerErrors";
 
 const SILENT_LOGGER = {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}};
 
-function makeFixture(target: Record<string, (...args: unknown[]) => Promise<unknown>>) {
+// Constraint uses `(...args: never[]) => Promise<unknown>` (NOT `unknown[]`):
+// `never` is the bottom type, so via parameter contravariance any concrete
+// function signature satisfies it (a function that requires a `string` arg
+// is assignable to one that requires `never` because no value is `never`).
+// This lets callers pass `{echo: async (msg: string) => string}` and have
+// TS infer the precise literal type, so `proxy.echo` is dot-accessible
+// without tripping noPropertyAccessFromIndexSignature.
+function makeFixture<TApi extends Record<string, (...args: never[]) => Promise<unknown>>>(target: TApi) {
   const inFlight = createInFlightRegistry();
   const bridge = createTelemetryBridge("test", {logger: SILENT_LOGGER});
   return {
     inFlight,
     bridge,
-    proxy: buildCallProxy<typeof target>({
+    proxy: buildCallProxy<TApi>({
       inFlight,
       bridge,
       defaultCallTimeoutMs: 30_000,
       ensureReady: async () => {},
-      getTarget: () => target as unknown as Remote<typeof target>,
+      getTarget: () => target as unknown as Remote<TApi>,
       lifecycle: {beginCall: () => {}, endCall: () => {}},
     }),
   };
@@ -62,8 +69,11 @@ describe("buildCallProxy", () => {
   });
 
   it("rewraps a worker-side __workerError envelope as a WorkerError with .method", async () => {
+    // Explicit `Promise<unknown>` return type prevents TS from inferring the
+    // always-throwing body as `Promise<never>`, which would collapse the
+    // proxy's call expression to `never` (no `.catch`) under tsgo strictness.
     const {proxy} = makeFixture({
-      boom: async () => {
+      boom: async (): Promise<unknown> => {
         // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw {__workerError: true, name: "Error", message: "from-worker"};
       },
@@ -134,8 +144,11 @@ describe("buildCallProxy", () => {
   });
 
   it("rethrows plain Error from the target without WorkerError wrapping", async () => {
+    // See the matching note on the __workerError envelope test: explicit
+    // `Promise<unknown>` keeps the inferred return type from collapsing
+    // to `Promise<never>` and breaking `.catch` resolution under tsgo.
     const {proxy} = makeFixture({
-      boom: async () => {
+      boom: async (): Promise<unknown> => {
         throw new TypeError("kaboom");
       },
     });

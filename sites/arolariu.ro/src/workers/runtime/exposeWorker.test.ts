@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import {validateBootstrap, WORKER_PROTOCOL_VERSION} from "../host/workerEnvelope";
+import {WORKER_PROTOCOL_VERSION} from "../host/workerEnvelope";
 import {__resetForTesting, expose, getEventPort} from "./exposeWorker";
 
 /**
