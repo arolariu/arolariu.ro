@@ -9,10 +9,6 @@
       "command": "cmd",
       "args": ["/c", "npx", "-y", "@playwright/mcp@latest"]
     },
-    "eslint": {
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@eslint/mcp@latest"]
-    },
     "memory": {
       "command": "cmd",
       "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
