@@ -4,7 +4,14 @@ import {__resetForTesting, getEventPort} from "../runtime/exposeWorker";
 import {emitEvent} from "../runtime/emitEvent";
 import {createWorkerHost} from "./createWorkerHost";
 import {createMockWorker} from "./mockWorker";
-import {WorkerCrashError, WorkerDeadError, WorkerError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
+import {
+  WorkerCrashError,
+  WorkerDeadError,
+  WorkerError,
+  WorkerMessageError,
+  WorkerNotAvailableError,
+  WorkerTimeoutError,
+} from "./workerErrors";
 import {type WorkerHostState} from "./workerLifecycle";
 
 type GreetApi = {
@@ -135,6 +142,64 @@ describe("createWorkerHost", () => {
       await host.warmUp();
       mock.simulateCrash();
       await expect(host.api.greet("x")).rejects.toThrowError(WorkerDeadError);
+    });
+
+    it("transitions to 'dead' and rejects in-flight calls on a messageerror event", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "msg-err",
+        load: () => mock.worker,
+        defaultCallTimeoutMs: 0,
+      });
+      await host.warmUp();
+      const inflight = host.api.sleep(1_000_000);
+      mock.simulateMessageError();
+      await expect(inflight).rejects.toBeInstanceOf(WorkerMessageError);
+      expect(host.state).toBe("dead");
+      await host.dispose();
+    });
+
+    // Regression: a `messageerror` event arriving DURING the bootstrap
+    // handshake (before `ready` resolves) MUST reject the boot promise so
+    // `warmUp()` / `ensureReady()` callers don't hang. The host snapshots
+    // `currentBoot` and calls `rejectIfPending(err)` BEFORE `tearDownWorker`
+    // (which would otherwise null `currentBoot` and leave `ready` pending
+    // forever). Uses a stalling worker that captures the messageerror
+    // listener but never replies to bootstrap, so the boot promise is
+    // genuinely in-flight when we fire the event.
+    it("messageerror mid-bootstrap rejects warmUp() instead of hanging", async () => {
+      let capturedMessageErrorHandler: ((e: MessageEvent) => void) | null = null;
+      const stalling = {
+        postMessage: () => {
+          /* swallow bootstrap; never reply */
+        },
+        terminate: () => {
+          /* no-op */
+        },
+        addEventListener: ((type: string, handler: EventListenerOrEventListenerObject) => {
+          if (type === "messageerror") {
+            capturedMessageErrorHandler = handler as (e: MessageEvent) => void;
+          }
+        }) as Worker["addEventListener"],
+        removeEventListener: () => {
+          /* no-op */
+        },
+        dispatchEvent: () => true,
+        onmessage: null,
+        onmessageerror: null,
+        onerror: null,
+      } as unknown as Worker;
+      const host = createWorkerHost<GreetApi>({
+        name: "msg-err-mid-boot",
+        load: () => stalling,
+      });
+      const warmUpPromise = host.warmUp();
+      // Fire the captured listener synchronously — bootstrap is still
+      // in-flight because the stalling worker never replies with `ready`.
+      expect(capturedMessageErrorHandler).not.toBeNull();
+      capturedMessageErrorHandler!(new MessageEvent("messageerror", {data: null}));
+      await expect(warmUpPromise).rejects.toBeInstanceOf(WorkerMessageError);
+      expect(host.state).toBe("dead");
     });
   });
 
@@ -483,7 +548,12 @@ describe("createWorkerHost", () => {
       expect(out).toBe("done");
       // Now make a SECOND call that uses the signal so the abort listener
       // path is taken; the call still wins and the listener must be detached.
-      const out2 = await host.api.echo("done-with-signal", ac.signal);
+      // The echo API has only one declared parameter, but the host's call
+      // proxy treats an `AbortSignal` last-arg specially (TS doesn't see
+      // the proxy's expanded contract). Cast to surface the signal-aware
+      // overload.
+      const echoWithSignal = host.api.echo as unknown as (msg: string, signal: AbortSignal) => Promise<string>;
+      const out2 = await echoWithSignal("done-with-signal", ac.signal);
       expect(out2).toBe("done-with-signal");
       // The body-wins cleanup branch must have called removeEventListener.
       expect(removeSpy).toHaveBeenCalledWith("abort", expect.any(Function));
@@ -670,7 +740,13 @@ describe("createWorkerHost", () => {
       // Calling a non-existent method goes through the proxy interceptor and
       // rejects because Comlink wraps the call and the worker has no such handler.
       // We just verify it rejects (covers the call path through body / wrapCall).
-      await expect((host.api as unknown as Record<string, () => Promise<unknown>>)["nonExistentProp"]()).rejects.toThrow();
+      const proxyAsRecord = host.api as unknown as Record<string, () => Promise<unknown>>;
+      // noUncheckedIndexedAccess returns `T | undefined` for index reads;
+      // the call proxy synthesizes a callable for ANY string key so the
+      // function is always present in practice. Assert non-null to satisfy
+      // the type checker for this lazy-error contract test.
+      const nonExistent = proxyAsRecord["nonExistentProp"]!;
+      await expect(nonExistent()).rejects.toThrow();
     });
   });
 

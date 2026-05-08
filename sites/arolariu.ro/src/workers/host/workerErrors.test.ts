@@ -4,6 +4,7 @@ import {
   WorkerCrashError,
   WorkerDeadError,
   WorkerError,
+  WorkerMessageError,
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./workerErrors";
@@ -71,5 +72,18 @@ describe("WorkerNotAvailableError", () => {
   it("accepts a custom message", () => {
     const err = new WorkerNotAvailableError("not in this build");
     expect(err.message).toBe("not in this build");
+  });
+});
+
+describe("WorkerMessageError", () => {
+  it("uses 'WorkerMessageError' as its name", () => {
+    const e = new WorkerMessageError();
+    expect(e.name).toBe("WorkerMessageError");
+  });
+
+  it("accepts a custom message and an optional detail object", () => {
+    const e = new WorkerMessageError("decode failure", {origin: "rpc-port"});
+    expect(e.message).toBe("decode failure");
+    expect(e.detail).toEqual({origin: "rpc-port"});
   });
 });

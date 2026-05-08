@@ -17,39 +17,38 @@ src/app/domains/<feature-area>/_workers/
 ├── feature-x.api.ts            ← shared TypeScript types (no runtime code)
 ├── feature-x.implementation.ts ← the testable logic
 ├── feature-x.worker.ts         ← 2-line entry; not unit-tested
-└── useFeatureXWorker.ts        ← optional thin React hook
+└── useFeatureXWorker.ts        ← thin React hook (one line, via createWorkerHook)
 ```
 
 ```typescript
 // feature-x.api.ts
-export type FeatureXApi = {
-  doThing: (input: string) => Promise<number>;
-};
+export type FeatureXApi = {doThing: (input: string) => Promise<number>};
 
 // feature-x.implementation.ts
 export function createFeatureXImplementation(): FeatureXApi {
-  return {
-    doThing: async (input) => input.length,
-  };
+  return {doThing: async (input) => input.length};
 }
 
 // feature-x.worker.ts
 import {expose} from "@/workers/runtime";
 import {createFeatureXImplementation} from "./feature-x.implementation";
 expose(createFeatureXImplementation());
-```
 
-```typescript
-// inside the feature
-import {createWorkerHost} from "@/workers";
+// useFeatureXWorker.ts
+"use client";
+import {createWorkerHook} from "@/workers/react";
 import type {FeatureXApi} from "./feature-x.api";
 
-const host = createWorkerHost<FeatureXApi>({
+export const useFeatureXWorker = createWorkerHook<FeatureXApi>({
   name: "feature-x",
   load: () => new Worker(new URL("./feature-x.worker.ts", import.meta.url), {type: "module"}),
 });
+```
 
-const result = await host.api.doThing("hello");
+```tsx
+// inside the React tree
+const {api, state, capabilities} = useFeatureXWorker();
+const result = await api.doThing("hello");
 ```
 
 ## Rules
@@ -76,6 +75,10 @@ const result = await host.api.doThing("hello");
    when the signal is already aborted at call time AND when it aborts mid-flight.
    The signal is **not forwarded to the worker**; in-worker handlers run to
    completion. This is a documented limitation; see "Known limitations" below.
+
+6. **Use `transferable(value, transfers)` for transferable objects.** Do NOT
+   import `transfer` from `comlink` directly — the foundation owns the
+   wire-protocol layering.
 
 ## Lifecycle
 
@@ -179,6 +182,26 @@ useEffect(() => {
 }, [host]);
 ```
 
+## React layer
+
+Three building blocks live in `@/workers/react`:
+
+- **`useWorker(factory)`** — the primitive. Strict-Mode-safe (re-creates a
+  fresh host across React 19's mount/unmount/remount cycle). Returns the
+  host; `host.state` is reactive via `useSyncExternalStore`.
+- **`createWorkerHook(options)`** — a factory that turns host options into a
+  feature-specific hook (`useFooWorker`). Use this instead of calling
+  `useWorker` with an inline factory at every consumer. **MUST** be called
+  at module scope — calling inside a component body would produce a fresh
+  hook function on every render and violate the Rules of Hooks.
+- **`useWorkerEvent(host, listener)`** — subscribe to the worker's
+  side-channel `WorkerEvent` stream. The listener identity is captured via a
+  ref so the underlying subscription is not re-created on each render.
+
+The barrel imports `client-only`, so a Server Component that imports
+`@/workers` or `@/workers/react` fails the Next.js build with a clear
+message rather than at runtime.
+
 ## Playground
 
 A live developer playground is available **in development only**:
@@ -220,6 +243,14 @@ only reachable via the gated route.
 - **Comlink's `AsyncIterable` proxying is not officially documented.** Treat
   any cross-port iterable as accidental and prefer the dedicated `eventPort`
   for streaming worker → parent updates.
+
+- **`unhandledrejection` inside a worker is now bridged.** Rejections from
+  forgotten `await`s in handlers surface in the parent's logger as
+  `[worker:<name>] error` lines via the side channel.
+
+- **`messageerror` is now treated as a crash.** A non-cloneable value
+  crossing the boundary in either direction transitions the host to `dead`
+  and rejects in-flight calls with `WorkerMessageError`.
 
 ## Testing
 

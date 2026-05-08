@@ -76,3 +76,19 @@ export class WorkerNotAvailableError extends Error {
     this.name = "WorkerNotAvailableError";
   }
 }
+
+/**
+ * Thrown / surfaced when the worker fires a `messageerror` event — i.e., the
+ * structured-clone deserialization of a posted message failed (per WHATWG
+ * HTML §10.2.4). Treated as a crash signal by the host: in-flight calls are
+ * rejected and the host transitions to `dead`.
+ */
+export class WorkerMessageError extends Error {
+  public readonly detail?: Readonly<Record<string, unknown>>;
+
+  constructor(message = "Worker message failed to deserialize.", detail?: Readonly<Record<string, unknown>>) {
+    super(message);
+    this.name = "WorkerMessageError";
+    if (detail !== undefined) this.detail = detail;
+  }
+}

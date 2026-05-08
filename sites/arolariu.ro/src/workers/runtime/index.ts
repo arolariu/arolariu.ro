@@ -5,3 +5,4 @@
 
 export {expose, getBootstrapCapabilities, getEventPort} from "./exposeWorker";
 export {emitEvent} from "./emitEvent";
+export {installUnhandledRejectionBridge} from "./installUnhandledRejectionBridge";

@@ -17,8 +17,9 @@
  * - **Realm isolation:** closures share the host realm. Passing a
  *   non-cloneable value (e.g., a function) does NOT throw the way structured
  *   clone would in a real Worker.
- * - **`messageerror` event:** never fired by MockWorker. Tests that need
- *   this event must dispatch it manually via `errorHandler`.
+ * - **`messageerror` event:** dispatchable via `simulateMessageError()`.
+ *   Note that real workers may fire `messageerror` parallel to in-flight
+ *   calls (HTML §10.2.4); the mock fires it synchronously when called.
  * - **Boot latency:** synchronous. Real workers have ~1–10ms startup.
  * - **Parallel `terminate()`:** synchronous. Per WHATWG HTML §10.2.4,
  *   real `terminate()` queues a task; an `error` event can fire after
@@ -40,6 +41,8 @@ export type MockWorker = Readonly<{
   worker: Worker;
   /** Trigger an `error` event on the worker so the host sees an unexpected crash. */
   simulateCrash: () => void;
+  /** Trigger a `messageerror` event so the host sees a deserialization failure. */
+  simulateMessageError: () => void;
   /** Resolves the first time `terminate()` is called. */
   whenTerminated: Promise<void>;
 }>;
@@ -54,6 +57,7 @@ export function createMockWorker<TApi extends Record<string, unknown>>(
 ): MockWorker {
   let bootstrapHandler: ((event: MessageEvent) => void) | null = null;
   let errorHandler: ((event: ErrorEvent) => void) | null = null;
+  let messageErrorHandler: ((event: MessageEvent) => void) | null = null;
   let terminated = false;
   let resolveTerminated!: () => void;
   const whenTerminated = new Promise<void>((resolve) => {
@@ -93,9 +97,13 @@ export function createMockWorker<TApi extends Record<string, unknown>>(
       if (type === "error") {
         errorHandler = handler as (e: ErrorEvent) => void;
       }
+      if (type === "messageerror") {
+        messageErrorHandler = handler as (e: MessageEvent) => void;
+      }
     }) as Worker["addEventListener"],
     removeEventListener: ((type: string): void => {
       if (type === "error") errorHandler = null;
+      if (type === "messageerror") messageErrorHandler = null;
     }) as Worker["removeEventListener"],
     dispatchEvent: () => true,
     onmessage: null,
@@ -111,6 +119,16 @@ export function createMockWorker<TApi extends Record<string, unknown>>(
       errorHandler?.(event);
       terminated = true;
       resolveTerminated();
+    },
+    // SPEC: WHATWG HTML §10.2.4 — a real `messageerror` event does NOT
+    // auto-terminate the worker. Termination follows the host's response
+    // (which calls `worker.terminate()` via `tearDownWorker("crash")`).
+    // Hence, unlike `simulateCrash`, this does NOT set `terminated = true`
+    // or resolve `whenTerminated` — the asymmetry is intentional.
+    simulateMessageError: (): void => {
+      if (terminated) return;
+      const event = new MessageEvent("messageerror", {data: null});
+      messageErrorHandler?.(event);
     },
     whenTerminated,
   };

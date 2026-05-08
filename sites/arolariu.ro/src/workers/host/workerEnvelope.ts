@@ -76,28 +76,28 @@ export function validateBootstrap(message: unknown): message is WorkerBootstrap 
     return false;
   }
   const m = message as Record<string, unknown>;
-  if (m.kind !== "bootstrap") return false;
-  if (m.version !== WORKER_PROTOCOL_VERSION) return false;
+  if (m["kind"] !== "bootstrap") return false;
+  if (m["version"] !== WORKER_PROTOCOL_VERSION) return false;
 
   // Check for MessagePort by duck typing: require a callable postMessage method.
-  const isRpcPortObject = typeof m.rpcPort === "object" && m.rpcPort !== null;
+  const isRpcPortObject = typeof m["rpcPort"] === "object" && m["rpcPort"] !== null;
   if (!isRpcPortObject) return false;
-  const hasRpcPostMessage = typeof (m.rpcPort as {postMessage?: unknown}).postMessage === "function";
+  const hasRpcPostMessage = typeof (m["rpcPort"] as {postMessage?: unknown}).postMessage === "function";
   if (!hasRpcPostMessage) return false;
 
-  const isEventPortObject = typeof m.eventPort === "object" && m.eventPort !== null;
+  const isEventPortObject = typeof m["eventPort"] === "object" && m["eventPort"] !== null;
   if (!isEventPortObject) return false;
-  const hasEventPostMessage = typeof (m.eventPort as {postMessage?: unknown}).postMessage === "function";
+  const hasEventPostMessage = typeof (m["eventPort"] as {postMessage?: unknown}).postMessage === "function";
   if (!hasEventPostMessage) return false;
 
-  if (typeof m.capabilities !== "object" || m.capabilities === null) return false;
+  if (typeof m["capabilities"] !== "object" || m["capabilities"] === null) return false;
   // SECURITY: validate capabilities fields strictly so untrusted snapshots
   // can't leak into worker code via getBootstrapCapabilities().
-  const caps = m.capabilities as Record<string, unknown>;
-  if (typeof caps.crossOriginIsolated !== "boolean") return false;
-  if (typeof caps.hasWebGpu !== "boolean") return false;
+  const caps = m["capabilities"] as Record<string, unknown>;
+  if (typeof caps["crossOriginIsolated"] !== "boolean") return false;
+  if (typeof caps["hasWebGpu"] !== "boolean") return false;
   // Optional numeric fields: if present, must be a number.
-  if (caps.hardwareConcurrency !== undefined && typeof caps.hardwareConcurrency !== "number") return false;
-  if (caps.deviceMemory !== undefined && typeof caps.deviceMemory !== "number") return false;
+  if (caps["hardwareConcurrency"] !== undefined && typeof caps["hardwareConcurrency"] !== "number") return false;
+  if (caps["deviceMemory"] !== undefined && typeof caps["deviceMemory"] !== "number") return false;
   return true;
 }
