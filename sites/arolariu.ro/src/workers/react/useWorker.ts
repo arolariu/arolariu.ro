@@ -49,6 +49,11 @@ export function useWorker<TApi>(factory: () => WorkerHost<TApi>): WorkerHost<TAp
 
   useEffect(() => {
     if (host.state === "disposed") {
+      // Strict-Mode remount inherited a host that the previous cycle's
+      // cleanup already disposed. Swap in a fresh instance — the re-render
+      // triggered by setHost re-runs this effect with the new host, which
+      // installs the real unmount cleanup against it. Returning no cleanup
+      // here is correct: the disposed host has nothing left to release.
       setHost(factoryRef.current());
       return;
     }
@@ -58,14 +63,22 @@ export function useWorker<TApi>(factory: () => WorkerHost<TApi>): WorkerHost<TAp
   }, [host]);
 
   // useSyncExternalStore wires the host's state-change subscription into
-  // React's concurrent-rendering snapshot model.
-  const subscribe = useCallback((listener: () => void) => host.subscribe(() => listener()), [host]);
+  // React's concurrent-rendering snapshot model. We pass `listener` directly
+  // (no closure wrapper): TS function-arity coercion lets `() => void` slot
+  // into `host.subscribe`'s `(state) => void` parameter, and host.subscribe
+  // is already identity-stable across renders.
+  const subscribe = useCallback((listener: () => void) => host.subscribe(listener), [host]);
   const getSnapshot = useCallback(() => host.state, [host]);
-  // SSR snapshot: workers are client-only, but React 19 still demands a
-  // server snapshot for hydration. The host's static initial state is
-  // "idle" before any boot, which is safe to serialize.
+  // SSR snapshot: workers are client-only, but React still demands a server
+  // snapshot for hydration. The host's initial state is "idle" before any
+  // boot — safe to serialize and identical between server and client.
   const getServerSnapshot = useCallback(() => "idle" as const, []);
 
+  // Return value intentionally unused: consumers read live state via
+  // `host.state` (a getter that always reflects the current value). Calling
+  // useSyncExternalStore here is purely for its re-render side-effect when
+  // the host's state machine transitions. Exposing the snapshot separately
+  // would duplicate the source of truth and risk tearing.
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return host;
