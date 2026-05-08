@@ -98,9 +98,9 @@ export async function navigateWithRetry(
       ...(success ? {} : {error: `Received status ${status}`}),
     };
   } catch (error) {
-    const err = error as Error;
+    const message = error instanceof Error ? error.message : String(error);
     const duration = performance.now() - startTime;
-    log.error(`Navigation failed: ${url}`, {durationMs: duration.toFixed(2), error: err.message});
+    log.error(`Navigation failed: ${url}`, {durationMs: duration.toFixed(2), error: message});
 
     return {
       response: null,
@@ -108,7 +108,7 @@ export async function navigateWithRetry(
       success: false,
       attempts: 1,
       url,
-      error: err.message,
+      error: message,
     };
   }
 }

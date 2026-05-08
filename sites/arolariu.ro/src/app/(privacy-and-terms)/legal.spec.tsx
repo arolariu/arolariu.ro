@@ -84,14 +84,9 @@ test.describe("Legal Pages @legal", () => {
       });
     }
 
-    for (const {path, name} of LEGAL_PAGES) {
-      test(tagged(`${name} has heading elements`, TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
-        await safeNavigate(path);
-        const headingCount = await page.getByRole("heading").count();
-        expect(headingCount).toBeGreaterThanOrEqual(0);
-      });
-    }
-
+    // Heading-element coverage is provided by full-site.spec.tsx (Heading Hierarchy)
+    // for `/privacy-policy/` and `/terms-of-service/`. Acknowledgements is intentionally
+    // not asserted here — its rendered structure relies on styled non-semantic elements.
   });
 
   test.describe("Navigation", () => {
