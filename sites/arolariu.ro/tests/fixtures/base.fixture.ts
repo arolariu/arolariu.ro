@@ -144,12 +144,6 @@ export const baseTest = base.extend<BaseFixtures>({
   waitForPageReady: async ({page}, use) => {
     await use(async () => {
       await page.waitForLoadState("domcontentloaded");
-      // Wait for network to be mostly idle
-      await page.waitForLoadState("networkidle").catch(() => {
-        // Network idle may timeout on pages with continuous activity
-      });
-      // Small delay for any final renders
-      await page.waitForTimeout(100);
     });
   },
 
