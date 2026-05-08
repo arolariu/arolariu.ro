@@ -84,15 +84,13 @@ test.describe("Legal Pages @legal", () => {
       });
     }
 
-    test(tagged("legal pages should have heading elements", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
-      for (const {path} of LEGAL_PAGES) {
+    for (const {path, name} of LEGAL_PAGES) {
+      test(tagged(`${name} has heading elements`, TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
         await safeNavigate(path);
-
-        // Check that there's at least one heading element
         const headingCount = await page.getByRole("heading").count();
-        expect(headingCount).toBeGreaterThanOrEqual(0); // May not have headings, that's ok
-      }
-    });
+        expect(headingCount).toBeGreaterThanOrEqual(0);
+      });
+    }
 
   });
 
@@ -143,14 +141,13 @@ test.describe("Legal Pages @legal", () => {
       await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
-    test(tagged("legal pages should work on desktop", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 1920, height: 1080});
-
-      for (const {path} of LEGAL_PAGES) {
+    for (const {path, name} of LEGAL_PAGES) {
+      test(tagged(`${name} should work on desktop viewport`, TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 1920, height: 1080});
         await safeNavigate(path);
         await expect(page.locator("main")).toBeVisible();
-      }
-    });
+      });
+    }
   });
 
   test.describe("Print Styles", () => {

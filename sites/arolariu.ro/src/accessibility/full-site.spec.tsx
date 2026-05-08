@@ -113,69 +113,52 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
     test(tagged("Homepage has proper landmarks", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
       await safeNavigate("/");
 
-      // Check for main landmark (at least one)
-      const mainCount = await page.locator("main").count();
-      expect(mainCount).toBeGreaterThanOrEqual(1);
-
-      // Check for header
-      const headerCount = await page.locator("header").count();
-      expect(headerCount).toBeGreaterThanOrEqual(1);
-
-      // Check for footer
-      const footerCount = await page.locator("footer").count();
-      expect(footerCount).toBeGreaterThanOrEqual(1);
-
-      // Check for navigation
-      const navCount = await page.locator("nav").count();
-      expect(navCount).toBeGreaterThanOrEqual(1);
+      expect(await page.locator("main").count()).toBeGreaterThanOrEqual(1);
+      expect(await page.locator("header").count()).toBeGreaterThanOrEqual(1);
+      expect(await page.locator("footer").count()).toBeGreaterThanOrEqual(1);
+      expect(await page.locator("nav").count()).toBeGreaterThanOrEqual(1);
     });
 
-    test(tagged("All pages have main region", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
-      for (const {path} of CRITICAL_PAGES) {
+    for (const {path, name} of CRITICAL_PAGES) {
+      test(tagged(`${name} has main region`, TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
         await safeNavigate(path);
-
-        const mainCount = await page.locator("main").count();
-        expect(mainCount, `${path} should have at least one main`).toBeGreaterThanOrEqual(1);
-      }
-    });
+        expect(await page.locator("main").count(), `${path} should have at least one main`).toBeGreaterThanOrEqual(1);
+      });
+    }
   });
 
   test.describe("Heading Hierarchy", () => {
     test(tagged("Homepage has heading structure", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
       await safeNavigate("/");
-
-      // Should have at least one heading (h1-h6)
-      const headingCount = await page.getByRole("heading").count();
-      expect(headingCount).toBeGreaterThanOrEqual(1);
+      expect(await page.getByRole("heading").count()).toBeGreaterThanOrEqual(1);
     });
 
-    test(tagged("Pages have h1 element", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
-      const pagesToCheck = ["/about/", "/privacy-policy/", "/terms-of-service/"];
+    const headingPages = [
+      {path: "/about/", name: "About"},
+      {path: "/privacy-policy/", name: "Privacy Policy"},
+      {path: "/terms-of-service/", name: "Terms of Service"},
+    ] as const;
 
-      for (const path of pagesToCheck) {
+    for (const {path, name} of headingPages) {
+      test(tagged(`${name} has heading elements`, TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
         await safeNavigate(path);
-
-        // Pages should have at least one heading
-        const headingCount = await page.getByRole("heading").count();
-        expect(headingCount, `${path} should have headings`).toBeGreaterThanOrEqual(1);
-      }
-    });
+        expect(await page.getByRole("heading").count(), `${path} should have headings`).toBeGreaterThanOrEqual(1);
+      });
+    }
   });
 
   test.describe("Document Structure", () => {
-    test(tagged("Pages have proper document title", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
-      for (const {path, name} of CRITICAL_PAGES) {
+    for (const {path, name} of CRITICAL_PAGES) {
+      test(tagged(`${name} has a document title`, TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
         await safeNavigate(path);
-
         const title = await page.title();
         expect(title, `${name} should have a title`).toBeTruthy();
         expect(title.length, `${name} title should be substantial`).toBeGreaterThan(0);
-      }
-    });
+      });
+    }
 
-    test(tagged("Pages have html lang attribute", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
+    test(tagged("Homepage has html lang attribute", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
       await safeNavigate("/");
-
       const lang = await page.locator("html").getAttribute("lang");
       expect(lang).toBeTruthy();
     });

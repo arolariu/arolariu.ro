@@ -95,18 +95,20 @@ test.describe("About Section @about", () => {
       }
     });
 
-    test(tagged("should have consistent layout across about pages", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
-      const aboutPages = ["/about/", "/about/the-author/", "/about/the-platform/"];
+    const aboutPages = [
+      {path: "/about/", name: "About"},
+      {path: "/about/the-author/", name: "Author"},
+      {path: "/about/the-platform/", name: "Platform"},
+    ] as const;
 
-      for (const pagePath of aboutPages) {
-        await safeNavigate(pagePath);
-
-        // Verify consistent structure
+    for (const {path, name} of aboutPages) {
+      test(tagged(`${name} has consistent layout`, TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+        await safeNavigate(path);
         await expect(page.locator("header")).toBeVisible();
         await expect(page.locator("main")).toBeVisible();
         await expect(page.locator("footer")).toBeVisible();
-      }
-    });
+      });
+    }
   });
 
   test.describe("About Pages Responsive Design", () => {
