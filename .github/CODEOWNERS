@@ -35,6 +35,29 @@ infra/ @arolariu
 .github/actions/ @arolariu
 .github/scripts/ @arolariu
 
+# =============================================================================
+# Agentic governance — DO NOT auto-approve. These files modify EVERY agent's
+# behavior. Edits here are functionally equivalent to writing code that runs
+# with the agent's privileges. Treat them as security-sensitive.
+#
+# Threat model: .github/agent-governance/threat-model.md
+# =============================================================================
+AGENTS.md                              @arolariu
+CLAUDE.md                              @arolariu
+.github/copilot-instructions.md        @arolariu
+.github/instructions/**                @arolariu
+.github/agents/**                      @arolariu
+.github/skills/**                      @arolariu
+.github/prompts/**                     @arolariu
+.github/agent-governance/**            @arolariu
+.github/memory/**                      @arolariu
+
+# MCP server configs — modifying a server entry runs arbitrary commands
+# with your credentials on agent invocation. Higher-impact than markdown.
+.mcp.json                              @arolariu
+.copilot/mcp-config.json               @arolariu
+.claude/settings.json                  @arolariu
+
 # Configuration files
 package.json @arolariu
 tsconfig.json @arolariu
