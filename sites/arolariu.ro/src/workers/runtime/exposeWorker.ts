@@ -8,6 +8,11 @@
  * handshake, normalizes thrown errors so the parent wrapper can rewrap them
  * as `WorkerError`, and emits `{kind: "ready"}` on the event port to signal
  * readiness to the host.
+ *
+ * Handshake state lives in a per-`expose()` `WorkerRuntime` object; the
+ * module-level `activeRuntime` pointer is updated on each successful
+ * bootstrap so `getEventPort()` / `getBootstrapCapabilities()` continue to
+ * work as zero-argument helpers. `__resetForTesting()` clears the pointer.
  */
 
 import * as Comlink from "comlink";
@@ -15,17 +20,16 @@ import * as Comlink from "comlink";
 import type {WorkerCapabilities} from "../host/workerCapabilities";
 import {validateBootstrap, type WorkerBootstrap} from "../host/workerEnvelope";
 import {emitEvent} from "./emitEvent";
+import {wrapHandlerError} from "./wrapHandlerError";
 
-/** Module-level slot for the event port; populated after bootstrap. */
-let eventPort: MessagePort | null = null;
+/** Per-`expose()` runtime state, populated after bootstrap. */
+type WorkerRuntime = {
+  eventPort: MessagePort | null;
+  capabilities: WorkerCapabilities | null;
+};
 
-/**
- * Module-level slot for the parent-supplied capability snapshot. Populated
- * after bootstrap so worker code can branch on host-side capability flags
- * (e.g., `crossOriginIsolated`, `hasWebGpu`) without reaching back into the
- * raw bootstrap message.
- */
-let cachedCapabilities: WorkerCapabilities | null = null;
+/** The most-recently bootstrapped runtime — backs `getEventPort`/`getBootstrapCapabilities`. */
+let activeRuntime: WorkerRuntime | null = null;
 
 /**
  * Returns the event port granted to this worker during bootstrap.
@@ -38,7 +42,7 @@ let cachedCapabilities: WorkerCapabilities | null = null;
  * ```
  */
 export function getEventPort(): MessagePort | null {
-  return eventPort;
+  return activeRuntime?.eventPort ?? null;
 }
 
 /**
@@ -48,16 +52,15 @@ export function getEventPort(): MessagePort | null {
  * clean.
  */
 export function getBootstrapCapabilities(): WorkerCapabilities | null {
-  return cachedCapabilities;
+  return activeRuntime?.capabilities ?? null;
 }
 
 /**
- * Reset module-level state. **Test-only.** Production code must not call this.
+ * Reset the active runtime pointer. **Test-only.** Production code must not call this.
  * @internal
  */
 export function __resetForTesting(): void {
-  eventPort = null;
-  cachedCapabilities = null;
+  activeRuntime = null;
 }
 
 /** Options for `expose`. The `self` parameter is for testability only. */
@@ -75,6 +78,7 @@ export type ExposeOptions = Readonly<{
  */
 export function expose<TApi extends Record<string, unknown>>(api: TApi, options: ExposeOptions = {}): void {
   const scope = options.self ?? (globalThis as unknown as DedicatedWorkerGlobalScope);
+  const runtime: WorkerRuntime = {eventPort: null, capabilities: null};
 
   const onBootstrap = (event: MessageEvent): void => {
     const data = event.data as unknown;
@@ -82,47 +86,22 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
       return; // ignore non-bootstrap traffic
     }
     const bootstrap = data as WorkerBootstrap;
-    eventPort = bootstrap.eventPort;
+    runtime.eventPort = bootstrap.eventPort;
     // SPEC: The event port is send-only on the worker side (we only
     // postMessage on it; never addEventListener). Per WHATWG HTML §9.4.5
     // `port.start()` is only required for the receiving side. Omitted as
     // a no-op.
-    // X: Cache capabilities so worker handlers can read them via
-    // `getBootstrapCapabilities()` instead of duplicating bootstrap parsing.
-    cachedCapabilities = bootstrap.capabilities;
+    runtime.capabilities = bootstrap.capabilities;
+    activeRuntime = runtime;
 
-    // Wrap each method so thrown errors become plain serializable objects.
+    // Wrap each method so thrown errors become serializable envelopes.
     const wrapped: Record<string, unknown> = {};
     for (const key of Object.keys(api)) {
       const value = (api as Record<string, unknown>)[key];
-      if (typeof value === "function") {
-        wrapped[key] = async (...args: unknown[]): Promise<unknown> => {
-          try {
-            return await (value as (...a: unknown[]) => unknown)(...args);
-          } catch (cause) {
-            // ENVELOPE: We throw a plain `__workerError` object rather than
-            // re-throwing the original `Error` because Comlink's default
-            // `throwTransferHandler` (comlink/src/comlink.ts) only preserves
-            // `name`, `message`, and `stack`. WHATWG HTML S2.7.3
-            // (StructuredSerialize) further normalizes `Error.name` to one
-            // of the seven standard names, so a custom subclass loses its
-            // identity over the port. Our envelope round-trips the fields
-            // we care about (`name`, `message`, `stack`) losslessly. The
-            // host rewraps the envelope as `WorkerError` in its proxy
-            // handler (see createWorkerHost.ts).
-            const err = cause as {name?: string; message?: string; stack?: string};
-            // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentional plain-object envelope; see ENVELOPE comment above
-            throw {
-              __workerError: true,
-              name: typeof err?.name === "string" ? err.name : "Error",
-              message: typeof err?.message === "string" ? err.message : String(cause),
-              stack: typeof err?.stack === "string" ? err.stack : undefined,
-            };
-          }
-        };
-      } else {
-        wrapped[key] = value;
-      }
+      wrapped[key] =
+        typeof value === "function"
+          ? wrapHandlerError(value as (...a: unknown[]) => Promise<unknown>)
+          : value;
     }
 
     Comlink.expose(wrapped, bootstrap.rpcPort);
