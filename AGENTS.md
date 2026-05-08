@@ -6,10 +6,10 @@
 
 **arolariu.ro** is a full-stack pet-project platform for invoice management and personal branding, built as a monorepo:
 
-- **Frontend**: Next.js 16.2 + React 19.2.4 (main website at `sites/arolariu.ro/`)
-- **Backend**: .NET 10 ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`)
+- **Frontend**: Next.js + React (main website at `sites/arolariu.ro/`; versions in [Versions](#versions))
+- **Backend**: .NET ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`; versions in [Versions](#versions))
 - **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
-- **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)
+- **CV Site**: SvelteKit (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies; versions in [Versions](#versions))
 - **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
 - **Tooling**: Nx monorepo, npm, Node.js, .NET SDK (versions in [Versions](#versions))
 
@@ -118,14 +118,14 @@ Always disclose assumptions, confidence level, risk flags, and validation eviden
 packages/
   components/              # @arolariu/components — shared UI library (Base UI + CSS Modules)
 sites/
-  arolariu.ro/             # Next.js 16 main website
+  arolariu.ro/             # Next.js main website (versions in Versions section)
     src/app/               #   App Router pages (RSC by default)
     src/hooks/             #   Custom React hooks (useInvoice, etc.)
     src/stores/            #   Zustand stores with IndexedDB persistence
     src/lib/actions/       #   Server Actions
     src/types/             #   TypeScript type definitions
     messages/              #   i18n translations (en.json, ro.json, fr.json)
-  api.arolariu.ro/         # .NET 10 backend API
+  api.arolariu.ro/         # .NET backend API (versions in Versions section)
     src/Core/              #   Entry point, infrastructure, health
     src/Core.Auth/         #   Authentication bounded context
     src/Invoices/          #   Invoice management bounded context
@@ -166,7 +166,7 @@ export default function InvoiceCard({invoiceId}: Readonly<Props>): React.JSX.Ele
 function BadComponent(data: any) { return <div>{data.thing}</div>; }
 ```
 
-### C# (.NET 10, C# 13)
+### C#
 
 ```csharp
 // DO: XML docs, ConfigureAwait, primary constructors, TryCatch pattern
@@ -318,7 +318,6 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 |--------|---------|-----------|
 | sequential-thinking | `@modelcontextprotocol/server-sequential-thinking` | Multi-step reasoning and planning |
 | playwright | `@playwright/mcp` | Browser automation for E2E testing |
-| eslint | `@eslint/mcp` | Real-time linting feedback |
 | memory | `@modelcontextprotocol/server-memory` | Persistent knowledge graph (→ `.github/memory/memory.json`) |
 | github | `github-mcp` | GitHub PRs, issues, actions, code search |
 | context7 | `@upstash/context7-mcp` | Live library/framework documentation injection |
@@ -369,7 +368,7 @@ files (intentional duplication — Copilot CLI requires explicit `type: "stdio"`
 
 ## Environment Setup
 
-**Prerequisites**: Node.js >=24, .NET 10.0 SDK, npm >=11
+**Prerequisites**: Node.js, .NET SDK, npm (versions in [Versions](#versions))
 
 ```bash
 git clone https://github.com/arolariu/arolariu.ro.git
