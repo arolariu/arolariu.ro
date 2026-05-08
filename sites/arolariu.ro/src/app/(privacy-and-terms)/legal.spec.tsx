@@ -5,7 +5,7 @@
  */
 
 import {expect, test} from "../../../tests/fixtures";
-import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
+import {BROWSER_TIER_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
 
 const LEGAL_PAGES = [
   {path: "/privacy-policy/", name: "Privacy Policy"},
@@ -95,7 +95,7 @@ test.describe("Legal Pages @legal", () => {
   });
 
   test.describe("Navigation", () => {
-    test(tagged("should be able to navigate from footer links", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should be able to navigate from footer links", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/");
 
       // Check if privacy policy link exists in footer
@@ -109,7 +109,7 @@ test.describe("Legal Pages @legal", () => {
       }
     });
 
-    test(tagged("should be able to navigate between legal pages", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should be able to navigate between legal pages", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/privacy-policy/");
 
       // Scope to footer to avoid matching section headings containing "terms"
@@ -125,7 +125,7 @@ test.describe("Legal Pages @legal", () => {
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/privacy-policy/");
 
@@ -133,7 +133,7 @@ test.describe("Legal Pages @legal", () => {
       await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
-    test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/terms-of-service/");
 
@@ -142,7 +142,7 @@ test.describe("Legal Pages @legal", () => {
     });
 
     for (const {path, name} of LEGAL_PAGES) {
-      test(tagged(`${name} should work on desktop viewport`, TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+      test(tagged(`${name} should work on desktop viewport`, TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
         await page.setViewportSize({width: 1920, height: 1080});
         await safeNavigate(path);
         await expect(page.locator("main")).toBeVisible();
@@ -151,7 +151,7 @@ test.describe("Legal Pages @legal", () => {
   });
 
   test.describe("Print Styles", () => {
-    test(tagged("privacy policy should be printable", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("privacy policy should be printable", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/privacy-policy/");
 
       // Emulate print media

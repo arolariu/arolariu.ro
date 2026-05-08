@@ -5,7 +5,7 @@
  */
 
 import {expect, test} from "../../tests/fixtures";
-import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
+import {BROWSER_TIER_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
 /**
  * Critical pages that must meet accessibility standards.
@@ -42,7 +42,7 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
   });
 
   test.describe("Keyboard Navigation", () => {
-    test(tagged("Homepage keyboard navigation works", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
+    test(tagged("Homepage keyboard navigation works", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/");
 
       // Tab through interactive elements
@@ -61,7 +61,7 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
       expect(outline).toBe(true);
     });
 
-    test(tagged("Can tab through all interactive elements", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
+    test(tagged("Can tab through all interactive elements", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/");
 
       // Get initial focus
@@ -93,7 +93,7 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
       expect(focusedElements.length).toBeGreaterThan(0);
     });
 
-    test(tagged("Escape key closes modals if present", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
+    test(tagged("Escape key closes modals if present", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await safeNavigate("/");
 
       // Press Escape - should not cause errors

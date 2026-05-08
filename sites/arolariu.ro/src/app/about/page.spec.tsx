@@ -5,7 +5,7 @@
  */
 
 import {expect, test} from "../../../tests/fixtures";
-import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
+import {BROWSER_TIER_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
 
 test.describe("About Section @about", () => {
   test.describe("Main About Page", () => {
@@ -112,14 +112,14 @@ test.describe("About Section @about", () => {
   });
 
   test.describe("About Pages Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/about/");
 
       await expect(page.locator("main")).toBeVisible();
     });
 
-    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 1920, height: 1080});
       await safeNavigate("/about/");
 

@@ -6,7 +6,7 @@
 
 import {expect, test} from "../../tests/fixtures";
 import {HeaderComponent} from "../../tests/page-objects";
-import {COMPONENT_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
+import {BROWSER_TIER_TAGS, COMPONENT_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
 test.describe("Header Component Tests @header", () => {
   let header: HeaderComponent;
@@ -71,7 +71,7 @@ test.describe("Header Component Tests @header", () => {
   });
 
   test.describe("Header Responsive Behavior", () => {
-    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER), async () => {
+    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER, BROWSER_TIER_TAGS.CROSS_BROWSER), async () => {
       await header.setMobileViewport();
 
       // Mobile menu button should exist (even if not visible without interaction)
@@ -79,7 +79,7 @@ test.describe("Header Component Tests @header", () => {
       expect(count).toBeGreaterThanOrEqual(0);
     });
 
-    test("should display full navigation on desktop", async () => {
+    test(tagged("should display full navigation on desktop", BROWSER_TIER_TAGS.CROSS_BROWSER), async () => {
       await header.setDesktopViewport();
       await header.shouldHaveNavigation();
     });
