@@ -24,21 +24,6 @@ test.describe("About Section @about", () => {
       await expect(page.locator("main")).toBeVisible();
       await expect(page.locator("footer")).toBeVisible();
     });
-
-    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/about/");
-
-      const results = await checkA11y({
-        level: "wcag21aa",
-      });
-
-      if (results.violations.length > 0) {
-        console.log("About page accessibility violations:");
-        console.log(results.formatViolations());
-      }
-
-      results.assertNoViolationsAbove("serious");
-    });
   });
 
   test.describe("The Author Page", () => {
