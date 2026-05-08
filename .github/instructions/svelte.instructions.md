@@ -15,7 +15,7 @@ Applies to SvelteKit code in `sites/cv.arolariu.ro/`.
 
 ### Mandatory Rules
 - This is a **standalone site** — do NOT import from `@arolariu/components` or other monorepo packages.
-- Use SvelteKit 2 conventions with TypeScript.
+- Use SvelteKit conventions with TypeScript (version in [AGENTS.md > Versions](../../AGENTS.md#versions)).
 - Deploy via Azure Static Web Apps adapter.
 
 ### Prohibited Actions
@@ -34,7 +34,7 @@ npm run build:cv
 
 | Aspect | Value |
 |--------|-------|
-| **Framework** | SvelteKit 2.x |
+| **Framework** | SvelteKit (see [AGENTS.md > Versions](../../AGENTS.md#versions)) |
 | **Adapter** | Azure Static Web Apps |
 | **TypeScript** | Strict mode |
 | **Deployment** | https://cv.arolariu.ro |

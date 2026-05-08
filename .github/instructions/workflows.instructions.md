@@ -352,7 +352,7 @@ environment:
 
 **Phases:**
 1. **Test Phase**
-   - Setup .NET 10
+   - Setup .NET (version in AGENTS.md > Versions)
    - Run `dotnet test` with coverage
    - Upload coverage report
 

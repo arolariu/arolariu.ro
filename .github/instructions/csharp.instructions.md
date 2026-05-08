@@ -2,7 +2,7 @@
 version: "1.1.0"
 lastUpdated: "2026-02-09"
 name: 'C# Coding Standards'
-description: 'C# coding standards and patterns for .NET 10.0 development'
+description: 'C# coding standards and patterns for .NET development (versions in AGENTS.md > Versions)'
 applyTo: '**/*.cs'
 ---
 
@@ -48,7 +48,7 @@ Specific C# coding guidelines for the arolariu.ro backend. For architecture patt
 
 | Aspect | Standard |
 |--------|----------|
-| **Target** | .NET 10.0 / C# 13 |
+| **Target** | .NET / C# (see [AGENTS.md > Versions](../../AGENTS.md#versions)) |
 | **Nullable** | Enabled (strict) |
 | **Implicit Usings** | Disabled |
 | **Warnings** | Treated as errors |

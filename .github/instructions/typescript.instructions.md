@@ -2,7 +2,7 @@
 version: "1.1.0"
 lastUpdated: "2026-02-09"
 name: 'TypeScript Standards'
-description: 'Guidelines for TypeScript Development targeting TypeScript 6.x and ES2022 output'
+description: 'Guidelines for TypeScript development targeting ES2022 output (TypeScript version in AGENTS.md > Versions)'
 applyTo: '**/*.ts'
 ---
 
@@ -39,7 +39,7 @@ npm run lint
 - Domain type location examples
 
 
-Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeScript 6.0 with ES2022 output.
+Comprehensive TypeScript standards for the arolariu.ro monorepo targeting ES2022 output. TypeScript version is defined in [AGENTS.md > Versions](../../AGENTS.md#versions).
 
 ---
 
@@ -47,12 +47,12 @@ Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeSc
 
 | Aspect | Value |
 |--------|-------|
-| **TypeScript** | 6.0 |
+| **TypeScript** | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 | **Target** | ES2022 |
 | **Module** | ESNext (bundler resolution) |
 | **Strict Mode** | All options enabled |
 | **JSX** | preserve (for Next.js) |
-| **Node** | ≥24.x |
+| **Node** | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 
 ---
 

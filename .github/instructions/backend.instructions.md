@@ -41,7 +41,7 @@ dotnet test sites/api.arolariu.ro/tests
 - Telemetry wiring paths and extension method names
 
 
-You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard architecture pattern, SOLID principles, and .NET 10.0 development for the arolariu.ro backend API. Follow these guidelines for building robust, maintainable systems.
+You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard architecture pattern, SOLID principles, and .NET development for the arolariu.ro backend API. Follow these guidelines for building robust, maintainable systems. Runtime/framework versions are defined in [AGENTS.md > Versions](../../AGENTS.md#versions).
 
 ---
 
@@ -63,13 +63,13 @@ You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard 
 
 | Category | Technology | Version |
 |----------|------------|---------|
-| **Framework** | .NET | 10.0 (net10.0) |
-| **Language** | C# | Latest (13+) |
+| **Framework** | .NET | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
+| **Language** | C# | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 | **Architecture** | Modular Monolith | The Standard + DDD |
 | **Primary Database** | Azure Cosmos DB | EF Core Cosmos Provider |
 | **Auth Database** | Azure SQL Server | EF Core SQL Provider |
 | **Authentication** | ASP.NET Identity + JWT Bearer | - |
-| **Observability** | OpenTelemetry | 1.14.0+ |
+| **Observability** | OpenTelemetry | pinned in `Directory.Packages.props` |
 | **AI Services** | Azure OpenAI, Document Intelligence | - |
 | **Testing** | xUnit, MSTest, Moq | - |
 

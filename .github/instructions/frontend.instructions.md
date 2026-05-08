@@ -48,15 +48,15 @@ Comprehensive guidelines for the arolariu.ro Next.js frontend application.
 
 | Aspect | Value |
 |--------|-------|
-| **Framework** | Next.js 16.2 (App Router) |
-| **React** | 19.2.4 (with RSC) |
-| **TypeScript** | 6.0 (strict mode) |
+| **Framework** | Next.js (App Router; version in [AGENTS.md > Versions](../../AGENTS.md#versions)) |
+| **React** | with RSC (version in [AGENTS.md > Versions](../../AGENTS.md#versions)) |
+| **TypeScript** | strict mode (version in [AGENTS.md > Versions](../../AGENTS.md#versions)) |
 | **Styling** | CSS Modules + Sass + @arolariu/components |
-| **State** | Zustand 5.0.12 + Context API |
-| **Auth** | Clerk (@clerk/nextjs 7.0) |
-| **i18n** | next-intl 4.9.0 |
+| **State** | Zustand + Context API (Zustand pinned in `package.json`) |
+| **Auth** | Clerk (`@clerk/nextjs` pinned in `package.json`) |
+| **i18n** | next-intl (pinned in `package.json`) |
 | **Components** | @arolariu/components (Base UI + CSS Modules) |
-| **Node** | ≥24.x |
+| **Node** | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 
 ---
 
@@ -1079,4 +1079,4 @@ sites/arolariu.ro/
 - **Type Safety**: Strict TypeScript with domain types
 - **Component Library**: Use @arolariu/components for UI
 
-Remember: The goal is to maintain high code quality, consistency, and developer experience while building scalable, observable, and maintainable React applications with Next.js 16 and React 19.
+Remember: The goal is to maintain high code quality, consistency, and developer experience while building scalable, observable, and maintainable React applications with Next.js and React (versions in [AGENTS.md > Versions](../../AGENTS.md#versions)).

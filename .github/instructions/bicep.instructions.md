@@ -108,7 +108,7 @@ infra/Azure/Bicep/
 ├── sites/                        # Web applications
 │   ├── deploymentFile.bicep      # Module entry
 │   ├── arolariu-ro.bicep         # Main website (Next.js)
-│   ├── api-arolariu-ro.bicep     # API (.NET 10)
+│   ├── api-arolariu-ro.bicep     # API (.NET — see AGENTS.md > Versions)
 │   ├── dev-arolariu-ro.bicep     # Development site
 │   ├── docs-arolariu-ro.bicep    # Documentation (DocFX - Static Web App)
 │   └── cv-arolariu-ro.bicep      # CV site (SvelteKit - Static Web App)
