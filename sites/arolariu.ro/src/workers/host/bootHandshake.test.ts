@@ -104,6 +104,34 @@ describe("createBootHandshake", () => {
     expect(closeEvent).toHaveBeenCalled();
   });
 
+  it("rethrows synchronously when validateBootstrap rejects malformed capabilities", () => {
+    // Exercises the synchronous validation-failure branch of
+    // createBootHandshake. validateBootstrap requires `crossOriginIsolated`
+    // to be a boolean (see workerEnvelope.ts SECURITY note); passing a
+    // string forces validateBootstrap to return false BEFORE postMessage,
+    // so the helper rejects `ready` and rethrows the validation error.
+    //
+    // Like the postMessage-throw test below, we cannot also assert on
+    // `ready` here because createBootHandshake throws before returning the
+    // handshake. The internal `.catch(() => {})` keeps the orphan rejection
+    // from surfacing as an unhandled-rejection warning — exactly the
+    // contract documented on the BootHandshake type.
+    const mock = createMockWorker({api: {ping: async () => "pong"}});
+    const malformedCaps = {
+      crossOriginIsolated: "not-a-boolean",
+      hasWebGpu: false,
+    } as unknown as WorkerCapabilities;
+
+    expect(() => {
+      createBootHandshake({
+        worker: mock.worker,
+        capabilities: malformedCaps,
+        onEvent: () => {},
+        bootstrapTimeoutMs: 1_000,
+      });
+    }).toThrow("invalid bootstrap message");
+  });
+
   it("rethrows synchronously when worker.postMessage throws", () => {
     // Exercises the synchronous postMessage-throw branch of
     // createBootHandshake: the helper must rethrow the same error after
