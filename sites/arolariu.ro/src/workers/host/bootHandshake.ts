@@ -198,11 +198,21 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
     /* loser; the caller observes the failure via the synchronous throw */
   });
 
+  // Eagerly reject `ready` then rethrow on the synchronous-failure paths
+  // (validation + postMessage). Because `rejectBoot` is reassigned inside a
+  // Promise-executor closure and a `.finally`, tsgo's flow analysis won't
+  // narrow `((err: unknown) => void) | null` to non-null at the call site
+  // even after a truthy guard. `typeof rejectBoot === "function"` is a
+  // primitive predicate it does narrow correctly.
+  const ejectBoot = (err: unknown): void => {
+    if (typeof rejectBoot === "function") rejectBoot(err);
+  };
+
   // SECURITY: self-validate so a malformed bootstrap is caught here, not via
   // a 10-second silent timeout at the worker boundary.
   if (!validateBootstrap(bootstrap)) {
     const err = new Error("Worker host produced an invalid bootstrap message; check capabilities snapshot.");
-    rejectBoot?.(err);
+    ejectBoot(err);
     if (bootTimeoutId !== null) {
       clearTimeout(bootTimeoutId);
       bootTimeoutId = null;
@@ -214,7 +224,7 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
   try {
     opts.worker.postMessage(bootstrap, [rpc.transferable, event.transferable]);
   } catch (err) {
-    rejectBoot?.(err);
+    ejectBoot(err);
     if (bootTimeoutId !== null) {
       clearTimeout(bootTimeoutId);
       bootTimeoutId = null;
