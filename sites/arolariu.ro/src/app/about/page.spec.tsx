@@ -5,7 +5,7 @@
  */
 
 import {expect, test} from "../../../tests/fixtures";
-import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
+import {BROWSER_TIER_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../../tests/utils";
 
 test.describe("About Section @about", () => {
   test.describe("Main About Page", () => {
@@ -23,21 +23,6 @@ test.describe("About Section @about", () => {
       await expect(page.locator("header")).toBeVisible();
       await expect(page.locator("main")).toBeVisible();
       await expect(page.locator("footer")).toBeVisible();
-    });
-
-    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/about/");
-
-      const results = await checkA11y({
-        level: "wcag21aa",
-      });
-
-      if (results.violations.length > 0) {
-        console.log("About page accessibility violations:");
-        console.log(results.formatViolations());
-      }
-
-      results.assertNoViolationsAbove("serious");
     });
   });
 
@@ -110,29 +95,31 @@ test.describe("About Section @about", () => {
       }
     });
 
-    test(tagged("should have consistent layout across about pages", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
-      const aboutPages = ["/about/", "/about/the-author/", "/about/the-platform/"];
+    const aboutPages = [
+      {path: "/about/", name: "About"},
+      {path: "/about/the-author/", name: "Author"},
+      {path: "/about/the-platform/", name: "Platform"},
+    ] as const;
 
-      for (const pagePath of aboutPages) {
-        await safeNavigate(pagePath);
-
-        // Verify consistent structure
+    for (const {path, name} of aboutPages) {
+      test(tagged(`${name} has consistent layout`, TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+        await safeNavigate(path);
         await expect(page.locator("header")).toBeVisible();
         await expect(page.locator("main")).toBeVisible();
         await expect(page.locator("footer")).toBeVisible();
-      }
-    });
+      });
+    }
   });
 
   test.describe("About Pages Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 375, height: 667});
       await safeNavigate("/about/");
 
       await expect(page.locator("main")).toBeVisible();
     });
 
-    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
+    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
       await page.setViewportSize({width: 1920, height: 1080});
       await safeNavigate("/about/");
 

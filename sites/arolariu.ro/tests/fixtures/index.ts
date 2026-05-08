@@ -42,7 +42,6 @@ export {
   navigateWithRetry,
   NAVIGATION_DEFAULTS,
   navigationTest,
-  WARMUP_ROUTES,
   type NavigateOptions,
   type NavigationFixtures,
   type NavigationResult,

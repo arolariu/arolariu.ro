@@ -1,6 +1,8 @@
 /**
- * @fileoverview Playwright global setup for pre-warming critical routes.
- * This runs once before all tests to trigger Next.js on-demand page compilation.
+ * @fileoverview Playwright global setup: writes the EULA-accepted cookie to
+ * the shared storage state used by all tests. With the production-build
+ * web server (see tests/config/index.ts), per-route warmup is no longer
+ * necessary — pages are compiled at build time, not on first request.
  * @module playwright-global-setup
  */
 
@@ -8,44 +10,23 @@ import {chromium, type FullConfig} from "@playwright/test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import {isProdBuild} from "./config/environment";
+
 /** Storage state file path for sharing auth state across tests */
 export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
 
 /**
- * Critical routes that need to be pre-warmed before tests run.
- * These are pages that are commonly tested and slow to compile on first load.
+ * Writes the EULA-accepted cookie so tests bypass the consent dialog.
+ * Runs once before the suite, in a single short-lived browser context.
+ *
+ * The cookie's `secure` flag tracks the test server's scheme: prod build
+ * runs over HTTP (cookie must be non-secure to apply), dev runs over HTTPS
+ * via `next dev --experimental-https` (cookie can stay secure).
  */
-const CRITICAL_ROUTES = [
-  "/",
-  "/about",
-  "/about/the-author",
-  "/about/the-platform",
-  "/domains",
-  "/domains/invoices",
-  "/auth",
-  "/privacy-policy",
-  "/terms-of-service",
-  "/acknowledgements",
-];
-
-/**
- * Global setup function that pre-warms critical routes.
- * This helps avoid 500 errors during tests caused by Next.js on-demand compilation.
- */
-export default async function globalSetup(config: FullConfig): Promise<void> {
-  // Get the base URL from config
-  const baseURL = config.projects[0]?.use?.baseURL ?? "https://localhost:3000";
-
-  console.log("[Global Setup] Starting route warmup...");
-  console.log(`[Global Setup] Base URL: ${baseURL}`);
-
+export default async function globalSetup(_config: FullConfig): Promise<void> {
   const browser = await chromium.launch();
-  const context = await browser.newContext({
-    ignoreHTTPSErrors: true,
-  });
+  const context = await browser.newContext({ignoreHTTPSErrors: true});
 
-  // Set EULA cookie to bypass consent dialog during tests
-  // This allows tests to access actual page content
   await context.addCookies([
     {
       name: "eula-accepted",
@@ -53,58 +34,17 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       domain: "localhost",
       path: "/",
       httpOnly: false,
-      secure: true,
+      secure: !isProdBuild(),
       sameSite: "Lax",
     },
   ]);
 
-  const page = await context.newPage();
-
-  for (const route of CRITICAL_ROUTES) {
-    const url = `${baseURL}${route}`;
-    console.log(`[Global Setup] Warming up: ${route}`);
-
-    try {
-      // Navigate with generous timeout and wait for network idle to ensure compilation completes
-      let response = await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 60000,
-      });
-
-      let status = response?.status();
-
-      // If we get a 500, wait and retry once (compilation may still be in progress)
-      if (status === 500) {
-        console.log(`[Global Setup] Got 500 for ${route}, retrying after delay...`);
-        try {
-          await page.waitForTimeout(5000);
-          response = await page.goto(url, {
-            waitUntil: "domcontentloaded",
-            timeout: 60000,
-          });
-          status = response?.status();
-        } catch {
-          // Page may have been closed during wait, skip retry
-          console.log(`[Global Setup] Retry aborted for ${route} (page closed)`);
-        }
-      }
-
-      console.log(`[Global Setup] ${route} -> ${status}`);
-    } catch (error) {
-      console.log(`[Global Setup] ${route} -> Error: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-  }
-
-  // Save storage state for other tests to use
   const authDir = path.dirname(STORAGE_STATE_PATH);
   if (!fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, {recursive: true});
   }
   await context.storageState({path: STORAGE_STATE_PATH});
-  console.log(`[Global Setup] Storage state saved to: ${STORAGE_STATE_PATH}`);
 
   await context.close();
   await browser.close();
-
-  console.log("[Global Setup] Route warmup complete");
 }

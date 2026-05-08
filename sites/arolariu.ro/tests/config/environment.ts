@@ -35,6 +35,7 @@ const ENV_KEYS = {
   TEST_ENV: "TEST_ENV",
   BASE_URL: "BASE_URL",
   PLAYWRIGHT_WORKERS: "PLAYWRIGHT_WORKERS",
+  E2E_USE_PROD: "E2E_USE_PROD",
 } as const;
 
 /** Simple debug check for config logging (avoids circular import) */
@@ -81,6 +82,20 @@ export function isCI(): boolean {
 }
 
 /**
+ * Check if E2E should run against a production build (`next build && next start`)
+ * instead of `next dev`. Opt-in via `E2E_USE_PROD=true`; CI sets this explicitly
+ * in the workflow's E2E test step.
+ *
+ * Production build uses plain HTTP because `next start` does not support
+ * `--experimental-https` cert auto-generation (that flag is `next dev` only).
+ * It also disables `output: "standalone"` in `next.config.ts` so `next start`
+ * actually serves requests (standalone output requires the standalone runner).
+ */
+export function isProdBuild(): boolean {
+  return process.env[ENV_KEYS.E2E_USE_PROD] === "true";
+}
+
+/**
  * Check if running in local development.
  */
 export function isLocal(): boolean {
@@ -90,6 +105,11 @@ export function isLocal(): boolean {
 
 /**
  * Get the base URL for the current environment.
+ *
+ * For local test runs the scheme tracks the web-server scheme:
+ * - prod build (`next start`) uses HTTP because `--experimental-https` isn't
+ *   supported on `next start`
+ * - dev (`next dev --experimental-https`) uses HTTPS via auto-generated cert
  */
 export function getBaseURL(): string {
   const customURL = process.env[ENV_KEYS.BASE_URL];
@@ -104,7 +124,7 @@ export function getBaseURL(): string {
     case "staging":
       return "https://staging.arolariu.ro";
     default:
-      return "https://localhost:3000";
+      return isProdBuild() ? "http://localhost:3000" : "https://localhost:3000";
   }
 }
 
@@ -124,8 +144,8 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     ci: {
       baseURL,
       reuseExistingServer: false,
-      timeout: 90_000,
-      retries: 2,
+      timeout: 30_000,
+      retries: 1,
       workers: "75%",
       maxFailures: 5,
       video: "retain-on-failure",
@@ -145,7 +165,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       baseURL,
       reuseExistingServer: true,
       timeout: 90_000,
-      retries: 2,
+      retries: 1,
       workers: "100%",
       maxFailures: 20,
       video: "on-first-retry",

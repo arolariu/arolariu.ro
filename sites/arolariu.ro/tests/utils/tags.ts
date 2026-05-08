@@ -109,6 +109,17 @@ export const PLATFORM_TAGS = {
 } as const;
 
 /**
+ * Browser-tier tags.
+ * Drive which browsers a test runs on in `local-full` and similar tiered configs.
+ */
+export const BROWSER_TIER_TAGS = {
+  /** Tests that depend on browser-engine behavior (responsive, keyboard, real forms) */
+  CROSS_BROWSER: "@cross-browser",
+  /** Mobile/tablet-specific tests — subset of cross-browser */
+  RESPONSIVE: "@responsive",
+} as const;
+
+/**
  * All available tags combined.
  */
 export const TAGS = {
@@ -117,6 +128,7 @@ export const TAGS = {
   ...COMPONENT_TAGS,
   ...PRIORITY_TAGS,
   ...PLATFORM_TAGS,
+  ...BROWSER_TIER_TAGS,
 } as const;
 
 /**

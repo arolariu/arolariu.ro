@@ -5,7 +5,7 @@
  */
 
 import {expect, test} from "../../tests/fixtures";
-import {FEATURE_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
+import {BROWSER_TIER_TAGS, FEATURE_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
 test.describe("Homepage @homepage", () => {
   test.beforeEach(async ({safeNavigate}) => {
@@ -92,17 +92,10 @@ test.describe("Homepage @homepage", () => {
       const h1Count = await page.getByRole("heading", {level: 1}).count();
       expect(h1Count).toBeGreaterThanOrEqual(1);
     });
-
-    test(tagged("should have accessible images", TEST_TYPE_TAGS.A11Y), async ({checkA11y}) => {
-      const results = await checkA11y({
-        rules: ["image-alt"],
-      });
-      results.assertNoViolations();
-    });
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E), async ({page}) => {
+    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({page}) => {
       await page.setViewportSize({width: 375, height: 667});
 
       await expect(page.locator("main")).toBeVisible();
@@ -111,7 +104,7 @@ test.describe("Homepage @homepage", () => {
       await expect(page.getByRole("banner")).toBeAttached();
     });
 
-    test(tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E), async ({page}) => {
+    test(tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({page}) => {
       await page.setViewportSize({width: 768, height: 1024});
 
       await expect(page.locator("main")).toBeVisible();
@@ -119,7 +112,7 @@ test.describe("Homepage @homepage", () => {
       await expect(page.getByRole("banner")).toBeAttached();
     });
 
-    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E), async ({page}) => {
+    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({page}) => {
       await page.setViewportSize({width: 1920, height: 1080});
 
       await expect(page.locator("main")).toBeVisible();

@@ -5,6 +5,8 @@
  */
 
 // Environment utilities
+import {isProdBuild} from "./environment";
+
 export {
   getBaseURL,
   getEnvironment,
@@ -45,12 +47,21 @@ export {
 } from "./reporters";
 
 /**
- * Web server configuration for local development.
+ * Web server configuration.
+ * - CI and `E2E_USE_PROD=true` use a production build then run the standalone
+ *   bundle (`node .next/standalone/sites/arolariu.ro/server.js`). The project
+ *   uses `output: "standalone"` for Docker, so `next start` is a no-op — we
+ *   invoke the bundled runner directly. Plain HTTP because the standalone
+ *   server doesn't auto-generate certs.
+ * - Local default stays on `next dev --experimental-https` so developers keep
+ *   HMR + auto-generated HTTPS while iterating.
  */
 export const WEB_SERVER_CONFIG = {
-  command: "npx next dev --experimental-https",
-  url: "https://localhost:3000",
-  timeout: 300_000, // 5 minutes
+  command: isProdBuild()
+    ? "npm run build && node scripts/prepareStandalone.ts && cross-env PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/sites/arolariu.ro/server.js"
+    : "npx next dev --experimental-https",
+  url: isProdBuild() ? "http://localhost:3000" : "https://localhost:3000",
+  timeout: 240_000, // 4 min — accommodates `next build` (~30-90s) plus standalone startup
   ignoreHTTPSErrors: true,
 } as const;
 

@@ -6,7 +6,7 @@
 
 import {expect, test} from "../../tests/fixtures";
 import {HeaderComponent} from "../../tests/page-objects";
-import {COMPONENT_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
+import {BROWSER_TIER_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
 test.describe("Header Component Tests @header", () => {
   let header: HeaderComponent;
@@ -71,15 +71,13 @@ test.describe("Header Component Tests @header", () => {
   });
 
   test.describe("Header Responsive Behavior", () => {
-    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER), async () => {
-      await header.setMobileViewport();
+    // Mobile-viewport hamburger coverage relies on the page-level Responsive Design tests
+    // in src/app/page.spec.tsx (and per-page mobile viewport assertions). The header's
+    // <MobileNavigation /> is conditionally rendered after `useWindowSize` hydrates, which
+    // races with synchronous selector queries — testing the real responsive behavior is
+    // best done at the page level where the full hydration cycle is exercised.
 
-      // Mobile menu button should exist (even if not visible without interaction)
-      const count = await header.mobileMenuButton.count();
-      expect(count).toBeGreaterThanOrEqual(0);
-    });
-
-    test("should display full navigation on desktop", async () => {
+    test(tagged("should display full navigation on desktop", BROWSER_TIER_TAGS.CROSS_BROWSER), async () => {
       await header.setDesktopViewport();
       await header.shouldHaveNavigation();
     });
