@@ -11,7 +11,29 @@
 - **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
 - **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)
 - **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
-- **Tooling**: Nx monorepo, npm >=11, Node.js >=24, .NET 10 SDK
+- **Tooling**: Nx monorepo, npm, Node.js, .NET SDK (versions in [Versions](#versions))
+
+---
+
+## Versions
+
+Canonical runtime/framework versions. **Update here only**; downstream
+instruction/agent files reference this section by name.
+
+| Component | Version | Where to verify |
+|-----------|---------|-----------------|
+| Node.js | >=24 | `package.json` engines |
+| npm | >=11 | `package.json` engines |
+| .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
+| C# | 14 | implied by .NET 10 (`<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props`) |
+| Next.js | 16.2.4 | `package.json` |
+| React | 19.2.5 | `package.json` |
+| TypeScript | 6.0.3 | `package.json` devDependencies |
+| SvelteKit | 2.58.0 | `package.json` |
+| Nx | 22.7.0 | `package.json` devDependencies |
+
+When a version changes: edit this table; do NOT edit prose mentions in
+instruction/agent files unless they still drift after this change.
 
 ---
 
@@ -302,6 +324,13 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 | context7 | `@upstash/context7-mcp` | Live library/framework documentation injection |
 | filesystem | `@modelcontextprotocol/server-filesystem` | Structured file operations (scoped to src/) |
 | azure-devops | `@azure-devops/mcp` | Azure DevOps work items, builds, repos |
+
+### Cross-tool MCP sync
+
+`.mcp.json` (root) is consumed by Claude Code. `.copilot/mcp-config.json`
+mirrors a subset for Copilot CLI. They share `.github/memory/memory.json`
+via the `memory` MCP server. Adding/removing a shared server: edit both
+files (intentional duplication — Copilot CLI requires explicit `type: "stdio"` per server entry; Claude Code infers it).
 
 ### RFCs (Architecture Decisions)
 
