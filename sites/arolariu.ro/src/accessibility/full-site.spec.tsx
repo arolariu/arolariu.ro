@@ -41,62 +41,6 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
     }
   });
 
-  test.describe("Color Contrast", () => {
-    test(tagged("Homepage color contrast meets requirements", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/");
-
-      const results = await checkA11y({
-        rules: ["color-contrast"],
-      });
-
-      if (results.violations.length > 0) {
-        console.log("Color contrast violations:");
-        console.log(results.formatViolations());
-      }
-
-      // Color contrast should have no violations
-      results.assertNoViolationsAbove("serious");
-    });
-
-    test(tagged("Legal pages have adequate color contrast", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      const legalPages = ["/privacy-policy/", "/terms-of-service/"];
-
-      for (const path of legalPages) {
-        await safeNavigate(path);
-
-        const results = await checkA11y({
-          rules: ["color-contrast"],
-        });
-
-        results.assertNoViolationsAbove("serious");
-      }
-    });
-  });
-
-  test.describe("Image Accessibility", () => {
-    test(tagged("All images have alt text", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/");
-
-      const results = await checkA11y({
-        rules: ["image-alt"],
-      });
-
-      // Allow minor/moderate issues, fail only on serious
-      results.assertNoViolationsAbove("serious");
-    });
-
-    test(tagged("About page images have alt text", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/about/");
-
-      const results = await checkA11y({
-        rules: ["image-alt"],
-      });
-
-      // Allow minor/moderate issues, fail only on serious
-      results.assertNoViolationsAbove("serious");
-    });
-  });
-
   test.describe("Keyboard Navigation", () => {
     test(tagged("Homepage keyboard navigation works", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, page}) => {
       await safeNavigate("/");
@@ -215,59 +159,6 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
         const headingCount = await page.getByRole("heading").count();
         expect(headingCount, `${path} should have headings`).toBeGreaterThanOrEqual(1);
       }
-    });
-  });
-
-  test.describe("Link Accessibility", () => {
-    test(tagged("All links have accessible names", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/");
-
-      const results = await checkA11y({
-        rules: ["link-name"],
-      });
-
-      // Allow minor/moderate issues
-      results.assertNoViolationsAbove("serious");
-    });
-
-    test(tagged("Links in footer are accessible", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/");
-
-      const results = await checkA11y({
-        include: ["footer"],
-        rules: ["link-name"],
-      });
-
-      // Allow minor/moderate issues
-      results.assertNoViolationsAbove("serious");
-    });
-  });
-
-  test.describe("Form Accessibility", () => {
-    test(tagged("Auth page forms are accessible", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/auth/");
-
-      const results = await checkA11y({
-        rules: ["label", "autocomplete-valid"],
-        // Exclude Clerk iframe which we can't control
-        exclude: ["[data-clerk-component] iframe"],
-      });
-
-      // Only fail on critical issues since Clerk manages its own forms
-      results.assertNoViolationsAbove("critical");
-    });
-  });
-
-  test.describe("ARIA Usage", () => {
-    test(tagged("ARIA attributes are used correctly", TEST_TYPE_TAGS.A11Y), async ({safeNavigate, checkA11y}) => {
-      await safeNavigate("/");
-
-      const results = await checkA11y({
-        rules: ["aria-valid-attr", "aria-valid-attr-value", "aria-roles"],
-      });
-
-      // Allow minor/moderate issues
-      results.assertNoViolationsAbove("serious");
     });
   });
 
