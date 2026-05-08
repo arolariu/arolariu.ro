@@ -5,6 +5,7 @@
 
 // Tag system
 export {
+  BROWSER_TIER_TAGS,
   COMPONENT_TAGS,
   FEATURE_TAGS,
   PLATFORM_TAGS,
