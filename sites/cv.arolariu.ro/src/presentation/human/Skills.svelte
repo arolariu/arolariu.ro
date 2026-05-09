@@ -4,6 +4,10 @@
   import {cx} from "@/lib/utils/classNames";
   import styles from "./Skills.module.scss";
 
+  function spanClass(size: string): string {
+    return styles[`span${size.charAt(0).toUpperCase()}${size.slice(1)}`];
+  }
+
   function sizeClass(size: string): string {
     return styles[`size${size.charAt(0).toUpperCase()}${size.slice(1)}`];
   }
@@ -38,7 +42,8 @@
         <AnimatedSection
           id="skill-tile-{i}"
           animation="fade-up"
-          delay={i * 40 + (skill.size === "hero" ? 150 : 0)}>
+          delay={i * 40 + (skill.size === "hero" ? 150 : 0)}
+          class={spanClass(skill.size)}>
           <div
             class={cx(styles.tile, sizeClass(skill.size), accentClass(skill.accent))}
             data-skill-tile

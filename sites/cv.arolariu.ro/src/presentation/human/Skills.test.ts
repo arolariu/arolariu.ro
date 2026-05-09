@@ -52,4 +52,16 @@ describe("Skills section (Bento mosaic)", () => {
     const {getByText} = render(Skills);
     expect(getByText(/my production languages\. most of what i ship\./i)).toBeTruthy();
   });
+
+  it("each tile's grid-item wrapper carries a span class (so grid-column/row spans actually apply)", () => {
+    // The AnimatedSection <section> is the direct child of .grid and is the CSS grid item.
+    // If it lacks a span class, grid-column/grid-row rules go nowhere and the bento collapses.
+    const {container} = render(Skills);
+    const tileWrappers = container.querySelectorAll('section[id^="skill-tile-"]');
+    expect(tileWrappers).toHaveLength(12);
+    for (const wrapper of tileWrappers) {
+      const className = wrapper.getAttribute("class") ?? "";
+      expect(className).toMatch(/span(Hero|Lg|Md|Sm)/);
+    }
+  });
 });
