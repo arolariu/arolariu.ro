@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "memory": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "env": { "MEMORY_FILE_PATH": ".github/memory/memory.json" }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "github-mcp"],
+      "env": { "GITHUB_ACCESS_TOKEN": "${GITHUB_ACCESS_TOKEN}" }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@playwright/mcp@latest"]
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c", "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        "sites/arolariu.ro/src",
+        "sites/api.arolariu.ro/src",
+        "packages/components/src",
+        "docs",
+        "infra/Azure/Bicep"
+      ]
+    }
+  }
+}

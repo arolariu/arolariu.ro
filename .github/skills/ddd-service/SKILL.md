@@ -1,6 +1,7 @@
 ---
 name: ddd-service
 description: 'Scaffolds a complete DDD service following The Standard architecture with Broker, Foundation Service, Processing/Orchestration layers, partial class separation, TryCatch pattern, OpenTelemetry tracing, and xUnit tests for the arolariu.ro backend.'
+lastReviewed: 2026-05-08
 ---
 
 # DDD Service Scaffolding

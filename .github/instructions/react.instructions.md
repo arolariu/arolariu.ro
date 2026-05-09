@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'React Patterns'
 applyTo: '**/*.jsx, **/*.tsx'
 description: 'Core React patterns for the arolariu.ro monorepo. Applies to component library, websites, and all React code. For Next.js-specific patterns, see frontend.instructions.md.'
+lastReviewed: 2026-05-08
 ---
 
 # React Development Guidelines
@@ -51,7 +52,7 @@ Core React patterns for the arolariu.ro monorepo. These guidelines apply to **al
 
 | Aspect | Standard |
 |--------|----------|
-| **React Version** | 19.2.4 |
+| **React Version** | see [AGENTS.md > Versions](../../AGENTS.md#versions) |
 | **Component Style** | Functional only (no classes) |
 | **Props** | Always `Readonly<Props>` |
 | **Return Type** | Explicit `React.JSX.Element` |

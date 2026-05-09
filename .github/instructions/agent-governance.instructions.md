@@ -4,6 +4,7 @@ lastUpdated: "2026-02-18"
 name: "Agent Governance Contract"
 applyTo: ".github/**/*.md"
 description: "Mandatory contract for agent-facing assets: intake, RFC grounding, verification, uncertainty reporting, and policy severity handling."
+lastReviewed: 2026-05-08
 ---
 
 # Agent Governance Contract

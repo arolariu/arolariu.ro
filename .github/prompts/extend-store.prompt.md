@@ -1,6 +1,7 @@
 ---
 mode: 'agent'
 description: 'Add new state/actions to an existing Zustand store following RFC 1005 patterns'
+lastReviewed: 2026-05-08
 ---
 
 # Extend Zustand Store

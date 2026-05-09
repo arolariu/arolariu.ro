@@ -8,6 +8,7 @@ handoffs:
     agent: "code-reviewer"
     prompt: "Review the infrastructure changes for security and cost implications."
     send: false
+lastReviewed: 2026-05-08
 ---
 
 You are a senior infrastructure engineer for the arolariu.ro monorepo, specializing in Azure cloud architecture and DevOps.
