@@ -1,44 +1,99 @@
 import type {Certificate} from "@/types";
 
-type CertificationKeys = Readonly<"az900" | "ai900" | "sc900">;
+type CertificationKeys =
+  | "ab730"
+  | "ab731"
+  | "az900"
+  | "ai900"
+  | "sc900"
+  | "gh900"
+  | "gh100"
+  | "gh200"
+  | "gh300";
+
 type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
 
 /**
- * This object contains the certifications obtained by the individual.
- * Each key corresponds to a specific certification.
- * The values are objects containing details about the certification name, issuer, code, issue date, and optional description.
+ * Professional certifications grouped by issuer.
+ * Microsoft block (5): newest first by year (AB-730/731 → AZ/AI/SC-900).
+ * GitHub block (4): by exam-code progression (900 → 100 → 200 → 300).
  */
 export const certifications: Readonly<Certifications> = {
+  ab730: {
+    name: "AI Business Professional",
+    code: "AB-730",
+    issuer: "Microsoft",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+    issueDate: "2026",
+    category: "Microsoft",
+  },
+  ab731: {
+    name: "AI Transformation Leader",
+    code: "AB-731",
+    issuer: "Microsoft",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+    issueDate: "2026",
+    category: "Microsoft",
+  },
   az900: {
-    name: "AZ-900 (Azure Fundamentals)",
+    name: "Azure Fundamentals",
     code: "AZ-900",
     issuer: "Microsoft",
-    issuerUrl: "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/",
     issueDate: "2023",
-    description: "Validates foundational knowledge of cloud services and how those services are provided with Microsoft Azure.",
+    category: "Microsoft",
   },
   ai900: {
-    name: "AI-900 (Azure AI Fundamentals)",
+    name: "Azure AI Fundamentals",
     code: "AI-900",
     issuer: "Microsoft",
-    issuerUrl: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/",
     issueDate: "2023",
-    description: "Demonstrates knowledge of common AI and machine learning workloads and how to implement them on Azure.",
+    category: "Microsoft",
   },
   sc900: {
-    name: "SC-900 (Security, Compliance & Identity Fundamentals)",
+    name: "Security, Compliance & Identity Fundamentals",
     code: "SC-900",
     issuer: "Microsoft",
-    issuerUrl: "https://learn.microsoft.com/en-us/certifications/security-compliance-and-identity-fundamentals/",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
     issueDate: "2023",
-    description:
-      "Validates foundational knowledge of security, compliance, and identity concepts and related cloud-based Microsoft solutions.",
+    category: "Microsoft",
+  },
+  gh900: {
+    name: "GitHub Foundations",
+    code: "GH-900",
+    issuer: "GitHub",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+    issueDate: "2026",
+    category: "GitHub",
+  },
+  gh100: {
+    name: "GitHub Administration",
+    code: "GH-100",
+    issuer: "GitHub",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+    issueDate: "2026",
+    category: "GitHub",
+  },
+  gh200: {
+    name: "GitHub Actions",
+    code: "GH-200",
+    issuer: "GitHub",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+    issueDate: "2026",
+    category: "GitHub",
+  },
+  gh300: {
+    name: "GitHub Copilot",
+    code: "GH-300",
+    issuer: "GitHub",
+    issuerUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+    issueDate: "2026",
+    category: "GitHub",
   },
 } as const;
 
 /**
- * Converts the certifications object to an array format for easier iteration in components.
- * This is useful for rendering lists of certifications in the UI.
- * This array will contain all certification entries defined in the `certifications` object.
+ * Flat array form for iteration in components.
  */
 export const certificationsAsArray: ReadonlyArray<Certificate> = Object.freeze(Object.values(certifications));

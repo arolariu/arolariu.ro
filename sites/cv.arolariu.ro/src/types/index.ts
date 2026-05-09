@@ -1,5 +1,5 @@
 export type {Biography} from "./Biography";
-export type {Certificate} from "./Certificate";
+export type {Certificate, CertificateCategory} from "./Certificate";
 export type {Competency} from "./Competency";
 export type {Education} from "./Education";
 export type {Experience} from "./Experience";
