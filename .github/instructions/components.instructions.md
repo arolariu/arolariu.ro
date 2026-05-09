@@ -4,6 +4,7 @@ lastUpdated: "2026-02-09"
 name: 'Component Library'
 description: 'Guidelines for the @arolariu/components shared UI library built on Base UI and CSS Modules'
 applyTo: 'packages/components/**/*.tsx, packages/components/**/*.ts'
+lastReviewed: 2026-05-08
 ---
 
 # Component Library Guidelines

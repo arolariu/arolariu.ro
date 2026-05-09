@@ -4,6 +4,7 @@ description: 'Guides dependency and framework migrations safely with audit, plan
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
+lastReviewed: 2026-05-08
 ---
 
 # Migration Guide

@@ -4,6 +4,7 @@ description: 'Guided refactoring following project patterns. Identifies code sme
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
+lastReviewed: 2026-05-08
 ---
 
 # Guided Refactoring

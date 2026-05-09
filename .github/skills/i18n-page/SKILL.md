@@ -1,6 +1,7 @@
 ---
 name: i18n-page
 description: 'Adds internationalization to Next.js pages using next-intl with server and client component patterns, supporting en/ro/fr locales following RFC 1003 for the arolariu.ro frontend.'
+lastReviewed: 2026-05-08
 ---
 
 # i18n Page Setup

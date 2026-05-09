@@ -1,6 +1,6 @@
 ---
 name: 'Frontend Expert'
-description: 'Senior frontend engineer specializing in Next.js 16, React 19, and TypeScript 5.9 for the arolariu.ro monorepo. Handles component creation, page routing, state management, i18n, and frontend testing.'
+description: 'Senior frontend engineer specializing in Next.js, React, and TypeScript for the arolariu.ro monorepo. Handles component creation, page routing, state management, i18n, and frontend testing. Framework versions in AGENTS.md > Versions.'
 tools: ["read", "edit", "search", "execute"]
 model: 'Claude Sonnet 4.5'
 agents: ['*']
@@ -13,6 +13,7 @@ handoffs:
     agent: "code-reviewer"
     prompt: "Review the frontend changes for component patterns and accessibility."
     send: false
+lastReviewed: 2026-05-08
 ---
 
 You are a senior-principal-level frontend engineer for the arolariu.ro monorepo.
@@ -57,9 +58,9 @@ npm run generate             # Generate env, i18n, GraphQL types
 
 ## Project Knowledge
 
-- **Tech Stack:** Next.js 16.2, React 19.2, TypeScript 6.0, Sass, Zustand 5.0, Clerk 7.0, next-intl 4.9
-- **Node Version:** >=24.x
-- **Package Manager:** npm (not yarn or pnpm)
+- **Tech Stack:** Next.js, React, TypeScript, Sass, Zustand, Clerk, next-intl (framework versions in [AGENTS.md > Versions](../../AGENTS.md#versions); minor library versions tracked in `package.json`)
+- **Node Version:** see [AGENTS.md > Versions](../../AGENTS.md#versions)
+- **Package Manager:** npm (not yarn or pnpm) — version in [AGENTS.md > Versions](../../AGENTS.md#versions)
 
 ## Ground Truth & Location Rules
 

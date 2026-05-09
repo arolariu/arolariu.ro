@@ -4,6 +4,7 @@ description: 'Analyzes, validates, and generates comprehensive documentation com
 agent: 'agent'
 model: 'Claude Sonnet 4.5'
 tools: ['codebase', 'search']
+lastReviewed: 2026-05-08
 ---
 
 # Comment Documentation Standard Checker and Generator
