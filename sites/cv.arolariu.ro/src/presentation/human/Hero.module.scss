@@ -197,12 +197,12 @@
   }
 }
 
-.underlinePink {
-  background: rgb(236 72 153 / 0.3);
+.underlineEmerald {
+  background: rgb(16 185 129 / 0.3);
   transition-delay: 900ms;
 
   :global(.dark) & {
-    background: rgb(244 114 182 / 0.3);
+    background: rgb(52 211 153 / 0.3);
   }
 }
 
