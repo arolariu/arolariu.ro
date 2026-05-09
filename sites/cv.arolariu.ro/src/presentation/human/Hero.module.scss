@@ -27,10 +27,10 @@
   filter: blur(48px);
   animation: float 8s ease-in-out infinite;
   transition: background var(--cv-transition-slow);
-  background: linear-gradient(to top right, rgb(59 130 246 / 0.1), rgb(139 92 246 / 0.08), rgb(236 72 153 / 0.05));
+  background: linear-gradient(to top right, rgb(59 130 246 / 0.1), rgb(139 92 246 / 0.08), rgb(52 211 153 / 0.05));
 
   :global(.dark) & {
-    background: linear-gradient(to top right, rgb(59 130 246 / 0.15), rgb(139 92 246 / 0.1), rgb(236 72 153 / 0.05));
+    background: linear-gradient(to top right, rgb(59 130 246 / 0.15), rgb(139 92 246 / 0.1), rgb(52 211 153 / 0.05));
   }
 }
 
@@ -45,10 +45,10 @@
   animation: float 8s ease-in-out infinite;
   animation-delay: -4s;
   transition: background var(--cv-transition-slow);
-  background: linear-gradient(to top right, rgb(236 72 153 / 0.1), rgb(139 92 246 / 0.08), rgb(59 130 246 / 0.05));
+  background: linear-gradient(to top right, rgb(52 211 153 / 0.1), rgb(139 92 246 / 0.08), rgb(59 130 246 / 0.05));
 
   :global(.dark) & {
-    background: linear-gradient(to top right, rgb(236 72 153 / 0.15), rgb(139 92 246 / 0.1), rgb(59 130 246 / 0.05));
+    background: linear-gradient(to top right, rgb(52 211 153 / 0.15), rgb(139 92 246 / 0.1), rgb(59 130 246 / 0.05));
   }
 }
 
