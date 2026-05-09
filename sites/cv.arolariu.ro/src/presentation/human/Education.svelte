@@ -77,31 +77,50 @@
             Professional <span class={styles.accent}>Certifications</span>
           </h3>
         </div>
-        <div class={styles.grid}>
-          {#each certificationsAsArray as cert, index}
-            <AnimatedSection
-              id="cert-{index}"
-              animation="fade-up"
-              delay={index * 200}>
-              <div class={styles.certCard}>
-                <div class={styles.certHeader}>
-                  <div class={styles.certContent}>
-                    <h4 class={styles.certTitle}>
-                      {cert.name}
-                    </h4>
-                    <p class={styles.certCode}>Code: {cert.code}</p>
-                    <p class={styles.certIssuer}>{cert.issuer}</p>
-                  </div>
-                  <span class={styles.certDate}>
-                    {cert.issueDate}
-                  </span>
+
+        {@const microsoftCerts = certificationsAsArray.filter((c) => c.category === "Microsoft")}
+        {@const githubCerts = certificationsAsArray.filter((c) => c.category === "GitHub")}
+
+        <div class={styles.certGroup}>
+          <span class={cx(styles.eyebrow, styles.eyebrowMicrosoft)}>
+            Microsoft &middot; {microsoftCerts.length} credentials
+          </span>
+          <div class={styles.certGrid}>
+            {#each microsoftCerts as cert, index}
+              <AnimatedSection
+                id="cert-ms-{index}"
+                animation="fade-up"
+                delay={index * 80}>
+                <div class={cx(styles.certCardCompact, styles.certCardMicrosoft)}>
+                  <span class={styles.certCode}>{cert.code}</span>
+                  <span class={styles.certName}>{cert.name}</span>
+                  <span class={styles.certYear}>{cert.issueDate}</span>
                 </div>
-                <p class={styles.certDescription}>
-                  {cert.description}
-                </p>
-              </div>
-            </AnimatedSection>
-          {/each}
+              </AnimatedSection>
+            {/each}
+          </div>
+        </div>
+
+        <hr class={styles.groupDivider} />
+
+        <div class={styles.certGroup}>
+          <span class={cx(styles.eyebrow, styles.eyebrowGitHub)}>
+            GitHub &middot; {githubCerts.length} credentials
+          </span>
+          <div class={styles.certGrid}>
+            {#each githubCerts as cert, index}
+              <AnimatedSection
+                id="cert-gh-{index}"
+                animation="fade-up"
+                delay={index * 80}>
+                <div class={cx(styles.certCardCompact, styles.certCardGitHub)}>
+                  <span class={styles.certCode}>{cert.code}</span>
+                  <span class={styles.certName}>{cert.name}</span>
+                  <span class={styles.certYear}>{cert.issueDate}</span>
+                </div>
+              </AnimatedSection>
+            {/each}
+          </div>
         </div>
       </div>
     </div>
