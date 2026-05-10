@@ -4,6 +4,10 @@
   import {educationAsArray} from "@/data/education";
   import {cx} from "@/lib/utils/classNames";
   import styles from "./Education.module.scss";
+
+  // Static partition by issuer; safe to compute once because the source array is frozen.
+  const microsoftCerts = certificationsAsArray.filter((c) => c.category === "Microsoft");
+  const githubCerts = certificationsAsArray.filter((c) => c.category === "GitHub");
 </script>
 
 <section
@@ -77,9 +81,6 @@
             Professional <span class={styles.accent}>Certifications</span>
           </h3>
         </div>
-
-        {@const microsoftCerts = certificationsAsArray.filter((c) => c.category === "Microsoft")}
-        {@const githubCerts = certificationsAsArray.filter((c) => c.category === "GitHub")}
 
         <div class={styles.certGroup}>
           <span class={cx(styles.eyebrow, styles.eyebrowMicrosoft)}>
