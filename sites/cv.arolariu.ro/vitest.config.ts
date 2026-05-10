@@ -29,6 +29,8 @@ export default mergeConfig(
         "@": path.resolve(__dirname, "./src"),
         $lib: path.resolve(__dirname, "./src/lib"),
         "$app/environment": path.resolve(__dirname, "./src/__mocks__/$app/environment.ts"),
+        "$app/navigation": path.resolve(__dirname, "./src/__mocks__/$app/navigation.ts"),
+        "$app/stores": path.resolve(__dirname, "./src/__mocks__/$app/stores.ts"),
       },
       conditions: ["browser"],
     },
