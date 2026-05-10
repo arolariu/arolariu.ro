@@ -11,7 +11,7 @@ type Educations = Readonly<Record<EducationKeys, Education>>;
  * date pair, `score`, `courses`, and `highlights` fields drive the JSON
  * Resume export (`/json` route) so the two views never drift on entry count.
  */
-export const education: Readonly<Educations> = {
+export const education: Readonly<Educations> = Object.freeze({
   portsmouthUK: {
     degree: "MSc. Data Science",
     institution: "University of Portsmouth",
@@ -96,7 +96,7 @@ export const education: Readonly<Educations> = {
       "Active member of the Computer Science Student Association",
     ],
   },
-} as const;
+});
 
 /**
  * Converts the education object to an array format for easier iteration in components.

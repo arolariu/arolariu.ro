@@ -5,7 +5,7 @@
 
 import type {PersonalInformation} from "@/types";
 
-export const author: Readonly<PersonalInformation> = {
+export const author: Readonly<PersonalInformation> = Object.freeze({
   name: "Alexandru-Razvan Olariu",
   age:
     new Date().getFullYear()
@@ -19,4 +19,4 @@ export const author: Readonly<PersonalInformation> = {
   github: "https://www.github.com/arolariu",
   region: "Romania / European Union",
   summary: "Passionate software engineer with a focus on building impactful solutions.",
-} as const;
+});

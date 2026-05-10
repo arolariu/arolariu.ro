@@ -10,7 +10,7 @@ type CompetencyKeys =
 
 type CompetenciesMap = Readonly<Record<CompetencyKeys, Competency>>;
 
-export const competencies: Readonly<CompetenciesMap> = {
+export const competencies: Readonly<CompetenciesMap> = Object.freeze({
   engineeringExcellence: {
     title: "Engineering Excellence",
     description:
@@ -41,4 +41,4 @@ export const competencies: Readonly<CompetenciesMap> = {
     description:
       "Alexandru has completed many Hacker Rank, Hacker Earth and Leet Code challenges published from 2019 until 2021. He has a strong algorithmic thinking and is able to construct complex algorithms with ease.",
   },
-} as const;
+});

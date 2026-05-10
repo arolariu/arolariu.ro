@@ -1,5 +1,12 @@
-// UI-related content like navigation, buttons, labels, etc.
-export const ui = {
+/**
+ * @fileoverview UI string catalog — labels, button text, status messages,
+ * format names. Read by every component that surfaces user-facing copy
+ * so all strings live in one place.
+ */
+
+import type {Ui} from "@/types";
+
+export const ui: Ui = Object.freeze({
   navigation: {
     about: "About",
     skills: "Skills",
@@ -74,4 +81,4 @@ export const ui = {
     raw: "Raw",
     technical: "Technical",
   },
-};
+});

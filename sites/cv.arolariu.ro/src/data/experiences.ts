@@ -13,7 +13,7 @@ const MICROSOFT_URL = "https://microsoft.com";
  * (`url`, `startDate`, `endDate`, `summary`) drive the JSON Resume export
  * (`/json` route) so the two views never drift on entry count.
  */
-export const experiences: Readonly<Experiences> = {
+export const experiences: Readonly<Experiences> = Object.freeze({
   microsoft3: {
     title: "E + D M365 AI Fullstack Software Engineer II",
     company: "Microsoft",
@@ -101,7 +101,7 @@ export const experiences: Readonly<Experiences> = {
     summary:
       "Tested Avatar: Frontiers of Pandora™, a first-person action-adventure game built on the Snowdrop engine (C++) by Massive Entertainment, a UBISOFT studio.",
   },
-} as const;
+});
 
 /**
  * This array is a flattened version of the experiences object.

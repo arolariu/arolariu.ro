@@ -5,7 +5,7 @@ import type {Skill} from "@/types";
  * Layout (desktop, 6-column grid):
  *   1 hero (3x2) + 2 large (3x1 each) + 3 medium (2x1 each) + 6 small (1x1 each).
  */
-export const skills: ReadonlyArray<Skill> = [
+export const skills: ReadonlyArray<Skill> = Object.freeze([
   {
     name: "TypeScript \u00B7 C# / .NET",
     size: "hero",
@@ -24,4 +24,4 @@ export const skills: ReadonlyArray<Skill> = [
   {name: "GH Actions", size: "sm", label: "CI"},
   {name: "Docker", size: "sm", label: "Container"},
   {name: "Git", size: "sm", label: "VCS"},
-] as const;
+]);

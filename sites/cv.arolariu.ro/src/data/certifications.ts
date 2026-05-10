@@ -18,7 +18,7 @@ type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
  * Microsoft block (5): newest first by year (AB-730/731 → AZ/AI/SC-900).
  * GitHub block (4): by exam-code progression (900 → 100 → 200 → 300).
  */
-export const certifications: Readonly<Certifications> = {
+export const certifications: Readonly<Certifications> = Object.freeze({
   ab730: {
     name: "AI Business Professional",
     code: "AB-730",
@@ -91,7 +91,7 @@ export const certifications: Readonly<Certifications> = {
     issueDate: "2026",
     category: "GitHub",
   },
-} as const;
+});
 
 /**
  * Flat array form for iteration in components.

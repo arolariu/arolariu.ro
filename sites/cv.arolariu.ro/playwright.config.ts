@@ -5,12 +5,14 @@
 
 import {defineConfig, devices} from "@playwright/test";
 
+const isCI = Boolean(process.env["CI"]);
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  workers: isCI ? 2 : 1,
   reporter: [["html", {outputFolder: "test-results/html-report"}], ["json", {outputFile: "test-results/results.json"}], ["list"]],
   use: {
     baseURL: "http://localhost:4173",
@@ -39,7 +41,7 @@ export default defineConfig({
   webServer: {
     command: "npm run preview",
     url: "http://localhost:4173",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120000,
   },
 });
