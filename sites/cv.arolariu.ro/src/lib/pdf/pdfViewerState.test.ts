@@ -2,8 +2,13 @@ import {describe, expect, it} from "vitest";
 
 import {
   PDF_ASSET_URL,
+  PDF_ATS_STATUS,
   PDF_DOWNLOAD_FILENAME,
+  PDF_FILE_SIZE_DISPLAY,
+  PDF_FORMAT_DISPLAY,
+  PDF_LAST_UPDATED,
   PDF_NATIVE_ASSISTANCE_DELAY_MS,
+  PDF_PAGE_COUNT,
   PDF_PRINT_ACTION_LABEL,
   PDF_PRINT_ASSISTANCE_TEXT,
   detectPdfDevice,
@@ -72,5 +77,31 @@ describe("PDF viewer state", () => {
     expect(PDF_PRINT_ASSISTANCE_TEXT).toContain("Open");
     expect(PDF_PRINT_ASSISTANCE_TEXT).toContain("browser");
     expect(PDF_PRINT_ASSISTANCE_TEXT).toContain("Print");
+  });
+});
+
+describe("PDF metadata constants", () => {
+  it("exports a non-empty file-size display string", () => {
+    expect(PDF_FILE_SIZE_DISPLAY).toBeTypeOf("string");
+    expect(PDF_FILE_SIZE_DISPLAY.length).toBeGreaterThan(0);
+  });
+
+  it("exports a positive page count number", () => {
+    expect(PDF_PAGE_COUNT).toBeTypeOf("number");
+    expect(PDF_PAGE_COUNT).toBeGreaterThan(0);
+  });
+
+  it("exports last-updated in YYYY-MM format", () => {
+    expect(PDF_LAST_UPDATED).toMatch(/^\d{4}-\d{2}$/);
+  });
+
+  it("exports a non-empty format display string", () => {
+    expect(PDF_FORMAT_DISPLAY).toBeTypeOf("string");
+    expect(PDF_FORMAT_DISPLAY.length).toBeGreaterThan(0);
+  });
+
+  it("exports a non-empty ATS status string", () => {
+    expect(PDF_ATS_STATUS).toBeTypeOf("string");
+    expect(PDF_ATS_STATUS.length).toBeGreaterThan(0);
   });
 });
