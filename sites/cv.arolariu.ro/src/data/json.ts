@@ -1,5 +1,98 @@
+import type {Certificate, Education, Experience} from "@/types";
+
 import {author} from "./author";
+import {certificationsAsArray} from "./certifications";
+import {educationAsArray} from "./education";
+import {experiencesAsArray, parseList} from "./experiences";
 import {testimonials} from "./testimonials";
+
+/**
+ * Maps an Experience entry to a JSON Resume `work[]` shape.
+ * Pulls highlights/keywords/achievements from the `#`-separated source strings.
+ * Falls back to `description` when `summary` is unset so existing entries
+ * stay valid even before they're enriched with JSON-Resume metadata.
+ */
+function experienceToJsonResume(e: Experience): {
+  name: string;
+  position: string;
+  url: string | undefined;
+  startDate: string | undefined;
+  endDate: string | null | undefined;
+  summary: string;
+  highlights: ReadonlyArray<string>;
+  location: string;
+  keywords: ReadonlyArray<string>;
+  achievements: ReadonlyArray<string>;
+} {
+  return {
+    name: e.company,
+    position: e.title,
+    url: e.url,
+    startDate: e.startDate,
+    endDate: e.endDate,
+    summary: e.summary ?? e.description,
+    highlights: parseList(e.responsibilities),
+    location: e.location,
+    keywords: parseList(e.techAndSkills),
+    achievements: parseList(e.achievements),
+  };
+}
+
+/**
+ * Maps an Education entry to a JSON Resume `education[]` shape.
+ */
+function educationToJsonResume(ed: Education): {
+  institution: string;
+  url: string | undefined;
+  area: string | undefined;
+  studyType: string | undefined;
+  startDate: string | undefined;
+  endDate: string | undefined;
+  score: string | undefined;
+  courses: ReadonlyArray<string> | undefined;
+  location: string;
+  status: string;
+  highlights: ReadonlyArray<string> | undefined;
+} {
+  return {
+    institution: ed.institution,
+    url: ed.url,
+    area: ed.area,
+    studyType: ed.studyType,
+    startDate: ed.startDate,
+    endDate: ed.endDate,
+    score: ed.score,
+    courses: ed.courses,
+    location: ed.location,
+    status: ed.status,
+    highlights: ed.highlights,
+  };
+}
+
+/**
+ * Maps a Certificate entry to a JSON Resume `certificates[]` shape.
+ * Microsoft-issued certs gain the canonical `Microsoft Certified:` prefix.
+ */
+function certificateToJsonResume(c: Certificate): {
+  name: string;
+  date: string;
+  issuer: string;
+  url: string | undefined;
+  code: string;
+  validUntil: string;
+  verificationUrl: string | undefined;
+} {
+  const displayName = c.issuer === "Microsoft" ? `Microsoft Certified: ${c.name}` : c.name;
+  return {
+    name: displayName,
+    date: c.issueDate,
+    issuer: c.issuer,
+    url: c.issuerUrl,
+    code: c.code,
+    validUntil: c.expirationDate ?? "No expiration",
+    verificationUrl: c.issuerUrl,
+  };
+}
 
 export const jsonCVData = {
   $schema: "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
@@ -45,133 +138,10 @@ export const jsonCVData = {
       },
     ],
   },
-  work: [
-    {
-      name: "Microsoft",
-      position: "E + D M365 AI Fullstack Software Engineer II",
-      url: "https://microsoft.com",
-      startDate: "2024-11",
-      endDate: null,
-      summary:
-        "Fullstack software engineer in the E+D MSAI (M365 AI Experiences) organization, building AI-first product surfaces consumed by millions of users.",
-      highlights: [
-        "Working on M365 AI experiences with React + GraphQL on cloud-native infrastructure",
-        "Driving engineering excellence and large-scale development practices across the team",
-        "Mentoring fellow engineers and contributing to leadership rituals",
-      ],
-      location: "Remote (Norway)",
-      keywords: ["React", "GraphQL", "Large-Scale Development", "Cloud-Native", "Agile", "Engineering Excellence", "Leadership"],
-      technologies: {
-        languages: ["TypeScript", "C#"],
-        frameworks: ["React", "GraphQL"],
-        cloud: ["Azure"],
-      },
-      achievements: [],
-    },
-    {
-      name: "Microsoft",
-      position: "E + D Sovereign Clouds Software Engineer II",
-      url: "https://microsoft.com",
-      startDate: "2023-03",
-      endDate: "2024-12",
-      summary: "Led observability, documentation and CLI tooling initiatives for sovereign cloud environments.",
-      highlights: [
-        "Orchestrated and implemented the three pillars of observability (3PO) in microservices architecture using Open Telemetry standards",
-        "Built automated monitoring and alerting triggers based on p95/p99 statistics for real-time and synthetic traffic",
-        "Contributed to development of in-house .NET library implementing ODataV4 data consumption protocol for NoSQL databases",
-        "Led documentation & product adoption initiatives using static site generators and API consumption layers",
-        "Shadowed and attended hiring interviews for SWE II and Senior SWE positions",
-      ],
-      location: "EMEA (Remote)",
-      keywords: [".NET", "Azure", "Microservices", "OpenTelemetry", "OData", "Documentation", "CLI"],
-      technologies: {
-        languages: ["C#", "TypeScript", "PowerShell"],
-        frameworks: [".NET 6/7", "React", "OpenTelemetry"],
-        tools: ["Azure DevOps", "GitHub Actions", "DocFX", "Grafana", "Prometheus"],
-        cloud: ["Azure", "Azure Kubernetes Service", "Azure Monitor", "Application Insights"],
-      },
-      achievements: [
-        "Reduced MTTR (Mean Time To Resolution) by 45% through improved observability",
-        "Increased API adoption by 30% through better documentation and tooling",
-        "Contributed to 3 internal patents for data consumption protocols",
-      ],
-    },
-    {
-      name: "Microsoft",
-      position: "Azure Technical Engineer",
-      url: "https://microsoft.com",
-      startDate: "2021-03",
-      endDate: "2023-03",
-      summary: "Provided technical support and engineering excellence for Azure services, working exclusively with Fortune 500 clients.",
-      highlights: [
-        "Achieved 4.94/5.00 customer feedback score through engineering excellence",
-        "Provided continuous feedback to Product Group for Azure Virtual Desktop (AVD) features",
-        "Developed documentation for Azure Core services including AVD, Virtual Machines, and Networks",
-        "Worked exclusively with TOP 100 & Fortune 500 clients and industry leading professionals",
-      ],
-      location: "Romania (Remote)",
-      keywords: ["Azure", "Customer Support", "Documentation", "AVD", "Fortune 500"],
-      technologies: {
-        languages: ["PowerShell", "Bash", "KQL (Kusto Query Language)"],
-        tools: ["Azure Portal", "Azure Resource Manager", "Log Analytics", "Azure Monitor"],
-        cloud: ["Azure Virtual Desktop", "Azure Virtual Machines", "Azure Networking"],
-      },
-      achievements: [
-        "Maintained 99.9% SLA for critical customer incidents",
-        "Recognized with 3 quarterly excellence awards",
-        "Contributed to 15+ internal knowledge base articles",
-      ],
-    },
-    {
-      name: "Intel",
-      position: "Embedded Engineer",
-      url: "https://intel.com",
-      startDate: "2021",
-      endDate: "2021",
-      summary:
-        "Six-month engagement at Intel's Timisoara site, working on image-processing software, color space converters, and embedded systems for hardware components and neural-network inference paths.",
-      highlights: [
-        "Mastering skills in the world of image processing",
-        "Gaining a grasp of the domain of Machine Learning (ML)",
-        "Practicing achieved knowledge by developing different color space converters",
-      ],
-      location: "Remote (Romania - Timisoara)",
-      keywords: ["C", "C++", "x86 Assembly", "Color Space Converters", "Python", "Embedded", "IoT"],
-      technologies: {
-        languages: ["C", "C++", "Intel x8086 Assembly", "Python"],
-        tools: ["Embedded toolchains"],
-      },
-      achievements: [
-        "Developed color space converters (CSC) in C and Assembly x8086 (YUV->RGB, Grayscale)",
-        "Created 10+ types of image filters such as Fish Eye, Sobel, Edge Detection, Box Blur",
-        "Refactored .ASM code to better perform on IoT & Embedded Systems devices",
-      ],
-    },
-    {
-      name: "Ubisoft",
-      position: "QA/QC Engineer",
-      url: "https://ubisoft.com",
-      startDate: "2020",
-      endDate: "2021",
-      summary:
-        "Tested Avatar: Frontiers of Pandora\u2122, a first-person action-adventure game built on the Snowdrop engine (C++) by Massive Entertainment, a UBISOFT studio.",
-      highlights: [
-        "Managed regression, integration, and unit testing using XRAY, TestRail, and Bugzilla",
-        "Created high-quality test suites and test plans in JIRA / Confluence",
-        "Maintained stable communication channels between production and testing teams",
-      ],
-      location: "Hybrid (Bucharest, Romania)",
-      keywords: ["Unit Testing", "Integration Testing", "A/B Testing", "Performance Testing", "Automated Testing", "E2E Testing"],
-      technologies: {
-        tools: ["XRAY", "TestRail", "Bugzilla", "JIRA", "Confluence", "SQL", "JQL"],
-      },
-      achievements: [
-        "Ranked #1 bug reporter for 5 of 6 months by consistently exceeding the reported-defect quota",
-        "Found and reported major code defects ranging from race conditions to memory-allocation issues",
-        "Increased daily report efficiency by leveraging SQL and JQL filtering capabilities",
-      ],
-    },
-  ],
+
+  /** Derived from `experiencesAsArray` so /json never drifts from /human. */
+  work: experiencesAsArray.map(experienceToJsonResume),
+
   volunteer: [
     {
       organization: "Global Mentorship Initiative (GMI)",
@@ -207,82 +177,10 @@ export const jsonCVData = {
       impact: "Organized 10+ technical workshops and community events",
     },
   ],
-  education: [
-    {
-      institution: "University of Portsmouth",
-      url: "https://www.port.ac.uk",
-      area: "Data Science",
-      studyType: "Master of Science",
-      startDate: "2024",
-      endDate: "2024",
-      score: "",
-      courses: [
-        "Data Science Fundamentals",
-        "Machine Learning",
-        "Statistical Analysis",
-        "Big Data Technologies",
-        "Data Visualization",
-        "Python for Data Science",
-      ],
-      location: "Online (United Kingdom)",
-      status: "Interrupted due to professional commitments",
-      highlights: [
-        "Online distance learning program",
-        "Focus on applied data science methodologies",
-        "Interrupted to prioritize career growth at Microsoft",
-      ],
-    },
-    {
-      institution: "Malmö University",
-      url: "https://mau.se",
-      area: "Internet of Things & Network Engineering",
-      studyType: "Master of Science",
-      startDate: "2023",
-      endDate: "2024",
-      score: "",
-      courses: [
-        "Internet of Things",
-        "Cloud Computing",
-        "Data Science",
-        "Machine Learning",
-        "Artificial Intelligence",
-        "Computer Vision",
-        "Robotics",
-      ],
-      location: "Malmö, Sweden",
-      status: "Interrupted due to personal circumstances",
-      highlights: [
-        "Focus on IoT architecture and implementation",
-        "Research in cloud-based IoT solutions",
-        "Advanced networking protocols for constrained devices",
-      ],
-    },
-    {
-      institution: "Academia de Studii Economice",
-      url: "https://ase.ro",
-      area: "Computer Science & Economics",
-      studyType: "Bachelor of Science",
-      startDate: "2019",
-      endDate: "2022",
-      score: "Top 1% according to thesis rating statistics",
-      courses: [
-        "Software Engineering",
-        "Computer Networks",
-        "Operating Systems",
-        "Algorithms & Data Structures",
-        "Database Management Systems",
-        "Web Development",
-        "Mobile Development",
-      ],
-      location: "Bucharest, Romania",
-      status: "Completed",
-      highlights: [
-        "Thesis: 'Implementation of a Microservices Architecture for E-Commerce Platforms'",
-        "GPA: 9.8/10",
-        "Active member of the Computer Science Student Association",
-      ],
-    },
-  ],
+
+  /** Derived from `educationAsArray` so /json never drifts from /human. */
+  education: educationAsArray.map(educationToJsonResume),
+
   awards: [
     {
       title: "Microsoft Student TECHathon",
@@ -321,89 +219,10 @@ export const jsonCVData = {
       ],
     },
   ],
-  certificates: [
-    {
-      name: "Microsoft Certified: AI Business Professional",
-      date: "2026",
-      issuer: "Microsoft",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
-      code: "AB-730",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
-    },
-    {
-      name: "Microsoft Certified: AI Transformation Leader",
-      date: "2026",
-      issuer: "Microsoft",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
-      code: "AB-731",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
-    },
-    {
-      name: "Microsoft Certified: Azure Fundamentals",
-      date: "2023",
-      issuer: "Microsoft",
-      url: "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
-      code: "AZ-900",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
-    },
-    {
-      name: "Microsoft Certified: Azure AI Fundamentals",
-      date: "2023",
-      issuer: "Microsoft",
-      url: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
-      code: "AI-900",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
-    },
-    {
-      name: "Microsoft Certified: Security, Compliance & Identity Fundamentals",
-      date: "2023",
-      issuer: "Microsoft",
-      url: "https://learn.microsoft.com/en-us/certifications/security-compliance-and-identity-fundamentals/",
-      code: "SC-900",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/certifications/security-compliance-and-identity-fundamentals/",
-    },
-    {
-      name: "GitHub Foundations",
-      date: "2026",
-      issuer: "GitHub",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
-      code: "GH-900",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
-    },
-    {
-      name: "GitHub Administration",
-      date: "2026",
-      issuer: "GitHub",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
-      code: "GH-100",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
-    },
-    {
-      name: "GitHub Actions",
-      date: "2026",
-      issuer: "GitHub",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
-      code: "GH-200",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
-    },
-    {
-      name: "GitHub Copilot",
-      date: "2026",
-      issuer: "GitHub",
-      url: "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
-      code: "GH-300",
-      validUntil: "No expiration",
-      verificationUrl: "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
-    },
-  ],
+
+  /** Derived from `certificationsAsArray` so /json never drifts from /human. */
+  certificates: certificationsAsArray.map(certificateToJsonResume),
+
   skills: [
     {
       name: "Programming Languages",
@@ -498,6 +317,8 @@ export const jsonCVData = {
       keywords: ["Student Mentoring", "Career Development", "Knowledge Sharing"],
     },
   ],
+
+  /** Derived from `testimonials` so /json never drifts from human Testimonials section. */
   references: testimonials
     ? Object.values(testimonials).map((testimonial) => ({
         name: testimonial.author,

@@ -3,11 +3,15 @@ import type {Experience} from "@/types";
 type ExperienceKeys = "microsoft3" | "microsoft2" | "microsoft1" | "ubisoft" | "intel";
 type Experiences = Readonly<Record<ExperienceKeys, Experience>>;
 
+const MICROSOFT_URL = "https://microsoft.com";
+
 /**
  * This object contains the professional experience of the individual.
  * Each key corresponds to a specific job or role.
- * The values are objects containing details about the title, company, location, period, description,
- * responsibilities, achievements, and technologies used.
+ *
+ * Most fields drive the human view (`/human`); the optional metadata fields
+ * (`url`, `startDate`, `endDate`, `summary`) drive the JSON Resume export
+ * (`/json` route) so the two views never drift on entry count.
  */
 export const experiences: Readonly<Experiences> = {
   microsoft3: {
@@ -20,6 +24,11 @@ export const experiences: Readonly<Experiences> = {
       "React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
     responsibilities: " ",
     achievements: " ",
+    url: MICROSOFT_URL,
+    startDate: "2024-11",
+    endDate: null,
+    summary:
+      "Fullstack software engineer in the E+D MSAI (M365 AI Experiences) organization, building AI-first product surfaces consumed by millions of users.",
   },
   microsoft2: {
     title: "E + D Sovereign Clouds Software Engineer II",
@@ -34,6 +43,10 @@ export const experiences: Readonly<Experiences> = {
       "Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations. # Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
     achievements:
       "(Observability-as-a-Service) Fully orchestrated and implemented the three pillars of observability in our microservices architecture using Open Telemetry standards; I've also built automated monitoring and alerting triggers based on p95/p99 statistics for real-time and synthetic traffic. # (Research & Development) Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX), using Domain-Driven Design (DDD) practices (e.g. aggregator roots) (patent in progress) # (Development Experience) Took leadership of two key areas for DX: documentation & consumption layers. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of frontend UIs, CLI tooling and OpenAPI spec files. # (Growth) Currently shadowing and attending hiring interviews for SWE II and Senior SWE positions.",
+    url: MICROSOFT_URL,
+    startDate: "2023-03",
+    endDate: "2024-12",
+    summary: "Led observability, documentation and CLI tooling initiatives for sovereign cloud environments.",
   },
   microsoft1: {
     title: "Azure Technical Engineer",
@@ -47,6 +60,10 @@ export const experiences: Readonly<Experiences> = {
       "Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; # Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; # Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; # Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly.",
     achievements:
       "(Engineering Excellence) Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # (Proactive interactions) Provided continuous feedback to the Product Group for the Azure Virtual Desktop (AVD) product, regarding the implementation of specific features and services. # (Customer Experience) Developed the existing documentation about the features of Azure Core services such as Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Worked exclusively with TOP 100 & Fortune 500 clients and industry leading professionals.",
+    url: MICROSOFT_URL,
+    startDate: "2021-03",
+    endDate: "2023-03",
+    summary: "Provided technical support and engineering excellence for Azure services, working exclusively with Fortune 500 clients.",
   },
   intel: {
     title: "Embedded Engineer",
@@ -60,6 +77,11 @@ export const experiences: Readonly<Experiences> = {
       "Mastering skills in the world of image processing. # Gaining a grasp of the domain of Machine Learning (ML). # Practicing the achieved knowledge by developing different color space converters.",
     achievements:
       "Developed color space converters (CSC) in C and Assembly x8086 (YUV->RGB, Grayscale). # Created 10+ types of image filters such as Fish Eye, Sobel, Edge Detection, Box Blur, etc. # Refactored .ASM code to better perform on IoT & Embedded Systems devices.",
+    url: "https://intel.com",
+    startDate: "2021",
+    endDate: "2021",
+    summary:
+      "Six-month engagement at Intel's Timisoara site working on image-processing software, color space converters, and embedded systems for hardware components and neural-network inference paths.",
   },
   ubisoft: {
     title: "QA/QC Engineer",
@@ -73,6 +95,11 @@ export const experiences: Readonly<Experiences> = {
       "# Managed regression, integration and unit testing with software such as XRAY, TestRail, Bugzilla. # Create high quality test suites and test plans using Atlassian (JIRA / Confluence) products. # Assure communications are stable and clear between production and testing teams.",
     achievements:
       "# I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
+    url: "https://ubisoft.com",
+    startDate: "2020",
+    endDate: "2021",
+    summary:
+      "Tested Avatar: Frontiers of Pandora™, a first-person action-adventure game built on the Snowdrop engine (C++) by Massive Entertainment, a UBISOFT studio.",
   },
 } as const;
 
