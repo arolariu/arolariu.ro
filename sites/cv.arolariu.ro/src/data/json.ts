@@ -48,17 +48,39 @@ export const jsonCVData = {
   work: [
     {
       name: "Microsoft",
+      position: "E + D M365 AI Fullstack Software Engineer II",
+      url: "https://microsoft.com",
+      startDate: "2024-11",
+      endDate: null,
+      summary:
+        "Fullstack software engineer in the E+D MSAI (M365 AI Experiences) organization, building AI-first product surfaces consumed by millions of users.",
+      highlights: [
+        "Working on M365 AI experiences with React + GraphQL on cloud-native infrastructure",
+        "Driving engineering excellence and large-scale development practices across the team",
+        "Mentoring fellow engineers and contributing to leadership rituals",
+      ],
+      location: "Remote (Norway)",
+      keywords: ["React", "GraphQL", "Large-Scale Development", "Cloud-Native", "Agile", "Engineering Excellence", "Leadership"],
+      technologies: {
+        languages: ["TypeScript", "C#"],
+        frameworks: ["React", "GraphQL"],
+        cloud: ["Azure"],
+      },
+      achievements: [],
+    },
+    {
+      name: "Microsoft",
       position: "E + D Sovereign Clouds Software Engineer II",
       url: "https://microsoft.com",
       startDate: "2023-03",
-      endDate: null,
-      summary: "Leading observability, documentation and CLI tooling initiatives for sovereign cloud environments.",
+      endDate: "2024-12",
+      summary: "Led observability, documentation and CLI tooling initiatives for sovereign cloud environments.",
       highlights: [
         "Orchestrated and implemented the three pillars of observability (3PO) in microservices architecture using Open Telemetry standards",
         "Built automated monitoring and alerting triggers based on p95/p99 statistics for real-time and synthetic traffic",
         "Contributed to development of in-house .NET library implementing ODataV4 data consumption protocol for NoSQL databases",
         "Led documentation & product adoption initiatives using static site generators and API consumption layers",
-        "Currently shadowing and attending hiring interviews for SWE II and Senior SWE positions",
+        "Shadowed and attended hiring interviews for SWE II and Senior SWE positions",
       ],
       location: "EMEA (Remote)",
       keywords: [".NET", "Azure", "Microservices", "OpenTelemetry", "OData", "Documentation", "CLI"],
@@ -98,6 +120,55 @@ export const jsonCVData = {
         "Maintained 99.9% SLA for critical customer incidents",
         "Recognized with 3 quarterly excellence awards",
         "Contributed to 15+ internal knowledge base articles",
+      ],
+    },
+    {
+      name: "Intel",
+      position: "Embedded Engineer",
+      url: "https://intel.com",
+      startDate: "2021",
+      endDate: "2021",
+      summary:
+        "Six-month engagement at Intel's Timisoara site, working on image-processing software, color space converters, and embedded systems for hardware components and neural-network inference paths.",
+      highlights: [
+        "Mastering skills in the world of image processing",
+        "Gaining a grasp of the domain of Machine Learning (ML)",
+        "Practicing achieved knowledge by developing different color space converters",
+      ],
+      location: "Remote (Romania - Timisoara)",
+      keywords: ["C", "C++", "x86 Assembly", "Color Space Converters", "Python", "Embedded", "IoT"],
+      technologies: {
+        languages: ["C", "C++", "Intel x8086 Assembly", "Python"],
+        tools: ["Embedded toolchains"],
+      },
+      achievements: [
+        "Developed color space converters (CSC) in C and Assembly x8086 (YUV->RGB, Grayscale)",
+        "Created 10+ types of image filters such as Fish Eye, Sobel, Edge Detection, Box Blur",
+        "Refactored .ASM code to better perform on IoT & Embedded Systems devices",
+      ],
+    },
+    {
+      name: "Ubisoft",
+      position: "QA/QC Engineer",
+      url: "https://ubisoft.com",
+      startDate: "2020",
+      endDate: "2021",
+      summary:
+        "Tested Avatar: Frontiers of Pandora\u2122, a first-person action-adventure game built on the Snowdrop engine (C++) by Massive Entertainment, a UBISOFT studio.",
+      highlights: [
+        "Managed regression, integration, and unit testing using XRAY, TestRail, and Bugzilla",
+        "Created high-quality test suites and test plans in JIRA / Confluence",
+        "Maintained stable communication channels between production and testing teams",
+      ],
+      location: "Hybrid (Bucharest, Romania)",
+      keywords: ["Unit Testing", "Integration Testing", "A/B Testing", "Performance Testing", "Automated Testing", "E2E Testing"],
+      technologies: {
+        tools: ["XRAY", "TestRail", "Bugzilla", "JIRA", "Confluence", "SQL", "JQL"],
+      },
+      achievements: [
+        "Ranked #1 bug reporter for 5 of 6 months by consistently exceeding the reported-defect quota",
+        "Found and reported major code defects ranging from race conditions to memory-allocation issues",
+        "Increased daily report efficiency by leveraging SQL and JQL filtering capabilities",
       ],
     },
   ],
