@@ -179,6 +179,7 @@ $cv.work | Select-Object position, name`,
           {#each codeSampleTabs as tab}
             {@const isActive = activeCodeTab === tab.id}
             <button
+              id="code-tab-{tab.id}"
               role="tab"
               aria-selected={isActive}
               aria-controls="code-sample-pane"
@@ -191,7 +192,8 @@ $cv.work | Select-Object position, name`,
         <div
           id="code-sample-pane"
           class={styles.codeSamplesPane}
-          role="tabpanel">
+          role="tabpanel"
+          aria-labelledby="code-tab-{activeCodeTab}">
           <pre class={styles.codeSamplesPre}>{codeSamples[activeCodeTab]}</pre>
           <button
             class={styles.codeSamplesCopy}
@@ -296,8 +298,10 @@ $cv.work | Select-Object position, name`,
             {#each tabsConfig.options as opt}
               {@const isActive = tabsConfig.active === opt.id}
               <button
+                id="json-format-tab-{opt.id}"
                 role="tab"
                 aria-selected={isActive}
+                aria-controls="json-content-pane"
                 class={cx(styles.tabButton, isActive ? styles.tabButtonActive : styles.tabButtonIdle)}
                 onclick={() => tabsConfig.onChange(opt.id)}>
                 {opt.label}
@@ -314,7 +318,11 @@ $cv.work | Select-Object position, name`,
             {/if}
           </div>
         </div>
-        <div class={styles.jsonContainer}>
+        <div
+          id="json-content-pane"
+          class={styles.jsonContainer}
+          role="tabpanel"
+          aria-labelledby="json-format-tab-{activeTab}">
           {#if activeTab === "formatted" && showHighlighting}
             <pre class={styles.pre}>{@html highlightedJSON}</pre>
           {:else}

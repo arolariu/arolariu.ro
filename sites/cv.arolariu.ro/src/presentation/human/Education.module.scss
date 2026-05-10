@@ -64,15 +64,6 @@
   gap: 2rem;
 }
 
-.grid {
-  display: grid;
-  gap: 2rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 .card {
   @include effects.card-surface;
   @include effects.hover-lift;
