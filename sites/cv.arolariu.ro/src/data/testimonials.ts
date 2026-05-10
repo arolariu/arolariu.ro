@@ -29,7 +29,7 @@ export const testimonials: Readonly<Testimonials> = {
   perspectiveFromXX: {
     author: "Anonymous",
     company: "Microsoft",
-    position: "Senior Software Engineer",
+    position: "Senior Software Engineering Manager",
     quote:
       "Alex is an intelligent engineer whose capabilities shone brightly during our collaboration on our projects. He consistently demonstrates eagerness to assist the team with any request, showcasing his dedication to collective success. His proactive approach to problem-solving and dedication to system stability greatly benefit our team's workflow. Additionally, Alex's availability and willingness to support others during our release flow highlight his value as a colleague who prioritizes teamwork and collaboration.",
   },
