@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Skills bento-mosaic data — feeds the `/human` Skills
+ * section. Distinct shape from the JSON Resume `skills[]` block (see
+ * `jsonResumeSkills.ts` for that).
+ */
+
 import type {Skill} from "@/types";
 
 /**

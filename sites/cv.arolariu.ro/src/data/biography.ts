@@ -1,6 +1,14 @@
+/**
+ * @fileoverview Five-paragraph biography rendered on the `/human` About
+ * section. The first sentence interpolates the author's current age so
+ * the page never needs hand-edits to stay current.
+ */
+
 import type {Biography} from "@/types";
+
 import {author} from "./author";
 
+/** Five-paragraph biography rendered on the `/human` About section. */
 export const biography: Readonly<Biography> = Object.freeze({
   firstPoint: `Alexandru is a ${author.age} years old software engineer and solution architect. He currently works at Microsoft as a software engineer in the E+D MSAI FAST organization, building solutions that are used by millions of users worldwide.`,
   secondPoint:

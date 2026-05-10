@@ -1,4 +1,8 @@
 /**
+ * @fileoverview Type for a `volunteer[]` entry in the JSON Resume export.
+ */
+
+/**
  * JSON Resume `volunteer[]` entry — community / ambassador role.
  */
 export type Volunteer = Readonly<{

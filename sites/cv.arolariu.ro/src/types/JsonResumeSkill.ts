@@ -1,4 +1,8 @@
 /**
+ * @fileoverview Type for a `skills[]` entry in the JSON Resume export.
+ */
+
+/**
  * JSON Resume `skills[]` entry — proficiency-level skill group.
  *
  * Distinct from {@link Skill} (the human-view bento mosaic): this shape

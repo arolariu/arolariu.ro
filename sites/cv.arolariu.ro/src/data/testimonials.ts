@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Testimonials source — feeds the `/human` Testimonials
+ * carousel and the JSON Resume `references[]` export.
+ *
+ * Keys follow a `perspectiveFromX/Y/Z` naming scheme to keep anonymity
+ * stable across iterations (each key is one person's perspective on a
+ * different role / collaboration).
+ */
+
 import type {Testimonial} from "@/types";
 
 type TestimonialKeys =

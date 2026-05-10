@@ -1,4 +1,8 @@
 /**
+ * @fileoverview Type for a `languages[]` entry in the JSON Resume export.
+ */
+
+/**
  * JSON Resume `languages[]` entry — spoken language with fluency note.
  */
 export type Language = Readonly<{

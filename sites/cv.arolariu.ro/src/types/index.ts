@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Barrel re-export of every type defined under `src/types/`.
+ *
+ * Consumers should import via the `@/types` alias:
+ *
+ * ```ts
+ * import type {Experience, Certificate} from "@/types";
+ * ```
+ *
+ * Each domain entity lives in its own sibling file (one entity per file).
+ */
+
 export type {Award} from "./Award";
 export type {Biography} from "./Biography";
 export type {Certificate, CertificateCategory} from "./Certificate";

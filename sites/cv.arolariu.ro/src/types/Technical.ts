@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Types for the UI chrome metadata exposed by `data/technical.ts`:
+ * the Help-dialog tech-info card and the page-footer model.
+ */
+
+/**
  * Technical metadata for the Help dialog and Footer.
  *
  * Distinct from {@link JsonResumeTechnical} (the JSON Resume `technical`

@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Barrel re-export of every data source used by components
+ * and views. Importing from `@/data` (rather than the individual file)
+ * keeps consumer imports stable when files move or rename.
+ *
+ * Roughly grouped: identity → narrative → professional → JSON Resume
+ * static sections → composed JSON export → UI strings → chrome.
+ */
+
 // Author / personal information
 export {author} from "./author";
 

@@ -1,6 +1,12 @@
 /**
- * JSON Resume `projects[]` entry — flagship personal project with optional
- * technologies / metrics / architecture metadata.
+ * @fileoverview Types for a `projects[]` entry in the JSON Resume export,
+ * including the supporting `technologies` and `metrics` shapes.
+ */
+
+/**
+ * Optional grouped technologies for a project (frontend / backend /
+ * devops / cloud). All buckets are optional so projects can declare
+ * only the dimensions that apply.
  */
 export type ProjectTechnologies = Readonly<{
   frontend?: ReadonlyArray<string>;

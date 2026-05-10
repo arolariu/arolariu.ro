@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Professional certifications source — feeds the `/human`
+ * Education view (grouped Microsoft/GitHub blocks) and the JSON Resume
+ * `certificates[]` export. Update this single file when a new cert is
+ * earned; both views update automatically.
+ */
+
 import type {Certificate} from "@/types";
 
 type CertificationKeys =

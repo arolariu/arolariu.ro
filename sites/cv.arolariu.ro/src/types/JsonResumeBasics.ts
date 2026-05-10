@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Types for the `basics` block in the JSON Resume export
+ * (identity, contact, structured location, profiles).
+ */
+
+/**
  * JSON Resume `basics` block — identity, contact, profiles, location.
  *
  * Mirrors the JSON Resume v1.0.0 spec for the basics section. Distinct

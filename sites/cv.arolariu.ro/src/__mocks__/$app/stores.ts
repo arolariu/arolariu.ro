@@ -1,6 +1,9 @@
 /**
- * Mock for SvelteKit's $app/stores module
- * Provides minimal readable stores used by view components in tests.
+ * @fileoverview Vitest mock for SvelteKit's `$app/stores` virtual module.
+ *
+ * Returns inert readable stores so components that subscribe to `page`
+ * or `navigating` can render in tests without a SvelteKit runtime.
+ * Wired via the `$app/stores` alias in `vitest.config.ts`.
  *
  * @see https://kit.svelte.dev/docs/modules#$app-stores
  */

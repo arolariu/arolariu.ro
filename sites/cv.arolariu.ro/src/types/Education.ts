@@ -1,9 +1,31 @@
+/**
+ * @fileoverview Type for an academic-history entry.
+ *
+ * Drives both the `/human` Education card list and the JSON Resume
+ * `education[]` export. The first six fields feed the human view; the
+ * optional fields below feed `/json` so the two views never drift.
+ */
+
+/**
+ * A single education entry (degree program, certification course, etc.).
+ *
+ * The split between required (human-view) and optional (JSON-Resume-only)
+ * fields is deliberate: the human view renders period + status + degree +
+ * institution + description; everything else is JSON-Resume metadata for
+ * the `/json` and `/rest/json` consumers.
+ */
 export type Education = Readonly<{
+  /** Degree title (e.g. `"MSc. Data Science"`). */
   degree: string;
+  /** Institution name. */
   institution: string;
+  /** Display location (free-form). */
   location: string;
+  /** Multi-sentence description for the human-view card. */
   description: string;
+  /** Human-readable period (e.g. `"2024 - 2024"`). */
   period: string;
+  /** Display status (e.g. `"Completed"`, `"Interrupted"`). */
   status: string;
 
   /** Institution URL — used by both human view (optional) and JSON Resume export. */

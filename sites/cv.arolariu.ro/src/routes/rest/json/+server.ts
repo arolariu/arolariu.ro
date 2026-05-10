@@ -1,7 +1,22 @@
+/**
+ * @fileoverview SvelteKit endpoint that exposes the JSON Resume export
+ * at `/rest/json`.
+ *
+ * Supports:
+ *  - `?format=resume` — raw JSON Resume only (drops `meta` envelope)
+ *  - `?format=minimal` — `basics` + `work` only
+ *  - `?section=<key>` — single section (one of the JSON Resume blocks)
+ *  - `?pretty=true` — pretty-printed output with 2-space indent
+ *
+ * Response carries CORS + ETag headers for cache friendliness.
+ *
+ * @see {@link /sites/cv.arolariu.ro/src/data/json.ts} for the composed shape.
+ */
+
 import {jsonCVData as resume} from "@/data/json";
 import {json, type RequestHandler} from "@sveltejs/kit";
 
-// Type-safe section keys
+/** Keys of the JSON Resume top-level sections that can be requested via `?section=`. */
 type SectionKey =
   | "basics"
   | "work"

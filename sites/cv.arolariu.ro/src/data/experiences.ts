@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Professional experience source — feeds the `/human`
+ * Experience timeline and the JSON Resume `work[]` export. Also exports
+ * the `parseList` helper used to split `#`-separated authoring strings
+ * into arrays at consumption time.
+ */
+
 import type {Experience} from "@/types";
 
 type ExperienceKeys = "microsoft3" | "microsoft2" | "microsoft1" | "ubisoft" | "intel";

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Academic history source — feeds the `/human` Education
+ * view and the JSON Resume `education[]` export. Single source of truth.
+ */
+
 import type {Education} from "@/types";
 
 type EducationKeys = Readonly<"aseBucharest" | "malmoSweden" | "portsmouthUK">;

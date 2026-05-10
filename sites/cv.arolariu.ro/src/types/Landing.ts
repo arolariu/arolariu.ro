@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Types for the landing-page string catalog and the
+ * help-dialog content rendered on `/`.
+ */
+
+/**
  * Landing-page strings + help dialog content.
  */
 export type Landing = Readonly<{

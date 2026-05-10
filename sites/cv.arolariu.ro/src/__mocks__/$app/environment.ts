@@ -1,6 +1,8 @@
 /**
- * Mock for SvelteKit's $app/environment module
- * Used in tests to simulate browser environment
+ * @fileoverview Vitest mock for SvelteKit's `$app/environment` virtual module.
+ *
+ * Wired via the `$app/environment` alias in `vitest.config.ts` so component
+ * tests can render without spinning up the SvelteKit runtime.
  *
  * @see https://kit.svelte.dev/docs/modules#$app-environment
  */

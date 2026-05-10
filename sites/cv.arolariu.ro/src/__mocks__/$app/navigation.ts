@@ -1,6 +1,9 @@
 /**
- * Mock for SvelteKit's $app/navigation module
- * Used in tests to simulate client-side navigation APIs.
+ * @fileoverview Vitest mock for SvelteKit's `$app/navigation` virtual module.
+ *
+ * All navigation APIs are no-ops in tests — they exist purely to satisfy
+ * imports inside components that render under `@testing-library/svelte`.
+ * Wired via the `$app/navigation` alias in `vitest.config.ts`.
  *
  * @see https://kit.svelte.dev/docs/modules#$app-navigation
  */
