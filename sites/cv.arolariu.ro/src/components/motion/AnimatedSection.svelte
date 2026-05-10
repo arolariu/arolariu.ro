@@ -1,7 +1,7 @@
 <script lang="ts">
+  import {onMount, untrack} from "svelte";
   import {Tween, prefersReducedMotion} from "svelte/motion";
   import {intersect} from "./intersection";
-  import {onMount} from "svelte";
 
   type AnimationType = "fade-up" | "fade-down" | "fade-left" | "fade-right" | "fade-in" | "scale-up";
 
@@ -31,8 +31,11 @@
     "scale-up": {scale: 0.95, opacity: 0},
   };
 
-  // initialize motion values from the selected animation preset
-  const init = animationStyles[animation] ?? {x: 0, y: 0, scale: 1, opacity: 0};
+  // The `animation` prop is only consumed at component construction to
+  // pick the starting Tween values. Subsequent prop changes are not
+  // expected to restart the animation, so we explicitly untrack the
+  // read to silence the (correct) Svelte 5 reactivity warning.
+  const init = untrack(() => animationStyles[animation] ?? {x: 0, y: 0, scale: 1, opacity: 0});
   const x = new Tween(init.x ?? 0);
   const y = new Tween(init.y ?? 0);
   const scale = new Tween(init.scale ?? 1);

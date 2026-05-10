@@ -26,12 +26,13 @@
     size?: number | string;
   }
   let {name, class: klass = "", size = 16}: IconProps = $props();
-  const dimensionStyle =
+  const dimensionStyle = $derived(
     typeof size === "number"
       ? `width:${size}px;height:${size}px;`
       : typeof size === "string" && size.match(/^[0-9.]+(px|rem|em|%)$/)
         ? `width:${size};height:${size};`
-        : "";
+        : "",
+  );
 </script>
 
 {#if name === "arrow-left"}
