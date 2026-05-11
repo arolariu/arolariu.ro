@@ -4,7 +4,8 @@
  * @module tests/fixtures/a11y.fixture
  */
 
-import {test as base, expect, Page} from "@playwright/test";
+import type {Page} from "@playwright/test";
+import {test as base, expect} from "@playwright/test";
 
 // CDN URL for axe-core
 const AXE_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js";

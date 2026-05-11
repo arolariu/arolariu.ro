@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Core competencies shown as iconed cards on the `/human`
+ * Competencies section. Keyed for stable iteration order and so the
+ * component can map each key to its icon glyph.
+ */
+
 import type {Competency} from "@/types";
 
 type CompetencyKeys =
@@ -10,7 +16,8 @@ type CompetencyKeys =
 
 type CompetenciesMap = Readonly<Record<CompetencyKeys, Competency>>;
 
-export const competencies: Readonly<CompetenciesMap> = {
+/** Core competencies displayed as iconed cards on `/human`. */
+export const competencies: Readonly<CompetenciesMap> = Object.freeze({
   engineeringExcellence: {
     title: "Engineering Excellence",
     description:
@@ -41,4 +48,4 @@ export const competencies: Readonly<CompetenciesMap> = {
     description:
       "Alexandru has completed many Hacker Rank, Hacker Earth and Leet Code challenges published from 2019 until 2021. He has a strong algorithmic thinking and is able to construct complex algorithms with ease.",
   },
-} as const;
+});

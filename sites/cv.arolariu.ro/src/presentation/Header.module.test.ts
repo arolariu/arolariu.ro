@@ -4,9 +4,13 @@ import styles from "./Header.module.scss";
 
 describe("Header styles", () => {
   it("exports a class for every Header variant", () => {
-    expect(styles.default).toBeTypeOf("string");
-    expect(styles.default.length).toBeGreaterThan(0);
-    expect(styles.inverse).toBeTypeOf("string");
-    expect(styles.inverse.length).toBeGreaterThan(0);
+    const defaultClass = styles["default"];
+    const inverseClass = styles["inverse"];
+    expect(defaultClass).toBeTypeOf("string");
+    expect(defaultClass).toBeDefined();
+    expect((defaultClass ?? "").length).toBeGreaterThan(0);
+    expect(inverseClass).toBeTypeOf("string");
+    expect(inverseClass).toBeDefined();
+    expect((inverseClass ?? "").length).toBeGreaterThan(0);
   });
 });

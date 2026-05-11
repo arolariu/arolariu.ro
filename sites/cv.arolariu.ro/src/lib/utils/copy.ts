@@ -1,3 +1,9 @@
+/**
+ * @fileoverview `copyText()` — clipboard helper used by the `/human` and
+ * `/json` view-level copy actions. Returns a `Result<…, …>` so callers
+ * can handle SSR / permission failures without try/catch.
+ */
+
 import {error, ok, type Result} from "./result";
 
 /**

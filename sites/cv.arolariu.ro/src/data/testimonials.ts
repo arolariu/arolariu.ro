@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Testimonials source — feeds the `/human` Testimonials
+ * carousel and the JSON Resume `references[]` export.
+ *
+ * Keys follow a `perspectiveFromX/Y/Z` naming scheme to keep anonymity
+ * stable across iterations (each key is one person's perspective on a
+ * different role / collaboration).
+ */
+
 import type {Testimonial} from "@/types";
 
 type TestimonialKeys =
@@ -18,7 +27,7 @@ type Testimonials = Readonly<Record<TestimonialKeys, Testimonial>>;
  * Each testimonial includes the author's name, position, company, and a quote.
  * This data is structured to provide insights into the author's professional relationships and impact.
  */
-export const testimonials: Readonly<Testimonials> = {
+export const testimonials: Readonly<Testimonials> = Object.freeze({
   perspectiveFromX: {
     author: "Anonymous",
     company: "Microsoft",
@@ -29,7 +38,7 @@ export const testimonials: Readonly<Testimonials> = {
   perspectiveFromXX: {
     author: "Anonymous",
     company: "Microsoft",
-    position: "Senior Software Engineer",
+    position: "Senior Software Engineering Manager",
     quote:
       "Alex is an intelligent engineer whose capabilities shone brightly during our collaboration on our projects. He consistently demonstrates eagerness to assist the team with any request, showcasing his dedication to collective success. His proactive approach to problem-solving and dedication to system stability greatly benefit our team's workflow. Additionally, Alex's availability and willingness to support others during our release flow highlight his value as a colleague who prioritizes teamwork and collaboration.",
   },
@@ -82,7 +91,7 @@ export const testimonials: Readonly<Testimonials> = {
     quote:
       "You always step up to help, sharing your time generously, even when you have your own pressing tasks. Your quick and helpful replies to any questions are greatly appreciated. You take a prioritized and meticulous approach, providing instant solutions that not only unblock us in the short term but also outline long-term fixes and their implementation timelines. Your solution-oriented mindset is a true asset for our team. Your expertise, willingness to assist, and pleasant personality make you a great colleague. Keep up the great work!",
   },
-} as const;
+});
 
 /**
  * Array of all testimonials, flattened.

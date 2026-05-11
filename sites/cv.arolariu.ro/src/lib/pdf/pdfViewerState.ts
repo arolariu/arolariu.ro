@@ -86,3 +86,16 @@ export function getNextPdfSurfaceStatus(currentStatus: PdfSurfaceStatus, event: 
 export function shouldShowPdfAssistance(status: PdfSurfaceStatus): boolean {
   return status === "needs-assistance" || status === "failed";
 }
+
+/**
+ * Display values for the PDF metadata sidebar.
+ *
+ * IMPORTANT: Update these whenever the CV PDF (`static/cv.pdf`) is regenerated.
+ * Keeping the values in source rather than computing them at runtime avoids a
+ * PDF parsing dependency for one file that changes a couple times a year.
+ */
+export const PDF_FILE_SIZE_DISPLAY = "114 KB";
+export const PDF_PAGE_COUNT = 1;
+export const PDF_LAST_UPDATED = "2026-05";
+export const PDF_FORMAT_DISPLAY = "A4 PDF";
+export const PDF_ATS_STATUS = "\u2713 Compatible";

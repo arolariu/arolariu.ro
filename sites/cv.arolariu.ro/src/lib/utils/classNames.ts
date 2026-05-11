@@ -1,3 +1,10 @@
+/**
+ * @fileoverview `cx()` — a tiny class-name joiner used throughout the
+ * `/human`, `/json`, and `/pdf` views to combine CSS Module classes
+ * with conditional / external class strings.
+ */
+
+/** A value `cx` will accept — either a class string or a falsy short-circuit. */
 type ClassValue = string | false | null | undefined;
 
 /**

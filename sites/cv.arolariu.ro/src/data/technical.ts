@@ -1,7 +1,14 @@
+/**
+ * @fileoverview UI chrome metadata — `techInfo` for the Help dialog and
+ * `footer` for the page footer. Distinct from `jsonResumeTechnical.ts`,
+ * which holds the JSON Resume `technical` block.
+ */
+
+import type {Footer, TechInfo} from "@/types";
+
 import {author} from "./author";
 
-// Technical information for the help dialog and app metadata
-export const techInfo = {
+export const techInfo: TechInfo = Object.freeze({
   version: "v1.0.0",
   deployDate: new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -27,10 +34,9 @@ export const techInfo = {
     {name: "Vite", version: "7"},
     {name: "TypeScript", version: "5.9.2"},
   ],
-};
+});
 
-// Footer content
-export const footer = {
+export const footer: Footer = Object.freeze({
   copyright: `© 2024 - ${new Date().getFullYear()} Alexandru-Razvan Olariu. All rights reserved.`,
   links: {
     github: {
@@ -46,4 +52,4 @@ export const footer = {
       label: "Personal Website",
     },
   },
-};
+});
