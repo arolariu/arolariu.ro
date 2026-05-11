@@ -30,5 +30,20 @@ describe("root layout", () => {
     const {container} = render(Layout, {props: {children: childSnippet}});
     const main = container.querySelector("main#main-content");
     expect(main).not.toBeNull();
+    // tabindex=-1 is required so the skip-link actually moves keyboard
+    // focus into <main> on activation (Chrome/Edge/Safari only shift
+    // focus to the fragment target if the target is focusable).
+    expect(main?.getAttribute("tabindex")).toBe("-1");
+  });
+
+  it("renders a skip-to-main link as the first focusable element", () => {
+    const childSnippet = createRawSnippet(() => ({
+      render: () => `<span>inner</span>`,
+    }));
+
+    const {container} = render(Layout, {props: {children: childSnippet}});
+    const skipLink = container.querySelector("a[href='#main-content']");
+    expect(skipLink).not.toBeNull();
+    expect(skipLink?.textContent?.trim()).toMatch(/skip to main content/i);
   });
 });

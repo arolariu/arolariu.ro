@@ -43,4 +43,14 @@ describe("Hero", () => {
     expect(labels.some((l) => /get in touch/.test(l))).toBe(true);
     expect(labels.some((l) => /view my work/.test(l))).toBe(true);
   });
+
+  it("renders the avatar with intrinsic dimensions and async decoding", () => {
+    const {container} = render(Hero);
+    const img = container.querySelector("img[src='/author.jpeg']");
+    expect(img).not.toBeNull();
+    expect(img?.getAttribute("width")).toBe("199");
+    expect(img?.getAttribute("height")).toBe("199");
+    expect(img?.getAttribute("decoding")).toBe("async");
+    expect(img?.getAttribute("fetchpriority")).toBe("high");
+  });
 });

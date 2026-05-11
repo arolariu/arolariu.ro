@@ -211,6 +211,45 @@ a[role="button"]:active,
   }
 }
 
+/* Screen-reader-only utility for content that should be perceivable by AT
+   but invisible until focused. Pattern lifted from inclusive-components.design. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%); /* Modern equivalent of clip; covers browsers
+                            that have deprecated the legacy property. */
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-visible {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.25rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  z-index: 10000;
+  background: var(--cv-color-blue-600, #2563eb);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--cv-radius-md, 0.5rem);
+  box-shadow: var(--cv-shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1));
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

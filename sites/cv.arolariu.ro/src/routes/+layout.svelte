@@ -24,9 +24,17 @@
   });
 </script>
 
+<a
+  href="#main-content"
+  class="sr-only sr-only-focusable">
+  Skip to main content
+</a>
+
 <ScrollProgress />
 <CommandPalette />
 
-<main id="main-content">
+<main
+  id="main-content"
+  tabindex="-1">
   {@render children?.()}
 </main>
