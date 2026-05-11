@@ -111,7 +111,7 @@ describe("runProbe", () => {
     }) as typeof fetch;
 
     const delays = [0, 0, 0, 0, 0]; // five samples, zero wait in-test
-    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays, warmupSampleCount: 0});
 
     // Four unique URLs, one fetch per delay entry
     expect(calls.size).toBe(4);
@@ -133,7 +133,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     expect(api.overall).toBe("Unhealthy"); // worst of [Healthy, Unhealthy, Healthy]
     expect(api.error).toContain("ECONNREFUSED");
@@ -183,7 +183,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     expect(api.overall).toBe("Degraded");
     const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
@@ -209,7 +209,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
     expect(mssql).toBeDefined();
@@ -429,6 +429,29 @@ describe("runProbe", () => {
       for (const lat of r.sampleLatenciesMs!) {
         expect(lat).toBeLessThan(100);
       }
+    }
+  });
+
+  it("default warmupSampleCount is 2 when the option is omitted", async () => {
+    // Arrange
+    const calls = new Map<string, number>();
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      calls.set(u, (calls.get(u) ?? 0) + 1);
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act: do NOT pass warmupSampleCount — exercise the production default.
+    await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+    });
+
+    // Assert: each URL hit 2 (warmup) + 3 (measurement) = 5 times.
+    expect(calls.size).toBe(4);
+    for (const [url, count] of calls.entries()) {
+      expect(count, `${url} should be probed 5 times (default 2 warmup + 3 measurement)`).toBe(5);
     }
   });
 

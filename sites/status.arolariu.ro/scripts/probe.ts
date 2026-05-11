@@ -52,6 +52,21 @@ const WARMUP_FETCH_TIMEOUT_MS = 30_000;
  */
 const DEFAULT_SAMPLE_DELAYS_MS: readonly number[] = [0, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000, 20_000];
 
+/**
+ * Number of warmup HTTP GETs fired per service before the measurement batch
+ * when {@link RunProbeOptions.warmupSampleCount} is omitted. Defaults to 2 so
+ * services on scale-to-zero infra (Azure Container Apps for `exp.arolariu.ro`)
+ * or services that may hibernate (Azure App Service for `api.arolariu.ro`)
+ * are demonstrably awake before we start measuring. Once warmup #1 returns,
+ * the container/process is live; warmup #2 confirms the second-request
+ * pipeline is also primed before the measurement batch begins.
+ *
+ * Two is a deliberate, simple choice over adaptive stabilisation detection —
+ * a fixed prefix is trivial to reason about, trivial to test, and one knob
+ * is enough until we have evidence that per-service tuning matters.
+ */
+const DEFAULT_WARMUP_SAMPLE_COUNT = 2;
+
 /** Severity ranking used when picking the "worst" sample across the batch. */
 const STATUS_ORDER: Record<HealthStatus, number> = {Healthy: 0, Degraded: 1, Unhealthy: 2};
 
@@ -270,8 +285,8 @@ export interface RunProbeOptions {
    * only to wake hibernating or scale-to-zero services so the measurement
    * batch reflects steady-state behavior.
    *
-   * In production, defaults to {@link DEFAULT_WARMUP_SAMPLE_COUNT} (see Task 2
-   * of the warmup-prelude plan). Tests should pass `0` explicitly when they
+   * In production, defaults to {@link DEFAULT_WARMUP_SAMPLE_COUNT}. Tests
+   * should pass `0` explicitly when they
    * count `fetch` invocations or branch on per-call indices, so the warmup
    * loop doesn't shift their indexing.
    */
@@ -295,7 +310,7 @@ export async function runProbe(opts: RunProbeOptions): Promise<ProbeResult[]> {
   const nowIso = now.toISOString();
   /* v8 ignore next */
   const delays = opts.sampleDelaysMs ?? DEFAULT_SAMPLE_DELAYS_MS;
-  const warmupSampleCount = opts.warmupSampleCount ?? 0;
+  const warmupSampleCount = opts.warmupSampleCount ?? DEFAULT_WARMUP_SAMPLE_COUNT;
 
   const results = await Promise.all(SERVICES.map((cfg) => probeOne(cfg, nowIso, delays, warmupSampleCount)));
 
