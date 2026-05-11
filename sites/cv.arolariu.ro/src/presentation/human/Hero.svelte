@@ -8,6 +8,17 @@
 
   // Trigger hero animation shortly after mount
   $effect(() => {
+    // If the user prefers reduced motion, surface the hero immediately
+    // instead of waiting 200ms — the CSS-side scale-in animation is
+    // already gated by prefers-reduced-motion, so the timer was the
+    // last remaining motion-driven delay.
+    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+    if (prefersReducedMotion) {
+      heroVisible = true;
+      return;
+    }
+
     const t = setTimeout(() => (heroVisible = true), 200);
     return () => clearTimeout(t);
   });
