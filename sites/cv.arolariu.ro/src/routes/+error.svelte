@@ -22,13 +22,13 @@ Global error page displayed when route loading fails or an unhandled error occur
 This component is automatically rendered by SvelteKit when an error occurs.
 -->
 <script lang="ts">
-  import {page} from "$app/stores";
+  import {page} from "$app/state";
   import {goto} from "$app/navigation";
   import ThemeToggle from "@/components/ThemeToggle.svelte";
   import styles from "./ErrorPage.module.scss";
 
-  const error = $derived($page.error);
-  const status = $derived($page.status);
+  const error = $derived(page.error);
+  const status = $derived(page.status);
 
   const errorMessages: Record<number, {title: string; description: string}> = {
     404: {

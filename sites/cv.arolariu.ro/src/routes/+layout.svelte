@@ -1,7 +1,7 @@
 <script lang="ts">
   import "@/styles/global.scss";
   import {onNavigate, preloadData} from "$app/navigation";
-  import {page} from "$app/stores";
+  import {page} from "$app/state";
   import ScrollProgress from "@/components/ScrollProgress.svelte";
   import CommandPalette from "@/components/CommandPalette.svelte";
   import {onMount} from "svelte";
@@ -31,7 +31,7 @@
 
     const prefetch = (): void => {
       for (const route of prefetchRoutes) {
-        if ($page.url.pathname !== route) {
+        if (page.url.pathname !== route) {
           preloadData(route).catch(() => {
             // Silently ignore prefetch errors
           });
