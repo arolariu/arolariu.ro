@@ -41,5 +41,6 @@ describe("ScrollProgress", () => {
     expect(bar?.getAttribute("aria-label")).toBe("Page scroll progress");
     expect(bar?.getAttribute("aria-valuemin")).toBe("0");
     expect(bar?.getAttribute("aria-valuemax")).toBe("100");
+    expect(bar?.getAttribute("aria-valuenow")).not.toBeNull();
   });
 });
