@@ -142,7 +142,7 @@ describe("runProbe", () => {
   it("all samples healthy → aggregated result is Healthy with median latency", async () => {
     globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     expect(results.every((r) => r.overall === "Healthy")).toBe(true);
     expect(results.every((r) => typeof r.latencyMs === "number" && r.latencyMs >= 0)).toBe(true);
   });
@@ -151,7 +151,7 @@ describe("runProbe", () => {
     globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 
     const delays = [0, 0, 0, 0, 0];
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays, warmupSampleCount: 0});
 
     for (const r of results) {
       expect(r.sampleLatenciesMs).toBeDefined();
