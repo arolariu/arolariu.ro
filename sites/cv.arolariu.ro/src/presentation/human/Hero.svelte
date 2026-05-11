@@ -31,6 +31,10 @@
       <img
         src="/author.jpeg"
         alt={author.name}
+        width="199"
+        height="199"
+        decoding="async"
+        fetchpriority="high"
         onload={handleImageLoad}
         class={cx(
           styles.avatar,
