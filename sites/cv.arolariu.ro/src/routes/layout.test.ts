@@ -31,4 +31,15 @@ describe("root layout", () => {
     const main = container.querySelector("main#main-content");
     expect(main).not.toBeNull();
   });
+
+  it("renders a skip-to-main link as the first focusable element", () => {
+    const childSnippet = createRawSnippet(() => ({
+      render: () => `<span>inner</span>`,
+    }));
+
+    const {container} = render(Layout, {props: {children: childSnippet}});
+    const skipLink = container.querySelector("a[href='#main-content']");
+    expect(skipLink).not.toBeNull();
+    expect(skipLink?.textContent?.trim()).toMatch(/skip to main content/i);
+  });
 });

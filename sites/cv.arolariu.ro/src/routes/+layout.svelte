@@ -24,6 +24,12 @@
   });
 </script>
 
+<a
+  href="#main-content"
+  class="sr-only sr-only-focusable">
+  Skip to main content
+</a>
+
 <ScrollProgress />
 <CommandPalette />
 
