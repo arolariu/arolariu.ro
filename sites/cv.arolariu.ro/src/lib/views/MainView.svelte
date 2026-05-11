@@ -43,10 +43,18 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
   // chunk out of the landing page's critical path.
   let HelpDialog = $state<Component | null>(null);
 
+  /** Transient flag covering the dynamic-import round-trip for HelpDialog. */
+  let isLoadingHelp = $state<boolean>(false);
+
   async function loadHelpDialog(): Promise<void> {
-    if (HelpDialog !== null) return;
-    const mod = await import("@/components/HelpDialog.svelte");
-    HelpDialog = mod.default;
+    if (HelpDialog !== null || isLoadingHelp) return;
+    isLoadingHelp = true;
+    try {
+      const mod = await import("@/components/HelpDialog.svelte");
+      HelpDialog = mod.default;
+    } finally {
+      isLoadingHelp = false;
+    }
   }
 
   /**
@@ -143,6 +151,7 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
           class={styles.panelCard}
           style="--panel-delay: {i * 100}ms;"
           aria-label={panel.title}
+          aria-busy={panel.id === "help" ? isLoadingHelp : undefined}
           onclick={panel.action}
           data-panel={panel.id}>
           <div class={cx(styles.panelGradientOverlay, gradientClasses[panel.gradient])}></div>
