@@ -26,6 +26,18 @@ import {parseExpArolariuRo} from "./parsers/expArolariuRo";
 const PROBE_TIMEOUT_MS = 10_000;
 
 /**
+ * Per-fetch timeout for the warmup-prelude requests. Set higher than
+ * `PROBE_TIMEOUT_MS` because the whole point of warmup is to absorb cold-start
+ * cost for scale-to-zero infra (Azure Container Apps, App Service with
+ * `always-on=false`), where the first request after a quiet period commonly
+ * takes 10–30 s while the runtime is provisioning. A 10 s budget here would
+ * cause warmup to time out on roughly half of true cold starts, defeating its
+ * purpose. Worst-case 2 × 30 s warmup + 180 s measurement ≈ 4 min per probe
+ * — still well under the 30-min cron cadence.
+ */
+const WARMUP_FETCH_TIMEOUT_MS = 30_000;
+
+/**
  * Delay BEFORE each sample fetch (inter-sample delta, NOT an absolute offset
  * from probe start — see `probeOne`). Ten samples at a constant 20 s cadence:
  * the first fires immediately, each subsequent sample waits 20 s after the
@@ -75,6 +87,31 @@ const SERVICES: readonly ServiceConfig[] = [
   {service: "exp.arolariu.ro", url: "https://exp.arolariu.ro/api/health", parse: parseExpArolariuRo, parseBody: true},
   {service: "cv.arolariu.ro", url: "https://cv.arolariu.ro/", parse: parseCvArolariuRo, parseBody: false},
 ];
+
+/**
+ * Fire a single warmup HTTP GET against `cfg.url`. The response is intentionally
+ * discarded — warmup exists only to wake hibernating / scale-to-zero services
+ * so the subsequent measurement batch reflects steady-state latency rather
+ * than cold-start cost.
+ *
+ * Every outcome is swallowed: network error, AbortSignal timeout, even a 5xx
+ * body. Warmup is pure prelude and never contributes to the probe result;
+ * failure-handling lives entirely in the measurement path via `singleFetch`.
+ *
+ * The User-Agent carries a `(warmup)` suffix so service-side logs and
+ * telemetry can filter warmup traffic cleanly without parsing timing or path
+ * heuristics.
+ */
+async function warmupFetch(cfg: ServiceConfig): Promise<void> {
+  try {
+    await fetch(cfg.url, {
+      signal: AbortSignal.timeout(WARMUP_FETCH_TIMEOUT_MS),
+      headers: {"user-agent": "status.arolariu.ro-probe/1.0 (warmup)"},
+    });
+  } catch {
+    // Pure prelude — warmup outcome never affects the probe result.
+  }
+}
 
 /**
  * Perform a single HTTP probe against `cfg.url`. Never throws: network,
@@ -191,8 +228,23 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
  * the corresponding delay, and return the aggregated `ProbeResult`. Runs
  * samples sequentially on purpose — back-to-back concurrent fetches would
  * defeat the "spread samples across the bucket" strategy.
+ *
+ * Before the measurement loop, fires `warmupSampleCount` warmup GETs back-to-back
+ * via {@link warmupFetch}. Warmup outcomes never reach {@link aggregateSamples};
+ * they exist only to absorb cold-start latency so the measurement samples
+ * reflect steady state.
  */
-async function probeOne(cfg: ServiceConfig, nowIso: string, delaysMs: readonly number[]): Promise<ProbeResult> {
+async function probeOne(
+  cfg: ServiceConfig,
+  nowIso: string,
+  delaysMs: readonly number[],
+  warmupSampleCount: number,
+): Promise<ProbeResult> {
+  // Warmup phase: sequential, results discarded.
+  for (let i = 0; i < warmupSampleCount; i++) {
+    await warmupFetch(cfg);
+  }
+  // Measurement phase: existing semantics, unchanged.
   const samples: ProbeResult[] = [];
   for (let i = 0; i < delaysMs.length; i++) {
     /* v8 ignore next */
@@ -211,6 +263,19 @@ export interface RunProbeOptions {
   readonly now?: Date;
   /** Delay BEFORE each sample fetch. Defaults to {@link DEFAULT_SAMPLE_DELAYS_MS}. Pass `[0, 0, 0]` in tests. */
   readonly sampleDelaysMs?: readonly number[];
+  /**
+   * Number of warmup HTTP GETs to fire per service BEFORE the measurement
+   * batch. Warmup requests are pure prelude — their success / failure / latency
+   * is discarded entirely and never reaches `aggregateSamples`. They exist
+   * only to wake hibernating or scale-to-zero services so the measurement
+   * batch reflects steady-state behavior.
+   *
+   * In production, defaults to {@link DEFAULT_WARMUP_SAMPLE_COUNT} (see Task 2
+   * of the warmup-prelude plan). Tests should pass `0` explicitly when they
+   * count `fetch` invocations or branch on per-call indices, so the warmup
+   * loop doesn't shift their indexing.
+   */
+  readonly warmupSampleCount?: number;
 }
 
 /**
@@ -221,7 +286,8 @@ export interface RunProbeOptions {
  * The JSONL append is guarded against torn writes from a killed prior run
  * (see body comment); callers do not need to sanitise the file beforehand.
  *
- * @param opts - Data directory plus optional clock and sample-delay overrides.
+ * @param opts - Data directory plus optional clock, sample-delay, and
+ *   warmup-count overrides.
  * @returns One `ProbeResult` per configured service, in `SERVICES` order.
  */
 export async function runProbe(opts: RunProbeOptions): Promise<ProbeResult[]> {
@@ -229,8 +295,9 @@ export async function runProbe(opts: RunProbeOptions): Promise<ProbeResult[]> {
   const nowIso = now.toISOString();
   /* v8 ignore next */
   const delays = opts.sampleDelaysMs ?? DEFAULT_SAMPLE_DELAYS_MS;
+  const warmupSampleCount = opts.warmupSampleCount ?? 0;
 
-  const results = await Promise.all(SERVICES.map((cfg) => probeOne(cfg, nowIso, delays)));
+  const results = await Promise.all(SERVICES.map((cfg) => probeOne(cfg, nowIso, delays, warmupSampleCount)));
 
   const rawDir = join(opts.dataDir, "raw");
   mkdirSync(rawDir, {recursive: true});
