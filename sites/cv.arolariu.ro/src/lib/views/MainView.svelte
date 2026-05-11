@@ -28,15 +28,26 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
 <script lang="ts">
   import {landing} from "@/data";
   import ThemeToggle from "@/components/ThemeToggle.svelte";
-  import HelpDialog from "@/components/HelpDialog.svelte";
   import {goto} from "$app/navigation";
   import {cx} from "@/lib/utils";
   import Icon, {type IconName} from "@/presentation/Icon.svelte";
   import Footer from "@/presentation/Footer.svelte";
+  import type {Component} from "svelte";
   import styles from "./MainView.module.scss";
 
   /** Controls visibility of the help dialog modal. */
   let showHelpDialog = $state<boolean>(false);
+
+  // HelpDialog is dynamically imported the first time the user opens it.
+  // Most visitors never use the keyboard-shortcuts help, so we keep its
+  // chunk out of the landing page's critical path.
+  let HelpDialog = $state<Component | null>(null);
+
+  async function loadHelpDialog(): Promise<void> {
+    if (HelpDialog !== null) return;
+    const mod = await import("@/components/HelpDialog.svelte");
+    HelpDialog = mod.default;
+  }
 
   /**
    * Panel configuration for the landing page grid.
@@ -73,7 +84,10 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
       description: landing.panels.help.description,
       gradient: "purplePink",
       icon: "help" satisfies IconName,
-      action: () => (showHelpDialog = true),
+      action: async () => {
+        await loadHelpDialog();
+        showHelpDialog = true;
+      },
     },
   ] as const;
 
@@ -164,5 +178,8 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
     <Footer />
   </div>
 
-  <HelpDialog bind:open={showHelpDialog} />
+  {#if HelpDialog && showHelpDialog}
+    {@const HelpDialogComponent = HelpDialog}
+    <HelpDialogComponent bind:open={showHelpDialog} />
+  {/if}
 </div>
