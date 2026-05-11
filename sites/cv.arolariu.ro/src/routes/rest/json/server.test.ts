@@ -141,6 +141,14 @@ describe("CV JSON API Endpoint", () => {
       expect(data).toHaveProperty("meta");
       expect(data.meta.format).toBe("cv.minimal");
     });
+
+    it("should not include the education section in minimal format", async () => {
+      const event = createMockEvent({format: "minimal"});
+      const response = await GET(event);
+      const data = (await response.json()) as {education?: unknown};
+
+      expect(data.education).toBeUndefined();
+    });
   });
 
   describe("GET /rest/json?section=", () => {
@@ -163,6 +171,16 @@ describe("CV JSON API Endpoint", () => {
       expect(response.status).toBe(404);
       expect(data).toHaveProperty("error");
       expect(data).toHaveProperty("availableSections");
+    });
+
+    it("should mention the requested name and list basics among available sections", async () => {
+      const event = createMockEvent({section: "nope"});
+      const response = await GET(event);
+      const data = (await response.json()) as {error: string; availableSections: string[]};
+
+      expect(response.status).toBe(404);
+      expect(data.error).toContain("nope");
+      expect(data.availableSections).toContain("basics");
     });
   });
 
@@ -198,6 +216,34 @@ describe("CV JSON API Endpoint", () => {
 
         const secondResponse = await GET(eventWithEtag);
         expect(secondResponse.status).toBe(304);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("emits a matching ETag header on the 304 response", async () => {
+      // The endpoint hashes the full payload (including `generatedAt`),
+      // so we freeze time to keep the two ETags identical.
+      const fixedDate = new Date("2024-01-01T00:00:00.000Z");
+      vi.useFakeTimers();
+      vi.setSystemTime(fixedDate);
+
+      try {
+        const firstResponse = await GET(createMockEvent());
+        const etag = firstResponse.headers.get("ETag");
+        expect(etag).toMatch(/^"cv-[a-z0-9]+"$/);
+
+        const url = new URL("http://localhost/rest/json");
+        const eventWithEtag = {
+          request: new Request(url.toString(), {
+            headers: {"If-None-Match": etag ?? ""},
+          }),
+          url,
+        } as RequestEvent;
+
+        const secondResponse = await GET(eventWithEtag);
+        expect(secondResponse.status).toBe(304);
+        expect(secondResponse.headers.get("ETag")).toBe(etag);
       } finally {
         vi.useRealTimers();
       }
