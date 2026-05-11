@@ -9,9 +9,8 @@
   type Props = {
     children?: Snippet;
     class?: string;
-    // Delay before the animation starts. Accepts milliseconds.
-    // Backwards-compat: if value <= 10, it's treated as seconds.
-    delay?: number; // ms (or seconds when <= 10)
+    // Delay before the animation starts, in milliseconds.
+    delay?: number;
     duration?: number; // seconds
     id?: string;
     animation?: AnimationType;
@@ -47,13 +46,7 @@
     hasAnimated = true;
     const reduce = prefersReducedMotion.current;
     const ms = reduce ? 0 : Math.max(0, duration) * 1000;
-    // Support both ms and s: treat small values (<=10) as seconds, otherwise ms
-    const dl = reduce
-      ? 0
-      : (() => {
-          const val = Math.max(0, delay);
-          return val <= 10 ? val * 1000 : val;
-        })();
+    const dl = reduce ? 0 : Math.max(0, delay);
     x.set(0, {duration: ms, delay: dl});
     y.set(0, {duration: ms, delay: dl});
     scale.set(1, {duration: ms, delay: dl});
