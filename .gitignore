@@ -61,11 +61,6 @@ nul
 **/.python_packages/
 
 
-# Local performance measurement artifacts (Phase 4 cv quality sweep):
-**/.perf-*.json
-**/.perf-*.txt
-**/.perf-*.md
-
 # arolariu.ro specific:
 sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
