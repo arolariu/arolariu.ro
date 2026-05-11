@@ -1,5 +1,6 @@
 <script lang="ts">
   import {goto} from "$app/navigation";
+  import type {Snippet} from "svelte";
   import ThemeToggle from "../components/ThemeToggle.svelte";
   import {ui} from "../data";
   import {cx} from "@/lib/utils";
@@ -14,14 +15,14 @@
     onClick: () => void;
   };
 
-  interface Props {
+  type Props = {
     variant?: "default" | "inverse";
-    actions?: () => any; // render function for actions area
+    actions?: Snippet; // render function for actions area
     sticky?: boolean; // stick to top
     showNavLinks?: boolean; // show section nav links (non-minimal)
     class?: string; // extra classes
     actionsConfig?: ActionConfig[];
-  }
+  };
 
   let {
     variant = "default",
