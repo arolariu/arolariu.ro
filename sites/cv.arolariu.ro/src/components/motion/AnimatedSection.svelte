@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type {Snippet} from "svelte";
   import {onMount, untrack} from "svelte";
   import {Tween, prefersReducedMotion} from "svelte/motion";
   import {intersect} from "./intersection";
@@ -6,7 +7,7 @@
   type AnimationType = "fade-up" | "fade-down" | "fade-left" | "fade-right" | "fade-in" | "scale-up";
 
   type Props = {
-    children?: any;
+    children?: Snippet;
     class?: string;
     // Delay before the animation starts. Accepts milliseconds.
     // Backwards-compat: if value <= 10, it's treated as seconds.

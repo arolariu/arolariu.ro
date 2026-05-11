@@ -24,7 +24,7 @@
   let inputRef = $state<HTMLInputElement | null>(null);
 
   // Define all available commands
-  const commands = $derived((): CommandAction[] => [
+  const commands = $derived.by((): CommandAction[] => [
     // Navigation
     {
       id: "nav-home",
@@ -208,12 +208,11 @@
   ]);
 
   // Filter commands based on search query
-  const filteredCommands = $derived(() => {
-    const allCommands = commands();
-    if (!searchQuery.trim()) return allCommands;
+  const filteredCommands = $derived.by(() => {
+    if (!searchQuery.trim()) return commands;
 
     const query = searchQuery.toLowerCase();
-    return allCommands.filter((cmd) => {
+    return commands.filter((cmd) => {
       const labelMatch = cmd.label.toLowerCase().includes(query);
       const descMatch = cmd.description?.toLowerCase().includes(query);
       const keywordMatch = cmd.keywords?.some((k) => k.includes(query));
@@ -222,15 +221,14 @@
   });
 
   // Group commands by category
-  const groupedCommands = $derived(() => {
-    const filtered = filteredCommands();
+  const groupedCommands = $derived.by(() => {
     const groups = {
       navigation: [] as CommandAction[],
       action: [] as CommandAction[],
       contact: [] as CommandAction[],
     };
 
-    filtered.forEach((cmd) => {
+    filteredCommands.forEach((cmd) => {
       groups[cmd.category].push(cmd);
     });
 
@@ -238,9 +236,8 @@
   });
 
   // Get flat list for keyboard navigation
-  const flatCommands = $derived(() => {
-    const groups = groupedCommands();
-    return [...groups.navigation, ...groups.action, ...groups.contact];
+  const flatCommands = $derived.by(() => {
+    return [...groupedCommands.navigation, ...groupedCommands.action, ...groupedCommands.contact];
   });
 
   function open() {
@@ -270,7 +267,7 @@
 
     if (!isOpen) return;
 
-    const cmds = flatCommands();
+    const cmds = flatCommands;
 
     switch (e.key) {
       case "Escape":
@@ -299,7 +296,8 @@
 
   // Reset selected index when filtered results change
   $effect(() => {
-    flatCommands();
+    // Reference the derived value so the effect re-runs when it updates.
+    flatCommands;
     selectedIndex = 0;
   });
 
@@ -384,14 +382,14 @@
 
       <!-- Command list -->
       <div class={styles.commandList}>
-        {#each Object.entries(groupedCommands()) as [category, cmds]}
+        {#each Object.entries(groupedCommands) as [category, cmds]}
           {#if cmds.length > 0}
             <div class={styles.commandGroup}>
               <div class={styles.categoryLabel}>
                 {categoryLabels[category] ?? category}
               </div>
               {#each cmds as cmd}
-                {@const globalIndex = flatCommands().indexOf(cmd)}
+                {@const globalIndex = flatCommands.indexOf(cmd)}
                 {@const isSelected = globalIndex === selectedIndex}
                 <button
                   onclick={() => cmd.action()}
@@ -423,7 +421,7 @@
           {/if}
         {/each}
 
-        {#if flatCommands().length === 0}
+        {#if flatCommands.length === 0}
           <div class={styles.emptyState}>
             <p>No commands found for "{searchQuery}"</p>
           </div>
