@@ -1,4 +1,10 @@
 <script lang="ts">
+  // CommandPalette is a layout singleton: it's mounted exactly once
+  // from +layout.svelte and attaches a document-level keydown listener
+  // in onMount (for the Cmd/Ctrl+K shortcut + arrow navigation). Do
+  // NOT mount this component inside a route page or anywhere else —
+  // each mount would attach another listener, leaking memory and
+  // double-firing the global shortcut.
   import {goto} from "$app/navigation";
   import {cx} from "@/lib/utils";
   import {useTheme} from "@/hooks/useTheme.svelte";
@@ -22,9 +28,10 @@
   let searchQuery = $state("");
   let selectedIndex = $state(0);
   let inputRef = $state<HTMLInputElement | null>(null);
+  let dialogRef = $state<HTMLDialogElement | null>(null);
 
   // Define all available commands
-  const commands = $derived((): CommandAction[] => [
+  const commands = $derived.by((): CommandAction[] => [
     // Navigation
     {
       id: "nav-home",
@@ -208,12 +215,11 @@
   ]);
 
   // Filter commands based on search query
-  const filteredCommands = $derived(() => {
-    const allCommands = commands();
-    if (!searchQuery.trim()) return allCommands;
+  const filteredCommands = $derived.by(() => {
+    if (!searchQuery.trim()) return commands;
 
     const query = searchQuery.toLowerCase();
-    return allCommands.filter((cmd) => {
+    return commands.filter((cmd) => {
       const labelMatch = cmd.label.toLowerCase().includes(query);
       const descMatch = cmd.description?.toLowerCase().includes(query);
       const keywordMatch = cmd.keywords?.some((k) => k.includes(query));
@@ -222,15 +228,14 @@
   });
 
   // Group commands by category
-  const groupedCommands = $derived(() => {
-    const filtered = filteredCommands();
+  const groupedCommands = $derived.by(() => {
     const groups = {
       navigation: [] as CommandAction[],
       action: [] as CommandAction[],
       contact: [] as CommandAction[],
     };
 
-    filtered.forEach((cmd) => {
+    filteredCommands.forEach((cmd) => {
       groups[cmd.category].push(cmd);
     });
 
@@ -238,22 +243,23 @@
   });
 
   // Get flat list for keyboard navigation
-  const flatCommands = $derived(() => {
-    const groups = groupedCommands();
-    return [...groups.navigation, ...groups.action, ...groups.contact];
+  const flatCommands = $derived.by(() => {
+    return [...groupedCommands.navigation, ...groupedCommands.action, ...groupedCommands.contact];
   });
 
   function open() {
     isOpen = true;
     searchQuery = "";
     selectedIndex = 0;
-    setTimeout(() => inputRef?.focus(), 50);
+    if (!dialogRef?.open) dialogRef?.showModal();
+    queueMicrotask(() => inputRef?.focus());
   }
 
   function close() {
     isOpen = false;
     searchQuery = "";
     selectedIndex = 0;
+    dialogRef?.close();
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -270,7 +276,7 @@
 
     if (!isOpen) return;
 
-    const cmds = flatCommands();
+    const cmds = flatCommands;
 
     switch (e.key) {
       case "Escape":
@@ -299,7 +305,8 @@
 
   // Reset selected index when filtered results change
   $effect(() => {
-    flatCommands();
+    // Reference the derived value so the effect re-runs when it updates.
+    flatCommands;
     selectedIndex = 0;
   });
 
@@ -341,24 +348,22 @@
   };
 </script>
 
-{#if isOpen}
-  <!-- Backdrop -->
-  <div
-    class={styles.backdrop}
-    onclick={close}
-    onkeydown={(e) => e.key === "Escape" && close()}
-    role="button"
-    tabindex="-1"
-    aria-label="Close command palette">
-  </div>
-
-  <!-- Command Palette Modal -->
-  <div
-    class={styles.modal}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Command palette">
-    <div class={styles.panel}>
+<!-- Command Palette Modal (native <dialog> handles focus-trap, ESC, backdrop, inert) -->
+<dialog
+  bind:this={dialogRef}
+  class={styles.modal}
+  aria-label="Command palette"
+  onclose={() => {
+    isOpen = false;
+    searchQuery = "";
+    selectedIndex = 0;
+  }}
+  onclick={(e) => {
+    // Close when the user clicks the backdrop (i.e. the dialog element itself,
+    // not any of its descendants).
+    if (e.target === dialogRef) close();
+  }}>
+  <div class={styles.panel}>
       <!-- Search input -->
       <div class={styles.searchRow}>
         <svg
@@ -384,16 +389,17 @@
 
       <!-- Command list -->
       <div class={styles.commandList}>
-        {#each Object.entries(groupedCommands()) as [category, cmds]}
+        {#each Object.entries(groupedCommands) as [category, cmds] (category)}
           {#if cmds.length > 0}
             <div class={styles.commandGroup}>
               <div class={styles.categoryLabel}>
                 {categoryLabels[category] ?? category}
               </div>
-              {#each cmds as cmd}
-                {@const globalIndex = flatCommands().indexOf(cmd)}
+              {#each cmds as cmd (cmd.id)}
+                {@const globalIndex = flatCommands.indexOf(cmd)}
                 {@const isSelected = globalIndex === selectedIndex}
                 <button
+                  id="cmd-{cmd.id}"
                   onclick={() => cmd.action()}
                   onmouseenter={() => (selectedIndex = globalIndex)}
                   class={cx(styles.commandItem, isSelected ? styles.commandItemSelected : styles.commandItemIdle)}>
@@ -423,7 +429,7 @@
           {/if}
         {/each}
 
-        {#if flatCommands().length === 0}
+        {#if flatCommands.length === 0}
           <div class={styles.emptyState}>
             <p>No commands found for "{searchQuery}"</p>
           </div>
@@ -452,8 +458,7 @@
         </div>
       </div>
     </div>
-  </div>
-{/if}
+</dialog>
 
 <!-- Keyboard shortcut hint (always visible) -->
 <button

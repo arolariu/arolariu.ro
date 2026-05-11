@@ -52,9 +52,7 @@ Full keyboard navigation supported.
   import styles from "./HumanView.module.scss";
 </script>
 
-<main
-  id="main"
-  class={styles.shell}>
+<section class={styles.shell}>
   <Header />
   <Hero />
   <About />
@@ -65,4 +63,4 @@ Full keyboard navigation supported.
   <Testimonials />
   <Contact />
   <Footer />
-</main>
+</section>

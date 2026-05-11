@@ -6,76 +6,29 @@
   // Bindable open flag; parent can bind:open, and we set open=false to close
   let {open = $bindable(false)} = $props();
 
-  let container: HTMLDivElement | null = $state(null);
-  let panel: HTMLDivElement | null = $state(null);
+  let dialogRef = $state<HTMLDialogElement | null>(null);
   let closeBtn: HTMLButtonElement | null = $state(null);
-  let previouslyFocused: HTMLElement | null = null;
   let activeTab = $state<"info" | "shortcuts" | "features">("info");
 
-  function focusFirstElement() {
-    if (!panel) return;
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-    );
-    const first = focusable[0];
-    (first ?? closeBtn ?? panel).focus();
+  function close() {
+    open = false;
+    dialogRef?.close();
   }
 
-  function trapTab(e: KeyboardEvent) {
-    if (!open || !panel) return;
-    if (e.key !== "Tab") return;
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (!first || !last) return;
-    const active = document.activeElement as HTMLElement | null;
-
-    if (e.shiftKey) {
-      if (active === first || !panel.contains(active)) {
-        last.focus();
-        e.preventDefault();
-      }
-    } else {
-      if (active === last) {
-        first.focus();
-        e.preventDefault();
-      }
-    }
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (!open) return;
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      e.preventDefault();
-      open = false;
-    } else if (e.key === "Tab") {
-      trapTab(e);
-    }
-  }
-
-  function handleOverlayClick(e: MouseEvent) {
-    if (!open) return;
-    if (e.target === container) {
-      open = false;
-    }
-  }
-
+  // Sync the bindable `open` prop into the native <dialog> imperative API.
+  // The browser handles focus-trap, ESC, backdrop, and inert siblings.
   $effect(() => {
-    if (!open) {
-      previouslyFocused?.focus?.();
-      return;
+    if (!dialogRef) return;
+    if (open && !dialogRef.open) {
+      dialogRef.showModal();
+      // Defer focus until after the browser opens the dialog. The native
+      // <dialog> would auto-focus the first focusable descendant, but we
+      // explicitly steer focus to the close button for parity with the
+      // previous behaviour.
+      queueMicrotask(() => closeBtn?.focus());
+    } else if (!open && dialogRef.open) {
+      dialogRef.close();
     }
-    previouslyFocused = document.activeElement as HTMLElement | null;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => focusFirstElement());
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
   });
 
   // Keyboard shortcuts data
@@ -137,24 +90,20 @@
   }
 </script>
 
-{#if open}
-  <!-- Overlay -->
-  <div
-    bind:this={container}
-    class={styles.overlay}
-    role="presentation"
-    onclick={handleOverlayClick}
-    onkeydown={handleKeydown}>
-    <!-- Dialog panel -->
-    <div
-      bind:this={panel}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="help-dialog-title"
-      aria-describedby="help-dialog-description"
-      class={styles.panel}
-      tabindex="-1"
-      onkeydown={handleKeydown}>
+<!-- Help dialog (native <dialog> handles focus-trap, ESC, backdrop, inert) -->
+<dialog
+  bind:this={dialogRef}
+  class={styles.panel}
+  aria-labelledby="help-dialog-title"
+  aria-describedby="help-dialog-description"
+  onclose={() => {
+    open = false;
+  }}
+  onclick={(e) => {
+    // Close when the user clicks the backdrop (i.e. the dialog element itself,
+    // not any of its descendants).
+    if (e.target === dialogRef) close();
+  }}>
       <!-- Header -->
       <header class={styles.header}>
         <div class={styles.headerTitleGroup}>
@@ -182,7 +131,7 @@
         </div>
         <button
           bind:this={closeBtn}
-          onclick={() => (open = false)}
+          onclick={close}
           class={styles.closeButton}
           aria-label={ui.buttons.close}>
           <svg
@@ -407,12 +356,10 @@
         <div class={styles.footerContent}>
           <p class={styles.footerText}> Built with care using modern web technologies </p>
           <button
-            onclick={() => (open = false)}
+            onclick={close}
             class={styles.footerButton}>
             {ui.buttons.close}
           </button>
         </div>
       </footer>
-    </div>
-  </div>
-{/if}
+</dialog>

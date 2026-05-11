@@ -11,6 +11,15 @@
         "./src/*"
       ]
     },
+    // Reason: The two settings below override stricter defaults from the
+    // root tsconfig.json because they fight the CSS Modules pattern used
+    // throughout this site. SvelteKit/Vite types *.module.scss imports
+    // as Record<string, string> (an index signature), so every styles.foo
+    // access in every component would trip these rules. The other strict
+    // rules (exactOptionalPropertyTypes, noImplicitAny, strict, etc.)
+    // remain enforced.
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false
   },
   "exclude": [
     "node_modules"

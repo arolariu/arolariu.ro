@@ -38,7 +38,7 @@ metadata sidebar (file size, page count, format, last-updated, ATS status).
   let isMobile = $state(false);
   let surfaceStatus = $state<PdfSurfaceStatus>("loading");
   let nativeFrameKey = $state(0);
-  let assistanceTimer: ReturnType<typeof window.setTimeout> | undefined;
+  let assistanceTimer: number | undefined;
 
   const showAssistance = $derived(shouldShowPdfAssistance(surfaceStatus));
   const statusMessage = $derived(
@@ -125,9 +125,7 @@ metadata sidebar (file size, page count, format, last-updated, ATS status).
     sticky
     showNavLinks={false} />
 
-  <main
-    id="main-content"
-    class={styles.container}>
+  <section class={styles.container}>
     <section class={styles.hero}>
       <span class={styles.heroPill}>PDF &middot; A4 &middot; ONE PAGE</span>
       <h1 class={styles.heroTitle}>Printable <span class={styles.heroTitleAccent}>CV</span></h1>
@@ -278,5 +276,5 @@ metadata sidebar (file size, page count, format, last-updated, ATS status).
         </div>
       </div>
     {/if}
-  </main>
+  </section>
 </div>

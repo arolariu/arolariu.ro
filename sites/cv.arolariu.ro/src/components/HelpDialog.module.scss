@@ -1,18 +1,5 @@
 @use "../styles/breakpoints";
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgb(0 0 0 / 0.5);
-  backdrop-filter: blur(4px);
-  animation: fade-in 200ms ease-out;
-}
-
 .panel {
   width: 100%;
   max-width: 48rem;
@@ -670,8 +657,41 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay,
   .panel {
     animation: none;
+  }
+}
+
+/* Backdrop styling for the native <dialog>. The browser draws ::backdrop
+   only when the dialog is opened via showModal(). */
+dialog.panel::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* The native <dialog> defaults to fixed inset:auto + width:fit-content
+   and ships its own padding/border/background. Neutralise the user-agent
+   box so our existing .panel rule controls the visual chrome. */
+dialog.panel {
+  padding: 0;
+  border: 1px solid var(--cv-color-gray-200);
+  background: var(--cv-color-white);
+  max-width: min(48rem, calc(100vw - 2rem));
+  margin: auto;
+}
+
+:global(.dark) dialog.panel {
+  border-color: var(--cv-color-gray-700);
+  background: var(--cv-color-gray-900);
+}
+
+dialog.panel:not([open]) {
+  display: none;
+}
+
+/* Reduced motion: skip the backdrop blur. */
+@media (prefers-reduced-motion: reduce) {
+  dialog.panel::backdrop {
+    backdrop-filter: none;
   }
 }

@@ -474,34 +474,12 @@
   color: var(--cv-color-gray-400);
 }
 
-.highlightToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--cv-color-gray-600);
-  font-size: 0.78rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-:global(.dark) .highlightToggle {
-  color: var(--cv-color-gray-400);
-}
-
-.highlightCheckbox {
-  width: 0.95rem;
-  height: 0.95rem;
-  cursor: pointer;
-  accent-color: var(--cv-accent-primary);
-}
-
 .jsonContainer {
   max-height: 60vh;
   overflow: auto;
   padding: 1rem 1.15rem;
 }
 
-.pre,
 .prePlain {
   margin: 0;
   font-family: ui-monospace, "JetBrains Mono", monospace;
@@ -509,54 +487,11 @@
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-.prePlain {
   color: var(--cv-color-gray-900);
 }
 
 :global(.dark) .prePlain {
   color: var(--cv-color-gray-100);
-}
-
-.jsonContainer :global(.json-key) {
-  color: var(--cv-accent-primary);
-}
-
-.jsonContainer :global(.json-string) {
-  color: var(--cv-accent-success);
-}
-
-.jsonContainer :global(.json-number) {
-  color: var(--cv-accent-primary);
-}
-
-.jsonContainer :global(.json-boolean) {
-  color: var(--cv-color-gray-500);
-}
-
-.jsonContainer :global(.json-null) {
-  color: var(--cv-color-gray-500);
-}
-
-:global(.dark) .jsonContainer :global(.json-key) {
-  color: var(--cv-color-blue-300);
-}
-
-:global(.dark) .jsonContainer :global(.json-string) {
-  color: var(--cv-color-green-400);
-}
-
-:global(.dark) .jsonContainer :global(.json-number) {
-  color: var(--cv-color-blue-300);
-}
-
-:global(.dark) .jsonContainer :global(.json-boolean) {
-  color: var(--cv-color-gray-400);
-}
-
-:global(.dark) .jsonContainer :global(.json-null) {
-  color: var(--cv-color-gray-400);
 }
 
 /* ===== Schema footer ===== */
