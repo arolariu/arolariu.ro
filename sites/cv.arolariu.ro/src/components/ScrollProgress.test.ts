@@ -10,9 +10,9 @@
  * mock exports a mutable `page` object (per Phase 2 follow-up typing).
  */
 
+import {page} from "$app/state";
 import {render} from "@testing-library/svelte";
 import {beforeEach, describe, expect, it} from "vitest";
-import {page} from "$app/state";
 
 import ScrollProgress from "./ScrollProgress.svelte";
 

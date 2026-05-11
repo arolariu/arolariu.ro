@@ -364,100 +364,100 @@
     if (e.target === dialogRef) close();
   }}>
   <div class={styles.panel}>
-      <!-- Search input -->
-      <div class={styles.searchRow}>
-        <svg
-          class={styles.searchIcon}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          bind:this={inputRef}
-          bind:value={searchQuery}
-          type="text"
-          placeholder="Type a command or search..."
-          class={styles.input}
-          aria-label="Search commands" />
-        <kbd class={styles.escapeKey}> ESC </kbd>
-      </div>
+    <!-- Search input -->
+    <div class={styles.searchRow}>
+      <svg
+        class={styles.searchIcon}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        bind:this={inputRef}
+        bind:value={searchQuery}
+        type="text"
+        placeholder="Type a command or search..."
+        class={styles.input}
+        aria-label="Search commands" />
+      <kbd class={styles.escapeKey}> ESC </kbd>
+    </div>
 
-      <!-- Command list -->
-      <div class={styles.commandList}>
-        {#each Object.entries(groupedCommands) as [category, cmds] (category)}
-          {#if cmds.length > 0}
-            <div class={styles.commandGroup}>
-              <div class={styles.categoryLabel}>
-                {categoryLabels[category] ?? category}
-              </div>
-              {#each cmds as cmd (cmd.id)}
-                {@const globalIndex = flatCommands.indexOf(cmd)}
-                {@const isSelected = globalIndex === selectedIndex}
-                <button
-                  id="cmd-{cmd.id}"
-                  onclick={() => cmd.action()}
-                  onmouseenter={() => (selectedIndex = globalIndex)}
-                  class={cx(styles.commandItem, isSelected ? styles.commandItemSelected : styles.commandItemIdle)}>
-                  <svg
-                    class={cx(styles.commandIcon, isSelected ? styles.commandIconSelected : styles.commandIconIdle)}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d={getIcon(cmd.icon)} />
-                  </svg>
-                  <div class={styles.commandText}>
-                    <div class={styles.commandLabel}>{cmd.label}</div>
-                    {#if cmd.description}
-                      <div class={styles.commandDescription}>{cmd.description}</div>
-                    {/if}
-                  </div>
-                  {#if isSelected}
-                    <kbd class={styles.enterKey}> Enter </kbd>
-                  {/if}
-                </button>
-              {/each}
+    <!-- Command list -->
+    <div class={styles.commandList}>
+      {#each Object.entries(groupedCommands) as [category, cmds] (category)}
+        {#if cmds.length > 0}
+          <div class={styles.commandGroup}>
+            <div class={styles.categoryLabel}>
+              {categoryLabels[category] ?? category}
             </div>
-          {/if}
-        {/each}
-
-        {#if flatCommands.length === 0}
-          <div class={styles.emptyState}>
-            <p>No commands found for "{searchQuery}"</p>
+            {#each cmds as cmd (cmd.id)}
+              {@const globalIndex = flatCommands.indexOf(cmd)}
+              {@const isSelected = globalIndex === selectedIndex}
+              <button
+                id="cmd-{cmd.id}"
+                onclick={() => cmd.action()}
+                onmouseenter={() => (selectedIndex = globalIndex)}
+                class={cx(styles.commandItem, isSelected ? styles.commandItemSelected : styles.commandItemIdle)}>
+                <svg
+                  class={cx(styles.commandIcon, isSelected ? styles.commandIconSelected : styles.commandIconIdle)}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d={getIcon(cmd.icon)} />
+                </svg>
+                <div class={styles.commandText}>
+                  <div class={styles.commandLabel}>{cmd.label}</div>
+                  {#if cmd.description}
+                    <div class={styles.commandDescription}>{cmd.description}</div>
+                  {/if}
+                </div>
+                {#if isSelected}
+                  <kbd class={styles.enterKey}> Enter </kbd>
+                {/if}
+              </button>
+            {/each}
           </div>
         {/if}
-      </div>
+      {/each}
 
-      <!-- Footer -->
-      <div class={styles.footer}>
-        <div class={styles.footerContent}>
-          <div class={styles.footerGroup}>
-            <span class={styles.footerHint}>
-              <kbd class={styles.key}>↑</kbd>
-              <kbd class={styles.key}>↓</kbd>
-              <span>to navigate</span>
-            </span>
-            <span class={styles.footerHint}>
-              <kbd class={styles.key}>Enter</kbd>
-              <span>to select</span>
-            </span>
-          </div>
+      {#if flatCommands.length === 0}
+        <div class={styles.emptyState}>
+          <p>No commands found for "{searchQuery}"</p>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Footer -->
+    <div class={styles.footer}>
+      <div class={styles.footerContent}>
+        <div class={styles.footerGroup}>
           <span class={styles.footerHint}>
-            <kbd class={styles.key}>⌘</kbd>
-            <kbd class={styles.key}>K</kbd>
-            <span>to toggle</span>
+            <kbd class={styles.key}>↑</kbd>
+            <kbd class={styles.key}>↓</kbd>
+            <span>to navigate</span>
+          </span>
+          <span class={styles.footerHint}>
+            <kbd class={styles.key}>Enter</kbd>
+            <span>to select</span>
           </span>
         </div>
+        <span class={styles.footerHint}>
+          <kbd class={styles.key}>⌘</kbd>
+          <kbd class={styles.key}>K</kbd>
+          <span>to toggle</span>
+        </span>
       </div>
     </div>
+  </div>
 </dialog>
 
 <!-- Keyboard shortcut hint (always visible) -->

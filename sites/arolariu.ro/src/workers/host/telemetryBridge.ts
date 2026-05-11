@@ -76,10 +76,22 @@ export function createTelemetryBridge(name: string, options: CreateTelemetryBrid
           logger[event.level](`[worker:${name}] ${event.msg}`, event.attrs);
           return;
         case "metric":
-          logger.debug(`[worker:${name}] metric`, {worker: name, name: event.name, value: event.value, unit: event.unit, attrs: event.attrs});
+          logger.debug(`[worker:${name}] metric`, {
+            worker: name,
+            name: event.name,
+            value: event.value,
+            unit: event.unit,
+            attrs: event.attrs,
+          });
           return;
         case "span":
-          logger.debug(`[worker:${name}] span`, {worker: name, name: event.name, startMs: event.startMs, durationMs: event.durationMs, attrs: event.attrs});
+          logger.debug(`[worker:${name}] span`, {
+            worker: name,
+            name: event.name,
+            startMs: event.startMs,
+            durationMs: event.durationMs,
+            attrs: event.attrs,
+          });
           return;
         default: {
           // Exhaustiveness check: if a new kind is added to the WorkerEvent

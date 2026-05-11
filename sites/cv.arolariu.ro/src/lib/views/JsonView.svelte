@@ -147,8 +147,8 @@ $cv.work | Select-Object position, name`,
         <span class={styles.heroPill}>REST &middot; JSON Resume v1.0.0</span>
         <h1 class={styles.heroTitle}>This CV is also an <span class={styles.heroTitleAccent}>API</span>.</h1>
         <p class={styles.heroSubtitle}>
-          Pull my profile programmatically &mdash; for ATS pipelines, recruiter tooling, or your own resume aggregator. Conforms
-          to JSON Resume v1.0.0.
+          Pull my profile programmatically &mdash; for ATS pipelines, recruiter tooling, or your own resume aggregator. Conforms to JSON
+          Resume v1.0.0.
         </p>
       </section>
     </AnimatedSection>
@@ -268,9 +268,7 @@ $cv.work | Select-Object position, name`,
             </div>
             <div class={styles.sizeMeta}>
               <span>
-                {activeTab === "formatted"
-                  ? formattedJSON.length.toLocaleString()
-                  : rawJSON.length.toLocaleString()} chars
+                {activeTab === "formatted" ? formattedJSON.length.toLocaleString() : rawJSON.length.toLocaleString()} chars
               </span>
               <span class={styles.kilobytes}>
                 {(activeTab === "formatted" ? formattedJSON.length / 1024 : rawJSON.length / 1024).toFixed(1)} KB
@@ -312,8 +310,8 @@ $cv.work | Select-Object position, name`,
       <section class={styles.schemaPanel}>
         <h2 class={styles.schemaTitle}>JSON Resume Schema</h2>
         <p class={styles.schemaDescription}>
-          This JSON follows the standardized JSON Resume schema v1.0.0, making it compatible with various resume builders, parsers,
-          and ATS systems that support this format.
+          This JSON follows the standardized JSON Resume schema v1.0.0, making it compatible with various resume builders, parsers, and ATS
+          systems that support this format.
         </p>
         <div class={styles.schemaBadgeList}>
           {#each schemaChips as chip}

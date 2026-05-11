@@ -27,10 +27,7 @@ import {emitEvent} from "./emitEvent";
  * @param port - The event-channel `MessagePort` granted at bootstrap.
  * @returns An `uninstall` function that detaches the listener.
  */
-export function installUnhandledRejectionBridge(
-  scope: DedicatedWorkerGlobalScope,
-  port: MessagePort,
-): () => void {
+export function installUnhandledRejectionBridge(scope: DedicatedWorkerGlobalScope, port: MessagePort): () => void {
   const handler = (event: PromiseRejectionEvent): void => {
     const reason = event.reason;
     const text = reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason);

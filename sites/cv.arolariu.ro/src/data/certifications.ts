@@ -7,16 +7,7 @@
 
 import type {Certificate} from "@/types";
 
-type CertificationKeys =
-  | "ab730"
-  | "ab731"
-  | "az900"
-  | "ai900"
-  | "sc900"
-  | "gh900"
-  | "gh100"
-  | "gh200"
-  | "gh300";
+type CertificationKeys = "ab730" | "ab731" | "az900" | "ai900" | "sc900" | "gh900" | "gh100" | "gh200" | "gh300";
 
 type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
 

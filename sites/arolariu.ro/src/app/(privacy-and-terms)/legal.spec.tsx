@@ -90,71 +90,89 @@ test.describe("Legal Pages @legal", () => {
   });
 
   test.describe("Navigation", () => {
-    test(tagged("should be able to navigate from footer links", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/");
+    test(
+      tagged("should be able to navigate from footer links", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/");
 
-      // Check if privacy policy link exists in footer
-      const privacyLink = page
-        .locator("footer")
-        .getByRole("link", {name: /privacy/i})
-        .first();
-      if (await privacyLink.isVisible({timeout: 3000})) {
-        await privacyLink.click();
-        await expect(page).toHaveURL(/privacy-policy/);
-      }
-    });
+        // Check if privacy policy link exists in footer
+        const privacyLink = page
+          .locator("footer")
+          .getByRole("link", {name: /privacy/i})
+          .first();
+        if (await privacyLink.isVisible({timeout: 3000})) {
+          await privacyLink.click();
+          await expect(page).toHaveURL(/privacy-policy/);
+        }
+      },
+    );
 
-    test(tagged("should be able to navigate between legal pages", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/privacy-policy/");
+    test(
+      tagged("should be able to navigate between legal pages", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/privacy-policy/");
 
-      // Scope to footer to avoid matching section headings containing "terms"
-      const footer = page.locator("footer");
-      const termsLink = footer.getByRole("link", {name: /terms of service/i});
+        // Scope to footer to avoid matching section headings containing "terms"
+        const footer = page.locator("footer");
+        const termsLink = footer.getByRole("link", {name: /terms of service/i});
 
-      if (await termsLink.isVisible({timeout: 3000})) {
-        await termsLink.scrollIntoViewIfNeeded();
-        await termsLink.click();
-        await expect(page).toHaveURL(/terms-of-service/, {timeout: 15000});
-      }
-    });
+        if (await termsLink.isVisible({timeout: 3000})) {
+          await termsLink.scrollIntoViewIfNeeded();
+          await termsLink.click();
+          await expect(page).toHaveURL(/terms-of-service/, {timeout: 15000});
+        }
+      },
+    );
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 375, height: 667});
-      await safeNavigate("/privacy-policy/");
+    test(
+      tagged("privacy policy should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE),
+      async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 375, height: 667});
+        await safeNavigate("/privacy-policy/");
 
-      await expect(page.locator("main")).toBeVisible();
-      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
-    });
+        await expect(page.locator("main")).toBeVisible();
+        await expect(page.getByRole("heading", {level: 1})).toBeVisible();
+      },
+    );
 
-    test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 375, height: 667});
-      await safeNavigate("/terms-of-service/");
+    test(
+      tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE),
+      async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 375, height: 667});
+        await safeNavigate("/terms-of-service/");
 
-      await expect(page.locator("main")).toBeVisible();
-      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
-    });
+        await expect(page.locator("main")).toBeVisible();
+        await expect(page.getByRole("heading", {level: 1})).toBeVisible();
+      },
+    );
 
     for (const {path, name} of LEGAL_PAGES) {
-      test(tagged(`${name} should work on desktop viewport`, TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-        await page.setViewportSize({width: 1920, height: 1080});
-        await safeNavigate(path);
-        await expect(page.locator("main")).toBeVisible();
-      });
+      test(
+        tagged(`${name} should work on desktop viewport`, TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER),
+        async ({safeNavigate, page}) => {
+          await page.setViewportSize({width: 1920, height: 1080});
+          await safeNavigate(path);
+          await expect(page.locator("main")).toBeVisible();
+        },
+      );
     }
   });
 
   test.describe("Print Styles", () => {
-    test(tagged("privacy policy should be printable", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/privacy-policy/");
+    test(
+      tagged("privacy policy should be printable", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/privacy-policy/");
 
-      // Emulate print media
-      await page.emulateMedia({media: "print"});
+        // Emulate print media
+        await page.emulateMedia({media: "print"});
 
-      // Content should still be visible in print mode
-      await expect(page.locator("main")).toBeVisible();
-      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
-    });
+        // Content should still be visible in print mode
+        await expect(page.locator("main")).toBeVisible();
+        await expect(page.getByRole("heading", {level: 1})).toBeVisible();
+      },
+    );
   });
 });

@@ -3,6 +3,6 @@
  * @module workers/runtime
  */
 
-export {expose, getBootstrapCapabilities, getEventPort} from "./exposeWorker";
 export {emitEvent} from "./emitEvent";
+export {expose, getBootstrapCapabilities, getEventPort} from "./exposeWorker";
 export {installUnhandledRejectionBridge} from "./installUnhandledRejectionBridge";

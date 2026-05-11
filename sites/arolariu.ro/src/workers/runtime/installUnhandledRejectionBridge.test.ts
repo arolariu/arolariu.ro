@@ -25,9 +25,7 @@ describe("installUnhandledRejectionBridge", () => {
     const handler = (fakeScope.addEventListener as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as (e: PromiseRejectionEvent) => void;
     handler({reason: new Error("dropped")} as unknown as PromiseRejectionEvent);
 
-    expect(events).toEqual([
-      {kind: "log", level: "error", msg: "Unhandled rejection in worker", attrs: {reason: "Error: dropped"}},
-    ]);
+    expect(events).toEqual([{kind: "log", level: "error", msg: "Unhandled rejection in worker", attrs: {reason: "Error: dropped"}}]);
 
     uninstall();
     expect(fakeScope.removeEventListener).toHaveBeenCalledWith("unhandledrejection", expect.any(Function));

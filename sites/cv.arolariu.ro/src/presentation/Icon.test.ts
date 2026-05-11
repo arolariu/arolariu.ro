@@ -14,16 +14,13 @@ import {describe, expect, it} from "vitest";
 import Icon from "./Icon.svelte";
 
 describe("Icon", () => {
-  it.each([
-    ["arrow-left"],
-    ["arrow-right"],
-    ["download"],
-    ["github"],
-    ["help"],
-  ] as const)("renders an <svg> for the known name %s", (name) => {
-    const {container} = render(Icon, {props: {name}});
-    expect(container.querySelector("svg")).not.toBeNull();
-  });
+  it.each([["arrow-left"], ["arrow-right"], ["download"], ["github"], ["help"]] as const)(
+    "renders an <svg> for the known name %s",
+    (name) => {
+      const {container} = render(Icon, {props: {name}});
+      expect(container.querySelector("svg")).not.toBeNull();
+    },
+  );
 
   it("renders nothing for an unknown name", () => {
     // Casting through unknown is required because the IconName union

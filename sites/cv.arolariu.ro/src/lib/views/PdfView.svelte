@@ -130,9 +130,7 @@ metadata sidebar (file size, page count, format, last-updated, ATS status).
       <span class={styles.heroPill}>PDF &middot; A4 &middot; ONE PAGE</span>
       <h1 class={styles.heroTitle}>Printable <span class={styles.heroTitleAccent}>CV</span></h1>
       <p class={styles.heroSubtitle}>
-        {isMobile
-          ? "Trying your browser's native PDF viewer first."
-          : "A traditional resume optimized for printing and ATS pipelines."}
+        {isMobile ? "Trying your browser's native PDF viewer first." : "A traditional resume optimized for printing and ATS pipelines."}
       </p>
     </section>
 

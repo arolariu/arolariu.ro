@@ -95,14 +95,17 @@ test.describe("Homepage @homepage", () => {
   });
 
   test.describe("Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({page}) => {
-      await page.setViewportSize({width: 375, height: 667});
+    test(
+      tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE),
+      async ({page}) => {
+        await page.setViewportSize({width: 375, height: 667});
 
-      await expect(page.locator("main")).toBeVisible();
-      // Use semantic role 'banner' which targets the main page header
-      // The <header> element may have zero height on mobile due to fixed-positioned nav
-      await expect(page.getByRole("banner")).toBeAttached();
-    });
+        await expect(page.locator("main")).toBeVisible();
+        // Use semantic role 'banner' which targets the main page header
+        // The <header> element may have zero height on mobile due to fixed-positioned nav
+        await expect(page.getByRole("banner")).toBeAttached();
+      },
+    );
 
     test(tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({page}) => {
       await page.setViewportSize({width: 768, height: 1024});

@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-import {__resetForTesting, getEventPort} from "../runtime/exposeWorker";
 import {emitEvent} from "../runtime/emitEvent";
+import {__resetForTesting, getEventPort} from "../runtime/exposeWorker";
 import {createWorkerHost} from "./createWorkerHost";
 import {createMockWorker} from "./mockWorker";
 import {

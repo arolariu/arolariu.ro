@@ -42,71 +42,80 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
   });
 
   test.describe("Keyboard Navigation", () => {
-    test(tagged("Homepage keyboard navigation works", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/");
+    test(
+      tagged("Homepage keyboard navigation works", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/");
 
-      // Tab through interactive elements
-      await page.keyboard.press("Tab");
+        // Tab through interactive elements
+        await page.keyboard.press("Tab");
 
-      // Check that an element received focus
-      const focusedElement = page.locator(":focus");
-      await expect(focusedElement).toBeVisible();
+        // Check that an element received focus
+        const focusedElement = page.locator(":focus");
+        await expect(focusedElement).toBeVisible();
 
-      // Check focus outline exists (not "none")
-      const outline = await focusedElement.evaluate((el) => {
-        const styles = globalThis.getComputedStyle(el);
-        return styles.outlineStyle !== "none" || styles.boxShadow !== "none";
-      });
+        // Check focus outline exists (not "none")
+        const outline = await focusedElement.evaluate((el) => {
+          const styles = globalThis.getComputedStyle(el);
+          return styles.outlineStyle !== "none" || styles.boxShadow !== "none";
+        });
 
-      expect(outline).toBe(true);
-    });
+        expect(outline).toBe(true);
+      },
+    );
 
-    test(tagged("Can tab through all interactive elements", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/");
+    test(
+      tagged("Can tab through all interactive elements", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/");
 
-      // Get initial focus
-      await page.keyboard.press("Tab");
+        // Get initial focus
+        await page.keyboard.press("Tab");
 
-      // Tab through several elements and verify focus changes
-      let previousFocusedElement = "";
-      const focusedElements: string[] = [];
+        // Tab through several elements and verify focus changes
+        let previousFocusedElement = "";
+        const focusedElements: string[] = [];
 
-      for (let i = 0; i < 5; i++) {
-        const focused = page.locator(":focus");
-        const isVisible = await focused.isVisible().catch(() => false);
+        for (let i = 0; i < 5; i++) {
+          const focused = page.locator(":focus");
+          const isVisible = await focused.isVisible().catch(() => false);
 
-        if (isVisible) {
-          const tagName = await focused.evaluate((el) => el.tagName).catch(() => "unknown");
-          focusedElements.push(tagName);
+          if (isVisible) {
+            const tagName = await focused.evaluate((el) => el.tagName).catch(() => "unknown");
+            focusedElements.push(tagName);
 
-          // Verify focus moved to a new element
-          const currentFocused = await focused.evaluate((el) => el.outerHTML).catch(() => "");
-          if (currentFocused !== previousFocusedElement) {
-            previousFocusedElement = currentFocused;
+            // Verify focus moved to a new element
+            const currentFocused = await focused.evaluate((el) => el.outerHTML).catch(() => "");
+            if (currentFocused !== previousFocusedElement) {
+              previousFocusedElement = currentFocused;
+            }
           }
+
+          await page.keyboard.press("Tab");
         }
 
-        await page.keyboard.press("Tab");
-      }
+        // Should have focused on at least some elements
+        expect(focusedElements.length).toBeGreaterThan(0);
+      },
+    );
 
-      // Should have focused on at least some elements
-      expect(focusedElements.length).toBeGreaterThan(0);
-    });
+    test(
+      tagged("Escape key closes modals if present", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await safeNavigate("/");
 
-    test(tagged("Escape key closes modals if present", TEST_TYPE_TAGS.A11Y, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await safeNavigate("/");
+        // Press Escape - should not cause errors
+        await page.keyboard.press("Escape");
 
-      // Press Escape - should not cause errors
-      await page.keyboard.press("Escape");
-
-      // Page should still be functional (check body is visible as fallback)
-      const mainVisible = await page
-        .locator("main")
-        .isVisible()
-        .catch(() => false);
-      const bodyVisible = await page.locator("body").isVisible();
-      expect(mainVisible || bodyVisible).toBe(true);
-    });
+        // Page should still be functional (check body is visible as fallback)
+        const mainVisible = await page
+          .locator("main")
+          .isVisible()
+          .catch(() => false);
+        const bodyVisible = await page.locator("body").isVisible();
+        expect(mainVisible || bodyVisible).toBe(true);
+      },
+    );
   });
 
   test.describe("Landmark Regions", () => {

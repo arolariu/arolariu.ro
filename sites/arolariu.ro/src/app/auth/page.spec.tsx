@@ -100,26 +100,41 @@ test.describe("Authentication @auth", () => {
   });
 
   test.describe("Auth Page Responsive Design", () => {
-    test(tagged("should work on mobile viewport", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH, BROWSER_TIER_TAGS.CROSS_BROWSER, BROWSER_TIER_TAGS.RESPONSIVE), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 375, height: 667});
-      await safeNavigate("/auth/");
+    test(
+      tagged(
+        "should work on mobile viewport",
+        TEST_TYPE_TAGS.E2E,
+        FEATURE_TAGS.AUTH,
+        BROWSER_TIER_TAGS.CROSS_BROWSER,
+        BROWSER_TIER_TAGS.RESPONSIVE,
+      ),
+      async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 375, height: 667});
+        await safeNavigate("/auth/");
 
-      await expect(page.locator("main")).toBeVisible();
-    });
+        await expect(page.locator("main")).toBeVisible();
+      },
+    );
 
-    test(tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 768, height: 1024});
-      await safeNavigate("/auth/");
+    test(
+      tagged("should work on tablet viewport", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 768, height: 1024});
+        await safeNavigate("/auth/");
 
-      await expect(page.locator("main")).toBeVisible();
-    });
+        await expect(page.locator("main")).toBeVisible();
+      },
+    );
 
-    test(tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH, BROWSER_TIER_TAGS.CROSS_BROWSER), async ({safeNavigate, page}) => {
-      await page.setViewportSize({width: 1920, height: 1080});
-      await safeNavigate("/auth/");
+    test(
+      tagged("should work on desktop viewport", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH, BROWSER_TIER_TAGS.CROSS_BROWSER),
+      async ({safeNavigate, page}) => {
+        await page.setViewportSize({width: 1920, height: 1080});
+        await safeNavigate("/auth/");
 
-      await expect(page.locator("main")).toBeVisible();
-    });
+        await expect(page.locator("main")).toBeVisible();
+      },
+    );
   });
 });
 

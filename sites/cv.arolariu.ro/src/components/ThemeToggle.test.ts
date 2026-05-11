@@ -12,7 +12,7 @@
  *    dependence with other tests in the suite.
  */
 
-import {render, fireEvent} from "@testing-library/svelte";
+import {fireEvent, render} from "@testing-library/svelte";
 import {beforeEach, describe, expect, it} from "vitest";
 
 import {useTheme} from "@/hooks/useTheme.svelte";

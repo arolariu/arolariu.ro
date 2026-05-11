@@ -13,12 +13,11 @@
  * rather than at runtime via `typeof Worker !== "undefined"`.
  */
 
-import "./client-only";
 import {transfer as comlinkTransfer} from "comlink";
+import "./client-only";
 
-export {createWorkerHost} from "./host";
-export type {CreateWorkerHostOptions, WorkerHost, WorkerHostState, WorkerCapabilities, WorkerEvent} from "./host";
 export {
+  createWorkerHost,
   WorkerCrashError,
   WorkerDeadError,
   WorkerError,
@@ -26,6 +25,7 @@ export {
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./host";
+export type {CreateWorkerHostOptions, WorkerCapabilities, WorkerEvent, WorkerHost, WorkerHostState} from "./host";
 
 /**
  * Mark a value carrying transferables (e.g. `ArrayBuffer`, `MessagePort`,

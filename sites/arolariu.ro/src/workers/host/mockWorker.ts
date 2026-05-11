@@ -52,9 +52,7 @@ export type MockWorker = Readonly<{
  * inside the parent process. Useful for testing host lifecycle without spinning
  * up a real worker thread.
  */
-export function createMockWorker<TApi extends Record<string, unknown>>(
-  options: CreateMockWorkerOptions<TApi>,
-): MockWorker {
+export function createMockWorker<TApi extends Record<string, unknown>>(options: CreateMockWorkerOptions<TApi>): MockWorker {
   let bootstrapHandler: ((event: MessageEvent) => void) | null = null;
   let errorHandler: ((event: ErrorEvent) => void) | null = null;
   let messageErrorHandler: ((event: MessageEvent) => void) | null = null;

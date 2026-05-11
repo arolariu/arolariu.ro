@@ -31,9 +31,7 @@
           class={styles.heading}>
           What I <span class={styles.accent}>Build With</span>
         </h2>
-        <p class={styles.description}>
-          Curated by importance, not self-rated by percentage.
-        </p>
+        <p class={styles.description}> Curated by importance, not self-rated by percentage. </p>
       </div>
     </AnimatedSection>
 
