@@ -178,8 +178,11 @@
 				</div>
 			</div>
 		</noscript>
-		<!-- Microsoft Clarity (deferred — keeps the critical render path free). -->
-		<script defer>
+		<!-- Microsoft Clarity — placed at end of <body> so it runs after the
+		     primary HTML parse, not in the critical render path. The `defer`
+		     attribute is ignored on inline scripts, so position-in-document
+		     is the actual deferral mechanism here. -->
+		<script>
 			(function (c, l, a, r, i, t, y) {
 				c[a] =
 					c[a] ||

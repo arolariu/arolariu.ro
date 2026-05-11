@@ -1,9 +1,12 @@
 /**
  * @fileoverview Render-smoke tests for the Experience timeline.
  *
- * Asserts the count of timeline items matches `experiencesAsArray`
- * (currently 5 roles: M365 AI, Sovereign Clouds, Azure Tech Eng,
- * Intel, Ubisoft) and that the most recent role title appears.
+ * Asserts that the Professional Experience heading renders, at least
+ * one timeline item (button[aria-expanded] card) is present, and the
+ * most recent Microsoft role surfaces somewhere in the rendered output.
+ * Intentionally loose on counts — the exact number of roles is data
+ * the test does not import, so this is a structural smoke test, not
+ * a content-completeness test.
  */
 
 import {render} from "@testing-library/svelte";

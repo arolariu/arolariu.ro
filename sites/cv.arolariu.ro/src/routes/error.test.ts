@@ -9,8 +9,9 @@
 import {render} from "@testing-library/svelte";
 import {beforeEach, describe, expect, it} from "vitest";
 
+import {page} from "$app/state";
+
 import ErrorPage from "./+error.svelte";
-import {page} from "../__mocks__/$app/state";
 
 describe("+error.svelte", () => {
   beforeEach(() => {
