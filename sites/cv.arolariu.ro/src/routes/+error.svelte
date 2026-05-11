@@ -23,7 +23,7 @@ This component is automatically rendered by SvelteKit when an error occurs.
 -->
 <script lang="ts">
   import {page} from "$app/state";
-  import {goto} from "$app/navigation";
+  import {goto, invalidateAll} from "$app/navigation";
   import ThemeToggle from "@/components/ThemeToggle.svelte";
   import styles from "./ErrorPage.module.scss";
 
@@ -56,8 +56,8 @@ This component is automatically rendered by SvelteKit when an error occurs.
     goto("/");
   }
 
-  function retry(): void {
-    window.location.reload();
+  async function retry(): Promise<void> {
+    await invalidateAll();
   }
 </script>
 
