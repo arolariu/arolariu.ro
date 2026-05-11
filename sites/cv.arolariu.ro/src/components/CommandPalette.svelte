@@ -383,16 +383,17 @@
 
       <!-- Command list -->
       <div class={styles.commandList}>
-        {#each Object.entries(groupedCommands) as [category, cmds]}
+        {#each Object.entries(groupedCommands) as [category, cmds] (category)}
           {#if cmds.length > 0}
             <div class={styles.commandGroup}>
               <div class={styles.categoryLabel}>
                 {categoryLabels[category] ?? category}
               </div>
-              {#each cmds as cmd}
+              {#each cmds as cmd (cmd.id)}
                 {@const globalIndex = flatCommands.indexOf(cmd)}
                 {@const isSelected = globalIndex === selectedIndex}
                 <button
+                  id="cmd-{cmd.id}"
                   onclick={() => cmd.action()}
                   onmouseenter={() => (selectedIndex = globalIndex)}
                   class={cx(styles.commandItem, isSelected ? styles.commandItemSelected : styles.commandItemIdle)}>
