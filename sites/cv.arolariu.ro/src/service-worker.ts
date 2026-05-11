@@ -155,19 +155,20 @@ self.addEventListener("fetch", (event: FetchEvent) => {
       // No cache, fetch from network
       try {
         const networkResponse = await fetch(request);
-        // Cache successful responses
+
+        // Cache successful responses for next visit.
         if (networkResponse.ok) {
           const responseToCache = networkResponse.clone();
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(request, responseToCache);
-              return responseToCache;
-            })
-            .catch(() => {
-              // Caching failed
-            });
+          event.waitUntil(
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, responseToCache))
+              .catch(() => {
+                /* Caching failed — visit still succeeds via the network response above. */
+              }),
+          );
         }
+
         return networkResponse;
       } catch {
         // Network failed, return offline fallback for HTML requests
