@@ -12,8 +12,8 @@
 
 import {render} from "@testing-library/svelte";
 import {beforeEach, describe, expect, it} from "vitest";
+import {page} from "$app/state";
 
-import {page} from "../__mocks__/$app/state";
 import ScrollProgress from "./ScrollProgress.svelte";
 
 describe("ScrollProgress", () => {
@@ -41,5 +41,6 @@ describe("ScrollProgress", () => {
     expect(bar?.getAttribute("aria-label")).toBe("Page scroll progress");
     expect(bar?.getAttribute("aria-valuemin")).toBe("0");
     expect(bar?.getAttribute("aria-valuemax")).toBe("100");
+    expect(bar?.getAttribute("aria-valuenow")).not.toBeNull();
   });
 });

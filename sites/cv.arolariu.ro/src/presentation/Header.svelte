@@ -1,7 +1,8 @@
 <script lang="ts">
   import {goto} from "$app/navigation";
+  import type {Snippet} from "svelte";
   import ThemeToggle from "../components/ThemeToggle.svelte";
-  import {ui} from "../data";
+  import {author, ui} from "../data";
   import {cx} from "@/lib/utils";
   import ActionButton from "@/presentation/ActionButton.svelte";
   import styles from "./Header.module.scss";
@@ -14,14 +15,14 @@
     onClick: () => void;
   };
 
-  interface Props {
+  type Props = {
     variant?: "default" | "inverse";
-    actions?: () => any; // render function for actions area
+    actions?: Snippet; // render function for actions area
     sticky?: boolean; // stick to top
     showNavLinks?: boolean; // show section nav links (non-minimal)
     class?: string; // extra classes
     actionsConfig?: ActionConfig[];
-  }
+  };
 
   let {
     variant = "default",
@@ -50,7 +51,7 @@
           onClick={goBack}
           variant={variant === "inverse" ? "text-inverse" : "text"} />
         <div class={styles.titleWrap}>
-          <h1 class={titleClasses}>Alexandru-Razvan Olariu</h1>
+          <h1 class={titleClasses}>{author.name}</h1>
         </div>
       </div>
       <div class={styles.actions}>

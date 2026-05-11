@@ -1,4 +1,10 @@
 <script lang="ts">
+  // CommandPalette is a layout singleton: it's mounted exactly once
+  // from +layout.svelte and attaches a document-level keydown listener
+  // in onMount (for the Cmd/Ctrl+K shortcut + arrow navigation). Do
+  // NOT mount this component inside a route page or anywhere else —
+  // each mount would attach another listener, leaking memory and
+  // double-firing the global shortcut.
   import {goto} from "$app/navigation";
   import {cx} from "@/lib/utils";
   import {useTheme} from "@/hooks/useTheme.svelte";

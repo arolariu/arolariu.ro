@@ -9,7 +9,7 @@
     children?: Snippet;
   }
 
-  const {children}: Props = $props();
+  let {children}: Props = $props();
 
   // Enable View Transitions API for smooth route changes.
   onNavigate((navigation) => {

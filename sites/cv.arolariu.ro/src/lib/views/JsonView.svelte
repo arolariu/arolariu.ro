@@ -17,7 +17,6 @@ code panel, schema footer.
 
   let copySuccess = $state<boolean>(false);
   let activeTab = $state<"formatted" | "raw">("formatted");
-  let showHighlighting = $state<boolean>(true);
 
   let activeCodeTab = $state<CodeSampleId>("curl");
   let copiedSample = $state<CodeSampleId | null>(null);
@@ -65,17 +64,6 @@ $cv = Invoke-RestMethod -Uri "https://cv.arolariu.ro/rest/json"
 # List all positions held
 $cv.work | Select-Object position, name`,
   };
-
-  function highlightJSON(jsonStr: string): string {
-    return jsonStr
-      .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
-      .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
-      .replace(/: (\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-      .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>')
-      .replace(/: (null)/g, ': <span class="json-null">$1</span>');
-  }
-
-  const highlightedJSON = $derived(showHighlighting ? highlightJSON(formattedJSON) : formattedJSON);
 
   async function copyToClipboard(): Promise<void> {
     const textToCopy = activeTab === "raw" ? rawJSON : formattedJSON;
@@ -149,9 +137,7 @@ $cv.work | Select-Object position, name`,
   showNavLinks={false}
   {actionsConfig} />
 
-<main
-  id="main-content"
-  class={styles.main}>
+<section class={styles.main}>
   <div class={styles.container}>
     <!-- Editorial hero -->
     <AnimatedSection
@@ -307,15 +293,6 @@ $cv.work | Select-Object position, name`,
                 {opt.label}
               </button>
             {/each}
-            {#if activeTab === "formatted"}
-              <label class={styles.highlightToggle}>
-                <input
-                  type="checkbox"
-                  bind:checked={showHighlighting}
-                  class={styles.highlightCheckbox} />
-                <span>Highlight</span>
-              </label>
-            {/if}
           </div>
         </div>
         <div
@@ -323,11 +300,7 @@ $cv.work | Select-Object position, name`,
           class={styles.jsonContainer}
           role="tabpanel"
           aria-labelledby="json-format-tab-{activeTab}">
-          {#if activeTab === "formatted" && showHighlighting}
-            <pre class={styles.pre}>{@html highlightedJSON}</pre>
-          {:else}
-            <pre class={styles.prePlain}>{activeTab === "formatted" ? formattedJSON : rawJSON}</pre>
-          {/if}
+          <pre class={styles.prePlain}>{activeTab === "formatted" ? formattedJSON : rawJSON}</pre>
         </div>
       </section>
     </AnimatedSection>
@@ -354,4 +327,4 @@ $cv.work | Select-Object position, name`,
       </section>
     </AnimatedSection>
   </div>
-</main>
+</section>

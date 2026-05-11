@@ -1,9 +1,11 @@
 /**
  * @fileoverview Render-smoke tests for the About section.
  *
- * Verifies the biography paragraphs render and the section heading
- * is present. The biography data is pulled from `data/biography.ts`
- * and asserted on a count basis (five-point structure).
+ * Asserts the section heading renders and at least five `<p>` paragraphs
+ * appear in the output. The biography source data lives in
+ * `data/biography.ts`, but this test deliberately does not import it —
+ * it's a structural smoke test verifying the component renders enough
+ * paragraph content, not a content-completeness test against the source.
  */
 
 import {render} from "@testing-library/svelte";

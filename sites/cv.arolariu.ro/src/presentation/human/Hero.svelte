@@ -6,6 +6,13 @@
   let heroVisible = $state(false);
   let imageLoaded = $state(false);
 
+  const nameParts = $derived.by(() => {
+    const lastSpace = author.name.lastIndexOf(" ");
+    return lastSpace === -1
+      ? {firstName: author.name, lastName: ""}
+      : {firstName: author.name.slice(0, lastSpace), lastName: author.name.slice(lastSpace + 1)};
+  });
+
   // Trigger hero animation shortly after mount
   $effect(() => {
     // If the user prefers reduced motion, surface the hero immediately
@@ -57,8 +64,8 @@
 
     <div class={cx(styles.nameWrapper, heroVisible ? styles.fadeVisible : styles.fadeHidden)}>
       <h1 class={styles.name}>
-        <span class={styles.firstName}>Alexandru-Razvan</span>
-        <span class={styles.lastName}> Olariu </span>
+        <span class={styles.firstName}>{nameParts.firstName}</span>
+        <span class={styles.lastName}> {nameParts.lastName} </span>
       </h1>
     </div>
 
@@ -86,7 +93,7 @@
 
     <div class={cx(styles.descriptionWrapper, heroVisible ? styles.fadeVisible : styles.fadeHidden)}>
       <p class={styles.description}>
-        {new Date().getFullYear() - 2000}-year-old passionate software engineer based in {author.location}, dedicated to creating innovative
+        {author.age}-year-old passionate software engineer based in {author.location}, dedicated to creating innovative
         solutions and building exceptional digital experiences.
       </p>
     </div>
