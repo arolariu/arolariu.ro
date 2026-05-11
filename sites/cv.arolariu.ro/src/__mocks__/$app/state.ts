@@ -8,7 +8,18 @@
  * @see https://kit.svelte.dev/docs/modules#$app-state
  */
 
-export const page = {
+interface MockPage {
+  url: URL;
+  params: Record<string, string>;
+  route: {id: string | null};
+  status: number;
+  error: {message: string} | null;
+  data: Record<string, unknown>;
+  state: Record<string, unknown>;
+  form: unknown;
+}
+
+export const page: MockPage = {
   url: new URL("https://cv.arolariu.ro/"),
   params: {},
   route: {id: "/"},

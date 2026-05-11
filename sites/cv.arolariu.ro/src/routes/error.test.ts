@@ -7,12 +7,18 @@
  */
 
 import {render} from "@testing-library/svelte";
-import {describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
 
 import ErrorPage from "./+error.svelte";
 import {page} from "../__mocks__/$app/state";
 
 describe("+error.svelte", () => {
+  beforeEach(() => {
+    page.status = 200;
+    page.error = null;
+    page.url = new URL("https://cv.arolariu.ro/");
+  });
+
   it("renders the 404 title for a 404 status", () => {
     page.status = 404;
     page.error = {message: "test"};
