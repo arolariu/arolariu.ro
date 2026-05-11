@@ -64,15 +64,6 @@
   gap: 2rem;
 }
 
-.grid {
-  display: grid;
-  gap: 2rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 .card {
   @include effects.card-surface;
   @include effects.hover-lift;
@@ -186,79 +177,113 @@
   }
 }
 
-.certCard {
-  background: linear-gradient(135deg, var(--cv-color-blue-50), var(--cv-color-purple-50));
-  @include effects.hover-lift;
-  padding: 1.5rem;
-  border-radius: var(--cv-radius-xl);
-  box-shadow: var(--cv-shadow-lg);
-  border: 1px solid rgb(59 130 246 / 0.5);
+/* === Grouped certifications (Microsoft + GitHub blocks, compact cards) === */
+.certGroup {
+  margin-block: 1.25rem;
+}
 
-  :global(.dark) & {
-    background: linear-gradient(135deg, rgb(30 58 138 / 0.2), rgb(88 28 135 / 0.2));
-    border-color: rgb(59 130 246 / 0.5);
+.eyebrow {
+  display: inline-block;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--cv-radius-full);
+  margin-bottom: 0.85rem;
+  border: 1px solid transparent;
+}
+
+.eyebrowMicrosoft {
+  color: var(--cv-accent-primary);
+  background: rgb(59 130 246 / 0.08);
+  border-color: rgb(59 130 246 / 0.2);
+}
+
+.eyebrowGitHub {
+  color: var(--cv-accent-secondary);
+  background: rgb(139 92 246 / 0.08);
+  border-color: rgb(139 92 246 / 0.2);
+}
+
+.certGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-.certHeader {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.certContent {
-  flex: 1;
-}
-
-.certTitle {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  font-weight: 600;
-  color: var(--cv-color-blue-600);
-  margin-bottom: 0.5rem;
+.groupDivider {
+  border: 0;
+  border-top: 1px solid var(--cv-color-gray-200);
+  margin-block: 1.5rem 0.5rem;
 
   :global(.dark) & {
-    color: var(--cv-color-blue-400);
+    border-top-color: var(--cv-color-gray-800);
+  }
+}
+
+.certCardCompact {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--cv-color-white);
+  border: 1px solid var(--cv-color-gray-200);
+  border-radius: var(--cv-radius-lg);
+  transition: border-color var(--cv-transition-base);
+
+  :global(.dark) & {
+    background: var(--cv-color-gray-900);
+    border-color: var(--cv-color-gray-800);
   }
 }
 
 .certCode {
-  color: var(--cv-color-gray-600);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  margin-bottom: 0.5rem;
-
-  :global(.dark) & {
-    color: var(--cv-color-gray-400);
-  }
-}
-
-.certIssuer {
-  color: var(--cv-color-gray-800);
-  font-weight: 500;
-
-  :global(.dark) & {
-    color: var(--cv-color-gray-200);
-  }
-}
-
-.certDate {
-  background: var(--cv-color-blue-500);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--cv-radius-full);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-.certDescription {
-  color: var(--cv-color-gray-700);
-  font-size: 0.875rem;
-  line-height: 1.625;
+.certCardMicrosoft .certCode {
+  color: var(--cv-accent-primary);
+}
+
+.certCardGitHub .certCode {
+  color: var(--cv-accent-secondary);
+}
+
+.certCardMicrosoft:hover {
+  border-color: rgb(59 130 246 / 0.4);
+}
+
+.certCardGitHub:hover {
+  border-color: rgb(139 92 246 / 0.4);
+}
+
+.certName {
+  font-family: var(--cv-font-display);
+  font-size: 0.95rem;
+  color: var(--cv-color-gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   :global(.dark) & {
-    color: var(--cv-color-gray-300);
+    color: var(--cv-color-white);
+  }
+}
+
+.certYear {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--cv-color-gray-500);
+
+  :global(.dark) & {
+    color: var(--cv-color-gray-400);
   }
 }

@@ -68,4 +68,15 @@
   --cv-transition-fast: 150ms ease;
   --cv-transition-base: 200ms ease;
   --cv-transition-slow: 300ms ease;
+
+  /* Semantic accent aliases (refresh palette: blue / purple / emerald) */
+  --cv-accent-primary: var(--cv-color-blue-600);
+  --cv-accent-secondary: var(--cv-color-purple-600);
+  --cv-accent-success: var(--cv-color-emerald-500);
+}
+
+:is(.dark) {
+  --cv-accent-primary: var(--cv-color-blue-400);
+  --cv-accent-secondary: var(--cv-color-purple-400);
+  --cv-accent-success: var(--cv-color-green-400);
 }

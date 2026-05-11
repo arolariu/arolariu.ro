@@ -1,6 +1,33 @@
+/**
+ * @fileoverview Theme hook backed by a Svelte 5 runes class.
+ *
+ * Persists the active theme (`"light"` | `"dark"`) to `localStorage` and
+ * applies the corresponding `data-theme` attribute + `.dark` class on the
+ * document root. Reads at construction so the initial paint already
+ * carries the user's stored preference.
+ *
+ * Usage:
+ * ```svelte
+ * <script lang="ts">
+ *   import {theme} from "@/hooks/useTheme.svelte";
+ * </script>
+ *
+ * <button onclick={() => theme.toggle()}>
+ *   {theme.current === "dark" ? "Light mode" : "Dark mode"}
+ * </button>
+ * ```
+ */
+
 import {browser} from "$app/environment";
+
+/** Allowed theme values. */
 export type Theme = Readonly<"light" | "dark">;
 
+/**
+ * Reactive theme state. Wraps localStorage persistence + DOM class
+ * application behind a Svelte 5 runes class so consumers only see
+ * `current` / `set` / `toggle`.
+ */
 class ThemeState {
   private __theme__ = $state<Theme>("dark");
 

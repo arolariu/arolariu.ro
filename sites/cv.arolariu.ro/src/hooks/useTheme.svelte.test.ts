@@ -15,13 +15,13 @@ describe("useTheme", () => {
 
     // Clear any theme classes from document
     document.documentElement.classList.remove("dark", "light");
-    delete document.documentElement.dataset.theme;
+    delete document.documentElement.dataset["theme"];
   });
 
   afterEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove("dark", "light");
-    delete document.documentElement.dataset.theme;
+    delete document.documentElement.dataset["theme"];
   });
 
   describe("initialization", () => {
@@ -61,7 +61,7 @@ describe("useTheme", () => {
       const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
       freshUseTheme();
 
-      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.dataset["theme"]).toBe("light");
     });
   });
 
@@ -119,7 +119,7 @@ describe("useTheme", () => {
     it("should set data-theme attribute", () => {
       theme.set("light");
 
-      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.dataset["theme"]).toBe("light");
     });
 
     it("should remove previous theme class when setting new theme", () => {
@@ -195,7 +195,7 @@ describe("useTheme", () => {
       theme.set("dark");
       theme.toggle();
 
-      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.dataset["theme"]).toBe("light");
     });
   });
 
@@ -216,11 +216,11 @@ describe("useTheme", () => {
     it("should maintain data-theme attribute consistency with class", () => {
       theme.set("light");
       expect(document.documentElement.classList.contains("light")).toBe(true);
-      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.dataset["theme"]).toBe("light");
 
       theme.set("dark");
       expect(document.documentElement.classList.contains("dark")).toBe(true);
-      expect(document.documentElement.dataset.theme).toBe("dark");
+      expect(document.documentElement.dataset["theme"]).toBe("dark");
     });
   });
 
@@ -285,7 +285,7 @@ describe("useTheme", () => {
       theme.set("light");
 
       expect(document.documentElement.classList.contains("light")).toBe(true);
-      expect(document.documentElement.dataset.theme).toBe("light");
+      expect(document.documentElement.dataset["theme"]).toBe("light");
     });
 
     it("should handle theme changes without explicit set", () => {

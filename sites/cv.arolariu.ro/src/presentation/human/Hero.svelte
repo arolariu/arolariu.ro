@@ -63,7 +63,7 @@
         <span class={styles.separator}>|</span>
         <span class={styles.taglineItem}>
           Mentor
-          <span class={cx(styles.taglineUnderline, styles.underlinePink, heroVisible ? styles.underlineVisible : styles.underlineHidden)}
+          <span class={cx(styles.taglineUnderline, styles.underlineEmerald, heroVisible ? styles.underlineVisible : styles.underlineHidden)}
           ></span>
         </span>
       </p>
