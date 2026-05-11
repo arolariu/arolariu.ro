@@ -38,7 +38,7 @@ metadata sidebar (file size, page count, format, last-updated, ATS status).
   let isMobile = $state(false);
   let surfaceStatus = $state<PdfSurfaceStatus>("loading");
   let nativeFrameKey = $state(0);
-  let assistanceTimer: ReturnType<typeof window.setTimeout> | undefined;
+  let assistanceTimer: number | undefined;
 
   const showAssistance = $derived(shouldShowPdfAssistance(surfaceStatus));
   const statusMessage = $derived(
