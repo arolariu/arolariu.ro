@@ -32,4 +32,18 @@ describe("CommandPalette", () => {
     const dialog = container.querySelector("dialog");
     expect(dialog?.hasAttribute("open")).toBe(false);
   });
+
+  it("renders each command button with a stable id attribute (keyed each blocks)", () => {
+    const {container} = render(CommandPalette);
+    const buttons = container.querySelectorAll("dialog button[id^='cmd-']");
+    // Sanity: at least one filtered command button should be rendered on mount
+    // (the palette renders the full command list when searchQuery is empty).
+    expect(buttons.length).toBeGreaterThan(0);
+
+    // Every button must have a unique id; this is the signal that the
+    // {#each ... (cmd.id)} key is in effect, because the template binds
+    // id="cmd-{cmd.id}".
+    const ids = Array.from(buttons, (b) => b.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
