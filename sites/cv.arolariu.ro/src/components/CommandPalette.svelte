@@ -22,6 +22,7 @@
   let searchQuery = $state("");
   let selectedIndex = $state(0);
   let inputRef = $state<HTMLInputElement | null>(null);
+  let dialogRef = $state<HTMLDialogElement | null>(null);
 
   // Define all available commands
   const commands = $derived.by((): CommandAction[] => [
@@ -244,13 +245,15 @@
     isOpen = true;
     searchQuery = "";
     selectedIndex = 0;
-    setTimeout(() => inputRef?.focus(), 50);
+    if (!dialogRef?.open) dialogRef?.showModal();
+    queueMicrotask(() => inputRef?.focus());
   }
 
   function close() {
     isOpen = false;
     searchQuery = "";
     selectedIndex = 0;
+    dialogRef?.close();
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -339,24 +342,22 @@
   };
 </script>
 
-{#if isOpen}
-  <!-- Backdrop -->
-  <div
-    class={styles.backdrop}
-    onclick={close}
-    onkeydown={(e) => e.key === "Escape" && close()}
-    role="button"
-    tabindex="-1"
-    aria-label="Close command palette">
-  </div>
-
-  <!-- Command Palette Modal -->
-  <div
-    class={styles.modal}
-    role="dialog"
-    aria-modal="true"
-    aria-label="Command palette">
-    <div class={styles.panel}>
+<!-- Command Palette Modal (native <dialog> handles focus-trap, ESC, backdrop, inert) -->
+<dialog
+  bind:this={dialogRef}
+  class={styles.modal}
+  aria-label="Command palette"
+  onclose={() => {
+    isOpen = false;
+    searchQuery = "";
+    selectedIndex = 0;
+  }}
+  onclick={(e) => {
+    // Close when the user clicks the backdrop (i.e. the dialog element itself,
+    // not any of its descendants).
+    if (e.target === dialogRef) close();
+  }}>
+  <div class={styles.panel}>
       <!-- Search input -->
       <div class={styles.searchRow}>
         <svg
@@ -450,8 +451,7 @@
         </div>
       </div>
     </div>
-  </div>
-{/if}
+</dialog>
 
 <!-- Keyboard shortcut hint (always visible) -->
 <button

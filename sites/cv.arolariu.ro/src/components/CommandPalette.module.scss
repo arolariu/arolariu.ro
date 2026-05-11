@@ -1,15 +1,5 @@
 @use "../styles/breakpoints";
 
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  cursor: pointer;
-  background: rgb(0 0 0 / 0.5);
-  backdrop-filter: blur(4px);
-  animation: fade-in 150ms ease-out;
-}
-
 .modal {
   position: fixed;
   top: 20%;
@@ -326,8 +316,35 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .backdrop,
   .modal {
     animation: none;
+  }
+}
+
+/* Backdrop styling for the native <dialog>. The browser draws ::backdrop
+   only when the dialog is opened via showModal(). */
+dialog.modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* The native <dialog> defaults to fixed inset:auto + width:fit-content,
+   so neutralise the user-agent box and let our existing .modal rule
+   handle positioning/sizing. */
+dialog.modal {
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+dialog.modal:not([open]) {
+  display: none;
+}
+
+/* Reduced motion: skip the backdrop blur (cheap on modern GPUs but not free). */
+@media (prefers-reduced-motion: reduce) {
+  dialog.modal::backdrop {
+    backdrop-filter: none;
   }
 }
