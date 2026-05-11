@@ -38,11 +38,18 @@ const DEFAULT_IDLE_TIMEOUT_MS = 5 * 60_000;
 /** Default per-call timeout: 30 seconds. Set to 0 or `Infinity` to disable. */
 const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 
+export {type Remote} from "comlink";
 export {type WorkerCapabilities} from "./workerCapabilities";
 export type {WorkerEvent} from "./workerEnvelope";
-export {WorkerCrashError, WorkerDeadError, WorkerError, WorkerMessageError, WorkerNotAvailableError, WorkerTimeoutError} from "./workerErrors";
+export {
+  WorkerCrashError,
+  WorkerDeadError,
+  WorkerError,
+  WorkerMessageError,
+  WorkerNotAvailableError,
+  WorkerTimeoutError,
+} from "./workerErrors";
 export {type WorkerHostState} from "./workerLifecycle";
-export {type Remote} from "comlink";
 
 /**
  * Options for {@link createWorkerHost}.

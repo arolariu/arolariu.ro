@@ -71,11 +71,7 @@ export function getDefaultNavigationOptions(): NavigateOptions {
  * Navigate to a URL once and report the outcome.
  * No retries — a 500 from a static production page is a real bug.
  */
-export async function navigateWithRetry(
-  page: Page,
-  url: string,
-  options: NavigateOptions = {},
-): Promise<NavigationResult> {
+export async function navigateWithRetry(page: Page, url: string, options: NavigateOptions = {}): Promise<NavigationResult> {
   const {waitUntil = NAVIGATION_DEFAULTS.waitUntil, navigationTimeout = NAVIGATION_DEFAULTS.navigationTimeout} = options;
 
   const startTime = performance.now();

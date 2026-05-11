@@ -10,7 +10,7 @@
  *  - onclick handler fires when the button is clicked.
  */
 
-import {render, fireEvent} from "@testing-library/svelte";
+import {fireEvent, render} from "@testing-library/svelte";
 import {describe, expect, it, vi} from "vitest";
 
 import ActionButton from "./ActionButton.svelte";

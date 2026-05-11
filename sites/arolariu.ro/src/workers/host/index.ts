@@ -6,7 +6,6 @@
 
 export {createWorkerHost} from "./createWorkerHost";
 export type {CreateWorkerHostOptions, WorkerHost} from "./createWorkerHost";
-export type {WorkerHostState} from "./workerLifecycle";
 export type {WorkerCapabilities} from "./workerCapabilities";
 export type {WorkerEvent} from "./workerEnvelope";
 export {
@@ -17,3 +16,4 @@ export {
   WorkerNotAvailableError,
   WorkerTimeoutError,
 } from "./workerErrors";
+export type {WorkerHostState} from "./workerLifecycle";

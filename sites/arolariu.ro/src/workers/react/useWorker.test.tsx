@@ -63,7 +63,7 @@ describe("useWorker", () => {
     const {factory} = makeFactory();
     function Probe() {
       const w = useWorker(factory);
-      return <div data-testid="state">{w.state}</div>;
+      return <div data-testid='state'>{w.state}</div>;
     }
     const {getByTestId, rerender} = render(
       <StrictMode>
@@ -103,7 +103,7 @@ describe("useWorker", () => {
     function Probe() {
       const w = useWorker(factory);
       seen.push(w);
-      return <div data-testid="state">{w.state}</div>;
+      return <div data-testid='state'>{w.state}</div>;
     }
     render(
       <StrictMode>

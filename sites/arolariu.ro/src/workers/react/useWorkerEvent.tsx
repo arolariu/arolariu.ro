@@ -26,10 +26,7 @@ import type {WorkerEvent, WorkerHost} from "../host";
  *                   receives. The callback runs synchronously inside the
  *                   host's `forwardEvent` fan-out.
  */
-export function useWorkerEvent<TApi>(
-  host: WorkerHost<TApi>,
-  listener: (event: WorkerEvent) => void,
-): void {
+export function useWorkerEvent<TApi>(host: WorkerHost<TApi>, listener: (event: WorkerEvent) => void): void {
   const listenerRef = useRef(listener);
   listenerRef.current = listener;
   useEffect(() => {

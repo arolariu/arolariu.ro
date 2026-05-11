@@ -27,9 +27,7 @@ describe("JsonView (API documentation)", () => {
 
   it("renders 4 code-sample tabs (curl, JavaScript, Python, PowerShell)", () => {
     const {getAllByRole} = render(JsonView);
-    const tabs = getAllByRole("tab").filter((t) =>
-      /^(curl|javascript|python|powershell)$/i.test(t.textContent?.trim() ?? ""),
-    );
+    const tabs = getAllByRole("tab").filter((t) => /^(curl|javascript|python|powershell)$/i.test(t.textContent?.trim() ?? ""));
     expect(tabs).toHaveLength(4);
   });
 

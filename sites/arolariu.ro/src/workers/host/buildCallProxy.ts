@@ -99,11 +99,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
                 try {
                   return await (fn as (...a: unknown[]) => Promise<unknown>)(...callArgs);
                 } catch (cause) {
-                  if (
-                    typeof cause === "object" &&
-                    cause !== null &&
-                    (cause as {__workerError?: unknown}).__workerError === true
-                  ) {
+                  if (typeof cause === "object" && cause !== null && (cause as {__workerError?: unknown}).__workerError === true) {
                     throw new WorkerError(cause, prop);
                   }
                   throw cause;

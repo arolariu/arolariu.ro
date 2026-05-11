@@ -104,202 +104,232 @@
     // not any of its descendants).
     if (e.target === dialogRef) close();
   }}>
-      <!-- Header -->
-      <header class={styles.header}>
-        <div class={styles.headerTitleGroup}>
-          <div class={styles.headerIconFrame}>
+  <!-- Header -->
+  <header class={styles.header}>
+    <div class={styles.headerTitleGroup}>
+      <div class={styles.headerIconFrame}>
+        <svg
+          class={styles.headerIcon}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h3
+          id="help-dialog-title"
+          class={styles.title}>
+          {help.title}
+        </h3>
+        <p class={styles.subtitle}>Learn about this CV website</p>
+      </div>
+    </div>
+    <button
+      bind:this={closeBtn}
+      onclick={close}
+      class={styles.closeButton}
+      aria-label={ui.buttons.close}>
+      <svg
+        class={styles.closeIcon}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </header>
+
+  <!-- Tabs -->
+  <div class={styles.tabs}>
+    <button
+      onclick={() => (activeTab = "info")}
+      class={cx(styles.tab, activeTab === "info" ? styles.tabActive : styles.tabIdle)}>
+      Technical Info
+    </button>
+    <button
+      onclick={() => (activeTab = "shortcuts")}
+      class={cx(styles.tab, activeTab === "shortcuts" ? styles.tabActive : styles.tabIdle)}>
+      Keyboard Shortcuts
+    </button>
+    <button
+      onclick={() => (activeTab = "features")}
+      class={cx(styles.tab, activeTab === "features" ? styles.tabActive : styles.tabIdle)}>
+      Features
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class={styles.content}>
+    <p
+      id="help-dialog-description"
+      class={styles.screenReaderOnly}>{help.title}</p>
+
+    {#if activeTab === "info"}
+      <!-- Technical Information -->
+      <div class={styles.stackLarge}>
+        <!-- Quick Stats -->
+        <div class={styles.statsGrid}>
+          <div class={styles.statCard}>
+            <div class={cx(styles.statValue, styles.statPurple)}>{techInfo.version}</div>
+            <div class={styles.statLabel}>Version</div>
+          </div>
+          <div class={styles.statCard}>
+            <div class={cx(styles.statValue, styles.statBlue)}>{techInfo.framework}</div>
+            <div class={styles.statLabel}>Framework</div>
+          </div>
+          <div class={styles.statCard}>
+            <div class={cx(styles.statValue, styles.statGreen)}>100</div>
+            <div class={styles.statLabel}>Lighthouse Score</div>
+          </div>
+          <div class={styles.statCard}>
+            <div class={cx(styles.statValue, styles.statPink)}>PWA</div>
+            <div class={styles.statLabel}>Installable</div>
+          </div>
+        </div>
+
+        <!-- Info Table -->
+        <div class={styles.tableFrame}>
+          <table class={styles.table}>
+            <tbody>
+              <tr class={styles.tableRow}>
+                <td class={styles.tableLabel}>{ui.labels.cloudProvider}</td>
+                <td class={styles.tableValueInline}>
+                  <svg
+                    class={styles.inlineIconBlue}
+                    viewBox="0 0 96 96"
+                    fill="currentColor">
+                    <path d="M47.5 24.2L25.9 37.1v25.7l21.6 12.9 21.6-12.9V37.1L47.5 24.2z" />
+                  </svg>
+                  {techInfo.cloudProvider} ({techInfo.region})
+                </td>
+              </tr>
+              <tr class={styles.tableRow}>
+                <td class={styles.tableLabel}>{ui.labels.commitSha}</td>
+                <td class={styles.tableValue}>
+                  <code class={styles.code}>
+                    {techInfo.commitSha}
+                  </code>
+                </td>
+              </tr>
+              <tr class={styles.tableRow}>
+                <td class={styles.tableLabel}>{ui.labels.buildTime}</td>
+                <td class={styles.tableValue}>{techInfo.buildTime}</td>
+              </tr>
+              <tr class={styles.tableRow}>
+                <td class={styles.tableLabel}>{ui.labels.sourceCode}</td>
+                <td class={styles.tableValue}>
+                  <a
+                    href={techInfo.sourceCodeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class={styles.sourceLink}>
+                    <svg
+                      class={styles.sourceIcon}
+                      fill="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    View Repository
+                    <svg
+                      class={styles.externalIcon}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Dependencies -->
+        <div>
+          <h4 class={styles.subheading}>{ui.labels.dependencies}</h4>
+          <div class={styles.dependencyList}>
+            {#each techInfo.dependencies as dep}
+              <span class={styles.dependencyPill}>
+                <span class={styles.dependencyName}>{dep.name}</span>
+                <span class={styles.dependencyVersion}>{dep.version}</span>
+              </span>
+            {/each}
+          </div>
+        </div>
+      </div>
+    {:else if activeTab === "shortcuts"}
+      <!-- Keyboard Shortcuts -->
+      <div class={styles.stackMedium}>
+        <p class={styles.helperText}> Use these keyboard shortcuts for faster navigation and actions. </p>
+        <div class={styles.shortcutList}>
+          {#each shortcuts as shortcut}
+            <div class={styles.shortcutRow}>
+              <div class={styles.shortcutKeyGroup}>
+                <div class={styles.keyGroup}>
+                  {#each shortcut.keys as key}
+                    <kbd class={styles.shortcutKey}>
+                      {key}
+                    </kbd>
+                  {/each}
+                </div>
+              </div>
+              <div class={styles.shortcutDescription}>
+                <span class={styles.shortcutText}>{shortcut.description}</span>
+                <span class={styles.shortcutCategory}>
+                  {shortcut.category}
+                </span>
+              </div>
+            </div>
+          {/each}
+        </div>
+        <div class={styles.proTip}>
+          <div class={styles.proTipContent}>
             <svg
-              class={styles.headerIcon}
+              class={styles.proTipIcon}
               fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+              stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </div>
-          <div>
-            <h3
-              id="help-dialog-title"
-              class={styles.title}>
-              {help.title}
-            </h3>
-            <p class={styles.subtitle}>Learn about this CV website</p>
+            <div>
+              <p class={styles.proTipTitle}>Pro Tip</p>
+              <p class={styles.proTipText}>
+                Press <kbd class={styles.proTipKey}>⌘</kbd> +
+                <kbd class={styles.proTipKey}>K</kbd> anywhere to quickly access any action or navigate to any section.
+              </p>
+            </div>
           </div>
         </div>
-        <button
-          bind:this={closeBtn}
-          onclick={close}
-          class={styles.closeButton}
-          aria-label={ui.buttons.close}>
-          <svg
-            class={styles.closeIcon}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </header>
-
-      <!-- Tabs -->
-      <div class={styles.tabs}>
-        <button
-          onclick={() => (activeTab = "info")}
-          class={cx(styles.tab, activeTab === "info" ? styles.tabActive : styles.tabIdle)}>
-          Technical Info
-        </button>
-        <button
-          onclick={() => (activeTab = "shortcuts")}
-          class={cx(styles.tab, activeTab === "shortcuts" ? styles.tabActive : styles.tabIdle)}>
-          Keyboard Shortcuts
-        </button>
-        <button
-          onclick={() => (activeTab = "features")}
-          class={cx(styles.tab, activeTab === "features" ? styles.tabActive : styles.tabIdle)}>
-          Features
-        </button>
       </div>
-
-      <!-- Content -->
-      <div class={styles.content}>
-        <p
-          id="help-dialog-description"
-          class={styles.screenReaderOnly}>{help.title}</p>
-
-        {#if activeTab === "info"}
-          <!-- Technical Information -->
-          <div class={styles.stackLarge}>
-            <!-- Quick Stats -->
-            <div class={styles.statsGrid}>
-              <div class={styles.statCard}>
-                <div class={cx(styles.statValue, styles.statPurple)}>{techInfo.version}</div>
-                <div class={styles.statLabel}>Version</div>
-              </div>
-              <div class={styles.statCard}>
-                <div class={cx(styles.statValue, styles.statBlue)}>{techInfo.framework}</div>
-                <div class={styles.statLabel}>Framework</div>
-              </div>
-              <div class={styles.statCard}>
-                <div class={cx(styles.statValue, styles.statGreen)}>100</div>
-                <div class={styles.statLabel}>Lighthouse Score</div>
-              </div>
-              <div class={styles.statCard}>
-                <div class={cx(styles.statValue, styles.statPink)}>PWA</div>
-                <div class={styles.statLabel}>Installable</div>
-              </div>
-            </div>
-
-            <!-- Info Table -->
-            <div class={styles.tableFrame}>
-              <table class={styles.table}>
-                <tbody>
-                  <tr class={styles.tableRow}>
-                    <td class={styles.tableLabel}>{ui.labels.cloudProvider}</td>
-                    <td class={styles.tableValueInline}>
-                      <svg
-                        class={styles.inlineIconBlue}
-                        viewBox="0 0 96 96"
-                        fill="currentColor">
-                        <path d="M47.5 24.2L25.9 37.1v25.7l21.6 12.9 21.6-12.9V37.1L47.5 24.2z" />
-                      </svg>
-                      {techInfo.cloudProvider} ({techInfo.region})
-                    </td>
-                  </tr>
-                  <tr class={styles.tableRow}>
-                    <td class={styles.tableLabel}>{ui.labels.commitSha}</td>
-                    <td class={styles.tableValue}>
-                      <code class={styles.code}>
-                        {techInfo.commitSha}
-                      </code>
-                    </td>
-                  </tr>
-                  <tr class={styles.tableRow}>
-                    <td class={styles.tableLabel}>{ui.labels.buildTime}</td>
-                    <td class={styles.tableValue}>{techInfo.buildTime}</td>
-                  </tr>
-                  <tr class={styles.tableRow}>
-                    <td class={styles.tableLabel}>{ui.labels.sourceCode}</td>
-                    <td class={styles.tableValue}>
-                      <a
-                        href={techInfo.sourceCodeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class={styles.sourceLink}>
-                        <svg
-                          class={styles.sourceIcon}
-                          fill="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                        </svg>
-                        View Repository
-                        <svg
-                          class={styles.externalIcon}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Dependencies -->
-            <div>
-              <h4 class={styles.subheading}>{ui.labels.dependencies}</h4>
-              <div class={styles.dependencyList}>
-                {#each techInfo.dependencies as dep}
-                  <span class={styles.dependencyPill}>
-                    <span class={styles.dependencyName}>{dep.name}</span>
-                    <span class={styles.dependencyVersion}>{dep.version}</span>
-                  </span>
-                {/each}
-              </div>
-            </div>
-          </div>
-        {:else if activeTab === "shortcuts"}
-          <!-- Keyboard Shortcuts -->
-          <div class={styles.stackMedium}>
-            <p class={styles.helperText}> Use these keyboard shortcuts for faster navigation and actions. </p>
-            <div class={styles.shortcutList}>
-              {#each shortcuts as shortcut}
-                <div class={styles.shortcutRow}>
-                  <div class={styles.shortcutKeyGroup}>
-                    <div class={styles.keyGroup}>
-                      {#each shortcut.keys as key}
-                        <kbd class={styles.shortcutKey}>
-                          {key}
-                        </kbd>
-                      {/each}
-                    </div>
-                  </div>
-                  <div class={styles.shortcutDescription}>
-                    <span class={styles.shortcutText}>{shortcut.description}</span>
-                    <span class={styles.shortcutCategory}>
-                      {shortcut.category}
-                    </span>
-                  </div>
-                </div>
-              {/each}
-            </div>
-            <div class={styles.proTip}>
-              <div class={styles.proTipContent}>
+    {:else if activeTab === "features"}
+      <!-- Features Grid -->
+      <div class={styles.featureGrid}>
+        {#each features as feature, i}
+          <div
+            class={styles.featureCard}
+            style="animation-delay: {i * 50}ms;">
+            <div class={styles.featureCardContent}>
+              <div class={styles.featureIconFrame}>
                 <svg
-                  class={styles.proTipIcon}
+                  class={styles.featureIcon}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -307,59 +337,29 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    d={getFeatureIcon(feature.icon)} />
                 </svg>
-                <div>
-                  <p class={styles.proTipTitle}>Pro Tip</p>
-                  <p class={styles.proTipText}>
-                    Press <kbd class={styles.proTipKey}>⌘</kbd> +
-                    <kbd class={styles.proTipKey}>K</kbd> anywhere to quickly access any action or navigate to any section.
-                  </p>
-                </div>
+              </div>
+              <div>
+                <h4 class={styles.featureTitle}>{feature.title}</h4>
+                <p class={styles.featureDescription}>{feature.description}</p>
               </div>
             </div>
           </div>
-        {:else if activeTab === "features"}
-          <!-- Features Grid -->
-          <div class={styles.featureGrid}>
-            {#each features as feature, i}
-              <div
-                class={styles.featureCard}
-                style="animation-delay: {i * 50}ms;">
-                <div class={styles.featureCardContent}>
-                  <div class={styles.featureIconFrame}>
-                    <svg
-                      class={styles.featureIcon}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d={getFeatureIcon(feature.icon)} />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 class={styles.featureTitle}>{feature.title}</h4>
-                    <p class={styles.featureDescription}>{feature.description}</p>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
+        {/each}
       </div>
+    {/if}
+  </div>
 
-      <!-- Footer -->
-      <footer class={styles.footer}>
-        <div class={styles.footerContent}>
-          <p class={styles.footerText}> Built with care using modern web technologies </p>
-          <button
-            onclick={close}
-            class={styles.footerButton}>
-            {ui.buttons.close}
-          </button>
-        </div>
-      </footer>
+  <!-- Footer -->
+  <footer class={styles.footer}>
+    <div class={styles.footerContent}>
+      <p class={styles.footerText}> Built with care using modern web technologies </p>
+      <button
+        onclick={close}
+        class={styles.footerButton}>
+        {ui.buttons.close}
+      </button>
+    </div>
+  </footer>
 </dialog>

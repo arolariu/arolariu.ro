@@ -104,10 +104,7 @@ export function expose<TApi extends Record<string, unknown>>(api: TApi, options:
     const wrapped: Record<string, unknown> = {};
     for (const key of Object.keys(api)) {
       const value = (api as Record<string, unknown>)[key];
-      wrapped[key] =
-        typeof value === "function"
-          ? wrapHandlerError(value as (...a: unknown[]) => Promise<unknown>)
-          : value;
+      wrapped[key] = typeof value === "function" ? wrapHandlerError(value as (...a: unknown[]) => Promise<unknown>) : value;
     }
 
     Comlink.expose(wrapped, bootstrap.rpcPort);

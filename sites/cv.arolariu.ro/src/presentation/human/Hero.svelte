@@ -93,8 +93,8 @@
 
     <div class={cx(styles.descriptionWrapper, heroVisible ? styles.fadeVisible : styles.fadeHidden)}>
       <p class={styles.description}>
-        {author.age}-year-old passionate software engineer based in {author.location}, dedicated to creating innovative
-        solutions and building exceptional digital experiences.
+        {author.age}-year-old passionate software engineer based in {author.location}, dedicated to creating innovative solutions and
+        building exceptional digital experiences.
       </p>
     </div>
 

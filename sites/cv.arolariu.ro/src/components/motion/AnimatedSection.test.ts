@@ -16,8 +16,8 @@
  */
 
 import {render} from "@testing-library/svelte";
-import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createRawSnippet} from "svelte";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import AnimatedSection from "./AnimatedSection.svelte";
 

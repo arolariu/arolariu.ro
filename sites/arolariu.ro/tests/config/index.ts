@@ -20,19 +20,18 @@ export {
 
 // Project configuration
 export {
-  DEVICE_PRESETS,
-  PROJECT_GROUPS,
   createProject,
   createSetupProject,
+  DEVICE_PRESETS,
   getProjectGroup,
   getProjectsForEnvironment,
+  PROJECT_GROUPS,
   type CreateProjectOptions,
   type DevicePresetName,
 } from "./projects";
 
 // Reporter configuration
 export {
-  REPORTER_PATHS,
   getBlobReporter,
   getDotReporter,
   getGitHubReporter,
@@ -44,6 +43,7 @@ export {
   getMergeReporters,
   getReportersForEnvironment,
   getShardedReporters,
+  REPORTER_PATHS,
 } from "./reporters";
 
 /**

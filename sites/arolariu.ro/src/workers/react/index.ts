@@ -8,6 +8,6 @@
 
 import "../client-only";
 
+export {createWorkerHook} from "./createWorkerHook";
 export {useWorker} from "./useWorker";
 export {useWorkerEvent} from "./useWorkerEvent";
-export {createWorkerHook} from "./createWorkerHook";

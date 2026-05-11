@@ -31,10 +31,7 @@ describe("createTelemetryBridge", () => {
       const debug = vi.fn();
       const bridge = createTelemetryBridge("ai", {logger: {debug, info: vi.fn(), warn: vi.fn(), error: vi.fn()}});
       await bridge.wrapCall("greet", async () => "ok");
-      expect(debug).toHaveBeenCalledWith(
-        expect.stringContaining("worker.ai.greet"),
-        expect.objectContaining({status: "ok"}),
-      );
+      expect(debug).toHaveBeenCalledWith(expect.stringContaining("worker.ai.greet"), expect.objectContaining({status: "ok"}));
     });
 
     it("logs an error span line on failure", async () => {
@@ -43,10 +40,7 @@ describe("createTelemetryBridge", () => {
         logger: {debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error},
       });
       await expect(bridge.wrapCall("greet", async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
-      expect(error).toHaveBeenCalledWith(
-        expect.stringContaining("worker.ai.greet"),
-        expect.objectContaining({status: "error"}),
-      );
+      expect(error).toHaveBeenCalledWith(expect.stringContaining("worker.ai.greet"), expect.objectContaining({status: "error"}));
     });
   });
 
