@@ -11,10 +11,15 @@
  *   (`lib/utils/copy.ts` and `lib/utils/download.ts` use them for
  *   irrecoverable browser-API failures).
  *
- * - `build.target = "es2022"` lets esbuild emit modern ECMAScript
- *   features (top-level await, class fields, `Error.cause`) instead
- *   of down-leveling. Every browser the site supports (Chrome 94+,
- *   Firefox 93+, Safari 16+, Edge 94+) handles ES2022 natively.
+ * - `build.target = "esnext"` lets esbuild emit any modern ECMAScript
+ *   syntax without down-leveling. The codebase doesn't use features
+ *   beyond ES2022 today, so output is currently identical to
+ *   `target: "es2022"` — but the directive future-proofs the build
+ *   so adopting ES2023+ syntax later doesn't require revisiting this
+ *   config. All browsers the site targets (Chrome 94+, Firefox 93+,
+ *   Safari 16+, Edge 94+) handle ES2022 natively; if a future
+ *   contributor lands a dependency that uses syntax esbuild can't
+ *   parse, the build fails fast — explicit beats silent down-leveling.
  *
  * @see https://vitejs.dev/config/
  */
@@ -28,6 +33,6 @@ export default defineConfig({
     pure: ["console.log", "console.debug", "console.info"],
   },
   build: {
-    target: "es2022",
+    target: "esnext",
   },
 });
