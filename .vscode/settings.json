@@ -433,7 +433,7 @@
     "*.cs": "$(capture).*.cs",
     "*.ts": "$(capture).*.ts",
     "*.tsx": "$(capture).*.tsx, $(capture).*.scss, $(capture).*.css",
-    "*.svelte": "$(capture).module.scss, $(capture).test.ts, $(capture).module.test.ts"
+    "*.svelte": "$(capture).*.scss, $(capture).*.ts"
   },
   "explorer.incrementalNaming": "smart",
   "explorer.openEditors.minVisible": 0,
