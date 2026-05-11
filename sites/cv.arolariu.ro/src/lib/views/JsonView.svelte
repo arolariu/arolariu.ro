@@ -149,9 +149,7 @@ $cv.work | Select-Object position, name`,
   showNavLinks={false}
   {actionsConfig} />
 
-<main
-  id="main-content"
-  class={styles.main}>
+<section class={styles.main}>
   <div class={styles.container}>
     <!-- Editorial hero -->
     <AnimatedSection
@@ -354,4 +352,4 @@ $cv.work | Select-Object position, name`,
       </section>
     </AnimatedSection>
   </div>
-</main>
+</section>
