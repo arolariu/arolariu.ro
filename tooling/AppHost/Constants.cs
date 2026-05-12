@@ -38,8 +38,4 @@ internal static class Constants
     public const int SqlPort = 8082;
     public const int CosmosGatewayPort = 8081;
     public const int AzuriteBlobPort = 10000;
-    public const int TraefikWebPort = 80;
-    public const int TraefikSecurePort = 443;
-    public const int TraefikDashboardPort = 8080;
-    public const int AspireDashboardHttpPort = 17081;
 }
