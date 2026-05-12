@@ -115,6 +115,15 @@ var docs = builder
     .WaitFor(traefik);
 
 // ─────────────────────────────────────────────────────────────────────
+// Status page — SvelteKit, standalone.
+// ─────────────────────────────────────────────────────────────────────
+
+var status = builder
+    .AddViteApp("status", "../../sites/status.arolariu.ro")
+    .WithHttpEndpoint(port: 3002, env: "PORT")
+    .WaitFor(traefik);
+
+// ─────────────────────────────────────────────────────────────────────
 // Traefik dynamic-config glue — writes *.localhost route entries when
 // native services become ready; cleans up on shutdown.
 // ─────────────────────────────────────────────────────────────────────
@@ -128,6 +137,7 @@ builder.AddTraefikDynamicConfig(
         ["exp.localhost"]     = exp,
         ["cv.localhost"]      = cv,
         ["docs.localhost"]    = docs,
+        ["status.localhost"]  = status,
     },
     staticRoutes: new Dictionary<string, (string scheme, int port)>
     {
