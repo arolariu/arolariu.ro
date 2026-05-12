@@ -111,7 +111,7 @@ describe("runProbe", () => {
     }) as typeof fetch;
 
     const delays = [0, 0, 0, 0, 0]; // five samples, zero wait in-test
-    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
+    await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays, warmupSampleCount: 0});
 
     // Four unique URLs, one fetch per delay entry
     expect(calls.size).toBe(4);
@@ -133,7 +133,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     expect(api.overall).toBe("Unhealthy"); // worst of [Healthy, Unhealthy, Healthy]
     expect(api.error).toContain("ECONNREFUSED");
@@ -142,7 +142,7 @@ describe("runProbe", () => {
   it("all samples healthy → aggregated result is Healthy with median latency", async () => {
     globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     expect(results.every((r) => r.overall === "Healthy")).toBe(true);
     expect(results.every((r) => typeof r.latencyMs === "number" && r.latencyMs >= 0)).toBe(true);
   });
@@ -151,7 +151,7 @@ describe("runProbe", () => {
     globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({status: "Healthy"}), {status: 200})) as typeof fetch;
 
     const delays = [0, 0, 0, 0, 0];
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: delays, warmupSampleCount: 0});
 
     for (const r of results) {
       expect(r.sampleLatenciesMs).toBeDefined();
@@ -183,7 +183,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     expect(api.overall).toBe("Degraded");
     const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
@@ -209,7 +209,7 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0, 0]});
+    const results = await runProbe({dataDir, now: new Date("2026-04-19T14:00:00Z"), sampleDelaysMs: [0, 0, 0, 0], warmupSampleCount: 0});
     const api = results.find((r) => r.service === "api.arolariu.ro")!;
     const mssql = api.subChecks?.find((sc) => sc.name === "mssql");
     expect(mssql).toBeDefined();
@@ -334,5 +334,180 @@ describe("runProbe", () => {
       sampleDelaysMs: [1], // 1ms delay — exercises the true branch
     });
     expect(results).toHaveLength(4);
+  });
+
+  it("warmup fires warmupSampleCount extra fetches per service BEFORE the measurement batch", async () => {
+    // Arrange: count fetch invocations per URL so we can verify warmup adds N extra calls.
+    const calls = new Map<string, number>();
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      calls.set(u, (calls.get(u) ?? 0) + 1);
+      if (u.includes("api.arolariu.ro/health")) {
+        return new Response(JSON.stringify({status: "Healthy", entries: {}}), {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act: 3 measurement samples + 2 warmup samples = 5 total fetches per URL.
+    const results = await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+      warmupSampleCount: 2,
+    });
+
+    // Assert: every service URL was hit 5 times (2 warmup + 3 measurement).
+    expect(calls.size).toBe(4);
+    for (const [url, count] of calls.entries()) {
+      expect(count, `${url} should be probed 5 times (2 warmup + 3 measurement)`).toBe(5);
+    }
+    // sampleCount reflects ONLY measurement samples — warmup is invisible to aggregation.
+    for (const r of results) {
+      expect(r.sampleCount).toBe(3);
+      expect(r.sampleLatenciesMs).toHaveLength(3);
+    }
+  });
+
+  it("warmup failures are swallowed — measurement batch runs and records its own outcome", async () => {
+    // Arrange: fail the FIRST two fetches per api.arolariu.ro (the warmup pair),
+    // succeed on every measurement fetch. With warmupSampleCount: 2, the failures
+    // land entirely inside the warmup window and must be invisible to the result.
+    let apiCalls = 0;
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("api.arolariu.ro/health")) {
+        // Only one service fetches this URL, so calls 1–2 are deterministically the warmup pair.
+        apiCalls++;
+        if (apiCalls <= 2) throw new Error("ECONNREFUSED");
+        return new Response(JSON.stringify({status: "Healthy", entries: {}}), {status: 200});
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act
+    const results = await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+      warmupSampleCount: 2,
+    });
+
+    // Assert: the warmup ECONNREFUSED throws were swallowed, measurement saw only
+    // healthy responses, so the probe result is Healthy with no error.
+    const api = results.find((r) => r.service === "api.arolariu.ro")!;
+    expect(api.overall).toBe("Healthy");
+    expect(api.error).toBeUndefined();
+    expect(api.sampleLatenciesMs).toHaveLength(3);
+  });
+
+  it("warmup latency never enters sampleLatenciesMs — the percentile distribution sees only measurement samples", async () => {
+    // Arrange: inject a fixed ~120 ms wait into warmup fetches, ~0 ms into measurement
+    // fetches. If warmup were leaking into latency math, sampleLatenciesMs would
+    // contain ≥120 ms entries; if it's correctly discarded, every entry is well
+    // under 120 ms.
+    globalThis.fetch = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      const ua = (init?.headers as Record<string, string> | undefined)?.["user-agent"] ?? "";
+      if (ua.includes("(warmup)")) {
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act
+    const results = await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+      warmupSampleCount: 2,
+    });
+
+    // Assert: none of the retained per-sample latencies should look like the
+    // 120 ms warmup floor — they should all be well under it.
+    for (const r of results) {
+      expect(r.sampleLatenciesMs).toBeDefined();
+      expect(r.sampleLatenciesMs).toHaveLength(3);
+      for (const lat of r.sampleLatenciesMs!) {
+        expect(lat).toBeLessThan(100);
+      }
+    }
+  });
+
+  it("default warmupSampleCount is 2 when the option is omitted", async () => {
+    // Arrange
+    const calls = new Map<string, number>();
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      calls.set(u, (calls.get(u) ?? 0) + 1);
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act: do NOT pass warmupSampleCount — exercise the production default.
+    await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+    });
+
+    // Assert: each URL hit 2 (warmup) + 3 (measurement) = 5 times.
+    expect(calls.size).toBe(4);
+    for (const [url, count] of calls.entries()) {
+      expect(count, `${url} should be probed 5 times (default 2 warmup + 3 measurement)`).toBe(5);
+    }
+  });
+
+  it("warmupSampleCount: 0 skips warmup entirely — fetch count equals measurement count", async () => {
+    // Arrange
+    const calls = new Map<string, number>();
+    globalThis.fetch = vi.fn(async (url: string | URL) => {
+      const u = String(url);
+      calls.set(u, (calls.get(u) ?? 0) + 1);
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act
+    await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+      warmupSampleCount: 0,
+    });
+
+    // Assert: each URL hit exactly delaysMs.length times — no warmup overhead.
+    expect(calls.size).toBe(4);
+    for (const [url, count] of calls.entries()) {
+      expect(count, `${url} should be probed exactly 3 times (no warmup)`).toBe(3);
+    }
+  });
+
+  it("warmup fetches carry '(warmup)' in the User-Agent; measurement fetches do not", async () => {
+    // Arrange: record the user-agent for every fetch per URL, in call order.
+    const userAgentsByUrl = new Map<string, string[]>();
+    globalThis.fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const u = String(url);
+      const ua = (init?.headers as Record<string, string> | undefined)?.["user-agent"] ?? "";
+      const arr = userAgentsByUrl.get(u) ?? [];
+      arr.push(ua);
+      userAgentsByUrl.set(u, arr);
+      return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
+    }) as typeof fetch;
+
+    // Act: 2 warmup + 3 measurement = 5 fetches per service. Warmup must come first.
+    await runProbe({
+      dataDir,
+      now: new Date("2026-05-11T14:00:00Z"),
+      sampleDelaysMs: [0, 0, 0],
+      warmupSampleCount: 2,
+    });
+
+    // Assert: per URL, the first two UAs include "(warmup)", the last three do not.
+    expect(userAgentsByUrl.size).toBe(4);
+    for (const [url, uas] of userAgentsByUrl.entries()) {
+      expect(uas, `${url} should have 5 recorded fetches`).toHaveLength(5);
+      expect(uas[0], `${url} warmup #1 UA`).toContain("(warmup)");
+      expect(uas[1], `${url} warmup #2 UA`).toContain("(warmup)");
+      expect(uas[2], `${url} measurement #1 UA`).not.toContain("(warmup)");
+      expect(uas[3], `${url} measurement #2 UA`).not.toContain("(warmup)");
+      expect(uas[4], `${url} measurement #3 UA`).not.toContain("(warmup)");
+    }
   });
 });
