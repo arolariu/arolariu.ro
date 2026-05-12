@@ -18,10 +18,21 @@
  */
 
 import {execSync, spawn, type ChildProcess} from "node:child_process";
+import {rmSync} from "node:fs";
 import {join} from "node:path";
 import {styleText} from "node:util";
 
 const INFRA_DIR = join(process.cwd(), "infra", "Local");
+
+// Defensive cleanup of any stale aspire-services.yml left by a previously
+// crashed Aspire run. Selfhost/local mode must not be confused by Aspire's
+// dynamic Traefik routes file.
+const STALE_ASPIRE_CONFIG = join(INFRA_DIR, "Management", "traefik", "dynamic", "aspire-services.yml");
+try {
+  rmSync(STALE_ASPIRE_CONFIG, {force: true});
+} catch {
+  /* ignore — file may not exist */
+}
 
 
 // ============================================================================
@@ -103,7 +114,7 @@ function startManagement(): void {
 
 function startStorage(): void {
   logStep(2, 5, "Starting databases (CosmosDB, SQL, Redis, Azurite, exp)...");
-  dockerCompose("Storage/docker-compose.yml", "up -d");
+  dockerCompose("Storage/docker-compose.yml", "--profile selfhost up -d");
   logSuccess("Storage containers started");
 }
 
