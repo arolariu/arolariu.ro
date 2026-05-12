@@ -33,6 +33,18 @@ var sql = builder
     .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
     .WithIconName("Database");
 
+// Declare the 'arolariu-sql' database as an Aspire resource. WithCreationScript
+// runs an idempotent CREATE DATABASE the first time this resource initializes
+// (mirrors the selfhost-start.sh bootstrap that does the same on the compose
+// stack). Downstream services that WaitFor(sqlDb) won't start until the
+// database exists and is queryable, eliminating the "Cannot open database"
+// failure on a fresh container.
+var sqlDb = sql.AddDatabase(Constants.SqlDatabaseName)
+    .WithCreationScript($"""
+        IF DB_ID('{Constants.SqlDatabaseName}') IS NULL
+            CREATE DATABASE [{Constants.SqlDatabaseName}];
+        """);
+
 // Gate WaitFor(sql) on TDS-readiness (not just container "Running"). AddSqlServer
 // wires no built-in health check, so WaitFor would otherwise resolve as soon as
 // the container starts — well before SQL Server's TDS listener accepts queries.
@@ -119,7 +131,7 @@ var exp = builder
     .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT", isProxied: false)
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
-    .WaitFor(sql)
+    .WaitFor(sqlDb)       // waits for sql-ready + database creation
     .WaitFor(cosmos)
     .WaitFor(storage)
     .WithIconName("KeyMultiple")
