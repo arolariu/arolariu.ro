@@ -56,29 +56,6 @@ var redis = builder
     .WithoutHttpsCertificate(); // redis:alpine doesn't speak TLS; Aspire 13.x defaults to TLS-on
 
 // ─────────────────────────────────────────────────────────────────────
-// Reverse proxy — Traefik with mkcert HTTPS.
-// File-provider only (Aspire 13.x doesn't use docker labels for routing).
-// Dynamic routes for native processes are wired by AddTraefikDynamicConfig
-// (added in Task 8 of the implementation plan).
-// ─────────────────────────────────────────────────────────────────────
-
-var traefik = builder
-    .AddContainer("traefik", "traefik:v3.6")
-    .WithBindMount("../../infra/Local/Management/traefik/dynamic", "/etc/traefik/dynamic", isReadOnly: true)
-    .WithBindMount("../../infra/Local/Management/certs", "/certs", isReadOnly: true)
-    .WithEndpoint(port: Constants.TraefikWebPort, targetPort: Constants.TraefikWebPort, name: "web", scheme: "http")
-    .WithEndpoint(port: Constants.TraefikSecurePort, targetPort: Constants.TraefikSecurePort, name: "websecure", scheme: "https")
-    .WithEndpoint(port: Constants.TraefikDashboardPort, targetPort: Constants.TraefikDashboardPort, name: "traefik-dashboard", scheme: "http")
-    .WithArgs(
-        "--api.dashboard=true",
-        "--api.insecure=true",
-        "--providers.file.directory=/etc/traefik/dynamic",
-        "--providers.file.watch=true",
-        "--entrypoints.web.address=:80",
-        "--entrypoints.websecure.address=:443",
-        "--log.level=INFO");
-
-// ─────────────────────────────────────────────────────────────────────
 // exp config service — native Python via uvicorn (FastAPI/ASGI).
 // (AddUvicornApp is the FastAPI-recommended method in Aspire 13.x; uses
 // existing .venv in sites/exp.arolariu.ro/ automatically.)
@@ -126,8 +103,7 @@ var website = builder
 
 var cv = builder
     .AddViteApp("cv", "../../sites/cv.arolariu.ro")
-    .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
-    .WaitFor(traefik);
+    .WithHttpEndpoint(port: Constants.CvPort, env: "PORT");
 
 // ─────────────────────────────────────────────────────────────────────
 // Docusaurus docs site — standalone.
@@ -138,8 +114,7 @@ var cv = builder
 
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
-    .WithHttpEndpoint(port: Constants.DocsPort)
-    .WaitFor(traefik);
+    .WithHttpEndpoint(port: Constants.DocsPort);
 
 // ─────────────────────────────────────────────────────────────────────
 // Status page — SvelteKit, standalone.
@@ -147,29 +122,7 @@ var docs = builder
 
 var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
-    .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
-    .WaitFor(traefik);
-
-// ─────────────────────────────────────────────────────────────────────
-// Traefik dynamic-config glue — writes *.localhost route entries when
-// native services become ready; cleans up on shutdown.
-// ─────────────────────────────────────────────────────────────────────
-
-builder.AddTraefikDynamicConfig(
-    targetFile: "../../infra/Local/Management/traefik/dynamic/aspire-services.yml",
-    dynamicResources: new Dictionary<string, IResourceBuilder<IResourceWithEndpoints>>
-    {
-        ["api.localhost"]     = api,
-        ["website.localhost"] = website,
-        ["exp.localhost"]     = exp,
-        ["cv.localhost"]      = cv,
-        ["docs.localhost"]    = docs,
-        ["status.localhost"]  = status,
-    },
-    staticRoutes: new Dictionary<string, (string scheme, int port)>
-    {
-        ["dashboard.localhost"] = ("http", Constants.AspireDashboardHttpPort),
-    });
+    .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT");
 
 // ─────────────────────────────────────────────────────────────────────
 // exp config-file generator — rewrites sites/exp.arolariu.ro/config.docker.json
