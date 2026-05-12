@@ -98,7 +98,9 @@ var website = builder
     .AddNextJsApp("website", "../../sites/arolariu.ro")
     .WithHttpEndpoint(port: 3000, env: "PORT")
     .WithReference(api)
+    .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
+    .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WaitFor(api);
 
 // ─────────────────────────────────────────────────────────────────────
