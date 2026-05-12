@@ -20,7 +20,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 var sqlPassword = builder.AddParameter("sql-password", Constants.SqlPassword, secret: true);
 var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
-    .WithDataVolume(Constants.SqlDataVolume);
+    .WithDataVolume(Constants.SqlDataVolume)
+    .WithIconName("Database");
 
 // Use RunAsPreviewEmulator for the Linux-based vnext emulator (matches the
 // compose container in infra/Local/Storage/docker-compose.yml). The default
@@ -32,7 +33,8 @@ var cosmos = builder
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
-        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"));
+        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
+    .WithIconName("DatabaseMultiple");
 
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
 // `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
@@ -47,13 +49,15 @@ var cosmosMerchants = cosmosPrimaryDb.AddContainer(
 var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
-        .WithBlobPort(Constants.AzuriteBlobPort));
+        .WithBlobPort(Constants.AzuriteBlobPort))
+    .WithIconName("Storage");
 
 var redisPassword = builder.AddParameter("redis-password", Constants.RedisPassword, secret: true);
 var redis = builder
     .AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
     .WithDataVolume(Constants.RedisDataVolume)
-    .WithoutHttpsCertificate(); // redis:alpine doesn't speak TLS; Aspire 13.x defaults to TLS-on
+    .WithoutHttpsCertificate() // redis:alpine doesn't speak TLS; Aspire 13.x defaults to TLS-on
+    .WithIconName("Memory");
 
 // ─────────────────────────────────────────────────────────────────────
 // exp config service — native Python via uvicorn (FastAPI/ASGI).
@@ -70,7 +74,8 @@ var exp = builder
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
     .WaitFor(sql)
     .WaitFor(cosmos)
-    .WaitFor(storage);
+    .WaitFor(storage)
+    .WithIconName("KeyMultiple");
 
 // ─────────────────────────────────────────────────────────────────────
 // .NET API. API reads connection strings from exp at startup; Aspire
@@ -82,7 +87,8 @@ var api = builder
     .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WithReference(exp)
-    .WaitFor(exp);
+    .WaitFor(exp)
+    .WithIconName("CodeBlock");
 
 // ─────────────────────────────────────────────────────────────────────
 // Website — Next.js (AddNextJsApp is Aspire 13.x dedicated method).
@@ -95,7 +101,8 @@ var website = builder
     .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
-    .WaitFor(api);
+    .WaitFor(api)
+    .WithIconName("Globe");
 
 // ─────────────────────────────────────────────────────────────────────
 // SvelteKit CV — standalone (no API/exp reference).
@@ -103,7 +110,8 @@ var website = builder
 
 var cv = builder
     .AddViteApp("cv", "../../sites/cv.arolariu.ro")
-    .WithHttpEndpoint(port: Constants.CvPort, env: "PORT");
+    .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
+    .WithIconName("PersonAccounts");
 
 // ─────────────────────────────────────────────────────────────────────
 // Docusaurus docs site — standalone.
@@ -114,7 +122,8 @@ var cv = builder
 
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
-    .WithHttpEndpoint(port: Constants.DocsPort);
+    .WithHttpEndpoint(port: Constants.DocsPort)
+    .WithIconName("BookOpenGlobe");
 
 // ─────────────────────────────────────────────────────────────────────
 // Status page — SvelteKit, standalone.
@@ -122,7 +131,8 @@ var docs = builder
 
 var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
-    .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT");
+    .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
+    .WithIconName("PulseSquare");
 
 // ─────────────────────────────────────────────────────────────────────
 // exp config-file generator — rewrites sites/exp.arolariu.ro/config.docker.json
