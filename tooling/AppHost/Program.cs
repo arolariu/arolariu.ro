@@ -69,6 +69,8 @@ var traefik = builder
 
 var exp = builder
     .AddUvicornApp("exp", "../../sites/exp.arolariu.ro", "main:app")
+    .WithPip() // force pip mode (uv may not be installed)
+    .WithVirtualEnvironment(".venv")
     .WithHttpEndpoint(port: 5002, env: "PORT")
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
