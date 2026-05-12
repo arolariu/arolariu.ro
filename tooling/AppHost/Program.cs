@@ -140,22 +140,12 @@ var exp = builder
 // ─────────────────────────────────────────────────────────────────────
 // .NET API. API reads connection strings from exp at startup; Aspire
 // injects EXP_PROXY_URL pointing at the native exp endpoint.
-//
-// Note: EXP_PROXY_URL and API_URL are pinned to explicit http:// strings
-// rather than exp.GetEndpoint("http") / api.GetEndpoint("http"). Aspire's
-// run-mode URL resolution promotes endpoint schemes to https:// — but
-// uvicorn and Kestrel's HTTP-only listener don't speak TLS, so clients
-// get "SSL connection could not be established" at the TLS handshake.
-// isProxied:false already pins the ports, so hardcoded URLs are stable.
 // ─────────────────────────────────────────────────────────────────────
-
-string apiUrl = $"http://localhost:{Constants.ApiPort}";
-string expUrl = $"http://localhost:{Constants.ExpPort}";
 
 var api = builder
     .AddProject<Projects.arolariu_Backend_Core>("api")
     .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
-    .WithEnvironment("EXP_PROXY_URL", expUrl)
+    .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WithReference(exp)
     .WaitFor(exp)
     .WithIconName("CodeBlock")
@@ -170,8 +160,8 @@ var website = builder
     .WithHttpEndpoint(port: Constants.WebsitePort, env: "PORT")
     .WithReference(api)
     .WithReference(exp)
-    .WithEnvironment("API_URL", apiUrl)
-    .WithEnvironment("EXP_PROXY_URL", expUrl)
+    .WithEnvironment("API_URL", api.GetEndpoint("http"))
+    .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WaitFor(api)
     .WithIconName("Globe");
 
