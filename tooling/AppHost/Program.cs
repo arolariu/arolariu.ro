@@ -103,6 +103,18 @@ var cv = builder
     .WaitFor(traefik);
 
 // ─────────────────────────────────────────────────────────────────────
+// Docusaurus docs site — standalone.
+// Uses the existing "start" script (docusaurus start --port 3100); the
+// port is pinned in the script itself, so we match it on the endpoint
+// and skip env-injection (the CLI flag wins over $PORT).
+// ─────────────────────────────────────────────────────────────────────
+
+var docs = builder
+    .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
+    .WithHttpEndpoint(port: 3100)
+    .WaitFor(traefik);
+
+// ─────────────────────────────────────────────────────────────────────
 // Traefik dynamic-config glue — writes *.localhost route entries when
 // native services become ready; cleans up on shutdown.
 // ─────────────────────────────────────────────────────────────────────
@@ -115,6 +127,7 @@ builder.AddTraefikDynamicConfig(
         ["website.localhost"] = website,
         ["exp.localhost"]     = exp,
         ["cv.localhost"]      = cv,
+        ["docs.localhost"]    = docs,
     },
     staticRoutes: new Dictionary<string, (string scheme, int port)>
     {
