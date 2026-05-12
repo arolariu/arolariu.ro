@@ -2,29 +2,40 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Next.js: Debug Full Stack",
-      "type": "node",
+      "name": "🚀 Full stack (Aspire)",
+      "type": "dotnet",
       "request": "launch",
-      "cwd": "${workspaceFolder}/sites/arolariu.ro",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev"
-      ],
-      "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "env": {
-        "NODE_OPTIONS": "--inspect",
-        "NEXT_TURBOPACK_TRACING": "1",
-        "EXP_PROXY_URL": "http://localhost:5002"
-      },
-      "sourceMaps": true,
-      "timeout": 30000
+      "projectPath": "${workspaceFolder}/tooling/AppHost/AppHost.csproj",
+      "launchSettingsProfile": "AppHost"
     },
     {
-      "name": "Next.js: Debug Client-Side",
+      "name": "🚀 Full stack (no debug)",
+      "type": "dotnet",
+      "request": "launch",
+      "noDebug": true,
+      "projectPath": "${workspaceFolder}/tooling/AppHost/AppHost.csproj",
+      "launchSettingsProfile": "AppHost"
+    },
+    {
+      "name": "🌐 Website only (standalone)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/sites/arolariu.ro"
+    },
+    {
+      "name": "🔧 API only (standalone)",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj"
+    },
+    {
+      "name": "🔗 Attach to running .NET process",
+      "type": "dotnet",
+      "request": "attach"
+    },
+    {
+      "name": "🧭 Next.js: Debug Client-Side (Edge)",
       "type": "msedge",
       "request": "launch",
       "url": "https://localhost:3000",
@@ -37,39 +48,14 @@
       }
     },
     {
-      "name": "Next.js: Debug Server-Side",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "npm run dev --workspace @arolariu/website",
-      "cwd": "${workspaceFolder}",
-      "serverReadyAction": {
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "action": "debugWithEdge"
-      }
-    },
-    {
-      "name": "Launch DocFX site",
+      "name": "📚 Launch DocFX site",
       "type": "node-terminal",
       "request": "launch",
       "command": "docfx build sites/docs.arolariu.ro/docfx.json --serve",
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": ".NET API: Debug",
-      "type": "dotnet",
-      "request": "launch",
-      "preLaunchTask": "Build: API for Debug",
-      "projectPath": "${workspaceFolder}/sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
-      "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "http://localhost:5000",
-        "INFRA": "local",
-        "EXP_PROXY_URL": "http://localhost:5002"
-      }
-    },
-    {
-      "name": "Python: exp FastAPI Debug",
+      "name": "🐍 Python: exp FastAPI Debug",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
@@ -83,12 +69,8 @@
   ],
   "compounds": [
     {
-      "name": "Full Stack: Website + API + exp",
-      "configurations": [
-        "Next.js: Debug Full Stack",
-        ".NET API: Debug",
-        "Python: exp FastAPI Debug"
-      ],
+      "name": "🪡 Full stack + Node debug",
+      "configurations": ["🚀 Full stack (Aspire)"],
       "stopAll": true
     }
   ]

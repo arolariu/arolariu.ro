@@ -405,6 +405,12 @@
   "editor.wrappingIndent": "same",
   "editor.wrappingStrategy": "simple",
 
+  // Dotnet / Aspire Settings
+  "dotnet.defaultSolution": "arolariu.slnx",
+  "dotnet.preferCSharpExtension": true,
+  "omnisharp.useModernNet": true,
+  "aspire.dashboard.openOnLaunch": "ifAvailable",
+
   // EditorConfig (.editorconfig) Settings
   "editorconfig.generateAuto": true,
   "editorconfig.showMenuEntry": true,
