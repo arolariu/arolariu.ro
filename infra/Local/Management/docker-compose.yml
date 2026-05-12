@@ -24,6 +24,8 @@ services:
       - no-new-privileges:true
     networks:
       - arolariu-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "80:80"
       - "443:443"
