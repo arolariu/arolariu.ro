@@ -21,32 +21,30 @@
 
 There are three ways to develop locally. Choose based on your needs:
 
-| | Bare-Metal | Docker Compose | DevContainer / Codespaces |
+| | Aspire (default) | Selfhost (Docker Compose) | DevContainer / Codespaces |
 |---|---|---|---|
-| **Best for** | Day-to-day coding with fast iteration | Full-stack integration testing | Onboarding, cloud dev, consistent env |
-| **Hot reload** | ✅ All services | ❌ Production builds, no reload | ✅ All services (runs bare-metal inside container) |
-| **Infrastructure** | ❌ No databases — API can't fully start | ✅ CosmosDB, SQL, Redis, Azurite, Traefik HTTPS | ❌ Unless you run Docker Compose inside |
+| **Best for** | Day-to-day coding with fast iteration | CI parity, deploy-mock-of-prod, container auditing | Onboarding, cloud dev, consistent env |
+| **Hot reload** | ✅ All services (apps run native) | ❌ Production builds, no reload | ✅ All services (Aspire runs inside container) |
+| **Infrastructure** | ✅ SQL, Cosmos vNext, Redis, Azurite, Traefik via Aspire-managed containers | ✅ Full containerized stack | ✅ Same as Aspire (Docker-in-Docker) |
 | **Setup time** | ~2 min (npm install + setup) | ~5 min (Docker build + init) | ~5 min (container build) |
-| **Prerequisites** | Node, .NET, (Python optional) | Docker Desktop only | Docker + VS Code Dev Containers extension |
-| **VS Code integration** | Open folder or `.code-workspace` | Open folder (services run in containers) | Automatic — extensions + tools pre-installed |
+| **Prerequisites** | Node, .NET 10, Docker Desktop | Docker Desktop only | Docker + VS Code Dev Containers extension |
+| **VS Code integration** | Open `.code-workspace`, press F5 | Open folder (services run in containers) | Automatic — extensions + tools pre-installed |
 | **OS support** | Windows, macOS, Linux | Windows, macOS, Linux | Windows, macOS, Linux, browser (Codespaces) |
-| **When to use** | Writing code, debugging, unit tests | Testing API with real databases, E2E tests | First day setup, CI environments, Codespaces |
+| **When to use** | Writing code, debugging, unit tests | Container auditing, CI parity, E2E against prod-shape | First day setup, CI environments, Codespaces |
 
 ### Recommended workflow
 
-Most developers use a **hybrid approach**:
-1. **Docker Compose** for infrastructure (databases, config service, Traefik)
-2. **Bare-metal** for the service you're actively coding (website, API, or exp)
+Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) runs each app natively (dotnet / Next.js / SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis, Traefik) as Aspire-managed containers. The Aspire dashboard surfaces live OTel traces, metrics, and logs.
 
-This gives you hot reload for your code AND real database connectivity.
+See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspire-vs-selfhost)** for the canonical mode reference.
 
 ---
 
 ## Quick Start
 
-### 🏆 Recommended: Hybrid Development (Docker infra + bare-metal services)
+### 🏆 Recommended: Aspire Mode (apps native + infra in Aspire-managed containers)
 
-This is the primary development workflow — Docker provides real databases and infrastructure while your services run bare-metal with full hot reload.
+This is the primary development workflow — Aspire orchestrates real infrastructure containers while your apps run native with full hot reload.
 
 ```bash
 # 1. Clone and install
@@ -58,83 +56,90 @@ npm install
 npm run setup        # checks Node 24, .NET 10, npm 11
 npm run doctor       # diagnoses workspace health
 
-# 3. Start everything (Docker infra + bare-metal services)
-npm run dev:local    # ← This is what you'll use every day
+# 3. Start everything (Aspire AppHost orchestrates apps + infra)
+npm run dev          # ← This is what you'll use every day (alias: npm run dev:aspire)
 ```
 
-**What `npm run dev:local` does:**
-1. ✅ Checks Docker is running
-2. 🐳 Starts Traefik reverse proxy (HTTPS on `*.localhost`)
-3. 💾 Starts CosmosDB, SQL Server, Redis, Azurite in Docker
-4. 🔄 Stops the Docker exp container (frees port 5002 for bare-metal exp)
-5. ⏳ Waits for databases to be healthy, initializes schemas
-6. 🚀 Starts exp, website, and API bare-metal with hot reload
+**What `npm run dev` does:**
+1. ✅ Runs `dotnet run --project tooling/AppHost` — the Aspire AppHost
+2. 🐳 Spawns Aspire-managed containers: Traefik (HTTPS `*.localhost` via mkcert), SQL Server, Cosmos vNext emulator, Redis, Azurite
+3. 🔀 Wires Traefik dynamic routes via `tooling/AppHost/Aspire/TraefikDynamicConfig.cs` (`api.localhost`, `website.localhost`, etc.)
+4. ⏳ Waits for infra health, initializes schemas
+5. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
+6. 📊 Exposes the Aspire dashboard at `https://dashboard.localhost` with live OTel traces / metrics / logs
 
-> **Why does exp run bare-metal?** The Docker exp serves `config.docker.json` with Docker hostnames (`cosmosdb`, `mssql`) that bare-metal services can't resolve. The bare-metal exp serves `config.json` with `localhost` URLs that work for all bare-metal services.
+> **Pressing F5 in VS Code / Visual Studio 2026** runs the same AppHost — the only difference is the IDE attaches a debugger.
 
-**Profiles for different workflows:**
+**Single-service standalone (no AppHost coordination — fallback only):**
 ```bash
-npm run dev:local              # Full stack: website + API + exp (bare-metal) + infra (Docker)
-npm run dev:local:frontend     # Frontend only: website + exp (bare-metal) + infra (Docker)
-npm run dev:local:backend      # Backend only: API + exp (bare-metal) + infra (Docker)
-npm run dev:local:infra        # Infrastructure + exp only (start other services manually)
+npm run dev:website     # Next.js only — no infra, no AppHost
+npm run dev:api         # .NET API only — needs infra running separately
+npm run dev:cv          # SvelteKit only
+npm run dev:exp         # Python uvicorn only
+npm run dev:docs        # Docusaurus only
+npm run dev:status      # Status page only
 ```
+
+Use these when narrowly iterating on a single service and you don't need cross-service coordination.
 
 **After startup, your services are at:**
 | Service | URL | Mode |
 |---------|-----|------|
-| Website | https://localhost:3000 | ✅ Bare-metal, Turbopack hot reload |
-| API | http://localhost:5000 | ✅ Bare-metal, dotnet watch hot reload |
-| exp | http://localhost:5002 | ✅ Bare-metal, uvicorn --reload |
+| Website | https://website.localhost | ✅ Native, Turbopack hot reload |
+| API | https://api.localhost | ✅ Native, .NET Hot Reload |
+| exp | https://exp.localhost | ✅ Native, uvicorn --reload |
+| CV | https://cv.localhost | ✅ Native, Vite HMR |
+| docs | https://docs.localhost | ✅ Native, Docusaurus dev |
+| status | https://status.localhost | ✅ Native, Next.js dev |
 
 **Infrastructure dashboards:**
 | Service | URL |
 |---------|-----|
+| Aspire Dashboard | https://dashboard.localhost |
 | Traefik Dashboard | http://localhost:8080 |
-| exp Admin (config editor) | http://localhost:5002/admin |
 | CosmosDB Explorer | http://localhost:1234 |
-| SQL Server | localhost:8082 (credentials in `infra/Local/Storage/docker-compose.yml`) |
+| SQL Server | localhost:8082 (credentials surfaced via Aspire dashboard) |
 | Redis | localhost:6379 |
 | Azurite Blobs | http://localhost:10000 |
 
 **Stopping:**
-- `Ctrl+C` stops bare-metal services (Docker infra keeps running)
-- `cd infra/Local && ./selfhost-stop.sh` (or `selfhost-stop.bat`) stops Docker infra
+- `Ctrl+C` in the AppHost terminal — Aspire tears down both native apps and managed containers.
+- If anything is stranded, `docker ps` then `docker stop` the leftover container(s).
 
 #### Validating everything works
 
 After starting, run these checks:
 
 ```bash
-# Check infrastructure health
-curl http://localhost:5002/api/health     # exp: should return {"status":"Healthy"}
-curl http://localhost:5000/health          # API: should return {"status":"Healthy"}
-curl -k https://localhost:3000             # Website: should return HTML
+# Check service health
+curl -k https://exp.localhost/api/health     # exp: should return {"status":"Healthy"}
+curl -k https://api.localhost/health          # API: should return {"status":"Healthy"}
+curl -k https://website.localhost             # Website: should return HTML
 
-# Check Docker container status
+# Check Docker container status (Aspire-managed)
 docker ps --format "table {{.Names}}\t{{.Status}}"
 
 # Check workspace health
 npm run doctor
 ```
 
-#### Troubleshooting the hybrid workflow
+#### Troubleshooting Aspire mode
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
 | `Docker is not running` | Docker Desktop not started | Start Docker Desktop, wait for it to initialize |
-| exp shows `AZURE_APPCONFIG_ENDPOINT required` | `INFRA=azure` env var leaking | The dev scripts set `INFRA=local` automatically. If running manually, prefix: `INFRA=local npm run dev:exp` |
-| API crashes on startup | Can't reach CosmosDB/SQL/exp | Ensure Docker infra is running first. Run `npm run dev:local:infra` then `npm run dev:api` |
+| AppHost fails on startup | Stale containers from prior session | `docker ps` then `docker stop` lingering `aspire-*` containers and retry |
+| API crashes on startup | Infra container not yet healthy | The AppHost has `WaitFor` dependencies — wait ~30s on first run while SQL/Cosmos initialize |
 | Website shows blank page | Turbopack compiling | Wait 10-15s for initial compilation, then refresh |
 | Port already in use | Previous dev session didn't clean up | `npm run doctor` checks ports. Kill stale processes or restart Docker |
-| CosmosDB Explorer not loading | Emulator still initializing | Wait 60s after `docker compose up`, CosmosDB takes time to start |
+| CosmosDB Explorer not loading | Emulator still initializing | Wait 60s after AppHost start, Cosmos vNext takes time to start |
 | SQL schema errors | Schema already exists | Safe to ignore "already exists" messages |
-| `npm run dev:local` fails on Windows | Long paths or permissions | Run terminal as Administrator, or use `npm run dev:local:infra` + manual service start |
-| HTTPS certificate untrusted | mkcert not installed | Run `mkcert -install` once (selfhost scripts do this automatically) |
+| `*.localhost` resolves but cert untrusted | mkcert root cert not installed | Run `mkcert -install` once |
+| Want the legacy fully-containerized stack | Auditing, CI parity, deploy-mock-of-prod | Use `npm run dev:selfhost` (see Alternative below) |
 
 ---
 
-### Alternative: Bare-Metal Only (no Docker)
+### Alternative: Bare-Metal Single Service (no Docker, no AppHost)
 
 For frontend-only work where you don't need databases:
 
@@ -159,19 +164,18 @@ npm run dev:website       # Just the website with hot reload
 
 ---
 
-### Alternative: Docker Compose Only (full containerized stack)
+### Alternative: Selfhost Mode (full containerized stack)
 
-For integration testing or when you want a fully containerized environment:
+For integration testing, CI parity, or auditing container behavior — everything (apps + infra) runs in Docker:
 
 ```bash
-cd infra/Local
-./selfhost-start.sh    # Linux/macOS
-selfhost-start.bat     # Windows
+npm run dev:selfhost       # Brings up the full Docker Compose stack
+npm run dev:selfhost:stop  # Tears it down
 ```
 
-> **Note:** Docker containers run production builds — no hot reload. For active coding, use the hybrid workflow above.
+> **Note:** Docker containers run production builds — no hot reload. For active coding, use Aspire mode above.
 
-See [infra/Local/readme.md](infra/Local/readme.md) for full details.
+See [infra/Local/readme.md](infra/Local/readme.md) for full Compose details.
 
 ---
 
@@ -181,7 +185,7 @@ For new developers or cloud-based development:
 
 1. Open the repo in VS Code → "Reopen in Container"
 2. Container pre-installs Node 24, .NET 10, Python 3.12, and 28 VS Code extensions
-3. Run `npm run dev:local` inside the container (Docker-in-Docker is enabled)
+3. Run `npm run dev` inside the container (Docker-in-Docker is enabled — Aspire spawns infra containers as siblings)
 
 **GitHub Codespaces:** Go to the repo → Code → Codespaces → Create codespace
 
@@ -235,12 +239,14 @@ Open the workspace file that matches your role for a tailored VS Code experience
 ### Development
 
 ```bash
-npm run dev              # Start all services in parallel
-npm run dev:website      # Next.js website only
-npm run dev:api          # .NET API with hot reload
-npm run dev:exp          # Python exp service with reload
+npm run dev              # Aspire mode — full stack (apps native + infra in Aspire-managed containers)
+npm run dev:aspire       # Explicit alias for npm run dev
+npm run dev:selfhost     # Selfhost mode — fully containerized via Docker Compose
+npm run dev:website      # Next.js website standalone (no AppHost)
+npm run dev:api          # .NET API standalone (no AppHost; needs infra separately)
+npm run dev:exp          # Python exp service standalone
 npm run dev:components   # Component library watch mode
-npm run dev:cv           # SvelteKit CV site
+npm run dev:cv           # SvelteKit CV site standalone
 ```
 
 ### Testing
