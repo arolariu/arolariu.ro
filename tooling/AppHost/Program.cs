@@ -1,49 +1,94 @@
 using Aspire.Hosting;
 
+#pragma warning disable ASPIREJAVASCRIPT001 // AddNextJsApp is experimental in Aspire 13.x
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Infra: Storage compose (SQL + Cosmos + Azurite + Redis; exp excluded via profile)
-var storage = builder.AddDockerComposeFile(
-    name: "storage",
-    composeFilePath: "../../infra/Local/Storage/docker-compose.yml");
+// ─────────────────────────────────────────────────────────────────────
+// Infrastructure — native Aspire 13.x declarations.
+// Mirrors infra/Local/Storage/docker-compose.yml ports/credentials so
+// exp's existing config.docker.json keeps working without modification.
+// (Aspire 13.x has no AddDockerComposeFile; native declarations are the
+// canonical pattern.)
+// ─────────────────────────────────────────────────────────────────────
 
-// Infra: Management compose (Traefik + healthchecks + mkcert)
-var management = builder.AddDockerComposeFile(
-    name: "management",
-    composeFilePath: "../../infra/Local/Management/docker-compose.yml");
+var sqlPassword = builder.AddParameter("sql-password", "qazWSXedcRFV1234!", secret: true);
+var sql = builder
+    .AddSqlServer("mssql", password: sqlPassword, port: 8082)
+    .WithDataVolume("arolariu-mssql-data");
 
-// exp config service — native Python (uvicorn --reload)
-var exp = builder.AddPythonApp(
-    name: "exp",
-    projectDirectory: "../../sites/exp.arolariu.ro",
-    scriptPath: "main.py",
-    virtualEnvironmentPath: ".venv",
-    scriptArgs: new[]
-    {
-        "-m", "uvicorn", "main:app",
-        "--host", "0.0.0.0",
-        "--port", "5002",
-        "--reload"
-    })
-    .WithHttpEndpoint(port: 5002, targetPort: 5002)
+var cosmos = builder
+    .AddAzureCosmosDB("cosmos")
+    .RunAsEmulator();
+
+var storage = builder
+    .AddAzureStorage("storage")
+    .RunAsEmulator();
+
+var redisPassword = builder.AddParameter("redis-password", "RedisPassword123!", secret: true);
+var redis = builder
+    .AddRedis("redis", port: 6379, password: redisPassword)
+    .WithDataVolume("arolariu-redis-data");
+
+// ─────────────────────────────────────────────────────────────────────
+// Reverse proxy — Traefik with mkcert HTTPS.
+// File-provider only (Aspire 13.x doesn't use docker labels for routing).
+// Dynamic routes for native processes are wired by AddTraefikDynamicConfig
+// (added in Task 8 of the implementation plan).
+// ─────────────────────────────────────────────────────────────────────
+
+var traefik = builder
+    .AddContainer("traefik", "traefik:v3.6")
+    .WithBindMount("../../infra/Local/Management/traefik/dynamic", "/etc/traefik/dynamic", isReadOnly: true)
+    .WithBindMount("../../infra/Local/Management/certs", "/certs", isReadOnly: true)
+    .WithEndpoint(port: 80, targetPort: 80, name: "web", scheme: "http")
+    .WithEndpoint(port: 443, targetPort: 443, name: "websecure", scheme: "https")
+    .WithEndpoint(port: 8080, targetPort: 8080, name: "traefik-dashboard", scheme: "http")
+    .WithArgs(
+        "--api.dashboard=true",
+        "--api.insecure=true",
+        "--providers.file.directory=/etc/traefik/dynamic",
+        "--providers.file.watch=true",
+        "--entrypoints.web.address=:80",
+        "--entrypoints.websecure.address=:443",
+        "--log.level=INFO");
+
+// ─────────────────────────────────────────────────────────────────────
+// exp config service — native Python via uvicorn (FastAPI/ASGI).
+// (AddUvicornApp is the FastAPI-recommended method in Aspire 13.x; uses
+// existing .venv in sites/exp.arolariu.ro/ automatically.)
+// ─────────────────────────────────────────────────────────────────────
+
+var exp = builder
+    .AddUvicornApp("exp", "../../sites/exp.arolariu.ro", "main:app")
+    .WithHttpEndpoint(port: 5002, env: "PORT")
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
+    .WaitFor(sql)
+    .WaitFor(cosmos)
     .WaitFor(storage);
 
-// .NET API (port 5000 pinned to match selfhost convention)
-var api = builder.AddProject<Projects.arolariu_Backend_Core>("api")
+// ─────────────────────────────────────────────────────────────────────
+// .NET API. API reads connection strings from exp at startup; Aspire
+// injects EXP_PROXY_URL pointing at the native exp endpoint.
+// ─────────────────────────────────────────────────────────────────────
+
+var api = builder
+    .AddProject<Projects.arolariu_Backend_Core>("api")
     .WithHttpEndpoint(port: 5000, name: "http")
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WithReference(exp)
     .WaitFor(exp);
 
-// Website — Next.js dev server (port 3000)
-var website = builder.AddNpmApp(
-    name: "website",
-    workingDirectory: "../../sites/arolariu.ro",
-    scriptName: "dev")
+// ─────────────────────────────────────────────────────────────────────
+// Website — Next.js (AddNextJsApp is Aspire 13.x dedicated method).
+// ─────────────────────────────────────────────────────────────────────
+
+var website = builder
+    .AddNextJsApp("website", "../../sites/arolariu.ro")
+    .WithHttpEndpoint(port: 3000, env: "PORT")
     .WithReference(api)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
-    .WithHttpEndpoint(env: "PORT", port: 3000);
+    .WaitFor(api);
 
 builder.Build().Run();
