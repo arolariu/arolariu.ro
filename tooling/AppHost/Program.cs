@@ -94,6 +94,15 @@ var website = builder
     .WaitFor(api);
 
 // ─────────────────────────────────────────────────────────────────────
+// SvelteKit CV — standalone (no API/exp reference).
+// ─────────────────────────────────────────────────────────────────────
+
+var cv = builder
+    .AddViteApp("cv", "../../sites/cv.arolariu.ro")
+    .WithHttpEndpoint(port: 4173, env: "PORT")
+    .WaitFor(traefik);
+
+// ─────────────────────────────────────────────────────────────────────
 // Traefik dynamic-config glue — writes *.localhost route entries when
 // native services become ready; cleans up on shutdown.
 // ─────────────────────────────────────────────────────────────────────
@@ -105,6 +114,7 @@ builder.AddTraefikDynamicConfig(
         ["api.localhost"]     = api,
         ["website.localhost"] = website,
         ["exp.localhost"]     = exp,
+        ["cv.localhost"]      = cv,
     },
     staticRoutes: new Dictionary<string, (string scheme, int port)>
     {
