@@ -29,5 +29,8 @@
   </Folder>
   <Folder Name="/tooling/">
     <Project Path="tooling/AppHost/AppHost.csproj" />
+    <Project Path="tooling/AppHost.Tests/AppHost.Tests.csproj">
+      <BuildDependency Project="tooling/AppHost/AppHost.csproj" />
+    </Project>
   </Folder>
 </Solution>

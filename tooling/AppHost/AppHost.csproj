@@ -23,4 +23,7 @@
       Include="..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj"
       IsAspireProjectResource="true" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="AppHost.Tests" />
+  </ItemGroup>
 </Project>
