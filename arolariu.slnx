@@ -27,4 +27,7 @@
       <BuildDependency Project="sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj" />
     </Project>
   </Folder>
+  <Folder Name="/tooling/">
+    <Project Path="tooling/AppHost/AppHost.csproj" />
+  </Folder>
 </Solution>

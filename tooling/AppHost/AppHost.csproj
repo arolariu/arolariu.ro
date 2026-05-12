@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="10.0.0" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>arolariu-apphost-local</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost"        Version="10.0.0" />
+    <PackageReference Include="Aspire.Hosting.Docker"         Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj"
+      IsAspireProjectResource="true" />
+  </ItemGroup>
+</Project>
