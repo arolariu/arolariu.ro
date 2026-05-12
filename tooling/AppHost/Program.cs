@@ -33,6 +33,12 @@ var cosmos = builder
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"));
 
+// Database + containers (mirrors the selfhost-start.sh bootstrap that runs
+// `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
+var cosmosPrimaryDb = cosmos.AddCosmosDatabase("primary");
+var cosmosInvoices  = cosmosPrimaryDb.AddContainer("invoices",  partitionKeyPath: "/UserIdentifier");
+var cosmosMerchants = cosmosPrimaryDb.AddContainer("merchants", partitionKeyPath: "/ParentCompanyId");
+
 var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
