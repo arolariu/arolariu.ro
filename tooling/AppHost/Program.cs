@@ -4,6 +4,7 @@ using AppHost.Aspire;
 
 #pragma warning disable ASPIREJAVASCRIPT001  // AddNextJsApp is experimental in Aspire 13.x
 #pragma warning disable ASPIRECERTIFICATES001 // WithoutHttpsCertificate is evaluation-only in 13.x
+#pragma warning disable ASPIRECOSMOSDB001     // RunAsPreviewEmulator is experimental in 13.x
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -20,10 +21,15 @@ var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: 8082)
     .WithDataVolume("arolariu-mssql-data");
 
+// Use RunAsPreviewEmulator for the Linux-based vnext emulator (matches the
+// compose container in infra/Local/Storage/docker-compose.yml). The default
+// RunAsEmulator picks the legacy Windows-based emulator which has different
+// port semantics and doesn't support AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP.
 var cosmos = builder
     .AddAzureCosmosDB("cosmos")
-    .RunAsEmulator(emulator => emulator
+    .RunAsPreviewEmulator(emulator => emulator
         .WithGatewayPort(8081)
+        .WithDataExplorer()
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"));
 
