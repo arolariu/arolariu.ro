@@ -2,6 +2,9 @@ using AppHost;
 using AppHost.Aspire;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 #pragma warning disable ASPIREJAVASCRIPT001  // AddNextJsApp is experimental in Aspire 13.x
 #pragma warning disable ASPIRECERTIFICATES001 // WithoutHttpsCertificate is evaluation-only in 13.x
@@ -22,6 +25,32 @@ var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
     .WithDataVolume(Constants.SqlDataVolume)
     .WithIconName("Database");
+
+// Gate WaitFor(sql) on TDS-readiness (not just container "Running"). AddSqlServer
+// wires no built-in health check, so WaitFor would otherwise resolve as soon as
+// the container starts — well before SQL Server's TDS listener accepts queries.
+// Without this gate, downstream services (exp, api) hit a half-initialized SQL
+// Server and the SqlClient connection pool gets poisoned by the failed handshake.
+builder.Services.AddHealthChecks().AddAsyncCheck("sql-ready", async () =>
+{
+    try
+    {
+        var connStr = await sql.Resource.GetConnectionStringAsync().ConfigureAwait(false);
+        if (string.IsNullOrEmpty(connStr))
+            return HealthCheckResult.Unhealthy("Connection string not yet resolved.");
+
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync().ConfigureAwait(false);
+        await using var cmd = new SqlCommand("SELECT 1", conn);
+        await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+        return HealthCheckResult.Healthy();
+    }
+    catch (Exception ex)
+    {
+        return HealthCheckResult.Unhealthy(ex.Message);
+    }
+});
+sql.WithHealthCheck("sql-ready");
 
 // Use RunAsPreviewEmulator for the Linux-based vnext emulator (matches the
 // compose container in infra/Local/Storage/docker-compose.yml). The default
