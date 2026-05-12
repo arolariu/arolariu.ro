@@ -25,7 +25,6 @@
       "{workspaceRoot}/prettier.config.ts",
       "{workspaceRoot}/vitest.config.ts",
       "{workspaceRoot}/vitest.setup.ts",
-      "{workspaceRoot}/arolariu.sln",
       "{workspaceRoot}/arolariu.slnx",
       "{workspaceRoot}/scripts/**/*"
     ]

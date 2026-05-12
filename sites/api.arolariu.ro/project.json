@@ -17,12 +17,12 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet test arolariu.sln --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\"",
+        "command": "dotnet test arolariu.slnx --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\"",
         "cwd": "."
       },
       "configurations": {
         "unit": {
-          "command": "dotnet test arolariu.sln --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\""
+          "command": "dotnet test arolariu.slnx --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\""
         }
       }
     },
