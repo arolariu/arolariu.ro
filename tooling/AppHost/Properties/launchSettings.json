@@ -13,7 +13,8 @@
         "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true",
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21030",
         "ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL": "https://localhost:21031",
-        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22057"
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22057",
+        "DOTNET_DASHBOARD_OPEN_BROWSER": "true"
       }
     }
   }
