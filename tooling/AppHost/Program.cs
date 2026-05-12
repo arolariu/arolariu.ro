@@ -22,11 +22,15 @@ var sql = builder
 
 var cosmos = builder
     .AddAzureCosmosDB("cosmos")
-    .RunAsEmulator();
+    .RunAsEmulator(emulator => emulator
+        .WithGatewayPort(8081)
+        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
+        .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"));
 
 var storage = builder
     .AddAzureStorage("storage")
-    .RunAsEmulator();
+    .RunAsEmulator(emulator => emulator
+        .WithBlobPort(10000));
 
 var redisPassword = builder.AddParameter("redis-password", "RedisPassword123!", secret: true);
 var redis = builder
