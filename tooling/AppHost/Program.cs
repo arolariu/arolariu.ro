@@ -172,26 +172,47 @@ builder.AddTraefikDynamicConfig(
 // restores the original content on graceful shutdown.
 // (exp's loader still reads config.docker.json — no Python code change.)
 // ─────────────────────────────────────────────────────────────────────
+// Helper: look up an allocated endpoint by name, trying multiple candidates
+// (Aspire endpoint names differ across resource types: cosmos preview emulator
+// might use "gateway"/"emulator"/"http"/"https" depending on version).
+// Throws with a diagnostic listing of available endpoints when none match.
+static int LookupEndpointPort(IResource resource, params string[] candidateNames)
+{
+    var endpoints = resource.Annotations.OfType<EndpointAnnotation>().ToList();
+    foreach (var name in candidateNames)
+    {
+        var ep = endpoints.FirstOrDefault(a =>
+            string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (ep?.AllocatedEndpoint is not null)
+            return ep.AllocatedEndpoint.Port;
+    }
+    var available = string.Join(", ", endpoints.Select(a =>
+        $"{a.Name}={a.AllocatedEndpoint?.Port.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(unallocated)"}"));
+    throw new InvalidOperationException(
+        $"None of [{string.Join(",", candidateNames)}] endpoints found on resource '{resource.Name}'. "
+        + $"Available: [{available}]");
+}
+
 builder.AddExpConfigGenerator(
     configPath: "../../sites/exp.arolariu.ro/config.docker.json",
     connectionStringFactories: new Dictionary<string, Func<string>>
     {
         ["Endpoints:Database:NoSQL"] = () =>
         {
-            var ep = cosmos.Resource.GetEndpoint("https");
-            return $"AccountEndpoint=https://localhost:{ep.Port}/;"
+            var port = LookupEndpointPort(cosmos.Resource, "https", "gateway", "emulator", "http");
+            return $"AccountEndpoint=https://localhost:{port}/;"
                  + "AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
         },
         ["Endpoints:Database:SQL"] = () =>
         {
-            var ep = sql.Resource.GetEndpoint("tcp");
-            return $"Server=localhost,{ep.Port};Database=arolariu-sql;User Id=sa;"
+            var port = LookupEndpointPort(sql.Resource, "tcp", "sql", "tds");
+            return $"Server=localhost,{port};Database=arolariu-sql;User Id=sa;"
                  + "Password=qazWSXedcRFV1234!;TrustServerCertificate=true;";
         },
         ["Endpoints:Storage:Blob"] = () =>
         {
-            var ep = storage.Resource.GetEndpoint("blob");
-            return $"http://localhost:{ep.Port}/devstoreaccount1";
+            var port = LookupEndpointPort(storage.Resource, "blob", "http", "https");
+            return $"http://localhost:{port}/devstoreaccount1";
         },
         ["Endpoints:Service:Api"] = () => "http://localhost:5000",
     },
