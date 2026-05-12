@@ -1,16 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
-  "name": "arolariu-monorepo",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bullseye",
+  "name": "arolariu.ro fullstack (Aspire)",
+  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/devcontainers/features/azure-cli:1": {},
-    "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "10.0"
-    },
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12"
-    }
+    "ghcr.io/devcontainers/features/dotnet:2":                   { "version": "10.0" },
+    "ghcr.io/devcontainers/features/node:1":                     { "version": "24" },
+    "ghcr.io/devcontainers/features/python:1":                   { "version": "3.12" },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": { "version": "latest" },
+    "ghcr.io/devcontainers/features/azure-cli:1":                {}
   },
   "containerEnv": {
     "PLAYWRIGHT_BROWSERS_PATH": "0",
@@ -19,36 +16,46 @@
   },
   "forwardPorts": [
     3000,
+    3001,
+    3002,
+    3100,
+    4173,
     5000,
     5002,
     5173,
     6006,
+    6379,
     7007,
     8080,
-    9229
+    8081,
+    8082,
+    9229,
+    10000,
+    10001,
+    10002,
+    17080,
+    17081
   ],
   "portsAttributes": {
-    "3000": {
-      "label": "Next.js Website"
-    },
-    "6006": {
-      "label": "Storybook Components"
-    },
-    "7007": {
-      "label": "Storybook Website"
-    },
-    "5000": {
-      "label": ".NET API"
-    },
-    "5002": {
-      "label": "exp Config Service"
-    },
-    "5173": {
-      "label": "CV Site (SvelteKit)"
-    },
-    "8080": {
-      "label": "DocFX"
-    }
+    "3000":  { "label": "Next.js Website" },
+    "3001":  { "label": "Docs / Status" },
+    "3002":  { "label": "Docs / Status (alt)" },
+    "3100":  { "label": "Docusaurus" },
+    "4173":  { "label": "CV Site (SvelteKit preview)" },
+    "5000":  { "label": ".NET API" },
+    "5002":  { "label": "exp Config Service" },
+    "5173":  { "label": "CV Site (SvelteKit dev)" },
+    "6006":  { "label": "Storybook Components" },
+    "6379":  { "label": "Redis" },
+    "7007":  { "label": "Storybook Website" },
+    "8080":  { "label": "Traefik dashboard / DocFX" },
+    "8081":  { "label": "Cosmos DB emulator" },
+    "8082":  { "label": "SQL emulator" },
+    "10000": { "label": "Azurite Blob" },
+    "10001": { "label": "Azurite Queue" },
+    "10002": { "label": "Azurite Table" },
+    "17080": { "label": "Aspire dashboard (HTTP)" },
+    "17081": { "label": "Aspire dashboard (HTTPS)" }
   },
   "mounts": [
     "source=npm-cache,target=/workspace/.cache/npm,type=volume",
@@ -58,7 +65,7 @@
     "NPM_CONFIG_CACHE": "/workspace/.cache/npm"
   },
   "updateContentCommand": "corepack enable && npm ci",
-  "postCreateCommand": "dotnet tool install -g docfx && npx playwright install --with-deps || true",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
   "postStartCommand": "npm run generate 2>/dev/null || true && echo '✅ Devcontainer ready'",
   "customizations": {
     "vscode": {
@@ -67,6 +74,7 @@
         "bencoleman.armview",
         "ms-azuretools.vscode-bicep",
         "ms-azuretools.vscode-azureresourcegroups",
+        "ms-azuretools.vscode-docker",
 
         // Formatting extensions
         "editorconfig.editorconfig",
@@ -93,11 +101,21 @@
 
         // Backend support
         "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
         "ms-python.python",
+        "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "ms-python.black-formatter",
         "charliermarsh.ruff",
         "humao.rest-client",
+
+        // Testing
+        "vitest.explorer",
+        "ms-playwright.playwright",
+
+        // Docs & misc
+        "redhat.vscode-yaml",
+        "bierner.markdown-mermaid",
 
         // Backlog grooming and task tracking
         "gruntfuggly.todo-tree",
