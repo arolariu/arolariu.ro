@@ -43,6 +43,7 @@ nul
 
 # Exceptions:
 !.vs/settings.vssettings
+!.vs/README.md
 
 
 # Claude Code local settings (user-specific auto-granted permissions):
