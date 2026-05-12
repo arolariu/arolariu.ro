@@ -75,7 +75,8 @@ var exp = builder
     .WaitFor(sql)
     .WaitFor(cosmos)
     .WaitFor(storage)
-    .WithIconName("KeyMultiple");
+    .WithIconName("KeyMultiple")
+    .WithHttpHealthCheck("/api/ready");
 
 // ─────────────────────────────────────────────────────────────────────
 // .NET API. API reads connection strings from exp at startup; Aspire
@@ -88,7 +89,8 @@ var api = builder
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WithReference(exp)
     .WaitFor(exp)
-    .WithIconName("CodeBlock");
+    .WithIconName("CodeBlock")
+    .WithHttpHealthCheck("/health");
 
 // ─────────────────────────────────────────────────────────────────────
 // Website — Next.js (AddNextJsApp is Aspire 13.x dedicated method).
