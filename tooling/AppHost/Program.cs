@@ -166,4 +166,40 @@ builder.AddTraefikDynamicConfig(
         ["dashboard.localhost"] = ("http", 17081),
     });
 
+// ─────────────────────────────────────────────────────────────────────
+// exp config-file generator — rewrites sites/exp.arolariu.ro/config.docker.json
+// in-place with Aspire-allocated localhost endpoints once infra is ready;
+// restores the original content on graceful shutdown.
+// (exp's loader still reads config.docker.json — no Python code change.)
+// ─────────────────────────────────────────────────────────────────────
+builder.AddExpConfigGenerator(
+    configPath: "../../sites/exp.arolariu.ro/config.docker.json",
+    connectionStringFactories: new Dictionary<string, Func<string>>
+    {
+        ["Endpoints:Database:NoSQL"] = () =>
+        {
+            var ep = cosmos.Resource.GetEndpoint("https");
+            return $"AccountEndpoint=https://localhost:{ep.Port}/;"
+                 + "AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+        },
+        ["Endpoints:Database:SQL"] = () =>
+        {
+            var ep = sql.Resource.GetEndpoint("tcp");
+            return $"Server=localhost,{ep.Port};Database=arolariu-sql;User Id=sa;"
+                 + "Password=qazWSXedcRFV1234!;TrustServerCertificate=true;";
+        },
+        ["Endpoints:Storage:Blob"] = () =>
+        {
+            var ep = storage.Resource.GetEndpoint("blob");
+            return $"http://localhost:{ep.Port}/devstoreaccount1";
+        },
+        ["Endpoints:Service:Api"] = () => "http://localhost:5000",
+    },
+    waitForResources: new IResource[]
+    {
+        cosmos.Resource,
+        sql.Resource,
+        storage.Resource,
+    });
+
 builder.Build().Run();
