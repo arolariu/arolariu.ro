@@ -1,4 +1,6 @@
 using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
+using AppHost.Aspire;
 
 #pragma warning disable ASPIREJAVASCRIPT001 // AddNextJsApp is experimental in Aspire 13.x
 
@@ -90,5 +92,23 @@ var website = builder
     .WithReference(api)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
     .WaitFor(api);
+
+// ─────────────────────────────────────────────────────────────────────
+// Traefik dynamic-config glue — writes *.localhost route entries when
+// native services become ready; cleans up on shutdown.
+// ─────────────────────────────────────────────────────────────────────
+
+builder.AddTraefikDynamicConfig(
+    targetFile: "../../infra/Local/Management/traefik/dynamic/aspire-services.yml",
+    dynamicResources: new Dictionary<string, IResourceBuilder<IResourceWithEndpoints>>
+    {
+        ["api.localhost"]     = api,
+        ["website.localhost"] = website,
+        ["exp.localhost"]     = exp,
+    },
+    staticRoutes: new Dictionary<string, (string scheme, int port)>
+    {
+        ["dashboard.localhost"] = ("http", 17081),
+    });
 
 builder.Build().Run();
