@@ -2,7 +2,8 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using AppHost.Aspire;
 
-#pragma warning disable ASPIREJAVASCRIPT001 // AddNextJsApp is experimental in Aspire 13.x
+#pragma warning disable ASPIREJAVASCRIPT001  // AddNextJsApp is experimental in Aspire 13.x
+#pragma warning disable ASPIRECERTIFICATES001 // WithoutHttpsCertificate is evaluation-only in 13.x
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -30,7 +31,8 @@ var storage = builder
 var redisPassword = builder.AddParameter("redis-password", "RedisPassword123!", secret: true);
 var redis = builder
     .AddRedis("redis", port: 6379, password: redisPassword)
-    .WithDataVolume("arolariu-redis-data");
+    .WithDataVolume("arolariu-redis-data")
+    .WithoutHttpsCertificate(); // redis:alpine doesn't speak TLS; Aspire 13.x defaults to TLS-on
 
 // ─────────────────────────────────────────────────────────────────────
 // Reverse proxy — Traefik with mkcert HTTPS.
