@@ -27,6 +27,12 @@
       <BuildDependency Project="sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj" />
     </Project>
   </Folder>
+  <Folder Name="/sites/frontend/">
+    <Project Path="sites/arolariu.ro/arolariu.ro.esproj" />
+    <Project Path="sites/cv.arolariu.ro/cv.arolariu.ro.esproj" />
+    <Project Path="sites/docs.arolariu.ro/docs.arolariu.ro.esproj" />
+    <Project Path="sites/status.arolariu.ro/status.arolariu.ro.esproj" />
+  </Folder>
   <Folder Name="/tooling/">
     <Project Path="tooling/AppHost/AppHost.csproj" />
     <Project Path="tooling/AppHost.Tests/AppHost.Tests.csproj">
