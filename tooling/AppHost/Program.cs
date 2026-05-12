@@ -17,10 +17,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 // canonical pattern.)
 // ─────────────────────────────────────────────────────────────────────
 
-var sqlPassword = builder.AddParameter("sql-password", AppHostConstants.SqlPassword, secret: true);
+var sqlPassword = builder.AddParameter("sql-password", Constants.SqlPassword, secret: true);
 var sql = builder
-    .AddSqlServer("mssql", password: sqlPassword, port: AppHostConstants.SqlPort)
-    .WithDataVolume(AppHostConstants.SqlDataVolume);
+    .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
+    .WithDataVolume(Constants.SqlDataVolume);
 
 // Use RunAsPreviewEmulator for the Linux-based vnext emulator (matches the
 // compose container in infra/Local/Storage/docker-compose.yml). The default
@@ -29,30 +29,30 @@ var sql = builder
 var cosmos = builder
     .AddAzureCosmosDB("cosmos")
     .RunAsPreviewEmulator(emulator => emulator
-        .WithGatewayPort(AppHostConstants.CosmosGatewayPort)
+        .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"));
 
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
 // `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
-var cosmosPrimaryDb = cosmos.AddCosmosDatabase(AppHostConstants.CosmosDatabaseName);
+var cosmosPrimaryDb = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
 var cosmosInvoices  = cosmosPrimaryDb.AddContainer(
-    AppHostConstants.CosmosInvoicesContainer,
-    partitionKeyPath: AppHostConstants.CosmosInvoicesPartitionKey);
+    Constants.CosmosInvoicesContainer,
+    partitionKeyPath: Constants.CosmosInvoicesPartitionKey);
 var cosmosMerchants = cosmosPrimaryDb.AddContainer(
-    AppHostConstants.CosmosMerchantsContainer,
-    partitionKeyPath: AppHostConstants.CosmosMerchantsPartitionKey);
+    Constants.CosmosMerchantsContainer,
+    partitionKeyPath: Constants.CosmosMerchantsPartitionKey);
 
 var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
-        .WithBlobPort(AppHostConstants.AzuriteBlobPort));
+        .WithBlobPort(Constants.AzuriteBlobPort));
 
-var redisPassword = builder.AddParameter("redis-password", AppHostConstants.RedisPassword, secret: true);
+var redisPassword = builder.AddParameter("redis-password", Constants.RedisPassword, secret: true);
 var redis = builder
-    .AddRedis("redis", port: AppHostConstants.RedisPort, password: redisPassword)
-    .WithDataVolume(AppHostConstants.RedisDataVolume)
+    .AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
+    .WithDataVolume(Constants.RedisDataVolume)
     .WithoutHttpsCertificate(); // redis:alpine doesn't speak TLS; Aspire 13.x defaults to TLS-on
 
 // ─────────────────────────────────────────────────────────────────────
@@ -66,9 +66,9 @@ var traefik = builder
     .AddContainer("traefik", "traefik:v3.6")
     .WithBindMount("../../infra/Local/Management/traefik/dynamic", "/etc/traefik/dynamic", isReadOnly: true)
     .WithBindMount("../../infra/Local/Management/certs", "/certs", isReadOnly: true)
-    .WithEndpoint(port: AppHostConstants.TraefikWebPort, targetPort: AppHostConstants.TraefikWebPort, name: "web", scheme: "http")
-    .WithEndpoint(port: AppHostConstants.TraefikSecurePort, targetPort: AppHostConstants.TraefikSecurePort, name: "websecure", scheme: "https")
-    .WithEndpoint(port: AppHostConstants.TraefikDashboardPort, targetPort: AppHostConstants.TraefikDashboardPort, name: "traefik-dashboard", scheme: "http")
+    .WithEndpoint(port: Constants.TraefikWebPort, targetPort: Constants.TraefikWebPort, name: "web", scheme: "http")
+    .WithEndpoint(port: Constants.TraefikSecurePort, targetPort: Constants.TraefikSecurePort, name: "websecure", scheme: "https")
+    .WithEndpoint(port: Constants.TraefikDashboardPort, targetPort: Constants.TraefikDashboardPort, name: "traefik-dashboard", scheme: "http")
     .WithArgs(
         "--api.dashboard=true",
         "--api.insecure=true",
@@ -88,7 +88,7 @@ var exp = builder
     .AddUvicornApp("exp", "../../sites/exp.arolariu.ro", "main:app")
     .WithPip() // force pip mode (uv may not be installed)
     .WithVirtualEnvironment(".venv")
-    .WithHttpEndpoint(port: AppHostConstants.ExpPort, env: "PORT")
+    .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT")
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
     .WaitFor(sql)
@@ -102,7 +102,7 @@ var exp = builder
 
 var api = builder
     .AddProject<Projects.arolariu_Backend_Core>("api")
-    .WithHttpEndpoint(port: AppHostConstants.ApiPort, name: "http")
+    .WithHttpEndpoint(port: Constants.ApiPort, name: "http")
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
     .WithReference(exp)
     .WaitFor(exp);
@@ -113,7 +113,7 @@ var api = builder
 
 var website = builder
     .AddNextJsApp("website", "../../sites/arolariu.ro")
-    .WithHttpEndpoint(port: AppHostConstants.WebsitePort, env: "PORT")
+    .WithHttpEndpoint(port: Constants.WebsitePort, env: "PORT")
     .WithReference(api)
     .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
@@ -126,7 +126,7 @@ var website = builder
 
 var cv = builder
     .AddViteApp("cv", "../../sites/cv.arolariu.ro")
-    .WithHttpEndpoint(port: AppHostConstants.CvPort, env: "PORT")
+    .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
     .WaitFor(traefik);
 
 // ─────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ var cv = builder
 
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
-    .WithHttpEndpoint(port: AppHostConstants.DocsPort)
+    .WithHttpEndpoint(port: Constants.DocsPort)
     .WaitFor(traefik);
 
 // ─────────────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ var docs = builder
 
 var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
-    .WithHttpEndpoint(port: AppHostConstants.StatusPort, env: "PORT")
+    .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
     .WaitFor(traefik);
 
 // ─────────────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ builder.AddTraefikDynamicConfig(
     },
     staticRoutes: new Dictionary<string, (string scheme, int port)>
     {
-        ["dashboard.localhost"] = ("http", AppHostConstants.AspireDashboardHttpPort),
+        ["dashboard.localhost"] = ("http", Constants.AspireDashboardHttpPort),
     });
 
 // ─────────────────────────────────────────────────────────────────────
@@ -206,20 +206,20 @@ builder.AddExpConfigGenerator(
         {
             var port = LookupEndpointPort(cosmos.Resource, "https", "gateway", "emulator", "http");
             return $"AccountEndpoint=https://localhost:{port}/;"
-                 + $"AccountKey={AppHostConstants.CosmosEmulatorAccountKey};";
+                 + $"AccountKey={Constants.CosmosEmulatorAccountKey};";
         },
         ["Endpoints:Database:SQL"] = () =>
         {
             var port = LookupEndpointPort(sql.Resource, "tcp", "sql", "tds");
-            return $"Server=localhost,{port};Database={AppHostConstants.SqlDatabaseName};User Id=sa;"
-                 + $"Password={AppHostConstants.SqlPassword};TrustServerCertificate=true;";
+            return $"Server=localhost,{port};Database={Constants.SqlDatabaseName};User Id=sa;"
+                 + $"Password={Constants.SqlPassword};TrustServerCertificate=true;";
         },
         ["Endpoints:Storage:Blob"] = () =>
         {
             var port = LookupEndpointPort(storage.Resource, "blob", "http", "https");
             return $"http://localhost:{port}/devstoreaccount1";
         },
-        ["Endpoints:Service:Api"] = () => $"http://localhost:{AppHostConstants.ApiPort}",
+        ["Endpoints:Service:Api"] = () => $"http://localhost:{Constants.ApiPort}",
     },
     waitForResources: new IResource[]
     {

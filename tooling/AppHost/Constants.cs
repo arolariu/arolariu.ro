@@ -7,7 +7,7 @@ namespace AppHost;
 /// belong here, not configurable values that should come from parameters
 /// or environment variables.
 /// </summary>
-internal static class AppHostConstants
+internal static class Constants
 {
     // ── Dev-only credentials (mirror infra/Local/Storage/docker-compose.yml) ──
     public const string SqlPassword = "qazWSXedcRFV1234!";
