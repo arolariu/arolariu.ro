@@ -43,11 +43,23 @@ instruction/agent files unless they still drift after this change.
 # First-time setup
 npm install && npm run setup
 
-# Development servers
-npm run dev:website        # Next.js → http://localhost:3000
-npm run dev:api            # .NET API → http://localhost:5000
-npm run dev:components     # Storybook → http://localhost:6006
-npm run dev:cv             # SvelteKit CV → http://localhost:4173
+# Aspire mode (default — runs API+Website+exp+CV+docs+status natively,
+# infra via Aspire-managed containers, Traefik with mkcert HTTPS)
+npm run dev              # = dotnet run --project tooling/AppHost; F5 in VS Code/VS 2026 does the same
+npm run dev:aspire       # Explicit alias for npm run dev
+
+# Selfhost mode (everything containerized — for auditing / CI parity / deploy-mock-of-prod)
+npm run dev:selfhost     # Brings up the full Docker Compose stack including containerized apps
+npm run dev:selfhost:stop
+
+# Standalone single-service dev (no AppHost coordination — fallback only)
+npm run dev:website      # Next.js only
+npm run dev:api          # .NET API only
+npm run dev:cv           # SvelteKit only
+npm run dev:exp          # Python uvicorn only
+npm run dev:docs         # Docusaurus only
+npm run dev:status       # Status page only
+npm run dev:components   # Storybook for component library
 
 # Build
 npm run build              # Build all projects
@@ -72,6 +84,25 @@ dotnet build sites/api.arolariu.ro/src/Core
 dotnet test sites/api.arolariu.ro/tests
 dotnet test sites/api.arolariu.ro/tests --collect:"XPlat Code Coverage"
 ```
+
+### Local Dev — Aspire vs Selfhost
+
+Two coexisting dev modes:
+
+**`aspire` mode (default)** — `npm run dev` (or F5 in VS Code/VS 2026)
+- Apps run **native** (.NET via dotnet, Next.js/Svelte/Docusaurus/status via npm dev scripts, exp via uvicorn). Hot reload preserved.
+- Infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis, Traefik) runs as containers spawned by Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) — native Aspire integrations, not Docker Compose.
+- Traefik dynamic routes (`*.localhost`) wired by `tooling/AppHost/Aspire/TraefikDynamicConfig.cs` so `https://api.localhost`, `https://website.localhost`, etc. work over mkcert HTTPS.
+- Aspire dashboard at `https://dashboard.localhost` with live OTel traces / metrics / logs.
+
+**`selfhost` mode (advanced)** — `npm run dev:selfhost`
+- Everything containerized including apps. Existing Compose flow (`infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`), unchanged.
+- Use when auditing container behavior, validating CI parity, or testing a deploy-mock-of-prod configuration.
+
+**Single-service standalone** — `npm run dev:website`, `npm run dev:api`, etc.
+- For narrow work where you don't need the full stack. No AppHost coordination; just spawn the one service's dev server.
+
+The legacy `npm run dev:local*` scripts and `scripts/dev-local.ts` orchestrator have been retired (replaced by Aspire).
 
 ---
 
