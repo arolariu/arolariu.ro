@@ -24,6 +24,13 @@ var sqlPassword = builder.AddParameter("sql-password", Constants.SqlPassword, se
 var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
     .WithDataVolume(Constants.SqlDataVolume)
+    // Bypass Aspire's DCP proxy. DCP is application-aware (HTTP/1.1, HTTP/2) and
+    // mishandles raw TCP protocols like SQL Server's TDS — first handshake hangs
+    // for 10+ seconds, the SqlClient pool gets poisoned, and subsequent connects
+    // fast-fail with "TCP Provider, error: 0 - The wait operation timed out".
+    // isProxied: false makes Docker map host port -> container port directly
+    // (same as the selfhost compose stack), so TDS rides plain TCP.
+    .WithEndpoint("tcp", endpoint => endpoint.IsProxied = false)
     .WithIconName("Database");
 
 // Gate WaitFor(sql) on TDS-readiness (not just container "Running"). AddSqlServer
@@ -33,12 +40,18 @@ var sql = builder
 // Server and the SqlClient connection pool gets poisoned by the failed handshake.
 builder.Services.AddHealthChecks().AddAsyncCheck("sql-ready", async () =>
 {
+    // Connect to 'master' (always exists on a fresh container) — the readiness
+    // probe just needs to verify TDS is accepting queries, not that the app's
+    // database exists yet. The app's database is created later by EF migrations
+    // / API bootstrap. Encrypt=False bypasses the vpnkit-mangled TLS handshake
+    // that Docker Desktop on Windows produces; equivalent to selfhost's Docker-
+    // network path which is unencrypted by default.
+    var connStr = $"Server=127.0.0.1,{Constants.SqlPort};Database=master;User Id=sa;"
+                + $"Password={Constants.SqlPassword};Encrypt=False;TrustServerCertificate=true;"
+                + $"Connection Timeout=5;";
+
     try
     {
-        var connStr = await sql.Resource.GetConnectionStringAsync().ConfigureAwait(false);
-        if (string.IsNullOrEmpty(connStr))
-            return HealthCheckResult.Unhealthy("Connection string not yet resolved.");
-
         await using var conn = new SqlConnection(connStr);
         await conn.OpenAsync().ConfigureAwait(false);
         await using var cmd = new SqlCommand("SELECT 1", conn);
@@ -98,7 +111,12 @@ var exp = builder
     .AddUvicornApp("exp", "../../sites/exp.arolariu.ro", "main:app")
     .WithPip() // force pip mode (uv may not be installed)
     .WithVirtualEnvironment(".venv")
-    .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT")
+    // isProxied: false — uvicorn binds host 5002 directly. With DCP in the path,
+    // Aspire promotes the endpoint URL to https://localhost:5002 in run mode but
+    // doesn't terminate TLS (uvicorn speaks HTTP only), so clients hit
+    // "SSL connection could not be established / unexpected EOF". Bypassing DCP
+    // keeps EXP_PROXY_URL as http://localhost:5002 — what uvicorn actually serves.
+    .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT", isProxied: false)
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
     .WaitFor(sql)
@@ -205,8 +223,16 @@ builder.AddExpConfigGenerator(
         ["Endpoints:Database:SQL"] = () =>
         {
             var port = LookupEndpointPort(sql.Resource, "tcp", "sql", "tds");
-            return $"Server=localhost,{port};Database={Constants.SqlDatabaseName};User Id=sa;"
-                 + $"Password={Constants.SqlPassword};TrustServerCertificate=true;";
+            // Encrypt=False: SQL Server 2022 default forces TLS, but Docker Desktop's
+            // vpnkit port-forwarding on Windows reliably stalls the TLS handshake step
+            // *after* TCP accepts (PRE-LOGIN reaches the server, TLS upgrade never
+            // completes — SqlClient hangs ~15s then reports "TCP Provider, error: 0".)
+            // Selfhost mode avoids this because containers reach each other via Docker
+            // network names (mssql:1433) without vpnkit in the path. Matching that path
+            // here by disabling TLS at the TDS layer. 127.0.0.1 (not localhost) skips
+            // the IPv6 first-try fallback that SqlClient does by default.
+            return $"Server=127.0.0.1,{port};Database={Constants.SqlDatabaseName};User Id=sa;"
+                 + $"Password={Constants.SqlPassword};Encrypt=False;TrustServerCertificate=true;";
         },
         ["Endpoints:Storage:Blob"] = () =>
         {
