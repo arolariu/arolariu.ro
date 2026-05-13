@@ -106,10 +106,13 @@ var storage = builder
         .WithBlobPort(Constants.AzuriteBlobPort))
     .WithIconName("Storage");
 
-// Azurite ships with no CORS rules — apply allow-all on every startup so
-// browser uploads from https://localhost:3000 → http://localhost:10000 succeed.
-// See Aspire/AzuriteCorsBootstrap.cs for the retry / event-subscription details.
-builder.AddAzuriteCorsBootstrap(storage, Constants.AzuriteBlobPort);
+// Azurite ships with no CORS rules and no containers — apply allow-all on every
+// startup so browser uploads from https://localhost:3000 → http://localhost:10000
+// succeed, and idempotently create the 'invoices' container so the first upload
+// from uploadScan.ts doesn't 404 with ContainerNotFound. In production these are
+// provisioned by Bicep; this brings the local emulator to the same starting state.
+// See Aspire/AzuriteBootstrap.cs for the retry / event-subscription details.
+builder.AddAzuriteBootstrap(storage, Constants.AzuriteBlobPort, "invoices");
 
 var redisPassword = builder.AddParameter("redis-password", Constants.RedisPassword, secret: true);
 var redis = builder
