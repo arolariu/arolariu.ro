@@ -206,11 +206,18 @@ var cv = builder
 // Uses the existing "start" script (docusaurus start --port 3100); the
 // port is pinned in the script itself, so we match it on the endpoint
 // and skip env-injection (the CLI flag wins over $PORT).
+//
+// isProxied: false — same reason as exp's uvicorn. Aspire's DCP would
+// otherwise grab 3100 first (proxy slot), then docusaurus tries to bind
+// the same port via its --port flag and fails with "Something is already
+// running on port 3100". Bypassing DCP lets docusaurus own the port
+// directly. Tradeoff: dashboard loses proxied request counts for docs,
+// but URL clicks and the resource health badge still work.
 // ─────────────────────────────────────────────────────────────────────
 
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
-    .WithHttpEndpoint(port: Constants.DocsPort)
+    .WithHttpEndpoint(port: Constants.DocsPort, isProxied: false)
     .WithIconName("BookOpenGlobe");
 
 // ─────────────────────────────────────────────────────────────────────
