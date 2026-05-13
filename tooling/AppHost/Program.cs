@@ -106,6 +106,11 @@ var storage = builder
         .WithBlobPort(Constants.AzuriteBlobPort))
     .WithIconName("Storage");
 
+// Azurite ships with no CORS rules — apply allow-all on every startup so
+// browser uploads from https://localhost:3000 → http://localhost:10000 succeed.
+// See Aspire/AzuriteCorsBootstrap.cs for the retry / event-subscription details.
+builder.AddAzuriteCorsBootstrap(storage, Constants.AzuriteBlobPort);
+
 var redisPassword = builder.AddParameter("redis-password", Constants.RedisPassword, secret: true);
 var redis = builder
     .AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
@@ -157,7 +162,11 @@ var api = builder
 
 var website = builder
     .AddNextJsApp("website", "../../sites/arolariu.ro")
-    .WithHttpEndpoint(port: Constants.WebsitePort, env: "PORT")
+    // Next.js dev serves HTTPS via its own self-signed cert (--experimental-https).
+    // Declare the binding as https so the Aspire dashboard's clickable URL matches
+    // what the browser actually opens (https://localhost:3000), instead of an http://
+    // URL that would just redirect.
+    .WithHttpsEndpoint(port: Constants.WebsitePort, env: "PORT")
     .WithReference(api)
     .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
