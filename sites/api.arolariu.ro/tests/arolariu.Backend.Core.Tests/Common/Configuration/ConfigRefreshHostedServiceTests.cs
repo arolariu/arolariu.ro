@@ -96,6 +96,12 @@ public sealed class ConfigRefreshHostedServiceTests
   {
     public Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default) =>
       Task.FromResult(responses.TryGetValue(name, out var value) ? value : null);
+
+    // ConfigRefreshHostedService doesn't call PingAsync; reachability is implied by
+    // whether the keyed responses map is populated, so this stub is sufficient for
+    // every test path. ExpHealthCheck has its own dedicated tests covering Ping.
+    public Task<bool> PingAsync(CancellationToken ct = default) =>
+      Task.FromResult(responses.Count > 0);
   }
 
   private sealed class FakeOptionsMonitorCache<TOptions>(TOptions initial) : IOptionsMonitorCache<TOptions>
