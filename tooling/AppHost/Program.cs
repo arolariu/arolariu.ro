@@ -12,14 +12,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Pre-typed strings for NODE_OPTIONS injection on each JS resource. Declared as
-// `string` so the WithEnvironment(name, string) overload binds correctly instead
-// of the ReferenceExpression-handler overload that interpolated `int` ports trip.
-string websiteInspect = "--inspect=" + Constants.WebsiteInspectPort;
-string cvInspect      = "--inspect=" + Constants.CvInspectPort;
-string docsInspect    = "--inspect=" + Constants.DocsInspectPort;
-string statusInspect  = "--inspect=" + Constants.StatusInspectPort;
-
 // ─────────────────────────────────────────────────────────────────────
 // Infrastructure — native Aspire 13.x declarations.
 // Mirrors infra/Local/Storage/docker-compose.yml ports/credentials so
@@ -179,12 +171,14 @@ var website = builder
     .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
-    // Enable Node debugger on a fixed port so VS Code's "Attach to Next.js (Aspire)"
-    // config can hit server-side breakpoints (Server Actions, route handlers, RSC).
-    // See .vscode/launch.json for the matching attach configurations.
-    .WithEnvironment("NODE_OPTIONS", websiteInspect)
     .WaitFor(api)
     .WithIconName("Globe");
+// Server-side Node debugger for the website is enabled in sites/arolariu.ro/package.json's
+// dev script (`next dev --inspect ...`), not via NODE_OPTIONS here. Pushing NODE_OPTIONS
+// via Aspire's WithEnvironment propagates to the website-installer resource, which spawns
+// `npm install`; npm 11's workspace arborist hits a null state under concurrent --inspect
+// children and aborts with "Cannot read properties of null (reading 'location')". See
+// .vscode/launch.json "Attach to Next.js (Aspire)" for the attach config on port 9229.
 
 // ─────────────────────────────────────────────────────────────────────
 // SvelteKit CV — standalone (no API/exp reference).
@@ -193,7 +187,6 @@ var website = builder
 var cv = builder
     .AddViteApp("cv", "../../sites/cv.arolariu.ro")
     .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
-    .WithEnvironment("NODE_OPTIONS", cvInspect)
     .WithIconName("PersonAccounts");
 
 // ─────────────────────────────────────────────────────────────────────
@@ -206,7 +199,6 @@ var cv = builder
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
     .WithHttpEndpoint(port: Constants.DocsPort)
-    .WithEnvironment("NODE_OPTIONS", docsInspect)
     .WithIconName("BookOpenGlobe");
 
 // ─────────────────────────────────────────────────────────────────────
@@ -216,7 +208,6 @@ var docs = builder
 var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
     .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
-    .WithEnvironment("NODE_OPTIONS", statusInspect)
     .WithIconName("PulseSquare");
 
 // ─────────────────────────────────────────────────────────────────────
