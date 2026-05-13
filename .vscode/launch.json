@@ -65,12 +65,70 @@
         "PYTHONPATH": "${workspaceFolder}/sites/exp.arolariu.ro",
         "INFRA": "local"
       }
+    },
+    {
+      "name": "🪡 Attach to Next.js (Aspire)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "continueOnAttach": true,
+      "localRoot": "${workspaceFolder}/sites/arolariu.ro",
+      "remoteRoot": "${workspaceFolder}/sites/arolariu.ro",
+      "presentation": { "group": "10-aspire-attach", "order": 1 }
+    },
+    {
+      "name": "🪡 Attach to cv SvelteKit (Aspire)",
+      "type": "node",
+      "request": "attach",
+      "port": 9230,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "continueOnAttach": true,
+      "localRoot": "${workspaceFolder}/sites/cv.arolariu.ro",
+      "remoteRoot": "${workspaceFolder}/sites/cv.arolariu.ro",
+      "presentation": { "group": "10-aspire-attach", "order": 2 }
+    },
+    {
+      "name": "🪡 Attach to docs Docusaurus (Aspire)",
+      "type": "node",
+      "request": "attach",
+      "port": 9231,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "continueOnAttach": true,
+      "localRoot": "${workspaceFolder}/sites/docs.arolariu.ro",
+      "remoteRoot": "${workspaceFolder}/sites/docs.arolariu.ro",
+      "presentation": { "group": "10-aspire-attach", "order": 3 }
+    },
+    {
+      "name": "🪡 Attach to status SvelteKit (Aspire)",
+      "type": "node",
+      "request": "attach",
+      "port": 9232,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "continueOnAttach": true,
+      "localRoot": "${workspaceFolder}/sites/status.arolariu.ro",
+      "remoteRoot": "${workspaceFolder}/sites/status.arolariu.ro",
+      "presentation": { "group": "10-aspire-attach", "order": 4 }
     }
   ],
   "compounds": [
     {
       "name": "🪡 Full stack + Node debug",
-      "configurations": ["🚀 Full stack (Aspire)"],
+      "configurations": [
+        "🚀 Full stack (Aspire)",
+        "🪡 Attach to Next.js (Aspire)",
+        "🪡 Attach to cv SvelteKit (Aspire)",
+        "🪡 Attach to docs Docusaurus (Aspire)",
+        "🪡 Attach to status SvelteKit (Aspire)"
+      ],
       "stopAll": true
     }
   ]

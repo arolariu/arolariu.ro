@@ -38,4 +38,13 @@ internal static class Constants
     public const int SqlPort = 8082;
     public const int CosmosGatewayPort = 8081;
     public const int AzuriteBlobPort = 10000;
+
+    // ── Node.js inspector ports (--inspect=<port>) ──
+    // One per JS resource so VS Code can attach to each independently. Default
+    // Node inspector port is 9229; we allocate sequentially. Update the
+    // matching attach configs in .vscode/launch.json if you change these.
+    public const int WebsiteInspectPort = 9229;
+    public const int CvInspectPort = 9230;
+    public const int DocsInspectPort = 9231;
+    public const int StatusInspectPort = 9232;
 }

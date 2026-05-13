@@ -12,6 +12,14 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// Pre-typed strings for NODE_OPTIONS injection on each JS resource. Declared as
+// `string` so the WithEnvironment(name, string) overload binds correctly instead
+// of the ReferenceExpression-handler overload that interpolated `int` ports trip.
+string websiteInspect = "--inspect=" + Constants.WebsiteInspectPort;
+string cvInspect      = "--inspect=" + Constants.CvInspectPort;
+string docsInspect    = "--inspect=" + Constants.DocsInspectPort;
+string statusInspect  = "--inspect=" + Constants.StatusInspectPort;
+
 // ─────────────────────────────────────────────────────────────────────
 // Infrastructure — native Aspire 13.x declarations.
 // Mirrors infra/Local/Storage/docker-compose.yml ports/credentials so
@@ -171,6 +179,10 @@ var website = builder
     .WithReference(exp)
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
     .WithEnvironment("EXP_PROXY_URL", exp.GetEndpoint("http"))
+    // Enable Node debugger on a fixed port so VS Code's "Attach to Next.js (Aspire)"
+    // config can hit server-side breakpoints (Server Actions, route handlers, RSC).
+    // See .vscode/launch.json for the matching attach configurations.
+    .WithEnvironment("NODE_OPTIONS", websiteInspect)
     .WaitFor(api)
     .WithIconName("Globe");
 
@@ -181,6 +193,7 @@ var website = builder
 var cv = builder
     .AddViteApp("cv", "../../sites/cv.arolariu.ro")
     .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
+    .WithEnvironment("NODE_OPTIONS", cvInspect)
     .WithIconName("PersonAccounts");
 
 // ─────────────────────────────────────────────────────────────────────
@@ -193,6 +206,7 @@ var cv = builder
 var docs = builder
     .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
     .WithHttpEndpoint(port: Constants.DocsPort)
+    .WithEnvironment("NODE_OPTIONS", docsInspect)
     .WithIconName("BookOpenGlobe");
 
 // ─────────────────────────────────────────────────────────────────────
@@ -202,6 +216,7 @@ var docs = builder
 var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
     .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
+    .WithEnvironment("NODE_OPTIONS", statusInspect)
     .WithIconName("PulseSquare");
 
 // ─────────────────────────────────────────────────────────────────────
