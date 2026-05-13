@@ -136,6 +136,15 @@ var exp = builder
     .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT", isProxied: false)
     .WithEnvironment("INFRA", "local")
     .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
+    // Force the Python opentelemetry-exporter-otlp-proto-http exporter to hit the
+    // Aspire dashboard's HTTP OTLP endpoint (21031). By default Aspire injects
+    // OTEL_EXPORTER_OTLP_ENDPOINT pointing at the gRPC endpoint (21030), which
+    // requires an h2 ALPN handshake the plain-HTTP exporter can't perform —
+    // every metrics / logs export then fails with:
+    //   ssl.SSLError: [SSL] tlsv1 alert no application protocol (_ssl.c:1010)
+    // Explicitly setting protocol + endpoint here picks the right transport.
+    .WithEnvironment("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
+    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "https://localhost:21031")
     .WaitFor(sqlDb)       // waits for sql-ready + database creation
     .WaitFor(cosmos)
     .WaitFor(storage)
