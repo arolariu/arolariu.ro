@@ -60,6 +60,7 @@ nul
 **/*.pyc
 **/.venv/
 **/.python_packages/
+**/*.egg-info/
 
 
 # arolariu.ro specific:
