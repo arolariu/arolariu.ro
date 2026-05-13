@@ -104,4 +104,39 @@ public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxy
       return null;
     }
   }
+
+  /// <inheritdoc />
+  public async Task<bool> PingAsync(CancellationToken ct = default)
+  {
+    using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.ping");
+    activity?.SetTag("peer.service", "exp");
+    activity?
+      .SetLayerContext("Broker", nameof(ConfigProxyClient))
+      .SetOperationType("Service.Ping");
+
+    try
+    {
+      using var response = await httpClient
+          .GetAsync(new Uri("/api/ready", UriKind.Relative), ct)
+          .ConfigureAwait(false);
+
+      activity?.SetTag("http.response.status_code", (int)response.StatusCode);
+      if (!response.IsSuccessStatusCode)
+      {
+        activity?.SetStatus(ActivityStatusCode.Error, $"HTTP {(int)response.StatusCode}");
+        return false;
+      }
+      return true;
+    }
+    catch (HttpRequestException ex)
+    {
+      activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+      return false;
+    }
+    catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+    {
+      activity?.SetStatus(ActivityStatusCode.Error, "timeout");
+      return false;
+    }
+  }
 }

@@ -12,4 +12,9 @@ public interface IConfigProxyClient
   /// <param name="ct">Cancellation token for the operation.</param>
   /// <returns>The typed config value response, or <see langword="null"/> when the request fails or the service is unavailable.</returns>
   Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default);
+
+  /// <summary>Probes the exp service's readiness endpoint (<c>GET /api/ready</c>) over the same transport / handler chain as <see cref="GetConfigValueAsync"/>.</summary>
+  /// <param name="ct">Cancellation token for the operation.</param>
+  /// <returns><see langword="true"/> when exp responds with HTTP 2xx; <see langword="false"/> on any non-success status, transport error, timeout, or cancellation.</returns>
+  Task<bool> PingAsync(CancellationToken ct = default);
 }

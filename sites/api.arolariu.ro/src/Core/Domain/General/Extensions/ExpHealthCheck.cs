@@ -14,25 +14,24 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Uses the API's existing <see cref="IConfigProxyClient"/> (same typed HttpClient as the
-/// main config-fetch flow) so it shares dev-cert trust and connection-pool state. An
-/// isolated <c>AddUrlGroup</c> probe would create its own HttpClient without trust for
-/// Aspire's DCP self-signed dev cert and would fail with "SSL connection could not be
-/// established" even when the API itself talks to exp successfully.
+/// Calls <see cref="IConfigProxyClient.PingAsync"/> which hits exp's
+/// <c>GET /api/ready</c> readiness endpoint over the API's existing typed HttpClient.
+/// Reusing the production HttpClient is critical: it inherits dotnet's dev-cert trust,
+/// the bearer-token handler (when targeting Azure), and the environment-aware
+/// <c>BaseAddress</c> resolved from <c>EXP_PROXY_URL</c>. An isolated UriHealthCheck
+/// would create its own HttpClient without dev-cert trust and fail TLS handshake
+/// against Aspire DCP's self-signed cert.
 /// </para>
 /// <para>
-/// Verifies the full GET <c>/api/v1/config?name=Site:Environment</c> round trip — a
-/// static, always-present key — confirming both transport reachability and that exp's
-/// config-resolver pipeline is wired.
+/// In local Aspire mode the BaseAddress is <c>http(s)://localhost:5002</c>; in cloud
+/// it's <c>https://exp.arolariu.ro</c>. The probe URL becomes
+/// <c>{BaseAddress}/api/ready</c> with no further branching needed.
 /// </para>
 /// </remarks>
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes",
     Justification = "Instantiated by the health-checks framework via DI through AddCheck<T>().")]
 internal sealed class ExpHealthCheck(IConfigProxyClient configProxy) : IHealthCheck
 {
-  private const string ProbeKey = "Site:Environment";
-  private const string ProbeLabel = "PRODUCTION";
-
   [SuppressMessage("Design", "CA1031:Do not catch general exception types",
       Justification = "Health checks must return Unhealthy for any failure, not propagate exceptions.")]
   public async Task<HealthCheckResult> CheckHealthAsync(
@@ -41,19 +40,10 @@ internal sealed class ExpHealthCheck(IConfigProxyClient configProxy) : IHealthCh
   {
     try
     {
-      var result = await configProxy
-          .GetConfigValueAsync(ProbeKey, label: ProbeLabel, ct: cancellationToken)
-          .ConfigureAwait(false);
-
-      if (result is null)
-      {
-        return HealthCheckResult.Unhealthy(
-            $"exp returned null for {ProbeKey} — service unreachable or the key is missing.");
-      }
-
-      return string.IsNullOrWhiteSpace(result.Value)
-          ? HealthCheckResult.Degraded($"exp returned an empty value for {ProbeKey}.")
-          : HealthCheckResult.Healthy($"exp reachable; {ProbeKey} = '{result.Value}'.");
+      var alive = await configProxy.PingAsync(cancellationToken).ConfigureAwait(false);
+      return alive
+          ? HealthCheckResult.Healthy("exp responded 2xx at /api/ready.")
+          : HealthCheckResult.Unhealthy("exp /api/ready did not return a 2xx status.");
     }
     catch (Exception ex)
     {
