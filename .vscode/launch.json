@@ -3,23 +3,24 @@
   "configurations": [
     {
       "name": "🚀 Full stack (Aspire)",
-      "type": "dotnet",
+      "type": "aspire",
       "request": "launch",
-      "projectPath": "${workspaceFolder}/tooling/AppHost/AppHost.csproj",
-      "launchSettingsProfile": "AppHost",
-      "serverReadyAction": {
-        "pattern": "Login to the dashboard at",
-        "action": "startDebugging",
-        "name": "🪡 Attach to Next.js (Aspire)"
+      "program": "${workspaceFolder}/tooling/AppHost",
+      "command": "run",
+      "debuggers": {
+        "apphost": {},
+        "project": { "console": "integratedTerminal" },
+        "node":    { "skipFiles": ["<node_internals>/**"] },
+        "python":  { "justMyCode": false }
       }
     },
     {
       "name": "🚀 Full stack (no debug)",
-      "type": "dotnet",
+      "type": "aspire",
       "request": "launch",
       "noDebug": true,
-      "projectPath": "${workspaceFolder}/tooling/AppHost/AppHost.csproj",
-      "launchSettingsProfile": "AppHost"
+      "program": "${workspaceFolder}/tooling/AppHost",
+      "command": "run"
     },
     {
       "name": "🌐 Website only (standalone)",
