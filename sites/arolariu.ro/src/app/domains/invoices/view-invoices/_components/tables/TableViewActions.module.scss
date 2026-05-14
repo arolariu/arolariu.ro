@@ -49,19 +49,27 @@
   min-width: space(40); // 160px
 }
 
+// `display: flex; align-items: center; gap; width: 100%` are inherited from
+// the component library's `.item-G26b7p` rule. The doubled-class selector
+// here exists solely to override `.trigger-GlwNv7 { max-width: max-content }`
+// (from the tooltip module) which otherwise clamps menu items to content width.
 .menuItem {
-  display: flex;
-  align-items: center;
-  gap: space(2);
-  width: 100%;
-  cursor: pointer;
+  &.menuItem {
+    max-width: none;
+    cursor: pointer;
+  }
 }
 
 .menuItemDestructive {
-  display: flex;
-  align-items: center;
-  gap: space(2);
-  width: 100%;
-  cursor: pointer;
-  color: color('destructive');
+  &.menuItemDestructive {
+    max-width: none;
+    cursor: pointer;
+    color: color('destructive');
+  }
+}
+
+.editLink {
+  &.editLink {
+    max-width: none;
+  }
 }
