@@ -18,7 +18,6 @@ import {auth, currentUser, type User} from "@clerk/nextjs/server";
 export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: boolean; user: User | null}> {
   "use server";
   try {
-    ("use cache");
     const user = await currentUser();
     const isAuthenticated = user !== null;
     return {isAuthenticated, user} as const;
@@ -40,7 +39,6 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
     if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue token.");
 
     if (isAuthenticated) {
-      ("use cache");
       const user = await currentUser();
       const userIdentifier = generateGuid(user?.primaryEmailAddress?.emailAddress ?? userId);
 
