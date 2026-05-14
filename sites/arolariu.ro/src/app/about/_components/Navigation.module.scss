@@ -86,7 +86,7 @@
   margin: 0 auto;
   padding: space(4);
   border-radius: radius('2xl');
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
   @include transition(transform);
 
   .card:hover & {
