@@ -159,6 +159,7 @@ export default function ExportDialog(): React.JSX.Element {
                 onValueChange={(format) => handleOptionsChange("format", format as InvoiceExportFormat)}>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='csv'
                     id='csv'
                   />
@@ -174,6 +175,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='json'
                     id='json'
                   />
@@ -189,6 +191,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='pdf'
                     id='pdf'
                   />
