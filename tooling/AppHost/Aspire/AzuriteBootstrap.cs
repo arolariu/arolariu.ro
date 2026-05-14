@@ -42,13 +42,14 @@ internal static class AzuriteBootstrap
 
     private const int MaxAttempts = 6;
 
-    // Shared bootstrap state surfaced to the dashboard via a custom health check.
-    // Marked unhealthy by default; flipped to healthy by the bootstrap handler once
-    // CORS + container creation both succeed. Failure mode: the storage container
-    // still reports green (it really is running), but the storage resource shows
-    // a degraded badge so the user notices instead of hitting cryptic 404/CORS
-    // errors at upload time.
-    private static volatile bool _bootstrapSucceeded;
+    // Shared bootstrap state surfaced to the dashboard via a custom health check
+    // attached to the storage resource. The check is **healthy by default** and only
+    // flips to unhealthy on actual bootstrap failure — otherwise we'd deadlock,
+    // because Aspire only fires ResourceReadyEvent once every attached health check
+    // is Healthy, but the bootstrap handler that would mark this check Healthy only
+    // runs *on* ResourceReadyEvent. Optimistic default breaks the cycle; the brief
+    // window between "container reachable" and "CORS applied" is harmless because
+    // bootstrap completes within seconds and the dashboard turns red on real failure.
     private static volatile string? _bootstrapError;
     private static int _bootstrapStarted; // 0 = not started, 1 = started (Interlocked guard)
     private const string HealthCheckName = "azurite-bootstrap";
@@ -86,10 +87,9 @@ internal static class AzuriteBootstrap
           + $"BlobEndpoint=http://localhost:{blobPort}/{AzuriteAccountName};";
 
         builder.Services.AddHealthChecks().AddCheck(HealthCheckName, () =>
-            _bootstrapSucceeded
+            _bootstrapError is null
                 ? HealthCheckResult.Healthy()
-                : HealthCheckResult.Unhealthy(
-                    _bootstrapError ?? "Azurite bootstrap has not run yet."));
+                : HealthCheckResult.Unhealthy(_bootstrapError));
         storage.WithHealthCheck(HealthCheckName);
 
         builder.Eventing.Subscribe<ResourceReadyEvent>(async (evt, ct) =>
@@ -114,7 +114,7 @@ internal static class AzuriteBootstrap
                 await ApplyCorsWithRetryAsync(client, logger, ct).ConfigureAwait(false);
                 await EnsureContainersWithRetryAsync(client, containerNames, logger, ct).ConfigureAwait(false);
                 _bootstrapError = null;
-                _bootstrapSucceeded = true;
+                logger?.LogInformation("Azurite bootstrap completed (CORS + container creation).");
             }
             catch (OperationCanceledException)
             {
