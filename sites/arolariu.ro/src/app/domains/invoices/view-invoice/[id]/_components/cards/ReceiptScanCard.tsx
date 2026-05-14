@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbArrowLeft, TbArrowRight, TbDownload, TbRotateClockwise, TbZoomIn, TbZoomOut, TbZoomReset} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -163,11 +162,16 @@ export function ReceiptScanCard(): React.JSX.Element {
                       transformOrigin,
                     }}
                     onMouseMove={handleMouseMove}>
-                    <Image
+                    {/* Plain <img> with direct HTTP GET — bypasses next/image optimization
+                        so the request goes straight to the storage URL. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={currentScanSrc}
                       alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
                       width={400}
                       height={600}
+                      loading='lazy'
+                      decoding='async'
                       className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
                     />
                   </div>
@@ -201,11 +205,15 @@ export function ReceiptScanCard(): React.JSX.Element {
                       handleDialogImageClick();
                     }
                   }}>
-                  <Image
+                  {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={currentScanSrc}
                     alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
                     width={800}
                     height={1200}
+                    loading='lazy'
+                    decoding='async'
                     className={styles["dialogImage"]}
                   />
                 </div>
