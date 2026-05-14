@@ -73,7 +73,7 @@
             "watch",
             "run",
             "--project",
-            "${workspaceFolder}/arolariu.slnx"
+            "${workspaceFolder}/tooling/AppHost/AppHost.csproj"
         ],
         "problemMatcher": "$msCompile"
     }
