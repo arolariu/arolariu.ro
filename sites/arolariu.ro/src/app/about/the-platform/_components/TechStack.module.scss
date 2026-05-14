@@ -221,7 +221,7 @@
 .techIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
 .techInfo {
@@ -368,12 +368,12 @@
 .iconPink { background-color: abstracts.color('primary'); }
 .iconIndigo { background-color: abstracts.color('primary'); }
 .iconYellow { background-color: abstracts.color('primary'); }
-.iconTeal { @include abstracts.gradient-bg(); }
+.iconTeal { background-color: abstracts.color-alpha('primary', 0.1); }
 
 .statIcon {
   width: 1.75rem;
   height: 1.75rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
 // Stat value
