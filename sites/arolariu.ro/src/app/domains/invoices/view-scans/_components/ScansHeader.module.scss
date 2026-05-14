@@ -121,11 +121,11 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  @include gradient-bg();
-  color: white;
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
 
   &:hover {
-    opacity: 0.9;
+    background-color: color-alpha('primary', 0.15);
   }
 }
 
