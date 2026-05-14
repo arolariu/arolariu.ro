@@ -2298,8 +2298,8 @@
       "buttons": {
         "cancel": "Anulare",
         "close": "Închide",
-        "createMultiple": "Creați {count} Facturi",
-        "createSingle": "Creați Factură"
+        "createMultiple": "Pornește analiza pentru {count} scanări",
+        "createSingle": "Pornește analiza"
       },
       "chooseMode": "Alegeți Modul de Creare",
       "complete": {
@@ -2331,7 +2331,7 @@
         "title": "Se creează Factura",
         "titlePlural": "Se creează Facturile"
       },
-      "description": "Transformați scanările în date structurate de factură cu extracție bazată pe AI.",
+      "description": "Transformă scanările în date structurate de factură.",
       "errors": {
         "createFailed": "Nu s-au putut crea facturile: {message}",
         "partialFail": "Nu s-au putut crea {count} facturi",
@@ -2346,8 +2346,8 @@
         "description": "AI-ul nostru va analiza scanarea dvs. și va extrage automat detaliile comerciantului, articolele, prețurile și totalurile. Puteți revizui și edita rezultatele ulterior.",
         "title": "Ce se întâmplă în continuare?"
       },
-      "title": "Creați Factură",
-      "titlePlural": "Creați Facturi",
+      "title": "Pornește analiza AI",
+      "titlePlural": "Pornește analiza AI",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {

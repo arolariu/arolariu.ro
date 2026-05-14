@@ -2298,8 +2298,8 @@
       "buttons": {
         "cancel": "Cancel",
         "close": "Close",
-        "createMultiple": "Create {count} Invoices",
-        "createSingle": "Create Invoice"
+        "createMultiple": "Start analysis on {count} scans",
+        "createSingle": "Start analysis"
       },
       "chooseMode": "Choose Creation Mode",
       "complete": {
@@ -2331,7 +2331,7 @@
         "title": "Creating Your Invoice",
         "titlePlural": "Creating Your Invoices"
       },
-      "description": "Transform your scans into structured invoice data with AI-powered extraction.",
+      "description": "Transform your scans into structured invoice data.",
       "errors": {
         "createFailed": "Failed to create invoices: {message}",
         "partialFail": "Failed to create {count} invoice(s)",
@@ -2346,8 +2346,8 @@
         "description": "Our AI will analyze your scan and automatically extract merchant details, items, prices, and totals. You can review and edit the results afterward.",
         "title": "What happens next?"
       },
-      "title": "Create Invoice",
-      "titlePlural": "Create Invoices",
+      "title": "Start AI analysis",
+      "titlePlural": "Start AI analysis",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {

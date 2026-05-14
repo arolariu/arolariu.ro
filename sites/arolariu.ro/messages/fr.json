@@ -2298,8 +2298,8 @@
       "buttons": {
         "cancel": "Annuler",
         "close": "Fermer",
-        "createMultiple": "Créer {count} Factures",
-        "createSingle": "Créer une Facture"
+        "createMultiple": "Lancer l'analyse sur {count} scans",
+        "createSingle": "Lancer l'analyse"
       },
       "chooseMode": "Choisir le Mode de Création",
       "complete": {
@@ -2331,7 +2331,7 @@
         "title": "Création de Votre Facture",
         "titlePlural": "Création de Vos Factures"
       },
-      "description": "Transformez vos scans en données de facture structurées grâce à l'extraction alimentée par l'IA.",
+      "description": "Transformez vos scans en données de facture structurées.",
       "errors": {
         "createFailed": "Échec de la création des factures : {message}",
         "partialFail": "Échec de la création de {count} facture(s)",
@@ -2346,8 +2346,8 @@
         "description": "Notre IA analysera votre scan et extraira automatiquement les détails du commerçant, les articles, les prix et les totaux. Vous pourrez examiner et modifier les résultats par la suite.",
         "title": "Que se passe-t-il ensuite ?"
       },
-      "title": "Créer une Facture",
-      "titlePlural": "Créer des Factures",
+      "title": "Lancer l'analyse IA",
+      "titlePlural": "Lancer l'analyse IA",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {
