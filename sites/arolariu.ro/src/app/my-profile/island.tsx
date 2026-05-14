@@ -18,7 +18,7 @@ import {SettingsNotifications} from "./_components/SettingsNotifications";
 import {SettingsSecurity} from "./_components/SettingsSecurity";
 import {getDefaultSettings, getMockStatistics} from "./_utils/helpers";
 import type {SettingsSection, UserSettings} from "./_utils/types";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
 import styles from "./island.module.scss";
 
 type Props = Readonly<{
