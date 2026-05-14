@@ -252,7 +252,7 @@ internal static class ExpConfigGenerator
                 {
                     // Generator never wrote (infra never became ready); the file still
                     // holds the original content — an idempotent restore is safe.
-                    File.WriteAllText(state.ConfigPath, state.OriginalContent);
+                    await File.WriteAllTextAsync(state.ConfigPath, state.OriginalContent, ct).ConfigureAwait(false);
                 }
             }
             catch
