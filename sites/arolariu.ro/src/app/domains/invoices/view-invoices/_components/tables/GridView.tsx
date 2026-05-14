@@ -22,6 +22,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
+import Link from "next/link";
 import {useCallback, useEffect} from "react";
 import {TbCalendar, TbEye, TbReceipt} from "react-icons/tb";
 import EmptyState from "../../../_components/EmptyState";
@@ -128,9 +129,15 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                           <Button
                             variant='ghost'
                             size='icon'
-                            className={styles["imageButton"]}>
-                            <TbEye className={styles["viewIcon"]} />
-                          </Button>
+                            className={styles["imageButton"]}
+                            render={
+                              <Link
+                                href={`/domains/invoices/view-invoice/${invoice.id}`}
+                                aria-label={t("tooltips.viewDetails")}>
+                                <TbEye className={styles["viewIcon"]} />
+                              </Link>
+                            }
+                          />
                         }
                       />
                       <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>
