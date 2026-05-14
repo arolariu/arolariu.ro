@@ -3547,11 +3547,11 @@
       "title": "Sistem de gestionare a facturilor - Încărcare scanări"
     },
     "postUpload": {
-      "createInvoice": "Da, creează factura",
+      "createInvoice": "Da, începe analiza",
       "dismiss": "Închide",
-      "subtitle": "Aceste scanări reprezintă o singură achiziție?",
+      "subtitle": "{count, plural, one {Această scanare reprezintă o singură achiziție?} few {Aceste # scanări reprezintă o singură achiziție?} other {Aceste # de scanări reprezintă o singură achiziție?}}",
       "title": "Încărcare finalizată!",
-      "viewScans": "Nu, le voi combina mai târziu"
+      "viewScans": "Nu, analizează-le separat"
     },
     "preview": {
       "pagination": {

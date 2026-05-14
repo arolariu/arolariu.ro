@@ -3547,11 +3547,11 @@
       "title": "Invoice Management System - Upload Scans"
     },
     "postUpload": {
-      "createInvoice": "Yes, create invoice",
+      "createInvoice": "Yes, start the analysis",
       "dismiss": "Dismiss",
-      "subtitle": "Do these scans represent a single purchase?",
+      "subtitle": "{count, plural, one {Does this scan represent a single purchase?} other {Do these scans represent a single purchase?}}",
       "title": "Upload Complete!",
-      "viewScans": "No, I'll combine later"
+      "viewScans": "No, analyze separately"
     },
     "preview": {
       "pagination": {

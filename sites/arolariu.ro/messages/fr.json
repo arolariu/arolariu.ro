@@ -3547,11 +3547,11 @@
       "title": "Système de Gestion des Factures - Télécharger des Scans"
     },
     "postUpload": {
-      "createInvoice": "Oui, créer une facture",
+      "createInvoice": "Oui, lancer l'analyse",
       "dismiss": "Fermer",
-      "subtitle": "Ces numérisations représentent-elles un seul achat ?",
-      "title": "Téléchargement terminé !",
-      "viewScans": "Non, je les combinerai plus tard"
+      "subtitle": "{count, plural, one {Cette numérisation représente-t-elle un seul achat ?} other {Ces numérisations représentent-elles un seul achat ?}}",
+      "title": "Téléchargement terminé !",
+      "viewScans": "Non, analyser séparément"
     },
     "preview": {
       "pagination": {
