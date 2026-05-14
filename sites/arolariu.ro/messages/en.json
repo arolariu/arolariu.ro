@@ -3632,6 +3632,7 @@
         "dropInactive": "Click or drag files to upload",
         "formats": "Supported formats: JPG, PNG, PDF (max 10MB each)",
         "note": "You can select multiple files.",
+        "pasteHint": "Tip: you can also paste an image from your clipboard (Ctrl+V).",
         "title": "Drag and drop your files here"
       },
       "tooltips": {

@@ -3632,6 +3632,7 @@
         "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
         "formats": "Formate acceptate: JPG, PNG, PDF (maxim 10MB fiecare)",
         "note": "Poți selecta mai multe fișiere.",
+        "pasteHint": "Sfat: poți lipi o imagine direct din clipboard (Ctrl+V).",
         "title": "Trage și plasează fișierele aici"
       },
       "tooltips": {

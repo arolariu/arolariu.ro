@@ -3632,6 +3632,7 @@
         "dropInactive": "Cliquez ou glissez des fichiers pour les téléverser",
         "formats": "Formats pris en charge : JPG, PNG, PDF (10 Mo max chacun)",
         "note": "Vous pouvez sélectionner plusieurs fichiers.",
+        "pasteHint": "Astuce : vous pouvez aussi coller une image depuis le presse-papiers (Ctrl+V).",
         "title": "Glissez-déposez vos fichiers ici"
       },
       "tooltips": {

@@ -5,9 +5,15 @@
 @use '../../../styles/abstracts' as *;
 @use 'settings-shared' as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    {
+.section {
+  @include settings.settings-section;
+}
+
+.header {
+  @include settings.settings-header;
+}
+
+.grid {
   @include settings.settings-grid;
 
   // Stretch immediate grid children (motion.div wrappers) and the Card inside
@@ -30,9 +36,18 @@
     }
   }
 }
-.fullWidthCard { @include settings.settings-card-full; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
+
+.fullWidthCard {
+  @include settings.settings-card-full;
+}
+
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
 
 // ===========================================
 // THEME & FONT BUTTONS
@@ -181,13 +196,33 @@
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.sliderCursor { @include settings.settings-slider-cursor; }
-.buttonFullCursor { @include settings.settings-button-full-cursor; }
-.iconSm { @include settings.settings-icon-sm; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+
+.selectCursor {
+  @include settings.settings-select-cursor;
+}
+
+.sliderCursor {
+  @include settings.settings-slider-cursor;
+}
+
+.buttonFullCursor {
+  @include settings.settings-button-full-cursor;
+}
+
+.iconSm {
+  @include settings.settings-icon-sm;
+}
 
 // ===========================================
 // THEME & FONT BUTTON UTILITIES
