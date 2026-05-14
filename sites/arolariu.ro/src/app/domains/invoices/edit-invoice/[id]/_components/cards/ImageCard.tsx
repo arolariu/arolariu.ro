@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -114,11 +113,15 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               className={styles["imageButton"]}
               onClick={handleOpenZoom}
               aria-label={t("aria.expandImage")}>
-              <Image
+              {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={currentScanSrc}
                 alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
                 width={400}
                 height={600}
+                loading='lazy'
+                decoding='async'
                 className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
               <div className={styles["zoomOverlayVisible"]}>
@@ -134,11 +137,15 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["zoomContainer"]}>
-                <Image
+                {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={currentScanSrc}
                   alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
                   width={800}
                   height={1200}
+                  loading='lazy'
+                  decoding='async'
                   className={styles["zoomDialogImage"]}
                 />
               </div>
