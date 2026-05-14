@@ -25,7 +25,7 @@ There are three ways to develop locally. Choose based on your needs:
 |---|---|---|---|
 | **Best for** | Day-to-day coding with fast iteration | CI parity, deploy-mock-of-prod, container auditing | Onboarding, cloud dev, consistent env |
 | **Hot reload** | ✅ All services (apps run native) | ❌ Production builds, no reload | ✅ All services (Aspire runs inside container) |
-| **Infrastructure** | ✅ SQL, Cosmos vNext, Redis, Azurite, Traefik via Aspire-managed containers | ✅ Full containerized stack | ✅ Same as Aspire (Docker-in-Docker) |
+| **Infrastructure** | ✅ SQL Server, Cosmos vNext emulator, Azurite, Redis via Aspire-managed containers | ✅ Full containerized stack | ✅ Same as Aspire (Docker-in-Docker) |
 | **Setup time** | ~2 min (npm install + setup) | ~5 min (Docker build + init) | ~5 min (container build) |
 | **Prerequisites** | Node, .NET 10, Docker Desktop | Docker Desktop only | Docker + VS Code Dev Containers extension |
 | **VS Code integration** | Open `.code-workspace`, press F5 | Open folder (services run in containers) | Automatic — extensions + tools pre-installed |
@@ -34,7 +34,7 @@ There are three ways to develop locally. Choose based on your needs:
 
 ### Recommended workflow
 
-Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) runs each app natively (dotnet / Next.js / SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis, Traefik) as Aspire-managed containers. The Aspire dashboard surfaces live OTel traces, metrics, and logs.
+Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) runs each app natively (dotnet / Next.js / SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) as Aspire-managed containers. The Aspire dashboard at `https://localhost:17080` surfaces live OTel traces, metrics, and logs.
 
 See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspire-vs-selfhost)** for the canonical mode reference.
 
@@ -62,11 +62,10 @@ npm run dev          # ← This is what you'll use every day (alias: npm run dev
 
 **What `npm run dev` does:**
 1. ✅ Runs `dotnet run --project tooling/AppHost` — the Aspire AppHost
-2. 🐳 Spawns Aspire-managed containers: Traefik (HTTPS `*.localhost` via mkcert), SQL Server, Cosmos vNext emulator, Redis, Azurite
-3. 🔀 Wires Traefik dynamic routes via `tooling/AppHost/Aspire/TraefikDynamicConfig.cs` (`api.localhost`, `website.localhost`, etc.)
-4. ⏳ Waits for infra health, initializes schemas
-5. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
-6. 📊 Exposes the Aspire dashboard at `https://dashboard.localhost` with live OTel traces / metrics / logs
+2. 🐳 Spawns Aspire-managed containers: SQL Server, Cosmos vNext emulator, Redis, Azurite
+3. ⏳ Waits for infra health, initializes schemas
+4. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn
+5. 📊 Exposes the Aspire dashboard at `https://localhost:17080` with live OTel traces / metrics / logs
 
 > **Pressing F5 in VS Code / Visual Studio 2026** runs the same AppHost — the only difference is the IDE attaches a debugger.
 
@@ -85,18 +84,17 @@ Use these when narrowly iterating on a single service and you don't need cross-s
 **After startup, your services are at:**
 | Service | URL | Mode |
 |---------|-----|------|
-| Website | https://website.localhost | ✅ Native, Turbopack hot reload |
-| API | https://api.localhost | ✅ Native, .NET Hot Reload |
-| exp | https://exp.localhost | ✅ Native, uvicorn --reload |
-| CV | https://cv.localhost | ✅ Native, Vite HMR |
-| docs | https://docs.localhost | ✅ Native, Docusaurus dev |
-| status | https://status.localhost | ✅ Native, Next.js dev |
+| Website | https://localhost:3000 | ✅ Native, Turbopack hot reload |
+| API | http://localhost:5000 | ✅ Native, .NET Hot Reload |
+| exp | http://localhost:5002 | ✅ Native, uvicorn --reload |
+| CV | http://localhost:4173 | ✅ Native, Vite HMR |
+| docs | http://localhost:3100 | ✅ Native, Docusaurus dev |
+| status | http://localhost:3002 | ✅ Native, SvelteKit (AddViteApp) |
 
 **Infrastructure dashboards:**
 | Service | URL |
 |---------|-----|
-| Aspire Dashboard | https://dashboard.localhost |
-| Traefik Dashboard | http://localhost:8080 |
+| Aspire Dashboard | https://localhost:17080 |
 | CosmosDB Explorer | http://localhost:1234 |
 | SQL Server | localhost:8082 (credentials surfaced via Aspire dashboard) |
 | Redis | localhost:6379 |
@@ -112,9 +110,9 @@ After starting, run these checks:
 
 ```bash
 # Check service health
-curl -k https://exp.localhost/api/health     # exp: should return {"status":"Healthy"}
-curl -k https://api.localhost/health          # API: should return {"status":"Healthy"}
-curl -k https://website.localhost             # Website: should return HTML
+curl -k http://localhost:5002/api/health     # exp: should return {"status":"Healthy"}
+curl -k http://localhost:5000/health          # API: should return {"status":"Healthy"}
+curl -k https://localhost:3000               # Website: should return HTML
 
 # Check Docker container status (Aspire-managed)
 docker ps --format "table {{.Names}}\t{{.Status}}"
@@ -134,7 +132,6 @@ npm run doctor
 | Port already in use | Previous dev session didn't clean up | `npm run doctor` checks ports. Kill stale processes or restart Docker |
 | CosmosDB Explorer not loading | Emulator still initializing | Wait 60s after AppHost start, Cosmos vNext takes time to start |
 | SQL schema errors | Schema already exists | Safe to ignore "already exists" messages |
-| `*.localhost` resolves but cert untrusted | mkcert root cert not installed | Run `mkcert -install` once |
 | Want the legacy fully-containerized stack | Auditing, CI parity, deploy-mock-of-prod | Use `npm run dev:selfhost` (see Alternative below) |
 
 ---
@@ -435,7 +432,7 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 | TypeScript errors on build | Run `npm run generate` to regenerate types and env files |
 | Tests failing | Run `npm run doctor` to diagnose workspace health |
 | HTTPS certificate errors | See [infra/Local/readme.md](infra/Local/readme.md) for mkcert setup |
-| `*.localhost` not resolving (Windows) | Add entries to `C:\Windows\System32\drivers\etc\hosts` — see Docker setup docs |
+| `*.localhost` not resolving (Windows, selfhost mode) | Add entries to `C:\Windows\System32\drivers\etc\hosts` — see Docker setup docs |
 
 ---
 

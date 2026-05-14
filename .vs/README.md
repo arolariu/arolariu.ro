@@ -8,11 +8,11 @@ Open `arolariu.slnx`. AppHost (under `tooling/`) is set as the startup project.
 F5 launches:
 
 1. Aspire 13.x's native infrastructure containers (SQL Server, Cosmos vNext emulator,
-   Azurite, Redis, Traefik) via `tooling/AppHost/Program.cs`
+   Azurite, Redis) via `tooling/AppHost/Program.cs`
 2. Native processes: exp (Python uvicorn), API (.NET), Website (Next.js),
    CV (SvelteKit), docs (Docusaurus), status (SvelteKit)
-3. Traefik dynamic config wired for `*.localhost` HTTPS routes
-4. Aspire dashboard at `https://dashboard.localhost`
+3. Aspire dashboard at `https://localhost:17080`; services reachable directly at their
+   native ports (api: 5000, website: 3000, exp: 5002, cv: 4173, docs: 3100, status: 3002)
 
 Target time to "everything green": ~30s on a warm dev box.
 

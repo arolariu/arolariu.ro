@@ -27,8 +27,8 @@ Plus retained custom configs for Edge browser debug, DocFX, and Python exp FastA
 | Generate | `npm run generate` |
 
 Aspire mode (F5) does not need any `Infra: up` preLaunchTask — Aspire 13.x's AppHost
-spawns its own infra containers (SQL, Cosmos emulator, Azurite, Redis, Traefik) natively
-via `tooling/AppHost/Program.cs`.
+spawns its own infra containers (SQL Server, Cosmos vNext emulator, Azurite, Redis) natively
+via `tooling/AppHost/Program.cs`. The Aspire dashboard opens at `https://localhost:17080`.
 
 ## Recommended extensions
 

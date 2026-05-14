@@ -10,12 +10,11 @@ Recommended for ~95% of dev work. The .NET Aspire 13.x AppHost (under `tooling/A
 declares and orchestrates everything natively:
 
 - **Infrastructure**: SQL Server, Cosmos vNext emulator, Azurite, Redis — all spawned by Aspire's native integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, etc.) using the same ports/credentials as the Selfhost-mode Compose files so `exp`'s `config.docker.json` keeps working.
-- **Reverse proxy**: Traefik (`AddContainer("traefik", ...)`) with bind-mounts to this directory's `traefik/dynamic/` and `certs/`. mkcert-issued cert for `*.localhost`.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
-- **Traefik dynamic routes** generated at runtime by `tooling/AppHost/Aspire/TraefikDynamicConfig.cs` into `traefik/dynamic/aspire-services.yml` (gitignored). Routes `https://api.localhost`, `https://website.localhost`, `https://exp.localhost`, `https://cv.localhost`, `https://docs.localhost`, `https://status.localhost`, `https://dashboard.localhost`.
-- **Aspire dashboard**: live OTel traces / metrics / logs at `https://dashboard.localhost`.
+- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`.
+- **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
-In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers. Only the certs and Traefik dynamic-config dir under `infra/Local/Management/` are referenced (as bind-mounts).
+In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
 
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost`)
 
