@@ -390,6 +390,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       key={enhancement.id}
                       className={styles["enhancementItem"]}>
                       <Checkbox
+                        nativeButton
                         id={enhancement.id}
                         checked={selectedEnhancements.includes(enhancement.id)}
                         // eslint-disable-next-line react/jsx-no-bind -- simple toggle handler

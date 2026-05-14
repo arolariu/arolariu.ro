@@ -13,7 +13,7 @@
 import {Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
 import styles from "./UploadArea.module.scss";
@@ -73,6 +73,17 @@ function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
   }
 
   return validFiles;
+}
+
+/**
+ * Returns true if the active element is one where pasting should be left alone
+ * (e.g. text inputs, textareas, contenteditable regions).
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 }
 
 /**
@@ -177,6 +188,36 @@ export default function UploadArea(): React.JSX.Element {
     [isUploading, addFiles],
   );
 
+  /**
+   * Handle clipboard paste events at the window level. Extracts image / PDF
+   * files from the clipboard and adds them as if they were dropped or selected.
+   * Ignores paste events targeted at editable elements (inputs, textareas, etc.).
+   */
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent): void => {
+      if (isUploading) return;
+      if (isEditableTarget(event.target)) return;
+      if (!event.clipboardData) return;
+
+      const pastedFiles = filterValidFilesFromDataTransfer(event.clipboardData.items);
+      if (pastedFiles.length === 0) return;
+
+      event.preventDefault();
+      const dataTransfer = new DataTransfer();
+      for (const file of pastedFiles) {
+        dataTransfer.items.add(file);
+      }
+      void addFiles(dataTransfer.files).catch((error) => {
+        console.error("Failed to add pasted files:", error);
+      });
+    };
+
+    globalThis.addEventListener("paste", handlePaste);
+    return () => {
+      globalThis.removeEventListener("paste", handlePaste);
+    };
+  }, [isUploading, addFiles]);
+
   if (pendingUploads.length === 0) {
     return (
       <>
@@ -210,6 +251,7 @@ export default function UploadArea(): React.JSX.Element {
             </p>
             <p className={styles["dropzoneFormats"]}>{t("uploadArea.empty.formats")}</p>
             <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.note")}</p>
+            <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.pasteHint")}</p>
             <span className={styles["chooseFilesButton"]}>{t("uploadArea.empty.chooseFiles")}</span>
           </motion.div>
           {isDragActive && dragCount > 0 && (

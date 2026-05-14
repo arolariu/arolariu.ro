@@ -158,7 +158,7 @@ export default function PostUploadPrompt({
                   initial={{opacity: 0}}
                   animate={{opacity: 1}}
                   transition={{delay: 0.4}}>
-                  {t("subtitle")}
+                  {t("subtitle", {count: completedScans.length})}
                 </motion.p>
 
                 {/* Action buttons */}

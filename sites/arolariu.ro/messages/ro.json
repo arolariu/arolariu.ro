@@ -11,6 +11,24 @@
       },
       "Certifications": {
         "certificates": {
+          "ab730": {
+            "code": "AB-730",
+            "coreSkills": "# Strategie AI # Adopție AI # AI Responsabil # Valoare de business AI # Identificarea cazurilor de utilizare AI",
+            "description": "Validează cunoștințele orientate pe business privind AI pentru profesioniștii care conduc sau influențează inițiative AI în cadrul organizației. Este destinată factorilor de decizie, product owner-ilor și consultanților care modelează strategia AI mai degrabă decât o implementează.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+            "name": "Certificat Microsoft: AI Business Professional"
+          },
+          "ab731": {
+            "code": "AB-731",
+            "coreSkills": "# Transformare AI la nivel de întreprindere # Strategie AI # Managementul schimbării # Guvernanță AI # Leadership executiv",
+            "description": "Validează capacitatea de a conduce inițiative de transformare AI la nivel de întreprindere — definirea strategiei, conducerea schimbării organizaționale și stabilirea guvernanței pentru operaționalizarea AI în întreaga afacere.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+            "name": "Certificat Microsoft: AI Transformation Leader"
+          },
           "ai900": {
             "code": "AI-900",
             "coreSkills": "# Machine Learning # Computer Vision # Natural Language Processing # Conversational AI # Responsible AI",
@@ -28,6 +46,51 @@
             "issuerDate": "2023",
             "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
             "name": "Certificat Microsoft: Azure Fundamentals"
+          },
+          "gh100": {
+            "code": "GH-100",
+            "coreSkills": "# Autentificare # Gestionarea utilizatorilor și echipelor # Politici de repository # Configurare Enterprise # Securitate și conformitate",
+            "description": "Validează abilitățile necesare pentru a administra organizațiile GitHub Enterprise — gestionarea utilizatorilor, echipelor, repositoriilor, politicilor și integrărilor la scară.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+            "name": "Certificat GitHub: Administration"
+          },
+          "gh200": {
+            "code": "GH-200",
+            "coreSkills": "# Crearea workflow-urilor # Runner-e self-hosted # Securitatea workflow-urilor # Workflow-uri reutilizabile # Pipeline-uri CI/CD",
+            "description": "Validează expertiza în crearea, configurarea și menținerea workflow-urilor GitHub Actions pentru automatizarea build, test și deployment de-a lungul întregului ciclu de viață software.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+            "name": "Certificat GitHub: Actions"
+          },
+          "gh300": {
+            "code": "GH-300",
+            "coreSkills": "# Planuri și funcționalități Copilot # Sugestii de cod # Prompt Engineering # Utilizare AI responsabilă # Copilot Chat",
+            "description": "Validează abilitățile necesare pentru a folosi GitHub Copilot eficient în dezvoltarea software asistată de AI — acoperind funcționalitățile, personalizarea, prompt engineering-ul și utilizarea responsabilă.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+            "name": "Certificat GitHub: Copilot"
+          },
+          "gh900": {
+            "code": "GH-900",
+            "coreSkills": "# Bazele GitHub # Repository-uri # Colaborare # Produsele GitHub # Issues, Pull Request-uri și workflow-uri",
+            "description": "Validează cunoștințele de bază despre GitHub — acoperind repository-urile, funcționalitățile de colaborare, familia de produse GitHub și workflow-urile esențiale ale dezvoltatorilor.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+            "name": "Certificat GitHub: Foundations"
+          },
+          "sc900": {
+            "code": "SC-900",
+            "coreSkills": "# Concepte de securitate # Principii de identitate # Microsoft Entra # Soluții de conformitate # Confidențialitate și protecția informațiilor",
+            "description": "Validează cunoștințele de bază privind securitatea, conformitatea și identitatea, împreună cu soluțiile Microsoft cloud aferente — Entra, Defender și Purview.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+            "name": "Certificat Microsoft: Security, Compliance & Identity Fundamentals"
           }
         },
         "coreSkillsLabel": "Competențe Demonstrate:",
@@ -133,44 +196,44 @@
           "title": "Inginer Embedded"
         },
         "microsoft1": {
-          "achievements": "# M-am impus constant pentru a obține cel mai bun feedback din partea clienților. (Punctaj actual: 4.94 / 5.00) # Am creat ghiduri de depanare pentru soluția Azure Virtual Desktop (AVD). # Lucrez în prezent cu clienți Fortune 500 și profesioniști de top din industrie. # Am oferit feedback continuu grupului de produse (PG) pentru Azure Virtual Desktop (AVD) cu privire la implementarea anumitor caracteristici și servicii.",
+          "achievements": "# (Excelență Inginerească) M-am impus constant pentru a obține cel mai bun feedback din partea clienților. (Punctaj actual: 4.94 / 5.00) # (Interacțiuni proactive) Am oferit feedback continuu Grupului de Produs pentru produsul Azure Virtual Desktop (AVD), cu privire la implementarea unor caracteristici și servicii specifice. # (Experiența Clientului) Am dezvoltat documentația existentă privind caracteristicile serviciilor Azure Core, precum Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Am lucrat exclusiv cu clienți TOP 100 și Fortune 500 și cu profesioniști de top din industrie.",
           "company": "Microsoft",
           "description": "Cu peste 12.000 de angajați în întreaga lume, organizația Microsoft Customer Experience & Success (CE&S) este responsabilă pentru strategia, proiectarea și implementarea experienței clienților Microsoft de la un capăt la altul.",
-          "location": "Remote(EMEA)",
-          "period": "2021 - 2023",
-          "responsibilites": "# Oferiți schimb de cunoștințe, coaching tehnic și mentorat colegilor; # Rezolvarea problemelor prin depanare profundă, depanare, analiză log, testare A/B; # Identificați și răspundeți la problemele critice de afaceri ale clienților specifice serviciilor Azure, cum ar fi Azure Virtual Desktop; # Lucrați exclusiv cu clienții Fortune 500 pentru a înțelege nevoile lor tehnice și pentru a defini un plan de acțiune pentru a le îndeplini, colaborând cu colegii sau cu alte echipe în mod regulat. ",
+          "location": "România",
+          "period": "03/2021 – 03/2023",
+          "responsibilites": "# Oferirea de schimb de cunoștințe, coaching tehnic și mentorat colegilor; # Rezolvarea problemelor prin depanare profundă, debugging, analiză de log-uri, testare A/B; # Identificarea și răspunsul la problemele critice de afaceri ale clienților, specifice serviciilor Azure precum Azure Virtual Desktop; # Lucrul exclusiv cu clienți Fortune 500 pentru a înțelege nevoile lor tehnice și pentru a defini un plan de acțiune pentru a le îndeplini, colaborând regulat cu colegi sau alte echipe.",
           "techAndSkills": "# Network Traffic Analysis # Azure # Customer-centric Approach # Business Relationships # Incident Manager",
-          "title": "Inginer de asistență tehnică"
+          "title": "Inginer Tehnic Azure"
         },
         "microsoft2": {
-          "achievements": "# A orchestrat și implementat cei trei piloni ai observabilității (3PO) în arhitectura noastră de microservicii utilizând standardele Open Telemetry; a construit declanșatoare automate de monitorizare și alertă bazate pe statisticile găleților p95/p99 (metrici, spane, fluxuri E2E). # Contribuții majore la dezvoltarea unei biblioteci interne .NET care implementează protocolul de consum de date ODataV4 pentru motoarele de baze de date NoSQL, cum ar fi Azure Data Explorer (ADX). # A preluat conducerea a două domenii cheie pentru DX: documentația și adoptarea produsului. A creat o documentație remarcabilă și a utilizat instrumente de generare a site-urilor statice (DocFX) pentru a genera automat documentația API din cod; a oferit straturi de consum API sub formă de interfețe utilizator micro-frontend, Cmdlets PowerShell și fișiere de specificații OpenAPI (Swagger / Postman).",
+          "achievements": "# (Observabilitate-as-a-Service) Am orchestrat și implementat complet cei trei piloni ai observabilității în arhitectura noastră de microservicii folosind standardele Open Telemetry; am construit, de asemenea, declanșatoare automate de monitorizare și alertare bazate pe statistici p95/p99 pentru trafic real și sintetic. # (Cercetare & Dezvoltare) Am contribuit major la dezvoltarea unei biblioteci .NET interne care implementează protocolul de consum de date ODataV4 pentru motoare de baze de date NoSQL precum Azure Data Explorer (ADX), folosind practici Domain-Driven Design (DDD) (de ex. aggregator roots) (brevet în curs de obținere). # (Experiența de Dezvoltare) Am preluat conducerea a două domenii cheie pentru DX: documentația și straturile de consum. Am construit o documentație remarcabilă și am folosit instrumente de generare a site-urilor statice (DocFX) pentru a genera automat documentația API din cod; am oferit straturi de consum API sub formă de UI-uri frontend, tooling CLI și fișiere de specificație OpenAPI. # (Creștere) Am asistat și am participat la interviuri de angajare pentru pozițiile SWE II și Senior SWE.",
           "company": "Microsoft",
-          "description": "Pe măsură ce guvernele de astăzi se uită la inovația tehnologică, există nevoia de a răspunde cerințelor în evoluție rapidă ale cetățenilor lor, protejând în același timp cele mai sensibile date și respectând promisiunile de încredere și securitate. Modernizarea serviciilor guvernamentale fără a compromite securitatea, digitalizarea proceselor manuale și îmbunătățirea experienței utilizatorilor, atât pentru cetățeni, cât și pentru angajații guvernamentali, sunt toate beneficii ale transformării digitale, iar platformele tehnologice potrivite pot crea oportunități și mai bune pentru creșterea socială și economică.",
-          "location": "Remote (România)",
-          "period": "2023 - 2024",
-          "responsibilites": "# Furnizarea unei platforme de date E+C capabilă să funcționeze pe mai multe cloud-uri și cu mai mulți chiriași în medii suverane și în scenarii air-gapped. # Gestionați și asigurați bunăstarea operațiunilor platformei de date RISE (Runtime in Sovereign Environments). # Construiți o nouă arhitectură de întreprindere a rețelei de date utilizând concepte de inginerie a datelor, instrumente precum Azure Data Factory și alte noțiuni de depozit de date.",
-          "techAndSkills": "# .NET # Azure # Microservicii # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design #Test-Driven Development #Project Management",
-          "title": "Inginer software"
+          "description": "Pe măsură ce guvernele de astăzi se uită la inovația tehnologică, există nevoia de a răspunde cerințelor în evoluție rapidă ale cetățenilor lor, protejând în același timp cele mai sensibile date și respectând promisiunile de încredere și securitate.",
+          "location": "EMEA",
+          "period": "03/2023 – 12/2024",
+          "responsibilites": "# Furnizarea unei platforme de date E+C capabilă să funcționeze pe mai multe cloud-uri și cu mai mulți chiriași în medii suverane și în scenarii air-gapped. # Gestionarea și asigurarea bunăstării operațiunilor platformei de date RISE (Runtime in Sovereign Environments). # Construirea unei noi arhitecturi de întreprindere de tip data mesh utilizând concepte de inginerie a datelor, instrumente precum Azure Data Factory și alte noțiuni de depozit de date.",
+          "techAndSkills": "# .NET # Azure # Microservicii # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design # Test-Driven Development # Project Management",
+          "title": "E + D Inginer Software II - Cloud-uri Suverane"
         },
         "microsoft3": {
           "achievements": " ",
           "company": "Microsoft",
-          "description": "Alexandru lucrează în prezent la Microsoft ca inginer software în cadrul organizației E+D MSAI FAST.",
+          "description": "Alexandru lucrează în prezent la Microsoft ca inginer software în cadrul organizației E+D MSAI (M365 AI Experiences).",
           "location": "Remote (Norvegia)",
-          "period": "2024 - prezent",
+          "period": "11/2024 - prezent",
           "responsibilites": " ",
-          "techAndSkills": " # React # GraphQL # Dezvoltare la scară largă # Aplicații Cloud-Native # Metodologii Agile # Excelență în inginerie # Leadership",
-          "title": "Inginer software fullstack"
+          "techAndSkills": "# React # GraphQL # Dezvoltare la scară largă # Aplicații Cloud-Native # Metodologii Agile # Excelență în inginerie # Leadership",
+          "title": "E + D Inginer Software Fullstack II - M365 AI"
         },
         "responsibilitiesLabel": "Responsabilități",
         "subtitle": "O călătorie prin cariera profesională a lui Alexandru și prin companiile cu care a lucrat.",
         "techSkillsLabel": "Tehnologii și Competențe",
         "title": "Experiență profesională",
         "ubisoft": {
-          "achievements": "# A contribuit la dezvoltarea de aplicații cloud-native folosind .NET și Azure, # A implementat arhitectura microserviciilor pentru sisteme scalabile și rezistente, # A colaborat cu echipe interfuncționale pentru a furniza soluții software de înaltă calitate, # A participat la revizuiri de cod și a îndrumat dezvoltatorii juniori",
+          "achievements": "# Am depășit constant cota de bug-uri, glitch-uri și artefacte raportate, clasându-mă pe locul #1 ca raportor timp de 5 luni solide din cele 6 lucrate. # Am descoperit și raportat defecte majore de cod, de la race conditions până la defecte de alocare a resurselor de memorie. # Am crescut eficiența raportării zilnice prin valorificarea capacităților de filtrare SQL și JQL.",
           "company": "Ubisoft",
-          "description": "Am lucrat la Avatar: Frontiers of Pandora ™, un joc construit folosind cea mai recentă iterație a motorului Snowdrop (C++) de Massive Entertainment - un studio Ubisoft și testat de Ubisoft România.",
-          "location": "Hibrid (România)",
+          "description": "Am lucrat la Avatar: Frontiers of Pandora™, un joc construit folosind cea mai recentă iterație a motorului Snowdrop (C++) de Massive Entertainment - un studio Ubisoft și testat de Ubisoft România.",
+          "location": "Hibrid (București, România)",
           "period": "2020 - 2021",
           "responsibilites": " # Gestionarea regresiei, integrării și testării unităților cu software precum XRAY, TestRail, Bugzilla. # Crearea de suite de teste și planuri de teste de înaltă calitate folosind produsele Atlassian (JIRA / Confluence). # Asigurarea unor comunicații stabile și clare între echipele de producție și cele de testare.",
           "techAndSkills": "# Testare unitară # Testare de integrare # Testare A/B # Testare de performanță # Testare automată # Testare E2E",
@@ -193,7 +256,7 @@
           "author": "Anonim",
           "avatar": " ",
           "company": "Microsoft",
-          "position": "Inginer software senior",
+          "position": "Manager Senior Inginerie Software",
           "quote": "Alex este un inginer inteligent ale cărui capacități au strălucit în timpul colaborării noastre la proiectele noastre. El demonstrează în mod constant dorința de a ajuta echipa cu orice solicitare, demonstrând dedicarea sa pentru succesul colectiv. Abordarea sa proactivă în ceea ce privește rezolvarea problemelor și dedicarea față de stabilitatea sistemului aduc beneficii majore fluxului de lucru al echipei noastre. În plus, disponibilitatea și dorința lui Alex de a sprijini pe alții în timpul fluxului nostru de lansare evidențiază valoarea sa ca coleg care acordă prioritate muncii în echipă și colaborării."
         },
         "perspectiveFromXY": {
@@ -2298,8 +2361,8 @@
       "buttons": {
         "cancel": "Anulare",
         "close": "Închide",
-        "createMultiple": "Creați {count} Facturi",
-        "createSingle": "Creați Factură"
+        "createMultiple": "Pornește analiza pentru {count} scanări",
+        "createSingle": "Pornește analiza"
       },
       "chooseMode": "Alegeți Modul de Creare",
       "complete": {
@@ -2331,7 +2394,7 @@
         "title": "Se creează Factura",
         "titlePlural": "Se creează Facturile"
       },
-      "description": "Transformați scanările în date structurate de factură cu extracție bazată pe AI.",
+      "description": "Transformă scanările în date structurate de factură.",
       "errors": {
         "createFailed": "Nu s-au putut crea facturile: {message}",
         "partialFail": "Nu s-au putut crea {count} facturi",
@@ -2346,8 +2409,8 @@
         "description": "AI-ul nostru va analiza scanarea dvs. și va extrage automat detaliile comerciantului, articolele, prețurile și totalurile. Puteți revizui și edita rezultatele ulterior.",
         "title": "Ce se întâmplă în continuare?"
       },
-      "title": "Creați Factură",
-      "titlePlural": "Creați Facturi",
+      "title": "Pornește analiza AI",
+      "titlePlural": "Pornește analiza AI",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {
@@ -3547,11 +3610,11 @@
       "title": "Sistem de gestionare a facturilor - Încărcare scanări"
     },
     "postUpload": {
-      "createInvoice": "Da, creează factura",
+      "createInvoice": "Da, începe analiza",
       "dismiss": "Închide",
-      "subtitle": "Aceste scanări reprezintă o singură achiziție?",
+      "subtitle": "{count, plural, one {Această scanare reprezintă o singură achiziție?} few {Aceste # scanări reprezintă o singură achiziție?} other {Aceste # de scanări reprezintă o singură achiziție?}}",
       "title": "Încărcare finalizată!",
-      "viewScans": "Nu, le voi combina mai târziu"
+      "viewScans": "Nu, analizează-le separat"
     },
     "preview": {
       "pagination": {
@@ -3632,6 +3695,7 @@
         "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
         "formats": "Formate acceptate: JPG, PNG, PDF (maxim 10MB fiecare)",
         "note": "Poți selecta mai multe fișiere.",
+        "pasteHint": "Sfat: poți lipi o imagine direct din clipboard (Ctrl+V).",
         "title": "Trage și plasează fișierele aici"
       },
       "tooltips": {
@@ -4485,6 +4549,7 @@
           "previewText": "Text Gradient Exemplu",
           "primary": "Culoare Primară",
           "secondary": "Culoare Secundară",
+          "intermediary": "Culoare Intermediară",
           "title": "Culori Personalizate"
         },
         "description": "Personalizați aspectul și senzația experienței",
@@ -4508,6 +4573,7 @@
         "theme": {
           "dark": "Întunecat",
           "description": "Alegeți schema de culori preferată",
+          "hint": "Comutați între temă deschisă, întunecată sau preferința sistemului",
           "light": "Deschis",
           "system": "Sistem",
           "title": "Temă"

@@ -351,6 +351,10 @@
 .contentSection {
   margin-inline: auto;
   max-width: 80rem; // max-w-7xl
+  // Ensure the page itself is tall enough to keep the footer below the fold
+  // even when the scans list is empty (e.g. right after creating an invoice).
+  // Without this, the footer can overlap the success dialog.
+  min-height: calc(100vh - 8rem);
 
   // Bottom padding for mobile nav
   @include abstracts.respond-below('md') {

@@ -82,6 +82,7 @@
 
   @include abstracts.respond-to('sm') {
     flex-direction: row;
+    justify-content: center;
   }
 
   @include abstracts.respond-to('lg') {

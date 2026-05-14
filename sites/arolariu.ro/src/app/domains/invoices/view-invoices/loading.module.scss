@@ -1,0 +1,248 @@
+// ===========================================
+// VIEW INVOICES LOADING SKELETON STYLES
+// ===========================================
+//
+// Mirrors the structure of `view-invoices/page.tsx` + `island.tsx`
+// (welcome header, InvoicesHeader, tabs row, FilterBar, TableView)
+// so that the shimmer is a 1:1 placeholder of the final layout
+// across mobile, tablet, and desktop breakpoints.
+// ===========================================
+
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// PAGE WRAPPER (matches page.module.scss .pageMain)
+// ===========================================
+.pageMain {
+  @include container(80rem);
+  padding-inline: space(5);
+  padding-block: space(24);
+  min-height: calc(200vh - 64px);
+
+  @include respond-below('md') {
+    min-height: 250vh;
+    padding-bottom: calc(space(16) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+// ===========================================
+// WELCOME HEADER (matches page.module.scss .headerSection)
+// ===========================================
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: space(20);
+  gap: space(3);
+}
+
+.headerTitle {
+  height: space(10);
+  width: min(28rem, 90%);
+
+  @include respond-to('sm') {
+    height: space(12);
+  }
+}
+
+.headerSubtitleLine {
+  height: space(4);
+  width: min(36rem, 95%);
+}
+
+.headerSubtitleLineNarrow {
+  height: space(4);
+  width: min(28rem, 80%);
+}
+
+// ===========================================
+// SECTION CONTAINER (mirrors invoices section)
+// ===========================================
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+// ===========================================
+// INVOICES HEADER (mirrors InvoicesHeader.module.scss .header)
+// ===========================================
+.invoicesHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.invoicesHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.invoicesHeaderTitle {
+  height: space(8);
+  width: 14rem;
+}
+
+.invoicesHeaderDescription {
+  height: space(4);
+  width: 18rem;
+  max-width: 100%;
+}
+
+.invoicesHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  height: space(9);
+  width: space(10);
+
+  @include respond-to('sm') {
+    width: space(24);
+  }
+}
+
+.actionButtonPrimary {
+  height: space(9);
+  width: space(10);
+
+  @include respond-to('sm') {
+    width: 7.5rem;
+  }
+}
+
+// ===========================================
+// TABS ROW (mirrors island.module.scss .tabsList)
+// ===========================================
+.tabsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: space(2);
+  width: 100%;
+  max-width: 28rem;
+
+  @include respond-below('md') {
+    max-width: 100%;
+  }
+}
+
+.tabSkeleton {
+  height: space(9);
+  width: 100%;
+}
+
+// ===========================================
+// FILTER BAR (mirrors FilterBar.module.scss .topBar)
+// ===========================================
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+
+  @include respond-to('md') {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.searchSkeleton {
+  height: space(10);
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.filterButtonSkeleton {
+  height: space(9);
+  width: space(24);
+}
+
+.viewToggleSkeleton {
+  display: flex;
+  gap: space(1);
+}
+
+.viewToggleButton {
+  height: space(9);
+  width: space(9);
+}
+
+// ===========================================
+// TABLE (mirrors TableView)
+// ===========================================
+.tableWrapper {
+  overflow: hidden;
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+}
+
+.tableHeaderRow,
+.tableBodyRow {
+  display: grid;
+  align-items: center;
+  gap: space(3);
+  padding: space(3) space(4);
+  // checkbox | invoice | category | date | amount | actions
+  grid-template-columns: space(8) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) space(20);
+
+  @include respond-below('md') {
+    // collapse some columns on small screens to mirror responsive table behavior
+    grid-template-columns: space(6) minmax(0, 1fr) minmax(0, 1fr) space(16);
+  }
+}
+
+.tableHeaderRow {
+  background-color: color-alpha('foreground', 0.04);
+  border-bottom: 1px solid color('border');
+}
+
+.tableBodyRow {
+  border-bottom: 1px solid color('border');
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.cellMuted,
+.cellStrong,
+.cellPill,
+.cellActions {
+  height: space(4);
+  width: 100%;
+}
+
+.cellPill {
+  height: space(6);
+  width: 6rem;
+  border-radius: radius('full');
+}
+
+.cellActions {
+  height: space(8);
+  width: 100%;
+  border-radius: radius('md');
+}
+
+.cellHidden {
+  @include respond-below('md') {
+    display: none;
+  }
+}
+
+.checkboxSkeleton {
+  height: space(4);
+  width: space(4);
+  border-radius: radius('sm');
+}

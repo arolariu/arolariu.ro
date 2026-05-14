@@ -11,6 +11,24 @@
       },
       "Certifications": {
         "certificates": {
+          "ab730": {
+            "code": "AB-730",
+            "coreSkills": "# AI Strategy # AI Adoption # Responsible AI # Business Value of AI # Identifying AI Use Cases",
+            "description": "Validates business-focused AI knowledge for professionals leading or influencing AI initiatives within their organization. Targeted at decision-makers, product owners and consultants who shape AI strategy rather than implement it.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+            "name": "Microsoft Certified: AI Business Professional"
+          },
+          "ab731": {
+            "code": "AB-731",
+            "coreSkills": "# Enterprise AI Transformation # AI Strategy # Change Management # AI Governance # Executive Leadership",
+            "description": "Validates the ability to lead enterprise-scale AI transformation initiatives — defining the strategy, driving organizational change, and establishing governance to operationalize AI across the business.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+            "name": "Microsoft Certified: AI Transformation Leader"
+          },
           "ai900": {
             "code": "AI-900",
             "coreSkills": "# Machine Learning # Computer Vision # Natural Language Processing # Conversational AI # Responsible AI",
@@ -28,6 +46,51 @@
             "issuerDate": "2023",
             "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
             "name": "Microsoft Certified: Azure Fundamentals"
+          },
+          "gh100": {
+            "code": "GH-100",
+            "coreSkills": "# Authentication # User & Team Management # Repository Policies # Enterprise Configuration # Security & Compliance",
+            "description": "Validates the skills required to administer GitHub Enterprise organizations — managing users, teams, repositories, policies, and integrations at scale.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+            "name": "GitHub Certified: Administration"
+          },
+          "gh200": {
+            "code": "GH-200",
+            "coreSkills": "# Workflow Authoring # Self-Hosted Runners # Workflow Security # Reusable Workflows # CI/CD Pipelines",
+            "description": "Validates expertise in authoring, configuring, and maintaining GitHub Actions workflows for build, test, and deployment automation across the entire software lifecycle.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+            "name": "GitHub Certified: Actions"
+          },
+          "gh300": {
+            "code": "GH-300",
+            "coreSkills": "# Copilot Plans & Features # Code Suggestions # Prompt Engineering # Responsible AI Use # Copilot Chat",
+            "description": "Validates the skills required to leverage GitHub Copilot effectively for AI-assisted software development — covering features, customization, prompt engineering, and responsible use.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+            "name": "GitHub Certified: Copilot"
+          },
+          "gh900": {
+            "code": "GH-900",
+            "coreSkills": "# GitHub Basics # Repositories # Collaboration # GitHub Products # Issues, Pull Requests & Workflows",
+            "description": "Validates foundational knowledge of GitHub — covering repositories, collaboration features, the GitHub product family, and core developer workflows.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+            "name": "GitHub Certified: Foundations"
+          },
+          "sc900": {
+            "code": "SC-900",
+            "coreSkills": "# Security Concepts # Identity Principles # Microsoft Entra # Compliance Solutions # Privacy & Information Protection",
+            "description": "Validates foundational knowledge of security, compliance, and identity concepts, alongside related Microsoft cloud-based solutions covering Entra, Defender, and Purview.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+            "name": "Microsoft Certified: Security, Compliance & Identity Fundamentals"
           }
         },
         "coreSkillsLabel": "Core Skills Demonstrated:",
@@ -133,34 +196,34 @@
           "title": "Embedded Engineer"
         },
         "microsoft1": {
-          "achievements": "# Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # Created troubleshooting guides for the Azure Virtual Desktop (AVD) solution. # Currently working with Fortune 500 clients and industry leading professionals. # Provided continuous feedback to the Product Group (PG) for Azure Virtual Desktop (AVD) regarding the implementation of certain features and services.",
+          "achievements": "# (Engineering Excellence) Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # (Proactive interactions) Provided continuous feedback to the Product Group for the Azure Virtual Desktop (AVD) product, regarding the implementation of specific features and services. # (Customer Experience) Developed the existing documentation about the features of Azure Core services such as Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Worked exclusively with TOP 100 & Fortune 500 clients and industry leading professionals.",
           "company": "Microsoft",
           "description": "With over 12,000 employees worldwide, the Microsoft Customer Experience & Success (CE&S) organization is responsible for the strategy, design, and implementation of the Microsoft end-to-end customer experience.",
-          "location": "Remote (EMEA)",
-          "period": "2021 - 2023",
-          "responsibilites": "#Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; #Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; #Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; #Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly. ",
+          "location": "Romania",
+          "period": "03/2021 – 03/2023",
+          "responsibilites": "# Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; # Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; # Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; # Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly.",
           "techAndSkills": "# Network Traffic Analysis # Azure # Customer-centric Approach # Business Relationships # Incident Manager",
-          "title": "Technical Support Engineer"
+          "title": "Azure Technical Engineer"
         },
         "microsoft2": {
-          "achievements": "# Orchestrated and implemented the three pillars of observability (3PO) in our microservices architecture using Open Telemetry standards; built automated monitoring and alerting triggers based on p95/p99 bucket statistics (metrics, spans, E2E flows). # Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX). # Took leadership of two key areas for DX: documentation & product adoption. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of micro-frontend UIs, PowerShell Cmdlets and OpenAPI spec files (Swagger / Postman).",
+          "achievements": "# (Observability-as-a-Service) Fully orchestrated and implemented the three pillars of observability in our microservices architecture using Open Telemetry standards; I've also built automated monitoring and alerting triggers based on p95/p99 statistics for real-time and synthetic traffic. # (Research & Development) Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX), using Domain-Driven Design (DDD) practices (e.g. aggregator roots) (patent in progress). # (Development Experience) Took leadership of two key areas for DX: documentation & consumption layers. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of frontend UIs, CLI tooling and OpenAPI spec files. # (Growth) Shadowed and attended hiring interviews for SWE II and Senior SWE positions.",
           "company": "Microsoft",
-          "description": "As governments today look at technology innovation, there is a need to address the rapidly evolving demands of their citizens while protecting the most sensitive data and delivering on promises of trust and security. Modernization of government services without compromising security, digitization of manual processes and improved user experiences for both citizens and government employees are all benefits of digital transformation, and the right technology platforms can create even better opportunities for social and economic growth.",
-          "location": "Remote (Romania)",
-          "period": "2023 - 2024",
-          "responsibilites": "# Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations.# Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
-          "techAndSkills": "# .NET # Azure # Microservices # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design #Test-Driven Development #Project Management",
-          "title": "Software Engineer"
+          "description": "As governments today look at technology innovation, there is a need to address the rapidly evolving demands of their citizens while protecting the most sensitive data and delivering on promises of trust and security.",
+          "location": "EMEA",
+          "period": "03/2023 – 12/2024",
+          "responsibilites": "# Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations. # Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
+          "techAndSkills": "# .NET # Azure # Microservices # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design # Test-Driven Development # Project Management",
+          "title": "E + D Sovereign Clouds Software Engineer II"
         },
         "microsoft3": {
           "achievements": " ",
           "company": "Microsoft",
-          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI FAST organization.",
+          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI (M365 AI Experiences) organization.",
           "location": "Remote (Norway)",
-          "period": "2024 - Present",
+          "period": "11/2024 - Present",
           "responsibilites": " ",
-          "techAndSkills": " # React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
-          "title": "Fullstack Software Engineer"
+          "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
+          "title": "E + D M365 AI Fullstack Software Engineer II"
         },
         "responsibilitiesLabel": "Responsibilities",
         "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
@@ -170,7 +233,7 @@
           "achievements": "#  I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
           "company": "Ubisoft",
           "description": "I've worked on the Avatar: Frontiers of Pandora™ first person, action-adventure game built using the latest iteration of the Snowdrop engine (C++) by Massive Entertainment - a UBISOFT studio, and tested by UBISOFT Romania.",
-          "location": "Hybrid - Bucharest, Romania",
+          "location": "Hybrid (Bucharest, Romania)",
           "period": "2020 - 2021",
           "responsibilites": "# Managed regression, integration and unit testing with software such as XRAY, TestRail, Bugzilla. # Create high quality test suites and test plans using Atlassian (JIRA / Confluence) products. # Assure communications are stable and clear between production and testing teams.",
           "techAndSkills": "# Unit Testing # Integration Testing # A/B Testing # Performance Testing # Automatic Testing # E2E Testing",
@@ -193,7 +256,7 @@
           "author": "Anonymous",
           "avatar": " ",
           "company": "Microsoft",
-          "position": "Senior Software Engineer",
+          "position": "Senior Software Engineering Manager",
           "quote": "Alex is an intelligent engineer whose capabilities shone brightly during our collaboration on our projects. He consistently demonstrates eagerness to assist the team with any request, showcasing his dedication to collective success. His proactive approach to problem-solving and dedication to system stability greatly benefit our team's workflow. Additionally, Alex's availability and willingness to support others during our release flow highlight his value as a colleague who prioritizes teamwork and collaboration."
         },
         "perspectiveFromXY": {
@@ -1143,7 +1206,7 @@
         }
       }
     },
-    "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under it&apos;s umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
+    "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under its umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
     "title": "Domain Space Services"
   },
   "Errors": {
@@ -2298,8 +2361,8 @@
       "buttons": {
         "cancel": "Cancel",
         "close": "Close",
-        "createMultiple": "Create {count} Invoices",
-        "createSingle": "Create Invoice"
+        "createMultiple": "Start analysis on {count} scans",
+        "createSingle": "Start analysis"
       },
       "chooseMode": "Choose Creation Mode",
       "complete": {
@@ -2331,7 +2394,7 @@
         "title": "Creating Your Invoice",
         "titlePlural": "Creating Your Invoices"
       },
-      "description": "Transform your scans into structured invoice data with AI-powered extraction.",
+      "description": "Transform your scans into structured invoice data.",
       "errors": {
         "createFailed": "Failed to create invoices: {message}",
         "partialFail": "Failed to create {count} invoice(s)",
@@ -2346,8 +2409,8 @@
         "description": "Our AI will analyze your scan and automatically extract merchant details, items, prices, and totals. You can review and edit the results afterward.",
         "title": "What happens next?"
       },
-      "title": "Create Invoice",
-      "titlePlural": "Create Invoices",
+      "title": "Start AI analysis",
+      "titlePlural": "Start AI analysis",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {
@@ -3547,11 +3610,11 @@
       "title": "Invoice Management System - Upload Scans"
     },
     "postUpload": {
-      "createInvoice": "Yes, create invoice",
+      "createInvoice": "Yes, start the analysis",
       "dismiss": "Dismiss",
-      "subtitle": "Do these scans represent a single purchase?",
+      "subtitle": "{count, plural, one {Does this scan represent a single purchase?} other {Do these scans represent a single purchase?}}",
       "title": "Upload Complete!",
-      "viewScans": "No, I'll combine later"
+      "viewScans": "No, analyze separately"
     },
     "preview": {
       "pagination": {
@@ -3632,6 +3695,7 @@
         "dropInactive": "Click or drag files to upload",
         "formats": "Supported formats: JPG, PNG, PDF (max 10MB each)",
         "note": "You can select multiple files.",
+        "pasteHint": "Tip: you can also paste an image from your clipboard (Ctrl+V).",
         "title": "Drag and drop your files here"
       },
       "tooltips": {
@@ -4190,7 +4254,7 @@
           "title": "Legal Requirements"
         },
         "personalDataRights": {
-          "content": "You have the right to access, correct, update or delete your Personal Data. You also have the right to object to the processing of your Personal Data, ask us to restrict the processing of your Personal Data or request portability of your Personal Data. You can exercise these rights by contacting us using the contact details provided under the &ldquo;Contact us&rdquo; section below. <br></br><br></br><br></br> Depending on your geographical location and citizenship, your rights are subject to local data privacy regulations. These rights may include: <ul> <li>   Right to be Forgotten (right to erasure) (GDPR Article 17, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD,   POPIA) </li> <li>Right to Access (PIPEDA, GDPR Article 15, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD, POPIA)</li> <li>Right to Rectification (PIPEDA, GDPR Article 16, CPRA, CPA, VCDPA, CTDPA, LGPD, POPIA)</li> <li>Nondiscrimination and nonretaliation (CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Restriction of Processing (GDPR Article 18, LGPD)</li> <li>Right to Opt Out (CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Portability (PIPEDA, GDPR Article 20, LGPD)</li> <li>Right to Objection (GDPR Article 21, LGPD, POPIA)</li> </ul> <br></br><br></br><br></br> If you want to file an appeal or complaint about how we process your Personal Data, you can contact us using the contact details provided under the &ldquo;Contact us&rdquo; section below. You also have the right to file a complaint with the data protection authority in your jurisdiction. <br></br> In the case that you did contact us and you are not satisfied with our response, you have the right to file an appeal with the attorney general located here: <ul> <li>   If you are based in the EEA, please visit https://edpb.europa.eu/about-edpb/about-edpb/members_en website for a list of local data protection authorities. </li> <li>   If you are based in Connecticut, please visit https://portal.ct.gov/AG/Common/Complaint-Form-Landing-page website to file a complaint. </li> <li> If you are based in Colorado, please visit https://complaints.coag.gov/s/contact-us website to file a complaint. </li> <li> If you are based in Virginia, please visit https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint website to file a complaint. </li></ul>",
+          "content": "You have the right to access, correct, update or delete your Personal Data. You also have the right to object to the processing of your Personal Data, ask us to restrict the processing of your Personal Data or request portability of your Personal Data. You can exercise these rights by contacting us using the contact details provided under the “Contact us” section below. <br></br><br></br><br></br> Depending on your geographical location and citizenship, your rights are subject to local data privacy regulations. These rights may include: <ul> <li>   Right to be Forgotten (right to erasure) (GDPR Article 17, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD,   POPIA) </li> <li>Right to Access (PIPEDA, GDPR Article 15, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD, POPIA)</li> <li>Right to Rectification (PIPEDA, GDPR Article 16, CPRA, CPA, VCDPA, CTDPA, LGPD, POPIA)</li> <li>Nondiscrimination and nonretaliation (CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Restriction of Processing (GDPR Article 18, LGPD)</li> <li>Right to Opt Out (CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Portability (PIPEDA, GDPR Article 20, LGPD)</li> <li>Right to Objection (GDPR Article 21, LGPD, POPIA)</li> </ul> <br></br><br></br><br></br> If you want to file an appeal or complaint about how we process your Personal Data, you can contact us using the contact details provided under the “Contact us” section below. You also have the right to file a complaint with the data protection authority in your jurisdiction. <br></br> In the case that you did contact us and you are not satisfied with our response, you have the right to file an appeal with the attorney general located here: <ul> <li>   If you are based in the EEA, please visit https://edpb.europa.eu/about-edpb/about-edpb/members_en website for a list of local data protection authorities. </li> <li>   If you are based in Connecticut, please visit https://portal.ct.gov/AG/Common/Complaint-Form-Landing-page website to file a complaint. </li> <li> If you are based in Colorado, please visit https://complaints.coag.gov/s/contact-us website to file a complaint. </li> <li> If you are based in Virginia, please visit https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint website to file a complaint. </li></ul>",
           "title": "Your Rights for Your Personal Data"
         },
         "policyChanges": {
@@ -4485,6 +4549,7 @@
           "previewText": "Sample Gradient Text",
           "primary": "Primary Color",
           "secondary": "Secondary Color",
+          "intermediary": "Intermediary Color",
           "title": "Custom Colors"
         },
         "description": "Customize the look and feel of your experience",
@@ -4508,6 +4573,7 @@
         "theme": {
           "dark": "Dark",
           "description": "Choose your preferred color scheme",
+          "hint": "Switch between light, dark, or your system preference",
           "light": "Light",
           "system": "System",
           "title": "Theme"

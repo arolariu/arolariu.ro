@@ -40,7 +40,7 @@
   height: abstracts.space(20);
   width: abstracts.space(20);
   border-radius: abstracts.radius('full');
-  @include abstracts.gradient-bg();
+  background-color: abstracts.color('primary');
 }
 
 .iconCircleIcon {
@@ -291,6 +291,7 @@
   from {
     opacity: 0.5;
   }
+
   to {
     opacity: 1;
   }

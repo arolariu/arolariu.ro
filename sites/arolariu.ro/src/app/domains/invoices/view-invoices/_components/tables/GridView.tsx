@@ -22,7 +22,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
-import Image from "next/image";
+import Link from "next/link";
 import {useCallback, useEffect} from "react";
 import {TbCalendar, TbEye, TbReceipt} from "react-icons/tb";
 import EmptyState from "../../../_components/EmptyState";
@@ -98,6 +98,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             className={styles["cardWrapper"]}>
             <div className={styles["checkboxOverlay"]}>
               <Checkbox
+                nativeButton
                 checked={selectedInvoices.includes(invoice)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
@@ -107,13 +108,17 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             </div>
             <Card className={styles["card"]}>
               <div className={styles["imageContainer"]}>
-                <Image
+                {/* Plain <img> with direct HTTP GET — bypasses next/image optimization
+                    so the request goes straight to the storage URL. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={invoice.scans[0]?.location || "/placeholder.svg"}
                   alt={invoice.name}
                   className={styles["cardImage"]}
                   width={400}
                   height={400}
-                  priority={index < 9}
+                  loading={index < 9 ? "eager" : "lazy"}
+                  decoding='async'
                 />
                 <div className={styles["imageActions"]}>
                   <TooltipProvider>
@@ -124,9 +129,15 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                           <Button
                             variant='ghost'
                             size='icon'
-                            className={styles["imageButton"]}>
-                            <TbEye className={styles["viewIcon"]} />
-                          </Button>
+                            className={styles["imageButton"]}
+                            render={
+                              <Link
+                                href={`/domains/invoices/view-invoice/${invoice.id}`}
+                                aria-label={t("tooltips.viewDetails")}>
+                                <TbEye className={styles["viewIcon"]} />
+                              </Link>
+                            }
+                          />
                         }
                       />
                       <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>

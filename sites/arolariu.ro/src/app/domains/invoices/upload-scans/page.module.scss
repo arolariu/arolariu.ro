@@ -6,6 +6,7 @@
 .page {
   min-height: 100vh;
   padding: space(12) space(4);
+  padding-bottom: space(80);
 
   @include respond-to('sm') {
     padding-inline: space(6);

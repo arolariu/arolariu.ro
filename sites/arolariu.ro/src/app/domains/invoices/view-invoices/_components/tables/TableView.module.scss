@@ -53,6 +53,13 @@
   font-size: font-size('xs');
   margin-left: space(1);
   display: inline-block;
+  // Reserve width for the arrow even when the column is not the active sort,
+  // so toggling between columns does not cause a horizontal layout shift.
+  min-width: 1ch;
+}
+
+.sortArrowInactive {
+  visibility: hidden;
 }
 
 .printHidden {

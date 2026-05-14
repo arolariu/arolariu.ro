@@ -20,7 +20,7 @@
 // ===========================================
 .cardWrapper {
   width: 100%;
-  max-width: 550px;
+  max-width: 640px;
 }
 
 .card {
@@ -118,15 +118,17 @@
 
   // Hide scrollbar but keep functionality
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
 }
 
 .thumbnail {
-  width: abstracts.space(20);
-  height: abstracts.space(20);
-  object-fit: cover;
+  width: abstracts.space(40);
+  height: abstracts.space(48);
+  object-fit: contain;
+  background-color: abstracts.color('muted');
   border-radius: abstracts.radius('md');
   border: 2px solid abstracts.color('border');
   @include abstracts.shadow('md');
@@ -141,12 +143,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: abstracts.space(20);
-  height: abstracts.space(20);
+  width: abstracts.space(40);
+  height: abstracts.space(48);
   border-radius: abstracts.radius('md');
   background-color: abstracts.color('muted');
   color: abstracts.color('muted-foreground');
-  font-size: abstracts.font-size('sm');
+  font-size: abstracts.font-size('lg');
   font-weight: abstracts.font-weight('semibold');
   border: 2px solid abstracts.color('border');
   @include abstracts.shadow('md');
@@ -215,12 +217,12 @@
   }
 
   .thumbnail {
-    width: abstracts.space(16);
-    height: abstracts.space(16);
+    width: abstracts.space(32);
+    height: abstracts.space(40);
   }
 
   .thumbnailMore {
-    width: abstracts.space(16);
-    height: abstracts.space(16);
+    width: abstracts.space(32);
+    height: abstracts.space(40);
   }
 }

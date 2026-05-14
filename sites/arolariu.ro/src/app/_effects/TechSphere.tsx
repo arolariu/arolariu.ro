@@ -31,15 +31,23 @@ export default function TechSphere(): React.JSX.Element {
       return;
     }
 
+    // Honor user's motion preference — render a single static frame and bail.
+    const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
     // Scene setup
     const scene = new Scene();
     const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
     camera.position.z = 5;
 
-    const renderer = new WebGLRenderer({antialias: true, alpha: true});
+    const renderer = new WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "low-power", // hint: this is a decorative widget
+    });
 
-    // Optional clarity on high-DPI screens
-    renderer.setPixelRatio(Math.min(2, globalThis.devicePixelRatio || 1));
+    // Cap pixel ratio aggressively. Rendering at native DPR=3 (some phones / 4K)
+    // quadruples fragment shader work for what is essentially eye-candy.
+    renderer.setPixelRatio(Math.min(1.5, globalThis.devicePixelRatio || 1));
 
     // Sphere
     const sphereGeometry = new IcosahedronGeometry(3, 3);
@@ -56,9 +64,9 @@ export default function TechSphere(): React.JSX.Element {
     const sphere = new Mesh(sphereGeometry, sphereMaterial);
     scene.add(sphere);
 
-    // Particles
+    // Particles — reduced from 1000 → 400 (perceptually identical, ~60% less vertex work).
     const particlesGeometry = new BufferGeometry();
-    const particlesCnt = 1000;
+    const particlesCnt = 400;
     const posArray = new Float32Array(particlesCnt * 3);
     for (let i = 0; i < particlesCnt * 3; i++) {
       // eslint-disable-next-line security/detect-object-injection -- safe access
@@ -90,20 +98,78 @@ export default function TechSphere(): React.JSX.Element {
     container.append(renderer.domElement);
     globalThis.addEventListener("resize", handleResize);
 
-    // Animation Loop (track id so we can cancel it)
+    // Visibility gating — only animate when (a) the canvas is on-screen,
+    // and (b) the document is visible. Otherwise scrolling away from the hero
+    // still pays for full-Hz WebGL frames.
+    let isInView = true;
+    let isDocumentVisible = !globalThis.document?.hidden;
     let rafId = 0;
-    const animate = () => {
-      rafId = requestAnimationFrame(animate);
+
+    const renderOnce = () => {
       sphere.rotation.y += 0.005;
       particlesMesh.rotation.y += 0.001;
       renderer.render(scene, camera);
     };
 
-    animate();
+    const animate = () => {
+      if (!isInView || !isDocumentVisible) {
+        rafId = 0;
+        return;
+      }
+      renderOnce();
+      rafId = requestAnimationFrame(animate);
+    };
+
+    const startLoop = () => {
+      if (rafId === 0 && isInView && isDocumentVisible && !reducedMotion) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    const stopLoop = () => {
+      if (rafId !== 0) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    };
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        isInView = entry.isIntersecting;
+        if (isInView) {
+          startLoop();
+        } else {
+          stopLoop();
+        }
+      },
+      {threshold: 0},
+    );
+    intersectionObserver.observe(container);
+
+    const handleVisibilityChange = () => {
+      isDocumentVisible = !globalThis.document.hidden;
+      if (isDocumentVisible) {
+        startLoop();
+      } else {
+        stopLoop();
+      }
+    };
+    globalThis.document?.addEventListener("visibilitychange", handleVisibilityChange);
+
+    if (reducedMotion) {
+      // Render a single frame so the user sees the sphere — but never animate.
+      renderOnce();
+    } else {
+      startLoop();
+    }
 
     // Cleanup
     return () => {
-      cancelAnimationFrame(rafId);
+      stopLoop();
+      intersectionObserver.disconnect();
+      globalThis.document?.removeEventListener("visibilitychange", handleVisibilityChange);
       globalThis.removeEventListener("resize", handleResize);
       if (container.contains(renderer.domElement)) {
         renderer.domElement.remove();

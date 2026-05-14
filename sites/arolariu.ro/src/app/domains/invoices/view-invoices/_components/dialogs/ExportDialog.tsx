@@ -159,6 +159,7 @@ export default function ExportDialog(): React.JSX.Element {
                 onValueChange={(format) => handleOptionsChange("format", format as InvoiceExportFormat)}>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='csv'
                     id='csv'
                   />
@@ -174,6 +175,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='json'
                     id='json'
                   />
@@ -189,6 +191,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
+                    nativeButton
                     value='pdf'
                     id='pdf'
                   />
@@ -213,6 +216,7 @@ export default function ExportDialog(): React.JSX.Element {
               <div className={styles["checkboxGroup"]}>
                 <div className={styles["radioRow"]}>
                   <Checkbox
+                    nativeButton
                     id='include-metadata'
                     checked={exportOptions.includeMetadata}
                     // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
@@ -222,6 +226,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <Checkbox
+                    nativeButton
                     id='include-items'
                     checked={exportOptions.includeProducts}
                     // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
@@ -231,6 +236,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <div className={styles["radioRow"]}>
                   <Checkbox
+                    nativeButton
                     id='include-merchant'
                     checked={exportOptions.includeMerchant}
                     // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
@@ -245,6 +251,7 @@ export default function ExportDialog(): React.JSX.Element {
                 <div className={styles["formatOptions"]}>
                   <div className={styles["radioRow"]}>
                     <Checkbox
+                      nativeButton
                       id='csv-include-headers'
                       checked={exportOptions.csvOptions?.includeHeaders ?? false}
                       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
@@ -279,6 +286,7 @@ export default function ExportDialog(): React.JSX.Element {
                 <div className={styles["formatOptions"]}>
                   <div className={styles["radioRow"]}>
                     <Checkbox
+                      nativeButton
                       id='json-pretty-print'
                       checked={exportOptions.jsonOptions?.prettyPrint ?? false}
                       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.

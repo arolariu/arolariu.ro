@@ -245,29 +245,31 @@ function UploadContent(): React.JSX.Element {
         <div className={styles["header"]}>
           <div className={styles["headerLeft"]}>
             <div>
-              <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
+              <div className={styles["titleRow"]}>
+                <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className={styles["infoButton"]}>
+                          <TbInfoCircle className={styles["infoIcon"]} />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent
+                      side='right'
+                      className={styles["tooltipContent"]}>
+                      <p>{t("header.tooltip")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className={styles["headerDescription"]}>{t("header.description")}</p>
             </div>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={styles["infoButton"]}>
-                    <TbInfoCircle className={styles["infoIcon"]} />
-                  </Button>
-                }
-              />
-              <TooltipContent
-                side='right'
-                className={styles["tooltipContent"]}>
-                <p>{t("header.tooltip")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
 
           <div className={styles["headerActions"]}>
             <TooltipProvider>

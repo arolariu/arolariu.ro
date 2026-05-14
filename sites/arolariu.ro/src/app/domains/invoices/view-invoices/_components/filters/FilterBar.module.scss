@@ -63,8 +63,13 @@
 }
 
 .searchInput {
-  padding-left: space(9);
-  width: 100%;
+
+  // Higher specificity (&&) needed to override @arolariu/components `.input` padding shorthand
+  // which loads later in the cascade and otherwise wipes out our left padding.
+  &.searchInput {
+    padding: space(1) space(3) space(1) space(9);
+    width: 100%;
+  }
 }
 
 // ===========================================
@@ -181,6 +186,39 @@
 .filterSheet {
   display: flex;
   flex-direction: column;
+}
+
+// ===========================================
+// INLINE FILTER PANEL (DESKTOP)
+// Replaces the popover; opens in-flow below the search bar.
+// ===========================================
+.inlineFilterPanel {
+  margin-top: space(3);
+  padding: space(4);
+  background-color: color('card');
+  border: 1px solid color('border');
+  border-radius: space(2);
+}
+
+.inlineFilterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(4);
+  padding-bottom: space(3);
+  border-bottom: 1px solid color('border');
+}
+
+.inlineFilterTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: color('foreground');
+}
+
+.inlineFilterActions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
 }
 
 .popoverHeader,

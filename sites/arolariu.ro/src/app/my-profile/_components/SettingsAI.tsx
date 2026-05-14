@@ -250,6 +250,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t("features.autoSuggestHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.autoSuggestEnabled}
                   onCheckedChange={handleToggle("autoSuggestEnabled")}
                 />
@@ -261,6 +262,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t("features.contextAwarenessHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.contextAwareness}
                   onCheckedChange={handleToggle("contextAwareness")}
                 />
@@ -272,6 +274,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t("features.memoryHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.memoryEnabled}
                   onCheckedChange={handleToggle("memoryEnabled")}
                 />
@@ -300,6 +303,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <p>{t("voice.enabledHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.voiceEnabled}
                   onCheckedChange={handleToggle("voiceEnabled")}
                 />

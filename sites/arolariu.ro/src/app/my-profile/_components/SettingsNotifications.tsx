@@ -94,6 +94,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("email.enabledHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.emailEnabled}
                   onCheckedChange={handleToggle("emailEnabled")}
                 />
@@ -140,6 +141,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("reports.weeklyDigestHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.weeklyDigest}
                   onCheckedChange={handleToggle("weeklyDigest")}
                   disabled={!settings.emailEnabled}
@@ -152,6 +154,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("reports.monthlyReportHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.monthlyReport}
                   onCheckedChange={handleToggle("monthlyReport")}
                   disabled={!settings.emailEnabled}
@@ -181,6 +184,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("financial.spendingAlertsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.spendingAlerts}
                   onCheckedChange={handleToggle("spendingAlerts")}
                   disabled={!settings.emailEnabled}
@@ -193,6 +197,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("financial.budgetAlertsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.budgetAlerts}
                   onCheckedChange={handleToggle("budgetAlerts")}
                   disabled={!settings.emailEnabled}
@@ -222,6 +227,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("updates.newFeaturesHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.newFeatures}
                   onCheckedChange={handleToggle("newFeatures")}
                   disabled={!settings.emailEnabled}
@@ -234,6 +240,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("updates.marketingHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.marketingEmails}
                   onCheckedChange={handleToggle("marketingEmails")}
                   disabled={!settings.emailEnabled}
@@ -263,6 +270,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
                   <p>{t("security.securityAlertsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.securityAlerts}
                   onCheckedChange={handleToggle("securityAlerts")}
                 />

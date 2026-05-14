@@ -91,6 +91,7 @@
 }
 
 .serviceCard {
+  width: 20rem;
   max-width: 20rem;
   margin-bottom: space(6);
   padding: space(4);
@@ -114,6 +115,7 @@
 
 .imageContainer {
   height: 16rem;
+  width: 100%;
   overflow: hidden;
   border-radius: radius('lg');
 }

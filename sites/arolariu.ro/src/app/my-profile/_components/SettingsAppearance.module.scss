@@ -5,12 +5,49 @@
 @use '../../../styles/abstracts' as *;
 @use 'settings-shared' as settings;
 
-.section { @include settings.settings-section; }
-.header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
-.fullWidthCard { @include settings.settings-card-full; }
-.toggleRow     { @include settings.settings-toggle-row; }
-.toggleLabel   { @include settings.settings-toggle-label; }
+.section {
+  @include settings.settings-section;
+}
+
+.header {
+  @include settings.settings-header;
+}
+
+.grid {
+  @include settings.settings-grid;
+
+  // Stretch immediate grid children (motion.div wrappers) and the Card inside
+  // so cards in the same row share the tallest sibling's height.
+  > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    > [class*='card-'] {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      > [class*='content-'] {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+}
+
+.fullWidthCard {
+  @include settings.settings-card-full;
+}
+
+.toggleRow {
+  @include settings.settings-toggle-row;
+}
+
+.toggleLabel {
+  @include settings.settings-toggle-label;
+}
 
 // ===========================================
 // THEME & FONT BUTTONS
@@ -25,9 +62,10 @@
   gap: space(2);
 }
 
-.fontHint {
+.cardHint {
   font-size: font-size('xs');
   color: color('muted-foreground');
+  text-align: center;
 }
 
 // ===========================================
@@ -100,7 +138,7 @@
   gap: space(4);
 
   @include respond-to('sm') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -133,6 +171,72 @@
 }
 
 // ===========================================
+// CUSTOM COLOR PICKER (full color swatches)
+// ===========================================
+.customColorField {
+  @include flex-column;
+  gap: space(2);
+}
+
+.customColorSwatch {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 5rem;
+  border: 2px solid color('border');
+  border-radius: radius('lg');
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: shadow('sm');
+  transition: transition('all');
+
+  &:hover {
+    border-color: color('primary');
+    box-shadow: shadow('md');
+  }
+
+  &:focus-within {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+}
+
+.customColorInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+
+  &::-webkit-color-swatch {
+    border: 0;
+  }
+}
+
+.customColorHex {
+  position: absolute;
+  bottom: space(2);
+  left: space(2);
+  padding: space(1) space(2);
+  background-color: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  border-radius: radius('md');
+  font-family: monospace;
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  letter-spacing: 0.025em;
+  pointer-events: none;
+}
+
+// ===========================================
 // GRADIENT PREVIEW
 // ===========================================
 .gradientPreview {
@@ -158,13 +262,104 @@
 // ===========================================
 // LIBRARY COMPONENT CLASSES
 // ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.sliderCursor { @include settings.settings-slider-cursor; }
-.buttonFullCursor { @include settings.settings-button-full-cursor; }
-.iconSm { @include settings.settings-icon-sm; }
+.cardHeaderPb {
+  @include settings.settings-card-header-flex;
+}
+
+.cardTitleBase {
+  @include settings.settings-card-title-base;
+}
+
+.cardContentSpaced {
+  @include settings.settings-card-content-spaced;
+}
+
+.selectCursor {
+  @include settings.settings-select-cursor;
+}
+
+// ===========================================
+// LOCALE LIST (row-based language selector)
+// ===========================================
+.localeList {
+  @include flex-column;
+  gap: space(2);
+}
+
+.localeRow {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  width: 100%;
+  padding: space(3);
+  border: 2px solid color('border');
+  border-radius: radius('lg');
+  background: transparent;
+  color: color('foreground');
+  cursor: pointer;
+  text-align: left;
+  @include transition((border-color, background-color, box-shadow, transform));
+
+  &:hover {
+    @include shadow('sm');
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+
+  &[data-selected='true'] {
+    border-color: color('primary');
+    background-color: color('accent');
+    @include shadow('sm');
+  }
+}
+
+.localeCode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: space(1) space(2);
+  border-radius: radius('md');
+  background-color: color('muted');
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  letter-spacing: 0.05em;
+
+  .localeRow[data-selected='true'] & {
+    background-color: color('primary');
+    color: color('primary-foreground');
+  }
+}
+
+.localeLabel {
+  flex: 1;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.localeCheck {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: color('primary');
+  flex-shrink: 0;
+}
+
+.sliderCursor {
+  @include settings.settings-slider-cursor;
+}
+
+.buttonFullCursor {
+  @include settings.settings-button-full-cursor;
+}
+
+.iconSm {
+  @include settings.settings-icon-sm;
+}
 
 // ===========================================
 // THEME & FONT BUTTON UTILITIES

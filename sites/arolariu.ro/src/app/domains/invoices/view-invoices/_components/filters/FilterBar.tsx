@@ -280,6 +280,7 @@ export default function FilterBar({
               key={paymentType.value}
               className={styles["checkboxItem"]}>
               <Checkbox
+                nativeButton
                 id={`payment-${paymentType.value}`}
                 checked={filters.paymentTypes.includes(paymentType.value)}
                 onCheckedChange={() => handlePaymentTypeToggle(paymentType.value)}
@@ -457,44 +458,23 @@ export default function FilterBar({
             </SheetContent>
           </Sheet>
         ) : (
-          <Popover
-            open={isFilterOpen}
-            onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className={styles["filterButton"]}>
-                  <TbFilter className={styles["filterIcon"]} />
-                  {t("filters.button")}
-                  {activeFilterCount > 0 && (
-                    <Badge
-                      variant='default'
-                      className={styles["filterBadge"]}>
-                      {activeFilterCount}
-                    </Badge>
-                  )}
-                </Button>
-              }
-            />
-            <PopoverContent className={styles["filterPopover"]}>
-              <div className={styles["popoverHeader"]}>
-                <h4 className={styles["popoverTitle"]}>{t("filters.title")}</h4>
-                {activeFilterCount > 0 && (
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={handleClearFilters}
-                    className={styles["clearButton"]}>
-                    <TbX className={styles["clearIcon"]} />
-                    {t("filters.clear")}
-                  </Button>
-                )}
-              </div>
-              {renderFilterPanel()}
-            </PopoverContent>
-          </Popover>
+          <Button
+            variant='outline'
+            size='sm'
+            className={styles["filterButton"]}
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            aria-expanded={isFilterOpen}
+            aria-controls='inline-filter-panel'>
+            <TbFilter className={styles["filterIcon"]} />
+            {t("filters.button")}
+            {activeFilterCount > 0 && (
+              <Badge
+                variant='default'
+                className={styles["filterBadge"]}>
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
         )}
 
         {/* Clear Filters Button (when filters active) */}
@@ -545,6 +525,38 @@ export default function FilterBar({
           </TooltipProvider>
         </div>
       </div>
+
+      {/* Inline filter panel (desktop only) — collapses below the search bar */}
+      {!isMobile && isFilterOpen && (
+        <div
+          id='inline-filter-panel'
+          className={styles["inlineFilterPanel"]}>
+          <div className={styles["inlineFilterHeader"]}>
+            <h4 className={styles["inlineFilterTitle"]}>{t("filters.title")}</h4>
+            <div className={styles["inlineFilterActions"]}>
+              {activeFilterCount > 0 && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={handleClearFilters}
+                  className={styles["clearButton"]}>
+                  <TbX className={styles["clearIcon"]} />
+                  {t("filters.clear")}
+                </Button>
+              )}
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => setIsFilterOpen(false)}
+                aria-label={t("filters.title")}
+                className={styles["clearButton"]}>
+                <TbX className={styles["clearIcon"]} />
+              </Button>
+            </div>
+          </div>
+          {renderFilterPanel()}
+        </div>
+      )}
 
       {/* Active filter count indicator */}
       {activeFilterCount > 0 && (

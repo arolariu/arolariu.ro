@@ -11,6 +11,24 @@
       },
       "Certifications": {
         "certificates": {
+          "ab730": {
+            "code": "AB-730",
+            "coreSkills": "# Stratégie IA # Adoption de l'IA # IA responsable # Valeur métier de l'IA # Identification des cas d'usage IA",
+            "description": "Valide les connaissances orientées métier en IA pour les professionnels qui dirigent ou influencent les initiatives IA au sein de leur organisation. Destinée aux décideurs, product owners et consultants qui définissent la stratégie IA plutôt que sa mise en œuvre.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+            "name": "Microsoft Certified: AI Business Professional"
+          },
+          "ab731": {
+            "code": "AB-731",
+            "coreSkills": "# Transformation IA d'entreprise # Stratégie IA # Conduite du changement # Gouvernance IA # Leadership exécutif",
+            "description": "Valide la capacité à diriger des initiatives de transformation IA à l'échelle de l'entreprise — définition de la stratégie, conduite du changement organisationnel et mise en place de la gouvernance pour opérationnaliser l'IA dans toute l'organisation.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+            "name": "Microsoft Certified: AI Transformation Leader"
+          },
           "ai900": {
             "code": "AI-900",
             "coreSkills": "# Machine Learning # Vision par ordinateur # Traitement du langage naturel # IA conversationnelle # IA responsable",
@@ -28,6 +46,51 @@
             "issuerDate": "2023",
             "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
             "name": "Microsoft Certified: Azure Fundamentals"
+          },
+          "gh100": {
+            "code": "GH-100",
+            "coreSkills": "# Authentification # Gestion des utilisateurs et équipes # Politiques de référentiel # Configuration Enterprise # Sécurité et conformité",
+            "description": "Valide les compétences nécessaires pour administrer les organisations GitHub Enterprise — gestion des utilisateurs, équipes, dépôts, politiques et intégrations à grande échelle.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+            "name": "GitHub Certified: Administration"
+          },
+          "gh200": {
+            "code": "GH-200",
+            "coreSkills": "# Création de workflows # Runners auto-hébergés # Sécurité des workflows # Workflows réutilisables # Pipelines CI/CD",
+            "description": "Valide l'expertise dans la création, la configuration et la maintenance des workflows GitHub Actions pour l'automatisation du build, des tests et du déploiement tout au long du cycle de vie logiciel.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+            "name": "GitHub Certified: Actions"
+          },
+          "gh300": {
+            "code": "GH-300",
+            "coreSkills": "# Plans et fonctionnalités Copilot # Suggestions de code # Prompt engineering # Utilisation responsable de l'IA # Copilot Chat",
+            "description": "Valide les compétences nécessaires pour exploiter efficacement GitHub Copilot dans le développement logiciel assisté par IA — couvrant les fonctionnalités, la personnalisation, le prompt engineering et l'utilisation responsable.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+            "name": "GitHub Certified: Copilot"
+          },
+          "gh900": {
+            "code": "GH-900",
+            "coreSkills": "# Bases de GitHub # Dépôts # Collaboration # Produits GitHub # Issues, pull requests et workflows",
+            "description": "Valide les connaissances fondamentales sur GitHub — couvrant les dépôts, les fonctionnalités de collaboration, la famille de produits GitHub et les workflows essentiels du développeur.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+            "name": "GitHub Certified: Foundations"
+          },
+          "sc900": {
+            "code": "SC-900",
+            "coreSkills": "# Concepts de sécurité # Principes d'identité # Microsoft Entra # Solutions de conformité # Confidentialité et protection des informations",
+            "description": "Valide les connaissances fondamentales en matière de sécurité, conformité et identité, ainsi que les solutions Microsoft cloud associées — Entra, Defender et Purview.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+            "name": "Microsoft Certified: Security, Compliance & Identity Fundamentals"
           }
         },
         "coreSkillsLabel": "Compétences clés démontrées :",
@@ -133,34 +196,34 @@
           "title": "Ingénieur Systèmes Embarqués"
         },
         "microsoft1": {
-          "achievements": "# Me suis constamment poussé pour obtenir les meilleurs retours clients. (Score actuel : 4,94 / 5,00) # Création de guides de dépannage pour la solution Azure Virtual Desktop (AVD). # Travail actuel avec des clients Fortune 500 et des professionnels leaders du secteur. # Fourniture de retours continus au groupe produit (PG) pour Azure Virtual Desktop (AVD) concernant l'implémentation de certaines fonctionnalités et services.",
+          "achievements": "# (Excellence en Ingénierie) Je me suis constamment poussé pour obtenir les meilleurs retours clients. (Score actuel : 4,94 / 5,00) # (Interactions Proactives) Fourniture de retours continus au Product Group concernant le produit Azure Virtual Desktop (AVD), au sujet de l'implémentation de fonctionnalités et services spécifiques. # (Expérience Client) Développement de la documentation existante sur les fonctionnalités des services Azure Core tels qu'Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Travail exclusif avec des clients TOP 100 et Fortune 500 et des professionnels leaders du secteur.",
           "company": "Microsoft",
           "description": "Avec plus de 12 000 employés dans le monde, l'organisation Microsoft Customer Experience & Success (CE&S) est responsable de la stratégie, de la conception et de la mise en œuvre de l'expérience client de bout en bout de Microsoft.",
-          "location": "Télétravail (EMEA)",
-          "period": "2021 - 2023",
-          "responsibilites": "#Fournir le partage de connaissances, le coaching technique et le mentorat aux collègues ; #Résolution de problèmes par un dépannage approfondi, débogage, analyse de logs, tests A/B ; #Identifier et répondre aux problèmes critiques des clients spécifiques aux services Azure tels qu'Azure Virtual Desktop ; #Travailler exclusivement avec des clients Fortune 500 pour comprendre leurs besoins techniques et définir un plan d'action pour y répondre, en collaborant régulièrement avec des pairs ou d'autres équipes.",
+          "location": "Roumanie",
+          "period": "03/2021 – 03/2023",
+          "responsibilites": "# Fournir le partage de connaissances, le coaching technique et le mentorat aux collègues ; # Résolution de problèmes par un dépannage approfondi, débogage, analyse de logs, tests A/B ; # Identifier et répondre aux problèmes critiques des clients spécifiques aux services Azure tels qu'Azure Virtual Desktop ; # Travailler exclusivement avec des clients Fortune 500 pour comprendre leurs besoins techniques et définir un plan d'action pour y répondre, en collaborant régulièrement avec des pairs ou d'autres équipes.",
           "techAndSkills": "# Analyse du trafic réseau # Azure # Approche centrée client # Relations commerciales # Gestionnaire d'incidents",
-          "title": "Ingénieur Support Technique"
+          "title": "Ingénieur Technique Azure"
         },
         "microsoft2": {
-          "achievements": "# Orchestration et implémentation des trois piliers de l'observabilité (3PO) dans notre architecture microservices utilisant les standards Open Telemetry ; création de déclencheurs de surveillance et d'alerte automatisés basés sur les statistiques p95/p99 (métriques, spans, flux E2E). # Contributions majeures au développement d'une bibliothèque .NET interne implémentant le protocole de consommation de données ODataV4 pour les moteurs de bases de données NoSQL tels qu'Azure Data Explorer (ADX). # Prise de leadership sur deux domaines clés pour la DX : documentation et adoption produit. Construction d'une documentation exceptionnelle et utilisation d'outils de génération de sites statiques (DocFX) pour générer automatiquement la documentation API à partir du code ; offre de couches de consommation API sous forme de micro-frontends, Cmdlets PowerShell et fichiers de spécification OpenAPI (Swagger / Postman).",
+          "achievements": "# (Observabilité-as-a-Service) Orchestration et implémentation complète des trois piliers de l'observabilité dans notre architecture microservices utilisant les standards Open Telemetry ; j'ai également construit des déclencheurs automatisés de surveillance et d'alerte basés sur les statistiques p95/p99 pour le trafic réel et synthétique. # (Recherche & Développement) Contributions majeures au développement d'une bibliothèque .NET interne implémentant le protocole de consommation de données ODataV4 pour les moteurs de bases de données NoSQL tels qu'Azure Data Explorer (ADX), en utilisant les pratiques Domain-Driven Design (DDD) (par ex. aggregator roots) (brevet en cours). # (Expérience de Développement) Prise de leadership sur deux domaines clés pour la DX : documentation et couches de consommation. Construction d'une documentation exceptionnelle et utilisation d'outils de génération de sites statiques (DocFX) pour générer automatiquement la documentation API à partir du code ; offre de couches de consommation API sous forme d'UI frontend, outillage CLI et fichiers de spécification OpenAPI. # (Croissance) J'ai assisté et participé à des entretiens d'embauche pour les postes SWE II et Senior SWE.",
           "company": "Microsoft",
-          "description": "Alors que les gouvernements d'aujourd'hui envisagent l'innovation technologique, il est nécessaire de répondre aux demandes en rapide évolution de leurs citoyens tout en protégeant les données les plus sensibles et en tenant les promesses de confiance et de sécurité. La modernisation des services gouvernementaux sans compromettre la sécurité, la numérisation des processus manuels et l'amélioration des expériences utilisateur pour les citoyens et les employés gouvernementaux sont tous des avantages de la transformation numérique, et les bonnes plateformes technologiques peuvent créer encore plus d'opportunités de croissance sociale et économique.",
-          "location": "Télétravail (Roumanie)",
-          "period": "2023 - 2024",
+          "description": "Alors que les gouvernements d'aujourd'hui envisagent l'innovation technologique, il est nécessaire de répondre aux demandes en rapide évolution de leurs citoyens tout en protégeant les données les plus sensibles et en tenant les promesses de confiance et de sécurité.",
+          "location": "EMEA",
+          "period": "03/2023 – 12/2024",
           "responsibilites": "# Livrer une plateforme de données E+C capable de fonctionner multi-cloud et multi-tenant dans des environnements souverains et des scénarios air-gap. # Gérer et assurer le bon fonctionnement des opérations de la plateforme de données Runtime in Sovereign Environments (RISE). # Construire une architecture d'entreprise data mesh innovante utilisant des concepts d'ingénierie de données, des outils comme Azure Data Factory et d'autres notions d'entrepôt de données.",
-          "techAndSkills": "# .NET # Azure # Microservices # Applications Cloud-Native # Méthodologies Agiles # DevOps # Domain-Driven Design #Test-Driven Development #Gestion de Projet",
-          "title": "Ingénieur Logiciel"
+          "techAndSkills": "# .NET # Azure # Microservices # Applications Cloud-Native # Méthodologies Agiles # DevOps # Domain-Driven Design # Test-Driven Development # Gestion de Projet",
+          "title": "E + D Ingénieur Logiciel II - Clouds Souverains"
         },
         "microsoft3": {
           "achievements": " ",
           "company": "Microsoft",
-          "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI FAST.",
+          "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI (M365 AI Experiences).",
           "location": "Télétravail (Norvège)",
-          "period": "2024 - Présent",
+          "period": "11/2024 - Présent",
           "responsibilites": " ",
-          "techAndSkills": " # React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
-          "title": "Ingénieur Logiciel Fullstack"
+          "techAndSkills": "# React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
+          "title": "E + D Ingénieur Logiciel Fullstack II - M365 AI"
         },
         "responsibilitiesLabel": "Responsabilités",
         "subtitle": "Un parcours à travers la carrière professionnelle d'Alexandru et les entreprises avec lesquelles il a travaillé.",
@@ -170,7 +233,7 @@
           "achievements": "# J'ai constamment dépassé le quota de bugs, glitches et artefacts signalés, me classant n°1 des rapporteurs pendant 5 mois solides sur les 6 travaillés. # Découverte et signalement de défauts de code majeurs allant des conditions de concurrence aux défauts d'allocation de ressources mémoire. # Augmentation de l'efficacité des rapports quotidiens en exploitant les capacités de filtrage SQL et JQL.",
           "company": "Ubisoft",
           "description": "J'ai travaillé sur Avatar: Frontiers of Pandora™, un jeu d'action-aventure à la première personne construit avec la dernière version du moteur Snowdrop (C++) par Massive Entertainment - un studio UBISOFT, et testé par UBISOFT Roumanie.",
-          "location": "Hybride - Bucarest, Roumanie",
+          "location": "Hybride (Bucarest, Roumanie)",
           "period": "2020 - 2021",
           "responsibilites": "# Gestion des tests de régression, d'intégration et unitaires avec des logiciels tels que XRAY, TestRail, Bugzilla. # Création de suites de tests et de plans de tests de haute qualité utilisant les produits Atlassian (JIRA / Confluence). # Assurer des communications stables et claires entre les équipes de production et de test.",
           "techAndSkills": "# Tests Unitaires # Tests d'Intégration # Tests A/B # Tests de Performance # Tests Automatiques # Tests E2E",
@@ -193,7 +256,7 @@
           "author": "Anonyme",
           "avatar": " ",
           "company": "Microsoft",
-          "position": "Ingénieur Logiciel Senior",
+          "position": "Senior Software Engineering Manager",
           "quote": "Alex est un ingénieur intelligent dont les capacités ont brillé durant notre collaboration sur nos projets. Il démontre constamment son empressement à aider l'équipe avec toute demande, montrant son dévouement au succès collectif. Son approche proactive de la résolution de problèmes et son dévouement à la stabilité du système bénéficient grandement au flux de travail de notre équipe. De plus, la disponibilité d'Alex et sa volonté de soutenir les autres pendant notre flux de release soulignent sa valeur en tant que collègue qui priorise le travail d'équipe et la collaboration."
         },
         "perspectiveFromXY": {
@@ -2298,8 +2361,8 @@
       "buttons": {
         "cancel": "Annuler",
         "close": "Fermer",
-        "createMultiple": "Créer {count} Factures",
-        "createSingle": "Créer une Facture"
+        "createMultiple": "Lancer l'analyse sur {count} scans",
+        "createSingle": "Lancer l'analyse"
       },
       "chooseMode": "Choisir le Mode de Création",
       "complete": {
@@ -2331,7 +2394,7 @@
         "title": "Création de Votre Facture",
         "titlePlural": "Création de Vos Factures"
       },
-      "description": "Transformez vos scans en données de facture structurées grâce à l'extraction alimentée par l'IA.",
+      "description": "Transformez vos scans en données de facture structurées.",
       "errors": {
         "createFailed": "Échec de la création des factures : {message}",
         "partialFail": "Échec de la création de {count} facture(s)",
@@ -2346,8 +2409,8 @@
         "description": "Notre IA analysera votre scan et extraira automatiquement les détails du commerçant, les articles, les prix et les totaux. Vous pourrez examiner et modifier les résultats par la suite.",
         "title": "Que se passe-t-il ensuite ?"
       },
-      "title": "Créer une Facture",
-      "titlePlural": "Créer des Factures",
+      "title": "Lancer l'analyse IA",
+      "titlePlural": "Lancer l'analyse IA",
       "totalSize": "total"
     },
     "deleteInvoiceDialog": {
@@ -3547,11 +3610,11 @@
       "title": "Système de Gestion des Factures - Télécharger des Scans"
     },
     "postUpload": {
-      "createInvoice": "Oui, créer une facture",
+      "createInvoice": "Oui, lancer l'analyse",
       "dismiss": "Fermer",
-      "subtitle": "Ces numérisations représentent-elles un seul achat ?",
-      "title": "Téléchargement terminé !",
-      "viewScans": "Non, je les combinerai plus tard"
+      "subtitle": "{count, plural, one {Cette numérisation représente-t-elle un seul achat ?} other {Ces numérisations représentent-elles un seul achat ?}}",
+      "title": "Téléchargement terminé !",
+      "viewScans": "Non, analyser séparément"
     },
     "preview": {
       "pagination": {
@@ -3632,6 +3695,7 @@
         "dropInactive": "Cliquez ou glissez des fichiers pour les téléverser",
         "formats": "Formats pris en charge : JPG, PNG, PDF (10 Mo max chacun)",
         "note": "Vous pouvez sélectionner plusieurs fichiers.",
+        "pasteHint": "Astuce : vous pouvez aussi coller une image depuis le presse-papiers (Ctrl+V).",
         "title": "Glissez-déposez vos fichiers ici"
       },
       "tooltips": {
@@ -4485,6 +4549,7 @@
           "previewText": "Exemple de Texte en Dégradé",
           "primary": "Couleur Principale",
           "secondary": "Couleur Secondaire",
+          "intermediary": "Couleur Intermédiaire",
           "title": "Couleurs Personnalisées"
         },
         "description": "Personnalisez l'apparence de votre expérience",
@@ -4508,6 +4573,7 @@
         "theme": {
           "dark": "Sombre",
           "description": "Choisissez votre palette de couleurs préférée",
+          "hint": "Basculez entre clair, sombre ou la préférence de votre système",
           "light": "Clair",
           "system": "Système",
           "title": "Thème"

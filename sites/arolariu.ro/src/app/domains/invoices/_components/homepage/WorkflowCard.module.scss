@@ -37,24 +37,25 @@
   height: 3rem;
   width: 3rem;
   border-radius: abstracts.radius('xl');
-  @include abstracts.gradient-bg(to bottom right);
-  color: abstracts.color('primary-foreground');
+  background-color: abstracts.color-alpha('secondary', 0.1);
+  color: abstracts.color('secondary');
   @include abstracts.shadow('md');
 }
 
 .workflowIcon {
   @include abstracts.icon-size(1.5rem);
-  color: abstracts.color('primary-foreground');
+  color: abstracts.color('secondary');
 }
 
 .stepButton {
   width: 100%;
-  @include abstracts.gradient-bg();
+  background-color: abstracts.color('primary');
   color: abstracts.color('primary-foreground');
   @include abstracts.transition(transform);
 
   &:hover {
     transform: scale(1.02);
+    background-color: abstracts.color-alpha('primary', 0.9);
   }
 }
 
@@ -87,4 +88,3 @@
 .cardContentCompact {
   padding-top: abstracts.space(2);
 }
-

@@ -143,10 +143,23 @@ export function useUserInformation(): HookReturnType {
         const userInformationAsJson = await userInformationResponse.json();
         setUserInformation(userInformationAsJson as UserInformation);
       } catch (error: unknown) {
+        // In development, React StrictMode double-invokes effects, which causes
+        // the first in-flight request to be aborted by the cleanup function.
+        // These aborts are expected and not actionable, so we silence them to
+        // avoid noisy dev-console errors. In production, we keep the original
+        // behavior so genuine aborts still surface as errors.
+        const isAbort = signal.aborted || (error instanceof DOMException && error.name === "AbortError");
+        if (isAbort && process.env.NODE_ENV === "development") {
+          return;
+        }
+
         console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
         setIsError(true);
       } finally {
-        setIsLoading(false);
+        const shouldSkipLoadingReset = process.env.NODE_ENV === "development" && signal.aborted;
+        if (!shouldSkipLoadingReset) {
+          setIsLoading(false);
+        }
       }
     };
 

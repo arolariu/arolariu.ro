@@ -91,6 +91,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   <p>{t("twoFactor.enabledHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.twoFactorEnabled}
                   onCheckedChange={handleToggle("twoFactorEnabled")}
                 />
@@ -145,6 +146,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   <p>{t("session.loginNotificationsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.loginNotifications}
                   onCheckedChange={handleToggle("loginNotifications")}
                 />

@@ -170,6 +170,8 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     render={
                       <Button
                         type='button'
+                        variant='ghost'
+                        size='icon'
                         className={styles["infoButton"]}
                         aria-label={t("aria.moreInfo", {title: eventTitle})}>
                         <TbInfoCircle className={styles["infoIcon"]} />

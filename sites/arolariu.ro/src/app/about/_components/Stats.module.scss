@@ -104,24 +104,15 @@
 .icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
-// Gradient variants
-.gradientBlue {
-  @include abstracts.gradient-bg();
-}
-
-.gradientPurple {
-  @include abstracts.gradient-bg();
-}
-
-.gradientAmber {
-  @include abstracts.gradient-bg();
-}
-
+// Subtle tinted icon backgrounds (formerly gradient variants)
+.gradientBlue,
+.gradientPurple,
+.gradientAmber,
 .gradientGreen {
-  @include abstracts.gradient-bg();
+  background-color: abstracts.color-alpha('primary', 0.1);
 }
 
 // Stat value with gradient text
