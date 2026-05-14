@@ -196,34 +196,34 @@
           "title": "Ingénieur Systèmes Embarqués"
         },
         "microsoft1": {
-          "achievements": "# Me suis constamment poussé pour obtenir les meilleurs retours clients. (Score actuel : 4,94 / 5,00) # Création de guides de dépannage pour la solution Azure Virtual Desktop (AVD). # Travail actuel avec des clients Fortune 500 et des professionnels leaders du secteur. # Fourniture de retours continus au groupe produit (PG) pour Azure Virtual Desktop (AVD) concernant l'implémentation de certaines fonctionnalités et services.",
+          "achievements": "# (Excellence en Ingénierie) Je me suis constamment poussé pour obtenir les meilleurs retours clients. (Score actuel : 4,94 / 5,00) # (Interactions Proactives) Fourniture de retours continus au Product Group concernant le produit Azure Virtual Desktop (AVD), au sujet de l'implémentation de fonctionnalités et services spécifiques. # (Expérience Client) Développement de la documentation existante sur les fonctionnalités des services Azure Core tels qu'Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Travail exclusif avec des clients TOP 100 et Fortune 500 et des professionnels leaders du secteur.",
           "company": "Microsoft",
           "description": "Avec plus de 12 000 employés dans le monde, l'organisation Microsoft Customer Experience & Success (CE&S) est responsable de la stratégie, de la conception et de la mise en œuvre de l'expérience client de bout en bout de Microsoft.",
-          "location": "Télétravail (EMEA)",
-          "period": "2021 - 2023",
-          "responsibilites": "#Fournir le partage de connaissances, le coaching technique et le mentorat aux collègues ; #Résolution de problèmes par un dépannage approfondi, débogage, analyse de logs, tests A/B ; #Identifier et répondre aux problèmes critiques des clients spécifiques aux services Azure tels qu'Azure Virtual Desktop ; #Travailler exclusivement avec des clients Fortune 500 pour comprendre leurs besoins techniques et définir un plan d'action pour y répondre, en collaborant régulièrement avec des pairs ou d'autres équipes.",
+          "location": "Roumanie",
+          "period": "03/2021 – 03/2023",
+          "responsibilites": "# Fournir le partage de connaissances, le coaching technique et le mentorat aux collègues ; # Résolution de problèmes par un dépannage approfondi, débogage, analyse de logs, tests A/B ; # Identifier et répondre aux problèmes critiques des clients spécifiques aux services Azure tels qu'Azure Virtual Desktop ; # Travailler exclusivement avec des clients Fortune 500 pour comprendre leurs besoins techniques et définir un plan d'action pour y répondre, en collaborant régulièrement avec des pairs ou d'autres équipes.",
           "techAndSkills": "# Analyse du trafic réseau # Azure # Approche centrée client # Relations commerciales # Gestionnaire d'incidents",
-          "title": "Ingénieur Support Technique"
+          "title": "Ingénieur Technique Azure"
         },
         "microsoft2": {
-          "achievements": "# Orchestration et implémentation des trois piliers de l'observabilité (3PO) dans notre architecture microservices utilisant les standards Open Telemetry ; création de déclencheurs de surveillance et d'alerte automatisés basés sur les statistiques p95/p99 (métriques, spans, flux E2E). # Contributions majeures au développement d'une bibliothèque .NET interne implémentant le protocole de consommation de données ODataV4 pour les moteurs de bases de données NoSQL tels qu'Azure Data Explorer (ADX). # Prise de leadership sur deux domaines clés pour la DX : documentation et adoption produit. Construction d'une documentation exceptionnelle et utilisation d'outils de génération de sites statiques (DocFX) pour générer automatiquement la documentation API à partir du code ; offre de couches de consommation API sous forme de micro-frontends, Cmdlets PowerShell et fichiers de spécification OpenAPI (Swagger / Postman).",
+          "achievements": "# (Observabilité-as-a-Service) Orchestration et implémentation complète des trois piliers de l'observabilité dans notre architecture microservices utilisant les standards Open Telemetry ; j'ai également construit des déclencheurs automatisés de surveillance et d'alerte basés sur les statistiques p95/p99 pour le trafic réel et synthétique. # (Recherche & Développement) Contributions majeures au développement d'une bibliothèque .NET interne implémentant le protocole de consommation de données ODataV4 pour les moteurs de bases de données NoSQL tels qu'Azure Data Explorer (ADX), en utilisant les pratiques Domain-Driven Design (DDD) (par ex. aggregator roots) (brevet en cours). # (Expérience de Développement) Prise de leadership sur deux domaines clés pour la DX : documentation et couches de consommation. Construction d'une documentation exceptionnelle et utilisation d'outils de génération de sites statiques (DocFX) pour générer automatiquement la documentation API à partir du code ; offre de couches de consommation API sous forme d'UI frontend, outillage CLI et fichiers de spécification OpenAPI. # (Croissance) J'ai assisté et participé à des entretiens d'embauche pour les postes SWE II et Senior SWE.",
           "company": "Microsoft",
-          "description": "Alors que les gouvernements d'aujourd'hui envisagent l'innovation technologique, il est nécessaire de répondre aux demandes en rapide évolution de leurs citoyens tout en protégeant les données les plus sensibles et en tenant les promesses de confiance et de sécurité. La modernisation des services gouvernementaux sans compromettre la sécurité, la numérisation des processus manuels et l'amélioration des expériences utilisateur pour les citoyens et les employés gouvernementaux sont tous des avantages de la transformation numérique, et les bonnes plateformes technologiques peuvent créer encore plus d'opportunités de croissance sociale et économique.",
-          "location": "Télétravail (Roumanie)",
-          "period": "2023 - 2024",
+          "description": "Alors que les gouvernements d'aujourd'hui envisagent l'innovation technologique, il est nécessaire de répondre aux demandes en rapide évolution de leurs citoyens tout en protégeant les données les plus sensibles et en tenant les promesses de confiance et de sécurité.",
+          "location": "EMEA",
+          "period": "03/2023 – 12/2024",
           "responsibilites": "# Livrer une plateforme de données E+C capable de fonctionner multi-cloud et multi-tenant dans des environnements souverains et des scénarios air-gap. # Gérer et assurer le bon fonctionnement des opérations de la plateforme de données Runtime in Sovereign Environments (RISE). # Construire une architecture d'entreprise data mesh innovante utilisant des concepts d'ingénierie de données, des outils comme Azure Data Factory et d'autres notions d'entrepôt de données.",
-          "techAndSkills": "# .NET # Azure # Microservices # Applications Cloud-Native # Méthodologies Agiles # DevOps # Domain-Driven Design #Test-Driven Development #Gestion de Projet",
-          "title": "Ingénieur Logiciel"
+          "techAndSkills": "# .NET # Azure # Microservices # Applications Cloud-Native # Méthodologies Agiles # DevOps # Domain-Driven Design # Test-Driven Development # Gestion de Projet",
+          "title": "E + D Ingénieur Logiciel II - Clouds Souverains"
         },
         "microsoft3": {
           "achievements": " ",
           "company": "Microsoft",
-          "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI FAST.",
+          "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI (M365 AI Experiences).",
           "location": "Télétravail (Norvège)",
-          "period": "2024 - Présent",
+          "period": "11/2024 - Présent",
           "responsibilites": " ",
-          "techAndSkills": " # React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
-          "title": "Ingénieur Logiciel Fullstack"
+          "techAndSkills": "# React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
+          "title": "E + D Ingénieur Logiciel Fullstack II - M365 AI"
         },
         "responsibilitiesLabel": "Responsabilités",
         "subtitle": "Un parcours à travers la carrière professionnelle d'Alexandru et les entreprises avec lesquelles il a travaillé.",
@@ -233,7 +233,7 @@
           "achievements": "# J'ai constamment dépassé le quota de bugs, glitches et artefacts signalés, me classant n°1 des rapporteurs pendant 5 mois solides sur les 6 travaillés. # Découverte et signalement de défauts de code majeurs allant des conditions de concurrence aux défauts d'allocation de ressources mémoire. # Augmentation de l'efficacité des rapports quotidiens en exploitant les capacités de filtrage SQL et JQL.",
           "company": "Ubisoft",
           "description": "J'ai travaillé sur Avatar: Frontiers of Pandora™, un jeu d'action-aventure à la première personne construit avec la dernière version du moteur Snowdrop (C++) par Massive Entertainment - un studio UBISOFT, et testé par UBISOFT Roumanie.",
-          "location": "Hybride - Bucarest, Roumanie",
+          "location": "Hybride (Bucarest, Roumanie)",
           "period": "2020 - 2021",
           "responsibilites": "# Gestion des tests de régression, d'intégration et unitaires avec des logiciels tels que XRAY, TestRail, Bugzilla. # Création de suites de tests et de plans de tests de haute qualité utilisant les produits Atlassian (JIRA / Confluence). # Assurer des communications stables et claires entre les équipes de production et de test.",
           "techAndSkills": "# Tests Unitaires # Tests d'Intégration # Tests A/B # Tests de Performance # Tests Automatiques # Tests E2E",

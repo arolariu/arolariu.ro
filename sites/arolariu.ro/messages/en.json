@@ -196,34 +196,34 @@
           "title": "Embedded Engineer"
         },
         "microsoft1": {
-          "achievements": "# Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # Created troubleshooting guides for the Azure Virtual Desktop (AVD) solution. # Currently working with Fortune 500 clients and industry leading professionals. # Provided continuous feedback to the Product Group (PG) for Azure Virtual Desktop (AVD) regarding the implementation of certain features and services.",
+          "achievements": "# (Engineering Excellence) Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # (Proactive interactions) Provided continuous feedback to the Product Group for the Azure Virtual Desktop (AVD) product, regarding the implementation of specific features and services. # (Customer Experience) Developed the existing documentation about the features of Azure Core services such as Azure Virtual Desktop, Azure Virtual Machines, Azure Networks. # Worked exclusively with TOP 100 & Fortune 500 clients and industry leading professionals.",
           "company": "Microsoft",
           "description": "With over 12,000 employees worldwide, the Microsoft Customer Experience & Success (CE&S) organization is responsible for the strategy, design, and implementation of the Microsoft end-to-end customer experience.",
-          "location": "Remote (EMEA)",
-          "period": "2021 - 2023",
-          "responsibilites": "#Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; #Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; #Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; #Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly. ",
+          "location": "Romania",
+          "period": "03/2021 – 03/2023",
+          "responsibilites": "# Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; # Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; # Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; # Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly.",
           "techAndSkills": "# Network Traffic Analysis # Azure # Customer-centric Approach # Business Relationships # Incident Manager",
-          "title": "Technical Support Engineer"
+          "title": "Azure Technical Engineer"
         },
         "microsoft2": {
-          "achievements": "# Orchestrated and implemented the three pillars of observability (3PO) in our microservices architecture using Open Telemetry standards; built automated monitoring and alerting triggers based on p95/p99 bucket statistics (metrics, spans, E2E flows). # Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX). # Took leadership of two key areas for DX: documentation & product adoption. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of micro-frontend UIs, PowerShell Cmdlets and OpenAPI spec files (Swagger / Postman).",
+          "achievements": "# (Observability-as-a-Service) Fully orchestrated and implemented the three pillars of observability in our microservices architecture using Open Telemetry standards; I've also built automated monitoring and alerting triggers based on p95/p99 statistics for real-time and synthetic traffic. # (Research & Development) Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX), using Domain-Driven Design (DDD) practices (e.g. aggregator roots) (patent in progress). # (Development Experience) Took leadership of two key areas for DX: documentation & consumption layers. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of frontend UIs, CLI tooling and OpenAPI spec files. # (Growth) Shadowed and attended hiring interviews for SWE II and Senior SWE positions.",
           "company": "Microsoft",
-          "description": "As governments today look at technology innovation, there is a need to address the rapidly evolving demands of their citizens while protecting the most sensitive data and delivering on promises of trust and security. Modernization of government services without compromising security, digitization of manual processes and improved user experiences for both citizens and government employees are all benefits of digital transformation, and the right technology platforms can create even better opportunities for social and economic growth.",
-          "location": "Remote (Romania)",
-          "period": "2023 - 2024",
-          "responsibilites": "# Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations.# Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
-          "techAndSkills": "# .NET # Azure # Microservices # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design #Test-Driven Development #Project Management",
-          "title": "Software Engineer"
+          "description": "As governments today look at technology innovation, there is a need to address the rapidly evolving demands of their citizens while protecting the most sensitive data and delivering on promises of trust and security.",
+          "location": "EMEA",
+          "period": "03/2023 – 12/2024",
+          "responsibilites": "# Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations. # Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
+          "techAndSkills": "# .NET # Azure # Microservices # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design # Test-Driven Development # Project Management",
+          "title": "E + D Sovereign Clouds Software Engineer II"
         },
         "microsoft3": {
           "achievements": " ",
           "company": "Microsoft",
-          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI FAST organization.",
+          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI (M365 AI Experiences) organization.",
           "location": "Remote (Norway)",
-          "period": "2024 - Present",
+          "period": "11/2024 - Present",
           "responsibilites": " ",
-          "techAndSkills": " # React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
-          "title": "Fullstack Software Engineer"
+          "techAndSkills": "# React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
+          "title": "E + D M365 AI Fullstack Software Engineer II"
         },
         "responsibilitiesLabel": "Responsibilities",
         "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
@@ -233,7 +233,7 @@
           "achievements": "#  I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
           "company": "Ubisoft",
           "description": "I've worked on the Avatar: Frontiers of Pandora™ first person, action-adventure game built using the latest iteration of the Snowdrop engine (C++) by Massive Entertainment - a UBISOFT studio, and tested by UBISOFT Romania.",
-          "location": "Hybrid - Bucharest, Romania",
+          "location": "Hybrid (Bucharest, Romania)",
           "period": "2020 - 2021",
           "responsibilites": "# Managed regression, integration and unit testing with software such as XRAY, TestRail, Bugzilla. # Create high quality test suites and test plans using Atlassian (JIRA / Confluence) products. # Assure communications are stable and clear between production and testing teams.",
           "techAndSkills": "# Unit Testing # Integration Testing # A/B Testing # Performance Testing # Automatic Testing # E2E Testing",
