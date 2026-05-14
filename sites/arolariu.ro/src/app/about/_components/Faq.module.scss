@@ -30,13 +30,13 @@
 .iconInner {
   padding: space(3);
   border-radius: radius('xl');
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: white;
+  color: color('primary');
 }
 
 .title {
