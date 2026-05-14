@@ -46,9 +46,9 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
 
       {/* Name + email */}
       <div className={styles["nameBlock"]}>
-        <p className={styles["name"]}>
+        <h1 className={styles["name"]}>
           {user?.firstName ?? ""} {user?.lastName ?? ""}
-        </p>
+        </h1>
         <p className={styles["email"]}>{user?.primaryEmailAddress?.emailAddress}</p>
       </div>
 
