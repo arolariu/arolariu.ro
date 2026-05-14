@@ -31,6 +31,7 @@ export interface AppearanceSettings {
   theme: "light" | "dark" | "system";
   primaryColor: string;
   secondaryColor: string;
+  tertiaryColor: string;
   fontType: "normal" | "dyslexic";
   locale: string;
   compactMode: boolean;

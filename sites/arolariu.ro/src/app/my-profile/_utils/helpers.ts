@@ -58,6 +58,7 @@ export function getDefaultSettings(): UserSettings {
       theme: "system",
       primaryColor: "#3b82f6",
       secondaryColor: "#8b5cf6",
+      tertiaryColor: "#1e3a8a",
       fontType: "normal",
       locale: "en",
       compactMode: false,

@@ -4549,6 +4549,7 @@
           "previewText": "Sample Gradient Text",
           "primary": "Primary Color",
           "secondary": "Secondary Color",
+          "intermediary": "Intermediary Color",
           "title": "Custom Colors"
         },
         "description": "Customize the look and feel of your experience",

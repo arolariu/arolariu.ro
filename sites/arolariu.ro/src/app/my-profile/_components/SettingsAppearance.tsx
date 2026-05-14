@@ -2,7 +2,7 @@
 
 import {useFontContext} from "@/contexts/FontContext";
 import {setCookie} from "@/lib/actions/cookies";
-import {THEME_PRESETS, type ThemePresetName} from "@/lib/theme-presets";
+import {THEME_PRESETS, type CustomThemeColors, type ThemePresetName} from "@/lib/theme-presets";
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import {
   Button,
@@ -12,24 +12,73 @@ import {
   CardHeader,
   CardTitle,
   Label,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Separator,
   Switch,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useTheme} from "next-themes";
 import {useCallback, useRef} from "react";
 import {TbBrush, TbCheck, TbGlobe, TbMoon, TbPalette, TbSettings, TbSun, TbTypography} from "react-icons/tb";
-import {COLOR_PALETTE} from "../_utils/constants";
 import type {AppearanceSettings} from "../_utils/types";
 import styles from "./SettingsAppearance.module.scss";
+
+/**
+ * Default intermediary color (Tailwind blue-900) used as the middle stop
+ * of the custom gradient when the user has not picked their own.
+ */
+const DEFAULT_INTERMEDIARY_COLOR = "#1e3a8a";
+
+/**
+ * Converts a `#rrggbb` hex color to a space-separated HSL string
+ * (e.g., `"187 94% 43%"`) suitable for Tailwind/CSS variable consumption.
+ */
+function hexToHslString(hex: string): string {
+  const cleaned = hex.replace("#", "");
+  const r = Number.parseInt(cleaned.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(cleaned.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(cleaned.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      default:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h *= 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+/**
+ * Builds the `CustomThemeColors` payload from user-chosen primary,
+ * intermediary (via), and secondary hex colors.
+ */
+function buildCustomThemeColors(primaryHex: string, viaHex: string, secondaryHex: string): CustomThemeColors {
+  const primaryHsl = hexToHslString(primaryHex);
+  const secondaryHsl = hexToHslString(secondaryHex);
+  const viaHsl = hexToHslString(viaHex);
+  return {
+    gradientFrom: primaryHsl,
+    gradientVia: viaHsl,
+    gradientTo: secondaryHsl,
+    primary: primaryHsl,
+    primaryForeground: "0 0% 100%",
+    footerBg: primaryHsl,
+  };
+}
 
 type Props = Readonly<{
   settings: AppearanceSettings;
@@ -43,7 +92,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const {
     setPrimaryColor,
     setSecondaryColor,
+    setTertiaryColor,
     setThemePreset,
+    setCustomThemeColors,
     setTheme: storeSetTheme,
     setLocale: storeSetLocale,
     setFontType: storeSetFontType,
@@ -73,22 +124,50 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   );
 
   const handleColorChange = useCallback(
-    (type: "primaryColor" | "secondaryColor") => (event: React.MouseEvent<HTMLButtonElement>) => {
-      const {color} = event.currentTarget.dataset;
-      if (color) {
-        void setCookie(`theme-${type.replace("Color", "-color")}`, color);
-        document.documentElement.style.setProperty(`--color-${type.replace("Color", "")}`, color);
-        onSettingsChange({[type]: color});
-        setThemePreset("custom");
-
-        if (type === "primaryColor") {
-          setPrimaryColor(color);
-        } else {
-          setSecondaryColor(color);
-        }
+    (type: "primaryColor" | "secondaryColor" | "tertiaryColor", color: string) => {
+      const cookieKeyMap = {primaryColor: "primary", secondaryColor: "secondary", tertiaryColor: "tertiary"} as const;
+      void setCookie(`theme-${cookieKeyMap[type]}-color`, color);
+      const currentVia = settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR;
+      const newPrimary = type === "primaryColor" ? color : settings.primaryColor;
+      const newSecondary = type === "secondaryColor" ? color : settings.secondaryColor;
+      const newVia = type === "tertiaryColor" ? color : currentVia;
+      if (type === "primaryColor") {
+        setPrimaryColor(color);
+      } else if (type === "secondaryColor") {
+        setSecondaryColor(color);
+      } else {
+        setTertiaryColor(color);
       }
+      setCustomThemeColors(buildCustomThemeColors(newPrimary, newVia, newSecondary));
+      setThemePreset("custom");
+      onSettingsChange({[type]: color});
     },
-    [onSettingsChange, setPrimaryColor, setSecondaryColor, setThemePreset],
+    [
+      onSettingsChange,
+      setPrimaryColor,
+      setSecondaryColor,
+      setTertiaryColor,
+      setThemePreset,
+      setCustomThemeColors,
+      settings.primaryColor,
+      settings.secondaryColor,
+      settings.tertiaryColor,
+    ],
+  );
+
+  const handlePrimaryColorInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleColorChange("primaryColor", e.target.value),
+    [handleColorChange],
+  );
+
+  const handleSecondaryColorInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleColorChange("secondaryColor", e.target.value),
+    [handleColorChange],
+  );
+
+  const handleTertiaryColorInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleColorChange("tertiaryColor", e.target.value),
+    [handleColorChange],
   );
 
   const handlePresetChange = useCallback(
@@ -306,115 +385,77 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               </CardHeader>
               <CardContent className={styles["cardContentSpaced"]}>
                 <div className={styles["colorGrid"]}>
-                  {/* Primary Color */}
-                  <div className={styles["colorRow"]}>
-                    <Label>{t("colors.primary")}</Label>
-                    <Popover>
-                      <PopoverTrigger
-                        render={
-                          <Button
-                            variant='outline'
-                            className={styles["colorPickerButton"]}>
-                            <div
-                              className={styles["colorSwatch"]}
-                              style={{backgroundColor: settings.primaryColor}}
-                            />
-                            <span className={styles["colorLabel"]}>{settings.primaryColor}</span>
-                          </Button>
-                        }
+                  {/* Primary Color — full color picker */}
+                  <div className={styles["customColorField"]}>
+                    <Label htmlFor='custom-primary-color'>{t("colors.primary")}</Label>
+                    <label
+                      className={styles["customColorSwatch"]}
+                      style={{backgroundColor: settings.primaryColor}}
+                      htmlFor='custom-primary-color'>
+                      <input
+                        id='custom-primary-color'
+                        type='color'
+                        className={styles["customColorInput"]}
+                        value={settings.primaryColor}
+                        onChange={handlePrimaryColorInput}
                       />
-                      <PopoverContent className={styles["colorPalette"]}>
-                        <div className={styles["paletteGrid"]}>
-                          {COLOR_PALETTE.map((color) => (
-                            <TooltipProvider key={color.value}>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <Button
-                                      variant={settings.primaryColor === color.value ? "default" : "outline"}
-                                      size='icon'
-                                      className={styles["colorButton"]}
-                                      data-color={color.value}
-                                      onClick={handleColorChange("primaryColor")}>
-                                      <div
-                                        className={styles["colorSwatchLarge"]}
-                                        style={{backgroundColor: color.value}}
-                                      />
-                                      {settings.primaryColor === color.value && <TbCheck className={styles["colorCheckIcon"]} />}
-                                    </Button>
-                                  }
-                                />
-                                <TooltipContent>{color.name}</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      <span className={styles["customColorHex"]}>{settings.primaryColor}</span>
+                    </label>
                   </div>
 
-                  {/* Secondary Color */}
-                  <div className={styles["colorRow"]}>
-                    <Label>{t("colors.secondary")}</Label>
-                    <Popover>
-                      <PopoverTrigger
-                        render={
-                          <Button
-                            variant='outline'
-                            className={styles["colorPickerButton"]}>
-                            <div
-                              className={styles["colorSwatch"]}
-                              style={{backgroundColor: settings.secondaryColor}}
-                            />
-                            <span className={styles["colorLabel"]}>{settings.secondaryColor}</span>
-                          </Button>
-                        }
+                  {/* Intermediary Color — full color picker */}
+                  <div className={styles["customColorField"]}>
+                    <Label htmlFor='custom-tertiary-color'>{t("colors.intermediary")}</Label>
+                    <label
+                      className={styles["customColorSwatch"]}
+                      style={{backgroundColor: settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}}
+                      htmlFor='custom-tertiary-color'>
+                      <input
+                        id='custom-tertiary-color'
+                        type='color'
+                        className={styles["customColorInput"]}
+                        value={settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}
+                        onChange={handleTertiaryColorInput}
                       />
-                      <PopoverContent className={styles["colorPalette"]}>
-                        <div className={styles["paletteGrid"]}>
-                          {COLOR_PALETTE.map((color) => (
-                            <TooltipProvider key={color.value}>
-                              <Tooltip>
-                                <TooltipTrigger
-                                  render={
-                                    <Button
-                                      variant={settings.secondaryColor === color.value ? "default" : "outline"}
-                                      size='icon'
-                                      className={styles["colorButton"]}
-                                      data-color={color.value}
-                                      onClick={handleColorChange("secondaryColor")}>
-                                      <div
-                                        className={styles["colorSwatchLarge"]}
-                                        style={{backgroundColor: color.value}}
-                                      />
-                                      {settings.secondaryColor === color.value && <TbCheck className={styles["colorCheckIcon"]} />}
-                                    </Button>
-                                  }
-                                />
-                                <TooltipContent>{color.name}</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                      <span className={styles["customColorHex"]}>
+                        {settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Secondary Color — full color picker */}
+                  <div className={styles["customColorField"]}>
+                    <Label htmlFor='custom-secondary-color'>{t("colors.secondary")}</Label>
+                    <label
+                      className={styles["customColorSwatch"]}
+                      style={{backgroundColor: settings.secondaryColor}}
+                      htmlFor='custom-secondary-color'>
+                      <input
+                        id='custom-secondary-color'
+                        type='color'
+                        className={styles["customColorInput"]}
+                        value={settings.secondaryColor}
+                        onChange={handleSecondaryColorInput}
+                      />
+                      <span className={styles["customColorHex"]}>{settings.secondaryColor}</span>
+                    </label>
                   </div>
                 </div>
 
-                {/* Gradient Preview */}
+                {/* Gradient Preview — primary → intermediary → secondary */}
                 <Separator />
                 <div className={styles["gradientPreview"]}>
                   <Label>{t("colors.preview")}</Label>
                   <div
                     className={styles["gradientBar"]}
                     style={{
-                      background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                      background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}, ${settings.secondaryColor})`,
                     }}
                   />
                   <p
                     className={styles["gradientText"]}
                     style={{
-                      backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                      backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}, ${settings.secondaryColor})`,
                     }}>
                     {t("colors.previewText")}
                   </p>

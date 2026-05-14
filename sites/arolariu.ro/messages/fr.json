@@ -4549,6 +4549,7 @@
           "previewText": "Exemple de Texte en Dégradé",
           "primary": "Couleur Principale",
           "secondary": "Couleur Secondaire",
+          "intermediary": "Couleur Intermédiaire",
           "title": "Couleurs Personnalisées"
         },
         "description": "Personnalisez l'apparence de votre expérience",
