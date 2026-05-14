@@ -63,8 +63,13 @@
 }
 
 .searchInput {
-  padding-left: space(9);
-  width: 100%;
+
+  // Higher specificity (&&) needed to override @arolariu/components `.input` padding shorthand
+  // which loads later in the cascade and otherwise wipes out our left padding.
+  &.searchInput {
+    padding: space(1) space(3) space(1) space(9);
+    width: 100%;
+  }
 }
 
 // ===========================================
