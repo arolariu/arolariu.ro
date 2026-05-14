@@ -11,6 +11,24 @@
       },
       "Certifications": {
         "certificates": {
+          "ab730": {
+            "code": "AB-730",
+            "coreSkills": "# AI Strategy # AI Adoption # Responsible AI # Business Value of AI # Identifying AI Use Cases",
+            "description": "Validates business-focused AI knowledge for professionals leading or influencing AI initiatives within their organization. Targeted at decision-makers, product owners and consultants who shape AI strategy rather than implement it.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+            "name": "Microsoft Certified: AI Business Professional"
+          },
+          "ab731": {
+            "code": "AB-731",
+            "coreSkills": "# Enterprise AI Transformation # AI Strategy # Change Management # AI Governance # Executive Leadership",
+            "description": "Validates the ability to lead enterprise-scale AI transformation initiatives — defining the strategy, driving organizational change, and establishing governance to operationalize AI across the business.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+            "name": "Microsoft Certified: AI Transformation Leader"
+          },
           "ai900": {
             "code": "AI-900",
             "coreSkills": "# Machine Learning # Computer Vision # Natural Language Processing # Conversational AI # Responsible AI",
@@ -28,6 +46,51 @@
             "issuerDate": "2023",
             "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
             "name": "Microsoft Certified: Azure Fundamentals"
+          },
+          "gh100": {
+            "code": "GH-100",
+            "coreSkills": "# Authentication # User & Team Management # Repository Policies # Enterprise Configuration # Security & Compliance",
+            "description": "Validates the skills required to administer GitHub Enterprise organizations — managing users, teams, repositories, policies, and integrations at scale.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+            "name": "GitHub Certified: Administration"
+          },
+          "gh200": {
+            "code": "GH-200",
+            "coreSkills": "# Workflow Authoring # Self-Hosted Runners # Workflow Security # Reusable Workflows # CI/CD Pipelines",
+            "description": "Validates expertise in authoring, configuring, and maintaining GitHub Actions workflows for build, test, and deployment automation across the entire software lifecycle.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+            "name": "GitHub Certified: Actions"
+          },
+          "gh300": {
+            "code": "GH-300",
+            "coreSkills": "# Copilot Plans & Features # Code Suggestions # Prompt Engineering # Responsible AI Use # Copilot Chat",
+            "description": "Validates the skills required to leverage GitHub Copilot effectively for AI-assisted software development — covering features, customization, prompt engineering, and responsible use.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+            "name": "GitHub Certified: Copilot"
+          },
+          "gh900": {
+            "code": "GH-900",
+            "coreSkills": "# GitHub Basics # Repositories # Collaboration # GitHub Products # Issues, Pull Requests & Workflows",
+            "description": "Validates foundational knowledge of GitHub — covering repositories, collaboration features, the GitHub product family, and core developer workflows.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+            "name": "GitHub Certified: Foundations"
+          },
+          "sc900": {
+            "code": "SC-900",
+            "coreSkills": "# Security Concepts # Identity Principles # Microsoft Entra # Compliance Solutions # Privacy & Information Protection",
+            "description": "Validates foundational knowledge of security, compliance, and identity concepts, alongside related Microsoft cloud-based solutions covering Entra, Defender, and Purview.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+            "name": "Microsoft Certified: Security, Compliance & Identity Fundamentals"
           }
         },
         "coreSkillsLabel": "Core Skills Demonstrated:",

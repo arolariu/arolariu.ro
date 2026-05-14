@@ -43,6 +43,28 @@ export default function Certifications(): React.JSX.Element {
 
   const certifications = [
     {
+      name: t("certificates.ab730.name"),
+      code: t("certificates.ab730.code"),
+      issuer: t("certificates.ab730.issuer"),
+      issueDate: t("certificates.ab730.issuerDate"),
+      description: t("certificates.ab730.description"),
+      coreSkills: t("certificates.ab730.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+    },
+    {
+      name: t("certificates.ab731.name"),
+      code: t("certificates.ab731.code"),
+      issuer: t("certificates.ab731.issuer"),
+      issueDate: t("certificates.ab731.issuerDate"),
+      description: t("certificates.ab731.description"),
+      coreSkills: t("certificates.ab731.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+    },
+    {
       name: t("certificates.az900.name"),
       code: t("certificates.az900.code"),
       issuer: t("certificates.az900.issuer"),
@@ -63,6 +85,61 @@ export default function Certifications(): React.JSX.Element {
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
+    },
+    {
+      name: t("certificates.sc900.name"),
+      code: t("certificates.sc900.code"),
+      issuer: t("certificates.sc900.issuer"),
+      issueDate: t("certificates.sc900.issuerDate"),
+      description: t("certificates.sc900.description"),
+      coreSkills: t("certificates.sc900.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+    },
+    {
+      name: t("certificates.gh900.name"),
+      code: t("certificates.gh900.code"),
+      issuer: t("certificates.gh900.issuer"),
+      issueDate: t("certificates.gh900.issuerDate"),
+      description: t("certificates.gh900.description"),
+      coreSkills: t("certificates.gh900.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+    },
+    {
+      name: t("certificates.gh100.name"),
+      code: t("certificates.gh100.code"),
+      issuer: t("certificates.gh100.issuer"),
+      issueDate: t("certificates.gh100.issuerDate"),
+      description: t("certificates.gh100.description"),
+      coreSkills: t("certificates.gh100.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+    },
+    {
+      name: t("certificates.gh200.name"),
+      code: t("certificates.gh200.code"),
+      issuer: t("certificates.gh200.issuer"),
+      issueDate: t("certificates.gh200.issuerDate"),
+      description: t("certificates.gh200.description"),
+      coreSkills: t("certificates.gh200.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+    },
+    {
+      name: t("certificates.gh300.name"),
+      code: t("certificates.gh300.code"),
+      issuer: t("certificates.gh300.issuer"),
+      issueDate: t("certificates.gh300.issuerDate"),
+      description: t("certificates.gh300.description"),
+      coreSkills: t("certificates.gh300.coreSkills")
+        .split("#")
+        .filter((skill) => skill.trim().length > 3),
+      link: "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
     },
   ] satisfies CertificationType[];
 
@@ -122,7 +199,7 @@ export default function Certifications(): React.JSX.Element {
                     <div className={styles["skillsList"]}>
                       {cert.coreSkills.map((skill, i) => (
                         <motion.div
-                          key={`${skill.slice(0, 10)}`}
+                          key={`${cert.code}-skill-${String(i)}`}
                           className={styles["skillItem"]}
                           initial={{opacity: 0, x: -10}}
                           animate={{opacity: 1, x: 0}}

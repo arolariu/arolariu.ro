@@ -11,6 +11,24 @@
       },
       "Certifications": {
         "certificates": {
+          "ab730": {
+            "code": "AB-730",
+            "coreSkills": "# Strategie AI # Adopție AI # AI Responsabil # Valoare de business AI # Identificarea cazurilor de utilizare AI",
+            "description": "Validează cunoștințele orientate pe business privind AI pentru profesioniștii care conduc sau influențează inițiative AI în cadrul organizației. Este destinată factorilor de decizie, product owner-ilor și consultanților care modelează strategia AI mai degrabă decât o implementează.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
+            "name": "Certificat Microsoft: AI Business Professional"
+          },
+          "ab731": {
+            "code": "AB-731",
+            "coreSkills": "# Transformare AI la nivel de întreprindere # Strategie AI # Managementul schimbării # Guvernanță AI # Leadership executiv",
+            "description": "Validează capacitatea de a conduce inițiative de transformare AI la nivel de întreprindere — definirea strategiei, conducerea schimbării organizaționale și stabilirea guvernanței pentru operaționalizarea AI în întreaga afacere.",
+            "issuer": "Microsoft",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
+            "name": "Certificat Microsoft: AI Transformation Leader"
+          },
           "ai900": {
             "code": "AI-900",
             "coreSkills": "# Machine Learning # Computer Vision # Natural Language Processing # Conversational AI # Responsible AI",
@@ -28,6 +46,51 @@
             "issuerDate": "2023",
             "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
             "name": "Certificat Microsoft: Azure Fundamentals"
+          },
+          "gh100": {
+            "code": "GH-100",
+            "coreSkills": "# Autentificare # Gestionarea utilizatorilor și echipelor # Politici de repository # Configurare Enterprise # Securitate și conformitate",
+            "description": "Validează abilitățile necesare pentru a administra organizațiile GitHub Enterprise — gestionarea utilizatorilor, echipelor, repositoriilor, politicilor și integrărilor la scară.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
+            "name": "Certificat GitHub: Administration"
+          },
+          "gh200": {
+            "code": "GH-200",
+            "coreSkills": "# Crearea workflow-urilor # Runner-e self-hosted # Securitatea workflow-urilor # Workflow-uri reutilizabile # Pipeline-uri CI/CD",
+            "description": "Validează expertiza în crearea, configurarea și menținerea workflow-urilor GitHub Actions pentru automatizarea build, test și deployment de-a lungul întregului ciclu de viață software.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
+            "name": "Certificat GitHub: Actions"
+          },
+          "gh300": {
+            "code": "GH-300",
+            "coreSkills": "# Planuri și funcționalități Copilot # Sugestii de cod # Prompt Engineering # Utilizare AI responsabilă # Copilot Chat",
+            "description": "Validează abilitățile necesare pentru a folosi GitHub Copilot eficient în dezvoltarea software asistată de AI — acoperind funcționalitățile, personalizarea, prompt engineering-ul și utilizarea responsabilă.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
+            "name": "Certificat GitHub: Copilot"
+          },
+          "gh900": {
+            "code": "GH-900",
+            "coreSkills": "# Bazele GitHub # Repository-uri # Colaborare # Produsele GitHub # Issues, Pull Request-uri și workflow-uri",
+            "description": "Validează cunoștințele de bază despre GitHub — acoperind repository-urile, funcționalitățile de colaborare, familia de produse GitHub și workflow-urile esențiale ale dezvoltatorilor.",
+            "issuer": "GitHub",
+            "issuerDate": "2026",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
+            "name": "Certificat GitHub: Foundations"
+          },
+          "sc900": {
+            "code": "SC-900",
+            "coreSkills": "# Concepte de securitate # Principii de identitate # Microsoft Entra # Soluții de conformitate # Confidențialitate și protecția informațiilor",
+            "description": "Validează cunoștințele de bază privind securitatea, conformitatea și identitatea, împreună cu soluțiile Microsoft cloud aferente — Entra, Defender și Purview.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
+            "name": "Certificat Microsoft: Security, Compliance & Identity Fundamentals"
           }
         },
         "coreSkillsLabel": "Competențe Demonstrate:",
