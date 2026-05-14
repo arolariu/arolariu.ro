@@ -1,7 +1,6 @@
 using AppHost;
 using AppHost.Aspire;
 using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -11,6 +10,26 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 #pragma warning disable ASPIRECOSMOSDB001     // RunAsPreviewEmulator is experimental in 13.x
 
 var builder = DistributedApplication.CreateBuilder(args);
+
+// Generate sites/exp.arolariu.ro/config.aspire.json by copying config.docker.json
+// (the developer's source-of-truth for non-endpoint secrets) and overlaying Aspire
+// localhost endpoints. exp picks the right file via EXP_LOCAL_CONFIG_PATH below.
+// Sync, runs once at startup — no event subscriptions, no shutdown restore, no
+// crash recovery, no race against uvicorn launch (the file exists before exp starts).
+ExpConfigGenerator.GenerateAspireConfig(
+    sourcePath: "../../sites/exp.arolariu.ro/config.docker.json",
+    targetPath: "../../sites/exp.arolariu.ro/config.aspire.json",
+    endpointOverrides: new Dictionary<string, string>
+    {
+        ["Endpoints:Database:NoSQL"] = $"AccountEndpoint=https://localhost:{Constants.CosmosGatewayPort}/;"
+                                     + $"AccountKey={Constants.CosmosEmulatorWellKnownKey};",
+        // Encrypt=False / 127.0.0.1 — see sql-ready health check below for rationale.
+        ["Endpoints:Database:SQL"] = $"Server=127.0.0.1,{Constants.SqlPort};Database={Constants.SqlDatabaseName};"
+                                   + $"User Id=sa;Password={builder.Configuration["Parameters:sql-password"]};"
+                                   + $"Encrypt=False;TrustServerCertificate=true;",
+        ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
+        ["Endpoints:Service:Api"] = $"http://localhost:{Constants.ApiPort}",
+    });
 
 // ─────────────────────────────────────────────────────────────────────
 // Infrastructure — native Aspire 13.x declarations.
@@ -141,7 +160,7 @@ var exp = builder
     // keeps EXP_PROXY_URL as http://localhost:5002 — what uvicorn actually serves.
     .WithHttpEndpoint(port: Constants.ExpPort, env: "PORT", isProxied: false)
     .WithEnvironment("INFRA", "local")
-    .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.docker.json")
+    .WithEnvironment("EXP_LOCAL_CONFIG_PATH", "config.aspire.json")
     // Force the Python opentelemetry-exporter-otlp-proto-http exporter to hit the
     // Aspire dashboard's HTTP OTLP endpoint (21031). By default Aspire injects
     // OTEL_EXPORTER_OTLP_ENDPOINT pointing at the gRPC endpoint (21030), which
@@ -231,82 +250,5 @@ var status = builder
     .AddViteApp("status", "../../sites/status.arolariu.ro")
     .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
     .WithIconName("PulseSquare");
-
-// ─────────────────────────────────────────────────────────────────────
-// exp config-file generator — rewrites sites/exp.arolariu.ro/config.docker.json
-// in-place with Aspire-allocated localhost endpoints once infra is ready;
-// restores the original content on graceful shutdown.
-// (exp's loader still reads config.docker.json — no Python code change.)
-// ─────────────────────────────────────────────────────────────────────
-// Helper: look up an allocated endpoint by name, trying multiple candidates
-// (Aspire endpoint names differ across resource types: cosmos preview emulator
-// might use "gateway"/"emulator"/"http"/"https" depending on version).
-// Throws with a diagnostic listing of available endpoints when none match.
-static int LookupEndpointPort(IResource resource, params string[] candidateNames)
-{
-    var endpoints = resource.Annotations.OfType<EndpointAnnotation>().ToList();
-    foreach (var name in candidateNames)
-    {
-        var ep = endpoints.FirstOrDefault(a =>
-            string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
-        if (ep?.AllocatedEndpoint is not null)
-            return ep.AllocatedEndpoint.Port;
-    }
-    var available = string.Join(", ", endpoints.Select(a =>
-        $"{a.Name}={a.AllocatedEndpoint?.Port.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "(unallocated)"}"));
-    throw new InvalidOperationException(
-        $"None of [{string.Join(",", candidateNames)}] endpoints found on resource '{resource.Name}'. "
-        + $"Available: [{available}]");
-}
-
-var expConfigState = builder.AddExpConfigGenerator(
-    configPath: "../../sites/exp.arolariu.ro/config.docker.json",
-    connectionStringFactories: new Dictionary<string, Func<string>>
-    {
-        ["Endpoints:Database:NoSQL"] = () =>
-        {
-            var port = LookupEndpointPort(cosmos.Resource, "https", "gateway", "emulator", "http");
-            return $"AccountEndpoint=https://localhost:{port}/;"
-                 + $"AccountKey={Constants.CosmosEmulatorWellKnownKey};";
-        },
-        ["Endpoints:Database:SQL"] = () =>
-        {
-            var port = LookupEndpointPort(sql.Resource, "tcp", "sql", "tds");
-            // Encrypt=False: SQL Server 2022 default forces TLS, but Docker Desktop's
-            // vpnkit port-forwarding on Windows reliably stalls the TLS handshake step
-            // *after* TCP accepts (PRE-LOGIN reaches the server, TLS upgrade never
-            // completes — SqlClient hangs ~15s then reports "TCP Provider, error: 0".)
-            // Selfhost mode avoids this because containers reach each other via Docker
-            // network names (mssql:1433) without vpnkit in the path. Matching that path
-            // here by disabling TLS at the TDS layer. 127.0.0.1 (not localhost) skips
-            // the IPv6 first-try fallback that SqlClient does by default.
-            return $"Server=127.0.0.1,{port};Database={Constants.SqlDatabaseName};User Id=sa;"
-                 + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;";
-        },
-        ["Endpoints:Storage:Blob"] = () =>
-        {
-            var port = LookupEndpointPort(storage.Resource, "blob", "http", "https");
-            return $"http://localhost:{port}/devstoreaccount1";
-        },
-        ["Endpoints:Service:Api"] = () => $"http://localhost:{Constants.ApiPort}",
-    },
-    waitForResources: new IResource[]
-    {
-        cosmos.Resource,
-        sql.Resource,
-        storage.Resource,
-    });
-
-// Task 5: gate uvicorn start on the config rewrite completing, eliminating the
-// race where exp reads the Docker-network config before the generator has
-// overwritten it with Aspire-allocated localhost endpoints.
-// Aspire awaits async WithEnvironment callbacks before launching the process,
-// so this acts as a zero-overhead barrier that costs nothing when the write
-// has already finished (ConfigWritten is already completed by then).
-exp.WithEnvironment(async ctx =>
-{
-    await expConfigState.ConfigWritten.ConfigureAwait(false);
-    ctx.EnvironmentVariables["EXP_CONFIG_READY"] = "1";
-});
 
 builder.Build().Run();
