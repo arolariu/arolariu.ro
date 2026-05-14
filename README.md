@@ -121,6 +121,9 @@
     - [Prerequisites](#prerequisites)
     - [Quick Start](#quick-start)
     - [Development Commands](#development-commands)
+    - [Aspire Mode (Default)](#aspire-mode-default)
+    - [Selfhost Mode (Containerized)](#selfhost-mode-containerized)
+    - [Troubleshooting](#troubleshooting)
   - [📂 Project Structure](#-project-structure)
     - [📖 Sub-Project Documentation](#-sub-project-documentation)
   - [🏗️ Architecture](#️-architecture)
@@ -213,8 +216,9 @@ Before you begin, ensure you have the following installed:
 |:----:|:-------:|:--------|
 | ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime |
 | ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager |
-| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime |
-| ![Docker](https://img.shields.io/badge/Docker-Latest-2496ED?style=flat-square&logo=docker&logoColor=white) | Latest | Containerization (optional) |
+| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime + Aspire 13.x AppHost |
+| ![Docker](https://img.shields.io/badge/Docker-Latest-2496ED?style=flat-square&logo=docker&logoColor=white) | Latest | Required for Aspire infra containers (SQL, Cosmos, Azurite, Redis) |
+| ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white) | 3.12 | Required for `exp` config service (FastAPI) |
 
 ### Quick Start
 
@@ -229,9 +233,17 @@ npm install
 # 3️⃣ Run initial setup (generates env files, i18n, GraphQL)
 npm run setup
 
-# 4️⃣ Start development server
-npm run dev:website
+# 4️⃣ Start the full stack via Aspire (recommended — apps native, infra in containers)
+npm run dev
+# → Aspire dashboard auto-opens at https://localhost:17080
+# → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
+#   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
+
+# Or start a single service standalone (no orchestration):
+npm run dev:website        # Next.js only
 ```
+
+> 💡 **F5 in VS Code or Visual Studio 2026** launches the Aspire AppHost with debuggers attached for all runtimes (.NET, Node.js, Python).
 
 ### Development Commands
 
@@ -253,11 +265,19 @@ npm run build:docs         # 📚 Documentation (DocFX)
 <summary><b>🔥 Development Servers</b></summary>
 
 ```bash
-npm run dev:website        # 🌐 Website → http://localhost:3000
+npm run dev                # 🚀 Aspire AppHost (full stack — recommended)
+npm run dev:aspire         # 🚀 Explicit alias for `npm run dev`
+npm run dev:selfhost       # 🐳 Containerized stack (Docker Compose)
+npm run dev:selfhost:stop  # 🛑 Stop the containerized stack
+
+# Standalone (single service, no AppHost coordination — fallback only):
+npm run dev:website        # 🌐 Website → https://localhost:3000
 npm run dev:components     # 🧩 Storybook → http://localhost:6006
 npm run dev:api            # ⚙️ API → http://localhost:5000
 npm run dev:cv             # 📄 CV → http://localhost:4173
-npm run dev:docs           # 📚 Docs → http://localhost:8080
+npm run dev:docs           # 📚 Docs → http://localhost:3100
+npm run dev:exp            # 🐍 exp config service → http://localhost:5002
+npm run dev:status         # 📟 Status page → http://localhost:3002
 ```
 
 </details>
@@ -287,6 +307,136 @@ npx nx affected --target=build   # 🎯 Build only affected projects
 npx nx affected --target=test    # 🧪 Test only affected projects
 npx nx show project website      # 🔍 Show project details
 ```
+
+</details>
+
+### Aspire Mode (Default)
+
+`npm run dev` (or pressing **F5** in VS Code / Visual Studio 2026) starts the **.NET Aspire 13.x AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
+
+- **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via `uvicorn`. Hot reload is preserved on every runtime.
+- **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations (no Docker Compose required).
+- **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
+
+| Resource | URL | Notes |
+|----------|-----|-------|
+| Aspire dashboard | `https://localhost:17080` | OTel traces · metrics · logs · resource graph |
+| Website (Next.js) | `https://localhost:3000` | HTTPS via `--experimental-https` (mkcert root CA) |
+| API (.NET) | `http://localhost:5000` | Swagger UI at `/swagger` |
+| CV (SvelteKit) | `http://localhost:4173` | Preview server |
+| Docs (Docusaurus) | `http://localhost:3100` | |
+| Status | `http://localhost:3002` | |
+| exp (Python FastAPI) | `http://localhost:5002` | Config service for the API |
+| SQL Server | `localhost:8082` | `Encrypt=False` required (vpnkit TLS) |
+| Cosmos emulator | `https://localhost:8081` | vNext preview emulator |
+| Azurite | `http://localhost:10000-10002` | Blob · Queue · Table |
+| Redis | `localhost:6379` | |
+
+### Selfhost Mode (Containerized)
+
+`npm run dev:selfhost` brings up the **full Docker Compose stack** including the apps themselves. Use this when you need to:
+
+- Audit container behavior or validate CI parity
+- Test a deploy-mock-of-prod configuration
+- Reproduce a bug that only manifests in containerized form
+
+The Compose definitions live under `infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`. Stop the stack with `npm run dev:selfhost:stop`.
+
+### Troubleshooting
+
+<details>
+<summary><b>🔌 Debugger won't attach to Next.js (port 9229)</b></summary>
+
+The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on **port 9229**. If your debugger doesn't attach:
+
+1. Confirm the website resource is **Running** in the Aspire dashboard.
+2. In VS Code, use the **`Attach to Next.js (Aspire)`** launch configuration (auto-attaches via `inspect` protocol on `localhost:9229`).
+3. If npm 11 logs an `arborist` null-state error during startup, kill the AppHost and re-run `npm run dev` — npm 11 occasionally races on concurrent `--inspect` children.
+4. For .NET debugging, F5 from `tooling/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also targets the AppHost project.
+
+</details>
+
+<details>
+<summary><b>🩺 An app is marked unhealthy in the Aspire dashboard</b></summary>
+
+Each resource has a health check; check the dashboard's **Health** column for the failing endpoint:
+
+| Resource | Health endpoint | What it checks |
+|----------|-----------------|----------------|
+| API | `http://localhost:5000/health` | DB + Cosmos + Azurite + Redis + exp connectivity |
+| Website | `https://localhost:3000/api/health` | Renders, env present |
+| exp | `http://localhost:5002/api/ready` | FastAPI ready + config bootstrap done |
+| SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
+
+The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live. If exp is yellow (Starting), the API stays Starting too — that's expected on cold boot for ~5-10 s while `ExpConfigGenerator` writes the bootstrap config. If exp stays Starting longer, check `tooling/AppHost/Aspire/ExpConfigGenerator.cs` logs in the dashboard.
+
+</details>
+
+<details>
+<summary><b>🚪 DCP port collision (e.g. "address already in use")</b></summary>
+
+Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), the resource must opt out via `isProxied: false` in `tooling/AppHost/Program.cs`. If you add a new resource and it can't bind, either:
+
+- Let Aspire pick a port (read it from the dashboard), or
+- Set `isProxied: false` on the endpoint and pin the host port explicitly.
+
+</details>
+
+<details>
+<summary><b>🔐 SQL Server connection hangs or "TLS handshake failed"</b></summary>
+
+The dev SQL container does not present a trusted TLS cert. Connection strings **must** include `Encrypt=False;TrustServerCertificate=True`. The AppHost wires this automatically via `Parameters:sql-password` from `tooling/AppHost/appsettings.Development.json`. If you bypass the AppHost (e.g. connecting from Azure Data Studio), append the same parameters.
+
+</details>
+
+<details>
+<summary><b>📡 OTLP exporter / dashboard shows no telemetry</b></summary>
+
+The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on `:21031`**. The .NET API uses gRPC by default; the Next.js website uses the HTTP exporter. If you see no traces:
+
+1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
+2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
+3. The HTTPS dashboard requires the mkcert root CA to be trusted (`mkcert -install`). On first boot, accept the cert prompt or run `.devcontainer/postCreate.sh` (devcontainer) which handles this.
+
+</details>
+
+<details>
+<summary><b>🔑 Local HTTPS certificate errors (`*.localhost`)</b></summary>
+
+The website and dashboard both use a wildcard `*.localhost` cert generated by **mkcert**. If you see `NET::ERR_CERT_AUTHORITY_INVALID`:
+
+```bash
+# Reinstall the root CA
+mkcert -install
+
+# Regenerate the wildcard cert (devcontainer does this automatically in postCreate.sh)
+cd infra/Local/Management/certs
+mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
+```
+
+</details>
+
+<details>
+<summary><b>🐳 Containers won't start / Docker not available</b></summary>
+
+Aspire spawns containers via the OCI runtime detected on your machine (Docker Desktop, Podman, or Rancher Desktop). Verify:
+
+```bash
+docker info        # should print server info
+docker ps          # should list running containers after `npm run dev`
+```
+
+If Docker isn't running, start Docker Desktop before `npm run dev`. On Windows, ensure WSL2 integration is enabled. As a last resort, `npm run dev:selfhost` exercises the same containers via Compose if Aspire's container manager misbehaves.
+
+</details>
+
+<details>
+<summary><b>🧪 Aspire AppHost crashes immediately on startup</b></summary>
+
+1. Run `dotnet restore ./arolariu.slnx` to refresh NuGet packages.
+2. Run `dotnet workload restore` to install the Aspire workload.
+3. Delete `tooling/AppHost/bin` and `tooling/AppHost/obj`, then re-run `npm run dev`.
+4. Check `tooling/AppHost/appsettings.Development.json` exists and has the `Parameters:sql-password` value (it ships with a dev default).
 
 </details>
 
@@ -332,6 +482,9 @@ arolariu.ro/
 │   └── Local/                      #    Local development infrastructure
 │
 ├── 📜 scripts/                     # Build & utility scripts
+├── 🛠️  tooling/                    # Dev tooling
+│   ├── AppHost/                    #    .NET Aspire 13.x AppHost (orchestrator)
+│   └── AppHost.Tests/              #    xUnit tests for AppHost helpers
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    13 Architecture Decision Records
 │

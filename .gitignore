@@ -43,6 +43,7 @@ nul
 
 # Exceptions:
 !.vs/settings.vssettings
+!.vs/README.md
 
 
 # Claude Code local settings (user-specific auto-granted permissions):
@@ -59,6 +60,7 @@ nul
 **/*.pyc
 **/.venv/
 **/.python_packages/
+**/*.egg-info/
 
 
 # arolariu.ro specific:
@@ -69,6 +71,7 @@ sites/arolariu.ro/licenses.json
 # exp local config files (may contain secrets for local development):
 sites/exp.arolariu.ro/config.json
 sites/exp.arolariu.ro/config.docker.json
+sites/exp.arolariu.ro/config.aspire.json
 sites/arolariu.ro/next-env.d.ts
 **/e2e-storage-state.json
 

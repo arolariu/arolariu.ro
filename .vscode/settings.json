@@ -86,7 +86,7 @@
     "cursor-global": true,
     "cursor-workspace": true,
     "windsurf": true
-  },
+},
   "chat.notifyWindowOnConfirmation": "windowNotFocused",
   "chat.promptFiles": true,
   "chat.renderRelatedFiles": false,
@@ -404,6 +404,12 @@
   "editor.wrapOnEscapedLineFeeds": false,
   "editor.wrappingIndent": "same",
   "editor.wrappingStrategy": "simple",
+
+  // Dotnet / Aspire Settings
+  "dotnet.defaultSolution": "arolariu.slnx",
+  "dotnet.preferCSharpExtension": true,
+  "omnisharp.useModernNet": true,
+  "aspire.dashboard.openOnLaunch": "ifAvailable",
 
   // EditorConfig (.editorconfig) Settings
   "editorconfig.generateAuto": true,

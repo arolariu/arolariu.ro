@@ -234,9 +234,13 @@ internal static class WebApplicationBuilderExtensions
         name: "blob-storage",
         failureStatus: null,
         tags: ["storage"])
-      .AddUrlGroup(
+      // exp reachability goes through the API's existing IConfigProxyClient (same
+      // HttpClient as the main config-fetch flow). An isolated AddUrlGroup would
+      // create its own HttpClient without dev-cert trust and fail TLS handshake
+      // against Aspire DCP's self-signed cert, even when the API itself talks to
+      // exp successfully. See ExpHealthCheck.cs.
+      .AddCheck<ExpHealthCheck>(
         name: "exp",
-        uri: new Uri($"{baseUrl}/api/health"),
         tags: ["config"]);
 
     if (cosmosMatch.Success)

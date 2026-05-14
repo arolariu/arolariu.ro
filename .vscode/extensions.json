@@ -30,6 +30,28 @@
 
     // Backlog grooming and task tracking
     "gruntfuggly.todo-tree",
-    "wayou.vscode-todo-highlight"
+    "wayou.vscode-todo-highlight",
+
+    // .NET / C# (Aspire-era backend development)
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.vscodeintellicode-csharp",
+    "microsoft-aspire.aspire-vscode",
+
+    // Containers / Docker (Aspire spawns infra containers)
+    "ms-azuretools.vscode-docker",
+
+    // Testing
+    "vitest.explorer",
+    "ms-playwright.playwright",
+
+    // Python (exp.arolariu.ro FastAPI service)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+
+    // YAML / Markdown / spell-check
+    "redhat.vscode-yaml",
+    "bierner.markdown-mermaid",
+    "streetsidesoftware.code-spell-checker"
   ]
 }

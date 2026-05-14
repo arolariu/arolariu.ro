@@ -48,6 +48,9 @@ class TelemetryDependencies:
     AzureMonitorMetricExporter: Any
     AzureMonitorLogExporter: Any
     DefaultAzureCredential: Any
+    OTLPSpanExporter: Any
+    OTLPMetricExporter: Any
+    OTLPLogExporter: Any
 
 
 @dataclass(slots=True)
@@ -111,6 +114,9 @@ def _import_telemetry_dependencies() -> TelemetryDependencies:
     )
     from opentelemetry import metrics, trace
     from opentelemetry._logs import set_logger_provider
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.logging import LoggingInstrumentor
     from opentelemetry.metrics import Observation
@@ -146,6 +152,9 @@ def _import_telemetry_dependencies() -> TelemetryDependencies:
         AzureMonitorMetricExporter=AzureMonitorMetricExporter,
         AzureMonitorLogExporter=AzureMonitorLogExporter,
         DefaultAzureCredential=DefaultAzureCredential,
+        OTLPSpanExporter=OTLPSpanExporter,
+        OTLPMetricExporter=OTLPMetricExporter,
+        OTLPLogExporter=OTLPLogExporter,
     )
 
 
@@ -242,6 +251,11 @@ def _configure_tracing(
             )
         )
 
+    if settings.otlp_export_enabled:
+        tracer_provider.add_span_processor(
+            dependencies.BatchSpanProcessor(dependencies.OTLPSpanExporter())
+        )
+
     dependencies.trace_module.set_tracer_provider(tracer_provider)
     return tracer_provider
 
@@ -273,6 +287,14 @@ def _configure_metrics(
             )
         )
 
+    if settings.otlp_export_enabled:
+        metric_readers.append(
+            dependencies.PeriodicExportingMetricReader(
+                dependencies.OTLPMetricExporter(),
+                export_interval_millis=settings.metric_export_interval_millis,
+            )
+        )
+
     meter_provider = dependencies.MeterProvider(
         resource=resource,
         metric_readers=metric_readers,
@@ -296,7 +318,7 @@ def _configure_logging(
         log_level=_resolve_log_level(settings),
     )
 
-    if not (settings.console_log_export_enabled or settings.azure_export_enabled):
+    if not (settings.console_log_export_enabled or settings.azure_export_enabled or settings.otlp_export_enabled):
         return None, None, logging_instrumentor
 
     logger_provider = dependencies.LoggerProvider(resource=resource)
@@ -315,6 +337,11 @@ def _configure_logging(
                     **_build_azure_exporter_kwargs(dependencies, settings),
                 )
             )
+        )
+
+    if settings.otlp_export_enabled:
+        logger_provider.add_log_record_processor(
+            dependencies.BatchLogRecordProcessor(dependencies.OTLPLogExporter())
         )
 
     dependencies.logs_module(logger_provider)
