@@ -50,6 +50,7 @@ internal static class AzuriteBootstrap
     // errors at upload time.
     private static volatile bool _bootstrapSucceeded;
     private static volatile string? _bootstrapError;
+    private static int _bootstrapStarted; // 0 = not started, 1 = started (Interlocked guard)
     private const string HealthCheckName = "azurite-bootstrap";
 
     /// <summary>
@@ -93,7 +94,14 @@ internal static class AzuriteBootstrap
 
         builder.Eventing.Subscribe<ResourceReadyEvent>(async (evt, ct) =>
         {
-            if (!ReferenceEquals(evt.Resource, storage.Resource))
+            // ResourceReadyEvent fires on the inner Azurite *container* resource that
+            // RunAsEmulator spawns (named "storage-<random>"), not on the parent
+            // AzureStorageResource. Walk the parent chain so we match either.
+            if (!IsResourceOrAncestor(evt.Resource, storage.Resource))
+                return;
+
+            // Guard against multiple ready events (one per endpoint, restarts, etc.).
+            if (Interlocked.CompareExchange(ref _bootstrapStarted, 1, 0) != 0)
                 return;
 
             var logger = evt.Services.GetService<ILoggerFactory>()
@@ -111,10 +119,12 @@ internal static class AzuriteBootstrap
             catch (OperationCanceledException)
             {
                 // Shutdown — leave health check unhealthy; nothing actionable.
+                Interlocked.Exchange(ref _bootstrapStarted, 0);
             }
             catch (Exception ex)
             {
                 _bootstrapError = ex.Message;
+                Interlocked.Exchange(ref _bootstrapStarted, 0); // allow retry on next ready
                 logger?.LogWarning(
                     ex,
                     "Azurite bootstrap exhausted retries — storage resource will report unhealthy in the dashboard.");
@@ -122,6 +132,19 @@ internal static class AzuriteBootstrap
         });
 
         return builder;
+    }
+
+    // Match the storage resource itself or any descendant (e.g. the Azurite container
+    // child resource that RunAsEmulator spawns).
+    private static bool IsResourceOrAncestor(IResource candidate, IResource target)
+    {
+        var current = candidate;
+        while (current is not null)
+        {
+            if (ReferenceEquals(current, target)) return true;
+            current = (current as IResourceWithParent)?.Parent;
+        }
+        return false;
     }
 
     private static async Task ApplyCorsWithRetryAsync(
