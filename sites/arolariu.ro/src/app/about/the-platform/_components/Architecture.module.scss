@@ -149,9 +149,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 3rem;
   height: 3rem;
-  border-radius: abstracts.radius('xl');
+  aspect-ratio: 1 / 1;
+  border-radius: abstracts.radius('md');
   @include abstracts.transition(transform);
 
   .layerCard:hover & {
