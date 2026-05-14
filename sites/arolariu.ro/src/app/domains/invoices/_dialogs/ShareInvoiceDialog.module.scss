@@ -109,6 +109,18 @@
 
 .alertMt {
   margin-top: space(4);
+  background-color: color-alpha('warning', 0.1);
+  border-color: color-alpha('warning', 0.35);
+  color: color('warning-foreground');
+
+  .alertIcon {
+    color: color('warning');
+  }
+
+  @include dark {
+    background-color: color-alpha('warning', 0.18);
+    border-color: color-alpha('warning', 0.45);
+  }
 }
 
 .alertDescXs {
@@ -131,7 +143,7 @@
 .cardHoverCursor {
   cursor: pointer;
   @include transition((color, background-color));
-  
+
   &:hover {
     border-color: color('primary');
     background-color: color-alpha('accent', 0.5);
