@@ -126,8 +126,10 @@
   background-color: color-alpha('primary', 0.1);
   color: color('primary');
 
-  &:hover {
-    background-color: color-alpha('primary', 0.15);
+  &:hover,
+  &:hover:not([data-disabled]) {
+    background-color: color-alpha('primary', 0.18);
+    color: color('primary');
   }
 }
 
