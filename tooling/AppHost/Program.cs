@@ -110,6 +110,12 @@ var cosmos = builder
         .WithDataExplorer()
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
+    // Bypass DCP on the gateway endpoint (same rationale as SQL above): without
+    // isProxied:false, DCP allocates a random host port and exp's hardcoded
+    // localhost:8081 connection in config.aspire.json fails with "connection refused".
+    // The "emulator" endpoint is the preview emulator's gateway (Aspire 13.x convention,
+    // set by WithGatewayPort).
+    .WithEndpoint("emulator", e => e.IsProxied = false)
     .WithIconName("DatabaseMultiple");
 
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
@@ -126,6 +132,11 @@ var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
         .WithBlobPort(Constants.AzuriteBlobPort))
+    // Bypass DCP on the blob endpoint (same rationale as SQL/Cosmos above): the
+    // AzuriteBootstrap helper below and exp's config.aspire.json both connect to
+    // hardcoded localhost:10000 — DCP would map that to a random host port and
+    // those connections would fail.
+    .WithEndpoint("blob", e => e.IsProxied = false)
     .WithIconName("Storage");
 
 // Azurite ships with no CORS rules and no containers — apply allow-all on every
