@@ -247,6 +247,15 @@ def _build_fake_dependencies() -> TelemetryDependencies:
         def __init__(self, **kwargs: object) -> None:
             self.kwargs = kwargs
 
+    class FakeOTLPSpanExporter:
+        pass
+
+    class FakeOTLPMetricExporter:
+        pass
+
+    class FakeOTLPLogExporter:
+        pass
+
     return TelemetryDependencies(
         trace_module=FakeTraceModule(),
         metrics_module=FakeMetricsModule(),
@@ -270,6 +279,9 @@ def _build_fake_dependencies() -> TelemetryDependencies:
         AzureMonitorMetricExporter=FakeAzureMonitorMetricExporter,
         AzureMonitorLogExporter=FakeAzureMonitorLogExporter,
         DefaultAzureCredential=FakeDefaultAzureCredential,
+        OTLPSpanExporter=FakeOTLPSpanExporter,
+        OTLPMetricExporter=FakeOTLPMetricExporter,
+        OTLPLogExporter=FakeOTLPLogExporter,
     )
 
 

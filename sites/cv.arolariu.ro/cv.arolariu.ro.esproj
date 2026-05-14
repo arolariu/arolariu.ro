@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.1597946">
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk">
   <PropertyGroup>
     <StartupCommand>npm run dev</StartupCommand>
     <JavaScriptTestRoot>$(MSBuildProjectDirectory)</JavaScriptTestRoot>

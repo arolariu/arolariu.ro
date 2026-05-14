@@ -35,6 +35,7 @@
   border-radius: radius('full');
   @include gradient-bg();
   filter: blur(48px);
+  opacity: 0.04;
 }
 
 .backgroundBlobRight {
@@ -46,6 +47,7 @@
   border-radius: radius('full');
   @include gradient-bg();
   filter: blur(48px);
+  opacity: 0.04;
 }
 
 // ===========================================

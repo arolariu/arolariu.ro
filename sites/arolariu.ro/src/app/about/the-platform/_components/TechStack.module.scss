@@ -137,9 +137,7 @@
 }
 
 .tabIndicator {
-  position: absolute;
-  inset: auto 0 -1px 0;
-  height: 2px;
+  display: none;
 }
 
 // Tab content (replaces inline utility-class strings)
@@ -221,7 +219,7 @@
 .techIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
 .techInfo {
@@ -361,19 +359,19 @@
   }
 }
 
-.iconBlue { background-color: abstracts.color('primary'); }
-.iconPurple { background-color: abstracts.color('primary'); }
-.iconGreen { background-color: abstracts.color('primary'); }
-.iconOrange { background-color: abstracts.color('primary'); }
-.iconPink { background-color: abstracts.color('primary'); }
-.iconIndigo { background-color: abstracts.color('primary'); }
-.iconYellow { background-color: abstracts.color('primary'); }
-.iconTeal { @include abstracts.gradient-bg(); }
+.iconBlue { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconPurple { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconGreen { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconOrange { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconPink { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconIndigo { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconYellow { background-color: abstracts.color-alpha('primary', 0.1); }
+.iconTeal { background-color: abstracts.color-alpha('primary', 0.1); }
 
 .statIcon {
   width: 1.75rem;
   height: 1.75rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
 // Stat value
@@ -418,10 +416,10 @@
 .borderPink { background-color: abstracts.color('primary'); }
 .borderIndigo { background-color: abstracts.color('primary'); }
 .borderYellow { background-color: abstracts.color('primary'); }
-.borderTeal { @include abstracts.gradient-bg(); }
+.borderTeal { background-color: abstracts.color('primary'); }
 
-// Gradient variants for categories
-.gradientBlueCyan { @include abstracts.gradient-bg(); }
-.gradientPurpleViolet { @include abstracts.gradient-bg(); }
-.gradientOrangeAmber { @include abstracts.gradient-bg(); }
-.gradientGreenEmerald { @include abstracts.gradient-bg(); }
+// Background variants for tech icon wrappers and card overlays
+.gradientBlueCyan { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientPurpleViolet { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientOrangeAmber { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientGreenEmerald { background-color: abstracts.color-alpha('primary', 0.1); }

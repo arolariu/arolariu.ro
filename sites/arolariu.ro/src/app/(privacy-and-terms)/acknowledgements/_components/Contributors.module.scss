@@ -10,7 +10,7 @@
   position: relative;
   width: 100%;
   padding: space(16) space(4);
-  @include gradient-bg();
+  background-color: color('muted');
 }
 
 .container {
@@ -34,10 +34,7 @@
 }
 
 .titleGradient {
-  @include gradient-bg();
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: color('foreground');
 }
 
 .subtitle {
@@ -96,24 +93,24 @@
 .avatarFallback {
   font-size: font-size('lg');
   font-weight: font-weight('bold');
-  color: white;
+  color: color('primary');
 }
 
 // Gradient variants for avatars
 .gradientCyanBlue {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientBluePurple {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientPurplePink {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientAmberOrange {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .contributorName {

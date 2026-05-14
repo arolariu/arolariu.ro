@@ -17,8 +17,8 @@ import Architecture from "./_components/Architecture";
 import CallToAction from "./_components/CallToAction";
 import Features from "./_components/Features";
 import Hero from "./_components/Hero";
+import Stepper from "./_components/Stepper";
 import TechStack from "./_components/TechStack";
-import Timeline from "./_components/Timeline";
 import styles from "./page.module.scss";
 
 /**
@@ -86,8 +86,8 @@ export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/
         {/* Tech Stack Section - Technologies used (with merged statistics) */}
         <TechStack />
 
-        {/* Timeline Section - Development journey */}
-        <Timeline />
+        {/* Stepper Section - Development journey */}
+        <Stepper />
 
         {/* Call to Action Section - Footer CTA */}
         <CallToAction />
