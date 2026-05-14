@@ -15,11 +15,6 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Separator,
   Switch,
   Tooltip,
@@ -116,6 +111,20 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
     },
     [storeSetLocale, onSettingsChange],
   );
+
+  const handleLocaleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const locale = e.currentTarget.dataset["locale"];
+      if (locale) handleLocaleChange(locale);
+    },
+    [handleLocaleChange],
+  );
+
+  const localeOptions = [
+    {value: "en", label: "English", code: "EN"},
+    {value: "ro", label: "Română", code: "RO"},
+    {value: "fr", label: "Français", code: "FR"},
+  ] as const;
 
   const handlePresetClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -429,18 +438,24 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               <CardDescription>{t("locale.description")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Select
-                value={settings.locale}
-                onValueChange={handleLocaleChange}>
-                <SelectTrigger className={styles["selectCursor"]}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='en'>English (EN)</SelectItem>
-                  <SelectItem value='ro'>Romana (RO)</SelectItem>
-                  <SelectItem value='fr'>Francais (FR)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className={styles["localeList"]}>
+                {localeOptions.map((option) => {
+                  const isSelected = settings.locale === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type='button'
+                      data-selected={isSelected}
+                      data-locale={option.value}
+                      className={styles["localeRow"]}
+                      onClick={handleLocaleClick}>
+                      <span className={styles["localeCode"]}>{option.code}</span>
+                      <span className={styles["localeLabel"]}>{option.label}</span>
+                      {isSelected && <TbCheck className={styles["localeCheck"]} />}
+                    </button>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </motion.div>

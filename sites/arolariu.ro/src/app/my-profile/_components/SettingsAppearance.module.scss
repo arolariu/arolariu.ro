@@ -212,6 +212,77 @@
   @include settings.settings-select-cursor;
 }
 
+// ===========================================
+// LOCALE LIST (row-based language selector)
+// ===========================================
+.localeList {
+  @include flex-column;
+  gap: space(2);
+}
+
+.localeRow {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  width: 100%;
+  padding: space(3);
+  border: 2px solid color('border');
+  border-radius: radius('lg');
+  background: transparent;
+  color: color('foreground');
+  cursor: pointer;
+  text-align: left;
+  @include transition((border-color, background-color, box-shadow, transform));
+
+  &:hover {
+    @include shadow('sm');
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+
+  &[data-selected='true'] {
+    border-color: color('primary');
+    background-color: color('accent');
+    @include shadow('sm');
+  }
+}
+
+.localeCode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: space(1) space(2);
+  border-radius: radius('md');
+  background-color: color('muted');
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  letter-spacing: 0.05em;
+
+  .localeRow[data-selected='true'] & {
+    background-color: color('primary');
+    color: color('primary-foreground');
+  }
+}
+
+.localeLabel {
+  flex: 1;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.localeCheck {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: color('primary');
+  flex-shrink: 0;
+}
+
 .sliderCursor {
   @include settings.settings-slider-cursor;
 }
