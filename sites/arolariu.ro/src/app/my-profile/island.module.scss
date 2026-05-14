@@ -1,87 +1,11 @@
-// ===========================================
-// MY-PROFILE ISLAND LAYOUT
-// Scoped to island.tsx only
-// ===========================================
 @use '../../styles/abstracts' as *;
 
-// ===========================================
-// PAGE CONTAINER
-// ===========================================
 .page {
   @include container(87.5rem);
-  padding-top: space(8);
-  padding-bottom: space(24);
-
-  @include respond-to('lg') {
-    padding-bottom: space(8);
-  }
+  padding-top: space(6);
+  padding-bottom: space(16);
 }
 
-// ===========================================
-// BENTO GRID HEADER
-// ===========================================
-.bentoGrid {
-  display: grid;
-  gap: space(4);
-  margin-bottom: space(8);
-
-  @include respond-to('md') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @include respond-to('lg') {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.bentoProfileCard {
-  border: 1px solid color('border');
-  border-radius: radius('xl');
-  padding: space(6);
-  @include gradient-bg();
-  @include shadow('sm');
-
-  @include respond-to('md') {
-    grid-column: span 2;
-  }
-}
-
-.bentoStatsCard {
-  border: 1px solid color('border');
-  border-radius: radius('xl');
-  padding: space(6);
-  @include gradient-bg();
-  @include shadow('sm');
-}
-
-.statsCardInner {
-  @include flex-column-center;
-  gap: space(2);
-  text-align: center;
-}
-
-.statsNumber {
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
-  color: color('primary');
-}
-
-.statsLabel {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-}
-
-.statsMeta {
-  display: flex;
-  gap: space(4);
-  margin-top: space(2);
-  font-size: font-size('xs');
-  color: color('muted-foreground');
-}
-
-// ===========================================
-// LAYOUT ROW (sidebar + content)
-// ===========================================
 .layoutRow {
   display: flex;
   flex-direction: column;
@@ -89,26 +13,25 @@
 
   @include respond-to('lg') {
     flex-direction: row;
+    align-items: flex-start;
   }
 }
 
-// ===========================================
-// SIDEBAR (desktop only)
-// ===========================================
 .sidebar {
   display: none;
 
   @include respond-to('lg') {
-    @include flex-column;
+    display: flex;
+    flex-direction: column;
     position: sticky;
-    top: space(8);
+    top: space(4);
     align-self: flex-start;
-    width: 16rem;
+    width: 14rem;
     flex-shrink: 0;
     gap: space(1);
-    padding: space(3);
+    padding: space(2);
     border: 1px solid color('border');
-    border-radius: radius('xl');
+    border-radius: radius('lg');
     background-color: color('card');
     @include shadow('sm');
   }
@@ -121,13 +44,13 @@
   width: 100%;
   padding: space(2.5) space(3);
   border: none;
-  border-radius: radius('lg');
+  border-radius: radius('md');
   background: transparent;
   cursor: pointer;
   font-size: font-size('sm');
   font-weight: font-weight('medium');
   color: color('muted-foreground');
-  @include transition((background-color, color, border-color, box-shadow));
+  @include transition((background-color, color));
 
   &:hover {
     background-color: color-alpha('muted', 0.5);
@@ -143,23 +66,21 @@
 
 .sidebarItemActive {
   composes: sidebarItem;
-  @include gradient-bg();
-  color: color('primary-foreground');
+  background-color: color-alpha('primary', 0.08);
+  color: color('primary');
+  font-weight: font-weight('semibold');
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
-    color: color('primary-foreground');
+    background-color: color-alpha('primary', 0.12);
+    color: color('primary');
   }
 }
 
-// ===========================================
-// CONTENT PANEL
-// ===========================================
 .content {
   flex: 1;
   min-width: 0;
   border: 1px solid color('border');
-  border-radius: radius('xl');
+  border-radius: radius('lg');
   padding: space(4);
   background-color: color('background');
   @include shadow('sm');
@@ -169,69 +90,15 @@
   }
 }
 
-// ===========================================
-// BOTTOM NAV (mobile/tablet only)
-// ===========================================
-.bottomNav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: z('fixed');
-  display: flex;
-  overflow-x: auto;
-  border-top: 1px solid color('border');
-  background-color: color('background');
-  padding: space(2) space(1);
-  padding-bottom: calc(space(2) + env(safe-area-inset-bottom, 0px));
-
-  // Hide scrollbar
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+.mobileNav {
+  width: 100%;
+  margin-bottom: space(4);
 
   @include respond-to('lg') {
     display: none;
   }
 }
 
-.bottomNavItem {
-  @include flex-column-center;
-  flex-shrink: 0;
-  gap: space(0.5);
-  padding: space(1.5) space(3);
-  border: none;
-  border-radius: radius('lg');
-  background: transparent;
-  cursor: pointer;
-  color: color('muted-foreground');
-  @include transition((background-color, color));
-
-  svg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  span {
-    font-size: font-size('xs');
-    line-height: line-height('none');
-  }
-}
-
-.bottomNavItemActive {
-  composes: bottomNavItem;
-  color: color('primary');
-  background-color: color-alpha('primary', 0.1);
-}
-
-// ===========================================
-// PANEL ANIMATION
-// ===========================================
 .panelEnter {
-  @include reduced-motion {
-    animation: none;
-  }
+  // Framer Motion handles the animation; no CSS needed here
 }

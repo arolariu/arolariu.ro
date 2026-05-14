@@ -18,6 +18,7 @@ import {SettingsNotifications} from "./_components/SettingsNotifications";
 import {SettingsSecurity} from "./_components/SettingsSecurity";
 import {getDefaultSettings, getMockStatistics} from "./_utils/helpers";
 import type {SettingsSection, UserSettings} from "./_utils/types";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components/select";
 import styles from "./island.module.scss";
 
 type Props = Readonly<{
@@ -190,26 +191,11 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
 
   return (
     <section className={styles["page"]}>
-      {/* Bento Grid Header Section */}
-      <section className={styles["bentoGrid"]}>
-        <div className={styles["bentoProfileCard"]}>
-          <ProfileHeader
-            user={user}
-            userIdentifier={user.id}
-          />
-        </div>
-
-        <div className={styles["bentoStatsCard"]}>
-          <div className={styles["statsCardInner"]}>
-            <div className={styles["statsNumber"]}>{statistics.totalInvoices}</div>
-            <p className={styles["statsLabel"]}>{tStats("totalInvoices")}</p>
-            <div className={styles["statsMeta"]}>
-              <span>{tStats("merchants", {count: String(statistics.totalMerchants)})}</span>
-              <span>{tStats("scans", {count: String(statistics.totalScans)})}</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Flat header row — no card wrapper */}
+      <ProfileHeader
+        user={user}
+        userIdentifier={user.id}
+      />
 
       {/* Two-column layout: sidebar + content */}
       <div className={styles["layoutRow"]}>
@@ -233,6 +219,24 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
 
         {/* Content Panel */}
         <section className={styles["content"]}>
+          {/* Mobile nav — replaces fixed bottom nav */}
+          <Select
+            value={activeSection}
+            onValueChange={(v) => handleSectionChange(v as SettingsSection)}>
+            <SelectTrigger className={styles["mobileNav"]}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TAB_CONFIG.map(({id, key}) => (
+                <SelectItem
+                  key={id}
+                  value={id}>
+                  {t(key)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <AnimatePresence
             mode='wait'
             initial={false}>
@@ -249,24 +253,6 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
           </AnimatePresence>
         </section>
       </div>
-
-      {/* Bottom Nav (mobile/tablet) */}
-      <nav
-        className={styles["bottomNav"]}
-        aria-label={tStats("settingsNavigationAriaLabel")}>
-        {TAB_CONFIG.map(({id, icon: Icon, key}) => (
-          <button
-            key={id}
-            type='button'
-            className={activeSection === id ? styles["bottomNavItemActive"] : styles["bottomNavItem"]}
-            data-section={id}
-            onClick={handleNavClick}
-            aria-current={activeSection === id ? "page" : undefined}>
-            <Icon aria-hidden='true' />
-            <span>{t(key)}</span>
-          </button>
-        ))}
-      </nav>
     </section>
   );
 }
