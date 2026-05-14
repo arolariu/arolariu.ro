@@ -21,14 +21,14 @@ ExpConfigGenerator.GenerateAspireConfig(
     targetPath: "../../sites/exp.arolariu.ro/config.aspire.json",
     endpointOverrides: new Dictionary<string, string>
     {
-        ["Endpoints:Database:NoSQL"] = $"AccountEndpoint=https://localhost:{Constants.CosmosGatewayPort}/;"
+      ["Endpoints:Database:NoSQL"] = $"AccountEndpoint=https://localhost:{Constants.CosmosGatewayPort}/;"
                                      + $"AccountKey={Constants.CosmosEmulatorWellKnownKey};",
-        // Encrypt=False / 127.0.0.1 — see sql-ready health check below for rationale.
-        ["Endpoints:Database:SQL"] = $"Server=127.0.0.1,{Constants.SqlPort};Database={Constants.SqlDatabaseName};"
+      // Encrypt=False / 127.0.0.1 — see sql-ready health check below for rationale.
+      ["Endpoints:Database:SQL"] = $"Server=127.0.0.1,{Constants.SqlPort};Database={Constants.SqlDatabaseName};"
                                    + $"User Id=sa;Password={builder.Configuration["Parameters:sql-password"]};"
                                    + $"Encrypt=False;TrustServerCertificate=true;",
-        ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
-        ["Endpoints:Service:Api"] = $"http://localhost:{Constants.ApiPort}",
+      ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
+      ["Endpoints:Service:Api"] = $"http://localhost:{Constants.ApiPort}",
     });
 
 // ─────────────────────────────────────────────────────────────────────
@@ -74,28 +74,28 @@ var sqlDb = sql.AddDatabase(Constants.SqlDatabaseName)
 // Server and the SqlClient connection pool gets poisoned by the failed handshake.
 builder.Services.AddHealthChecks().AddAsyncCheck("sql-ready", async () =>
 {
-    // Connect to 'master' (always exists on a fresh container) — the readiness
-    // probe just needs to verify TDS is accepting queries, not that the app's
-    // database exists yet. The app's database is created later by EF migrations
-    // / API bootstrap. Encrypt=False bypasses the vpnkit-mangled TLS handshake
-    // that Docker Desktop on Windows produces; equivalent to selfhost's Docker-
-    // network path which is unencrypted by default.
-    var connStr = $"Server=127.0.0.1,{Constants.SqlPort};Database=master;User Id=sa;"
-                + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;"
-                + $"Connection Timeout=5;";
+  // Connect to 'master' (always exists on a fresh container) — the readiness
+  // probe just needs to verify TDS is accepting queries, not that the app's
+  // database exists yet. The app's database is created later by EF migrations
+  // / API bootstrap. Encrypt=False bypasses the vpnkit-mangled TLS handshake
+  // that Docker Desktop on Windows produces; equivalent to selfhost's Docker-
+  // network path which is unencrypted by default.
+  var connStr = $"Server=127.0.0.1,{Constants.SqlPort};Database=master;User Id=sa;"
+              + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;"
+              + $"Connection Timeout=5;";
 
-    try
-    {
-        await using var conn = new SqlConnection(connStr);
-        await conn.OpenAsync().ConfigureAwait(false);
-        await using var cmd = new SqlCommand("SELECT 1", conn);
-        await cmd.ExecuteScalarAsync().ConfigureAwait(false);
-        return HealthCheckResult.Healthy();
-    }
-    catch (Exception ex)
-    {
-        return HealthCheckResult.Unhealthy(ex.Message);
-    }
+  try
+  {
+    await using var conn = new SqlConnection(connStr);
+    await conn.OpenAsync().ConfigureAwait(false);
+    await using var cmd = new SqlCommand("SELECT 1", conn);
+    await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+    return HealthCheckResult.Healthy();
+  }
+  catch (Exception ex)
+  {
+    return HealthCheckResult.Unhealthy(ex.Message);
+  }
 });
 sql.WithHealthCheck("sql-ready");
 
@@ -122,7 +122,7 @@ var cosmos = builder
 // Database + containers (mirrors the selfhost-start.sh bootstrap that runs
 // `cosmos.NewDatabase('primary')` + creates invoices/merchants containers).
 var cosmosPrimaryDb = cosmos.AddCosmosDatabase(Constants.CosmosDatabaseName);
-var cosmosInvoices  = cosmosPrimaryDb.AddContainer(
+var cosmosInvoices = cosmosPrimaryDb.AddContainer(
     Constants.CosmosInvoicesContainer,
     partitionKeyPath: Constants.CosmosInvoicesPartitionKey);
 var cosmosMerchants = cosmosPrimaryDb.AddContainer(

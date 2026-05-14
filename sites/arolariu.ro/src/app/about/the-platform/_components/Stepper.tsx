@@ -4,18 +4,7 @@ import {Badge} from "@arolariu/components/badge";
 import {AnimatePresence, motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
-import {
-  TbBrandReact,
-  TbCalendar,
-  TbCheck,
-  TbCloud,
-  TbCode,
-  TbFileInvoice,
-  TbRocket,
-  TbServer,
-  TbSparkles,
-  TbTools,
-} from "react-icons/tb";
+import {TbBrandReact, TbCalendar, TbCheck, TbCloud, TbCode, TbFileInvoice, TbRocket, TbServer, TbSparkles, TbTools} from "react-icons/tb";
 import styles from "./Stepper.module.scss";
 
 interface EventConfig {
@@ -107,14 +96,10 @@ export default function Stepper(): React.JSX.Element {
                     data-event-id={event.id}
                     className={styles["stepButton"]}
                     onClick={handleStepClick}>
-                    <h3 className={styles["stepTitle"]}>
-                      {t(`events.${event.id}.title` as Parameters<typeof t>[0])}
-                    </h3>
+                    <h3 className={styles["stepTitle"]}>{t(`events.${event.id}.title` as Parameters<typeof t>[0])}</h3>
                   </button>
 
-                  <p className={styles["stepDescription"]}>
-                    {t(`events.${event.id}.description` as Parameters<typeof t>[0])}
-                  </p>
+                  <p className={styles["stepDescription"]}>{t(`events.${event.id}.description` as Parameters<typeof t>[0])}</p>
 
                   {/* Tags */}
                   <div className={styles["tags"]}>

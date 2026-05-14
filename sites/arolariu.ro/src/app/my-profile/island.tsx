@@ -7,6 +7,7 @@ import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
 
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
 import {ProfileHeader} from "./_components/ProfileHeader";
 import {ProfileSkeleton} from "./_components/ProfileSkeleton";
 import {QuickStats} from "./_components/QuickStats";
@@ -18,7 +19,6 @@ import {SettingsNotifications} from "./_components/SettingsNotifications";
 import {SettingsSecurity} from "./_components/SettingsSecurity";
 import {getDefaultSettings, getMockStatistics} from "./_utils/helpers";
 import type {SettingsSection, UserSettings} from "./_utils/types";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@arolariu/components";
 import styles from "./island.module.scss";
 
 type Props = Readonly<{

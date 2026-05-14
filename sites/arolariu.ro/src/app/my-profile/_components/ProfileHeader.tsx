@@ -39,9 +39,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
           src={user?.imageUrl}
           alt={`${user?.firstName ?? "User"}'s avatar`}
         />
-        <AvatarFallback className={styles["avatarFallback"]}>
-          {getInitials(user?.firstName, user?.lastName)}
-        </AvatarFallback>
+        <AvatarFallback className={styles["avatarFallback"]}>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
       </Avatar>
 
       {/* Name + email */}
@@ -75,10 +73,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
               <Button
                 className={styles["manageButton"]}
                 onClick={() =>
-                  window.open(
-                    userIdentifier ? `https://accounts.clerk.dev/user/${userIdentifier}` : "https://accounts.clerk.dev",
-                    "_blank",
-                  )
+                  window.open(userIdentifier ? `https://accounts.clerk.dev/user/${userIdentifier}` : "https://accounts.clerk.dev", "_blank")
                 }>
                 <TbShieldCheck className={styles["iconSmSize"]} />
                 {t("header.manageOnClerk")}
