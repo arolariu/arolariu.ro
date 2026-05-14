@@ -4,200 +4,55 @@
 // ===========================================
 @use '../../../styles/abstracts' as *;
 
-// ===========================================
-// BANNER
-// ===========================================
-.bannerGradient {
-  position: relative;
-  height: 8rem;
-  @include gradient-bg();
-}
-
-.bannerOrb {
-  @include orb(10rem, 48px, color-alpha('primary', 0.1));
-  top: -2.5rem;
-  right: -2.5rem;
-}
-
-// ===========================================
-// CARD BODY
-// ===========================================
-.cardBody {
-  position: relative;
-  margin-top: -4rem;
-  padding: 0 space(6) space(6);
-}
-
-// ===========================================
-// HEADER LAYOUT
-// ===========================================
-.headerLayout {
-  @include flex-column;
-  gap: space(4);
-
-  @include respond-to('sm') {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-}
-
-.avatarGroup {
-  @include flex-column;
+.headerRow {
+  display: flex;
   align-items: center;
-  gap: space(4);
-
-  @include respond-to('sm') {
-    flex-direction: row;
-    align-items: flex-end;
-  }
+  gap: space(3);
+  padding: space(3) space(4);
+  background-color: color('card');
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  margin-bottom: space(4);
 }
 
-// ===========================================
-// AVATAR
-// ===========================================
-.avatarWrapper {
-  position: relative;
+.avatar {
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
 }
 
-.onlineIndicator {
-  position: absolute;
-  right: -0.25rem;
-  bottom: -0.25rem;
-  border-radius: radius('full');
-  background-color: color('success');
-  padding: 0.375rem;
-  ring: 2px solid color('background');
+.avatarFallback {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
 }
 
-.onlineIcon {
-  width: 0.75rem;
-  height: 0.75rem;
-  color: white;
-}
-
-// ===========================================
-// NAME & BADGES
-// ===========================================
 .nameBlock {
-  text-align: center;
-
-  @include respond-to('sm') {
-    text-align: left;
-  }
-}
-
-.nameRow {
-  @include flex-column;
-  align-items: center;
-  gap: space(2);
-
-  @include respond-to('sm') {
-    flex-direction: row;
-  }
+  flex: 1;
+  min-width: 0;
 }
 
 .name {
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .email {
+  font-size: font-size('xs');
   color: color('muted-foreground');
-  margin-top: space(1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: space(2);
-  margin-top: space(3);
-
-  @include respond-to('sm') {
-    justify-content: flex-start;
-  }
-}
-
-// ===========================================
-// EDIT BUTTON
-// ===========================================
 .editActions {
   display: flex;
   align-items: center;
   gap: space(2);
-}
-
-.sheetBody {
-  margin-top: space(6);
-  @include flex-column;
-  gap: space(4);
-}
-
-.sheetNote {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
-}
-
-// ===========================================
-// PROGRESS
-// ===========================================
-.progressSection {
-  margin-top: space(6);
-  max-width: 28rem;
-}
-
-.progressHeader {
-  @include flex-between;
-  margin-bottom: space(2);
-  font-size: font-size('sm');
-}
-
-.progressLabel {
-  color: color('muted-foreground');
-}
-
-.progressValue {
-  font-weight: font-weight('medium');
-}
-
-.progressHint {
-  margin-top: space(2);
-  font-size: font-size('xs');
-  color: color('muted-foreground');
-}
-
-// ===========================================
-// COMPONENT OVERRIDES
-// ===========================================
-.cardRoot {
-  overflow: hidden;
-}
-
-.profileAvatar {
-  height: 6rem;
-  width: 6rem;
-  border-width: 4px;
-  border-color: color('background');
-  @include shadow('xl');
-  box-shadow: shadow('xl'), 0 0 0 2px color-alpha('primary', 0.2);
-}
-
-.avatarInitials {
-  font-size: font-size('2xl');
-}
-
-.premiumBadge {
-  gap: space(1);
-}
-
-.iconXs {
-  @include icon-size(0.75rem);
-}
-
-.badgeIcon {
-  @include icon-size(0.75rem);
-  margin-right: space(1);
+  flex-shrink: 0;
 }
 
 .editButton {
@@ -206,66 +61,29 @@
 }
 
 .editIcon {
-  @include icon-size(space(4));
+  height: space(4);
+  width: space(4);
+}
+
+.sheetBody {
+  margin-top: space(6);
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.sheetNote {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
 }
 
 .manageButton {
   width: 100%;
   cursor: pointer;
-}
-
-.progressBar {
-  height: 0.5rem;
-}
-
-// ===========================================
-// LIBRARY COMPONENT CLASSES
-// ===========================================
-.cardOverflow {
-  overflow: hidden;
-}
-
-.avatarLarge {
-  height: 6rem;
-  width: 6rem;
-  border-width: 4px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-}
-
-.avatarFallbackLarge {
-  font-size: 1.5rem;
-}
-
-.badgeIconGap {
-  gap: 0.25rem;
-}
-
-.iconXsSize {
-  height: 0.75rem;
-  width: 0.75rem;
-}
-
-.iconMrSmall {
-  height: 0.75rem;
-  width: 0.75rem;
-  margin-right: 0.25rem;
+  gap: space(2);
 }
 
 .iconSmSize {
   height: 1rem;
   width: 1rem;
-}
-
-.buttonCursorGap {
-  cursor: pointer;
-  gap: 0.5rem;
-}
-
-.buttonFullCursor {
-  width: 100%;
-  cursor: pointer;
-}
-
-.progressHeight {
-  height: 0.5rem;
 }

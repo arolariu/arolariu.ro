@@ -162,7 +162,7 @@
 .layerIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: white;
+  color: abstracts.color('primary');
 }
 
 .layerName {
@@ -202,12 +202,12 @@
   }
 }
 
-// Gradient variants for layer backgrounds
-.gradientBlueCyan { @include abstracts.gradient-bg(); }
-.gradientGreenEmerald { @include abstracts.gradient-bg(); }
-.gradientPurpleViolet { @include abstracts.gradient-bg(); }
-.gradientOrangeAmber { @include abstracts.gradient-bg(); }
-.gradientRedPink { @include abstracts.gradient-bg(); }
-.gradientIndigoBlue { @include abstracts.gradient-bg(); }
-.gradientCyanTeal { @include abstracts.gradient-bg(); }
-.gradientSlateZinc { @include abstracts.gradient-bg(); }
+// Layer icon wrapper background variants
+.gradientBlueCyan { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientGreenEmerald { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientPurpleViolet { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientOrangeAmber { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientRedPink { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientIndigoBlue { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientCyanTeal { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientSlateZinc { background-color: abstracts.color-alpha('primary', 0.1); }

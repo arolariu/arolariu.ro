@@ -94,25 +94,25 @@
 
 // Gradient variants for icons
 .gradientCyanBlue {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientGreenEmerald {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientAmberOrange {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .gradientPurplePink {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 }
 
 .icon {
   height: 1.5rem;
   width: 1.5rem;
-  color: white;
+  color: color('primary');
 }
 
 .statValue {

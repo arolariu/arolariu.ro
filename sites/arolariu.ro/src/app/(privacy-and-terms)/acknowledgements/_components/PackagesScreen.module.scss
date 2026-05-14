@@ -265,21 +265,12 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  @include gradient-bg();
-  color: color('primary');
+  background-color: color('primary');
+  color: white;
   @include transition(background-color);
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
-  }
-
-  @include dark {
-    background-color: color('success');
-    color: color('primary');
-
-    &:hover {
-      background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
-    }
+    background-color: color-alpha('primary', 0.85);
   }
 }
 
@@ -289,21 +280,12 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  @include gradient-bg();
-  color: color('warning');
+  background-color: color('secondary');
+  color: color('secondary-foreground');
   @include transition(background-color);
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
-  }
-
-  @include dark {
-    @include gradient-bg();
-    color: color('primary');
-
-    &:hover {
-      background-color: color('warning');
-    }
+    background-color: color-alpha('secondary', 0.85);
   }
 }
 
