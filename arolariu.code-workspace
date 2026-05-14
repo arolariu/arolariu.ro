@@ -1,0 +1,19 @@
+{
+  "folders": [
+    { "path": "." },
+    { "path": "sites" },
+    { "path": "packages" },
+    { "path": "infra" },
+    { "path": "docs" },
+    { "path": "tooling" },
+    { "path": "scripts" },
+    { "path": ".github" }
+  ],
+  "settings": {
+    "dotnet.defaultSolution": "arolariu.slnx",
+    "dotnet.preferCSharpExtension": true
+  },
+  "extensions": {
+    "recommendations": []
+  }
+}

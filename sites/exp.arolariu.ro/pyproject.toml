@@ -4,6 +4,17 @@ version = "3.0.0"
 description = "Configuration proxy service for arolariu.ro platform"
 requires-python = ">=3.12"
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# exp is a FastAPI app (run via uvicorn), not a distributable Python package.
+# Explicitly tell setuptools "no packages to discover" so `pip install -e .`
+# (which Aspire's AddUvicornApp installer runs by default) doesn't fail on the
+# multiple top-level dirs (api/, config/, runtime/, security/, telemetry/).
+[tool.setuptools]
+packages = []
+
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
 testpaths = ["."]

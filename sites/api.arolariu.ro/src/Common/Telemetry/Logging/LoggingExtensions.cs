@@ -88,6 +88,13 @@ public static class LoggingExtensions
           monitorOptions.Credential = AzureCredentialFactory.CreateCredential();
         });
       }
+
+      // Aspire dashboard OTLP receiver — opt-in via OTEL_EXPORTER_OTLP_ENDPOINT (AppHost injects)
+      if (!string.IsNullOrWhiteSpace(
+              Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT")))
+      {
+        otelOptions.AddOtlpExporter();
+      }
     });
   }
 }

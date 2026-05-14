@@ -131,6 +131,7 @@ services:
       - "traefik.http.routers.redis.tls=true"
 
   exp:
+    profiles: [selfhost]
     build:
       context: ../../..
       dockerfile: infra/containers/Dockerfile.exp

@@ -41,9 +41,12 @@ docker compose -f Management/docker-compose.yml up -d
 
 timeout /t 3 /nobreak > nul
 
+rem Clean any stale aspire-services.yml from a previous Aspire run
+del /Q Management\traefik\dynamic\aspire-services.yml 2>nul
+
 rem Start the Storage containers
 echo 📦 Preparing to start the storage containers...
-docker compose -f Storage/docker-compose.yml up -d
+docker compose -f Storage/docker-compose.yml --profile selfhost up -d
 
 rem Wait 10 seconds for the servers to start and become ready
 echo 🕒 Waiting for the servers to start...

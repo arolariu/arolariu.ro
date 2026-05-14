@@ -46,6 +46,8 @@ class TelemetrySettings:
     application_insights_connection_string: str | None
     excluded_urls: str
     log_level_name: str
+    otlp_export_enabled: bool
+    otlp_endpoint: str | None
 
 
 def _service_root() -> Path:
@@ -142,6 +144,8 @@ def get_telemetry_settings() -> TelemetrySettings:
         default=DEFAULT_METRIC_EXPORT_INTERVAL_SECONDS,
     )
 
+    otlp_endpoint = (os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip() or None
+
     return TelemetrySettings(
         enabled=enabled,
         infra_mode=infra_mode,
@@ -171,4 +175,6 @@ def get_telemetry_settings() -> TelemetrySettings:
         application_insights_connection_string=connection_string,
         excluded_urls=(os.getenv("EXP_OTEL_EXCLUDED_URLS") or DEFAULT_EXCLUDED_URLS).strip() or DEFAULT_EXCLUDED_URLS,
         log_level_name=(os.getenv("EXP_OTEL_LOG_LEVEL") or DEFAULT_LOG_LEVEL).strip().upper() or DEFAULT_LOG_LEVEL,
+        otlp_export_enabled=otlp_endpoint is not None,
+        otlp_endpoint=otlp_endpoint,
     )

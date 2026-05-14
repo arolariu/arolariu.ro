@@ -2,6 +2,33 @@
 
 ## Overview
 
+Two coexisting modes for local development.
+
+### Mode 1: Aspire (default — `npm run dev`)
+
+Recommended for ~95% of dev work. The .NET Aspire 13.x AppHost (under `tooling/AppHost`)
+declares and orchestrates everything natively:
+
+- **Infrastructure**: SQL Server, Cosmos vNext emulator, Azurite, Redis — all spawned by Aspire's native integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, etc.) using the same ports/credentials as the Selfhost-mode Compose files so `exp`'s `config.docker.json` keeps working.
+- **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
+- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`.
+- **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
+
+In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
+
+### Mode 2: Selfhost (advanced — `npm run dev:selfhost`)
+
+Everything containerized via Docker Compose, including apps. Used for:
+- Auditing container behavior
+- CI parity validation
+- Testing deploy-mock-of-prod configurations
+
+The Selfhost flow is the rest of this README. It starts the Management + Storage + Backend + Frontend Compose stacks (with `--profile selfhost` to include containerized exp + apps).
+
+---
+
+## Selfhost mode — full setup
+
 This repository contains a complete containerized development environment for the arolariu.ro project. The setup uses Docker Compose to orchestrate multiple containers organized in logical groups (Management, Storage, Backend, Frontend), allowing developers to run the entire stack locally.
 
 ## Architecture
