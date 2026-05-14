@@ -143,19 +143,21 @@ export function useUserInformation(): HookReturnType {
         const userInformationAsJson = await userInformationResponse.json();
         setUserInformation(userInformationAsJson as UserInformation);
       } catch (error: unknown) {
-        // Swallow aborts triggered by the effect cleanup (StrictMode double-invoke,
-        // unmount, or a new request superseding this one). These are expected and
-        // not actionable errors.
-        if (signal.aborted) {
+        // In development, React StrictMode double-invokes effects, which causes
+        // the first in-flight request to be aborted by the cleanup function.
+        // These aborts are expected and not actionable, so we silence them to
+        // avoid noisy dev-console errors. In production, we keep the original
+        // behavior so genuine aborts still surface as errors.
+        const isAbort = signal.aborted || (error instanceof DOMException && error.name === "AbortError");
+        if (isAbort && process.env.NODE_ENV === "development") {
           return;
         }
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
+
         console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
         setIsError(true);
       } finally {
-        if (!signal.aborted) {
+        const shouldSkipLoadingReset = process.env.NODE_ENV === "development" && signal.aborted;
+        if (!shouldSkipLoadingReset) {
           setIsLoading(false);
         }
       }
