@@ -465,6 +465,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 </div>
                 <Switch
                   nativeButton
+                  nativeButton
                   checked={settings.compactMode}
                   onCheckedChange={handleToggle("compactMode")}
                 />
@@ -476,6 +477,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   <p>{t("advanced.animationsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   nativeButton
                   checked={settings.animationsEnabled}
                   onCheckedChange={handleToggle("animationsEnabled")}

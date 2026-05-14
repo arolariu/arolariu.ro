@@ -94,6 +94,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("enabled.hint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.enabled}
                   onCheckedChange={handleToggle("enabled")}
                 />
@@ -187,6 +188,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("tracking.spendingHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.trackSpending}
                   onCheckedChange={handleToggle("trackSpending")}
                   disabled={!settings.enabled}
@@ -199,6 +201,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("tracking.categoriesHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.trackCategories}
                   onCheckedChange={handleToggle("trackCategories")}
                   disabled={!settings.enabled}
@@ -211,6 +214,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("tracking.merchantsHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.trackMerchants}
                   onCheckedChange={handleToggle("trackMerchants")}
                   disabled={!settings.enabled}
@@ -240,6 +244,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("advanced.benchmarkingHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.benchmarking}
                   onCheckedChange={handleToggle("benchmarking")}
                   disabled={!settings.enabled}
@@ -252,6 +257,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                   <p>{t("advanced.predictiveHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.predictiveAnalysis}
                   onCheckedChange={handleToggle("predictiveAnalysis")}
                   disabled={!settings.enabled}

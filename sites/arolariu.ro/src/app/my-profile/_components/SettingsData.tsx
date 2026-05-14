@@ -123,6 +123,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   <p>{t("backup.autoBackupHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.autoBackup}
                   onCheckedChange={handleToggle("autoBackup")}
                 />
@@ -172,6 +173,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   <p>{t("privacy.shareAnonymousHint")}</p>
                 </div>
                 <Switch
+                  nativeButton
                   checked={settings.shareAnonymousData}
                   onCheckedChange={handleToggle("shareAnonymousData")}
                 />
