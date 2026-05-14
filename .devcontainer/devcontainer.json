@@ -50,12 +50,12 @@
     "7007":  { "label": "Storybook Website" },
     "8080":  { "label": "Traefik dashboard / DocFX" },
     "8081":  { "label": "Cosmos DB emulator" },
-    "8082":  { "label": "SQL emulator" },
+    "8082":  { "label": "SQL Server" },
     "10000": { "label": "Azurite Blob" },
     "10001": { "label": "Azurite Queue" },
     "10002": { "label": "Azurite Table" },
-    "17080": { "label": "Aspire dashboard (HTTP)" },
-    "17081": { "label": "Aspire dashboard (HTTPS)" }
+    "17080": { "label": "Aspire dashboard (HTTPS)" },
+    "17081": { "label": "Aspire dashboard (HTTP)" }
   },
   "mounts": [
     "source=npm-cache,target=/workspace/.cache/npm,type=volume",
