@@ -72,8 +72,8 @@ public sealed class ExpHealthCheckTests
 
     Assert.AreEqual(HealthStatus.Unhealthy, result.Status);
     Assert.IsNotNull(result.Description);
-    StringAssert.Contains(result.Description, exceptionMessage);
-    StringAssert.StartsWith(result.Description, "exp unreachable:");
+    StringAssert.Contains(result.Description, exceptionMessage, StringComparison.Ordinal);
+    StringAssert.StartsWith(result.Description, "exp unreachable:", StringComparison.Ordinal);
   }
 
   // ---------------------------------------------------------------------------
