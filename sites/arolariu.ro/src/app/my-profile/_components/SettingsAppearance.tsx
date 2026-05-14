@@ -4,17 +4,7 @@ import {useFontContext} from "@/contexts/FontContext";
 import {setCookie} from "@/lib/actions/cookies";
 import {THEME_PRESETS, type CustomThemeColors, type ThemePresetName} from "@/lib/theme-presets";
 import {usePreferencesStore} from "@/stores/preferencesStore";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Label,
-  Separator,
-  Switch,
-} from "@arolariu/components";
+import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Label, Separator, Switch} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useTheme} from "next-themes";
@@ -417,9 +407,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                         value={settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}
                         onChange={handleTertiaryColorInput}
                       />
-                      <span className={styles["customColorHex"]}>
-                        {settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}
-                      </span>
+                      <span className={styles["customColorHex"]}>{settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}</span>
                     </label>
                   </div>
 
