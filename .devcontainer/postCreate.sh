@@ -4,10 +4,12 @@ set -euo pipefail
 echo "=== Installing mkcert + generating root CA ==="
 if ! command -v mkcert >/dev/null 2>&1; then
   MKCERT_VERSION="v1.4.4"
-  curl -sSL "https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-amd64" \
-       -o /tmp/mkcert
-  sudo mv /tmp/mkcert /usr/local/bin/mkcert
-  sudo chmod +x /usr/local/bin/mkcert
+  MKCERT_SHA256="6d31c65b03972c6dc4a14ab429f2928300518b26503f58723e532d1b0a3bbb52"
+  MKCERT_URL="https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-amd64"
+  curl -fsSL "$MKCERT_URL" -o /tmp/mkcert
+  echo "${MKCERT_SHA256}  /tmp/mkcert" | sha256sum -c -
+  sudo install -m 0755 /tmp/mkcert /usr/local/bin/mkcert
+  rm /tmp/mkcert
 fi
 mkcert -install
 
@@ -18,9 +20,6 @@ if [[ ! -f local-cert.pem ]] || [[ ! -f local-key.pem ]]; then
   mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
 fi
 cd -
-
-echo "=== Installing Node deps ==="
-npm install
 
 echo "=== Restoring .NET workloads + packages ==="
 dotnet workload restore || true
