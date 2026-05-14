@@ -153,6 +153,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             open={isOpen}
             onOpenChange={setIsOpen}>
             <DialogTrigger
+              nativeButton
               render={
                 <div className={styles["imageContainer"]}>
                   <div
