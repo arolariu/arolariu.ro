@@ -108,6 +108,7 @@ var cosmos = builder
     .RunAsPreviewEmulator(emulator => emulator
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
+        .WithDataVolume(Constants.CosmosDataVolume)
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "true")
         .WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP", "true"))
     // Bypass DCP on the gateway endpoint (same rationale as SQL above): without
