@@ -143,10 +143,21 @@ export function useUserInformation(): HookReturnType {
         const userInformationAsJson = await userInformationResponse.json();
         setUserInformation(userInformationAsJson as UserInformation);
       } catch (error: unknown) {
+        // Swallow aborts triggered by the effect cleanup (StrictMode double-invoke,
+        // unmount, or a new request superseding this one). These are expected and
+        // not actionable errors.
+        if (signal.aborted) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
         console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
         setIsError(true);
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
