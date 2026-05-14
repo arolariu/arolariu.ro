@@ -136,13 +136,11 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "name")}>
             {t("columns.invoice")}
-            {sortBy === "name" && sortDirection && (
-              <span
-                className={styles["sortArrow"]}
-                aria-hidden='true'>
-                {sortDirection === "asc" ? " ▲" : " ▼"}
-              </span>
-            )}
+            <span
+              className={`${styles["sortArrow"]} ${sortBy === "name" && sortDirection ? "" : styles["sortArrowInactive"]}`}
+              aria-hidden='true'>
+              {sortBy === "name" && sortDirection === "desc" ? "\u25BC" : "\u25B2"}
+            </span>
           </TableHead>
           <TableHead>{t("columns.category")}</TableHead>
           <TableHead
@@ -154,13 +152,11 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "date")}>
             {t("columns.date")}
-            {sortBy === "date" && sortDirection && (
-              <span
-                className={styles["sortArrow"]}
-                aria-hidden='true'>
-                {sortDirection === "asc" ? " ▲" : " ▼"}
-              </span>
-            )}
+            <span
+              className={`${styles["sortArrow"]} ${sortBy === "date" && sortDirection ? "" : styles["sortArrowInactive"]}`}
+              aria-hidden='true'>
+              {sortBy === "date" && sortDirection === "desc" ? "\u25BC" : "\u25B2"}
+            </span>
           </TableHead>
           <TableHead
             className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
@@ -171,13 +167,11 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "amount")}>
             {t("columns.amount")}
-            {sortBy === "amount" && sortDirection && (
-              <span
-                className={styles["sortArrow"]}
-                aria-hidden='true'>
-                {sortDirection === "asc" ? " ▲" : " ▼"}
-              </span>
-            )}
+            <span
+              className={`${styles["sortArrow"]} ${sortBy === "amount" && sortDirection ? "" : styles["sortArrowInactive"]}`}
+              aria-hidden='true'>
+              {sortBy === "amount" && sortDirection === "desc" ? "\u25BC" : "\u25B2"}
+            </span>
           </TableHead>
           <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
