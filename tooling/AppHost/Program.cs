@@ -20,7 +20,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 // canonical pattern.)
 // ─────────────────────────────────────────────────────────────────────
 
-var sqlPassword = builder.AddParameter("sql-password", Constants.SqlPassword, secret: true);
+var sqlPassword = builder.AddParameter("sql-password", secret: true);
+var sqlPasswordValue = builder.Configuration["Parameters:sql-password"]
+    ?? throw new InvalidOperationException(
+        "Parameters:sql-password not configured. Set via 'dotnet user-secrets set Parameters:sql-password <value>' or appsettings.Development.json.");
 var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
     .WithDataVolume(Constants.SqlDataVolume)
@@ -59,7 +62,7 @@ builder.Services.AddHealthChecks().AddAsyncCheck("sql-ready", async () =>
     // that Docker Desktop on Windows produces; equivalent to selfhost's Docker-
     // network path which is unencrypted by default.
     var connStr = $"Server=127.0.0.1,{Constants.SqlPort};Database=master;User Id=sa;"
-                + $"Password={Constants.SqlPassword};Encrypt=False;TrustServerCertificate=true;"
+                + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;"
                 + $"Connection Timeout=5;";
 
     try
@@ -114,7 +117,7 @@ var storage = builder
 // See Aspire/AzuriteBootstrap.cs for the retry / event-subscription details.
 builder.AddAzuriteBootstrap(storage, Constants.AzuriteBlobPort, "invoices");
 
-var redisPassword = builder.AddParameter("redis-password", Constants.RedisPassword, secret: true);
+var redisPassword = builder.AddParameter("redis-password", secret: true);
 var redis = builder
     .AddRedis("redis", port: Constants.RedisPort, password: redisPassword)
     .WithDataVolume(Constants.RedisDataVolume)
@@ -264,7 +267,7 @@ builder.AddExpConfigGenerator(
         {
             var port = LookupEndpointPort(cosmos.Resource, "https", "gateway", "emulator", "http");
             return $"AccountEndpoint=https://localhost:{port}/;"
-                 + $"AccountKey={Constants.CosmosEmulatorAccountKey};";
+                 + $"AccountKey={Constants.CosmosEmulatorWellKnownKey};";
         },
         ["Endpoints:Database:SQL"] = () =>
         {
@@ -278,7 +281,7 @@ builder.AddExpConfigGenerator(
             // here by disabling TLS at the TDS layer. 127.0.0.1 (not localhost) skips
             // the IPv6 first-try fallback that SqlClient does by default.
             return $"Server=127.0.0.1,{port};Database={Constants.SqlDatabaseName};User Id=sa;"
-                 + $"Password={Constants.SqlPassword};Encrypt=False;TrustServerCertificate=true;";
+                 + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;";
         },
         ["Endpoints:Storage:Blob"] = () =>
         {
