@@ -201,6 +201,12 @@
   gap: abstracts.space(2);
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(2);
+}
+
 .headerTitle {
   font-size: abstracts.font-size('2xl');
   font-weight: abstracts.font-weight('bold');
