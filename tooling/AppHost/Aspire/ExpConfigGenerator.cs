@@ -4,6 +4,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AppHost.Aspire;
 
@@ -51,7 +52,12 @@ internal static class ExpConfigGenerator
     /// Aspire resources whose readiness gates the config write. Typically the
     /// infra resources whose ports appear in the connection strings.
     /// </param>
-    public static IDistributedApplicationBuilder AddExpConfigGenerator(
+    /// <returns>
+    /// A <see cref="GeneratorState"/> whose <see cref="GeneratorState.ConfigWritten"/>
+    /// task completes once the first successful config write finishes. Gate the exp
+    /// process start on this to eliminate the exp ↔ config-rewrite race.
+    /// </returns>
+    public static GeneratorState AddExpConfigGenerator(
         this IDistributedApplicationBuilder builder,
         string configPath,
         IReadOnlyDictionary<string, Func<string>> connectionStringFactories,
@@ -100,22 +106,31 @@ internal static class ExpConfigGenerator
             if (!state.Tracked.Contains(evt.Resource))
                 return;
 
-            bool allReady;
+            // Task 3: check allReady and the one-time write guard atomically so that
+            // concurrent or repeated ResourceReadyEvent firings cannot trigger more
+            // than one write per AppHost lifecycle.
+            bool shouldWrite;
             lock (state.ReadyLock)
             {
                 state.Ready.Add(evt.Resource);
-                allReady = state.Ready.Count == state.Tracked.Count;
+                bool allReady = state.Ready.Count == state.Tracked.Count;
+                shouldWrite = allReady && !state.HasWritten;
+                if (shouldWrite)
+                    state.HasWritten = true;
             }
 
-            if (!allReady)
+            if (!shouldWrite)
                 return;
 
             await WriteAspireConfigAsync(state, connectionStringFactories, ct).ConfigureAwait(false);
         });
 
-        builder.Services.AddSingleton<IHostedService>(_ => new RestoreOriginalHostedService(state));
+        builder.Services.AddSingleton<IHostedService>(sp =>
+            new RestoreOriginalHostedService(
+                state,
+                sp.GetRequiredService<ILogger<RestoreOriginalHostedService>>()));
 
-        return builder;
+        return state;
     }
 
     internal static async Task WriteAspireConfigAsync(
@@ -138,28 +153,107 @@ internal static class ExpConfigGenerator
 
         var output = config.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(state.ConfigPath, output, ct).ConfigureAwait(false);
+
+        // Task 4: cache the written content so StopAsync can detect external edits.
+        state.LastGeneratedContent = output;
+
+        // Task 5: signal that the config file is ready for exp (uvicorn) to read.
+        state.SignalWritten();
     }
 
+    /// <summary>
+    /// Mutable state shared between the <c>ResourceReadyEvent</c> handler and the
+    /// <see cref="RestoreOriginalHostedService"/>. Also exposes
+    /// <see cref="ConfigWritten"/> for callers that need to gate on the rewrite.
+    /// </summary>
     internal sealed class GeneratorState
     {
+        /// <summary>Absolute path to the exp config file being rewritten.</summary>
         public required string ConfigPath { get; init; }
+
+        /// <summary>Absolute path to the crash-recovery sidecar backup.</summary>
         public required string BackupPath { get; init; }
+
+        /// <summary>Original file content captured at registration time.</summary>
         public required string OriginalContent { get; init; }
+
+        /// <summary>Resources whose readiness gates the config write.</summary>
         public required HashSet<IResource> Tracked { get; init; }
+
+        /// <summary>Resources that have fired <c>ResourceReadyEvent</c> so far.</summary>
         public HashSet<IResource> Ready { get; } = [];
+
+        /// <summary>Lock protecting <see cref="Ready"/>, <see cref="HasWritten"/>, and related state.</summary>
         public object ReadyLock { get; } = new();
+
+        /// <summary>
+        /// Task 3: set to <see langword="true"/> once the first write is dispatched,
+        /// preventing duplicate writes if <c>ResourceReadyEvent</c> re-fires.
+        /// Reset to <see langword="false"/> in <c>StopAsync</c> so a soft restart re-writes.
+        /// </summary>
+        public bool HasWritten { get; set; }
+
+        /// <summary>
+        /// Task 4: content of the last successful file write; <see langword="null"/>
+        /// until the first write completes. Used by <c>StopAsync</c> to detect
+        /// external edits made while AppHost was running.
+        /// </summary>
+        public string? LastGeneratedContent { get; set; }
+
+        // Task 5: TCS whose Task completes when the first write succeeds.
+        private readonly TaskCompletionSource<bool> _writtenTcs =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Completes once the first successful config write has finished.
+        /// Gate uvicorn start on this task to eliminate the exp ↔ config-rewrite race
+        /// (e.g. via an async <c>WithEnvironment</c> callback on the exp resource).
+        /// </summary>
+        public Task ConfigWritten => _writtenTcs.Task;
+
+        /// <summary>Signals that the config write has completed successfully.</summary>
+        public void SignalWritten() => _writtenTcs.TrySetResult(true);
     }
 
-    private sealed class RestoreOriginalHostedService(GeneratorState state) : IHostedService
+    private sealed class RestoreOriginalHostedService(
+        GeneratorState state,
+        ILogger<RestoreOriginalHostedService> logger) : IHostedService
     {
+        /// <inheritdoc/>
         public Task StartAsync(CancellationToken _) => Task.CompletedTask;
 
-        public Task StopAsync(CancellationToken _)
+        /// <inheritdoc/>
+        public async Task StopAsync(CancellationToken ct)
         {
-            // Restore the cached original content so selfhost mode works next run
+            // Task 3: reset the write guard so a soft AppHost restart will re-write.
+            lock (state.ReadyLock)
+                state.HasWritten = false;
+
+            // Restore the original content so selfhost mode works on the next run.
+            // Task 4: if the file was edited outside the generator while AppHost was
+            // running, skip the restore to avoid clobbering the user's edits.
             try
             {
-                File.WriteAllText(state.ConfigPath, state.OriginalContent);
+                if (state.LastGeneratedContent is not null)
+                {
+                    var current = await File.ReadAllTextAsync(state.ConfigPath, ct).ConfigureAwait(false);
+                    if (current != state.LastGeneratedContent)
+                    {
+                        logger.LogWarning(
+                            "exp config at {Path} was modified outside the generator; skipping restore to avoid clobbering user edits.",
+                            state.ConfigPath);
+                    }
+                    else
+                    {
+                        await File.WriteAllTextAsync(state.ConfigPath, state.OriginalContent, ct).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    // Generator never wrote (infra never became ready); the file still
+                    // holds the original content — an idempotent restore is safe.
+                    File.WriteAllText(state.ConfigPath, state.OriginalContent);
+                }
             }
             catch
             {
@@ -176,8 +270,6 @@ internal static class ExpConfigGenerator
             {
                 // best-effort
             }
-
-            return Task.CompletedTask;
         }
     }
 }

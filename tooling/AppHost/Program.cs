@@ -259,7 +259,7 @@ static int LookupEndpointPort(IResource resource, params string[] candidateNames
         + $"Available: [{available}]");
 }
 
-builder.AddExpConfigGenerator(
+var expConfigState = builder.AddExpConfigGenerator(
     configPath: "../../sites/exp.arolariu.ro/config.docker.json",
     connectionStringFactories: new Dictionary<string, Func<string>>
     {
@@ -296,5 +296,17 @@ builder.AddExpConfigGenerator(
         sql.Resource,
         storage.Resource,
     });
+
+// Task 5: gate uvicorn start on the config rewrite completing, eliminating the
+// race where exp reads the Docker-network config before the generator has
+// overwritten it with Aspire-allocated localhost endpoints.
+// Aspire awaits async WithEnvironment callbacks before launching the process,
+// so this acts as a zero-overhead barrier that costs nothing when the write
+// has already finished (ConfigWritten is already completed by then).
+exp.WithEnvironment(async ctx =>
+{
+    await expConfigState.ConfigWritten.ConfigureAwait(false);
+    ctx.EnvironmentVariables["EXP_CONFIG_READY"] = "1";
+});
 
 builder.Build().Run();
