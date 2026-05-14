@@ -6,6 +6,7 @@ using Aspire.Hosting.ApplicationModel;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 
 namespace AppHost.Aspire;
@@ -39,13 +40,27 @@ internal static class AzuriteBootstrap
     private const string AzuriteAccountKey =
         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
+    private const int MaxAttempts = 6;
+
+    // Shared bootstrap state surfaced to the dashboard via a custom health check.
+    // Marked unhealthy by default; flipped to healthy by the bootstrap handler once
+    // CORS + container creation both succeed. Failure mode: the storage container
+    // still reports green (it really is running), but the storage resource shows
+    // a degraded badge so the user notices instead of hitting cryptic 404/CORS
+    // errors at upload time.
+    private static volatile bool _bootstrapSucceeded;
+    private static volatile string? _bootstrapError;
+    private const string HealthCheckName = "azurite-bootstrap";
+
     /// <summary>
     /// Subscribes a bootstrap handler to <paramref name="storage"/>'s
     /// <see cref="ResourceReadyEvent"/>. The handler applies allow-all CORS rules and
-    /// idempotently creates each container in <paramref name="containerNames"/>. It
-    /// retries up to 6 times with linear backoff because Azurite's blob service typically
-    /// needs a couple of seconds after the container reports Ready before service writes
-    /// are accepted.
+    /// idempotently creates each container in <paramref name="containerNames"/>. CORS and
+    /// container creation are retried independently up to 6 times each with linear backoff.
+    /// Bootstrap success/failure is surfaced via a custom health check
+    /// (<c>azurite-bootstrap</c>) attached to <paramref name="storage"/>, so the dashboard
+    /// turns the storage resource red on persistent failure instead of leaving the user to
+    /// debug 404/CORS errors at upload time.
     /// </summary>
     /// <param name="builder">The Aspire distributed application builder.</param>
     /// <param name="storage">The Azurite storage resource to configure.</param>
@@ -69,6 +84,13 @@ internal static class AzuriteBootstrap
           + $"AccountKey={AzuriteAccountKey};"
           + $"BlobEndpoint=http://localhost:{blobPort}/{AzuriteAccountName};";
 
+        builder.Services.AddHealthChecks().AddCheck(HealthCheckName, () =>
+            _bootstrapSucceeded
+                ? HealthCheckResult.Healthy()
+                : HealthCheckResult.Unhealthy(
+                    _bootstrapError ?? "Azurite bootstrap has not run yet."));
+        storage.WithHealthCheck(HealthCheckName);
+
         builder.Eventing.Subscribe<ResourceReadyEvent>(async (evt, ct) =>
         {
             if (!ReferenceEquals(evt.Resource, storage.Resource))
@@ -79,82 +101,114 @@ internal static class AzuriteBootstrap
 
             var client = new BlobServiceClient(connStr);
 
-            for (int attempt = 1; attempt <= 6; attempt++)
+            try
             {
-                try
-                {
-                    var props = (await client.GetPropertiesAsync(ct).ConfigureAwait(false)).Value;
-                    props.Cors.Clear();
-                    props.Cors.Add(new BlobCorsRule
-                    {
-                        AllowedOrigins = "*",
-                        AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
-                        AllowedHeaders = "*",
-                        ExposedHeaders = "*",
-                        MaxAgeInSeconds = 3600,
-                    });
-                    await client.SetPropertiesAsync(props, ct).ConfigureAwait(false);
-                    logger?.LogInformation(
-                        "Azurite CORS rules applied (allow-all) on attempt {Attempt}.", attempt);
-
-                    // Idempotent — second-and-later runs are no-ops, so this is safe to
-                    // call on every AppHost startup even when the data volume persists
-                    // containers across restarts. PublicAccessType.Blob enables anonymous
-                    // GET on individual blobs (matches prod, where the website renders
-                    // thumbnails via raw <img src="…/invoices/…"> without SAS) while
-                    // still blocking anonymous container-level listing.
-                    foreach (var name in containerNames)
-                    {
-                        var container = client.GetBlobContainerClient(name);
-                        var created = await container.CreateIfNotExistsAsync(
-                            publicAccessType: PublicAccessType.Blob,
-                            cancellationToken: ct).ConfigureAwait(false);
-
-                        if (created?.Value is null)
-                        {
-                            // Container already existed (likely from a prior run with the
-                            // persistent volume). The create call returns null in that
-                            // case and does NOT touch the existing access policy, so
-                            // explicitly upgrade it — first-time runs that predated this
-                            // bootstrap may have left it at PublicAccessType.None.
-                            await container.SetAccessPolicyAsync(
-                                PublicAccessType.Blob,
-                                cancellationToken: ct).ConfigureAwait(false);
-                            logger?.LogInformation(
-                                "Azurite container '{Name}' already exists; upgraded public access to Blob.", name);
-                        }
-                        else
-                        {
-                            logger?.LogInformation(
-                                "Azurite container '{Name}' created with public-blob access.", name);
-                        }
-                    }
-                    return;
-                }
-                catch (Exception ex) when (attempt < 6)
-                {
-                    logger?.LogDebug(
-                        "Azurite bootstrap attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
-                        attempt, ex.Message, attempt);
-                    try
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(attempt), ct).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogWarning(
-                        ex,
-                        "Azurite bootstrap exhausted retries — browser uploads / container access may fail.");
-                    return;
-                }
+                await ApplyCorsWithRetryAsync(client, logger, ct).ConfigureAwait(false);
+                await EnsureContainersWithRetryAsync(client, containerNames, logger, ct).ConfigureAwait(false);
+                _bootstrapError = null;
+                _bootstrapSucceeded = true;
+            }
+            catch (OperationCanceledException)
+            {
+                // Shutdown — leave health check unhealthy; nothing actionable.
+            }
+            catch (Exception ex)
+            {
+                _bootstrapError = ex.Message;
+                logger?.LogWarning(
+                    ex,
+                    "Azurite bootstrap exhausted retries — storage resource will report unhealthy in the dashboard.");
             }
         });
 
         return builder;
+    }
+
+    private static async Task ApplyCorsWithRetryAsync(
+        BlobServiceClient client, ILogger? logger, CancellationToken ct)
+    {
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            try
+            {
+                var props = (await client.GetPropertiesAsync(ct).ConfigureAwait(false)).Value;
+                props.Cors.Clear();
+                props.Cors.Add(new BlobCorsRule
+                {
+                    AllowedOrigins = "*",
+                    AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
+                    AllowedHeaders = "*",
+                    ExposedHeaders = "*",
+                    MaxAgeInSeconds = 3600,
+                });
+                await client.SetPropertiesAsync(props, ct).ConfigureAwait(false);
+                logger?.LogInformation(
+                    "Azurite CORS rules applied (allow-all) on attempt {Attempt}.", attempt);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxAttempts)
+            {
+                logger?.LogDebug(
+                    "Azurite CORS attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
+                    attempt, ex.Message, attempt);
+                await Task.Delay(TimeSpan.FromSeconds(attempt), ct).ConfigureAwait(false);
+            }
+        }
+        // Final attempt (no catch) — let the exception propagate so the bootstrap
+        // handler marks the health check unhealthy with the real error.
+        throw new InvalidOperationException(
+            $"Azurite CORS bootstrap failed after {MaxAttempts} attempts.");
+    }
+
+    private static async Task EnsureContainersWithRetryAsync(
+        BlobServiceClient client,
+        string[] containerNames,
+        ILogger? logger,
+        CancellationToken ct)
+    {
+        if (containerNames.Length == 0) return;
+
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            try
+            {
+                foreach (var name in containerNames)
+                {
+                    var container = client.GetBlobContainerClient(name);
+                    var created = await container.CreateIfNotExistsAsync(
+                        publicAccessType: PublicAccessType.Blob,
+                        cancellationToken: ct).ConfigureAwait(false);
+
+                    if (created?.Value is null)
+                    {
+                        // Container already existed (likely from a prior run with the
+                        // persistent volume). The create call returns null in that
+                        // case and does NOT touch the existing access policy, so
+                        // explicitly upgrade it — first-time runs that predated this
+                        // bootstrap may have left it at PublicAccessType.None.
+                        await container.SetAccessPolicyAsync(
+                            PublicAccessType.Blob,
+                            cancellationToken: ct).ConfigureAwait(false);
+                        logger?.LogInformation(
+                            "Azurite container '{Name}' already exists; upgraded public access to Blob.", name);
+                    }
+                    else
+                    {
+                        logger?.LogInformation(
+                            "Azurite container '{Name}' created with public-blob access.", name);
+                    }
+                }
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxAttempts)
+            {
+                logger?.LogDebug(
+                    "Azurite container creation attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
+                    attempt, ex.Message, attempt);
+                await Task.Delay(TimeSpan.FromSeconds(attempt), ct).ConfigureAwait(false);
+            }
+        }
+        throw new InvalidOperationException(
+            $"Azurite container bootstrap failed after {MaxAttempts} attempts.");
     }
 }
