@@ -92,6 +92,7 @@
 
   &:hover {
     border-color: abstracts.color('link');
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -110,6 +111,7 @@
 }
 
 .cardGradient {
+  display: none;
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -313,12 +315,12 @@
 .colorAmber { color: abstracts.color('warning'); }
 
 // Gradient variants for backgrounds
-.gradientBlue { @include abstracts.gradient-bg(); }
-.gradientPurple { @include abstracts.gradient-bg(); }
-.gradientGreen { @include abstracts.gradient-bg(); }
-.gradientOrange { @include abstracts.gradient-bg(); }
-.gradientPink { @include abstracts.gradient-bg(); }
-.gradientCyan { @include abstracts.gradient-bg(); }
-.gradientRed { @include abstracts.gradient-bg(); }
-.gradientIndigo { @include abstracts.gradient-bg(); }
-.gradientAmber { @include abstracts.gradient-bg(); }
+.gradientBlue   { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientPurple { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientGreen  { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientOrange { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientPink   { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientCyan   { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientRed    { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientIndigo { background-color: abstracts.color-alpha('primary', 0.1); }
+.gradientAmber  { background-color: abstracts.color-alpha('primary', 0.1); }
