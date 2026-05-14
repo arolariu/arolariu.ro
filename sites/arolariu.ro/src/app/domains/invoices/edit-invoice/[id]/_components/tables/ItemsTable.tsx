@@ -570,6 +570,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <TableRow className={styles["mutedRow"]}>
               <TableHead className={styles["tableHeaderCheckbox"]}>
                 <Checkbox
+                  nativeButton
                   checked={selectedIndices.size === sortedItems.length && sortedItems.length > 0}
                   onCheckedChange={handleSelectAll}
                   aria-label={t("columns.selectAll")}
@@ -619,6 +620,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   } ${indicatorClass}`}>
                   <td className={styles["tableCellCheckbox"]}>
                     <Checkbox
+                      nativeButton
                       checked={isSelected}
                       onCheckedChange={() => handleSelectRow(index)}
                       aria-label={t("columns.selectRow", {name: item.name})}
