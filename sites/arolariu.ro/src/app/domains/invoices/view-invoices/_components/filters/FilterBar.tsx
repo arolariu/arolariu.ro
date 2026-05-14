@@ -280,6 +280,7 @@ export default function FilterBar({
               key={paymentType.value}
               className={styles["checkboxItem"]}>
               <Checkbox
+                nativeButton
                 id={`payment-${paymentType.value}`}
                 checked={filters.paymentTypes.includes(paymentType.value)}
                 onCheckedChange={() => handlePaymentTypeToggle(paymentType.value)}

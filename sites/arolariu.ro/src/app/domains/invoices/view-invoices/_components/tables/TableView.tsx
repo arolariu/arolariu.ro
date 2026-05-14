@@ -120,6 +120,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
         <TableRow>
           <TableHead className={styles["printHidden"]}>
             <Checkbox
+              nativeButton
               className={styles["frostedCheckbox"]}
               checked={isAllSelected || (isIndeterminate && "indeterminate")}
               onCheckedChange={handleSelectAllInvoices}
@@ -186,6 +187,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableRow key={invoice.id}>
             <TableCell className={styles["printHidden"]}>
               <Checkbox
+                nativeButton
                 checked={selectedInvoices.some((s) => s.id === invoice.id)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}

@@ -98,6 +98,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             className={styles["cardWrapper"]}>
             <div className={styles["checkboxOverlay"]}>
               <Checkbox
+                nativeButton
                 checked={selectedInvoices.includes(invoice)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
