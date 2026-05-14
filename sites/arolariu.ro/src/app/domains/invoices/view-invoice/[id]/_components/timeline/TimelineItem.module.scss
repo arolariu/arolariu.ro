@@ -34,8 +34,8 @@
 }
 
 .iconCompleted {
-  @include gradient-bg();
-  color: color('primary-foreground');
+  background-color: color-alpha('secondary', 0.15);
+  color: color('secondary');
 }
 
 .iconPending {
