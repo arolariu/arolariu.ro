@@ -100,6 +100,7 @@
   height: space(6);
   width: space(6);
   color: color('muted-foreground');
+  cursor: help;
 
   &:hover {
     color: color('foreground');
