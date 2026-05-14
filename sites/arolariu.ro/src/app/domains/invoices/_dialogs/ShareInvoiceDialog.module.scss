@@ -42,18 +42,18 @@
 }
 
 .iconCircleOrange {
-  @include gradient-bg();
+  background-color: color-alpha('primary', 0.1);
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3);
+    background-color: color-alpha('primary', 0.2);
   }
 }
 
 .iconCircleGreen {
-  @include gradient-bg();
+  background-color: color-alpha('secondary', 0.1);
 
   @include dark {
-    background-color: color-alpha('success', 0.3);
+    background-color: color-alpha('secondary', 0.2);
   }
 }
 
