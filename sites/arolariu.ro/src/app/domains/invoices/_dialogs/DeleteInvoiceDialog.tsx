@@ -232,6 +232,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 {/* Understanding Checkbox */}
                 <div className={styles["checkboxCard"]}>
                   <Checkbox
+                    nativeButton
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}
