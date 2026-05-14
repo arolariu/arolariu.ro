@@ -4508,6 +4508,7 @@
         "theme": {
           "dark": "Sombre",
           "description": "Choisissez votre palette de couleurs préférée",
+          "hint": "Basculez entre clair, sombre ou la préférence de votre système",
           "light": "Clair",
           "system": "Système",
           "title": "Thème"

@@ -4508,6 +4508,7 @@
         "theme": {
           "dark": "Întunecat",
           "description": "Alegeți schema de culori preferată",
+          "hint": "Comutați între temă deschisă, întunecată sau preferința sistemului",
           "light": "Deschis",
           "system": "Sistem",
           "title": "Temă"

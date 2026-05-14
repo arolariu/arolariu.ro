@@ -7,7 +7,29 @@
 
 .section { @include settings.settings-section; }
 .header  { @include settings.settings-header; }
-.grid    { @include settings.settings-grid; }
+.grid    {
+  @include settings.settings-grid;
+
+  // Stretch immediate grid children (motion.div wrappers) and the Card inside
+  // so cards in the same row share the tallest sibling's height.
+  > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    > [class*='card-'] {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      > [class*='content-'] {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+}
 .fullWidthCard { @include settings.settings-card-full; }
 .toggleRow     { @include settings.settings-toggle-row; }
 .toggleLabel   { @include settings.settings-toggle-label; }
@@ -25,9 +47,10 @@
   gap: space(2);
 }
 
-.fontHint {
+.cardHint {
   font-size: font-size('xs');
   color: color('muted-foreground');
+  text-align: center;
 }
 
 // ===========================================

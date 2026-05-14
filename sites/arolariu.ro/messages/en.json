@@ -4508,6 +4508,7 @@
         "theme": {
           "dark": "Dark",
           "description": "Choose your preferred color scheme",
+          "hint": "Switch between light, dark, or your system preference",
           "light": "Light",
           "system": "System",
           "title": "Theme"

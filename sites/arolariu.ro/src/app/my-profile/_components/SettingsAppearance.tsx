@@ -162,7 +162,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               </CardTitle>
               <CardDescription>{t("theme.description")}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className={styles["cardContentSpaced3"]}>
               <div className={styles["themeButtons"]}>
                 <Button
                   variant={theme === "light" ? "default" : "outline"}
@@ -189,6 +189,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   {t("theme.system")}
                 </Button>
               </div>
+              <p className={styles["cardHint"]}>{t("theme.hint")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -223,7 +224,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   {t("font.dyslexic")}
                 </Button>
               </div>
-              <p className={styles["fontHint"]}>{t("font.dyslexicHint")}</p>
+              <p className={styles["cardHint"]}>{t("font.dyslexicHint")}</p>
             </CardContent>
           </Card>
         </motion.div>
