@@ -5258,7 +5258,41 @@
       "secondaryCta": "Voir le tableau de bord"
     },
     "invoiceStats": {
-      "subject": "Vos statistiques de factures"
+      "subject": "Vos statistiques de factures",
+      "frequencyLabel": "{frequency, select, daily {Quotidienne} weekly {Hebdomadaire} monthly {Mensuelle} yearly {Annuelle} other {Périodique}}",
+      "title": "Statistiques de factures {frequencyLabel}",
+      "badge": "Factures",
+      "heading": "Statistiques {frequencyLabel} de factures",
+      "preview": "Statistiques {frequencyLabel} pour {name} — {totalSpend} au total.",
+      "greeting": "Bonjour {name},",
+      "intro": "Voici votre résumé d'activité et de dépenses pour la période <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Factures",
+        "scans": "Analyses",
+        "totalSpend": "Dépenses totales",
+        "averagePerInvoice": "Moy. / facture"
+      },
+      "reportDetailsTitle": "Détails du rapport",
+      "reportDetails": {
+        "period": "Période",
+        "currency": "Devise"
+      },
+      "topMerchantsTitle": "Top commerçants",
+      "topCategoriesTitle": "Top catégories",
+      "noDataFallback": "Pas encore de données — téléchargez quelques factures pour débloquer les statistiques.",
+      "breakdownCardTitle": "Répartition des dépenses (par catégorie)",
+      "donutChartTitle": "Distribution des dépenses par catégorie",
+      "donutChartAlt": "Graphique en anneau montrant la répartition des dépenses par catégorie.",
+      "breakdownTableTitle": "Répartition",
+      "breakdownNote": "Remarque : Ce graphique utilise les données de classement par catégorie disponibles pour la période.",
+      "body": "Pour une répartition complète de vos dépenses, visitez votre liste de factures pour consulter les tendances, les commerçants, les catégories et les totaux au fil du temps. Ces informations peuvent vous aider à identifier les habitudes de dépenses et à prendre des décisions financières plus éclairées.",
+      "feedbackPrompt": "Des questions ou quelque chose ne semble pas correct ? Écrivez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir les factures",
+      "ctaSecondary": "Télécharger une nouvelle facture"
     },
     "invoiceStatsDaily": {
       "subject": "Vos statistiques quotidiennes de factures"

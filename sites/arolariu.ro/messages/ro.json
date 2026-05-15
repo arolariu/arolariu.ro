@@ -5258,7 +5258,41 @@
       "secondaryCta": "Vezi tabloul de bord"
     },
     "invoiceStats": {
-      "subject": "Statisticile tale de factură"
+      "subject": "Statisticile tale de factură",
+      "frequencyLabel": "{frequency, select, daily {Zilnică} weekly {Săptămânală} monthly {Lunară} yearly {Anuală} other {Periodică}}",
+      "title": "Statistici factură {frequencyLabel}",
+      "badge": "Facturi",
+      "heading": "Statistici {frequencyLabel} de factură",
+      "preview": "Statistici {frequencyLabel} pentru {name} — {totalSpend} total.",
+      "greeting": "Salut {name},",
+      "intro": "Acesta este rezumatul activității tale pe facturi și cheltuieli pentru <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Facturi",
+        "scans": "Scanări",
+        "totalSpend": "Cheltuieli totale",
+        "averagePerInvoice": "Medie / factură"
+      },
+      "reportDetailsTitle": "Detalii raport",
+      "reportDetails": {
+        "period": "Perioadă",
+        "currency": "Monedă"
+      },
+      "topMerchantsTitle": "Top comercianți",
+      "topCategoriesTitle": "Top categorii",
+      "noDataFallback": "Încă nu există date — încarcă câteva facturi pentru a debloca statistici.",
+      "breakdownCardTitle": "Detaliere cheltuieli (pe categorie)",
+      "donutChartTitle": "Distribuția cheltuielilor pe categorii",
+      "donutChartAlt": "Grafic inelar arătând distribuția cheltuielilor pe categorii.",
+      "breakdownTableTitle": "Detaliere",
+      "breakdownNote": "Notă: Acest grafic folosește datele de clasare pe categorii disponibile pentru perioadă.",
+      "body": "Pentru o detaliere completă a cheltuielilor tale, vizitează lista de facturi pentru a analiza trendurile, comercianții, categoriile și totalurile în timp. Aceste statistici te pot ajuta să identifici modele de cheltuire și să iei decizii financiare mai informate.",
+      "feedbackPrompt": "Întrebări sau ceva nu pare corect? Scrie-ne la <email></email>.",
+      "signOff": {
+        "line1": "La revedere,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi facturile",
+      "ctaSecondary": "Încarcă o factură nouă"
     },
     "invoiceStatsDaily": {
       "subject": "Statisticile tale zilnice de factură"

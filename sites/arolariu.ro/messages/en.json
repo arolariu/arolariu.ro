@@ -5258,7 +5258,41 @@
       "secondaryCta": "View dashboard"
     },
     "invoiceStats": {
-      "subject": "Your invoice statistics"
+      "subject": "Your invoice statistics",
+      "frequencyLabel": "{frequency, select, daily {Daily} weekly {Weekly} monthly {Monthly} yearly {Yearly} other {Periodic}}",
+      "title": "{frequencyLabel} invoice stats",
+      "badge": "Invoices",
+      "heading": "{frequencyLabel} invoice statistics",
+      "preview": "{frequencyLabel} stats for {name} — {totalSpend} total.",
+      "greeting": "Hi {name},",
+      "intro": "This is your invoice activity and spending summary for <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Invoices",
+        "scans": "Scans",
+        "totalSpend": "Total spend",
+        "averagePerInvoice": "Avg / invoice"
+      },
+      "reportDetailsTitle": "Report details",
+      "reportDetails": {
+        "period": "Period",
+        "currency": "Currency"
+      },
+      "topMerchantsTitle": "Top merchants",
+      "topCategoriesTitle": "Top categories",
+      "noDataFallback": "No data yet — upload a couple of invoices to unlock insights.",
+      "breakdownCardTitle": "Spending breakdown (by category)",
+      "donutChartTitle": "Category spend distribution",
+      "donutChartAlt": "Donut chart showing spending distribution by category.",
+      "breakdownTableTitle": "Breakdown",
+      "breakdownNote": "Note: This chart uses the available category ranking data for the period.",
+      "body": "For a complete breakdown of your spending, visit your invoices list to review trends, merchants, categories, and totals over time. These insights can help you identify spending patterns and make more informed financial decisions.",
+      "feedbackPrompt": "Questions or something looks off? Email <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View invoices",
+      "ctaSecondary": "Upload a new invoice"
     },
     "invoiceStatsDaily": {
       "subject": "Your daily invoice statistics"
