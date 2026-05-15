@@ -6,6 +6,7 @@
 import "server-only";
 
 import type {ReactElement} from "react";
+import {render} from "react-email";
 
 import {logWithTrace, withSpan} from "@/instrumentation.server";
 
@@ -73,12 +74,22 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
   return withSpan("api.email.send", async () => {
     const resend = await getResendClient();
 
+    // Pre-render to HTML via `react-email`'s exported `render` instead of
+    // passing `react: …` to Resend. Resend's `{react}` path dynamically
+    // requires `@react-email/render` (legacy package name) at runtime; we
+    // dropped that legacy package in favour of the unified `react-email`
+    // v6, so the dynamic require fails with "Make sure to install
+    // @react-email/render or @react-email/components". Doing the render
+    // here makes the dependency explicit and bypasses the dynamic-require
+    // path entirely.
+    const html = await render(options.react);
+
     const result = await resend.emails.send(
       {
         from: FROM_ADDRESS,
         to: options.to,
         subject: options.subject,
-        react: options.react,
+        html,
         replyTo: options.replyTo,
         tags: [
           {name: "template", value: options.templateKey},

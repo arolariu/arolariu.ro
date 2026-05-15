@@ -1,10 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-const {mockSend, mockGetClient, mockWithSpan, mockLog} = vi.hoisted(() => ({
+const {mockSend, mockGetClient, mockWithSpan, mockLog, mockRender} = vi.hoisted(() => ({
   mockSend: vi.fn(),
   mockGetClient: vi.fn(),
   mockWithSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
   mockLog: vi.fn(),
+  mockRender: vi.fn(),
 }));
 
 vi.mock("./resendClient", () => ({
@@ -14,6 +15,10 @@ vi.mock("./resendClient", () => ({
 vi.mock("@/instrumentation.server", () => ({
   withSpan: mockWithSpan,
   logWithTrace: mockLog,
+}));
+
+vi.mock("react-email", () => ({
+  render: mockRender,
 }));
 
 import {emailService} from "./emailService";
@@ -26,6 +31,8 @@ beforeEach(() => {
   mockGetClient.mockResolvedValue({emails: {send: mockSend}});
   mockWithSpan.mockClear();
   mockLog.mockClear();
+  mockRender.mockReset();
+  mockRender.mockResolvedValue("<html><body>rendered</body></html>");
 });
 
 describe("emailService.sendEmail", () => {
@@ -42,7 +49,7 @@ describe("emailService.sendEmail", () => {
     ).rejects.toThrow(/api key/i);
   });
 
-  it("calls Resend with from address, tags, and the rendered react element", async () => {
+  it("renders the react element to HTML and passes html (not react) to Resend along with from address + tags", async () => {
     mockSend.mockResolvedValue({data: {id: "id_123"}, error: null});
 
     await emailService.sendEmail({
@@ -53,12 +60,15 @@ describe("emailService.sendEmail", () => {
       locale: "ro",
     });
 
+    expect(mockRender).toHaveBeenCalledTimes(1);
+    expect(mockRender).toHaveBeenCalledWith(reactEl);
     expect(mockSend).toHaveBeenCalledTimes(1);
     const [payload, options] = mockSend.mock.calls[0]!;
     expect(payload.from).toMatch(/AROLARIU\.RO/);
     expect(payload.to).toBe("user@example.com");
     expect(payload.subject).toBe("Welcome");
-    expect(payload.react).toBe(reactEl);
+    expect(payload.html).toBe("<html><body>rendered</body></html>");
+    expect(payload.react).toBeUndefined();
     expect(payload.tags).toEqual(
       expect.arrayContaining([{name: "template", value: "welcome"}, {name: "locale", value: "ro"}, expect.objectContaining({name: "env"})]),
     );
