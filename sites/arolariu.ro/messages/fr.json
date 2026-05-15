@@ -5039,7 +5039,26 @@
       }
     },
     "newsletterUnsubscribed": {
-      "subject": "Vous avez été désabonné"
+      "subject": "Vous avez été désabonné",
+      "badge": "Newsletter",
+      "heading": "Vous avez été désabonné",
+      "preview": "Bonjour {name} — vous avez été désabonné.",
+      "greeting": "Bonjour {name},",
+      "intro": "Cet email confirme que vous avez été retiré de la liste de newsletter <brand>{brandName}</brand>. Je suis désolé de vous voir partir.",
+      "whatHappensNextTitle": "Ce qui se passe ensuite",
+      "whatHappensNext": {
+        "0": "Vous ne recevrez plus de newsletters de notre part à l'avenir.",
+        "1": "Vous pourriez toujours recevoir des emails essentiels de compte et de service si vous utilisez le produit.",
+        "2": "Vous avez changé d'avis ? Vous pouvez vous réabonner à tout moment en utilisant le bouton ci-dessus."
+      },
+      "body": "J'apprécie le temps que vous avez passé avec nous. Si vous avez des commentaires sur les raisons de votre départ ou sur la façon dont je peux m'améliorer, j'aimerais sincèrement les entendre—répondez simplement à cet email.",
+      "feedbackPrompt": "Si vous n'avez pas demandé cette désinscription, ou si vous avez besoin d'aide, veuillez contacter {email}.",
+      "ctaPrimary": "Revoir les préférences",
+      "ctaSecondary": "Se réabonner",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
     },
     "accountInactivity": {
       "subject": "Vous nous manquez chez {brand}"

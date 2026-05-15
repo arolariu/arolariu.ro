@@ -5039,7 +5039,26 @@
       }
     },
     "newsletterUnsubscribed": {
-      "subject": "You've been unsubscribed"
+      "subject": "You've been unsubscribed",
+      "badge": "Newsletter",
+      "heading": "You've been unsubscribed",
+      "preview": "Hi {name} — you've been unsubscribed.",
+      "greeting": "Hi {name},",
+      "intro": "This email confirms you've been removed from the <brand>{brandName}</brand> newsletter list. I'm sorry to see you go.",
+      "whatHappensNextTitle": "What happens next",
+      "whatHappensNext": {
+        "0": "You won't receive newsletter updates from us going forward.",
+        "1": "You may still receive essential account and service emails if you use the product.",
+        "2": "Changed your mind? You can resubscribe at any time using the button above."
+      },
+      "body": "I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I'd genuinely love to hear it—just reply to this email.",
+      "feedbackPrompt": "If you didn't request this unsubscription, or you need help with anything, please contact {email}.",
+      "ctaPrimary": "Review preferences",
+      "ctaSecondary": "Resubscribe",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
     },
     "accountInactivity": {
       "subject": "We miss you at {brand}"

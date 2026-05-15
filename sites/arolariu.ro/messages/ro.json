@@ -5039,7 +5039,26 @@
       }
     },
     "newsletterUnsubscribed": {
-      "subject": "Te-ai dezabonat"
+      "subject": "Te-ai dezabonat",
+      "badge": "Newsletter",
+      "heading": "Te-ai dezabonat",
+      "preview": "Salut {name} — te-ai dezabonat.",
+      "greeting": "Salut {name},",
+      "intro": "Acest email confirmă că ai fost eliminat din lista de newsletter <brand>{brandName}</brand>. Îmi pare rău să te văd plecând.",
+      "whatHappensNextTitle": "Ce urmează",
+      "whatHappensNext": {
+        "0": "Nu vei mai primi actualizări de newsletter de la noi în viitor.",
+        "1": "Este posibil să primești în continuare emailuri esențiale de cont și serviciu dacă folosești produsul.",
+        "2": "Ți-ai schimbat părerea? Te poți reabona oricând folosind butonul de mai sus."
+      },
+      "body": "Apreciez timpul pe care l-ai petrecut cu noi. Dacă ai feedback despre motivul pentru care ai plecat sau despre cum mă pot îmbunătăți, aș fi cu adevărat bucuros să-l aud—doar răspunde la acest email.",
+      "feedbackPrompt": "Dacă nu ai solicitat această dezabonare sau ai nevoie de ajutor cu ceva, te rugăm să contactezi {email}.",
+      "ctaPrimary": "Verifică preferințele",
+      "ctaSecondary": "Reabonează-te",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
     },
     "accountInactivity": {
       "subject": "Te lipsim la {brand}"
