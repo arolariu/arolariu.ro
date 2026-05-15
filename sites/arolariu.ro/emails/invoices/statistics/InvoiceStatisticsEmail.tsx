@@ -61,14 +61,6 @@ export type InvoiceStatisticsEmailProps = Readonly<{
 
   /** Secondary destination (defaults to create invoice). */
   readonly createInvoiceUrl?: string;
-
-  /**
-   * Locale for translations. Optional — the HOF injects it from the
-   * resolved {@link EmailLocale}. Retained on the prop shape so legacy
-   * wrappers in `./Daily*|Weekly*|Monthly*|Yearly*InvoiceStatisticsEmail.tsx`
-   * still compile until Task 10 deletes them.
-   */
-  readonly locale?: EmailLocale;
 }>;
 
 function safeFormatCurrency(amount: number, currency: string): string {
