@@ -99,6 +99,12 @@ type Props = Readonly<{
    * @example "https://arolariu.ro/domains/invoices/view-invoices?utm_source=email&utm_campaign=30d"
    */
   readonly invoicesUrl?: string;
+
+  /**
+   * Locale for email translation (en, ro, fr).
+   * Defaults to DEFAULT_LOCALE ("en").
+   */
+  readonly locale?: string;
 }>;
 
 /**
@@ -181,7 +187,7 @@ type Props = Readonly<{
  * @see {@link InvoiceUploadInactivityReminderEmail} - Shared template implementation
  */
 const NoInvoiceUploadsFor30DaysEmail = (props: Readonly<Props>) => {
-  const {username, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
+  const {username, lastUploadDate, createInvoiceUrl, invoicesUrl, locale} = props;
 
   return (
     <InvoiceUploadInactivityReminderEmail
@@ -190,6 +196,7 @@ const NoInvoiceUploadsFor30DaysEmail = (props: Readonly<Props>) => {
       createInvoiceUrl={createInvoiceUrl}
       invoicesUrl={invoicesUrl}
       daysWithoutUpload={30}
+      locale={locale as "en" | "ro" | "fr"}
     />
   );
 };
@@ -218,6 +225,7 @@ const NoInvoiceUploadsFor30DaysEmail = (props: Readonly<Props>) => {
 NoInvoiceUploadsFor30DaysEmail.PreviewProps = {
   username: "Test User",
   lastUploadDate: "November 23, 2025",
+  locale: "en",
 } satisfies Props;
 
 export default NoInvoiceUploadsFor30DaysEmail;
