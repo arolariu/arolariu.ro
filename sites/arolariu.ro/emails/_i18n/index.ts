@@ -99,7 +99,7 @@ export function createEmailTranslator(opts: {
 }): EmailTranslator {
   return createTranslator<AbstractIntlMessages, string>({
     locale: opts.locale,
-    messages: opts.messages,
+    messages: opts.messages as AbstractIntlMessages,
     namespace: opts.namespace,
   }) as unknown as EmailTranslator;
 }

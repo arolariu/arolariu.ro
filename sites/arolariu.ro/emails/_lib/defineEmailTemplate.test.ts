@@ -17,7 +17,7 @@ const FIXTURE_MESSAGES = {
 
 describe("defineEmailTemplate", () => {
   it("attaches .namespace to the returned template", () => {
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.welcome",
       render: () => ({type: "div", props: {}}) as never,
     });
@@ -27,7 +27,7 @@ describe("defineEmailTemplate", () => {
   it("defaults locale to 'en' when omitted", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const seen: {locale?: string} = {};
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.welcome",
       render: (ctx) => {
         seen.locale = ctx.locale;
@@ -41,7 +41,7 @@ describe("defineEmailTemplate", () => {
   it("uses the provided locale when given", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const seen: {locale?: string} = {};
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.welcome",
       render: (ctx) => {
         seen.locale = ctx.locale;
@@ -84,7 +84,7 @@ describe("defineEmailTemplate", () => {
   it("returns the render output as-is", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const expected = {type: "div", props: {"data-marker": "ok"}};
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.welcome",
       render: () => expected as never,
     });
@@ -94,7 +94,7 @@ describe("defineEmailTemplate", () => {
 
   it(".getSubject() defaults locale to 'en'", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.plain",
       render: () => ({type: "div", props: {}}) as never,
     });
@@ -104,7 +104,7 @@ describe("defineEmailTemplate", () => {
 
   it(".getSubject() interpolates ICU vars", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
-    const T = defineEmailTemplate<Record<string, never>>({
+    const T = defineEmailTemplate<{}>({
       namespace: "email.welcome",
       render: () => ({type: "div", props: {}}) as never,
     });
