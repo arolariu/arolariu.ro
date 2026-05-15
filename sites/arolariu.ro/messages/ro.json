@@ -4744,5 +4744,39 @@
       },
       "title": "Statistici Rapide"
     }
+  },
+  "email": {
+    "layout": {
+      "tagline": "Instrumente practice. Informații clare. Gândit pentru cheltuielile de zi cu zi.",
+      "managePreferences": "Administrează preferințele de email",
+      "unsubscribe": "Dezabonează-te",
+      "buttonFallback": "Dacă butonul nu funcționează, deschide acest link:",
+      "secondaryFallback": "Sau:",
+      "allRightsReserved": "© 2022-{year} {brand}. Toate drepturile rezervate."
+    },
+    "welcome": { "subject": "Bun venit la {brand}" },
+    "firstInvoiceUploaded": { "subject": "Prima ta factură a sosit!" },
+    "invoiceAnalyzed": { "subject": "Factura ta a fost analizată" },
+    "invoiceDeleted": { "subject": "Factura ta a fost ștearsă" },
+    "invoiceMadePublic": { "subject": "Factura ta este acum publică" },
+    "invoiceShared": { "subject": "{fromName} a partajat o factură cu tine" },
+    "invoiceUnshared": { "subject": "Accesul la o factură partajată a fost revocat" },
+    "spendingAlert": { "subject": "Alertă prag de cheltuieli" },
+    "newsletterSubscribed": { "subject": "Te-ai abonat cu succes!" },
+    "newsletterUnsubscribed": { "subject": "Te-ai dezabonat" },
+    "accountInactivity": { "subject": "Te lipsim la {brand}" },
+    "invoiceInactivity": { "subject": "A trecut ceva timp de la ultima ta factură" },
+    "noUploads3d": { "subject": "3 zile fără o încărcare" },
+    "noUploads7d": { "subject": "O săptămână întreagă fără o încărcare" },
+    "noUploads14d": { "subject": "Două săptămâni fără o încărcare" },
+    "noUploads30d": { "subject": "O lună fără o încărcare" },
+    "incompleteInvoice": { "subject": "Ai facturi incomplete" },
+    "unanalyzedInvoices": { "subject": "Ai facturi neanaliza­te" },
+    "weeklyUploadReminder": { "subject": "Promemoria de încărcare săptămânală" },
+    "invoiceStats": { "subject": "Statisticile tale de factură" },
+    "invoiceStatsDaily": { "subject": "Statisticile tale zilnice de factură" },
+    "invoiceStatsWeekly": { "subject": "Statisticile tale săptămânale de factură" },
+    "invoiceStatsMonthly": { "subject": "Statisticile tale lunare de factură" },
+    "invoiceStatsYearly": { "subject": "Statisticile tale anuale de factură" }
   }
 }

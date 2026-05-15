@@ -4744,5 +4744,39 @@
       },
       "title": "Quick Statistics"
     }
+  },
+  "email": {
+    "layout": {
+      "tagline": "Practical tools. Clean insights. Built for everyday spending.",
+      "managePreferences": "Manage email preferences",
+      "unsubscribe": "Unsubscribe",
+      "buttonFallback": "If the button doesn't work, open this link:",
+      "secondaryFallback": "Or:",
+      "allRightsReserved": "© 2022-{year} {brand}. All rights reserved."
+    },
+    "welcome": { "subject": "Welcome to {brand}" },
+    "firstInvoiceUploaded": { "subject": "Your first invoice is in!" },
+    "invoiceAnalyzed": { "subject": "Your invoice has been analyzed" },
+    "invoiceDeleted": { "subject": "Your invoice was deleted" },
+    "invoiceMadePublic": { "subject": "Your invoice is now public" },
+    "invoiceShared": { "subject": "{fromName} shared an invoice with you" },
+    "invoiceUnshared": { "subject": "Access to a shared invoice was revoked" },
+    "spendingAlert": { "subject": "Spending threshold alert" },
+    "newsletterSubscribed": { "subject": "You're subscribed!" },
+    "newsletterUnsubscribed": { "subject": "You've been unsubscribed" },
+    "accountInactivity": { "subject": "We miss you at {brand}" },
+    "invoiceInactivity": { "subject": "It's been a while since your last invoice" },
+    "noUploads3d": { "subject": "3 days without an upload" },
+    "noUploads7d": { "subject": "A whole week without an upload" },
+    "noUploads14d": { "subject": "Two weeks without an upload" },
+    "noUploads30d": { "subject": "A month without an upload" },
+    "incompleteInvoice": { "subject": "You have incomplete invoices" },
+    "unanalyzedInvoices": { "subject": "You have unanalyzed invoices" },
+    "weeklyUploadReminder": { "subject": "Your weekly upload reminder" },
+    "invoiceStats": { "subject": "Your invoice statistics" },
+    "invoiceStatsDaily": { "subject": "Your daily invoice statistics" },
+    "invoiceStatsWeekly": { "subject": "Your weekly invoice statistics" },
+    "invoiceStatsMonthly": { "subject": "Your monthly invoice statistics" },
+    "invoiceStatsYearly": { "subject": "Your yearly invoice statistics" }
   }
 }
