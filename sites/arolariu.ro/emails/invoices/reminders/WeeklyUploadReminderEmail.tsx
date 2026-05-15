@@ -27,7 +27,7 @@ import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} f
 /**
  * Properties for the WeeklyUploadReminderEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -51,7 +51,7 @@ type Props = Readonly<{
 
   /** Email locale for translation. */
   readonly locale?: EmailLocale;
-}>;
+};
 
 /**
  * React component that renders the "Weekly Upload Reminder" email.

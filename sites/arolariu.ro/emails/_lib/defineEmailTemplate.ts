@@ -27,21 +27,21 @@ import {
  * memoised `getLayoutTranslator` helper, so no `tLayout` is threaded
  * through this context.
  */
-export type EmailRenderContext<P> = Readonly<{
+export type EmailRenderContext<P> = {
   /** Resolved locale (defaulted to `"en"` if the caller omitted it). */
   readonly locale: EmailLocale;
   /** Translator scoped to the template's namespace, e.g. `"email.welcome"`. */
   readonly t: EmailTranslator;
   /** The caller-supplied props, minus `locale`. */
   readonly props: P;
-}>;
+};
 
 /**
  * Configuration object for {@link defineEmailTemplate}.
  *
  * @typeParam P - User prop shape (locale is added by the HOF, not by the caller).
  */
-export type EmailTemplateConfig<P> = Readonly<{
+export type EmailTemplateConfig<P> = {
   /**
    * Full next-intl namespace path — must point at a JSON object that
    * contains a `subject` key. Example: `"email.welcome"`.
@@ -73,7 +73,7 @@ export type EmailTemplateConfig<P> = Readonly<{
    * ```
    */
   readonly render: (ctx: EmailRenderContext<P>) => ReactElement;
-}>;
+};
 
 /**
  * The runtime shape of a template produced by {@link defineEmailTemplate}.
@@ -129,10 +129,10 @@ export type EmailTemplate<P> = ((
  *
  * @example
  * ```ts
- * type Props = Readonly<{
+ * type Props = {
  *   readonly username: string;
  *   readonly uploadUrl?: string;
- * }>;
+ * };
  *
  * const WelcomeEmail = defineEmailTemplate<Props>({
  *   namespace: "email.welcome",

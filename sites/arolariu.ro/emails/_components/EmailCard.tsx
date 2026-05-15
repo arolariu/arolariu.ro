@@ -8,10 +8,10 @@ import {Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Props = Readonly<{
+type Props = {
   readonly title?: string;
   readonly children: ReactNode;
-}>;
+};
 
 const styles = {
   card: {

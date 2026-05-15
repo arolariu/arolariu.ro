@@ -27,7 +27,7 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name for email personalization. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -42,7 +42,7 @@ type Props = Readonly<{
 
   /** Direct link to upload another receipt. */
   readonly uploadUrl?: string;
-}>;
+};
 
 /**
  * React component that renders the "First Invoice Uploaded" celebration email.

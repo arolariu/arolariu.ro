@@ -16,14 +16,14 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 /**
  * Properties for the InvoiceHasBeenSharedWithEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** The username of the person sharing the invoice */
   readonly fromUsername: string;
   /** The username of the recipient */
   readonly toUsername: string;
   /** The unique identifier of the shared invoice */
   readonly identifier: string;
-}>;
+};
 
 /**
  * React component that renders the "Shared Invoice" email template.

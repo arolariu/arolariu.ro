@@ -11,12 +11,12 @@ import type {EmailLocale} from "../_i18n";
 import {getLayoutTranslator} from "./layoutTranslator";
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Cta = Readonly<{
+type Cta = {
   readonly href: string;
   readonly label: string;
-}>;
+};
 
-type Props = Readonly<{
+type Props = {
   readonly locale: EmailLocale;
   readonly title: string;
   readonly preview: string;
@@ -28,7 +28,7 @@ type Props = Readonly<{
   readonly unsubscribeUrl?: string;
   readonly managePreferencesUrl?: string;
   readonly children: ReactNode;
-}>;
+};
 
 const styles = {
   body: {backgroundColor: EMAIL_COLORS.background, margin: "0", padding: "32px 0", fontFamily: EMAIL_TYPOGRAPHY.fontFamily},

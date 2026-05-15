@@ -7,14 +7,14 @@ import {Column, Row, Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Metric = Readonly<{
+type Metric = {
   readonly label: string;
   readonly value: string;
-}>;
+};
 
-type Props = Readonly<{
+type Props = {
   readonly metrics: readonly Metric[];
-}>;
+};
 
 const styles = {
   row: {

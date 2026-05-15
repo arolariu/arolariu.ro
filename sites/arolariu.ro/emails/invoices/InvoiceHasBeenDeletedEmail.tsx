@@ -17,14 +17,14 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 /**
  * Properties for the InvoiceHasBeenDeletedEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
   readonly username: string;
   /** The ID of the deleted invoice */
   readonly invoiceId: string;
   /** Optional: invoice name for better context */
   readonly invoiceName?: string;
-}>;
+};
 
 /**
  * React component that renders the "Invoice Deleted" email template.

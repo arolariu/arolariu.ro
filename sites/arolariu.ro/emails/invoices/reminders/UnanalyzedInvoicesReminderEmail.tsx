@@ -27,7 +27,7 @@ import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} f
 /**
  * Represents a single unanalyzed invoice for display in the email.
  */
-type UnanalyzedInvoice = Readonly<{
+type UnanalyzedInvoice = {
   /** Invoice name or fallback identifier. */
   readonly name: string;
 
@@ -36,12 +36,12 @@ type UnanalyzedInvoice = Readonly<{
 
   /** Direct link to view/analyze this specific invoice. */
   readonly url: string;
-}>;
+};
 
 /**
  * Properties for the UnanalyzedInvoicesReminderEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -53,7 +53,7 @@ type Props = Readonly<{
 
   /** Email locale for translation. */
   readonly locale?: EmailLocale;
-}>;
+};
 
 /**
  * React component that renders the "Unanalyzed Invoices Reminder" email.

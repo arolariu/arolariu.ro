@@ -46,7 +46,7 @@ import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} f
  * - Typically sent when `inactiveDays` reaches policy threshold (e.g., 30 days)
  * - `daysUntilClosure` represents grace period before account deletion
  */
-type Props = Readonly<{
+type Props = {
   /**
    * The user's display name for email personalization.
    * Falls back to "there" if empty or undefined.
@@ -77,7 +77,7 @@ type Props = Readonly<{
    * Defaults to DEFAULT_LOCALE ("en").
    */
   readonly locale?: EmailLocale;
-}>;
+};
 
 /**
  * Renders an account inactivity warning email with timeline and action steps.

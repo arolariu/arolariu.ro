@@ -18,12 +18,12 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 /**
  * Properties for the InvoiceHasBeenAnalyzedEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
   readonly username: string;
   /** The analyzed invoice object */
   readonly invoice: Readonly<Invoice>;
-}>;
+};
 
 /**
  * React component that renders the "Invoice Analyzed" email template.

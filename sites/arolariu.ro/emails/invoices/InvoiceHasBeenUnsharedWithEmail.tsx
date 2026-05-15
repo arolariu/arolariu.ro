@@ -9,7 +9,7 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
-type Props = Readonly<{
+type Props = {
   /** The username of the person who revoked access. */
   readonly fromUsername: string;
 
@@ -21,7 +21,7 @@ type Props = Readonly<{
 
   /** Optional timestamp (ISO or human-readable). */
   readonly revokedAt?: string;
-}>;
+};
 
 const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
   namespace: "email.invoiceUnshared",

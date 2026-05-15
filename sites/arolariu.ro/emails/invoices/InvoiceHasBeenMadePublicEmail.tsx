@@ -30,7 +30,7 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
  * @remarks
  * All fields are required to provide a complete summary of the invoice in the email.
  */
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
   readonly username: string;
   /** The unique identifier of the invoice */
@@ -45,7 +45,7 @@ type Props = Readonly<{
   readonly currency: string;
   /** The date the invoice was created, formatted for display */
   readonly dateCreated: string;
-}>;
+};
 
 /**
  * React component that renders the "Invoice Made Public" email template.

@@ -9,11 +9,11 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
-type Props = Readonly<{
+type Props = {
   readonly username: string;
   readonly uploadUrl?: string;
   readonly dashboardUrl?: string;
-}>;
+};
 
 const WelcomeEmail = defineEmailTemplate<Props>({
   namespace: "email.welcome",

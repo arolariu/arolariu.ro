@@ -9,7 +9,7 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
   readonly username: string;
 
@@ -18,7 +18,7 @@ type Props = Readonly<{
 
   /** Where to (re)subscribe (optional). */
   readonly resubscribeUrl?: string;
-}>;
+};
 
 const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
   namespace: "email.newsletterUnsubscribed",

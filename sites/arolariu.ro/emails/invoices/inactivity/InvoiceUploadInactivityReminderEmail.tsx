@@ -65,7 +65,7 @@ import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
  * - `createInvoiceUrl`: Defaults to `/domains/invoices/create-invoice`
  * - `invoicesUrl`: Defaults to `/domains/invoices/view-invoices`
  */
-export type Props = Readonly<{
+export type Props = {
   /**
    * User's display name for email personalization.
    * Falls back to "there" if empty or undefined.
@@ -98,7 +98,7 @@ export type Props = Readonly<{
    * Defaults to `${BRAND.url}/domains/invoices/view-invoices`.
    */
   readonly invoicesUrl?: string;
-}>;
+};
 
 const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
   namespace: "email.invoiceInactivity",

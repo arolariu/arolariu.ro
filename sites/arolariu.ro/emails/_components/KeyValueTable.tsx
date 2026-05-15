@@ -7,15 +7,15 @@ import {Column, Row, Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Item = Readonly<{
+type Item = {
   readonly label: string;
   readonly value: string;
-}>;
+};
 
-type Props = Readonly<{
+type Props = {
   readonly title?: string;
   readonly items: readonly Item[];
-}>;
+};
 
 const styles = {
   wrap: {

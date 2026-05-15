@@ -43,7 +43,7 @@ type MissingField = "merchant" | "items" | "payment" | "category";
 /**
  * Properties for the IncompleteInvoiceReminderEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -64,7 +64,7 @@ type Props = Readonly<{
 
   /** Email locale for translation. */
   readonly locale?: EmailLocale;
-}>;
+};
 
 /**
  * React component that renders the "Incomplete Invoice Reminder" email.

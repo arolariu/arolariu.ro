@@ -28,10 +28,10 @@ import UserHasUnsubscribedEmail from "./newsletter/UserHasUnsubscribedEmail";
  * fixed variant value.
  */
 type EntryFor<T> = T extends EmailTemplate<infer P>
-  ? Readonly<{
+  ? {
       readonly template: T;
       readonly variantProps?: Partial<P>;
-    }>
+    }
   : never;
 
 /**

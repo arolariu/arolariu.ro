@@ -39,17 +39,17 @@ import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 /**
  * A spending category with its amount for the donut chart.
  */
-type SpendingCategory = Readonly<{
+type SpendingCategory = {
   /** Category label (e.g., "Groceries", "Fast Food"). */
   readonly label: string;
   /** Amount spent in this category. */
   readonly value: number;
-}>;
+};
 
 /**
  * Properties for the SpendingThresholdAlertEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -79,7 +79,7 @@ type Props = Readonly<{
 
   /** Link to the spending dashboard. */
   readonly dashboardUrl?: string;
-}>;
+};
 
 /**
  * React component that renders the "Spending Threshold Alert" email.

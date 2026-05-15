@@ -21,19 +21,19 @@ import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
-type RankedItem = Readonly<{
+type RankedItem = {
   readonly name: string;
   readonly totalSpend: number;
-}>;
+};
 
-type Totals = Readonly<{
+type Totals = {
   readonly invoicesCount: number;
   readonly scansCount: number;
   readonly totalSpend: number;
   readonly averageSpend: number;
-}>;
+};
 
-export type InvoiceStatisticsEmailProps = Readonly<{
+export type InvoiceStatisticsEmailProps = {
   readonly username: string;
   readonly frequency: Frequency;
 
@@ -61,7 +61,7 @@ export type InvoiceStatisticsEmailProps = Readonly<{
 
   /** Secondary destination (defaults to create invoice). */
   readonly createInvoiceUrl?: string;
-}>;
+};
 
 function safeFormatCurrency(amount: number, currency: string): string {
   try {
