@@ -34,6 +34,7 @@
  */
 
 import {InvoiceUploadInactivityReminderEmail} from "./InvoiceUploadInactivityReminderEmail";
+import type {EmailLocale} from "../../_i18n";
 
 /**
  * Props for the 3-day inactivity email component.
@@ -69,7 +70,7 @@ type Props = Readonly<{
    * Locale for email translation (en, ro, fr).
    * Defaults to DEFAULT_LOCALE ("en").
    */
-  readonly locale?: string;
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -140,7 +141,7 @@ const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => {
       createInvoiceUrl={createInvoiceUrl}
       invoicesUrl={invoicesUrl}
       daysWithoutUpload={3}
-      locale={locale as "en" | "ro" | "fr"}
+      locale={locale}
     />
   );
 };
