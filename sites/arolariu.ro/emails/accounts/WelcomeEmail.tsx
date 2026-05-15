@@ -20,7 +20,6 @@ const WelcomeEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.welcome"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const name = props.username?.trim() || "there";
   const uploadUrl = props.uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
@@ -29,7 +28,6 @@ const WelcomeEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={`${BRAND.name} | ${t("badge")}`}
       preview={t("preview", {brand: BRAND.name, name})}
       badge={t("badge")}

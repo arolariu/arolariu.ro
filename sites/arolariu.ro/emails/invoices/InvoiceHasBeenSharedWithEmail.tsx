@@ -40,7 +40,6 @@ const InvoiceHasBeenSharedWithEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.invoiceShared"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const {fromUsername, toUsername, identifier} = props;
 
@@ -51,7 +50,6 @@ const InvoiceHasBeenSharedWithEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={`${BRAND.name} | ${t("badge")}`}
       preview={t("preview", {fromName: safeFrom})}
       badge={t("badge")}

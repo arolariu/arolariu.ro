@@ -122,7 +122,6 @@ const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.spendingAlert"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const {
     username,
@@ -145,7 +144,6 @@ const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={`${BRAND.name} | Spending alert`}
       preview={t("preview", {name, percent: thresholdPercent, category, period})}
       badge={t("badge", {percent: thresholdPercent})}

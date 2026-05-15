@@ -76,7 +76,6 @@ const FirstInvoiceUploadedEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.firstInvoiceUploaded"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 
@@ -87,7 +86,6 @@ const FirstInvoiceUploadedEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={`${BRAND.name} | ${t("badge")}`}
       preview={t("preview", {name})}
       badge={t("badge")}

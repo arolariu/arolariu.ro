@@ -64,7 +64,6 @@ const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.invoiceMadePublic"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const {username, invoiceId, invoiceName, merchantName, totalAmount, currency, dateCreated} = props;
 
@@ -75,7 +74,6 @@ const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={`${BRAND.name} | ${t("badge")}`}
       preview={t("preview", {invoiceName})}
       badge={t("badge")}

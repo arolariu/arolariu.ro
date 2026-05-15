@@ -27,7 +27,6 @@ const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
   const t = createTranslator({locale, messages, namespace: "email.newsletterUnsubscribed"});
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
 
   const {username, managePreferencesUrl, resubscribeUrl} = props;
 
@@ -39,7 +38,6 @@ const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      tLayout={tLayout}
       title={${BRAND.name} | Unsubscribed}
       preview={t("preview", {name})}
       badge={t("badge")}
