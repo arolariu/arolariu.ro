@@ -3,4 +3,4 @@
  * @module lib/actions/email
  */
 
-export {sendInvoiceShareEmail} from "./sendInvoiceShareEmail";
+export {sendEmail} from "./sendEmail";

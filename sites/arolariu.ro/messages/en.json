@@ -4744,5 +4744,543 @@
       },
       "title": "Quick Statistics"
     }
+  },
+  "email": {
+    "layout": {
+      "tagline": "Practical tools. Clean insights. Built for everyday spending.",
+      "managePreferences": "Manage email preferences",
+      "unsubscribe": "Unsubscribe",
+      "buttonFallback": "If the button doesn't work, open this link:",
+      "secondaryFallback": "Or:",
+      "allRightsReserved": "© 2022-{year} {brand}. All rights reserved."
+    },
+    "welcome": {
+      "subject": "Welcome to {brand}",
+      "badge": "Welcome",
+      "heading": "Welcome to {brand}",
+      "preview": "Welcome to {brand}, {name}! Let's get started.",
+      "greeting": "Hi {name},",
+      "intro": "Thanks for joining {brand}. We're glad you're here. Our platform helps you turn everyday receipts into organized financial insights — powered by AI analysis.",
+      "howItWorksTitle": "How it works",
+      "howItWorks": {
+        "0": "Upload — snap a photo or upload a PDF of any receipt",
+        "1": "Analyze — our AI extracts items, prices, merchants, and even suggests recipes from grocery receipts",
+        "2": "Track — view spending dashboards by merchant, category, month, or year"
+      },
+      "whatYouCanDoTitle": "What you can do",
+      "whatYouCanDo": {
+        "0": "Get allergen alerts on food products",
+        "1": "Share invoices with family members or colleagues",
+        "2": "Export statistics and spending reports",
+        "3": "Access your data from any device"
+      },
+      "body": "Ready to get started? Upload your first receipt and watch the magic happen. The whole process takes less than a minute.",
+      "feedbackPrompt": "Questions or feedback? We'd love to hear from you at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "Upload your first receipt",
+      "ctaSecondary": "Explore the dashboard"
+    },
+    "firstInvoiceUploaded": {
+      "subject": "Your first invoice is in!",
+      "badge": "Milestone",
+      "heading": "Your first invoice is in!",
+      "preview": "Congratulations, {name}! Your first invoice is in.",
+      "greeting": "Hi {name},",
+      "intro": "Congratulations on uploading your first invoice! You've taken the first step toward organized, insightful spending tracking. Here's what we've got so far:",
+      "invoiceSummaryTitle": "Your First Invoice",
+      "invoiceSummary": {
+        "invoiceName": "Invoice name",
+        "uploaded": "Uploaded",
+        "status": "Status"
+      },
+      "statusValue": "Ready for analysis",
+      "untitledFallback": "Untitled",
+      "whatHappensNextTitle": "What happens next",
+      "whatHappensNext": {
+        "0": "We analyze your receipt — our AI extracts items, prices, and merchant info",
+        "1": "You review the results — check the analysis and correct anything that looks off",
+        "2": "Your dashboard updates — spending charts, category breakdowns, and trends start building"
+      },
+      "featuresToExploreTitle": "Features to explore",
+      "featuresToExplore": {
+        "0": "Share invoices with family or colleagues for joint expense tracking",
+        "1": "View AI-generated recipe suggestions from your grocery items",
+        "2": "Check allergen warnings on detected food products",
+        "3": "Track spending patterns across merchants, categories, and time periods"
+      },
+      "body": "The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your dashboard come to life.",
+      "feedbackPrompt": "Need help or have feedback? Reach us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoice",
+      "ctaSecondary": "Upload another receipt"
+    },
+    "invoiceAnalyzed": {
+      "subject": "Your invoice has been analyzed",
+      "badge": "Invoices • Analysis Complete",
+      "heading": "Your invoice analysis is ready",
+      "preview": "Your invoice is ready, {name}. Analysis complete!",
+      "greeting": "Hi {name},",
+      "intro": "Great news! Our AI has finished analyzing your invoice. We've extracted all the key information, categorized your items, and generated spending insights to help you track your finances.",
+      "summaryTitle": "Invoice Summary",
+      "summary": {
+        "invoiceName": "Invoice name",
+        "merchantId": "Merchant ID",
+        "itemsDetected": "Items detected",
+        "totalAmount": "Total amount",
+        "notIdentified": "Not identified yet"
+      },
+      "whatWasAnalyzedTitle": "What was analyzed",
+      "whatWasAnalyzed": {
+        "0": "Merchant identification and categorization",
+        "1": "Line-by-line item extraction with pricing",
+        "2": "Automatic product categorization (groceries, beverages, household, etc.)",
+        "3": "Currency detection and amount validation",
+        "4": "Date and time extraction when available"
+      },
+      "body": "Click the button above to view the complete analysis. If anything looks off—perhaps a product was miscategorized or a price wasn't detected correctly—you can edit the invoice directly in your dashboard and the insights will update automatically.",
+      "feedbackPrompt": "Have questions about your analysis, or need help? Contact us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View full analysis"
+    },
+    "invoiceDeleted": {
+      "subject": "Your invoice was deleted",
+      "badge": "Invoices • Deleted",
+      "heading": "Invoice removed from your account",
+      "preview": "Invoice {invoiceLabel} has been removed from your account.",
+      "greeting": "Hi {name},",
+      "intro": "This email confirms that an invoice has been removed from your {brand} account. The deletion was processed successfully.",
+      "detailsTitle": "Deletion Details",
+      "details": {
+        "invoice": "Invoice",
+        "invoiceId": "Invoice ID",
+        "status": "Status"
+      },
+      "statusValue": "Deleted (soft delete)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "What you should know",
+      "whatYouShouldKnow": {
+        "0": "This is a soft delete—the invoice data may be retained for 30 days for recovery purposes.",
+        "1": "Any shared access to this invoice has been automatically revoked.",
+        "2": "Statistics and insights will be recalculated to exclude this invoice.",
+        "3": "If you need to recover this invoice, contact support within 30 days."
+      },
+      "body": "If you didn't initiate this deletion, or if you need to recover the invoice, please contact us immediately at <email></email>. We're here to help.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoices"
+    },
+    "invoiceMadePublic": {
+      "subject": "Your invoice is now public",
+      "badge": "Invoices • Public Link",
+      "heading": "Your invoice is now public",
+      "preview": "Your invoice \"{invoiceName}\" is now public and shareable.",
+      "greeting": "Hi {name},",
+      "intro": "You've successfully made your invoice public. Anyone with the link or QR code below can now view this invoice—no login required. This is perfect for sharing receipts with colleagues, accountants, or for expense reporting.",
+      "detailsTitle": "Invoice details",
+      "details": {
+        "invoiceName": "Invoice name",
+        "invoiceId": "Invoice ID",
+        "merchant": "Merchant",
+        "total": "Total",
+        "created": "Created",
+        "access": "Access"
+      },
+      "accessValue": "Public (anyone with link)",
+      "qrTitle": "Quick Access QR Code",
+      "qrSubText": "Scan with your phone camera for instant access.",
+      "qrAlt": "QR Code for invoice access",
+      "howToShareTitle": "How to share",
+      "howToShare": {
+        "0": "Copy the direct link below and send via email or message",
+        "1": "Print or screenshot the QR code for in-person sharing",
+        "2": "Include in expense reports or reimbursement requests"
+      },
+      "privacyNoticeTitle": "Privacy Notice",
+      "privacyNoticeBody": "Public invoices can be accessed by anyone who has the URL or QR code. To make this invoice private again, update the sharing settings from your invoice page at any time.",
+      "directLinkLabel": "Direct link:",
+      "feedbackPrompt": "Questions about sharing or privacy settings? Contact us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "Open public invoice"
+    },
+    "invoiceShared": {
+      "subject": "{fromName} shared an invoice with you",
+      "badge": "Invoices • Shared",
+      "heading": "An invoice was shared with you",
+      "preview": "{fromName} shared an invoice with you.",
+      "greeting": "Hi {toName},",
+      "intro": "Great news! <from></from> has shared an invoice with you on {brand}. This gives you access to view all the invoice details, including itemized products, merchant information, and analysis insights.",
+      "detailsTitle": "Share details",
+      "details": {
+        "sharedBy": "Shared by",
+        "invoiceId": "Invoice ID"
+      },
+      "whatYouCanDoTitle": "What you can do",
+      "whatYouCanDo": {
+        "0": "View the complete invoice details and itemized breakdown",
+        "1": "See analysis insights and spending categories",
+        "2": "Download or print the invoice for your records"
+      },
+      "body": "Click the button above to access the shared invoice. This link will remain active as long as the sharing permissions are in place.",
+      "feedbackPrompt": "Have questions about this share, or need help? Contact us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View shared invoice"
+    },
+    "invoiceUnshared": {
+      "subject": "Access to a shared invoice was revoked",
+      "badge": "Invoices • Access Revoked",
+      "heading": "Your access to an invoice was revoked",
+      "preview": "{fromName} revoked your access to a shared invoice.",
+      "greeting": "Hi {toName},",
+      "intro": "We're writing to let you know that <from></from> has revoked your access to an invoice that was previously shared with you. This means you will no longer be able to view this invoice.",
+      "detailsTitle": "Revocation Details",
+      "details": {
+        "revokedBy": "Revoked by",
+        "invoiceId": "Invoice ID",
+        "revokedAt": "Revoked at",
+        "yourAccess": "Your access",
+        "accessRevoked": "Revoked",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "What this means",
+      "whatThisMeans": {
+        "0": "Any bookmarked links to this invoice will no longer work for you.",
+        "1": "This invoice will not appear in your shared invoices list.",
+        "2": "If you need access again, contact the invoice owner directly."
+      },
+      "body": "If you believe this change was made in error, please reach out to <from></from> or contact our support team. Access revocations are sometimes accidental, and we're happy to help facilitate communication if needed.",
+      "feedbackPrompt": "Need assistance? Email us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoices",
+      "ctaSecondary": "Contact support"
+    },
+    "spendingAlert": {
+      "subject": "Spending threshold alert",
+      "badge": "Spending Alert • {percent}%",
+      "heading": "{percent, select, 80 {Heads up: approaching your budget limit} 90 {Almost there: 90% of your budget used} 100 {Budget reached: you've hit your spending limit} other {Spending alert}}",
+      "preview": "{name}, you've used {percent}% of your {category} budget for {period}.",
+      "greeting": "Hi {name},",
+      "intro": "{state, select, over {You've reached your spending limit for {category} in {period}. Here's a summary of where you stand.} other {You've used {percent}% of your {category} budget for {period}. Here's a quick summary to help you plan the rest of the period.}}",
+      "overBudgetWarning": "Your spending has reached or exceeded the budget you set. Review your recent purchases to stay on track.",
+      "metricsLabels": {
+        "budgetLimit": "Budget limit",
+        "currentSpending": "Current spending",
+        "remaining": "Remaining",
+        "threshold": "Threshold"
+      },
+      "overBudgetValue": "Over budget",
+      "detailsTitle": "Budget Details",
+      "detailsLabels": {
+        "category": "Category",
+        "period": "Period",
+        "budget": "Budget",
+        "spent": "Spent"
+      },
+      "chartTitle": "Spending by category",
+      "chartAlt": "Spending breakdown by category for {period}",
+      "tipsTitle": "{state, select, over {What you can do} other {Tips to stay on track}}",
+      "tipsOverBudget": {
+        "0": "Review recent purchases to identify non-essential spending",
+        "1": "Consider adjusting your budget if it no longer reflects reality",
+        "2": "Set a stricter threshold (e.g., 80%) for earlier warnings"
+      },
+      "tipsOnTrack": {
+        "0": "Check your recent purchases to see where the bulk is going",
+        "1": "Prioritize essential spending for the rest of the period",
+        "2": "Consider cooking at home more if dining is driving costs up"
+      },
+      "notificationsParagraph": "You can adjust your budget thresholds and notification preferences in your <settings></settings>.",
+      "notificationsLink": "notification settings",
+      "feedbackPrompt": "Questions? Reach us at <email></email>.",
+      "ctaPrimary": "View dashboard",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
+    },
+    "newsletterSubscribed": {
+      "subject": "You're subscribed!",
+      "badge": "Newsletter",
+      "heading": "You're in — welcome aboard",
+      "preview": "Welcome, {name} — you're subscribed.",
+      "greeting": "Hi {name},",
+      "intro": "Thanks for subscribing to the <brand>{brandName}</brand> newsletter. I'm genuinely excited to have you here. I'll keep communications lightweight, meaningful, and worth your time.",
+      "whatToExpectTitle": "What to expect",
+      "whatToExpect": {
+        "0": "Product updates & new features as they launch",
+        "1": "New articles & write-ups about technology, productivity, and personal finance",
+        "2": "Occasional highlights and curated resources (1–2 emails per quarter)"
+      },
+      "body": "Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it's a tip that saves you hours or an insight that shifts your perspective on personal finance.",
+      "feedbackPrompt": "Questions, feedback, or just want to say hello? Reply to this email or reach me directly at <email></email>.",
+      "ctaPrimary": "Visit arolariu.ro",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
+    },
+    "newsletterUnsubscribed": {
+      "subject": "You've been unsubscribed",
+      "badge": "Newsletter",
+      "heading": "You've been unsubscribed",
+      "preview": "Hi {name} — you've been unsubscribed.",
+      "greeting": "Hi {name},",
+      "intro": "This email confirms you've been removed from the <brand>{brandName}</brand> newsletter list. I'm sorry to see you go.",
+      "whatHappensNextTitle": "What happens next",
+      "whatHappensNext": {
+        "0": "You won't receive newsletter updates from us going forward.",
+        "1": "You may still receive essential account and service emails if you use the product.",
+        "2": "Changed your mind? You can resubscribe at any time using the button above."
+      },
+      "body": "I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I'd genuinely love to hear it—just reply to this email.",
+      "feedbackPrompt": "If you didn't request this unsubscription, or you need help with anything, please contact <email></email>.",
+      "ctaPrimary": "Review preferences",
+      "ctaSecondary": "Resubscribe",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
+    },
+    "accountInactivity": {
+      "subject": "We miss you at {brand}",
+      "badge": "Account",
+      "heading": "Account inactivity notice",
+      "preview": "Hi {name} — your account has been inactive for {inactiveDays} days.",
+      "greeting": "Hi {name},",
+      "intro": "This is a heads-up that your account has been inactive for <count>{inactiveDays}</count> days.",
+      "whatThisMeans": {
+        "title": "What this means",
+        "bullet1": "Signing in will keep your account active.",
+        "bullet2": "If there's no activity for the next {daysUntilClosure} days, the account may be scheduled for closure.",
+        "bullet3": "If you want to keep your data, please take action before the deadline."
+      },
+      "timeline": {
+        "title": "Timeline",
+        "inactiveFor": "Inactive for",
+        "timeRemaining": "Time remaining",
+        "daysValue": "{days} days"
+      },
+      "supportPrompt": "If you believe you received this message in error, or you need assistance, please contact <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "footnote": "Note: This notice is informational and intended to help you avoid losing access. Actual account retention policies may vary by region and product.",
+      "cta": {
+        "primary": "Sign in",
+        "secondary": "Contact support"
+      }
+    },
+    "invoiceInactivity": {
+      "subject": "It's been {daysWithoutUpload} days since your last invoice",
+      "badge": {
+        "3": "Inactivity • 3 days",
+        "7": "Inactivity • 7 days",
+        "14": "Inactivity • 14 days",
+        "30": "Inactivity • 30 days"
+      },
+      "heading": {
+        "3": "Quick check-in",
+        "7": "A gentle reminder",
+        "14": "Let's get you back on track",
+        "30": "It's been a while"
+      },
+      "preview": "Hi {name} — {days} days since your last upload.",
+      "greeting": "Hi {name},",
+      "intro": {
+        "3": "We noticed you haven't uploaded any invoices recently.",
+        "7": "Looks like it's been a week since your last invoice upload.",
+        "14": "Two weeks without uploads — want a quick nudge to restart the habit?",
+        "30": "It's been about a month since your last upload — we can help you pick up where you left off."
+      },
+      "whyWorthIt": {
+        "title": "Why it's worth it",
+        "bullet1": "Keep your spending timeline accurate.",
+        "bullet2": "Get cleaner totals by merchant and category.",
+        "bullet3": "Find receipts faster when you need them."
+      },
+      "status": {
+        "title": "Status",
+        "daysWithoutUpload": "Days without upload",
+        "lastUpload": "Last upload"
+      },
+      "tip": {
+        "title": "Tip (30 seconds)",
+        "message": "Upload one recent invoice today — small consistency beats big catch-up."
+      },
+      "important": {
+        "title": "Important",
+        "message": "If you're stuck or something isn't working, reply to this email or contact support — we'll help."
+      },
+      "helpPrompt": "Need help or have questions? Email <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      },
+      "cta": {
+        "primary": "Upload an invoice",
+        "secondary": "View invoices"
+      }
+    },
+    "incompleteInvoice": {
+      "subject": "You have incomplete invoices",
+      "badge": "Reminder",
+      "heading": "Your invoice needs a quick update",
+      "preview": "{name}, your invoice \"{invoiceName}\" needs some attention.",
+      "greeting": "Hi {name},",
+      "intro": "We analyzed your invoice {invoiceName} but couldn't extract everything. A few details are missing, and completing them will give you better spending insights and more accurate dashboards.",
+      "invoiceDetailsTitle": "Invoice Details",
+      "invoiceLabel": "Invoice",
+      "analyzedOnLabel": "Analyzed on",
+      "missingFieldsLabel": "Missing fields",
+      "whatsMissingTitle": "What's missing",
+      "missingFields": {
+        "merchant": {
+          "label": "Merchant",
+          "suggestion": "Add the store name manually in the edit view"
+        },
+        "items": {
+          "label": "Line items",
+          "suggestion": "Try re-uploading a clearer photo, or add items manually"
+        },
+        "payment": {
+          "label": "Payment info",
+          "suggestion": "Enter the total amount and payment method in the edit view"
+        },
+        "category": {
+          "label": "Invoice category",
+          "suggestion": "Select a category (groceries, fast food, household, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Please review and update this information"
+        }
+      },
+      "tipsTitle": "Tips for better analysis",
+      "tips": {
+        "0": "Use a well-lit, flat surface when photographing receipts",
+        "1": "Ensure the entire receipt is visible and in focus",
+        "2": "PDF receipts from online orders tend to analyze best",
+        "3": "You can always add or correct details manually after analysis"
+      },
+      "bodyText": "Completing these details takes less than a minute and ensures your spending reports stay accurate.",
+      "feedback": "Stuck or need help? Reach out at <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "Complete your invoice",
+      "secondaryCta": "Re-run analysis"
+    },
+    "unanalyzedInvoices": {
+      "subject": "You have unanalyzed invoices",
+      "badge": "Reminder",
+      "heading": "{count, plural, =1 {1 invoice waiting for analysis} other {# invoices waiting for analysis}}",
+      "preview": "{name}, you have {count, plural, =1 {1 invoice} other {# invoices}} waiting for AI analysis.",
+      "greeting": "Hi {name},",
+      "intro": "{count, plural, =1 {You have 1 invoice that hasn't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.} other {You have # invoices that haven't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.}}",
+      "invoicesAwaitingTitle": "Invoices awaiting analysis",
+      "uploadedDate": "Uploaded {date}",
+      "andMore": "…and {remaining} more. View all in your <dashboard></dashboard>.",
+      "analysisProvidedTitle": "What analysis provides",
+      "analysisProvides": {
+        "0": "Line-by-line item extraction with prices and categories",
+        "1": "Merchant identification and categorization",
+        "2": "Allergen detection on food products",
+        "3": "Recipe suggestions based on your grocery items",
+        "4": "Automatic spending categorization for dashboard insights"
+      },
+      "bodyText": "Analysis typically takes under a minute per invoice. Once complete, you'll receive a notification with the results.",
+      "feedback": "Need help? Contact us at <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "View invoices"
+    },
+    "weeklyUploadReminder": {
+      "subject": "Your weekly upload reminder",
+      "badge": "Weekly Reminder",
+      "heading": "Your weekly receipt check-in",
+      "preview": "Hi {name} — here's your weekly receipt check-in.",
+      "greeting": "Hi {name},",
+      "intro": "Here's a quick look at your receipt tracking activity. Consistent uploading gives you the most accurate spending insights.",
+      "metricsLabels": {
+        "thisWeek": "This week",
+        "lastWeek": "Last week",
+        "totalInvoices": "Total invoices",
+        "totalTracked": "Total tracked"
+      },
+      "quickTipsTitle": "Quick tips",
+      "quickTips": {
+        "0": "Upload receipts right after shopping — it takes under 30 seconds",
+        "1": "Batch upload at the end of the day if you prefer",
+        "2": "Even small purchases help build a complete spending picture"
+      },
+      "bodyText": "Every receipt you track makes your spending insights more accurate and your dashboards more useful.",
+      "feedback": "Questions or feedback? Reach us at <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "Upload this week's receipts",
+      "secondaryCta": "View dashboard"
+    },
+    "invoiceStats": {
+      "subject": "Your {frequency, select, daily {daily} weekly {weekly} monthly {monthly} yearly {yearly} other {periodic}} invoice statistics",
+      "frequencyLabel": "{frequency, select, daily {Daily} weekly {Weekly} monthly {Monthly} yearly {Yearly} other {Periodic}}",
+      "title": "{frequencyLabel} invoice stats",
+      "badge": "Invoices",
+      "heading": "{frequencyLabel} invoice statistics",
+      "preview": "{frequencyLabel} stats for {name} — {totalSpend} total.",
+      "greeting": "Hi {name},",
+      "intro": "This is your invoice activity and spending summary for <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Invoices",
+        "scans": "Scans",
+        "totalSpend": "Total spend",
+        "averagePerInvoice": "Avg / invoice"
+      },
+      "reportDetailsTitle": "Report details",
+      "reportDetails": {
+        "period": "Period",
+        "currency": "Currency"
+      },
+      "topMerchantsTitle": "Top merchants",
+      "topCategoriesTitle": "Top categories",
+      "noDataFallback": "No data yet — upload a couple of invoices to unlock insights.",
+      "breakdownCardTitle": "Spending breakdown (by category)",
+      "donutChartTitle": "Category spend distribution",
+      "donutChartAlt": "Donut chart showing spending distribution by category.",
+      "breakdownTableTitle": "Breakdown",
+      "breakdownNote": "Note: This chart uses the available category ranking data for the period.",
+      "body": "For a complete breakdown of your spending, visit your invoices list to review trends, merchants, categories, and totals over time. These insights can help you identify spending patterns and make more informed financial decisions.",
+      "feedbackPrompt": "Questions or something looks off? Email <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View invoices",
+      "ctaSecondary": "Upload a new invoice"
+    }
   }
 }

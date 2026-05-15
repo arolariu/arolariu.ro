@@ -3,55 +3,35 @@
  * @module emails/components/EmailLayout
  */
 
-import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "@react-email/components";
 import type {ReactNode} from "react";
+import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
+
+import type {EmailLocale} from "../_i18n";
 
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
+import {getLayoutTranslator} from "./layoutTranslator";
 
-type Cta = Readonly<{
+type Cta = {
   readonly href: string;
   readonly label: string;
-}>;
+};
 
-type Props = Readonly<{
-  /** HTML document title (shown by some clients). */
+type Props = {
+  readonly locale: EmailLocale;
   readonly title: string;
-
-  /** Preheader text (preview line in inbox list). */
   readonly preview: string;
-
-  /** Main email headline. */
   readonly heading: string;
-
-  /** Small “pill” label above the heading. */
   readonly badge?: string;
-
-  /** Primary call-to-action. */
   readonly primaryCta?: Cta;
-
-  /** Optional secondary action (displayed as a simple link). */
   readonly secondaryCta?: Cta;
-
-  /** Whether to show an unsubscribe link in footer. */
   readonly showUnsubscribe?: boolean;
-
-  /** URL used by the unsubscribe link (only if showUnsubscribe is true). */
   readonly unsubscribeUrl?: string;
-
-  /** Optional “manage preferences” link shown in the footer. */
   readonly managePreferencesUrl?: string;
-
-  /** Main body content (paragraphs, cards, etc.). */
   readonly children: ReactNode;
-}>;
+};
 
 const styles = {
-  body: {
-    backgroundColor: EMAIL_COLORS.background,
-    margin: "0",
-    padding: "32px 0",
-    fontFamily: EMAIL_TYPOGRAPHY.fontFamily,
-  },
+  body: {backgroundColor: EMAIL_COLORS.background, margin: "0", padding: "32px 0", fontFamily: EMAIL_TYPOGRAPHY.fontFamily},
   container: {
     backgroundColor: EMAIL_COLORS.cardBackground,
     border: `1px solid ${EMAIL_COLORS.border}`,
@@ -59,27 +39,10 @@ const styles = {
     overflow: "hidden",
     width: "600px",
   },
-  headerBar: {
-    backgroundColor: EMAIL_COLORS.brandBlue,
-    padding: "18px 24px",
-    textAlign: "center" as const,
-  },
-  logo: {
-    display: "block",
-    margin: "0 auto",
-    width: "140px",
-    height: "auto",
-    maxWidth: "100%",
-  },
-  headerTagline: {
-    color: "rgba(255,255,255,0.92)",
-    fontSize: "12px",
-    lineHeight: "18px",
-    margin: "10px 0 0",
-  },
-  content: {
-    padding: "28px 32px",
-  },
+  headerBar: {backgroundColor: EMAIL_COLORS.brandBlue, padding: "18px 24px", textAlign: "center" as const},
+  logo: {display: "block", margin: "0 auto", width: "140px", height: "auto", maxWidth: "100%"},
+  headerTagline: {color: "rgba(255,255,255,0.92)", fontSize: "12px", lineHeight: "18px", margin: "10px 0 0"},
+  content: {padding: "28px 32px"},
   badge: {
     display: "inline-block",
     border: `1px solid ${EMAIL_COLORS.border}`,
@@ -91,23 +54,9 @@ const styles = {
     backgroundColor: EMAIL_COLORS.background,
     margin: "0 0 12px",
   },
-  heading: {
-    margin: "0 0 14px",
-    fontSize: "24px",
-    lineHeight: "30px",
-    fontWeight: "700",
-    color: EMAIL_COLORS.ink,
-  },
-  paragraph: {
-    margin: "0 0 14px",
-    fontSize: "16px",
-    lineHeight: "24px",
-    color: EMAIL_COLORS.ink,
-  },
-  ctaWrap: {
-    textAlign: "center" as const,
-    padding: "8px 0 4px",
-  },
+  heading: {margin: "0 0 14px", fontSize: "24px", lineHeight: "30px", fontWeight: "700", color: EMAIL_COLORS.ink},
+  paragraph: {margin: "0 0 14px", fontSize: "16px", lineHeight: "24px", color: EMAIL_COLORS.ink},
+  ctaWrap: {textAlign: "center" as const, padding: "8px 0 4px"},
   button: {
     display: "inline-block",
     backgroundColor: EMAIL_COLORS.brandPurple,
@@ -119,40 +68,38 @@ const styles = {
     lineHeight: "20px",
     fontWeight: "700",
   },
-  fallbackLinkText: {
-    margin: "12px 0 0",
-    fontSize: "12px",
-    lineHeight: "18px",
-    color: EMAIL_COLORS.muted,
-  },
-  link: {
-    color: EMAIL_COLORS.brandPurple,
-    textDecoration: "none",
-  },
-  hr: {
-    borderColor: EMAIL_COLORS.border,
-    margin: "0",
-  },
-  footer: {
-    padding: "18px 32px 22px",
-    textAlign: "center" as const,
-  },
-  footerText: {
-    margin: "0 0 8px",
-    fontSize: "12px",
-    lineHeight: "18px",
-    color: EMAIL_COLORS.muted,
-  },
-  footerFinePrint: {
-    margin: "0",
-    fontSize: "11px",
-    lineHeight: "16px",
-    color: EMAIL_COLORS.muted,
-  },
+  fallbackLinkText: {margin: "12px 0 0", fontSize: "12px", lineHeight: "18px", color: EMAIL_COLORS.muted},
+  link: {color: EMAIL_COLORS.brandPurple, textDecoration: "none"},
+  hr: {borderColor: EMAIL_COLORS.border, margin: "0"},
+  footer: {padding: "18px 32px 22px", textAlign: "center" as const},
+  footerText: {margin: "0 0 8px", fontSize: "12px", lineHeight: "18px", color: EMAIL_COLORS.muted},
+  footerFinePrint: {margin: "0", fontSize: "11px", lineHeight: "16px", color: EMAIL_COLORS.muted},
 } as const;
 
-export function EmailLayout(props: Props) {
+/**
+ * The shared chrome wrapping every email body.
+ *
+ * @remarks
+ * **Self-contained i18n.** Resolves its own `email.layout`-scoped strings
+ * via {@link getLayoutTranslator} (memoised per locale in
+ * `./layoutTranslator.ts`). Templates pass only data — they do **not**
+ * thread a translator function down. This keeps the layout's prop
+ * surface data-shaped and amortises the `loadMessages` +
+ * `createTranslator` pair to one-time-per-locale per warm Node process.
+ *
+ * **Async component.** The first render per locale awaits the memoised
+ * translator construction; subsequent renders hit the in-process cache.
+ * React Email's `render()` and Resend's `react:` payload both await
+ * async components recursively — no caller changes needed.
+ *
+ * **Footer.** Renders `{BRAND.location} • {BRAND.supportEmail}` without
+ * a `"Support:"` label — the email address itself is the affordance.
+ * Intentional removal (see PR #751 review thread); do not "fix" by
+ * re-adding the label.
+ */
+export async function EmailLayout(props: Props) {
   const {
+    locale,
     title,
     preview,
     heading,
@@ -165,9 +112,11 @@ export function EmailLayout(props: Props) {
     children,
   } = props;
 
+  const tLayout = await getLayoutTranslator(locale);
+
   return (
     <Html
-      lang='en'
+      lang={locale}
       dir='ltr'>
       <Head>
         <title>{title}</title>
@@ -190,7 +139,7 @@ export function EmailLayout(props: Props) {
               alt={BRAND.name}
               style={styles.logo}
             />
-            <Text style={styles.headerTagline}>Practical tools. Clean insights. Built for everyday spending.</Text>
+            <Text style={styles.headerTagline}>{tLayout("tagline")}</Text>
           </Section>
 
           <Section style={styles.content}>
@@ -206,7 +155,7 @@ export function EmailLayout(props: Props) {
                   {primaryCta.label}
                 </Link>
                 <Text style={styles.fallbackLinkText}>
-                  If the button doesn’t work, open this link:{" "}
+                  {tLayout("buttonFallback")}{" "}
                   <Link
                     href={primaryCta.href}
                     style={styles.link}>
@@ -218,7 +167,7 @@ export function EmailLayout(props: Props) {
 
             {secondaryCta ? (
               <Text style={styles.fallbackLinkText}>
-                Or:{" "}
+                {tLayout("secondaryFallback")}{" "}
                 <Link
                   href={secondaryCta.href}
                   style={styles.link}>
@@ -239,7 +188,7 @@ export function EmailLayout(props: Props) {
               </Link>
             </Text>
             <Text style={styles.footerText}>
-              {BRAND.location} • Support:{" "}
+              {BRAND.location} •{" "}
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
                 style={styles.link}>
@@ -252,7 +201,7 @@ export function EmailLayout(props: Props) {
                 <Link
                   href={managePreferencesUrl}
                   style={styles.link}>
-                  Manage email preferences
+                  {tLayout("managePreferences")}
                 </Link>
               </Text>
             ) : null}
@@ -262,14 +211,12 @@ export function EmailLayout(props: Props) {
                 <Link
                   href={unsubscribeUrl}
                   style={styles.link}>
-                  Unsubscribe
+                  {tLayout("unsubscribe")}
                 </Link>
               </Text>
             ) : null}
 
-            <Text style={styles.footerFinePrint}>
-              © 2022-{new Date().getFullYear()} {BRAND.name}. All rights reserved.
-            </Text>
+            <Text style={styles.footerFinePrint}>{tLayout("allRightsReserved", {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
           </Section>
         </Container>
       </Body>

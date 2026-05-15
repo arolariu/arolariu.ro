@@ -51,23 +51,38 @@ vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
 }));
 
-vi.mock("next-intl", () => {
-  return {
-    useTranslations: (namespace?: string) => {
-      const mockT = (key: string) => (namespace ? `${namespace}.${key}` : key);
-      mockT.rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
-      return mockT;
-    },
-    useLocale: () => "en",
-    useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
-    NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
-  };
-});
-
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
 }));
+
+// ── i18n shims ──
+//
+// `useTranslations` and `useLocale` are React hooks that require a
+// `NextIntlClientProvider` context. Client-component tests that don't set
+// up that provider need stubs here. The stubs intentionally return key
+// paths verbatim (e.g., `t("foo.bar")` → `"namespace.foo.bar"`) so tests
+// can assert on the raw key string without depending on real translation
+// content.
+//
+// `createTranslator` is NOT mocked — it's a pure function with no provider
+// dependency, and tests that exercise it (e.g., `_i18n/index.test.ts`) use
+// the real next-intl runtime. An earlier broken `t.rich` mock on
+// `createTranslator` was removed in PR #751's refactor (Copilot review
+// comment #4).
+vi.mock("next-intl", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl")>();
+  const makeTranslator = (namespace?: string) => {
+    const t = ((key: string) => (namespace ? `${namespace}.${key}` : key)) as unknown as ReturnType<typeof actual.useTranslations>;
+    (t as unknown as {rich: (key: string) => string}).rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
+    return t;
+  };
+  return {
+    ...actual,
+    useTranslations: (namespace?: string) => makeTranslator(namespace),
+    useLocale: () => "en",
+  };
+});
 
 // ── SDK shims (prevent CJS/ESM resolution crashes in happy-dom) ──
 

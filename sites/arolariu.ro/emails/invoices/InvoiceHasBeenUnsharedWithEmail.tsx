@@ -3,11 +3,12 @@
  * @module emails/invoices/InvoiceHasBeenUnsharedWithEmail
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
-type Props = Readonly<{
+type Props = {
   /** The username of the person who revoked access. */
   readonly fromUsername: string;
 
@@ -19,80 +20,83 @@ type Props = Readonly<{
 
   /** Optional timestamp (ISO or human-readable). */
   readonly revokedAt?: string;
-}>;
+};
 
-const InvoiceHasBeenUnsharedWithEmail = (props: Readonly<Props>) => {
-  const {fromUsername, toUsername, identifier, revokedAt} = props;
+const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
+  namespace: "email.invoiceUnshared",
+  render: ({locale, t, props}) => {
+    const {fromUsername, toUsername, identifier, revokedAt} = props;
 
-  const safeTo = toUsername?.trim() ? toUsername : "there";
-  const safeFrom = fromUsername?.trim() ? fromUsername : "The owner";
+    const safeTo = toUsername?.trim() ? toUsername : "there";
+    const safeFrom = fromUsername?.trim() ? fromUsername : "The owner";
 
-  const invoicesUrl = `${BRAND.url}/domains/invoices/view-invoices`;
+    const invoicesUrl = `${BRAND.url}/domains/invoices/view-invoices`;
 
-  return (
-    <EmailLayout
-      title={`${BRAND.name} | Access revoked`}
-      preview={`${safeFrom} revoked your access to a shared invoice.`}
-      badge='Invoices • Access Revoked'
-      heading='Your access to an invoice was revoked'
-      primaryCta={{href: invoicesUrl, label: "View your invoices"}}
-      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: "Contact support"}}>
-      <Text style={EmailParagraphStyles}>Hi {safeTo},</Text>
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | ${t("badge")}`}
+        preview={t("preview", {fromName: safeFrom})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("ctaSecondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        We’re writing to let you know that <strong>{safeFrom}</strong> has revoked your access to an invoice that was previously shared with
-        you. This means you will no longer be able to view this invoice.
-      </Text>
+        <Text style={EmailParagraphStyles}>
+          {t.rich("intro", {
+            from: () => <strong>{safeFrom}</strong>,
+          })}
+        </Text>
 
-      <KeyValueTable
-        title='Revocation Details'
-        items={[
-          {label: "Revoked by", value: safeFrom},
-          {label: "Invoice ID", value: identifier},
-          {label: "Revoked at", value: revokedAt ?? "—"},
-          {label: "Your access", value: "Revoked"},
-        ]}
-      />
-
-      <EmailCard title='What this means'>
-        <BulletList
+        <KeyValueTable
+          title={t("detailsTitle")}
           items={[
-            "Any bookmarked links to this invoice will no longer work for you.",
-            "This invoice will not appear in your shared invoices list.",
-            "If you need access again, contact the invoice owner directly.",
+            {label: t("details.revokedBy"), value: safeFrom},
+            {label: t("details.invoiceId"), value: identifier},
+            {label: t("details.revokedAt"), value: revokedAt ?? t("details.notProvided")},
+            {label: t("details.yourAccess"), value: t("details.accessRevoked")},
           ]}
         />
-      </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        If you believe this change was made in error, please reach out to <strong>{safeFrom}</strong> or contact our support team. Access
-        revocations are sometimes accidental, and we’re happy to help facilitate communication if needed.
-      </Text>
+        <EmailCard title={t("whatThisMeansTitle")}>
+          <BulletList items={[t("whatThisMeans.0"), t("whatThisMeans.1"), t("whatThisMeans.2")]} />
+        </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Need assistance? Email us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
-      </Text>
+        <Text style={EmailParagraphStyles}>
+          {t.rich("body", {
+            from: () => <strong>{safeFrom}</strong>,
+          })}
+        </Text>
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
-        <br />
-        {BRAND.teamName}
-      </Text>
-    </EmailLayout>
-  );
-};
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
 InvoiceHasBeenUnsharedWithEmail.PreviewProps = {
   fromUsername: "Alex Olariu",
   toUsername: "John Doe",
   identifier: "550e8400-e29b-41d4-a716-446655440000",
   revokedAt: "December 24, 2025",
-} satisfies Props;
+  locale: "en",
+};
 
 export default InvoiceHasBeenUnsharedWithEmail;

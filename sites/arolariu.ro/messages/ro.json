@@ -4744,5 +4744,543 @@
       },
       "title": "Statistici Rapide"
     }
+  },
+  "email": {
+    "layout": {
+      "tagline": "Instrumente practice. Informații clare. Gândit pentru cheltuielile de zi cu zi.",
+      "managePreferences": "Administrează preferințele de email",
+      "unsubscribe": "Dezabonează-te",
+      "buttonFallback": "Dacă butonul nu funcționează, deschide acest link:",
+      "secondaryFallback": "Sau:",
+      "allRightsReserved": "© 2022-{year} {brand}. Toate drepturile rezervate."
+    },
+    "welcome": {
+      "subject": "Bun venit la {brand}",
+      "badge": "Bun venit",
+      "heading": "Bun venit la {brand}",
+      "preview": "Bun venit la {brand}, {name}! Hai să începem.",
+      "greeting": "Salut {name},",
+      "intro": "Mulțumim că ni te-ai alăturat la {brand}. Ne bucurăm că ești aici. Platforma noastră te ajută să transformi bonurile zilnice în informații financiare organizate — cu ajutorul analizei AI.",
+      "howItWorksTitle": "Cum funcționează",
+      "howItWorks": {
+        "0": "Încarcă — fă o fotografie sau încarcă un PDF al oricărui bon",
+        "1": "Analizează — AI-ul nostru extrage produsele, prețurile, comercianții și chiar sugerează rețete din bonurile de băcănie",
+        "2": "Urmărește — vizualizează panouri de cheltuieli pe comerciant, categorie, lună sau an"
+      },
+      "whatYouCanDoTitle": "Ce poți face",
+      "whatYouCanDo": {
+        "0": "Primește alerte despre alergeni pentru produsele alimentare",
+        "1": "Partajează facturi cu membrii familiei sau colegii",
+        "2": "Exportă statistici și rapoarte de cheltuieli",
+        "3": "Accesează-ți datele de pe orice dispozitiv"
+      },
+      "body": "Gata să începi? Încarcă primul tău bon și privește magia în acțiune. Întregul proces durează mai puțin de un minut.",
+      "feedbackPrompt": "Întrebări sau feedback? Ne-ar plăcea să auzim de la tine la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Încarcă primul tău bon",
+      "ctaSecondary": "Explorează panoul"
+    },
+    "firstInvoiceUploaded": {
+      "subject": "Prima ta factură a sosit!",
+      "badge": "Milestone",
+      "heading": "Prima ta factură a fost încărcată!",
+      "preview": "Felicitări, {name}! Prima ta factură a fost încărcată.",
+      "greeting": "Salut {name},",
+      "intro": "Felicitări pentru încărcarea primei tale facturi! Ai făcut primul pas către urmărirea organizată și perspicace a cheltuielilor. Iată ce avem până acum:",
+      "invoiceSummaryTitle": "Prima Ta Factură",
+      "invoiceSummary": {
+        "invoiceName": "Nume factură",
+        "uploaded": "Încărcat",
+        "status": "Status"
+      },
+      "statusValue": "Gata pentru analiză",
+      "untitledFallback": "Fără titlu",
+      "whatHappensNextTitle": "Ce urmează",
+      "whatHappensNext": {
+        "0": "Analizăm chitanța ta — AI-ul nostru extrage articole, prețuri și informații despre comerciant",
+        "1": "Revizuiești rezultatele — verifică analiza și corectează orice pare greșit",
+        "2": "Tabloul tău de bord se actualizează — grafice de cheltuieli, defalcări pe categorii și tendințe încep să se construiască"
+      },
+      "featuresToExploreTitle": "Funcții de explorat",
+      "featuresToExplore": {
+        "0": "Partajează facturi cu familia sau colegii pentru urmărirea cheltuielilor comune",
+        "1": "Vezi sugestii de rețete generate de AI din articolele tale de cumpărături",
+        "2": "Verifică avertismente despre alergeni pentru produsele alimentare detectate",
+        "3": "Urmărește tiparele de cheltuieli pe comercianți, categorii și perioade de timp"
+      },
+      "body": "Cu cât încarci mai multe facturi, cu atât informațiile despre cheltuieli devin mai bogate. Încearcă să încarci câteva chitanțe în această săptămână pentru a vedea tabloul tău de bord prinde viață.",
+      "feedbackPrompt": "Ai nevoie de ajutor sau ai feedback? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi factura ta",
+      "ctaSecondary": "Încarcă altă chitanță"
+    },
+    "invoiceAnalyzed": {
+      "subject": "Factura ta a fost analizată",
+      "badge": "Facturi • Analiză Completă",
+      "heading": "Analiza facturii tale este gata",
+      "preview": "Factura ta este gata, {name}. Analiză completă!",
+      "greeting": "Bună {name},",
+      "intro": "Vești bune! AI-ul nostru a terminat de analizat factura ta. Am extras toate informațiile cheie, am categorisit articolele și am generat perspective asupra cheltuielilor pentru a te ajuta să îți urmărești finanțele.",
+      "summaryTitle": "Rezumat factură",
+      "summary": {
+        "invoiceName": "Nume factură",
+        "merchantId": "ID Comerciant",
+        "itemsDetected": "Articole detectate",
+        "totalAmount": "Suma totală",
+        "notIdentified": "Neidentificat încă"
+      },
+      "whatWasAnalyzedTitle": "Ce a fost analizat",
+      "whatWasAnalyzed": {
+        "0": "Identificarea și categorizarea comerciantului",
+        "1": "Extragerea linie cu linie a articolelor cu prețuri",
+        "2": "Categorizare automată a produselor (produse alimentare, băuturi, articole casnice etc.)",
+        "3": "Detectarea monedei și validarea sumei",
+        "4": "Extragerea datei și orei când este disponibilă"
+      },
+      "body": "Apasă butonul de mai sus pentru a vizualiza analiza completă. Dacă ceva nu arată bine—poate un produs a fost categorizat greșit sau un preț nu a fost detectat corect—poți edita factura direct în tabloul tău de bord și perspectivele se vor actualiza automat.",
+      "feedbackPrompt": "Ai întrebări despre analiză sau ai nevoie de ajutor? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează analiza completă"
+    },
+    "invoiceDeleted": {
+      "subject": "Factura ta a fost ștearsă",
+      "badge": "Facturi • Șters",
+      "heading": "Factură eliminată din contul tău",
+      "preview": "Factura {invoiceLabel} a fost eliminată din contul tău.",
+      "greeting": "Salut {name},",
+      "intro": "Acest email confirmă că o factură a fost eliminată din contul tău {brand}. Ștergerea a fost procesată cu succes.",
+      "detailsTitle": "Detalii ștergere",
+      "details": {
+        "invoice": "Factură",
+        "invoiceId": "ID factură",
+        "status": "Status"
+      },
+      "statusValue": "Șters (ștergere soft)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "Ce trebuie să știi",
+      "whatYouShouldKnow": {
+        "0": "Aceasta este o ștergere soft—datele facturii pot fi păstrate timp de 30 de zile pentru recuperare.",
+        "1": "Orice acces partajat la această factură a fost revocat automat.",
+        "2": "Statisticile și informațiile vor fi recalculate pentru a exclude această factură.",
+        "3": "Dacă trebuie să recuperezi această factură, contactează suportul în 30 de zile."
+      },
+      "body": "Dacă nu ai inițiat această ștergere sau dacă trebuie să recuperezi factura, te rugăm să ne contactezi imediat la <email></email>. Suntem aici să te ajutăm.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi facturile tale"
+    },
+    "invoiceMadePublic": {
+      "subject": "Factura ta este acum publică",
+      "badge": "Facturi • Link Public",
+      "heading": "Factura ta este acum publică",
+      "preview": "Factura ta \"{invoiceName}\" este acum publică și partajabilă.",
+      "greeting": "Salut {name},",
+      "intro": "Ai făcut cu succes factura publică. Oricine are linkul sau codul QR de mai jos poate vedea această factură—fără autentificare. Acest lucru este perfect pentru partajarea chitanțelor cu colegi, contabili sau pentru rapoarte de cheltuieli.",
+      "detailsTitle": "Detalii factură",
+      "details": {
+        "invoiceName": "Nume factură",
+        "invoiceId": "ID factură",
+        "merchant": "Comerciant",
+        "total": "Total",
+        "created": "Creat",
+        "access": "Acces"
+      },
+      "accessValue": "Public (oricine cu linkul)",
+      "qrTitle": "Cod QR Acces Rapid",
+      "qrSubText": "Scanează cu camera telefonului pentru acces instant.",
+      "qrAlt": "Cod QR pentru acces factură",
+      "howToShareTitle": "Cum să partajezi",
+      "howToShare": {
+        "0": "Copiază linkul direct de mai jos și trimite prin email sau mesaj",
+        "1": "Printează sau fă screenshot codului QR pentru partajare în persoană",
+        "2": "Include în rapoarte de cheltuieli sau cereri de rambursare"
+      },
+      "privacyNoticeTitle": "Notificare Confidențialitate",
+      "privacyNoticeBody": "Facturile publice pot fi accesate de oricine are URL-ul sau codul QR. Pentru a face această factură privată din nou, actualizează setările de partajare din pagina facturii în orice moment.",
+      "directLinkLabel": "Link direct:",
+      "feedbackPrompt": "Întrebări despre partajare sau setări de confidențialitate? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Deschide factura publică"
+    },
+    "invoiceShared": {
+      "subject": "{fromName} a distribuit o factură cu tine",
+      "badge": "Facturi • Distribuite",
+      "heading": "O factură a fost distribuită cu tine",
+      "preview": "{fromName} a distribuit o factură cu tine.",
+      "greeting": "Bună {toName},",
+      "intro": "Vești bune! <from></from> a distribuit o factură cu tine pe {brand}. Aceasta îți oferă acces pentru a vizualiza toate detaliile facturii, inclusiv produsele detaliate, informațiile despre comerciant și analizele.",
+      "detailsTitle": "Detalii distribuire",
+      "details": {
+        "sharedBy": "Distribuit de",
+        "invoiceId": "ID Factură"
+      },
+      "whatYouCanDoTitle": "Ce poți face",
+      "whatYouCanDo": {
+        "0": "Vizualizează detaliile complete ale facturii și descompunerea pe articole",
+        "1": "Vezi analizele și categoriile de cheltuieli",
+        "2": "Descarcă sau printează factura pentru evidențele tale"
+      },
+      "body": "Apasă butonul de mai sus pentru a accesa factura distribuită. Acest link va rămâne activ atât timp cât permisiunile de distribuire sunt în vigoare.",
+      "feedbackPrompt": "Ai întrebări despre această distribuire sau ai nevoie de ajutor? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează factura distribuită"
+    },
+    "invoiceUnshared": {
+      "subject": "Accesul la o factură distribuită a fost revocat",
+      "badge": "Facturi • Acces Revocat",
+      "heading": "Accesul tău la o factură a fost revocat",
+      "preview": "{fromName} a revocat accesul tău la o factură distribuită.",
+      "greeting": "Bună {toName},",
+      "intro": "Îți scriem pentru a te informa că <from></from> a revocat accesul tău la o factură care îți fusese distribuită anterior. Aceasta înseamnă că nu vei mai putea vizualiza această factură.",
+      "detailsTitle": "Detalii revocare",
+      "details": {
+        "revokedBy": "Revocat de",
+        "invoiceId": "ID Factură",
+        "revokedAt": "Revocat la",
+        "yourAccess": "Accesul tău",
+        "accessRevoked": "Revocat",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "Ce înseamnă asta",
+      "whatThisMeans": {
+        "0": "Orice link salvat la această factură nu va mai funcționa pentru tine.",
+        "1": "Această factură nu va mai apărea în lista ta de facturi distribuite.",
+        "2": "Dacă ai nevoie din nou de acces, contactează direct proprietarul facturii."
+      },
+      "body": "Dacă crezi că această schimbare a fost făcută din greșeală, te rugăm să contactezi pe <from></from> sau echipa noastră de suport. Revocările de acces sunt uneori accidentale și suntem bucuroși să ajutăm la facilitarea comunicării dacă este necesar.",
+      "feedbackPrompt": "Ai nevoie de asistență? Trimite-ne un email la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează facturile tale",
+      "ctaSecondary": "Contactează suportul"
+    },
+    "spendingAlert": {
+      "subject": "Alertă prag de cheltuieli",
+      "badge": "Alertă Cheltuieli • {percent}%",
+      "heading": "{percent, select, 80 {Atenție: te apropii de limita bugetului} 90 {Aproape gata: ai folosit 90% din buget} 100 {Buget atins: ai atins limita de cheltuieli} other {Alertă de cheltuieli}}",
+      "preview": "{name}, ai folosit {percent}% din bugetul tău de {category} pentru {period}.",
+      "greeting": "Salut {name},",
+      "intro": "{state, select, over {Ai atins limita de cheltuieli pentru {category} în {period}. Iată un rezumat al situației tale.} other {Ai folosit {percent}% din bugetul tău de {category} pentru {period}. Iată un rezumat rapid pentru a planifica restul perioadei.}}",
+      "overBudgetWarning": "Cheltuielile tale au atins sau depășit bugetul stabilit. Verifică achizițiile recente pentru a rămâne pe drumul cel bun.",
+      "metricsLabels": {
+        "budgetLimit": "Limită buget",
+        "currentSpending": "Cheltuieli curente",
+        "remaining": "Rămas",
+        "threshold": "Prag"
+      },
+      "overBudgetValue": "Peste buget",
+      "detailsTitle": "Detalii Buget",
+      "detailsLabels": {
+        "category": "Categorie",
+        "period": "Perioadă",
+        "budget": "Buget",
+        "spent": "Cheltuit"
+      },
+      "chartTitle": "Cheltuieli pe categorii",
+      "chartAlt": "Defalcare cheltuieli pe categorii pentru {period}",
+      "tipsTitle": "{state, select, over {Ce poți face} other {Sfaturi pentru a rămâne pe drumul cel bun}}",
+      "tipsOverBudget": {
+        "0": "Verifică achizițiile recente pentru a identifica cheltuielile neesențiale",
+        "1": "Consideră ajustarea bugetului dacă nu mai reflectă realitatea",
+        "2": "Stabilește un prag mai strict (de ex. 80%) pentru avertismente mai timpurii"
+      },
+      "tipsOnTrack": {
+        "0": "Verifică achizițiile recente pentru a vedea unde merg cea mai mare parte",
+        "1": "Prioritizează cheltuielile esențiale pentru restul perioadei",
+        "2": "Consideră să găătești mai mult acasă dacă mesele la restaurant cresc costurile"
+      },
+      "notificationsParagraph": "Poți ajusta pragurile bugetului și preferințele de notificare în <settings></settings>.",
+      "notificationsLink": "setările de notificări",
+      "feedbackPrompt": "Întrebări? Contactează-ne la <email></email>.",
+      "ctaPrimary": "Vezi tabloul de bord",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
+    },
+    "newsletterSubscribed": {
+      "subject": "Te-ai abonat cu succes!",
+      "badge": "Newsletter",
+      "heading": "Bine ai venit — te-ai abonat",
+      "preview": "Bun venit, {name} — te-ai abonat.",
+      "greeting": "Salut {name},",
+      "intro": "Mulțumesc că te-ai abonat la newsletter-ul <brand>{brandName}</brand>. Mă bucur sincer să te am aici. Voi păstra comunicările ușoare, semnificative și merită timpul tău.",
+      "whatToExpectTitle": "La ce să te aștepți",
+      "whatToExpect": {
+        "0": "Actualizări de produs și funcționalități noi pe măsură ce sunt lansate",
+        "1": "Articole și materiale noi despre tehnologie, productivitate și finanțe personale",
+        "2": "Evidențieri ocazionale și resurse curatate (1–2 emailuri pe trimestru)"
+      },
+      "body": "Inbox-ul tău este sacru—respect asta. Fiecare email este creat pentru a oferi valoare genuină, fie că este un sfat care îți economisește ore sau o perspectivă care îți schimbă viziunea asupra finanțelor personale.",
+      "feedbackPrompt": "Întrebări, feedback sau doar vrei să saluti? Răspunde la acest email sau contactează-mă direct la <email></email>.",
+      "ctaPrimary": "Vizitează arolariu.ro",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
+    },
+    "newsletterUnsubscribed": {
+      "subject": "Te-ai dezabonat",
+      "badge": "Newsletter",
+      "heading": "Te-ai dezabonat",
+      "preview": "Salut {name} — te-ai dezabonat.",
+      "greeting": "Salut {name},",
+      "intro": "Acest email confirmă că ai fost eliminat din lista de newsletter <brand>{brandName}</brand>. Îmi pare rău să te văd plecând.",
+      "whatHappensNextTitle": "Ce urmează",
+      "whatHappensNext": {
+        "0": "Nu vei mai primi actualizări de newsletter de la noi în viitor.",
+        "1": "Este posibil să primești în continuare emailuri esențiale de cont și serviciu dacă folosești produsul.",
+        "2": "Ți-ai schimbat părerea? Te poți reabona oricând folosind butonul de mai sus."
+      },
+      "body": "Apreciez timpul pe care l-ai petrecut cu noi. Dacă ai feedback despre motivul pentru care ai plecat sau despre cum mă pot îmbunătăți, aș fi cu adevărat bucuros să-l aud—doar răspunde la acest email.",
+      "feedbackPrompt": "Dacă nu ai solicitat această dezabonare sau ai nevoie de ajutor cu ceva, te rugăm să contactezi <email></email>.",
+      "ctaPrimary": "Verifică preferințele",
+      "ctaSecondary": "Reabonează-te",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
+    },
+    "accountInactivity": {
+      "subject": "Ne lipsești la {brand}",
+      "badge": "Cont",
+      "heading": "Notificare de inactivitate a contului",
+      "preview": "Bună {name} — contul tău a fost inactiv de {inactiveDays} zile.",
+      "greeting": "Bună {name},",
+      "intro": "Acesta este un atenționare că contul tău a fost inactiv de <count>{inactiveDays}</count> zile.",
+      "whatThisMeans": {
+        "title": "Ce înseamnă asta",
+        "bullet1": "Autentificarea va menține contul tău activ.",
+        "bullet2": "Dacă nu există activitate în următoarele {daysUntilClosure} zile, contul poate fi programat pentru închidere.",
+        "bullet3": "Dacă dorești să îți păstrezi datele, te rugăm să acționezi înainte de termen."
+      },
+      "timeline": {
+        "title": "Cronologie",
+        "inactiveFor": "Inactiv de",
+        "timeRemaining": "Timp rămas",
+        "daysValue": "{days} zile"
+      },
+      "supportPrompt": "Dacă crezi că ai primit acest mesaj din greșeală sau ai nevoie de asistență, te rugăm să contactezi <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu respect,",
+        "line2": "Echipa {brand}"
+      },
+      "footnote": "Notă: Această notificare este informativă și are scopul de a te ajuta să eviți pierderea accesului. Politicile reale de retenție a conturilor pot varia în funcție de regiune și produs.",
+      "cta": {
+        "primary": "Autentifică-te",
+        "secondary": "Contactează asistența"
+      }
+    },
+    "invoiceInactivity": {
+      "subject": "Au trecut {daysWithoutUpload} de zile de la ultima ta factură",
+      "badge": {
+        "3": "Inactivitate • 3 zile",
+        "7": "Inactivitate • 7 zile",
+        "14": "Inactivitate • 14 zile",
+        "30": "Inactivitate • 30 zile"
+      },
+      "heading": {
+        "3": "Verificare rapidă",
+        "7": "O reamintire blândă",
+        "14": "Hai să te aducem înapoi pe drumul cel bun",
+        "30": "A trecut ceva timp"
+      },
+      "preview": "Bună {name} — {days} zile de la ultima încărcare.",
+      "greeting": "Bună {name},",
+      "intro": {
+        "3": "Am observat că nu ai încărcat nicio factură recent.",
+        "7": "Se pare că a trecut o săptămână de la ultima ta încărcare de factură.",
+        "14": "Două săptămâni fără încărcări — vrei o îmboldire rapidă pentru a relua obiceiul?",
+        "30": "A trecut aproximativ o lună de la ultima încărcare — te putem ajuta să reia de unde ai rămas."
+      },
+      "whyWorthIt": {
+        "title": "De ce merită",
+        "bullet1": "Păstrează cronologia cheltuielilor tale exactă.",
+        "bullet2": "Obține totaluri mai clare pe comerciant și categorie.",
+        "bullet3": "Găsește chitanțe mai repede când ai nevoie."
+      },
+      "status": {
+        "title": "Stare",
+        "daysWithoutUpload": "Zile fără încărcare",
+        "lastUpload": "Ultima încărcare"
+      },
+      "tip": {
+        "title": "Sfat (30 secunde)",
+        "message": "Încarcă o factură recentă astăzi — consistența mică bate recuperarea mare."
+      },
+      "important": {
+        "title": "Important",
+        "message": "Dacă ești blocat sau ceva nu funcționează, răspunde la acest email sau contactează suportul — te vom ajuta."
+      },
+      "helpPrompt": "Ai nevoie de ajutor sau ai întrebări? Email <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă",
+        "line2": "Echipa {brand}"
+      },
+      "cta": {
+        "primary": "Încarcă o factură",
+        "secondary": "Vezi facturile"
+      }
+    },
+    "incompleteInvoice": {
+      "subject": "Ai facturi incomplete",
+      "badge": "Memento",
+      "heading": "Factura ta necesită o actualizare rapidă",
+      "preview": "{name}, factura ta \"{invoiceName}\" necesită atenție.",
+      "greeting": "Bună, {name}!",
+      "intro": "Am analizat factura ta {invoiceName}, dar nu am putut extrage totul. Câteva detalii lipsesc, iar completarea lor îți va oferi o perspectivă mai bună asupra cheltuielilor și rapoarte mai precise.",
+      "invoiceDetailsTitle": "Detalii factură",
+      "invoiceLabel": "Factură",
+      "analyzedOnLabel": "Analizată la",
+      "missingFieldsLabel": "Câmpuri lipsă",
+      "whatsMissingTitle": "Ce lipsește",
+      "missingFields": {
+        "merchant": {
+          "label": "Comerciant",
+          "suggestion": "Adaugă manual numele magazinului în vizualizarea de editare"
+        },
+        "items": {
+          "label": "Articole pe rânduri",
+          "suggestion": "Încearcă să reîncarci o fotografie mai clară sau adaugă articolele manual"
+        },
+        "payment": {
+          "label": "Informații de plată",
+          "suggestion": "Introdu suma totală și metoda de plată în vizualizarea de editare"
+        },
+        "category": {
+          "label": "Categorie factură",
+          "suggestion": "Selectează o categorie (produse alimentare, fast food, gospodărie, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Te rugăm să revizuiești și să actualizezi aceste informații"
+        }
+      },
+      "tipsTitle": "Sfaturi pentru o analiză mai bună",
+      "tips": {
+        "0": "Folosește o suprafață bine iluminată și plată când fotografiezi bonuri",
+        "1": "Asigură-te că întregul bon este vizibil și în focus",
+        "2": "Bonurile PDF de la comenzile online tind să fie analizate cel mai bine",
+        "3": "Poți întotdeauna să adaugi sau să corectezi detaliile manual după analiză"
+      },
+      "bodyText": "Completarea acestor detalii durează mai puțin de un minut și asigură acuratețea rapoartelor tale de cheltuieli.",
+      "feedback": "Întâmpini probleme sau ai nevoie de ajutor? Scrie-ne la <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Completează factura",
+      "secondaryCta": "Reanalizeză"
+    },
+    "unanalyzedInvoices": {
+      "subject": "Ai facturi neanalizate",
+      "badge": "Memento",
+      "heading": "{count, plural, =1 {1 factură în așteptarea analizei} other {# facturi în așteptarea analizei}}",
+      "preview": "{name}, ai {count, plural, =1 {1 factură} other {# facturi}} care așteaptă analiza AI.",
+      "greeting": "Bună, {name}!",
+      "intro": "{count, plural, =1 {Ai 1 factură care nu a fost încă analizată. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.} other {Ai # facturi care nu au fost încă analizate. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.}}",
+      "invoicesAwaitingTitle": "Facturi în așteptarea analizei",
+      "uploadedDate": "Încărcată la {date}",
+      "andMore": "…și încă {remaining}. Vezi toate în <dashboard></dashboard>.",
+      "analysisProvidedTitle": "Ce oferă analiza",
+      "analysisProvides": {
+        "0": "Extracția rând cu rând a articolelor cu prețuri și categorii",
+        "1": "Identificarea și categorizarea comercianților",
+        "2": "Detectarea alergenilor pe produsele alimentare",
+        "3": "Sugestii de rețete bazate pe articolele din coșul de cumpărături",
+        "4": "Categorizare automată a cheltuielilor pentru informații de pe tablou"
+      },
+      "bodyText": "Analiza durează de obicei mai puțin de un minut per factură. Odată completă, vei primi o notificare cu rezultatele.",
+      "feedback": "Ai nevoie de ajutor? Contactează-ne la <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Vezi facturile"
+    },
+    "weeklyUploadReminder": {
+      "subject": "Mementoultău săptămânal pentru încărcări",
+      "badge": "Memento Săptămânal",
+      "heading": "Verificarea săptămânală a bonurilor",
+      "preview": "Bună, {name} — iată verificarea săptămânală a bonurilor tale.",
+      "greeting": "Bună, {name}!",
+      "intro": "Iată o privire rapidă asupra activității tale de urmărire a bonurilor. Încărcarea constantă îți oferă cele mai precise informații despre cheltuieli.",
+      "metricsLabels": {
+        "thisWeek": "Săptămâna aceasta",
+        "lastWeek": "Săptămâna trecută",
+        "totalInvoices": "Total facturi",
+        "totalTracked": "Total urmărit"
+      },
+      "quickTipsTitle": "Sfaturi rapide",
+      "quickTips": {
+        "0": "Încarcă bonurile imediat după cumpărături — durează mai puțin de 30 de secunde",
+        "1": "Încarcă în lot la sfârșitul zilei dacă preferi",
+        "2": "Chiar și achizițiile mici ajută la construirea unei imagini complete a cheltuielilor"
+      },
+      "bodyText": "Fiecare bon pe care îl urmărești face ca informațiile despre cheltuieli să fie mai precise și tablourile mai utile.",
+      "feedback": "Întrebări sau feedback? Scrie-ne la <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Încarcă bonurile din această săptămână",
+      "secondaryCta": "Vezi tabloul de bord"
+    },
+    "invoiceStats": {
+      "subject": "Statisticile tale {frequency, select, daily {zilnice} weekly {săptămânale} monthly {lunare} yearly {anuale} other {periodice}} de facturi",
+      "frequencyLabel": "{frequency, select, daily {Zilnică} weekly {Săptămânală} monthly {Lunară} yearly {Anuală} other {Periodică}}",
+      "title": "Statistici factură {frequencyLabel}",
+      "badge": "Facturi",
+      "heading": "Statistici {frequencyLabel} de factură",
+      "preview": "Statistici {frequencyLabel} pentru {name} — {totalSpend} total.",
+      "greeting": "Salut {name},",
+      "intro": "Acesta este rezumatul activității tale pe facturi și cheltuieli pentru <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Facturi",
+        "scans": "Scanări",
+        "totalSpend": "Cheltuieli totale",
+        "averagePerInvoice": "Medie / factură"
+      },
+      "reportDetailsTitle": "Detalii raport",
+      "reportDetails": {
+        "period": "Perioadă",
+        "currency": "Monedă"
+      },
+      "topMerchantsTitle": "Top comercianți",
+      "topCategoriesTitle": "Top categorii",
+      "noDataFallback": "Încă nu există date — încarcă câteva facturi pentru a debloca statistici.",
+      "breakdownCardTitle": "Detaliere cheltuieli (pe categorie)",
+      "donutChartTitle": "Distribuția cheltuielilor pe categorii",
+      "donutChartAlt": "Grafic inelar arătând distribuția cheltuielilor pe categorii.",
+      "breakdownTableTitle": "Detaliere",
+      "breakdownNote": "Notă: Acest grafic folosește datele de clasare pe categorii disponibile pentru perioadă.",
+      "body": "Pentru o detaliere completă a cheltuielilor tale, vizitează lista de facturi pentru a analiza trendurile, comercianții, categoriile și totalurile în timp. Aceste statistici te pot ajuta să identifici modele de cheltuire și să iei decizii financiare mai informate.",
+      "feedbackPrompt": "Întrebări sau ceva nu pare corect? Scrie-ne la <email></email>.",
+      "signOff": {
+        "line1": "La revedere,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi facturile",
+      "ctaSecondary": "Încarcă o factură nouă"
+    }
   }
 }

@@ -7,21 +7,22 @@
  * from the system.
  */
 
-import {generateGuid} from "@/lib/utils.generic";
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
+
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
  * Properties for the InvoiceHasBeenDeletedEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
-  username: string;
+  readonly username: string;
   /** The ID of the deleted invoice */
-  invoiceId: string;
+  readonly invoiceId: string;
   /** Optional: invoice name for better context */
-  invoiceName?: string;
-}>;
+  readonly invoiceName?: string;
+};
 
 /**
  * React component that renders the "Invoice Deleted" email template.
@@ -32,68 +33,67 @@ type Props = Readonly<{
  * @param props - The username and deleted invoice ID.
  * @returns A rendered React Email template.
  */
-const InvoiceHasBeenDeletedEmail = (props: Readonly<Props>) => {
-  const {username, invoiceId, invoiceName} = props;
+const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
+  namespace: "email.invoiceDeleted",
+  render: ({locale, t, props}) => {
+    const {username, invoiceId, invoiceName} = props;
 
-  const safeName = username?.trim() ? username : "there";
-  const invoicesUrl = `${BRAND.url}/domains/invoices/view-invoices`;
+    const safeName = username?.trim() ? username : "there";
+    const invoicesUrl = `${BRAND.url}/domains/invoices/view-invoices`;
+    const invoiceLabel = invoiceName ?? `#${invoiceId}`;
 
-  return (
-    <EmailLayout
-      title={`${BRAND.name} | Invoice deleted`}
-      preview={`Invoice ${invoiceName ?? invoiceId} has been removed from your account.`}
-      badge='Invoices • Deleted'
-      heading='Invoice removed from your account'
-      primaryCta={{href: invoicesUrl, label: "View your invoices"}}>
-      <Text style={EmailParagraphStyles}>Hi {safeName},</Text>
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | ${t("badge")}`}
+        preview={t("preview", {invoiceLabel})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        This email confirms that an invoice has been removed from your {BRAND.name} account. The deletion was processed successfully.
-      </Text>
+        <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
 
-      <KeyValueTable
-        title='Deletion Details'
-        items={[
-          {label: "Invoice", value: invoiceName ?? `#${invoiceId}`},
-          {label: "Invoice ID", value: invoiceId ?? "—"},
-          {label: "Status", value: "Deleted (soft delete)"},
-        ]}
-      />
-
-      <EmailCard title='What you should know'>
-        <BulletList
+        <KeyValueTable
+          title={t("detailsTitle")}
           items={[
-            "This is a soft delete—the invoice data may be retained for 30 days for recovery purposes.",
-            "Any shared access to this invoice has been automatically revoked.",
-            "Statistics and insights will be recalculated to exclude this invoice.",
-            "If you need to recover this invoice, contact support within 30 days.",
+            {label: t("details.invoice"), value: invoiceName ?? `#${invoiceId}`},
+            {label: t("details.invoiceId"), value: invoiceId ?? t("placeholder")},
+            {label: t("details.status"), value: t("statusValue")},
           ]}
         />
-      </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        If you didn’t initiate this deletion, or if you need to recover the invoice, please contact us immediately at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        . We’re here to help.
-      </Text>
+        <EmailCard title={t("whatYouShouldKnowTitle")}>
+          <BulletList items={[t("whatYouShouldKnow.0"), t("whatYouShouldKnow.1"), t("whatYouShouldKnow.2"), t("whatYouShouldKnow.3")]} />
+        </EmailCard>
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
-        <br />
-        {BRAND.teamName}
-      </Text>
-    </EmailLayout>
-  );
-};
+        <Text style={EmailParagraphStyles}>
+          {t.rich("body", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
 InvoiceHasBeenDeletedEmail.PreviewProps = {
   username: "Test User",
-  invoiceId: generateGuid(),
+  invoiceId: "00000000-0000-4000-8000-000000000001",
   invoiceName: "Carrefour Market - Dec 2024",
-} satisfies Props;
+  locale: "en",
+};
 
 export default InvoiceHasBeenDeletedEmail;

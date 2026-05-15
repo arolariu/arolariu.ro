@@ -3,7 +3,7 @@
  * @module emails/invoices/statistics/InvoiceStatisticsEmail
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
 import {
   BRAND,
   BulletList,
@@ -16,22 +16,23 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
+import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
-type RankedItem = Readonly<{
+type RankedItem = {
   readonly name: string;
   readonly totalSpend: number;
-}>;
+};
 
-type Totals = Readonly<{
+type Totals = {
   readonly invoicesCount: number;
   readonly scansCount: number;
   readonly totalSpend: number;
   readonly averageSpend: number;
-}>;
+};
 
-export type InvoiceStatisticsEmailProps = Readonly<{
+export type InvoiceStatisticsEmailProps = {
   readonly username: string;
   readonly frequency: Frequency;
 
@@ -59,7 +60,7 @@ export type InvoiceStatisticsEmailProps = Readonly<{
 
   /** Secondary destination (defaults to create invoice). */
   readonly createInvoiceUrl?: string;
-}>;
+};
 
 function safeFormatCurrency(amount: number, currency: string): string {
   try {
@@ -73,33 +74,6 @@ function safeFormatCurrency(amount: number, currency: string): string {
   }
 }
 
-function frequencyLabel(frequency: Frequency): string {
-  switch (frequency) {
-    case "daily":
-      return "Daily";
-    case "weekly":
-      return "Weekly";
-    case "monthly":
-      return "Monthly";
-    case "yearly":
-      return "Yearly";
-    default: {
-      const exhaustive: never = frequency;
-      return exhaustive;
-    }
-  }
-}
-
-function summarizeRanked(items: readonly RankedItem[], currency: string): readonly string[] {
-  const top = items.slice(0, 3);
-
-  if (top.length === 0) {
-    return ["No data yet — upload a couple of invoices to unlock insights."];
-  }
-
-  return top.map((item, index) => `${index + 1}. ${item.name} — ${safeFormatCurrency(item.totalSpend, currency)}`);
-}
-
 function toPercent(part: number, total: number): string {
   if (!Number.isFinite(part) || !Number.isFinite(total) || total <= 0) {
     return "0%";
@@ -110,119 +84,156 @@ function toPercent(part: number, total: number): string {
   return `${rounded}%`;
 }
 
-export function InvoiceStatisticsEmail(props: Readonly<InvoiceStatisticsEmailProps>) {
-  const {
-    username,
-    frequency,
-    periodStart,
-    periodEnd,
-    currency,
-    totals,
-    topMerchants,
-    topCategories,
-    categorySpendBreakdown,
-    categorySpendChartUrl,
-    invoicesUrl,
-    createInvoiceUrl,
-  } = props;
+function rankedItems(items: readonly RankedItem[], currency: string, fallback: string): readonly string[] {
+  const top = items.slice(0, 3);
+  if (top.length === 0) return [fallback];
+  return top.map((item, i) => `${i + 1}. ${item.name} — ${safeFormatCurrency(item.totalSpend, currency)}`);
+}
 
-  const name = username?.trim() ? username : "there";
+const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>({
+  namespace: "email.invoiceStats",
+  render: ({locale, t, props}) => {
+    const {
+      username,
+      frequency,
+      periodStart,
+      periodEnd,
+      currency,
+      totals,
+      topMerchants,
+      topCategories,
+      categorySpendBreakdown,
+      categorySpendChartUrl,
+      invoicesUrl,
+      createInvoiceUrl,
+    } = props;
 
-  const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
-  const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
+    const name = username?.trim() ? username : "there";
 
-  const label = frequencyLabel(frequency);
-  const preview = `${label} stats for ${name} — ${safeFormatCurrency(totals.totalSpend, currency)} total.`;
+    const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
+    const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
 
-  const breakdownSource = categorySpendBreakdown ?? topCategories;
-  const breakdownTop = breakdownSource.slice(0, 6);
-  const breakdownForChart = breakdownTop.map((item) => ({label: item.name, value: item.totalSpend}));
+    const label = t("frequencyLabel", {frequency});
+    const preview = t("preview", {frequencyLabel: label, name, totalSpend: safeFormatCurrency(totals.totalSpend, currency)});
 
-  return (
-    <EmailLayout
-      title={`${BRAND.name} | ${label} invoice stats`}
-      preview={preview}
-      badge='Invoices'
-      heading={`${label} invoice statistics`}
-      primaryCta={{href: effectiveInvoicesUrl, label: "View invoices"}}
-      secondaryCta={{href: effectiveCreateInvoiceUrl, label: "Upload a new invoice"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+    const breakdownSource = categorySpendBreakdown ?? topCategories;
+    const breakdownTop = breakdownSource.slice(0, 6);
+    const breakdownForChart = breakdownTop.map((item) => ({label: item.name, value: item.totalSpend}));
 
-      <Text style={EmailParagraphStyles}>
-        This is your invoice activity and spending summary for <strong>{periodStart}</strong> → <strong>{periodEnd}</strong>.
-      </Text>
+    const noDataFallback = t("noDataFallback");
 
-      <MetricsGrid
-        metrics={[
-          {label: "Invoices", value: String(totals.invoicesCount)},
-          {label: "Scans", value: String(totals.scansCount)},
-          {label: "Total spend", value: safeFormatCurrency(totals.totalSpend, currency)},
-          {label: "Avg / invoice", value: safeFormatCurrency(totals.averageSpend, currency)},
-        ]}
-      />
+    return (
+      <EmailLayout
+        title={t("title", {frequencyLabel: label})}
+        preview={preview}
+        badge={t("badge")}
+        heading={t("heading", {frequencyLabel: label})}
+        primaryCta={{href: effectiveInvoicesUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: effectiveCreateInvoiceUrl, label: t("ctaSecondary")}}
+        locale={locale}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <EmailCard title='Report details'>
-        <KeyValueTable
-          items={[
-            {label: "Period", value: `${periodStart} → ${periodEnd}`},
-            {label: "Currency", value: currency},
+        <Text style={EmailParagraphStyles}>
+          {t.rich("intro", {
+            start: () => <strong>{periodStart}</strong>,
+            end: () => <strong>{periodEnd}</strong>,
+          })}
+        </Text>
+
+        <MetricsGrid
+          metrics={[
+            {label: t("metrics.invoices"), value: String(totals.invoicesCount)},
+            {label: t("metrics.scans"), value: String(totals.scansCount)},
+            {label: t("metrics.totalSpend"), value: safeFormatCurrency(totals.totalSpend, currency)},
+            {label: t("metrics.averagePerInvoice"), value: safeFormatCurrency(totals.averageSpend, currency)},
           ]}
         />
-      </EmailCard>
 
-      <EmailCard title='Top merchants'>
-        <BulletList items={summarizeRanked(topMerchants, currency)} />
-      </EmailCard>
-
-      <EmailCard title='Top categories'>
-        <BulletList items={summarizeRanked(topCategories, currency)} />
-      </EmailCard>
-
-      {breakdownForChart.length > 0 ? (
-        <EmailCard title='Spending breakdown (by category)'>
-          <DonutChart
-            title='Category spend distribution'
-            data={breakdownForChart}
-            chartImageUrl={categorySpendChartUrl}
-            alt='Donut chart showing spending distribution by category.'
-          />
-
+        <EmailCard title={t("reportDetailsTitle")}>
           <KeyValueTable
-            title='Breakdown'
-            items={breakdownTop.map((item) => ({
-              label: item.name,
-              value: `${safeFormatCurrency(item.totalSpend, currency)} (${toPercent(item.totalSpend, totals.totalSpend)})`,
-            }))}
+            items={[
+              {label: t("reportDetails.period"), value: `${periodStart} → ${periodEnd}`},
+              {label: t("reportDetails.currency"), value: currency},
+            ]}
           />
-
-          {categorySpendBreakdown ? null : (
-            <Text style={{...EmailParagraphStyles, fontSize: "12px", lineHeight: "18px", margin: "0", color: EMAIL_COLORS.muted}}>
-              Note: This chart uses the available category ranking data for the period.
-            </Text>
-          )}
         </EmailCard>
-      ) : null}
 
-      <Text style={EmailParagraphStyles}>
-        For a complete breakdown of your spending, visit your invoices list to review trends, merchants, categories, and totals over time.
-        These insights can help you identify spending patterns and make more informed financial decisions.
-      </Text>
+        <EmailCard title={t("topMerchantsTitle")}>
+          <BulletList items={rankedItems(topMerchants, currency, noDataFallback)} />
+        </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Questions or something looks off? Email{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
-      </Text>
+        <EmailCard title={t("topCategoriesTitle")}>
+          <BulletList items={rankedItems(topCategories, currency, noDataFallback)} />
+        </EmailCard>
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
-        <br />
-        {BRAND.teamName}
-      </Text>
-    </EmailLayout>
-  );
-}
+        {breakdownForChart.length > 0 ? (
+          <EmailCard title={t("breakdownCardTitle")}>
+            <DonutChart
+              title={t("donutChartTitle")}
+              data={breakdownForChart}
+              chartImageUrl={categorySpendChartUrl}
+              alt={t("donutChartAlt")}
+            />
+
+            <KeyValueTable
+              title={t("breakdownTableTitle")}
+              items={breakdownTop.map((item) => ({
+                label: item.name,
+                value: `${safeFormatCurrency(item.totalSpend, currency)} (${toPercent(item.totalSpend, totals.totalSpend)})`,
+              }))}
+            />
+
+            {categorySpendBreakdown ? null : (
+              <Text style={{...EmailParagraphStyles, fontSize: "12px", lineHeight: "18px", margin: "0", color: EMAIL_COLORS.muted}}>
+                {t("breakdownNote")}
+              </Text>
+            )}
+          </EmailCard>
+        ) : null}
+
+        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
+
+InvoiceStatisticsEmail.PreviewProps = {
+  username: "Test User",
+  frequency: "monthly",
+  periodStart: "2025-01-01",
+  periodEnd: "2025-01-31",
+  currency: "EUR",
+  totals: {invoicesCount: 12, scansCount: 14, totalSpend: 1234.56, averageSpend: 102.88},
+  topMerchants: [
+    {name: "Lidl", totalSpend: 412.5},
+    {name: "Kaufland", totalSpend: 318.2},
+    {name: "Carrefour", totalSpend: 215.0},
+  ],
+  topCategories: [
+    {name: "Groceries", totalSpend: 720.0},
+    {name: "Dining", totalSpend: 280.0},
+    {name: "Transport", totalSpend: 150.0},
+  ],
+  locale: "en",
+};
+
+export default InvoiceStatisticsEmail;
+export {InvoiceStatisticsEmail};
