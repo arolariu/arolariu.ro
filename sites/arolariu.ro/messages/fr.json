@@ -4974,7 +4974,48 @@
       "ctaSecondary": "Contacter le support"
     },
     "spendingAlert": {
-      "subject": "Alerte de seuil de dépenses"
+      "subject": "Alerte de seuil de dépenses",
+      "badge": "Alerte Dépenses • {percent}%",
+      "heading": "{percent, select, 80 {Attention : vous approchez de la limite de votre budget} 90 {Presque terminé : 90% de votre budget utilisé} 100 {Budget atteint : vous avez atteint votre limite de dépenses} other {Alerte de dépenses}}",
+      "preview": "{name}, vous avez utilisé {percent}% de votre budget {category} pour {period}.",
+      "greeting": "Bonjour {name},",
+      "intro": "{state, select, over {Vous avez atteint votre limite de dépenses pour {category} en {period}. Voici un résumé de votre situation.} other {Vous avez utilisé {percent}% de votre budget {category} pour {period}. Voici un résumé rapide pour vous aider à planifier le reste de la période.}}",
+      "overBudgetWarning": "Vos dépenses ont atteint ou dépassé le budget que vous avez défini. Examinez vos achats récents pour rester sur la bonne voie.",
+      "metricsLabels": {
+        "budgetLimit": "Limite du budget",
+        "currentSpending": "Dépenses actuelles",
+        "remaining": "Restant",
+        "threshold": "Seuil"
+      },
+      "overBudgetValue": "Au-dessus du budget",
+      "detailsTitle": "Détails du Budget",
+      "detailsLabels": {
+        "category": "Catégorie",
+        "period": "Période",
+        "budget": "Budget",
+        "spent": "Dépensé"
+      },
+      "chartTitle": "Dépenses par catégorie",
+      "chartAlt": "Répartition des dépenses par catégorie pour {period}",
+      "tipsTitle": "{state, select, over {Ce que vous pouvez faire} other {Conseils pour rester sur la bonne voie}}",
+      "tipsOverBudget": {
+        "0": "Examinez les achats récents pour identifier les dépenses non essentielles",
+        "1": "Envisagez d'ajuster votre budget s'il ne reflète plus la réalité",
+        "2": "Définissez un seuil plus strict (par exemple 80%) pour des avertissements plus précoces"
+      },
+      "tipsOnTrack": {
+        "0": "Vérifiez vos achats récents pour voir où va la majeure partie",
+        "1": "Priorisez les dépenses essentielles pour le reste de la période",
+        "2": "Envisagez de cuisiner davantage à la maison si les restaurants augmentent les coûts"
+      },
+      "notificationsParagraph": "Vous pouvez ajuster vos seuils de budget et vos préférences de notification dans vos {settings}.",
+      "notificationsLink": "paramètres de notification",
+      "feedbackPrompt": "Des questions ? Contactez-nous à {email}.",
+      "ctaPrimary": "Voir le tableau de bord",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
     },
     "newsletterSubscribed": {
       "subject": "Vous êtes abonné !"

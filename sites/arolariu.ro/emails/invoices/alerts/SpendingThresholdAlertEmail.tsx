@@ -20,7 +20,8 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
 import {
   BRAND,
   BulletList,
@@ -33,6 +34,7 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * A spending category with its amount for the donut chart.
@@ -77,49 +79,10 @@ type Props = Readonly<{
 
   /** Link to the spending dashboard. */
   readonly dashboardUrl?: string;
+
+  /** Email locale for translations. */
+  readonly locale?: EmailLocale;
 }>;
-
-/**
- * Generates heading text based on threshold severity.
- *
- * @param thresholdPercent - The threshold percentage crossed.
- * @returns Heading string.
- */
-function headingFor(thresholdPercent: Props["thresholdPercent"]): string {
-  switch (thresholdPercent) {
-    case 80:
-      return "Heads up: approaching your budget limit";
-    case 90:
-      return "Almost there: 90% of your budget used";
-    case 100:
-      return "Budget reached: you've hit your spending limit";
-    default: {
-      const exhaustive: never = thresholdPercent;
-      return exhaustive;
-    }
-  }
-}
-
-/**
- * Generates badge text based on threshold severity.
- *
- * @param thresholdPercent - The threshold percentage crossed.
- * @returns Badge label string.
- */
-function badgeFor(thresholdPercent: Props["thresholdPercent"]): string {
-  switch (thresholdPercent) {
-    case 80:
-      return "Spending Alert • 80%";
-    case 90:
-      return "Spending Alert • 90%";
-    case 100:
-      return "Spending Alert • 100%";
-    default: {
-      const exhaustive: never = thresholdPercent;
-      return exhaustive;
-    }
-  }
-}
 
 /**
  * React component that renders the "Spending Threshold Alert" email.
@@ -155,7 +118,12 @@ function badgeFor(thresholdPercent: Props["thresholdPercent"]): string {
  * />
  * ```
  */
-const SpendingThresholdAlertEmail = (props: Readonly<Props>) => {
+const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.spendingAlert"});
+  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+
   const {
     username,
     category,
@@ -172,23 +140,24 @@ const SpendingThresholdAlertEmail = (props: Readonly<Props>) => {
   const name = username?.trim() ? username : "there";
   const effectiveDashboardUrl = dashboardUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
   const isOverBudget = thresholdPercent >= 100;
+  const budgetState = isOverBudget ? "over" : "under";
 
   return (
     <EmailLayout
+      locale={locale}
+      tLayout={tLayout}
       title={`${BRAND.name} | Spending alert`}
-      preview={`${name}, you've used ${thresholdPercent}% of your ${category} budget for ${period}.`}
-      badge={badgeFor(thresholdPercent)}
-      heading={headingFor(thresholdPercent)}
-      primaryCta={{href: effectiveDashboardUrl, label: "View dashboard"}}
+      preview={t("preview", {name, percent: thresholdPercent, category, period})}
+      badge={t("badge", {percent: thresholdPercent})}
+      heading={t("heading", {percent: thresholdPercent})}
+      primaryCta={{href: effectiveDashboardUrl, label: t("ctaPrimary")}}
       showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        {isOverBudget
-          ? `You've reached your spending limit for ${category} in ${period}. Here's a summary of where you stand.`
-          : `You've used ${thresholdPercent}% of your ${category} budget for ${period}. Here's a quick summary to help you plan the rest of the period.`}
+        {t("intro", {state: budgetState, category, period, percent: thresholdPercent})}
       </Text>
 
       {isOverBudget ? (
@@ -201,80 +170,72 @@ const SpendingThresholdAlertEmail = (props: Readonly<Props>) => {
             borderRadius: "10px",
             padding: "12px",
           }}>
-          Your spending has reached or exceeded the budget you set. Review your recent purchases to stay on track.
+          {t("overBudgetWarning")}
         </Text>
       ) : null}
 
       <MetricsGrid
         metrics={[
-          {label: "Budget limit", value: budgetLimit},
-          {label: "Current spending", value: currentSpending},
-          {label: "Remaining", value: isOverBudget ? "Over budget" : remainingBudget},
-          {label: "Threshold", value: `${thresholdPercent}%`},
+          {label: t("metricsLabels.budgetLimit"), value: budgetLimit},
+          {label: t("metricsLabels.currentSpending"), value: currentSpending},
+          {label: t("metricsLabels.remaining"), value: isOverBudget ? t("overBudgetValue") : remainingBudget},
+          {label: t("metricsLabels.threshold"), value: `${thresholdPercent}%`},
         ]}
       />
 
       <KeyValueTable
-        title='Budget Details'
+        title={t("detailsTitle")}
         items={[
-          {label: "Category", value: category},
-          {label: "Period", value: period},
-          {label: "Budget", value: budgetLimit},
-          {label: "Spent", value: currentSpending},
+          {label: t("detailsLabels.category"), value: category},
+          {label: t("detailsLabels.period"), value: period},
+          {label: t("detailsLabels.budget"), value: budgetLimit},
+          {label: t("detailsLabels.spent"), value: currentSpending},
         ]}
       />
 
       {categoryBreakdown.length > 0 ? (
         <DonutChart
-          title='Spending by category'
+          title={t("chartTitle")}
           data={categoryBreakdown}
           chartImageUrl={chartImageUrl}
-          alt={`Spending breakdown by category for ${period}`}
+          alt={t("chartAlt", {period})}
         />
       ) : null}
 
-      <EmailCard title={isOverBudget ? "What you can do" : "Tips to stay on track"}>
+      <EmailCard title={t("tipsTitle", {state: budgetState})}>
         <BulletList
           items={
             isOverBudget
-              ? [
-                  "Review recent purchases to identify non-essential spending",
-                  "Consider adjusting your budget if it no longer reflects reality",
-                  "Set a stricter threshold (e.g., 80%) for earlier warnings",
-                ]
-              : [
-                  "Check your recent purchases to see where the bulk is going",
-                  "Prioritize essential spending for the rest of the period",
-                  "Consider cooking at home more if dining is driving costs up",
-                ]
+              ? [t("tipsOverBudget.0"), t("tipsOverBudget.1"), t("tipsOverBudget.2")]
+              : [t("tipsOnTrack.0"), t("tipsOnTrack.1"), t("tipsOnTrack.2")]
           }
         />
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        You can adjust your budget thresholds and notification preferences in your{" "}
-        <Link
-          href={`${BRAND.url}/settings/notifications`}
-          style={EmailLinkStyles}>
-          notification settings
-        </Link>
-        .
+        {t.rich("notificationsParagraph", {
+          settings: () => (
+            <Link href={`${BRAND.url}/settings/notifications`} style={EmailLinkStyles}>
+              {t("notificationsLink")}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={EmailParagraphStyles}>
-        Questions? Reach us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedbackPrompt", {
+          email: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -293,6 +254,7 @@ SpendingThresholdAlertEmail.PreviewProps = {
     {label: "Fast Food", value: 85},
     {label: "Household", value: 47.5},
   ],
+  locale: "en",
 } satisfies Props;
 
 export default SpendingThresholdAlertEmail;

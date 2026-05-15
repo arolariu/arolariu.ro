@@ -4974,7 +4974,48 @@
       "ctaSecondary": "Contact support"
     },
     "spendingAlert": {
-      "subject": "Spending threshold alert"
+      "subject": "Spending threshold alert",
+      "badge": "Spending Alert • {percent}%",
+      "heading": "{percent, select, 80 {Heads up: approaching your budget limit} 90 {Almost there: 90% of your budget used} 100 {Budget reached: you've hit your spending limit} other {Spending alert}}",
+      "preview": "{name}, you've used {percent}% of your {category} budget for {period}.",
+      "greeting": "Hi {name},",
+      "intro": "{state, select, over {You've reached your spending limit for {category} in {period}. Here's a summary of where you stand.} other {You've used {percent}% of your {category} budget for {period}. Here's a quick summary to help you plan the rest of the period.}}",
+      "overBudgetWarning": "Your spending has reached or exceeded the budget you set. Review your recent purchases to stay on track.",
+      "metricsLabels": {
+        "budgetLimit": "Budget limit",
+        "currentSpending": "Current spending",
+        "remaining": "Remaining",
+        "threshold": "Threshold"
+      },
+      "overBudgetValue": "Over budget",
+      "detailsTitle": "Budget Details",
+      "detailsLabels": {
+        "category": "Category",
+        "period": "Period",
+        "budget": "Budget",
+        "spent": "Spent"
+      },
+      "chartTitle": "Spending by category",
+      "chartAlt": "Spending breakdown by category for {period}",
+      "tipsTitle": "{state, select, over {What you can do} other {Tips to stay on track}}",
+      "tipsOverBudget": {
+        "0": "Review recent purchases to identify non-essential spending",
+        "1": "Consider adjusting your budget if it no longer reflects reality",
+        "2": "Set a stricter threshold (e.g., 80%) for earlier warnings"
+      },
+      "tipsOnTrack": {
+        "0": "Check your recent purchases to see where the bulk is going",
+        "1": "Prioritize essential spending for the rest of the period",
+        "2": "Consider cooking at home more if dining is driving costs up"
+      },
+      "notificationsParagraph": "You can adjust your budget thresholds and notification preferences in your {settings}.",
+      "notificationsLink": "notification settings",
+      "feedbackPrompt": "Questions? Reach us at {email}.",
+      "ctaPrimary": "View dashboard",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
     },
     "newsletterSubscribed": {
       "subject": "You're subscribed!"

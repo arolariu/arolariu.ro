@@ -4974,7 +4974,48 @@
       "ctaSecondary": "Contactează suportul"
     },
     "spendingAlert": {
-      "subject": "Alertă prag de cheltuieli"
+      "subject": "Alertă prag de cheltuieli",
+      "badge": "Alertă Cheltuieli • {percent}%",
+      "heading": "{percent, select, 80 {Atenție: te apropii de limita bugetului} 90 {Aproape gata: ai folosit 90% din buget} 100 {Buget atins: ai atins limita de cheltuieli} other {Alertă de cheltuieli}}",
+      "preview": "{name}, ai folosit {percent}% din bugetul tău de {category} pentru {period}.",
+      "greeting": "Salut {name},",
+      "intro": "{state, select, over {Ai atins limita de cheltuieli pentru {category} în {period}. Iată un rezumat al situației tale.} other {Ai folosit {percent}% din bugetul tău de {category} pentru {period}. Iată un rezumat rapid pentru a planifica restul perioadei.}}",
+      "overBudgetWarning": "Cheltuielile tale au atins sau depășit bugetul stabilit. Verifică achizițiile recente pentru a rămâne pe drumul cel bun.",
+      "metricsLabels": {
+        "budgetLimit": "Limită buget",
+        "currentSpending": "Cheltuieli curente",
+        "remaining": "Rămas",
+        "threshold": "Prag"
+      },
+      "overBudgetValue": "Peste buget",
+      "detailsTitle": "Detalii Buget",
+      "detailsLabels": {
+        "category": "Categorie",
+        "period": "Perioadă",
+        "budget": "Buget",
+        "spent": "Cheltuit"
+      },
+      "chartTitle": "Cheltuieli pe categorii",
+      "chartAlt": "Defalcare cheltuieli pe categorii pentru {period}",
+      "tipsTitle": "{state, select, over {Ce poți face} other {Sfaturi pentru a rămâne pe drumul cel bun}}",
+      "tipsOverBudget": {
+        "0": "Verifică achizițiile recente pentru a identifica cheltuielile neesențiale",
+        "1": "Consideră ajustarea bugetului dacă nu mai reflectă realitatea",
+        "2": "Stabilește un prag mai strict (de ex. 80%) pentru avertismente mai timpurii"
+      },
+      "tipsOnTrack": {
+        "0": "Verifică achizițiile recente pentru a vedea unde merg cea mai mare parte",
+        "1": "Prioritizează cheltuielile esențiale pentru restul perioadei",
+        "2": "Consideră să găătești mai mult acasă dacă mesele la restaurant cresc costurile"
+      },
+      "notificationsParagraph": "Poți ajusta pragurile bugetului și preferințele de notificare în {settings}.",
+      "notificationsLink": "setările de notificări",
+      "feedbackPrompt": "Întrebări? Contactează-ne la {email}.",
+      "ctaPrimary": "Vezi tabloul de bord",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
     },
     "newsletterSubscribed": {
       "subject": "Te-ai abonat cu succes!"
