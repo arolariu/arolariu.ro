@@ -44,7 +44,6 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
-import type {EmailLocale} from "../../_i18n";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 /**
@@ -182,7 +181,7 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
   },
 });
 
-(InvoiceUploadInactivityReminderEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+InvoiceUploadInactivityReminderEmail.PreviewProps = {
   username: "Test User",
   daysWithoutUpload: 7,
   lastUploadDate: "2025-12-21",

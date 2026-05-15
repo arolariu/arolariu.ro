@@ -6,7 +6,6 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 type Props = {
@@ -92,7 +91,7 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
   },
 });
 
-(InvoiceHasBeenUnsharedWithEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+InvoiceHasBeenUnsharedWithEmail.PreviewProps = {
   fromUsername: "Alex Olariu",
   toUsername: "John Doe",
   identifier: "550e8400-e29b-41d4-a716-446655440000",

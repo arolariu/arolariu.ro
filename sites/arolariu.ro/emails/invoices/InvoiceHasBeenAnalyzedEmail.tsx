@@ -11,7 +11,6 @@ import type {Invoice} from "@/types/invoices";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
@@ -102,7 +101,7 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
 // `crypto` the mocks reach for). Hand-rolled minimal shape covers every
 // field the template reads (id, name, merchantReference, items.length,
 // paymentInformation.{currency.code,totalCostAmount}).
-(InvoiceHasBeenAnalyzedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+InvoiceHasBeenAnalyzedEmail.PreviewProps = {
   username: "Test User",
   invoice: {
     id: "00000000-0000-4000-8000-000000000002",

@@ -21,7 +21,6 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
@@ -132,7 +131,7 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
   },
 });
 
-(FirstInvoiceUploadedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+FirstInvoiceUploadedEmail.PreviewProps = {
   username: "Test User",
   invoiceName: "Lidl Groceries — Feb 10",
   uploadDate: "February 10, 2026 at 14:30",

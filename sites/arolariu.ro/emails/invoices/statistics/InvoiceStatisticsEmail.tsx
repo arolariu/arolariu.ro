@@ -16,7 +16,6 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
-import type {EmailLocale} from "../../_i18n";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
@@ -216,7 +215,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
   },
 });
 
-(InvoiceStatisticsEmail as unknown as {PreviewProps: InvoiceStatisticsEmailProps & {locale: EmailLocale}}).PreviewProps = {
+InvoiceStatisticsEmail.PreviewProps = {
   username: "Test User",
   frequency: "monthly",
   periodStart: "2025-01-01",

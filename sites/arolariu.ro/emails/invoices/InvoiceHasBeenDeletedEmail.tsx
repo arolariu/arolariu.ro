@@ -10,7 +10,6 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
@@ -90,7 +89,7 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
   },
 });
 
-(InvoiceHasBeenDeletedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+InvoiceHasBeenDeletedEmail.PreviewProps = {
   username: "Test User",
   invoiceId: "00000000-0000-4000-8000-000000000001",
   invoiceName: "Carrefour Market - Dec 2024",

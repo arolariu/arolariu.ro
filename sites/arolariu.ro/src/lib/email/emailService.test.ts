@@ -183,8 +183,10 @@ describe("emailService.sendEmail", () => {
       const envTag = (payload.tags as readonly {name: string; value: string}[]).find((t) => t.name === "env");
       expect(envTag?.value).toBe("unknown");
     } finally {
+      // process.env.NODE_ENV is typed as readonly in TS 5.x; bracket-cast
+      // through Record so the restore line compiles under strict mode.
       if (original !== undefined) {
-        process.env["NODE_ENV"] = original;
+        (process.env as Record<string, string | undefined>)["NODE_ENV"] = original;
       }
     }
   });

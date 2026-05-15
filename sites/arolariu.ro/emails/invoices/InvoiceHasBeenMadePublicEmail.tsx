@@ -21,7 +21,6 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
@@ -167,7 +166,7 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
   },
 });
 
-(InvoiceHasBeenMadePublicEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+InvoiceHasBeenMadePublicEmail.PreviewProps = {
   username: "Test User",
   invoiceId: "550e8400-e29b-41d4-a716-446655440000",
   invoiceName: "Grocery Shopping - Carrefour",

@@ -58,7 +58,9 @@ describe("emailTemplates registry", () => {
       "spending-alert", "newsletter-subscribed", "newsletter-unsubscribed",
     ];
     for (const key of single) {
-      expect(emailTemplates[key].variantProps).toBeUndefined();
+      // Access via index signature to accommodate the union of entry
+      // shapes (some entries declare variantProps, some don't).
+      expect((emailTemplates[key] as {variantProps?: unknown}).variantProps).toBeUndefined();
     }
   });
 });

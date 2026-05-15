@@ -6,7 +6,6 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 type Props = {
@@ -76,7 +75,7 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
   },
 });
 
-(UserHasUnsubscribedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+UserHasUnsubscribedEmail.PreviewProps = {
   username: "Test User",
   managePreferencesUrl: `${BRAND.url}/unsubscribe`,
   resubscribeUrl: BRAND.url,

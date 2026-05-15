@@ -105,6 +105,13 @@ export type EmailTemplate<P> = ((
     locale?: EmailLocale,
     vars?: Readonly<Record<string, string | number>>,
   ) => Promise<string>;
+  /**
+   * Static preview data consumed by `npm run email` (the react-email dev
+   * server). Mutable + optional so each template can assign it directly:
+   * `WelcomeEmail.PreviewProps = {...}`. Not read by the HOF; serves the
+   * preview tooling only.
+   */
+  PreviewProps?: P & {locale?: EmailLocale};
 };
 
 /**

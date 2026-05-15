@@ -33,7 +33,6 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
-import type {EmailLocale} from "../../_i18n";
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 /**
@@ -237,7 +236,7 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
   },
 });
 
-(SpendingThresholdAlertEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+SpendingThresholdAlertEmail.PreviewProps = {
   username: "Test User",
   category: "Groceries",
   period: "February 2026",

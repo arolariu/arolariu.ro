@@ -10,7 +10,6 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
-import type {EmailLocale} from "../_i18n";
 import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
@@ -84,7 +83,7 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
   },
 });
 
-(UserHasBeenSubscribedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+UserHasBeenSubscribedEmail.PreviewProps = {
   username: "Test User",
   locale: "en",
 };
