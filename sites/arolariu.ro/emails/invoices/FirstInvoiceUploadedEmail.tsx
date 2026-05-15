@@ -21,7 +21,8 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import type {EmailLocale} from "../_i18n";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
@@ -41,9 +42,6 @@ type Props = Readonly<{
 
   /** Direct link to upload another receipt. */
   readonly uploadUrl?: string;
-
-  /** The locale for the email */
-  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -71,75 +69,74 @@ type Props = Readonly<{
  * />
  * ```
  */
-const FirstInvoiceUploadedEmail = async (props: Readonly<Props>) => {
-  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
-  const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.firstInvoiceUploaded"});
+const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
+  namespace: "email.firstInvoiceUploaded",
+  render: ({locale, t, props}) => {
+    const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 
-  const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
+    const name = username?.trim() ? username : "there";
+    const effectiveInvoiceUrl = invoiceUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
+    const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
 
-  const name = username?.trim() ? username : "there";
-  const effectiveInvoiceUrl = invoiceUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
-  const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | ${t("badge")}`}
+        preview={t("preview", {name})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-  return (
-    <EmailLayout
-      locale={locale}
-      title={`${BRAND.name} | ${t("badge")}`}
-      preview={t("preview", {name})}
-      badge={t("badge")}
-      heading={t("heading")}
-      primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
-      secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 
-      <Text style={EmailParagraphStyles}>{t("intro")}</Text>
+        <KeyValueTable
+          title={t("invoiceSummaryTitle")}
+          items={[
+            {label: t("invoiceSummary.invoiceName"), value: invoiceName || t("untitledFallback")},
+            {label: t("invoiceSummary.uploaded"), value: uploadDate},
+            {label: t("invoiceSummary.status"), value: t("statusValue")},
+          ]}
+        />
 
-      <KeyValueTable
-        title={t("invoiceSummaryTitle")}
-        items={[
-          {label: t("invoiceSummary.invoiceName"), value: invoiceName || t("untitledFallback")},
-          {label: t("invoiceSummary.uploaded"), value: uploadDate},
-          {label: t("invoiceSummary.status"), value: t("statusValue")},
-        ]}
-      />
+        <EmailCard title={t("whatHappensNextTitle")}>
+          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        </EmailCard>
 
-      <EmailCard title={t("whatHappensNextTitle")}>
-        <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
-      </EmailCard>
+        <EmailCard title={t("featuresToExploreTitle")}>
+          <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
+        </EmailCard>
 
-      <EmailCard title={t("featuresToExploreTitle")}>
-        <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
-      </EmailCard>
+        <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
-      <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
 
-      <Text style={EmailParagraphStyles}>
-        {t.rich("feedbackPrompt", {
-          email: () => (
-            <Link
-              href={`mailto:${BRAND.supportEmail}`}
-              style={EmailLinkStyles}>
-              {BRAND.supportEmail}
-            </Link>
-          ),
-        })}
-      </Text>
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}
-        <br />
-        {t("signOff.line2", {brand: BRAND.name})}
-      </Text>
-    </EmailLayout>
-  );
-};
-
-FirstInvoiceUploadedEmail.PreviewProps = {
+(FirstInvoiceUploadedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
   username: "Test User",
   invoiceName: "Lidl Groceries — Feb 10",
   uploadDate: "February 10, 2026 at 14:30",
-  locale: "en" as const,
-} satisfies Props;
+  locale: "en",
+};
 
 export default FirstInvoiceUploadedEmail;

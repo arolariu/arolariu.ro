@@ -6,7 +6,8 @@
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import type {EmailLocale} from "../_i18n";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 type Props = Readonly<{
   /** The username of the recipient */
@@ -17,73 +18,69 @@ type Props = Readonly<{
 
   /** Where to (re)subscribe (optional). */
   readonly resubscribeUrl?: string;
-
-  /** Email locale for translations. */
-  readonly locale?: EmailLocale;
 }>;
 
-const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
-  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
-  const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.newsletterUnsubscribed"});
+const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
+  namespace: "email.newsletterUnsubscribed",
+  render: ({locale, t, props}) => {
+    const {username, managePreferencesUrl, resubscribeUrl} = props;
 
-  const {username, managePreferencesUrl, resubscribeUrl} = props;
+    const name = username?.trim() ? username : "there";
 
-  const name = username?.trim() ? username : "there";
+    const effectiveManagePreferencesUrl = managePreferencesUrl ?? `${BRAND.url}/unsubscribe`;
+    const effectiveResubscribeUrl = resubscribeUrl ?? BRAND.url;
 
-  const effectiveManagePreferencesUrl = managePreferencesUrl ?? `${BRAND.url}/unsubscribe`;
-  const effectiveResubscribeUrl = resubscribeUrl ?? BRAND.url;
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | Unsubscribed`}
+        preview={t("preview", {name})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: effectiveManagePreferencesUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-  return (
-    <EmailLayout
-      locale={locale}
-      title={`${BRAND.name} | Unsubscribed`}
-      preview={t("preview", {name})}
-      badge={t("badge")}
-      heading={t("heading")}
-      primaryCta={{href: effectiveManagePreferencesUrl, label: t("ctaPrimary")}}
-      secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        <Text style={EmailParagraphStyles}>
+          {t.rich("intro", {
+            brandName: BRAND.name,
+            brand: (chunks) => <strong>{chunks}</strong>,
+          })}
+        </Text>
 
-      <Text style={EmailParagraphStyles}>
-        {t.rich("intro", {
-          brandName: BRAND.name,
-          brand: (chunks) => <strong>{chunks}</strong>,
-        })}
-      </Text>
+        <EmailCard title={t("whatHappensNextTitle")}>
+          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        </EmailCard>
 
-      <EmailCard title={t("whatHappensNextTitle")}>
-        <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
-      </EmailCard>
+        <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
-      <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
 
-      <Text style={EmailParagraphStyles}>
-        {t.rich("feedbackPrompt", {
-          email: () => (
-            <Link
-              href={`mailto:${BRAND.supportEmail}`}
-              style={EmailLinkStyles}>
-              {BRAND.supportEmail}
-            </Link>
-          ),
-        })}
-      </Text>
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}
-        <br />
-        {t("signOff.line2", {brand: BRAND.name})}
-      </Text>
-    </EmailLayout>
-  );
-};
-
-UserHasUnsubscribedEmail.PreviewProps = {
+(UserHasUnsubscribedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
   username: "Test User",
   managePreferencesUrl: `${BRAND.url}/unsubscribe`,
   resubscribeUrl: BRAND.url,
   locale: "en",
-} satisfies Props;
+};
 
 export default UserHasUnsubscribedEmail;
