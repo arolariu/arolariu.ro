@@ -5091,7 +5091,55 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "It's been a while since your last invoice"
+      "subject": "It's been a while since your last invoice",
+      "badge": {
+        "3": "Inactivity • 3 days",
+        "7": "Inactivity • 7 days",
+        "14": "Inactivity • 14 days",
+        "30": "Inactivity • 30 days"
+      },
+      "heading": {
+        "3": "Quick check-in",
+        "7": "A gentle reminder",
+        "14": "Let's get you back on track",
+        "30": "It's been a while"
+      },
+      "preview": "Hi {name} — {days} days since your last upload.",
+      "greeting": "Hi {name},",
+      "intro": {
+        "3": "We noticed you haven't uploaded any invoices recently.",
+        "7": "Looks like it's been a week since your last invoice upload.",
+        "14": "Two weeks without uploads — want a quick nudge to restart the habit?",
+        "30": "It's been about a month since your last upload — we can help you pick up where you left off."
+      },
+      "whyWorthIt": {
+        "title": "Why it's worth it",
+        "bullet1": "Keep your spending timeline accurate.",
+        "bullet2": "Get cleaner totals by merchant and category.",
+        "bullet3": "Find receipts faster when you need them."
+      },
+      "status": {
+        "title": "Status",
+        "daysWithoutUpload": "Days without upload",
+        "lastUpload": "Last upload"
+      },
+      "tip": {
+        "title": "Tip (30 seconds)",
+        "message": "Upload one recent invoice today — small consistency beats big catch-up."
+      },
+      "important": {
+        "title": "Important",
+        "message": "If you're stuck or something isn't working, reply to this email or contact support — we'll help."
+      },
+      "helpPrompt": "Need help or have questions? Email <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      },
+      "cta": {
+        "primary": "Upload an invoice",
+        "secondary": "View invoices"
+      }
     },
     "noUploads3d": {
       "subject": "3 days without an upload"

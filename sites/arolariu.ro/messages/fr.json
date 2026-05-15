@@ -5091,7 +5091,55 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "Il y a un moment que vous n'avez pas créé de facture"
+      "subject": "Cela fait un moment depuis votre dernière facture",
+      "badge": {
+        "3": "Inactivité • 3 jours",
+        "7": "Inactivité • 7 jours",
+        "14": "Inactivité • 14 jours",
+        "30": "Inactivité • 30 jours"
+      },
+      "heading": {
+        "3": "Vérification rapide",
+        "7": "Un rappel doux",
+        "14": "Reprenons le fil",
+        "30": "Cela fait un moment"
+      },
+      "preview": "Bonjour {name} — {days} jours depuis votre dernier téléchargement.",
+      "greeting": "Bonjour {name},",
+      "intro": {
+        "3": "Nous avons remarqué que vous n'avez téléchargé aucune facture récemment.",
+        "7": "Il semble qu'une semaine se soit écoulée depuis votre dernier téléchargement de facture.",
+        "14": "Deux semaines sans téléchargements — besoin d'un petit coup de pouce pour reprendre l'habitude?",
+        "30": "Cela fait environ un mois depuis votre dernier téléchargement — nous pouvons vous aider à reprendre là où vous en étiez."
+      },
+      "whyWorthIt": {
+        "title": "Pourquoi c'est utile",
+        "bullet1": "Gardez votre chronologie de dépenses précise.",
+        "bullet2": "Obtenez des totaux plus propres par commerçant et catégorie.",
+        "bullet3": "Trouvez les reçus plus rapidement quand vous en avez besoin."
+      },
+      "status": {
+        "title": "Statut",
+        "daysWithoutUpload": "Jours sans téléchargement",
+        "lastUpload": "Dernier téléchargement"
+      },
+      "tip": {
+        "title": "Astuce (30 secondes)",
+        "message": "Téléchargez une facture récente aujourd'hui — une petite constance vaut mieux qu'un gros rattrapage."
+      },
+      "important": {
+        "title": "Important",
+        "message": "Si vous êtes bloqué ou si quelque chose ne fonctionne pas, répondez à cet email ou contactez le support — nous vous aiderons."
+      },
+      "helpPrompt": "Besoin d'aide ou avez des questions? Envoyez un email à <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      },
+      "cta": {
+        "primary": "Télécharger une facture",
+        "secondary": "Voir les factures"
+      }
     },
     "noUploads3d": {
       "subject": "3 jours sans téléversement"

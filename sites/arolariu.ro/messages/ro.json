@@ -5091,7 +5091,55 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "A trecut ceva timp de la ultima ta factură"
+      "subject": "A trecut ceva timp de la ultima factură",
+      "badge": {
+        "3": "Inactivitate • 3 zile",
+        "7": "Inactivitate • 7 zile",
+        "14": "Inactivitate • 14 zile",
+        "30": "Inactivitate • 30 zile"
+      },
+      "heading": {
+        "3": "Verificare rapidă",
+        "7": "O reamintire blândă",
+        "14": "Hai să te aducem înapoi pe drumul cel bun",
+        "30": "A trecut ceva timp"
+      },
+      "preview": "Bună {name} — {days} zile de la ultima încărcare.",
+      "greeting": "Bună {name},",
+      "intro": {
+        "3": "Am observat că nu ai încărcat nicio factură recent.",
+        "7": "Se pare că a trecut o săptămână de la ultima ta încărcare de factură.",
+        "14": "Două săptămâni fără încărcări — vrei o îmboldire rapidă pentru a relua obiceiul?",
+        "30": "A trecut aproximativ o lună de la ultima încărcare — te putem ajuta să reia de unde ai rămas."
+      },
+      "whyWorthIt": {
+        "title": "De ce merită",
+        "bullet1": "Păstrează cronologia cheltuielilor tale exactă.",
+        "bullet2": "Obține totaluri mai clare pe comerciant și categorie.",
+        "bullet3": "Găsește chitanțe mai repede când ai nevoie."
+      },
+      "status": {
+        "title": "Stare",
+        "daysWithoutUpload": "Zile fără încărcare",
+        "lastUpload": "Ultima încărcare"
+      },
+      "tip": {
+        "title": "Sfat (30 secunde)",
+        "message": "Încarcă o factură recentă astăzi — consistența mică bate recuperarea mare."
+      },
+      "important": {
+        "title": "Important",
+        "message": "Dacă ești blocat sau ceva nu funcționează, răspunde la acest email sau contactează suportul — te vom ajuta."
+      },
+      "helpPrompt": "Ai nevoie de ajutor sau ai întrebări? Email <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă",
+        "line2": "Echipa {brand}"
+      },
+      "cta": {
+        "primary": "Încarcă o factură",
+        "secondary": "Vezi facturile"
+      }
     },
     "noUploads3d": {
       "subject": "3 zile fără o încărcare"

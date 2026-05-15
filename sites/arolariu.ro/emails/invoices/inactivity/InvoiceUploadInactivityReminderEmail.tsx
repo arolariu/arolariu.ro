@@ -34,7 +34,9 @@
  * @see {@link AccountInactivityWarningEmail} - Related account-level inactivity email
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
+import {createTranslator} from "next-intl";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 import {
   BRAND,
   BulletList,
@@ -97,127 +99,13 @@ export type Props = Readonly<{
    * Defaults to `${BRAND.url}/domains/invoices/view-invoices`.
    */
   readonly invoicesUrl?: string;
+
+  /**
+   * Locale for email translation (en, ro, fr).
+   * Defaults to DEFAULT_LOCALE ("en").
+   */
+  readonly locale?: EmailLocale;
 }>;
-
-/**
- * Generates progressive heading text based on inactivity duration.
- *
- * @remarks
- * **Tone Progression**:
- * - 3 days: Casual, low-pressure ("Quick check-in")
- * - 7 days: Friendly reminder ("A gentle reminder")
- * - 14 days: Re-engagement focus ("Let's get you back on track")
- * - 30 days: Empathetic acknowledgment ("It's been a while")
- *
- * **Type Safety**: Exhaustive switch with `never` type ensures compile-time
- * validation that all union members are handled. Adding new thresholds to the
- * union type will cause compilation errors until this function is updated.
- *
- * @param daysWithoutUpload - Number of days inactive (3, 7, 14, or 30)
- * @returns Heading string appropriate for inactivity duration
- *
- * @example
- * ```typescript
- * headingFor(3);  // Returns: "Quick check-in"
- * headingFor(30); // Returns: "It's been a while"
- * ```
- */
-function headingFor(daysWithoutUpload: Props["daysWithoutUpload"]): string {
-  switch (daysWithoutUpload) {
-    case 3:
-      return "Quick check-in";
-    case 7:
-      return "A gentle reminder";
-    case 14:
-      return "Let's get you back on track";
-    case 30:
-      return "It's been a while";
-    default: {
-      const exhaustive: never = daysWithoutUpload;
-      return exhaustive;
-    }
-  }
-}
-
-/**
- * Generates badge label displaying inactivity category and duration.
- *
- * @remarks
- * Badge appears in email header as a visual categorization indicator.
- * Format: "Inactivity • {days} days"
- *
- * **Type Safety**: Uses exhaustive switch pattern with `never` type for
- * compile-time validation of all union members.
- *
- * @param daysWithoutUpload - Number of days inactive (3, 7, 14, or 30)
- * @returns Badge label string with category and day count
- *
- * @example
- * ```typescript
- * badgeFor(7);  // Returns: "Inactivity • 7 days"
- * badgeFor(30); // Returns: "Inactivity • 30 days"
- * ```
- */
-function badgeFor(daysWithoutUpload: Props["daysWithoutUpload"]): string {
-  switch (daysWithoutUpload) {
-    case 3:
-      return "Inactivity • 3 days";
-    case 7:
-      return "Inactivity • 7 days";
-    case 14:
-      return "Inactivity • 14 days";
-    case 30:
-      return "Inactivity • 30 days";
-    default: {
-      const exhaustive: never = daysWithoutUpload;
-      return exhaustive;
-    }
-  }
-}
-
-/**
- * Generates context-appropriate introduction text based on inactivity duration.
- *
- * @remarks
- * Opening paragraph sets the tone and acknowledges the user's inactivity period.
- * Messaging becomes progressively more direct and solution-oriented as days increase.
- *
- * **Messaging Strategy**:
- * - 3 days: Neutral observation ("noticed you haven't uploaded")
- * - 7 days: Timeline acknowledgment ("been a week")
- * - 14 days: Habit formation focus ("restart the habit")
- * - 30 days: Re-engagement offer ("help you pick up where you left off")
- *
- * **Type Safety**: Exhaustive switch ensures all literal union members handled.
- *
- * @param daysWithoutUpload - Number of days inactive (3, 7, 14, or 30)
- * @returns Introduction paragraph text
- *
- * @example
- * ```typescript
- * introFor(3);
- * // Returns: "We noticed you haven't uploaded any invoices recently."
- *
- * introFor(30);
- * // Returns: "It's been about a month since your last upload — we can help..."
- * ```
- */
-function introFor(daysWithoutUpload: Props["daysWithoutUpload"]): string {
-  switch (daysWithoutUpload) {
-    case 3:
-      return "We noticed you haven't uploaded any invoices recently.";
-    case 7:
-      return "Looks like it's been a week since your last invoice upload.";
-    case 14:
-      return "Two weeks without uploads — want a quick nudge to restart the habit?";
-    case 30:
-      return "It's been about a month since your last upload — we can help you pick up where you left off.";
-    default: {
-      const exhaustive: never = daysWithoutUpload;
-      return exhaustive;
-    }
-  }
-}
 
 /**
  * Renders progressive engagement email for invoice upload inactivity.
@@ -297,7 +185,7 @@ function introFor(daysWithoutUpload: Props["daysWithoutUpload"]): string {
  * @see {@link BulletList} - Benefit list component
  * @see {@link KeyValueTable} - Status timeline display
  */
-export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
+export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
   const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
 
   const name = username?.trim() ? username : "there";
@@ -312,9 +200,9 @@ export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
       heading={headingFor(daysWithoutUpload)}
       primaryCta={{href: effectiveCreateInvoiceUrl, label: "Upload an invoice"}}
       secondaryCta={{href: effectiveInvoicesUrl, label: "View invoices"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>{introFor(daysWithoutUpload)}</Text>
+      <Text style={EmailParagraphStyles}>{t("intro", {count: daysWithoutUpload})}</Text>
 
       <EmailCard title='Why it’s worth it'>
         <BulletList
@@ -326,17 +214,17 @@ export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
         />
       </EmailCard>
 
-      <EmailCard title='Status'>
+      <EmailCard title={t("status.title")}>
         <KeyValueTable
           items={[
-            {label: "Days without upload", value: String(daysWithoutUpload)},
-            {label: "Last upload", value: lastUploadDate ?? "—"},
+            {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
+            {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},
           ]}
         />
       </EmailCard>
 
       {daysWithoutUpload >= 14 ? (
-        <EmailCard title='Tip (30 seconds)'>
+        <EmailCard title={t("tip.title")}>
           <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>
             Upload one recent invoice today — small consistency beats big catch-up.
           </Text>
@@ -344,7 +232,7 @@ export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
       ) : null}
 
       {daysWithoutUpload >= 30 ? (
-        <EmailCard title='Important'>
+        <EmailCard title={t("important.title")}>
           <Text
             style={{
               ...EmailParagraphStyles,
@@ -355,7 +243,7 @@ export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
               borderRadius: "10px",
               padding: "12px",
             }}>
-            If you&apos;re stuck or something isn&apos;t working, reply to this email or contact support — we&apos;ll help.
+{t("important.message")}
           </Text>
         </EmailCard>
       ) : null}
