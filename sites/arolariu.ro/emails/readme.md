@@ -4,10 +4,10 @@ When developing e-mail templates, use pixels (px) instead of rem/em units becaus
 
 ## Email utility wrapper
 
-For email-only utility classes, use the `Tailwind` wrapper from `@react-email/components` inside the JSX/TSX template.
+For email-only utility classes, use the `Tailwind` wrapper from `react-email` inside the JSX/TSX template.
 
 ```tsx
-import { Tailwind, Text } from '@react-email/components';
+import { Tailwind, Text } from 'react-email';
 
 <Tailwind>
   <Text className="bg-red-500 text-white p-4">

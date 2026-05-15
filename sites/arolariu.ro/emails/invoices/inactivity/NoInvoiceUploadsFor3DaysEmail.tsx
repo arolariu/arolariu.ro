@@ -107,7 +107,7 @@ type Props = Readonly<{
  * ```tsx
  * // Usage in email sending service
  * import NoInvoiceUploadsFor3DaysEmail from './NoInvoiceUploadsFor3DaysEmail';
- * import { render } from '@react-email/render';
+ * import { render } from 'react-email';
  *
  * const emailHtml = render(
  *   <NoInvoiceUploadsFor3DaysEmail

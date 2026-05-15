@@ -153,7 +153,7 @@ type Props = Readonly<{
  * @example
  * ```typescript
  * // Backend email service usage
- * import {render} from "@react-email/render";
+ * import {render} from "react-email";
  * import NoInvoiceUploadsFor30DaysEmail from "./NoInvoiceUploadsFor30DaysEmail";
  *
  * const emailHtml = await render(
