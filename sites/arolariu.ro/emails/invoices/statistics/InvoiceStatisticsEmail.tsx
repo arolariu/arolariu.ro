@@ -3,7 +3,6 @@
  * @module emails/invoices/statistics/InvoiceStatisticsEmail
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 import {
   BRAND,
@@ -17,7 +16,7 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
@@ -112,7 +111,7 @@ export async function InvoiceStatisticsEmail(props: Readonly<InvoiceStatisticsEm
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.invoiceStats"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceStats"});
 
   const name = username?.trim() ? username : "there";
 

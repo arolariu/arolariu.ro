@@ -35,8 +35,7 @@
  */
 
 import {Link, Text} from "react-email";
-import {createTranslator} from "next-intl";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 import {
   BRAND,
   BulletList,
@@ -187,31 +186,30 @@ export type Props = Readonly<{
  */
 export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
   const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceInactivity"});
 
   const name = username?.trim() ? username : "there";
   const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
   const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
+  const dayKey = String(daysWithoutUpload) as "3" | "7" | "14" | "30";
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | Invoice inactivity`}
-      preview={`Hi ${name} — ${daysWithoutUpload} days since your last upload.`}
-      badge={badgeFor(daysWithoutUpload)}
-      heading={headingFor(daysWithoutUpload)}
-      primaryCta={{href: effectiveCreateInvoiceUrl, label: "Upload an invoice"}}
-      secondaryCta={{href: effectiveInvoicesUrl, label: "View invoices"}}>
+      locale={locale}
+      title={`${BRAND.name} | ${t(`heading.${dayKey}`)}`}
+      preview={t("preview", {name, days: daysWithoutUpload})}
+      badge={t(`badge.${dayKey}`)}
+      heading={t(`heading.${dayKey}`)}
+      primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
+      secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>{t("intro", {count: daysWithoutUpload})}</Text>
+      <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
 
-      <EmailCard title='Why it’s worth it'>
-        <BulletList
-          items={[
-            "Keep your spending timeline accurate.",
-            "Get cleaner totals by merchant and category.",
-            "Find receipts faster when you need them.",
-          ]}
-        />
+      <EmailCard title={t("whyWorthIt.title")}>
+        <BulletList items={[t("whyWorthIt.bullet1"), t("whyWorthIt.bullet2"), t("whyWorthIt.bullet3")]} />
       </EmailCard>
 
       <EmailCard title={t("status.title")}>
@@ -226,7 +224,7 @@ export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props
       {daysWithoutUpload >= 14 ? (
         <EmailCard title={t("tip.title")}>
           <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>
-            Upload one recent invoice today — small consistency beats big catch-up.
+            {t("tip.message")}
           </Text>
         </EmailCard>
       ) : null}
@@ -243,25 +241,26 @@ export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props
               borderRadius: "10px",
               padding: "12px",
             }}>
-{t("important.message")}
+            {t("important.message")}
           </Text>
         </EmailCard>
       ) : null}
 
       <Text style={EmailParagraphStyles}>
-        Need help or have questions? Email{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("helpPrompt", {
+          supportEmail: BRAND.supportEmail,
+          link: (chunks) => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );

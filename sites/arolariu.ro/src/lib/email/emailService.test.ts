@@ -123,7 +123,7 @@ describe("emailService.sendEmail", () => {
       locale: "en",
     });
 
-    expect(mockWithSpan).toHaveBeenCalledWith("email.send", expect.any(Function));
+    expect(mockWithSpan).toHaveBeenCalledWith("api.email.send", expect.any(Function));
   });
 
   it("throws when Resend returns an error", async () => {

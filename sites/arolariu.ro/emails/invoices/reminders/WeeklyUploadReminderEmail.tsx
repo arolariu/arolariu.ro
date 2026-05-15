@@ -20,10 +20,9 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.
@@ -86,7 +85,7 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.weeklyUploadReminder"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.weeklyUploadReminder"});
 
   const name = username?.trim() ? username : "there";
   const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
@@ -126,9 +125,9 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          supportEmail: () => (
+          link: (chunks) => (
             <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
-              {BRAND.supportEmail}
+              {chunks}
             </Link>
           ),
         })}

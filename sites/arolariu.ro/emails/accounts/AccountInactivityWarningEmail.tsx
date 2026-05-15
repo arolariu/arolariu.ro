@@ -21,8 +21,7 @@
  */
 
 import {Link, Text} from "react-email";
-import {createTranslator} from "next-intl";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 import {
   BRAND,
   BulletList,
@@ -141,7 +140,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.accountInactivity"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.accountInactivity"});
 
   const name = username?.trim() ? username : "there";
   const effectiveSignInUrl = signInUrl ?? `${BRAND.url}/auth/sign-in`;

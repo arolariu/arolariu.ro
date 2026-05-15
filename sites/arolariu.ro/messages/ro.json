@@ -5195,7 +5195,7 @@
         "3": "Poți întotdeauna să adaugi sau să corectezi detaliile manual după analiză"
       },
       "bodyText": "Completarea acestor detalii durează mai puțin de un minut și asigură acuratețea rapoartelor tale de cheltuieli.",
-      "feedback": "Ai nevoie de ajutor? Contactează-ne la {supportEmail}.",
+      "feedback": "Întâmpini probleme sau ai nevoie de ajutor? Scrie-ne la <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cu stimă,",
         "line2": "Echipa {brand}"
@@ -5222,7 +5222,7 @@
         "4": "Categorizare automată a cheltuielilor pentru informații de pe tablou"
       },
       "bodyText": "Analiza durează de obicei mai puțin de un minut per factură. Odată completă, vei primi o notificare cu rezultatele.",
-      "feedback": "Ai nevoie de ajutor? Contactează-ne la {supportEmail}.",
+      "feedback": "Ai nevoie de ajutor? Contactează-ne la <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cu stimă,",
         "line2": "Echipa {brand}"
@@ -5249,7 +5249,7 @@
         "2": "Chiar și achizițiile mici ajută la construirea unei imagini complete a cheltuielilor"
       },
       "bodyText": "Fiecare bon pe care îl urmărești face ca informațiile despre cheltuieli să fie mai precise și tablourile mai utile.",
-      "feedback": "Ai întrebări sau feedback? Contactează-ne la {supportEmail}.",
+      "feedback": "Întrebări sau feedback? Scrie-ne la <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cu stimă,",
         "line2": "Echipa {brand}"

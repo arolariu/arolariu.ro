@@ -18,11 +18,10 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - Sent when AI analysis completes
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
@@ -75,7 +74,7 @@ type Props = Readonly<{
 const FirstInvoiceUploadedEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.firstInvoiceUploaded"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.firstInvoiceUploaded"});
 
   const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 

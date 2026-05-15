@@ -22,7 +22,6 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - For successfully analyzed invoices
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 import {
   BRAND,
@@ -34,7 +33,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
@@ -100,7 +99,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.incompleteInvoice"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.incompleteInvoice"});
 
   const name = username?.trim() ? username : "there";
 
@@ -119,10 +118,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        {t.rich("intro", {
-          invoiceName,
-          invoiceName: () => <strong>&quot;{invoiceName}&quot;</strong>,
-        })}
+        {t("intro", {invoiceName: `"${invoiceName}"`})}
       </Text>
 
       <KeyValueTable
@@ -165,9 +161,9 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          supportEmail: () => (
+          link: (chunks) => (
             <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
-              {BRAND.supportEmail}
+              {chunks}
             </Link>
           ),
         })}

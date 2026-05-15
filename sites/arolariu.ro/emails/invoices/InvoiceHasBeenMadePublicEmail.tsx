@@ -9,7 +9,6 @@
  * @see {@link https://react.email/docs/introduction}
  */
 
-import {createTranslator} from "next-intl";
 import {Img, Link, Section, Text} from "react-email";
 
 import {
@@ -22,7 +21,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the InvoiceHasBeenMadePublicEmail component.
@@ -63,7 +62,7 @@ type Props = Readonly<{
 const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.invoiceMadePublic"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceMadePublic"});
 
   const {username, invoiceId, invoiceName, merchantName, totalAmount, currency, dateCreated} = props;
 

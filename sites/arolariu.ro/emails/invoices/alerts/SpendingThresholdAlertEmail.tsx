@@ -20,7 +20,6 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 import {
   BRAND,
@@ -34,7 +33,7 @@ import {
   KeyValueTable,
   MetricsGrid,
 } from "../../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * A spending category with its amount for the donut chart.
@@ -121,7 +120,7 @@ type Props = Readonly<{
 const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.spendingAlert"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.spendingAlert"});
 
   const {
     username,

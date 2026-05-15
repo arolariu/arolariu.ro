@@ -5195,7 +5195,7 @@
         "3": "Vous pouvez toujours ajouter ou corriger les détails manuellement après l'analyse"
       },
       "bodyText": "Compléter ces détails prend moins d'une minute et garantit que vos rapports de dépenses restent précis.",
-      "feedback": "Besoin d'aide? Contactez-nous à {supportEmail}.",
+      "feedback": "Bloqué ou besoin d’aide ? Contactez-nous à <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cordialement,",
         "line2": "L'équipe {brand}"
@@ -5222,7 +5222,7 @@
         "4": "Catégorisation automatique des dépenses pour les informations du tableau de bord"
       },
       "bodyText": "L'analyse prend généralement moins d'une minute par facture. Une fois terminée, vous recevrez une notification avec les résultats.",
-      "feedback": "Besoin d'aide? Contactez-nous à {supportEmail}.",
+      "feedback": "Besoin d’aide ? Contactez-nous à <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cordialement,",
         "line2": "L'équipe {brand}"
@@ -5249,7 +5249,7 @@
         "2": "Même les petits achats aident à construire une image complète des dépenses"
       },
       "bodyText": "Chaque reçu que vous suivez rend vos informations de dépenses plus précises et vos tableaux de bord plus utiles.",
-      "feedback": "Des questions ou des commentaires? Contactez-nous à {supportEmail}.",
+      "feedback": "Questions ou retours ? Contactez-nous à <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Cordialement,",
         "line2": "L'équipe {brand}"

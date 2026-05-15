@@ -3,11 +3,10 @@
  * @module emails/invoices/InvoiceHasBeenUnsharedWithEmail
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 type Props = Readonly<{
   /** The username of the person who revoked access. */
@@ -29,7 +28,7 @@ type Props = Readonly<{
 const InvoiceHasBeenUnsharedWithEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.invoiceUnshared"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceUnshared"});
 
   const {fromUsername, toUsername, identifier, revokedAt} = props;
 

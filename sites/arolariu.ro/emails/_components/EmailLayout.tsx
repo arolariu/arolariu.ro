@@ -3,11 +3,10 @@
  * @module emails/components/EmailLayout
  */
 
-import {createTranslator} from "next-intl";
 import type {ReactNode} from "react";
 import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
 
-import {type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, type EmailLocale, loadMessages} from "../_i18n";
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
 type Cta = Readonly<{
@@ -53,7 +52,7 @@ export async function EmailLayout(props: Props) {
   const {locale, title, preview, heading, badge, primaryCta, secondaryCta, showUnsubscribe = false, unsubscribeUrl, managePreferencesUrl, children} = props;
 
   const messages = await loadMessages(locale);
-  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+  const tLayout = createEmailTranslator({locale, messages, namespace: "email.layout"});
 
   return (
     <Html lang={locale} dir='ltr'>

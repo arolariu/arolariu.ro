@@ -26,7 +26,7 @@ type SendEmailOptions = Readonly<{
 }>;
 
 async function sendEmail(options: SendEmailOptions): Promise<void> {
-  return withSpan("email.send", async () => {
+  return withSpan("api.email.send", async () => {
     const apiKey = await fetchResendApiKey();
     if (!apiKey) throw new Error("Resend API key not configured");
 
@@ -53,7 +53,7 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
         "error",
         "Resend send failed",
         {to: options.to, template: options.templateKey, locale: options.locale, error: result.error.message},
-        "email",
+        "api",
       );
       throw new Error(result.error.message);
     }
@@ -62,7 +62,7 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
       "info",
       "Email sent",
       {to: options.to, template: options.templateKey, locale: options.locale, id: result.data?.id},
-      "email",
+      "api",
     );
   });
 }

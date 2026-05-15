@@ -3,11 +3,10 @@
  * @module emails/newsletter/Unsubscription
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 type Props = Readonly<{
   /** The username of the recipient */
@@ -26,7 +25,7 @@ type Props = Readonly<{
 const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.newsletterUnsubscribed"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.newsletterUnsubscribed"});
 
   const {username, managePreferencesUrl, resubscribeUrl} = props;
 

@@ -3,7 +3,6 @@
  * @module emails/invoices/statistics/WeeklyInvoiceStatisticsEmail
  */
 
-import type {EmailLocale} from "../../_i18n";
 import {InvoiceStatisticsEmail, type InvoiceStatisticsEmailProps} from "./InvoiceStatisticsEmail";
 
 type Props = Readonly<Omit<InvoiceStatisticsEmailProps, "frequency">>;

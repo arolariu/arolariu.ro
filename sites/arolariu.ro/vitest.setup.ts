@@ -90,14 +90,14 @@ vi.mock("next-intl", () => {
         // Simple implementation: split on <tagName></tagName> or <tagName>content</tagName>
         const result: (string | unknown)[] = [];
         let remaining = text;
-        for (const [tagName, replacer] of Object.entries(replacements)) {
+        for (const [tagName, _replacer] of Object.entries(replacements)) {
           const selfClosingPattern = `<${tagName}></${tagName}>`;
           const withContentPattern = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
           if (remaining.includes(selfClosingPattern)) {
             const parts = remaining.split(selfClosingPattern);
             remaining = parts.join("{{REPLACEMENT}}");
           } else {
-            remaining = remaining.replace(withContentPattern, (_match, content) => {
+            remaining = remaining.replace(withContentPattern, (_match, _content) => {
               return "{{REPLACEMENT}}";
             });
           }
@@ -108,7 +108,8 @@ vi.mock("next-intl", () => {
         for (let i = 0; i < segments.length; i++) {
           if (segments[i]) result.push(segments[i]);
           if (i < replacerEntries.length) {
-            result.push(replacerEntries[i][1](""));
+            const entry = replacerEntries[i];
+            if (entry) result.push(entry[1](""));
           }
         }
         return result.length === 1 ? result[0] : result;

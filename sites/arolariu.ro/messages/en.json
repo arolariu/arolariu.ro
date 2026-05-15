@@ -5195,7 +5195,7 @@
         "3": "You can always add or correct details manually after analysis"
       },
       "bodyText": "Completing these details takes less than a minute and ensures your spending reports stay accurate.",
-      "feedback": "Stuck or need help? Reach out at {supportEmail}.",
+      "feedback": "Stuck or need help? Reach out at <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Best regards,",
         "line2": "The {brand} Team"
@@ -5222,7 +5222,7 @@
         "4": "Automatic spending categorization for dashboard insights"
       },
       "bodyText": "Analysis typically takes under a minute per invoice. Once complete, you'll receive a notification with the results.",
-      "feedback": "Need help? Contact us at {supportEmail}.",
+      "feedback": "Need help? Contact us at <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Best regards,",
         "line2": "The {brand} Team"
@@ -5249,7 +5249,7 @@
         "2": "Even small purchases help build a complete spending picture"
       },
       "bodyText": "Every receipt you track makes your spending insights more accurate and your dashboards more useful.",
-      "feedback": "Questions or feedback? Reach us at {supportEmail}.",
+      "feedback": "Questions or feedback? Reach us at <link>{supportEmail}</link>.",
       "signOff": {
         "line1": "Best regards,",
         "line2": "The {brand} Team"

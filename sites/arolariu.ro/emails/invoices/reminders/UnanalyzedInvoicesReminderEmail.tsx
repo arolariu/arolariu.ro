@@ -20,10 +20,9 @@
  * @see {@link IncompleteInvoiceReminderEmail} - For partially analyzed invoices
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.
@@ -88,7 +87,7 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.unanalyzedInvoices"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.unanalyzedInvoices"});
 
   const name = username?.trim() ? username : "there";
   const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
@@ -140,9 +139,9 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          supportEmail: () => (
+          link: (chunks) => (
             <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
-              {BRAND.supportEmail}
+              {chunks}
             </Link>
           ),
         })}

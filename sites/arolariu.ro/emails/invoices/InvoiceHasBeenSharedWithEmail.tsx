@@ -7,11 +7,10 @@
  * It includes the sender's name and a direct link to the shared invoice.
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the InvoiceHasBeenSharedWithEmail component.
@@ -39,7 +38,7 @@ type Props = Readonly<{
 const InvoiceHasBeenSharedWithEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.invoiceShared"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceShared"});
 
   const {fromUsername, toUsername, identifier} = props;
 

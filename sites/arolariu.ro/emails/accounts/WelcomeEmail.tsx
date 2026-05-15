@@ -3,11 +3,10 @@
  * @module emails/accounts/WelcomeEmail
  */
 
-import {createTranslator} from "next-intl";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
-import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 type Props = Readonly<{
   readonly username: string;
@@ -19,7 +18,7 @@ type Props = Readonly<{
 const WelcomeEmail = async (props: Readonly<Props>) => {
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createTranslator({locale, messages, namespace: "email.welcome"});
+  const t = createEmailTranslator({locale, messages, namespace: "email.welcome"});
 
   const name = props.username?.trim() || "there";
   const uploadUrl = props.uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
