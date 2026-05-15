@@ -86,6 +86,7 @@
     "@next/bundle-analyzer": "*",
     "@next/eslint-plugin-next": "*",
     "@playwright/test": "*",
+    "@react-email/ui": "*",
     "@react-pdf/types": "*",
     "@testing-library/dom": "*",
     "@testing-library/jest-dom": "*",

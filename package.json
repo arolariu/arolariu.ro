@@ -123,6 +123,7 @@
     "@playwright/test": "1.60.0",
     "@prettier/plugin-hermes": "0.1.3",
     "@prettier/plugin-oxc": "0.1.4",
+    "@react-email/ui": "6.1.4",
     "@react-pdf/renderer": "4.5.1",
     "@react-pdf/types": "2.11.1",
     "@resvg/resvg-js": "2.6.2",
