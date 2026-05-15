@@ -4784,7 +4784,41 @@
       "ctaSecondary": "Explorez le tableau de bord"
     },
     "firstInvoiceUploaded": {
-      "subject": "Votre première facture est arrivée !"
+      "subject": "Votre première facture est arrivée !",
+      "badge": "Étape importante",
+      "heading": "Votre première facture est arrivée !",
+      "preview": "Félicitations, {name} ! Votre première facture est arrivée.",
+      "greeting": "Bonjour {name},",
+      "intro": "Félicitations pour le téléchargement de votre première facture ! Vous avez fait le premier pas vers un suivi organisé et perspicace des dépenses. Voici ce que nous avons jusqu'à présent :",
+      "invoiceSummaryTitle": "Votre Première Facture",
+      "invoiceSummary": {
+        "invoiceName": "Nom de la facture",
+        "uploaded": "Téléchargé",
+        "status": "Statut"
+      },
+      "statusValue": "Prêt pour l'analyse",
+      "untitledFallback": "Sans titre",
+      "whatHappensNextTitle": "Ce qui va suivre",
+      "whatHappensNext": {
+        "0": "Nous analysons votre reçu — notre IA extrait les articles, les prix et les informations sur le commerçant",
+        "1": "Vous examinez les résultats — vérifiez l'analyse et corrigez tout ce qui semble incorrect",
+        "2": "Votre tableau de bord se met à jour — graphiques de dépenses, répartitions par catégorie et tendances commencent à se construire"
+      },
+      "featuresToExploreTitle": "Fonctionnalités à explorer",
+      "featuresToExplore": {
+        "0": "Partagez des factures avec votre famille ou vos collègues pour un suivi des dépenses conjoint",
+        "1": "Consultez les suggestions de recettes générées par l'IA à partir de vos articles d'épicerie",
+        "2": "Vérifiez les avertissements sur les allergènes pour les produits alimentaires détectés",
+        "3": "Suivez les modèles de dépenses par commerçant, catégorie et période"
+      },
+      "body": "Plus vous téléchargez de factures, plus vos informations sur les dépenses deviennent riches. Essayez de télécharger quelques reçus cette semaine pour voir votre tableau de bord prendre vie.",
+      "feedbackPrompt": "Besoin d'aide ou avez-vous des commentaires ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir votre facture",
+      "ctaSecondary": "Télécharger un autre reçu"
     },
     "invoiceAnalyzed": {
       "subject": "Votre facture a été analysée",

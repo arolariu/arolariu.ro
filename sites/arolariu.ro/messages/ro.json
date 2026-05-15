@@ -4784,7 +4784,41 @@
       "ctaSecondary": "Explorează panoul"
     },
     "firstInvoiceUploaded": {
-      "subject": "Prima ta factură a sosit!"
+      "subject": "Prima ta factură a sosit!",
+      "badge": "Milestone",
+      "heading": "Prima ta factură a fost încărcată!",
+      "preview": "Felicitări, {name}! Prima ta factură a fost încărcată.",
+      "greeting": "Salut {name},",
+      "intro": "Felicitări pentru încărcarea primei tale facturi! Ai făcut primul pas către urmărirea organizată și perspicace a cheltuielilor. Iată ce avem până acum:",
+      "invoiceSummaryTitle": "Prima Ta Factură",
+      "invoiceSummary": {
+        "invoiceName": "Nume factură",
+        "uploaded": "Încărcat",
+        "status": "Status"
+      },
+      "statusValue": "Gata pentru analiză",
+      "untitledFallback": "Fără titlu",
+      "whatHappensNextTitle": "Ce urmează",
+      "whatHappensNext": {
+        "0": "Analizăm chitanța ta — AI-ul nostru extrage articole, prețuri și informații despre comerciant",
+        "1": "Revizuiești rezultatele — verifică analiza și corectează orice pare greșit",
+        "2": "Tabloul tău de bord se actualizează — grafice de cheltuieli, defalcări pe categorii și tendințe încep să se construiască"
+      },
+      "featuresToExploreTitle": "Funcții de explorat",
+      "featuresToExplore": {
+        "0": "Partajează facturi cu familia sau colegii pentru urmărirea cheltuielilor comune",
+        "1": "Vezi sugestii de rețete generate de AI din articolele tale de cumpărături",
+        "2": "Verifică avertismente despre alergeni pentru produsele alimentare detectate",
+        "3": "Urmărește tiparele de cheltuieli pe comercianți, categorii și perioade de timp"
+      },
+      "body": "Cu cât încarci mai multe facturi, cu atât informațiile despre cheltuieli devin mai bogate. Încearcă să încarci câteva chitanțe în această săptămână pentru a vedea tabloul tău de bord prinde viață.",
+      "feedbackPrompt": "Ai nevoie de ajutor sau ai feedback? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi factura ta",
+      "ctaSecondary": "Încarcă altă chitanță"
     },
     "invoiceAnalyzed": {
       "subject": "Factura ta a fost analizată",

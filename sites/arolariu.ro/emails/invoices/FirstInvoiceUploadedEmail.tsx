@@ -18,8 +18,11 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - Sent when AI analysis completes
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
+
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
@@ -39,6 +42,9 @@ type Props = Readonly<{
 
   /** Direct link to upload another receipt. */
   readonly uploadUrl?: string;
+
+  /** The locale for the email */
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -66,7 +72,12 @@ type Props = Readonly<{
  * />
  * ```
  */
-const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
+const FirstInvoiceUploadedEmail = async (props: Readonly<Props>) => {
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.firstInvoiceUploaded"});
+  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+
   const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 
   const name = username?.trim() ? username : "there";
@@ -75,68 +86,51 @@ const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | First invoice uploaded`}
-      preview={`Congratulations, ${name}! Your first invoice is in.`}
-      badge='Milestone'
-      heading='Your first invoice is in!'
-      primaryCta={{href: effectiveInvoiceUrl, label: "View your invoice"}}
-      secondaryCta={{href: effectiveUploadUrl, label: "Upload another receipt"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      locale={locale}
+      tLayout={tLayout}
+      title={`${BRAND.name} | ${t("badge")}`}
+      preview={t("preview", {name})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
+      secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        Congratulations on uploading your first invoice! You&apos;ve taken the first step toward organized, insightful spending tracking.
-        Here&apos;s what we&apos;ve got so far:
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 
       <KeyValueTable
-        title='Your First Invoice'
+        title={t("invoiceSummaryTitle")}
         items={[
-          {label: "Invoice name", value: invoiceName || "Untitled"},
-          {label: "Uploaded", value: uploadDate},
-          {label: "Status", value: "Ready for analysis"},
+          {label: t("invoiceSummary.invoiceName"), value: invoiceName || t("untitledFallback")},
+          {label: t("invoiceSummary.uploaded"), value: uploadDate},
+          {label: t("invoiceSummary.status"), value: t("statusValue")},
         ]}
       />
 
-      <EmailCard title='What happens next'>
-        <BulletList
-          items={[
-            "We analyze your receipt — our AI extracts items, prices, and merchant info",
-            "You review the results — check the analysis and correct anything that looks off",
-            "Your dashboard updates — spending charts, category breakdowns, and trends start building",
-          ]}
-        />
+      <EmailCard title={t("whatHappensNextTitle")}>
+        <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
       </EmailCard>
 
-      <EmailCard title='Features to explore'>
-        <BulletList
-          items={[
-            "Share invoices with family or colleagues for joint expense tracking",
-            "View AI-generated recipe suggestions from your grocery items",
-            "Check allergen warnings on detected food products",
-            "Track spending patterns across merchants, categories, and time periods",
-          ]}
-        />
+      <EmailCard title={t("featuresToExploreTitle")}>
+        <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your
-        dashboard come to life.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Need help or have feedback? Reach us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedbackPrompt", {
+          email: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -146,6 +140,7 @@ FirstInvoiceUploadedEmail.PreviewProps = {
   username: "Test User",
   invoiceName: "Lidl Groceries — Feb 10",
   uploadDate: "February 10, 2026 at 14:30",
+  locale: "en" as const,
 } satisfies Props;
 
 export default FirstInvoiceUploadedEmail;

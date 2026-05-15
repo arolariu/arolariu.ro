@@ -4784,7 +4784,41 @@
       "ctaSecondary": "Explore the dashboard"
     },
     "firstInvoiceUploaded": {
-      "subject": "Your first invoice is in!"
+      "subject": "Your first invoice is in!",
+      "badge": "Milestone",
+      "heading": "Your first invoice is in!",
+      "preview": "Congratulations, {name}! Your first invoice is in.",
+      "greeting": "Hi {name},",
+      "intro": "Congratulations on uploading your first invoice! You've taken the first step toward organized, insightful spending tracking. Here's what we've got so far:",
+      "invoiceSummaryTitle": "Your First Invoice",
+      "invoiceSummary": {
+        "invoiceName": "Invoice name",
+        "uploaded": "Uploaded",
+        "status": "Status"
+      },
+      "statusValue": "Ready for analysis",
+      "untitledFallback": "Untitled",
+      "whatHappensNextTitle": "What happens next",
+      "whatHappensNext": {
+        "0": "We analyze your receipt — our AI extracts items, prices, and merchant info",
+        "1": "You review the results — check the analysis and correct anything that looks off",
+        "2": "Your dashboard updates — spending charts, category breakdowns, and trends start building"
+      },
+      "featuresToExploreTitle": "Features to explore",
+      "featuresToExplore": {
+        "0": "Share invoices with family or colleagues for joint expense tracking",
+        "1": "View AI-generated recipe suggestions from your grocery items",
+        "2": "Check allergen warnings on detected food products",
+        "3": "Track spending patterns across merchants, categories, and time periods"
+      },
+      "body": "The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your dashboard come to life.",
+      "feedbackPrompt": "Need help or have feedback? Reach us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoice",
+      "ctaSecondary": "Upload another receipt"
     },
     "invoiceAnalyzed": {
       "subject": "Your invoice has been analyzed",
