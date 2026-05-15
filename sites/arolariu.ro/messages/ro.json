@@ -5204,7 +5204,30 @@
       "secondaryCta": "Reanalizeză"
     },
     "unanalyzedInvoices": {
-      "subject": "Ai facturi neanaliza­te"
+      "subject": "Ai facturi neanalizate",
+      "badge": "Memento",
+      "heading": "{count, plural, =1 {1 factură în așteptarea analizei} other {# facturi în așteptarea analizei}}",
+      "preview": "{name}, ai {count, plural, =1 {1 factură} other {# facturi}} care așteaptă analiza AI.",
+      "greeting": "Bună, {name}!",
+      "intro": "{count, plural, =1 {Ai 1 factură care nu a fost încă analizată. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.} other {Ai # facturi care nu au fost încă analizate. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.}}",
+      "invoicesAwaitingTitle": "Facturi în așteptarea analizei",
+      "uploadedDate": "Încărcată la {date}",
+      "andMore": "…și încă {remaining}. Vezi toate în {dashboard}.",
+      "analysisProvidedTitle": "Ce oferă analiza",
+      "analysisProvides": {
+        "0": "Extracția rând cu rând a articolelor cu prețuri și categorii",
+        "1": "Identificarea și categorizarea comercianților",
+        "2": "Detectarea alergenilor pe produsele alimentare",
+        "3": "Sugestii de rețete bazate pe articolele din coșul de cumpărături",
+        "4": "Categorizare automată a cheltuielilor pentru informații de pe tablou"
+      },
+      "bodyText": "Analiza durează de obicei mai puțin de un minut per factură. Odată completă, vei primi o notificare cu rezultatele.",
+      "feedback": "Ai nevoie de ajutor? Contactează-ne la {supportEmail}.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Vezi facturile"
     },
     "weeklyUploadReminder": {
       "subject": "Promemoria de încărcare săptămânală"

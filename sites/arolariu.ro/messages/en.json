@@ -5204,7 +5204,30 @@
       "secondaryCta": "Re-run analysis"
     },
     "unanalyzedInvoices": {
-      "subject": "You have unanalyzed invoices"
+      "subject": "You have unanalyzed invoices",
+      "badge": "Reminder",
+      "heading": "{count, plural, =1 {1 invoice waiting for analysis} other {# invoices waiting for analysis}}",
+      "preview": "{name}, you have {count, plural, =1 {1 invoice} other {# invoices}} waiting for AI analysis.",
+      "greeting": "Hi {name},",
+      "intro": "{count, plural, =1 {You have 1 invoice that hasn't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.} other {You have # invoices that haven't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.}}",
+      "invoicesAwaitingTitle": "Invoices awaiting analysis",
+      "uploadedDate": "Uploaded {date}",
+      "andMore": "…and {remaining} more. View all in your {dashboard}.",
+      "analysisProvidedTitle": "What analysis provides",
+      "analysisProvides": {
+        "0": "Line-by-line item extraction with prices and categories",
+        "1": "Merchant identification and categorization",
+        "2": "Allergen detection on food products",
+        "3": "Recipe suggestions based on your grocery items",
+        "4": "Automatic spending categorization for dashboard insights"
+      },
+      "bodyText": "Analysis typically takes under a minute per invoice. Once complete, you'll receive a notification with the results.",
+      "feedback": "Need help? Contact us at {supportEmail}.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "View invoices"
     },
     "weeklyUploadReminder": {
       "subject": "Your weekly upload reminder"

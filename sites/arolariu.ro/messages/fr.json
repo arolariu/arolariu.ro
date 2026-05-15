@@ -5204,7 +5204,30 @@
       "secondaryCta": "Réanalyser"
     },
     "unanalyzedInvoices": {
-      "subject": "Vous avez des factures non analysées"
+      "subject": "Vous avez des factures non analysées",
+      "badge": "Rappel",
+      "heading": "{count, plural, =1 {1 facture en attente d'analyse} other {# factures en attente d'analyse}}",
+      "preview": "{name}, vous avez {count, plural, =1 {1 facture} other {# factures}} en attente d'analyse AI.",
+      "greeting": "Bonjour {name},",
+      "intro": "{count, plural, =1 {Vous avez 1 facture qui n'a pas encore été analysée. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.} other {Vous avez # factures qui n'ont pas encore été analysées. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.}}",
+      "invoicesAwaitingTitle": "Factures en attente d'analyse",
+      "uploadedDate": "Téléchargée le {date}",
+      "andMore": "…et {remaining} de plus. Voir tout dans votre {dashboard}.",
+      "analysisProvidedTitle": "Ce que l'analyse fournit",
+      "analysisProvides": {
+        "0": "Extraction ligne par ligne des articles avec prix et catégories",
+        "1": "Identification et catégorisation des commerçants",
+        "2": "Détection des allergènes sur les produits alimentaires",
+        "3": "Suggestions de recettes basées sur vos articles d'épicerie",
+        "4": "Catégorisation automatique des dépenses pour les informations du tableau de bord"
+      },
+      "bodyText": "L'analyse prend généralement moins d'une minute par facture. Une fois terminée, vous recevrez une notification avec les résultats.",
+      "feedback": "Besoin d'aide? Contactez-nous à {supportEmail}.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Voir les factures"
     },
     "weeklyUploadReminder": {
       "subject": "Rappel de téléversement hebdomadaire"
