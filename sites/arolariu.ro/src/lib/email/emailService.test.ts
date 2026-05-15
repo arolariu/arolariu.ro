@@ -1,22 +1,14 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-const {mockSend, mockFetchKey, mockWithSpan, mockLog} = vi.hoisted(() => ({
+const {mockSend, mockGetClient, mockWithSpan, mockLog} = vi.hoisted(() => ({
   mockSend: vi.fn(),
-  mockFetchKey: vi.fn(),
+  mockGetClient: vi.fn(),
   mockWithSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
   mockLog: vi.fn(),
 }));
 
-vi.mock("resend", () => {
-  return {
-    Resend: class {
-      emails = {send: mockSend};
-    },
-  };
-});
-
-vi.mock("@/lib/config/configProxy", () => ({
-  fetchResendApiKey: mockFetchKey,
+vi.mock("./resendClient", () => ({
+  getResendClient: mockGetClient,
 }));
 
 vi.mock("@/instrumentation.server", () => ({
@@ -30,14 +22,15 @@ const reactEl = {type: "div", props: {}} as unknown as React.ReactElement;
 
 beforeEach(() => {
   mockSend.mockReset();
-  mockFetchKey.mockReset();
+  mockGetClient.mockReset();
+  mockGetClient.mockResolvedValue({emails: {send: mockSend}});
   mockWithSpan.mockClear();
   mockLog.mockClear();
 });
 
 describe("emailService.sendEmail", () => {
   it("throws when API key is missing", async () => {
-    mockFetchKey.mockResolvedValue("");
+    mockGetClient.mockRejectedValueOnce(new Error("Resend API key not configured"));
     await expect(
       emailService.sendEmail({
         to: "x@y.com",
@@ -50,7 +43,6 @@ describe("emailService.sendEmail", () => {
   });
 
   it("calls Resend with from address, tags, and the rendered react element", async () => {
-    mockFetchKey.mockResolvedValue("re_test_key");
     mockSend.mockResolvedValue({data: {id: "id_123"}, error: null});
 
     await emailService.sendEmail({
@@ -74,7 +66,6 @@ describe("emailService.sendEmail", () => {
   });
 
   it("forwards idempotencyKey when provided", async () => {
-    mockFetchKey.mockResolvedValue("re_key");
     mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
 
     await emailService.sendEmail({
@@ -91,7 +82,6 @@ describe("emailService.sendEmail", () => {
   });
 
   it("forwards replyTo when provided", async () => {
-    mockFetchKey.mockResolvedValue("re_key");
     mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
 
     await emailService.sendEmail({
@@ -108,7 +98,6 @@ describe("emailService.sendEmail", () => {
   });
 
   it("wraps the call in a withSpan trace", async () => {
-    mockFetchKey.mockResolvedValue("re_key");
     mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
 
     await emailService.sendEmail({
@@ -123,7 +112,6 @@ describe("emailService.sendEmail", () => {
   });
 
   it("throws when Resend returns an error", async () => {
-    mockFetchKey.mockResolvedValue("re_key");
     mockSend.mockResolvedValue({data: null, error: {message: "domain_not_verified", name: "validation_error"}});
 
     await expect(
@@ -135,5 +123,71 @@ describe("emailService.sendEmail", () => {
         locale: "en",
       }),
     ).rejects.toThrow("domain_not_verified");
+  });
+
+  it("logs an error entry when Resend returns an error", async () => {
+    mockSend.mockResolvedValue({data: null, error: {message: "domain_not_verified", name: "validation_error"}});
+
+    await expect(
+      emailService.sendEmail({
+        to: "u@e.com",
+        subject: "S",
+        react: reactEl,
+        templateKey: "welcome",
+        locale: "en",
+      }),
+    ).rejects.toThrow();
+
+    expect(mockLog).toHaveBeenCalledWith(
+      "error",
+      "Resend send failed",
+      expect.objectContaining({to: "u@e.com", template: "welcome", locale: "en", error: "domain_not_verified"}),
+      "api",
+    );
+  });
+
+  it("logs a success entry on successful send", async () => {
+    mockSend.mockResolvedValue({data: {id: "id_success"}, error: null});
+
+    await emailService.sendEmail({
+      to: "u@e.com",
+      subject: "S",
+      react: reactEl,
+      templateKey: "welcome",
+      locale: "en",
+    });
+
+    expect(mockLog).toHaveBeenCalledWith(
+      "info",
+      "Email sent",
+      expect.objectContaining({to: "u@e.com", template: "welcome", locale: "en", id: "id_success"}),
+      "api",
+    );
+  });
+
+  it("reuses the singleton Resend client across multiple sends", async () => {
+    mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
+
+    await emailService.sendEmail({
+      to: "a@e.com",
+      subject: "S1",
+      react: reactEl,
+      templateKey: "welcome",
+      locale: "en",
+    });
+    await emailService.sendEmail({
+      to: "b@e.com",
+      subject: "S2",
+      react: reactEl,
+      templateKey: "welcome",
+      locale: "en",
+    });
+
+    // getResendClient mock returns the same stub client both times; the real
+    // singleton's responsibility is tested in resendClient.test.ts. Here we
+    // assert emailService called the singleton accessor exactly once per send
+    // (i.e. it does not instantiate Resend directly).
+    expect(mockGetClient).toHaveBeenCalledTimes(2);
+    expect(mockSend).toHaveBeenCalledTimes(2);
   });
 });
