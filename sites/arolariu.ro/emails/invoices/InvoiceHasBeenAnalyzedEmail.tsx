@@ -7,7 +7,6 @@
  * is complete. It provides a direct link to view the results.
  */
 
-import {generateRandomInvoice} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
 import {Link, Text} from "react-email";
 
@@ -98,9 +97,23 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
   },
 });
 
+// Static preview fixture — calls into `@/data/mocks` would evaluate at
+// module-load time and break `npm run email` (which lacks the global
+// `crypto` the mocks reach for). Hand-rolled minimal shape covers every
+// field the template reads (id, name, merchantReference, items.length,
+// paymentInformation.{currency.code,totalCostAmount}).
 (InvoiceHasBeenAnalyzedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
   username: "Test User",
-  invoice: generateRandomInvoice(),
+  invoice: {
+    id: "00000000-0000-4000-8000-000000000002",
+    name: "Carrefour Market - Dec 2024",
+    merchantReference: "CARREFOUR-001",
+    items: [{name: "Bread"}, {name: "Milk"}, {name: "Eggs"}],
+    paymentInformation: {
+      totalCostAmount: 42.99,
+      currency: {code: "RON"},
+    },
+  } as unknown as Invoice,
   locale: "en",
 };
 

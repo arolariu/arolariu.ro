@@ -7,7 +7,6 @@
  * from the system.
  */
 
-import {generateGuid} from "@/lib/utils.generic";
 import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
@@ -93,7 +92,7 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
 
 (InvoiceHasBeenDeletedEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
   username: "Test User",
-  invoiceId: generateGuid(),
+  invoiceId: "00000000-0000-4000-8000-000000000001",
   invoiceName: "Carrefour Market - Dec 2024",
   locale: "en",
 };
