@@ -8,8 +8,8 @@ import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from
 
 import type {EmailLocale} from "../_i18n";
 
-import {getLayoutTranslator} from "./layoutTranslator";
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
+import {getLayoutTranslator} from "./layoutTranslator";
 
 type Cta = {
   readonly href: string;

@@ -1,5 +1,5 @@
-import {describe, expect, it} from "vitest";
 import type {ReactNode} from "react";
+import {describe, expect, it} from "vitest";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailMessages, loadMessages, SUPPORTED_LOCALES} from "./index";
 
 describe("emails/_i18n", () => {
@@ -26,7 +26,6 @@ describe("emails/_i18n", () => {
       expect(enMessages).toEqual(explicit);
     });
   });
-
 });
 
 describe("createEmailTranslator (real next-intl runtime)", () => {

@@ -1,12 +1,6 @@
 import type {ReactElement} from "react";
 
-import {
-  createEmailTranslator,
-  DEFAULT_LOCALE,
-  type EmailLocale,
-  type EmailTranslator,
-  loadMessages,
-} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "../_i18n";
 
 /**
  * Render-time context handed to a template's `render` callback.
@@ -90,9 +84,7 @@ export type EmailTemplateConfig<P> = {
  *
  * @typeParam P - The template's prop shape (excluding `locale`).
  */
-export type EmailTemplate<P> = ((
-  props: P & {readonly locale?: EmailLocale},
-) => Promise<ReactElement>) & {
+export type EmailTemplate<P> = ((props: P & {readonly locale?: EmailLocale}) => Promise<ReactElement>) & {
   /** The next-intl namespace this template is scoped to. */
   readonly namespace: string;
   /**
@@ -101,10 +93,7 @@ export type EmailTemplate<P> = ((
    * @param locale - Defaults to `"en"`.
    * @param vars - ICU variables for interpolation (e.g. `{name: "Alex"}`).
    */
-  readonly getSubject: (
-    locale?: EmailLocale,
-    vars?: Readonly<Record<string, string | number>>,
-  ) => Promise<string>;
+  readonly getSubject: (locale?: EmailLocale, vars?: Readonly<Record<string, string | number>>) => Promise<string>;
   /**
    * Static preview data consumed by `npm run email` (the react-email dev
    * server). Mutable + optional so each template can assign it directly:
@@ -166,12 +155,8 @@ export type EmailTemplate<P> = ((
  * const subject = await WelcomeEmail.getSubject("ro", {name: "Alex"});
  * ```
  */
-export function defineEmailTemplate<P>(
-  config: EmailTemplateConfig<P>,
-): EmailTemplate<P> {
-  const component = async (
-    props: P & {readonly locale?: EmailLocale},
-  ): Promise<ReactElement> => {
+export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTemplate<P> {
+  const component = async (props: P & {readonly locale?: EmailLocale}): Promise<ReactElement> => {
     const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
     const messages = await loadMessages(locale);
     const t = createEmailTranslator({locale, messages, namespace: config.namespace});

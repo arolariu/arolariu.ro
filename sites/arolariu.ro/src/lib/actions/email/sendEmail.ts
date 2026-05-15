@@ -16,11 +16,7 @@ import {auth} from "@clerk/nextjs/server";
 import type {ReactElement} from "react";
 
 import {DEFAULT_LOCALE, type EmailLocale} from "@/../emails/_i18n";
-import {
-  emailTemplates,
-  type EmailTemplateKey,
-  type EmailTemplatePropsMap,
-} from "@/../emails/_registry";
+import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
 import {emailService} from "@/lib/email";
 
 /**
@@ -44,9 +40,7 @@ type SendEmailInput<K extends EmailTemplateKey> = {
 /**
  * Discriminated result of {@link sendEmail}. Never throws to the client.
  */
-type Result =
-  | {readonly success: true}
-  | {readonly success: false; readonly error: string};
+type Result = {readonly success: true} | {readonly success: false; readonly error: string};
 
 /**
  * Send a registered email template.
@@ -63,9 +57,7 @@ type Result =
  * });
  * ```
  */
-export async function sendEmail<K extends EmailTemplateKey>(
-  input: SendEmailInput<K>,
-): Promise<Result> {
+export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInput<K>): Promise<Result> {
   const {userId} = await auth();
   if (!userId) return {success: false, error: "Unauthorized"};
 
@@ -100,9 +92,7 @@ export async function sendEmail<K extends EmailTemplateKey>(
   // The registry union widens `template` across all entries, so we erase
   // the generic at the call site. Type safety is enforced upstream by
   // `EmailTemplatePropsMap[K]` on the caller's `props`.
-  const template = entry.template as unknown as (
-    props: Readonly<Record<string, unknown>>,
-  ) => Promise<ReactElement>;
+  const template = entry.template as unknown as (props: Readonly<Record<string, unknown>>) => Promise<ReactElement>;
 
   try {
     const subject = await entry.template.getSubject(locale, subjectVars);

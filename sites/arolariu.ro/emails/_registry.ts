@@ -27,12 +27,13 @@ import UserHasUnsubscribedEmail from "./newsletter/UserHasUnsubscribedEmail";
  * over the caller's `props` so callers cannot accidentally override a
  * fixed variant value.
  */
-type EntryFor<T> = T extends EmailTemplate<infer P>
-  ? {
-      readonly template: T;
-      readonly variantProps?: Partial<P>;
-    }
-  : never;
+type EntryFor<T> =
+  T extends EmailTemplate<infer P>
+    ? {
+        readonly template: T;
+        readonly variantProps?: Partial<P>;
+      }
+    : never;
 
 /**
  * Server-only registry of all sendable email templates.
@@ -42,26 +43,36 @@ type EntryFor<T> = T extends EmailTemplate<infer P>
  * `emailService.sendEmail()` directly.
  */
 export const emailTemplates = {
-  welcome:                   {template: WelcomeEmail}                       satisfies EntryFor<typeof WelcomeEmail>,
-  "first-upload":            {template: FirstInvoiceUploadedEmail}          satisfies EntryFor<typeof FirstInvoiceUploadedEmail>,
-  "invoice-analyzed":        {template: InvoiceHasBeenAnalyzedEmail}        satisfies EntryFor<typeof InvoiceHasBeenAnalyzedEmail>,
-  "invoice-deleted":         {template: InvoiceHasBeenDeletedEmail}         satisfies EntryFor<typeof InvoiceHasBeenDeletedEmail>,
-  "invoice-made-public":     {template: InvoiceHasBeenMadePublicEmail}      satisfies EntryFor<typeof InvoiceHasBeenMadePublicEmail>,
-  "invoice-shared":          {template: InvoiceHasBeenSharedWithEmail}      satisfies EntryFor<typeof InvoiceHasBeenSharedWithEmail>,
-  "invoice-unshared":        {template: InvoiceHasBeenUnsharedWithEmail}    satisfies EntryFor<typeof InvoiceHasBeenUnsharedWithEmail>,
-  "spending-alert":          {template: SpendingThresholdAlertEmail}        satisfies EntryFor<typeof SpendingThresholdAlertEmail>,
-  "newsletter-subscribed":   {template: UserHasBeenSubscribedEmail}         satisfies EntryFor<typeof UserHasBeenSubscribedEmail>,
-  "newsletter-unsubscribed": {template: UserHasUnsubscribedEmail}           satisfies EntryFor<typeof UserHasUnsubscribedEmail>,
+  welcome: {template: WelcomeEmail} satisfies EntryFor<typeof WelcomeEmail>,
+  "first-upload": {template: FirstInvoiceUploadedEmail} satisfies EntryFor<typeof FirstInvoiceUploadedEmail>,
+  "invoice-analyzed": {template: InvoiceHasBeenAnalyzedEmail} satisfies EntryFor<typeof InvoiceHasBeenAnalyzedEmail>,
+  "invoice-deleted": {template: InvoiceHasBeenDeletedEmail} satisfies EntryFor<typeof InvoiceHasBeenDeletedEmail>,
+  "invoice-made-public": {template: InvoiceHasBeenMadePublicEmail} satisfies EntryFor<typeof InvoiceHasBeenMadePublicEmail>,
+  "invoice-shared": {template: InvoiceHasBeenSharedWithEmail} satisfies EntryFor<typeof InvoiceHasBeenSharedWithEmail>,
+  "invoice-unshared": {template: InvoiceHasBeenUnsharedWithEmail} satisfies EntryFor<typeof InvoiceHasBeenUnsharedWithEmail>,
+  "spending-alert": {template: SpendingThresholdAlertEmail} satisfies EntryFor<typeof SpendingThresholdAlertEmail>,
+  "newsletter-subscribed": {template: UserHasBeenSubscribedEmail} satisfies EntryFor<typeof UserHasBeenSubscribedEmail>,
+  "newsletter-unsubscribed": {template: UserHasUnsubscribedEmail} satisfies EntryFor<typeof UserHasUnsubscribedEmail>,
 
-  "inactivity-3d":  {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 3}}  satisfies EntryFor<typeof InvoiceUploadInactivityReminderEmail>,
-  "inactivity-7d":  {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 7}}  satisfies EntryFor<typeof InvoiceUploadInactivityReminderEmail>,
-  "inactivity-14d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 14}} satisfies EntryFor<typeof InvoiceUploadInactivityReminderEmail>,
-  "inactivity-30d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 30}} satisfies EntryFor<typeof InvoiceUploadInactivityReminderEmail>,
+  "inactivity-3d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 3}} satisfies EntryFor<
+    typeof InvoiceUploadInactivityReminderEmail
+  >,
+  "inactivity-7d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 7}} satisfies EntryFor<
+    typeof InvoiceUploadInactivityReminderEmail
+  >,
+  "inactivity-14d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 14}} satisfies EntryFor<
+    typeof InvoiceUploadInactivityReminderEmail
+  >,
+  "inactivity-30d": {template: InvoiceUploadInactivityReminderEmail, variantProps: {daysWithoutUpload: 30}} satisfies EntryFor<
+    typeof InvoiceUploadInactivityReminderEmail
+  >,
 
-  "stats-daily":   {template: InvoiceStatisticsEmail, variantProps: {frequency: "daily"}}   satisfies EntryFor<typeof InvoiceStatisticsEmail>,
-  "stats-weekly":  {template: InvoiceStatisticsEmail, variantProps: {frequency: "weekly"}}  satisfies EntryFor<typeof InvoiceStatisticsEmail>,
-  "stats-monthly": {template: InvoiceStatisticsEmail, variantProps: {frequency: "monthly"}} satisfies EntryFor<typeof InvoiceStatisticsEmail>,
-  "stats-yearly":  {template: InvoiceStatisticsEmail, variantProps: {frequency: "yearly"}}  satisfies EntryFor<typeof InvoiceStatisticsEmail>,
+  "stats-daily": {template: InvoiceStatisticsEmail, variantProps: {frequency: "daily"}} satisfies EntryFor<typeof InvoiceStatisticsEmail>,
+  "stats-weekly": {template: InvoiceStatisticsEmail, variantProps: {frequency: "weekly"}} satisfies EntryFor<typeof InvoiceStatisticsEmail>,
+  "stats-monthly": {template: InvoiceStatisticsEmail, variantProps: {frequency: "monthly"}} satisfies EntryFor<
+    typeof InvoiceStatisticsEmail
+  >,
+  "stats-yearly": {template: InvoiceStatisticsEmail, variantProps: {frequency: "yearly"}} satisfies EntryFor<typeof InvoiceStatisticsEmail>,
 } as const;
 
 /** All stable template keys callable via {@link sendEmail}. */

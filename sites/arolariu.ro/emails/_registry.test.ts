@@ -53,9 +53,16 @@ describe("emailTemplates registry", () => {
 
   it("single entries (non-variants) have no variantProps", () => {
     const single: readonly EmailTemplateKey[] = [
-      "welcome", "first-upload", "invoice-analyzed", "invoice-deleted",
-      "invoice-made-public", "invoice-shared", "invoice-unshared",
-      "spending-alert", "newsletter-subscribed", "newsletter-unsubscribed",
+      "welcome",
+      "first-upload",
+      "invoice-analyzed",
+      "invoice-deleted",
+      "invoice-made-public",
+      "invoice-shared",
+      "invoice-unshared",
+      "spending-alert",
+      "newsletter-subscribed",
+      "newsletter-unsubscribed",
     ];
     for (const key of single) {
       // Access via index signature to accommodate the union of entry

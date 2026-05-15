@@ -106,10 +106,12 @@ describe("sendEmail action", () => {
       idempotencyKey: "welcome/user_test",
       replyTo: "alex@example.com",
     });
-    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({
-      idempotencyKey: "welcome/user_test",
-      replyTo: "alex@example.com",
-    }));
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: "welcome/user_test",
+        replyTo: "alex@example.com",
+      }),
+    );
   });
 
   it("returns {success: false} when getSubject throws", async () => {

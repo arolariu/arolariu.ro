@@ -47,10 +47,7 @@ export type EmailMessages = Record<string, unknown>;
  * contract.
  */
 export type EmailTranslator = ((key: string, vars?: Readonly<Record<string, string | number>>) => string) & {
-  readonly rich: (
-    key: string,
-    replacements?: Readonly<Record<string, string | number | ((chunks?: ReactNode) => ReactNode)>>,
-  ) => ReactNode;
+  readonly rich: (key: string, replacements?: Readonly<Record<string, string | number | ((chunks?: ReactNode) => ReactNode)>>) => ReactNode;
 };
 
 /** Loads the full message bundle for a locale. */
