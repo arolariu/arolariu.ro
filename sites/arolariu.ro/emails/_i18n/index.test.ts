@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import type {ReactNode} from "react";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailMessages, getEmailSubject, loadMessages, SUPPORTED_LOCALES} from "./index";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailMessages, loadMessages, SUPPORTED_LOCALES} from "./index";
 
 describe("emails/_i18n", () => {
   describe("constants", () => {
@@ -27,29 +27,6 @@ describe("emails/_i18n", () => {
     });
   });
 
-  describe("getEmailSubject", () => {
-    it("resolves a subject from email.welcome with ICU interpolation", async () => {
-      const subject = await getEmailSubject("email.welcome", "en", {brand: "arolariu.ro"});
-      expect(subject).toContain("arolariu.ro");
-    });
-
-    it("interpolates ICU variables for invoiceShared", async () => {
-      const subject = await getEmailSubject("email.invoiceShared", "en", {fromName: "Alex"});
-      expect(subject).toContain("Alex");
-    });
-
-    it("defaults locale to 'en' when omitted", async () => {
-      const enSubject = await getEmailSubject("email.welcome", undefined, {brand: "X"});
-      const explicit = await getEmailSubject("email.welcome", "en", {brand: "X"});
-      expect(enSubject).toBe(explicit);
-    });
-
-    it("returns the Romanian subject when locale='ro'", async () => {
-      const ro = await getEmailSubject("email.welcome", "ro", {brand: "arolariu.ro"});
-      const en = await getEmailSubject("email.welcome", "en", {brand: "arolariu.ro"});
-      expect(ro).not.toBe(en);
-    });
-  });
 });
 
 describe("createEmailTranslator (real next-intl runtime)", () => {

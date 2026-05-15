@@ -17,11 +17,6 @@
  * next-intl's return type still ties back to the (now-erased) key tree
  * generic.
  *
- * {@link getEmailSubject} is a legacy helper still used by the current
- * `sendEmail` server action. It will be deleted in a later commit once
- * the action switches to `Template.getSubject` (attached by
- * `defineEmailTemplate`).
- *
  * Implementation note: `loadMessages` uses a hard-coded `switch` over
  * dynamic imports so the bundler resolves exactly the three locale JSON
  * files (rather than the entire `messages/` glob, which would also pull
@@ -102,24 +97,4 @@ export function createEmailTranslator(opts: {
     messages: opts.messages as AbstractIntlMessages,
     namespace: opts.namespace,
   }) as unknown as EmailTranslator;
-}
-
-/**
- * Resolves the localized `subject` string for an email namespace.
- *
- * @param namespace - e.g. `"email.welcome"` — must contain a `subject` key.
- * @param locale - defaults to `"en"`.
- * @param vars - ICU variables for interpolation.
- *
- * @deprecated Will be removed in the next commit. New code should use
- *   `Template.getSubject(locale, vars)` (attached by `defineEmailTemplate`).
- */
-export async function getEmailSubject(
-  namespace: string,
-  locale: EmailLocale = DEFAULT_LOCALE,
-  vars: Readonly<Record<string, string | number>> = {},
-): Promise<string> {
-  const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace});
-  return t("subject", vars);
 }

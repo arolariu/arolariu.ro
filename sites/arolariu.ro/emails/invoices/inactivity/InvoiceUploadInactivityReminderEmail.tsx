@@ -27,7 +27,6 @@
  * - Consistent structure across all variants
  * - Conditional tip section (14+ days)
  * - Conditional assistance section (30+ days)
- * - Status timeline for transparency
  *
  * @see {@link https://react.email} - React Email documentation
  * @see {@link EmailLayout} - Base layout component
@@ -45,7 +44,8 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import type {EmailLocale} from "../../_i18n";
+import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 /**
  * Properties for the invoice upload inactivity reminder email.
@@ -98,170 +98,96 @@ export type Props = Readonly<{
    * Defaults to `${BRAND.url}/domains/invoices/view-invoices`.
    */
   readonly invoicesUrl?: string;
-
-  /**
-   * Locale for email translation (en, ro, fr).
-   * Defaults to DEFAULT_LOCALE ("en").
-   */
-  readonly locale?: EmailLocale;
 }>;
 
-/**
- * Renders progressive engagement email for invoice upload inactivity.
- *
- * @remarks
- * **Rendering Context**: React Email component rendered to HTML email markup.
- *
- * **Email Client Compatibility**: Tested with major email clients (Gmail, Outlook,
- * Apple Mail). Uses inline styles and table-based layout for maximum compatibility.
- *
- * **Progressive Content Strategy**:
- * The email structure adapts based on `daysWithoutUpload`:
- *
- * - **Always shown**: Greeting, intro, benefits card, status table, support contact
- * - **14+ days**: Productivity tip card with action suggestion
- * - **30+ days**: Highlighted assistance card with support escalation
- *
- * **Conditional Rendering Logic**:
- * ```typescript
- * {daysWithoutUpload >= 14 ? <TipCard /> : null}
- * {daysWithoutUpload >= 30 ? <AssistanceCard /> : null}
- * ```
- *
- * **Design Philosophy**: "Small consistency beats big catch-up"
- * - Encourages single upload rather than overwhelming backlog
- * - Emphasizes benefits (timeline accuracy, faster receipt search)
- * - Reduces friction with direct upload CTA
- * - Escalates to human support at 30+ days
- *
- * **CTA Strategy**:
- * - Primary: "Upload an invoice" (action-oriented, immediate)
- * - Secondary: "View invoices" (context review, lower commitment)
- *
- * **Accessibility**:
- * - Semantic HTML structure with proper heading hierarchy
- * - Descriptive link labels
- * - Sufficient color contrast for warning callouts
- * - Table layout for email client compatibility
- *
- * @param props - Email configuration with user details and inactivity duration
- * @returns React Email component JSX rendered to HTML
- *
- * @example
- * ```tsx
- * // Early nudge (3 days) with minimal pressure
- * <InvoiceUploadInactivityReminderEmail
- *   username="Sarah Chen"
- *   daysWithoutUpload={3}
- *   lastUploadDate="February 7, 2026"
- *   createInvoiceUrl="https://arolariu.ro/domains/invoices/create-invoice?utm_source=email&utm_campaign=inactivity_3d"
- * />
- * ```
- *
- * @example
- * ```tsx
- * // Extended inactivity (30 days) with support escalation
- * <InvoiceUploadInactivityReminderEmail
- *   username="John Doe"
- *   daysWithoutUpload={30}
- *   lastUploadDate="January 11, 2026"
- * />
- * // Shows: Greeting, intro, benefits, status, productivity tip, assistance card, support contact
- * ```
- *
- * @example
- * ```tsx
- * // Minimal props with defaults
- * <InvoiceUploadInactivityReminderEmail
- *   username=""
- *   daysWithoutUpload={7}
- * />
- * // Uses fallbacks: "there" for username, default URLs, no lastUploadDate
- * ```
- *
- * @see {@link EmailLayout} - Base layout with header/footer
- * @see {@link EmailCard} - Card containers for content sections
- * @see {@link BulletList} - Benefit list component
- * @see {@link KeyValueTable} - Status timeline display
- */
-export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
-  const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
-  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
-  const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.invoiceInactivity"});
+const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
+  namespace: "email.invoiceInactivity",
+  render: ({locale, t, props}) => {
+    const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
 
-  const name = username?.trim() ? username : "there";
-  const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
-  const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
-  const dayKey = String(daysWithoutUpload) as "3" | "7" | "14" | "30";
+    const name = username?.trim() ? username : "there";
+    const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
+    const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
+    const dayKey = String(daysWithoutUpload) as "3" | "7" | "14" | "30";
 
-  return (
-    <EmailLayout
-      locale={locale}
-      title={`${BRAND.name} | ${t(`heading.${dayKey}`)}`}
-      preview={t("preview", {name, days: daysWithoutUpload})}
-      badge={t(`badge.${dayKey}`)}
-      heading={t(`heading.${dayKey}`)}
-      primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
-      secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | ${t(`heading.${dayKey}`)}`}
+        preview={t("preview", {name, days: daysWithoutUpload})}
+        badge={t(`badge.${dayKey}`)}
+        heading={t(`heading.${dayKey}`)}
+        primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
+        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
+        <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
 
-      <EmailCard title={t("whyWorthIt.title")}>
-        <BulletList items={[t("whyWorthIt.bullet1"), t("whyWorthIt.bullet2"), t("whyWorthIt.bullet3")]} />
-      </EmailCard>
-
-      <EmailCard title={t("status.title")}>
-        <KeyValueTable
-          items={[
-            {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
-            {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},
-          ]}
-        />
-      </EmailCard>
-
-      {daysWithoutUpload >= 14 ? (
-        <EmailCard title={t("tip.title")}>
-          <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t("tip.message")}</Text>
+        <EmailCard title={t("whyWorthIt.title")}>
+          <BulletList items={[t("whyWorthIt.bullet1"), t("whyWorthIt.bullet2"), t("whyWorthIt.bullet3")]} />
         </EmailCard>
-      ) : null}
 
-      {daysWithoutUpload >= 30 ? (
-        <EmailCard title={t("important.title")}>
-          <Text
-            style={{
-              ...EmailParagraphStyles,
-              fontSize: "14px",
-              margin: "0",
-              backgroundColor: EMAIL_COLORS.warningBackground,
-              border: `1px solid ${EMAIL_COLORS.warningInk}`,
-              borderRadius: "10px",
-              padding: "12px",
-            }}>
-            {t("important.message")}
-          </Text>
+        <EmailCard title={t("status.title")}>
+          <KeyValueTable
+            items={[
+              {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
+              {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},
+            ]}
+          />
         </EmailCard>
-      ) : null}
 
-      <Text style={EmailParagraphStyles}>
-        {t.rich("helpPrompt", {
-          supportEmail: BRAND.supportEmail,
-          link: (chunks) => (
-            <Link
-              href={`mailto:${BRAND.supportEmail}`}
-              style={EmailLinkStyles}>
-              {chunks}
-            </Link>
-          ),
-        })}
-      </Text>
+        {daysWithoutUpload >= 14 ? (
+          <EmailCard title={t("tip.title")}>
+            <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t("tip.message")}</Text>
+          </EmailCard>
+        ) : null}
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}
-        <br />
-        {t("signOff.line2", {brand: BRAND.name})}
-      </Text>
-    </EmailLayout>
-  );
-}
+        {daysWithoutUpload >= 30 ? (
+          <EmailCard title={t("important.title")}>
+            <Text
+              style={{
+                ...EmailParagraphStyles,
+                fontSize: "14px",
+                margin: "0",
+                backgroundColor: EMAIL_COLORS.warningBackground,
+                border: `1px solid ${EMAIL_COLORS.warningInk}`,
+                borderRadius: "10px",
+                padding: "12px",
+              }}>
+              {t("important.message")}
+            </Text>
+          </EmailCard>
+        ) : null}
+
+        <Text style={EmailParagraphStyles}>
+          {t.rich("helpPrompt", {
+            supportEmail: BRAND.supportEmail,
+            link: (chunks) => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {chunks}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
+
+(InvoiceUploadInactivityReminderEmail as unknown as {PreviewProps: Props & {locale: EmailLocale}}).PreviewProps = {
+  username: "Test User",
+  daysWithoutUpload: 7,
+  lastUploadDate: "2025-12-21",
+  locale: "en",
+};
+
+export default InvoiceUploadInactivityReminderEmail;
+export {InvoiceUploadInactivityReminderEmail};
