@@ -3,7 +3,7 @@
  * @module emails/components/DonutChart
  */
 
-import {Img, Section, Text} from "@react-email/components";
+import {Img, Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 

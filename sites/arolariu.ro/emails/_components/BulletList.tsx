@@ -3,7 +3,7 @@
  * @module emails/components/BulletList
  */
 
-import {Text} from "@react-email/components";
+import {Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 

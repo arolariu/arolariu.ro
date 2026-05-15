@@ -3,7 +3,7 @@
  * @module emails/components/EmailCard
  */
 
-import {Section, Text} from "@react-email/components";
+import {Section, Text} from "react-email";
 import type {ReactNode} from "react";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";

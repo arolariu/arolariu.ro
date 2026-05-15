@@ -3,7 +3,7 @@
  * @module emails/components/KeyValueTable
  */
 
-import {Column, Row, Section, Text} from "@react-email/components";
+import {Column, Row, Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
