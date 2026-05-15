@@ -5081,7 +5081,7 @@
       },
       "supportPrompt": "Dacă crezi că ai primit acest mesaj din greșeală sau ai nevoie de asistență, te rugăm să contactezi <link>{supportEmail}</link>.",
       "signOff": {
-        "line1": "Cu stimă",
+        "line1": "Cu respect,",
         "line2": "Echipa {brand}"
       },
       "footnote": "Notă: Această notificare este informativă și are scopul de a te ajuta să eviți pierderea accesului. Politicile reale de retenție a conturilor pot varia în funcție de regiune și produs.",
@@ -5091,7 +5091,7 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "A trecut ceva timp de la ultima factură",
+      "subject": "Au trecut {daysWithoutUpload} de zile de la ultima ta factură",
       "badge": {
         "3": "Inactivitate • 3 zile",
         "7": "Inactivitate • 7 zile",
@@ -5140,18 +5140,6 @@
         "primary": "Încarcă o factură",
         "secondary": "Vezi facturile"
       }
-    },
-    "noUploads3d": {
-      "subject": "3 zile fără o încărcare"
-    },
-    "noUploads7d": {
-      "subject": "O săptămână întreagă fără o încărcare"
-    },
-    "noUploads14d": {
-      "subject": "Două săptămâni fără o încărcare"
-    },
-    "noUploads30d": {
-      "subject": "O lună fără o încărcare"
     },
     "incompleteInvoice": {
       "subject": "Ai facturi incomplete",
@@ -5258,7 +5246,7 @@
       "secondaryCta": "Vezi tabloul de bord"
     },
     "invoiceStats": {
-      "subject": "Statisticile tale de factură",
+      "subject": "Statisticile tale {frequency, select, daily {zilnice} weekly {săptămânale} monthly {lunare} yearly {anuale} other {periodice}} de facturi",
       "frequencyLabel": "{frequency, select, daily {Zilnică} weekly {Săptămânală} monthly {Lunară} yearly {Anuală} other {Periodică}}",
       "title": "Statistici factură {frequencyLabel}",
       "badge": "Facturi",
@@ -5293,18 +5281,6 @@
       },
       "ctaPrimary": "Vezi facturile",
       "ctaSecondary": "Încarcă o factură nouă"
-    },
-    "invoiceStatsDaily": {
-      "subject": "Statisticile tale zilnice de factură"
-    },
-    "invoiceStatsWeekly": {
-      "subject": "Statisticile tale săptămânale de factură"
-    },
-    "invoiceStatsMonthly": {
-      "subject": "Statisticile tale lunare de factură"
-    },
-    "invoiceStatsYearly": {
-      "subject": "Statisticile tale anuale de factură"
     }
   }
 }

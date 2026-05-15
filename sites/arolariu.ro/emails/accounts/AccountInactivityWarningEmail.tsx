@@ -190,7 +190,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")},
+        {t("signOff.line1")}
         <br />
         {t("signOff.line2", {brand: BRAND.name})}
       </Text>

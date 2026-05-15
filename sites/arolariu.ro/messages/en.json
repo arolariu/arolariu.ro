@@ -5081,7 +5081,7 @@
       },
       "supportPrompt": "If you believe you received this message in error, or you need assistance, please contact <link>{supportEmail}</link>.",
       "signOff": {
-        "line1": "Best regards",
+        "line1": "Best regards,",
         "line2": "The {brand} Team"
       },
       "footnote": "Note: This notice is informational and intended to help you avoid losing access. Actual account retention policies may vary by region and product.",
@@ -5091,7 +5091,7 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "It's been a while since your last invoice",
+      "subject": "It's been {daysWithoutUpload} days since your last invoice",
       "badge": {
         "3": "Inactivity • 3 days",
         "7": "Inactivity • 7 days",
@@ -5140,18 +5140,6 @@
         "primary": "Upload an invoice",
         "secondary": "View invoices"
       }
-    },
-    "noUploads3d": {
-      "subject": "3 days without an upload"
-    },
-    "noUploads7d": {
-      "subject": "A whole week without an upload"
-    },
-    "noUploads14d": {
-      "subject": "Two weeks without an upload"
-    },
-    "noUploads30d": {
-      "subject": "A month without an upload"
     },
     "incompleteInvoice": {
       "subject": "You have incomplete invoices",
@@ -5258,7 +5246,7 @@
       "secondaryCta": "View dashboard"
     },
     "invoiceStats": {
-      "subject": "Your invoice statistics",
+      "subject": "Your {frequency, select, daily {daily} weekly {weekly} monthly {monthly} yearly {yearly} other {periodic}} invoice statistics",
       "frequencyLabel": "{frequency, select, daily {Daily} weekly {Weekly} monthly {Monthly} yearly {Yearly} other {Periodic}}",
       "title": "{frequencyLabel} invoice stats",
       "badge": "Invoices",
@@ -5293,18 +5281,6 @@
       },
       "ctaPrimary": "View invoices",
       "ctaSecondary": "Upload a new invoice"
-    },
-    "invoiceStatsDaily": {
-      "subject": "Your daily invoice statistics"
-    },
-    "invoiceStatsWeekly": {
-      "subject": "Your weekly invoice statistics"
-    },
-    "invoiceStatsMonthly": {
-      "subject": "Your monthly invoice statistics"
-    },
-    "invoiceStatsYearly": {
-      "subject": "Your yearly invoice statistics"
     }
   }
 }

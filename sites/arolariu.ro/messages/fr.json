@@ -5081,7 +5081,7 @@
       },
       "supportPrompt": "Si vous pensez avoir reçu ce message par erreur ou si vous avez besoin d'aide, veuillez contacter <link>{supportEmail}</link>.",
       "signOff": {
-        "line1": "Cordialement",
+        "line1": "Cordialement,",
         "line2": "L'équipe {brand}"
       },
       "footnote": "Note : Cet avis est informatif et destiné à vous aider à éviter de perdre l'accès. Les politiques réelles de rétention des comptes peuvent varier selon la région et le produit.",
@@ -5091,7 +5091,7 @@
       }
     },
     "invoiceInactivity": {
-      "subject": "Cela fait un moment depuis votre dernière facture",
+      "subject": "Cela fait {daysWithoutUpload} jours depuis votre dernière facture",
       "badge": {
         "3": "Inactivité • 3 jours",
         "7": "Inactivité • 7 jours",
@@ -5140,18 +5140,6 @@
         "primary": "Télécharger une facture",
         "secondary": "Voir les factures"
       }
-    },
-    "noUploads3d": {
-      "subject": "3 jours sans téléversement"
-    },
-    "noUploads7d": {
-      "subject": "Une semaine entière sans téléversement"
-    },
-    "noUploads14d": {
-      "subject": "Deux semaines sans téléversement"
-    },
-    "noUploads30d": {
-      "subject": "Un mois sans téléversement"
     },
     "incompleteInvoice": {
       "subject": "Vous avez des factures incomplètes",
@@ -5258,7 +5246,7 @@
       "secondaryCta": "Voir le tableau de bord"
     },
     "invoiceStats": {
-      "subject": "Vos statistiques de factures",
+      "subject": "Vos statistiques {frequency, select, daily {quotidiennes} weekly {hebdomadaires} monthly {mensuelles} yearly {annuelles} other {périodiques}} de factures",
       "frequencyLabel": "{frequency, select, daily {Quotidienne} weekly {Hebdomadaire} monthly {Mensuelle} yearly {Annuelle} other {Périodique}}",
       "title": "Statistiques de factures {frequencyLabel}",
       "badge": "Factures",
@@ -5293,18 +5281,6 @@
       },
       "ctaPrimary": "Voir les factures",
       "ctaSecondary": "Télécharger une nouvelle facture"
-    },
-    "invoiceStatsDaily": {
-      "subject": "Vos statistiques quotidiennes de factures"
-    },
-    "invoiceStatsWeekly": {
-      "subject": "Vos statistiques hebdomadaires de factures"
-    },
-    "invoiceStatsMonthly": {
-      "subject": "Vos statistiques mensuelles de factures"
-    },
-    "invoiceStatsYearly": {
-      "subject": "Vos statistiques annuelles de factures"
     }
   }
 }
