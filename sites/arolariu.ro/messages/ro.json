@@ -4783,28 +4783,97 @@
       "ctaPrimary": "Încarcă primul tău bon",
       "ctaSecondary": "Explorează panoul"
     },
-    "firstInvoiceUploaded": { "subject": "Prima ta factură a sosit!" },
-    "invoiceAnalyzed": { "subject": "Factura ta a fost analizată" },
-    "invoiceDeleted": { "subject": "Factura ta a fost ștearsă" },
-    "invoiceMadePublic": { "subject": "Factura ta este acum publică" },
-    "invoiceShared": { "subject": "{fromName} a partajat o factură cu tine" },
-    "invoiceUnshared": { "subject": "Accesul la o factură partajată a fost revocat" },
-    "spendingAlert": { "subject": "Alertă prag de cheltuieli" },
-    "newsletterSubscribed": { "subject": "Te-ai abonat cu succes!" },
-    "newsletterUnsubscribed": { "subject": "Te-ai dezabonat" },
-    "accountInactivity": { "subject": "Te lipsim la {brand}" },
-    "invoiceInactivity": { "subject": "A trecut ceva timp de la ultima ta factură" },
-    "noUploads3d": { "subject": "3 zile fără o încărcare" },
-    "noUploads7d": { "subject": "O săptămână întreagă fără o încărcare" },
-    "noUploads14d": { "subject": "Două săptămâni fără o încărcare" },
-    "noUploads30d": { "subject": "O lună fără o încărcare" },
-    "incompleteInvoice": { "subject": "Ai facturi incomplete" },
-    "unanalyzedInvoices": { "subject": "Ai facturi neanaliza­te" },
-    "weeklyUploadReminder": { "subject": "Promemoria de încărcare săptămânală" },
-    "invoiceStats": { "subject": "Statisticile tale de factură" },
-    "invoiceStatsDaily": { "subject": "Statisticile tale zilnice de factură" },
-    "invoiceStatsWeekly": { "subject": "Statisticile tale săptămânale de factură" },
-    "invoiceStatsMonthly": { "subject": "Statisticile tale lunare de factură" },
-    "invoiceStatsYearly": { "subject": "Statisticile tale anuale de factură" }
+    "firstInvoiceUploaded": {
+      "subject": "Prima ta factură a sosit!"
+    },
+    "invoiceAnalyzed": {
+      "subject": "Factura ta a fost analizată"
+    },
+    "invoiceDeleted": {
+      "subject": "Factura ta a fost ștearsă"
+    },
+    "invoiceMadePublic": {
+      "subject": "Factura ta este acum publică"
+    },
+    "invoiceShared": {
+      "subject": "{fromName} a distribuit o factură cu tine",
+      "badge": "Facturi • Distribuite",
+      "heading": "O factură a fost distribuită cu tine",
+      "preview": "{fromName} a distribuit o factură cu tine.",
+      "greeting": "Bună {toName},",
+      "intro": "Vești bune! <from></from> a distribuit o factură cu tine pe {brand}. Aceasta îți oferă acces pentru a vizualiza toate detaliile facturii, inclusiv produsele detaliate, informațiile despre comerciant și analizele.",
+      "detailsTitle": "Detalii distribuire",
+      "details": {
+        "sharedBy": "Distribuit de",
+        "invoiceId": "ID Factură"
+      },
+      "whatYouCanDoTitle": "Ce poți face",
+      "whatYouCanDo": {
+        "0": "Vizualizează detaliile complete ale facturii și descompunerea pe articole",
+        "1": "Vezi analizele și categoriile de cheltuieli",
+        "2": "Descarcă sau printează factura pentru evidențele tale"
+      },
+      "body": "Apasă butonul de mai sus pentru a accesa factura distribuită. Acest link va rămâne activ atât timp cât permisiunile de distribuire sunt în vigoare.",
+      "feedbackPrompt": "Ai întrebări despre această distribuire sau ai nevoie de ajutor? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează factura distribuită"
+    },
+    "invoiceUnshared": {
+      "subject": "Accesul la o factură partajată a fost revocat"
+    },
+    "spendingAlert": {
+      "subject": "Alertă prag de cheltuieli"
+    },
+    "newsletterSubscribed": {
+      "subject": "Te-ai abonat cu succes!"
+    },
+    "newsletterUnsubscribed": {
+      "subject": "Te-ai dezabonat"
+    },
+    "accountInactivity": {
+      "subject": "Te lipsim la {brand}"
+    },
+    "invoiceInactivity": {
+      "subject": "A trecut ceva timp de la ultima ta factură"
+    },
+    "noUploads3d": {
+      "subject": "3 zile fără o încărcare"
+    },
+    "noUploads7d": {
+      "subject": "O săptămână întreagă fără o încărcare"
+    },
+    "noUploads14d": {
+      "subject": "Două săptămâni fără o încărcare"
+    },
+    "noUploads30d": {
+      "subject": "O lună fără o încărcare"
+    },
+    "incompleteInvoice": {
+      "subject": "Ai facturi incomplete"
+    },
+    "unanalyzedInvoices": {
+      "subject": "Ai facturi neanaliza­te"
+    },
+    "weeklyUploadReminder": {
+      "subject": "Promemoria de încărcare săptămânală"
+    },
+    "invoiceStats": {
+      "subject": "Statisticile tale de factură"
+    },
+    "invoiceStatsDaily": {
+      "subject": "Statisticile tale zilnice de factură"
+    },
+    "invoiceStatsWeekly": {
+      "subject": "Statisticile tale săptămânale de factură"
+    },
+    "invoiceStatsMonthly": {
+      "subject": "Statisticile tale lunare de factură"
+    },
+    "invoiceStatsYearly": {
+      "subject": "Statisticile tale anuale de factură"
+    }
   }
 }

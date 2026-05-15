@@ -4783,28 +4783,97 @@
       "ctaPrimary": "Téléversez votre premier reçu",
       "ctaSecondary": "Explorez le tableau de bord"
     },
-    "firstInvoiceUploaded": { "subject": "Votre première facture est arrivée !" },
-    "invoiceAnalyzed": { "subject": "Votre facture a été analysée" },
-    "invoiceDeleted": { "subject": "Votre facture a été supprimée" },
-    "invoiceMadePublic": { "subject": "Votre facture est maintenant publique" },
-    "invoiceShared": { "subject": "{fromName} a partagé une facture avec vous" },
-    "invoiceUnshared": { "subject": "L'accès à une facture partagée a été révoqué" },
-    "spendingAlert": { "subject": "Alerte de seuil de dépenses" },
-    "newsletterSubscribed": { "subject": "Vous êtes abonné !" },
-    "newsletterUnsubscribed": { "subject": "Vous avez été désabonné" },
-    "accountInactivity": { "subject": "Vous nous manquez chez {brand}" },
-    "invoiceInactivity": { "subject": "Il y a un moment que vous n'avez pas créé de facture" },
-    "noUploads3d": { "subject": "3 jours sans téléversement" },
-    "noUploads7d": { "subject": "Une semaine entière sans téléversement" },
-    "noUploads14d": { "subject": "Deux semaines sans téléversement" },
-    "noUploads30d": { "subject": "Un mois sans téléversement" },
-    "incompleteInvoice": { "subject": "Vous avez des factures incomplètes" },
-    "unanalyzedInvoices": { "subject": "Vous avez des factures non analysées" },
-    "weeklyUploadReminder": { "subject": "Rappel de téléversement hebdomadaire" },
-    "invoiceStats": { "subject": "Vos statistiques de factures" },
-    "invoiceStatsDaily": { "subject": "Vos statistiques quotidiennes de factures" },
-    "invoiceStatsWeekly": { "subject": "Vos statistiques hebdomadaires de factures" },
-    "invoiceStatsMonthly": { "subject": "Vos statistiques mensuelles de factures" },
-    "invoiceStatsYearly": { "subject": "Vos statistiques annuelles de factures" }
+    "firstInvoiceUploaded": {
+      "subject": "Votre première facture est arrivée !"
+    },
+    "invoiceAnalyzed": {
+      "subject": "Votre facture a été analysée"
+    },
+    "invoiceDeleted": {
+      "subject": "Votre facture a été supprimée"
+    },
+    "invoiceMadePublic": {
+      "subject": "Votre facture est maintenant publique"
+    },
+    "invoiceShared": {
+      "subject": "{fromName} a partagé une facture avec vous",
+      "badge": "Factures • Partagées",
+      "heading": "Une facture a été partagée avec vous",
+      "preview": "{fromName} a partagé une facture avec vous.",
+      "greeting": "Bonjour {toName},",
+      "intro": "Bonne nouvelle ! <from></from> a partagé une facture avec vous sur {brand}. Cela vous donne accès à tous les détails de la facture, y compris les produits détaillés, les informations sur le commerçant et les analyses.",
+      "detailsTitle": "Détails du partage",
+      "details": {
+        "sharedBy": "Partagé par",
+        "invoiceId": "ID Facture"
+      },
+      "whatYouCanDoTitle": "Ce que vous pouvez faire",
+      "whatYouCanDo": {
+        "0": "Voir les détails complets de la facture et la ventilation par article",
+        "1": "Consulter les analyses et les catégories de dépenses",
+        "2": "Télécharger ou imprimer la facture pour vos archives"
+      },
+      "body": "Cliquez sur le bouton ci-dessus pour accéder à la facture partagée. Ce lien restera actif tant que les autorisations de partage seront en place.",
+      "feedbackPrompt": "Vous avez des questions sur ce partage ou besoin d'aide ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir la facture partagée"
+    },
+    "invoiceUnshared": {
+      "subject": "L'accès à une facture partagée a été révoqué"
+    },
+    "spendingAlert": {
+      "subject": "Alerte de seuil de dépenses"
+    },
+    "newsletterSubscribed": {
+      "subject": "Vous êtes abonné !"
+    },
+    "newsletterUnsubscribed": {
+      "subject": "Vous avez été désabonné"
+    },
+    "accountInactivity": {
+      "subject": "Vous nous manquez chez {brand}"
+    },
+    "invoiceInactivity": {
+      "subject": "Il y a un moment que vous n'avez pas créé de facture"
+    },
+    "noUploads3d": {
+      "subject": "3 jours sans téléversement"
+    },
+    "noUploads7d": {
+      "subject": "Une semaine entière sans téléversement"
+    },
+    "noUploads14d": {
+      "subject": "Deux semaines sans téléversement"
+    },
+    "noUploads30d": {
+      "subject": "Un mois sans téléversement"
+    },
+    "incompleteInvoice": {
+      "subject": "Vous avez des factures incomplètes"
+    },
+    "unanalyzedInvoices": {
+      "subject": "Vous avez des factures non analysées"
+    },
+    "weeklyUploadReminder": {
+      "subject": "Rappel de téléversement hebdomadaire"
+    },
+    "invoiceStats": {
+      "subject": "Vos statistiques de factures"
+    },
+    "invoiceStatsDaily": {
+      "subject": "Vos statistiques quotidiennes de factures"
+    },
+    "invoiceStatsWeekly": {
+      "subject": "Vos statistiques hebdomadaires de factures"
+    },
+    "invoiceStatsMonthly": {
+      "subject": "Vos statistiques mensuelles de factures"
+    },
+    "invoiceStatsYearly": {
+      "subject": "Vos statistiques annuelles de factures"
+    }
   }
 }

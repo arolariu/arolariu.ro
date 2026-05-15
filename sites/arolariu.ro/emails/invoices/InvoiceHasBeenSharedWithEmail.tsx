@@ -7,20 +7,24 @@
  * It includes the sender's name and a direct link to the shared invoice.
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the InvoiceHasBeenSharedWithEmail component.
  */
 type Props = Readonly<{
   /** The username of the person sharing the invoice */
-  fromUsername: string;
+  readonly fromUsername: string;
   /** The username of the recipient */
-  toUsername: string;
+  readonly toUsername: string;
   /** The unique identifier of the shared invoice */
-  identifier: string;
+  readonly identifier: string;
+  /** The locale for the email */
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -32,7 +36,12 @@ type Props = Readonly<{
  * @param props - The sharing details.
  * @returns A rendered React Email template.
  */
-const InvoiceHasBeenSharedWithEmail = (props: Readonly<Props>) => {
+const InvoiceHasBeenSharedWithEmail = async (props: Readonly<Props>) => {
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.invoiceShared"});
+  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+
   const {fromUsername, toUsername, identifier} = props;
 
   const invoiceUrl = `${BRAND.url}/domains/invoices/view-invoice/${identifier}`;
@@ -41,54 +50,50 @@ const InvoiceHasBeenSharedWithEmail = (props: Readonly<Props>) => {
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | Invoice shared with you`}
-      preview={`${safeFrom} shared an invoice with you.`}
-      badge='Invoices • Shared'
-      heading='An invoice was shared with you'
-      primaryCta={{href: invoiceUrl, label: "View shared invoice"}}>
-      <Text style={EmailParagraphStyles}>Hi {safeTo},</Text>
+      locale={locale}
+      tLayout={tLayout}
+      title={`${BRAND.name} | ${t("badge")}`}
+      preview={t("preview", {fromName: safeFrom})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
+      <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Great news! <strong>{safeFrom}</strong> has shared an invoice with you on {BRAND.name}. This gives you access to view all the
-        invoice details, including itemized products, merchant information, and analysis insights.
+        {t.rich("intro", {
+          brand: () => <>{BRAND.name}</>,
+          from: () => <strong>{safeFrom}</strong>,
+        })}
       </Text>
 
       <KeyValueTable
-        title='Share details'
+        title={t("detailsTitle")}
         items={[
-          {label: "Shared by", value: safeFrom},
-          {label: "Invoice ID", value: identifier},
+          {label: t("details.sharedBy"), value: safeFrom},
+          {label: t("details.invoiceId"), value: identifier},
         ]}
       />
 
-      <EmailCard title='What you can do'>
-        <BulletList
-          items={[
-            "View the complete invoice details and itemized breakdown",
-            "See analysis insights and spending categories",
-            "Download or print the invoice for your records",
-          ]}
-        />
+      <EmailCard title={t("whatYouCanDoTitle")}>
+        <BulletList items={[t("whatYouCanDo.0"), t("whatYouCanDo.1"), t("whatYouCanDo.2")]} />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Click the button above to access the shared invoice. This link will remain active as long as the sharing permissions are in place.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Have questions about this share, or need help? Contact us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedbackPrompt", {
+          email: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -98,6 +103,7 @@ InvoiceHasBeenSharedWithEmail.PreviewProps = {
   fromUsername: "Alex Olariu",
   toUsername: "John Doe",
   identifier: "550e8400-e29b-41d4-a716-446655440000",
+  locale: "en" as const,
 } satisfies Props;
 
 export default InvoiceHasBeenSharedWithEmail;
