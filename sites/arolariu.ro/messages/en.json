@@ -4754,7 +4754,35 @@
       "secondaryFallback": "Or:",
       "allRightsReserved": "© 2022-{year} {brand}. All rights reserved."
     },
-    "welcome": { "subject": "Welcome to {brand}" },
+    "welcome": {
+      "subject": "Welcome to {brand}",
+      "badge": "Welcome",
+      "heading": "Welcome to {brand}",
+      "preview": "Welcome to {brand}, {name}! Let's get started.",
+      "greeting": "Hi {name},",
+      "intro": "Thanks for joining {brand}. We're glad you're here. Our platform helps you turn everyday receipts into organized financial insights — powered by AI analysis.",
+      "howItWorksTitle": "How it works",
+      "howItWorks": {
+        "0": "Upload — snap a photo or upload a PDF of any receipt",
+        "1": "Analyze — our AI extracts items, prices, merchants, and even suggests recipes from grocery receipts",
+        "2": "Track — view spending dashboards by merchant, category, month, or year"
+      },
+      "whatYouCanDoTitle": "What you can do",
+      "whatYouCanDo": {
+        "0": "Get allergen alerts on food products",
+        "1": "Share invoices with family members or colleagues",
+        "2": "Export statistics and spending reports",
+        "3": "Access your data from any device"
+      },
+      "body": "Ready to get started? Upload your first receipt and watch the magic happen. The whole process takes less than a minute.",
+      "feedbackPrompt": "Questions or feedback? We'd love to hear from you at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "Upload your first receipt",
+      "ctaSecondary": "Explore the dashboard"
+    },
     "firstInvoiceUploaded": { "subject": "Your first invoice is in!" },
     "invoiceAnalyzed": { "subject": "Your invoice has been analyzed" },
     "invoiceDeleted": { "subject": "Your invoice was deleted" },

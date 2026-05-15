@@ -68,7 +68,7 @@ vi.mock("next-intl", () => {
       return mockT;
     },
     createTranslator: ({locale: _locale, messages, namespace}: {locale?: string; messages: Record<string, unknown>; namespace: string}) => {
-      return (key: string, vars?: Record<string, unknown>) => {
+      const fn = (key: string, vars?: Record<string, unknown>) => {
         const parts = `${namespace}.${key}`.split(".");
         let value: unknown = messages;
         for (const part of parts) {
@@ -78,6 +78,42 @@ vi.mock("next-intl", () => {
         const text = typeof value === "string" ? value : key;
         return mockTranslator(text, vars);
       };
+      fn.rich = (key: string, replacements?: Record<string, (content?: string) => unknown>) => {
+        const parts = `${namespace}.${key}`.split(".");
+        let value: unknown = messages;
+        for (const part of parts) {
+          if (typeof value !== "object" || value === null) return key;
+          value = (value as Record<string, unknown>)[part];
+        }
+        let text = typeof value === "string" ? value : key;
+        if (!replacements) return text;
+        // Simple implementation: split on <tagName></tagName> or <tagName>content</tagName>
+        const result: (string | unknown)[] = [];
+        let remaining = text;
+        for (const [tagName, replacer] of Object.entries(replacements)) {
+          const selfClosingPattern = `<${tagName}></${tagName}>`;
+          const withContentPattern = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
+          if (remaining.includes(selfClosingPattern)) {
+            const parts = remaining.split(selfClosingPattern);
+            remaining = parts.join("{{REPLACEMENT}}");
+          } else {
+            remaining = remaining.replace(withContentPattern, (_match, content) => {
+              return "{{REPLACEMENT}}";
+            });
+          }
+        }
+        // Now split by {{REPLACEMENT}} and interleave with replacer results
+        const segments = remaining.split("{{REPLACEMENT}}");
+        const replacerEntries = Object.entries(replacements);
+        for (let i = 0; i < segments.length; i++) {
+          if (segments[i]) result.push(segments[i]);
+          if (i < replacerEntries.length) {
+            result.push(replacerEntries[i][1](""));
+          }
+        }
+        return result.length === 1 ? result[0] : result;
+      };
+      return fn;
     },
     useLocale: () => "en",
     useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),

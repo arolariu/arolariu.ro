@@ -4754,7 +4754,35 @@
       "secondaryFallback": "Sau:",
       "allRightsReserved": "© 2022-{year} {brand}. Toate drepturile rezervate."
     },
-    "welcome": { "subject": "Bun venit la {brand}" },
+    "welcome": {
+      "subject": "Bun venit la {brand}",
+      "badge": "Bun venit",
+      "heading": "Bun venit la {brand}",
+      "preview": "Bun venit la {brand}, {name}! Hai să începem.",
+      "greeting": "Salut {name},",
+      "intro": "Mulțumim că ni te-ai alăturat la {brand}. Ne bucurăm că ești aici. Platforma noastră te ajută să transformi bonurile zilnice în informații financiare organizate — cu ajutorul analizei AI.",
+      "howItWorksTitle": "Cum funcționează",
+      "howItWorks": {
+        "0": "Încarcă — fă o fotografie sau încarcă un PDF al oricărui bon",
+        "1": "Analizează — AI-ul nostru extrage produsele, prețurile, comercianții și chiar sugerează rețete din bonurile de băcănie",
+        "2": "Urmărește — vizualizează panouri de cheltuieli pe comerciant, categorie, lună sau an"
+      },
+      "whatYouCanDoTitle": "Ce poți face",
+      "whatYouCanDo": {
+        "0": "Primește alerte despre alergeni pentru produsele alimentare",
+        "1": "Partajează facturi cu membrii familiei sau colegii",
+        "2": "Exportă statistici și rapoarte de cheltuieli",
+        "3": "Accesează-ți datele de pe orice dispozitiv"
+      },
+      "body": "Gata să începi? Încarcă primul tău bon și privește magia în acțiune. Întregul proces durează mai puțin de un minut.",
+      "feedbackPrompt": "Întrebări sau feedback? Ne-ar plăcea să auzim de la tine la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Încarcă primul tău bon",
+      "ctaSecondary": "Explorează panoul"
+    },
     "firstInvoiceUploaded": { "subject": "Prima ta factură a sosit!" },
     "invoiceAnalyzed": { "subject": "Factura ta a fost analizată" },
     "invoiceDeleted": { "subject": "Factura ta a fost ștearsă" },

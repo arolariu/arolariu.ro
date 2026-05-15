@@ -4754,7 +4754,35 @@
       "secondaryFallback": "Ou :",
       "allRightsReserved": "© 2022-{year} {brand}. Tous droits réservés."
     },
-    "welcome": { "subject": "Bienvenue chez {brand}" },
+    "welcome": {
+      "subject": "Bienvenue chez {brand}",
+      "badge": "Bienvenue",
+      "heading": "Bienvenue chez {brand}",
+      "preview": "Bienvenue chez {brand}, {name} ! Commençons.",
+      "greeting": "Bonjour {name},",
+      "intro": "Merci d'avoir rejoint {brand}. Nous sommes ravis de vous compter parmi nous. Notre plateforme vous aide à transformer vos reçus quotidiens en informations financières organisées, grâce à l'analyse par IA.",
+      "howItWorksTitle": "Comment ça marche",
+      "howItWorks": {
+        "0": "Téléversez — prenez une photo ou téléversez un PDF d'un reçu",
+        "1": "Analysez — notre IA extrait les articles, les prix, les marchands et suggère même des recettes à partir des reçus d'épicerie",
+        "2": "Suivez — consultez des tableaux de dépenses par marchand, catégorie, mois ou année"
+      },
+      "whatYouCanDoTitle": "Ce que vous pouvez faire",
+      "whatYouCanDo": {
+        "0": "Recevez des alertes sur les allergènes des produits alimentaires",
+        "1": "Partagez des factures avec votre famille ou vos collègues",
+        "2": "Exportez des statistiques et des rapports de dépenses",
+        "3": "Accédez à vos données depuis n'importe quel appareil"
+      },
+      "body": "Prêt à commencer ? Téléversez votre premier reçu et regardez la magie opérer. Le processus prend moins d'une minute.",
+      "feedbackPrompt": "Des questions ou des commentaires ? Nous serions ravis de vous entendre à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Téléversez votre premier reçu",
+      "ctaSecondary": "Explorez le tableau de bord"
+    },
     "firstInvoiceUploaded": { "subject": "Votre première facture est arrivée !" },
     "invoiceAnalyzed": { "subject": "Votre facture a été analysée" },
     "invoiceDeleted": { "subject": "Votre facture a été supprimée" },
