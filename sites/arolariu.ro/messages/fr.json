@@ -5061,7 +5061,34 @@
       }
     },
     "accountInactivity": {
-      "subject": "Vous nous manquez chez {brand}"
+      "subject": "Vous nous manquez chez {brand}",
+      "badge": "Compte",
+      "heading": "Avis d'inactivité du compte",
+      "preview": "Bonjour {name} — votre compte est inactif depuis {inactiveDays} jours.",
+      "greeting": "Bonjour {name},",
+      "intro": "Ceci est un avertissement que votre compte est inactif depuis <count>{inactiveDays}</count> jours.",
+      "whatThisMeans": {
+        "title": "Ce que cela signifie",
+        "bullet1": "Se connecter gardera votre compte actif.",
+        "bullet2": "S'il n'y a aucune activité pendant les prochains {daysUntilClosure} jours, le compte pourrait être programmé pour fermeture.",
+        "bullet3": "Si vous souhaitez conserver vos données, veuillez agir avant la date limite."
+      },
+      "timeline": {
+        "title": "Chronologie",
+        "inactiveFor": "Inactif depuis",
+        "timeRemaining": "Temps restant",
+        "daysValue": "{days} jours"
+      },
+      "supportPrompt": "Si vous pensez avoir reçu ce message par erreur ou si vous avez besoin d'aide, veuillez contacter <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      },
+      "footnote": "Note : Cet avis est informatif et destiné à vous aider à éviter de perdre l'accès. Les politiques réelles de rétention des comptes peuvent varier selon la région et le produit.",
+      "cta": {
+        "primary": "Se connecter",
+        "secondary": "Contacter le support"
+      }
     },
     "invoiceInactivity": {
       "subject": "Il y a un moment que vous n'avez pas créé de facture"

@@ -5061,7 +5061,34 @@
       }
     },
     "accountInactivity": {
-      "subject": "We miss you at {brand}"
+      "subject": "We miss you at {brand}",
+      "badge": "Account",
+      "heading": "Account inactivity notice",
+      "preview": "Hi {name} — your account has been inactive for {inactiveDays} days.",
+      "greeting": "Hi {name},",
+      "intro": "This is a heads-up that your account has been inactive for <count>{inactiveDays}</count> days.",
+      "whatThisMeans": {
+        "title": "What this means",
+        "bullet1": "Signing in will keep your account active.",
+        "bullet2": "If there's no activity for the next {daysUntilClosure} days, the account may be scheduled for closure.",
+        "bullet3": "If you want to keep your data, please take action before the deadline."
+      },
+      "timeline": {
+        "title": "Timeline",
+        "inactiveFor": "Inactive for",
+        "timeRemaining": "Time remaining",
+        "daysValue": "{days} days"
+      },
+      "supportPrompt": "If you believe you received this message in error, or you need assistance, please contact <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      },
+      "footnote": "Note: This notice is informational and intended to help you avoid losing access. Actual account retention policies may vary by region and product.",
+      "cta": {
+        "primary": "Sign in",
+        "secondary": "Contact support"
+      }
     },
     "invoiceInactivity": {
       "subject": "It's been a while since your last invoice"

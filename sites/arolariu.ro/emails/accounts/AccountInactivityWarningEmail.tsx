@@ -20,7 +20,9 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
+import {createTranslator} from "next-intl";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 import {
   BRAND,
   BulletList,
@@ -70,6 +72,12 @@ type Props = Readonly<{
    * Should include tracking parameters for email campaign analytics.
    */
   readonly signInUrl?: string;
+
+  /**
+   * Locale for email translation (en, ro, fr).
+   * Defaults to DEFAULT_LOCALE ("en").
+   */
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -128,59 +136,68 @@ type Props = Readonly<{
  * @see {@link BulletList} - Accessibility-optimized bullet lists
  * @see {@link KeyValueTable} - Timeline data display
  */
-const AccountInactivityWarningEmail = (props: Readonly<Props>) => {
+const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
   const {username, inactiveDays, daysUntilClosure, signInUrl} = props;
+
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.accountInactivity"});
 
   const name = username?.trim() ? username : "there";
   const effectiveSignInUrl = signInUrl ?? `${BRAND.url}/auth/sign-in`;
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | Account inactivity notice`}
-      preview={`Hi ${name} — your account has been inactive for ${inactiveDays} days.`}
-      badge='Account'
-      heading='Account inactivity notice'
-      primaryCta={{href: effectiveSignInUrl, label: "Sign in"}}
-      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: "Contact support"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      locale={locale}
+      title={`${BRAND.name} | ${t("heading")}`}
+      preview={t("preview", {name, inactiveDays})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: effectiveSignInUrl, label: t("cta.primary")}}
+      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("cta.secondary")}}>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        This is a heads-up that your account has been inactive for <strong>{inactiveDays}</strong> days.
+        {t.rich("intro", {
+          inactiveDays,
+          count: (chunks) => <strong>{chunks}</strong>,
+        })}
       </Text>
 
-      <EmailCard title='What this means'>
+      <EmailCard title={t("whatThisMeans.title")}>
         <BulletList
           items={[
-            "Signing in will keep your account active.",
-            `If there's no activity for the next ${daysUntilClosure} days, the account may be scheduled for closure.`,
-            "If you want to keep your data, please take action before the deadline.",
+            t("whatThisMeans.bullet1"),
+            t("whatThisMeans.bullet2", {daysUntilClosure}),
+            t("whatThisMeans.bullet3"),
           ]}
         />
       </EmailCard>
 
-      <EmailCard title='Timeline'>
+      <EmailCard title={t("timeline.title")}>
         <KeyValueTable
           items={[
-            {label: "Inactive for", value: `${inactiveDays} days`},
-            {label: "Time remaining", value: `${daysUntilClosure} days`},
+            {label: t("timeline.inactiveFor"), value: t("timeline.daysValue", {days: inactiveDays})},
+            {label: t("timeline.timeRemaining"), value: t("timeline.daysValue", {days: daysUntilClosure})},
           ]}
         />
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        If you believe you received this message in error, or you need assistance, please contact{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("supportPrompt", {
+          supportEmail: BRAND.supportEmail,
+          link: (chunks) => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")},
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
 
       <Text
@@ -191,8 +208,7 @@ const AccountInactivityWarningEmail = (props: Readonly<Props>) => {
           lineHeight: "18px",
           color: EMAIL_COLORS.muted,
         }}>
-        Note: This notice is informational and intended to help you avoid losing access. Actual account retention policies may vary by
-        region and product.
+        {t("footnote")}
       </Text>
     </EmailLayout>
   );
@@ -216,6 +232,7 @@ AccountInactivityWarningEmail.PreviewProps = {
   inactiveDays: 30,
   daysUntilClosure: 60,
   signInUrl: `${BRAND.url}/auth/sign-in`,
+  locale: "en",
 } satisfies Props;
 
 export default AccountInactivityWarningEmail;

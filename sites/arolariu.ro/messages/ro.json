@@ -5061,7 +5061,34 @@
       }
     },
     "accountInactivity": {
-      "subject": "Te lipsim la {brand}"
+      "subject": "Ne lipsești la {brand}",
+      "badge": "Cont",
+      "heading": "Notificare de inactivitate a contului",
+      "preview": "Bună {name} — contul tău a fost inactiv de {inactiveDays} zile.",
+      "greeting": "Bună {name},",
+      "intro": "Acesta este un atenționare că contul tău a fost inactiv de <count>{inactiveDays}</count> zile.",
+      "whatThisMeans": {
+        "title": "Ce înseamnă asta",
+        "bullet1": "Autentificarea va menține contul tău activ.",
+        "bullet2": "Dacă nu există activitate în următoarele {daysUntilClosure} zile, contul poate fi programat pentru închidere.",
+        "bullet3": "Dacă dorești să îți păstrezi datele, te rugăm să acționezi înainte de termen."
+      },
+      "timeline": {
+        "title": "Cronologie",
+        "inactiveFor": "Inactiv de",
+        "timeRemaining": "Timp rămas",
+        "daysValue": "{days} zile"
+      },
+      "supportPrompt": "Dacă crezi că ai primit acest mesaj din greșeală sau ai nevoie de asistență, te rugăm să contactezi <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cu stimă",
+        "line2": "Echipa {brand}"
+      },
+      "footnote": "Notă: Această notificare este informativă și are scopul de a te ajuta să eviți pierderea accesului. Politicile reale de retenție a conturilor pot varia în funcție de regiune și produs.",
+      "cta": {
+        "primary": "Autentifică-te",
+        "secondary": "Contactează asistența"
+      }
     },
     "invoiceInactivity": {
       "subject": "A trecut ceva timp de la ultima ta factură"
