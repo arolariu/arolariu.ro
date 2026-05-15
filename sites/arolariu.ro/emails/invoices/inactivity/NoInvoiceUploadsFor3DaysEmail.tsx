@@ -64,6 +64,12 @@ type Props = Readonly<{
    * Defaults to `${BRAND.url}/domains/invoices/view-invoices`.
    */
   readonly invoicesUrl?: string;
+
+  /**
+   * Locale for email translation (en, ro, fr).
+   * Defaults to DEFAULT_LOCALE ("en").
+   */
+  readonly locale?: string;
 }>;
 
 /**
@@ -125,7 +131,7 @@ type Props = Readonly<{
  * @see {@link NoInvoiceUploadsFor7DaysEmail} - Next milestone in sequence
  */
 const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => {
-  const {username, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
+  const {username, lastUploadDate, createInvoiceUrl, invoicesUrl, locale} = props;
 
   return (
     <InvoiceUploadInactivityReminderEmail
@@ -134,6 +140,7 @@ const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => {
       createInvoiceUrl={createInvoiceUrl}
       invoicesUrl={invoicesUrl}
       daysWithoutUpload={3}
+      locale={locale as "en" | "ro" | "fr"}
     />
   );
 };
@@ -151,6 +158,7 @@ const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => {
 NoInvoiceUploadsFor3DaysEmail.PreviewProps = {
   username: "Test User",
   lastUploadDate: "2025-12-21",
+  locale: "en",
 } satisfies Props;
 
 export default NoInvoiceUploadsFor3DaysEmail;
