@@ -51,81 +51,38 @@ vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
 }));
 
-vi.mock("next-intl", () => {
-  const mockTranslator = (key: string, vars?: Record<string, unknown>) => {
-    if (!vars) return key;
-    let result = key;
-    Object.entries(vars).forEach(([k, v]) => {
-      result = result.replace(`{${k}}`, String(v));
-    });
-    return result;
-  };
-
-  return {
-    useTranslations: (namespace?: string) => {
-      const mockT = (key: string) => (namespace ? `${namespace}.${key}` : key);
-      mockT.rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
-      return mockT;
-    },
-    createTranslator: ({locale: _locale, messages, namespace}: {locale?: string; messages: Record<string, unknown>; namespace: string}) => {
-      const fn = (key: string, vars?: Record<string, unknown>) => {
-        const parts = `${namespace}.${key}`.split(".");
-        let value: unknown = messages;
-        for (const part of parts) {
-          if (typeof value !== "object" || value === null) return key;
-          value = (value as Record<string, unknown>)[part];
-        }
-        const text = typeof value === "string" ? value : key;
-        return mockTranslator(text, vars);
-      };
-      fn.rich = (key: string, replacements?: Record<string, (content?: string) => unknown>) => {
-        const parts = `${namespace}.${key}`.split(".");
-        let value: unknown = messages;
-        for (const part of parts) {
-          if (typeof value !== "object" || value === null) return key;
-          value = (value as Record<string, unknown>)[part];
-        }
-        let text = typeof value === "string" ? value : key;
-        if (!replacements) return text;
-        // Simple implementation: split on <tagName></tagName> or <tagName>content</tagName>
-        const result: (string | unknown)[] = [];
-        let remaining = text;
-        for (const [tagName, _replacer] of Object.entries(replacements)) {
-          const selfClosingPattern = `<${tagName}></${tagName}>`;
-          const withContentPattern = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
-          if (remaining.includes(selfClosingPattern)) {
-            const parts = remaining.split(selfClosingPattern);
-            remaining = parts.join("{{REPLACEMENT}}");
-          } else {
-            remaining = remaining.replace(withContentPattern, (_match, _content) => {
-              return "{{REPLACEMENT}}";
-            });
-          }
-        }
-        // Now split by {{REPLACEMENT}} and interleave with replacer results
-        const segments = remaining.split("{{REPLACEMENT}}");
-        const replacerEntries = Object.entries(replacements);
-        for (let i = 0; i < segments.length; i++) {
-          if (segments[i]) result.push(segments[i]);
-          if (i < replacerEntries.length) {
-            const entry = replacerEntries[i];
-            if (entry) result.push(entry[1](""));
-          }
-        }
-        return result.length === 1 ? result[0] : result;
-      };
-      return fn;
-    },
-    useLocale: () => "en",
-    useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
-    NextIntlClientProvider: ({children}: {children: React.ReactNode}) => children,
-  };
-});
-
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
 }));
+
+// ── i18n shims ──
+//
+// `useTranslations` and `useLocale` are React hooks that require a
+// `NextIntlClientProvider` context. Client-component tests that don't set
+// up that provider need stubs here. The stubs intentionally return key
+// paths verbatim (e.g., `t("foo.bar")` → `"namespace.foo.bar"`) so tests
+// can assert on the raw key string without depending on real translation
+// content.
+//
+// `createTranslator` is NOT mocked — it's a pure function with no provider
+// dependency, and tests that exercise it (e.g., `_i18n/index.test.ts`) use
+// the real next-intl runtime. An earlier broken `t.rich` mock on
+// `createTranslator` was removed in PR #751's refactor (Copilot review
+// comment #4).
+vi.mock("next-intl", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl")>();
+  const makeTranslator = (namespace?: string) => {
+    const t = ((key: string) => (namespace ? `${namespace}.${key}` : key)) as unknown as ReturnType<typeof actual.useTranslations>;
+    (t as unknown as {rich: (key: string) => string}).rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
+    return t;
+  };
+  return {
+    ...actual,
+    useTranslations: (namespace?: string) => makeTranslator(namespace),
+    useLocale: () => "en",
+  };
+});
 
 // ── SDK shims (prevent CJS/ESM resolution crashes in happy-dom) ──
 
