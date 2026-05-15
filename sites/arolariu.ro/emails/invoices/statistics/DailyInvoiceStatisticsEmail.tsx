@@ -3,11 +3,12 @@
  * @module emails/invoices/statistics/DailyInvoiceStatisticsEmail
  */
 
+import type {EmailLocale} from "../../_i18n";
 import {InvoiceStatisticsEmail, type InvoiceStatisticsEmailProps} from "./InvoiceStatisticsEmail";
 
 type Props = Readonly<Omit<InvoiceStatisticsEmailProps, "frequency">>;
 
-const DailyInvoiceStatisticsEmail = (props: Readonly<Props>) => {
+async function DailyInvoiceStatisticsEmail(props: Readonly<Props>): Promise<React.JSX.Element> {
   const {
     username,
     periodStart,
@@ -20,6 +21,7 @@ const DailyInvoiceStatisticsEmail = (props: Readonly<Props>) => {
     categorySpendChartUrl,
     invoicesUrl,
     createInvoiceUrl,
+    locale,
   } = props;
 
   return (
@@ -36,9 +38,10 @@ const DailyInvoiceStatisticsEmail = (props: Readonly<Props>) => {
       invoicesUrl={invoicesUrl}
       createInvoiceUrl={createInvoiceUrl}
       frequency='daily'
+      locale={locale}
     />
   );
-};
+}
 
 DailyInvoiceStatisticsEmail.PreviewProps = {
   username: "Test User",
@@ -53,6 +56,7 @@ DailyInvoiceStatisticsEmail.PreviewProps = {
   },
   topMerchants: [{name: "Mega Image", totalSpend: 27.2}],
   topCategories: [{name: "Groceries", totalSpend: 31.4}],
+  locale: "en",
 } satisfies Props;
 
 export default DailyInvoiceStatisticsEmail;
