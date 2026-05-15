@@ -5018,7 +5018,25 @@
       }
     },
     "newsletterSubscribed": {
-      "subject": "You're subscribed!"
+      "subject": "You're subscribed!",
+      "badge": "Newsletter",
+      "heading": "You're in — welcome aboard",
+      "preview": "Welcome, {name} — you're subscribed.",
+      "greeting": "Hi {name},",
+      "intro": "Thanks for subscribing to the <brand>{brandName}</brand> newsletter. I'm genuinely excited to have you here. I'll keep communications lightweight, meaningful, and worth your time.",
+      "whatToExpectTitle": "What to expect",
+      "whatToExpect": {
+        "0": "Product updates & new features as they launch",
+        "1": "New articles & write-ups about technology, productivity, and personal finance",
+        "2": "Occasional highlights and curated resources (1–2 emails per quarter)"
+      },
+      "body": "Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it's a tip that saves you hours or an insight that shifts your perspective on personal finance.",
+      "feedbackPrompt": "Questions, feedback, or just want to say hello? Reply to this email or reach me directly at {email}.",
+      "ctaPrimary": "Visit arolariu.ro",
+      "signOff": {
+        "line1": "Best regards",
+        "line2": "The {brand} Team"
+      }
     },
     "newsletterUnsubscribed": {
       "subject": "You've been unsubscribed"

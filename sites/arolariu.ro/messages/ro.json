@@ -5018,7 +5018,25 @@
       }
     },
     "newsletterSubscribed": {
-      "subject": "Te-ai abonat cu succes!"
+      "subject": "Te-ai abonat cu succes!",
+      "badge": "Newsletter",
+      "heading": "Bine ai venit — te-ai abonat",
+      "preview": "Bun venit, {name} — te-ai abonat.",
+      "greeting": "Salut {name},",
+      "intro": "Mulțumesc că te-ai abonat la newsletter-ul <brand>{brandName}</brand>. Mă bucur sincer să te am aici. Voi păstra comunicările ușoare, semnificative și merită timpul tău.",
+      "whatToExpectTitle": "La ce să te aștepți",
+      "whatToExpect": {
+        "0": "Actualizări de produs și funcționalități noi pe măsură ce sunt lansate",
+        "1": "Articole și materiale noi despre tehnologie, productivitate și finanțe personale",
+        "2": "Evidențieri ocazionale și resurse curatate (1–2 emailuri pe trimestru)"
+      },
+      "body": "Inbox-ul tău este sacru—respect asta. Fiecare email este creat pentru a oferi valoare genuină, fie că este un sfat care îți economisește ore sau o perspectivă care îți schimbă viziunea asupra finanțelor personale.",
+      "feedbackPrompt": "Întrebări, feedback sau doar vrei să saluti? Răspunde la acest email sau contactează-mă direct la {email}.",
+      "ctaPrimary": "Vizitează arolariu.ro",
+      "signOff": {
+        "line1": "Cu respect",
+        "line2": "Echipa {brand}"
+      }
     },
     "newsletterUnsubscribed": {
       "subject": "Te-ai dezabonat"

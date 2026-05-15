@@ -5018,7 +5018,25 @@
       }
     },
     "newsletterSubscribed": {
-      "subject": "Vous êtes abonné !"
+      "subject": "Vous êtes abonné !",
+      "badge": "Newsletter",
+      "heading": "Vous êtes inscrit — bienvenue à bord",
+      "preview": "Bienvenue, {name} — vous êtes abonné.",
+      "greeting": "Bonjour {name},",
+      "intro": "Merci de vous être abonné à la newsletter <brand>{brandName}</brand>. Je suis sincèrement ravi de vous avoir ici. Je garderai les communications légères, significatives et dignes de votre temps.",
+      "whatToExpectTitle": "À quoi s'attendre",
+      "whatToExpect": {
+        "0": "Mises à jour de produits et nouvelles fonctionnalités au fur et à mesure de leur lancement",
+        "1": "Nouveaux articles et écrits sur la technologie, la productivité et les finances personnelles",
+        "2": "Points forts occasionnels et ressources sélectionnées (1 à 2 emails par trimestre)"
+      },
+      "body": "Votre boîte de réception est sacrée—je respecte cela. Chaque email est conçu pour apporter une véritable valeur, que ce soit un conseil qui vous fait gagner des heures ou une perspective qui change votre vision des finances personnelles.",
+      "feedbackPrompt": "Des questions, des commentaires ou juste envie de dire bonjour ? Répondez à cet email ou contactez-moi directement à {email}.",
+      "ctaPrimary": "Visiter arolariu.ro",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
     },
     "newsletterUnsubscribed": {
       "subject": "Vous avez été désabonné"

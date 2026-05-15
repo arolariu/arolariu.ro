@@ -7,9 +7,11 @@
  * It provides information about the expected frequency and content of the emails.
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the UserHasBeenSubscribedEmail component.
@@ -17,6 +19,8 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 type Props = Readonly<{
   /** The username of the recipient */
   username: string;
+  /** Email locale for translations. */
+  locale?: EmailLocale;
 }>;
 
 /**
@@ -28,56 +32,56 @@ type Props = Readonly<{
  * @param props - The subscription details.
  * @returns A rendered React Email template.
  */
-const UserHasBeenSubscribedEmail = (props: Readonly<Props>) => {
+const UserHasBeenSubscribedEmail = async (props: Readonly<Props>) => {
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.newsletterSubscribed"});
+  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+
   const {username} = props;
 
   const name = username?.trim() ? username : "there";
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | Newsletter subscription`}
-      preview={`Welcome, ${name} — you’re subscribed.`}
-      badge='Newsletter'
-      heading='You’re in — welcome aboard'
-      primaryCta={{href: BRAND.url, label: "Visit arolariu.ro"}}
+      locale={locale}
+      tLayout={tLayout}
+      title={${BRAND.name} | Newsletter subscription}
+      preview={t("preview", {name})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: BRAND.url, label: t("ctaPrimary")}}
       showUnsubscribe
-      unsubscribeUrl={`${BRAND.url}/unsubscribe`}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      unsubscribeUrl={${BRAND.url}/unsubscribe}>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Thanks for subscribing to the <strong>{BRAND.name}</strong> newsletter. I’m genuinely excited to have you here. I’ll keep
-        communications lightweight, meaningful, and worth your time.
+        {t.rich("intro", {
+          brandName: BRAND.name,
+          brand: (chunks) => <strong>{chunks}</strong>,
+        })}
       </Text>
 
-      <EmailCard title='What to expect'>
-        <BulletList
-          items={[
-            "Product updates & new features as they launch",
-            "New articles & write-ups about technology, productivity, and personal finance",
-            "Occasional highlights and curated resources (1–2 emails per quarter)",
-          ]}
-        />
+      <EmailCard title={t("whatToExpectTitle")}>
+        <BulletList items={[t("whatToExpect.0"), t("whatToExpect.1"), t("whatToExpect.2")]} />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it’s a tip that saves you hours or an
-        insight that shifts your perspective on personal finance.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Questions, feedback, or just want to say hello? Reply to this email or reach me directly at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedbackPrompt", {
+          email: () => (
+            <Link href={mailto:} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -85,6 +89,7 @@ const UserHasBeenSubscribedEmail = (props: Readonly<Props>) => {
 
 UserHasBeenSubscribedEmail.PreviewProps = {
   username: "Test User",
+  locale: "en",
 } satisfies Props;
 
 export default UserHasBeenSubscribedEmail;
