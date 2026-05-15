@@ -5008,9 +5008,9 @@
         "1": "Priorisez les dépenses essentielles pour le reste de la période",
         "2": "Envisagez de cuisiner davantage à la maison si les restaurants augmentent les coûts"
       },
-      "notificationsParagraph": "Vous pouvez ajuster vos seuils de budget et vos préférences de notification dans vos {settings}.",
+      "notificationsParagraph": "Vous pouvez ajuster vos seuils de budget et vos préférences de notification dans vos <settings></settings>.",
       "notificationsLink": "paramètres de notification",
-      "feedbackPrompt": "Des questions ? Contactez-nous à {email}.",
+      "feedbackPrompt": "Des questions ? Contactez-nous à <email></email>.",
       "ctaPrimary": "Voir le tableau de bord",
       "signOff": {
         "line1": "Cordialement",
@@ -5031,7 +5031,7 @@
         "2": "Points forts occasionnels et ressources sélectionnées (1 à 2 emails par trimestre)"
       },
       "body": "Votre boîte de réception est sacrée—je respecte cela. Chaque email est conçu pour apporter une véritable valeur, que ce soit un conseil qui vous fait gagner des heures ou une perspective qui change votre vision des finances personnelles.",
-      "feedbackPrompt": "Des questions, des commentaires ou juste envie de dire bonjour ? Répondez à cet email ou contactez-moi directement à {email}.",
+      "feedbackPrompt": "Des questions, des commentaires ou juste envie de dire bonjour ? Répondez à cet email ou contactez-moi directement à <email></email>.",
       "ctaPrimary": "Visiter arolariu.ro",
       "signOff": {
         "line1": "Cordialement",
@@ -5052,7 +5052,7 @@
         "2": "Vous avez changé d'avis ? Vous pouvez vous réabonner à tout moment en utilisant le bouton ci-dessus."
       },
       "body": "J'apprécie le temps que vous avez passé avec nous. Si vous avez des commentaires sur les raisons de votre départ ou sur la façon dont je peux m'améliorer, j'aimerais sincèrement les entendre—répondez simplement à cet email.",
-      "feedbackPrompt": "Si vous n'avez pas demandé cette désinscription, ou si vous avez besoin d'aide, veuillez contacter {email}.",
+      "feedbackPrompt": "Si vous n'avez pas demandé cette désinscription, ou si vous avez besoin d'aide, veuillez contacter <email></email>.",
       "ctaPrimary": "Revoir les préférences",
       "ctaSecondary": "Se réabonner",
       "signOff": {
@@ -5200,7 +5200,7 @@
       "intro": "{count, plural, =1 {Vous avez 1 facture qui n'a pas encore été analysée. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.} other {Vous avez # factures qui n'ont pas encore été analysées. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.}}",
       "invoicesAwaitingTitle": "Factures en attente d'analyse",
       "uploadedDate": "Téléchargée le {date}",
-      "andMore": "…et {remaining} de plus. Voir tout dans votre {dashboard}.",
+      "andMore": "…et {remaining} de plus. Voir tout dans votre <dashboard></dashboard>.",
       "analysisProvidedTitle": "Ce que l'analyse fournit",
       "analysisProvides": {
         "0": "Extraction ligne par ligne des articles avec prix et catégories",

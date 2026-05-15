@@ -5008,9 +5008,9 @@
         "1": "Prioritizează cheltuielile esențiale pentru restul perioadei",
         "2": "Consideră să găătești mai mult acasă dacă mesele la restaurant cresc costurile"
       },
-      "notificationsParagraph": "Poți ajusta pragurile bugetului și preferințele de notificare în {settings}.",
+      "notificationsParagraph": "Poți ajusta pragurile bugetului și preferințele de notificare în <settings></settings>.",
       "notificationsLink": "setările de notificări",
-      "feedbackPrompt": "Întrebări? Contactează-ne la {email}.",
+      "feedbackPrompt": "Întrebări? Contactează-ne la <email></email>.",
       "ctaPrimary": "Vezi tabloul de bord",
       "signOff": {
         "line1": "Cu respect",
@@ -5031,7 +5031,7 @@
         "2": "Evidențieri ocazionale și resurse curatate (1–2 emailuri pe trimestru)"
       },
       "body": "Inbox-ul tău este sacru—respect asta. Fiecare email este creat pentru a oferi valoare genuină, fie că este un sfat care îți economisește ore sau o perspectivă care îți schimbă viziunea asupra finanțelor personale.",
-      "feedbackPrompt": "Întrebări, feedback sau doar vrei să saluti? Răspunde la acest email sau contactează-mă direct la {email}.",
+      "feedbackPrompt": "Întrebări, feedback sau doar vrei să saluti? Răspunde la acest email sau contactează-mă direct la <email></email>.",
       "ctaPrimary": "Vizitează arolariu.ro",
       "signOff": {
         "line1": "Cu respect",
@@ -5052,7 +5052,7 @@
         "2": "Ți-ai schimbat părerea? Te poți reabona oricând folosind butonul de mai sus."
       },
       "body": "Apreciez timpul pe care l-ai petrecut cu noi. Dacă ai feedback despre motivul pentru care ai plecat sau despre cum mă pot îmbunătăți, aș fi cu adevărat bucuros să-l aud—doar răspunde la acest email.",
-      "feedbackPrompt": "Dacă nu ai solicitat această dezabonare sau ai nevoie de ajutor cu ceva, te rugăm să contactezi {email}.",
+      "feedbackPrompt": "Dacă nu ai solicitat această dezabonare sau ai nevoie de ajutor cu ceva, te rugăm să contactezi <email></email>.",
       "ctaPrimary": "Verifică preferințele",
       "ctaSecondary": "Reabonează-te",
       "signOff": {
@@ -5200,7 +5200,7 @@
       "intro": "{count, plural, =1 {Ai 1 factură care nu a fost încă analizată. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.} other {Ai # facturi care nu au fost încă analizate. Rularea analizei noastre AI deblochează întreaga valoare a bonurilor încărcate.}}",
       "invoicesAwaitingTitle": "Facturi în așteptarea analizei",
       "uploadedDate": "Încărcată la {date}",
-      "andMore": "…și încă {remaining}. Vezi toate în {dashboard}.",
+      "andMore": "…și încă {remaining}. Vezi toate în <dashboard></dashboard>.",
       "analysisProvidedTitle": "Ce oferă analiza",
       "analysisProvides": {
         "0": "Extracția rând cu rând a articolelor cu prețuri și categorii",

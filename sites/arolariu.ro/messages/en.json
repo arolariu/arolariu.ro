@@ -5008,9 +5008,9 @@
         "1": "Prioritize essential spending for the rest of the period",
         "2": "Consider cooking at home more if dining is driving costs up"
       },
-      "notificationsParagraph": "You can adjust your budget thresholds and notification preferences in your {settings}.",
+      "notificationsParagraph": "You can adjust your budget thresholds and notification preferences in your <settings></settings>.",
       "notificationsLink": "notification settings",
-      "feedbackPrompt": "Questions? Reach us at {email}.",
+      "feedbackPrompt": "Questions? Reach us at <email></email>.",
       "ctaPrimary": "View dashboard",
       "signOff": {
         "line1": "Best regards",
@@ -5031,7 +5031,7 @@
         "2": "Occasional highlights and curated resources (1–2 emails per quarter)"
       },
       "body": "Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it's a tip that saves you hours or an insight that shifts your perspective on personal finance.",
-      "feedbackPrompt": "Questions, feedback, or just want to say hello? Reply to this email or reach me directly at {email}.",
+      "feedbackPrompt": "Questions, feedback, or just want to say hello? Reply to this email or reach me directly at <email></email>.",
       "ctaPrimary": "Visit arolariu.ro",
       "signOff": {
         "line1": "Best regards",
@@ -5052,7 +5052,7 @@
         "2": "Changed your mind? You can resubscribe at any time using the button above."
       },
       "body": "I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I'd genuinely love to hear it—just reply to this email.",
-      "feedbackPrompt": "If you didn't request this unsubscription, or you need help with anything, please contact {email}.",
+      "feedbackPrompt": "If you didn't request this unsubscription, or you need help with anything, please contact <email></email>.",
       "ctaPrimary": "Review preferences",
       "ctaSecondary": "Resubscribe",
       "signOff": {
@@ -5200,7 +5200,7 @@
       "intro": "{count, plural, =1 {You have 1 invoice that hasn't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.} other {You have # invoices that haven't been analyzed yet. Running our AI analysis unlocks the full value of your uploaded receipts.}}",
       "invoicesAwaitingTitle": "Invoices awaiting analysis",
       "uploadedDate": "Uploaded {date}",
-      "andMore": "…and {remaining} more. View all in your {dashboard}.",
+      "andMore": "…and {remaining} more. View all in your <dashboard></dashboard>.",
       "analysisProvidedTitle": "What analysis provides",
       "analysisProvides": {
         "0": "Line-by-line item extraction with prices and categories",

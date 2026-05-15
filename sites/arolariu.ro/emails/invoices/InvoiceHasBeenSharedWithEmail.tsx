@@ -54,7 +54,7 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
 
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
-            brand: () => <>{BRAND.name}</>,
+            brand: BRAND.name,
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
