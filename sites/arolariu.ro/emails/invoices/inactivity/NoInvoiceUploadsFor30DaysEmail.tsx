@@ -42,8 +42,8 @@
  * @see RFC 1008 - Email Communication System (hypothetical - if documented)
  */
 
-import {InvoiceUploadInactivityReminderEmail} from "./InvoiceUploadInactivityReminderEmail";
 import type {EmailLocale} from "../../_i18n";
+import {InvoiceUploadInactivityReminderEmail} from "./InvoiceUploadInactivityReminderEmail";
 
 /**
  * Props for the 30-day inactivity email component.

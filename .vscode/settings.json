@@ -16,6 +16,9 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
 
+  // Use TS 7
+  "js/ts.experimental.useTsgo":true,
+
   // Breadcrumbs Settings
   "breadcrumbs.enabled": true,
   "breadcrumbs.filePath": "on",

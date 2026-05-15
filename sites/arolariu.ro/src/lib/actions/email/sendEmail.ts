@@ -8,8 +8,8 @@
 import {auth} from "@clerk/nextjs/server";
 import type React from "react";
 
+import {DEFAULT_LOCALE, getEmailSubject, type EmailLocale} from "@/../emails/_i18n";
 import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
-import {DEFAULT_LOCALE, type EmailLocale, getEmailSubject} from "@/../emails/_i18n";
 import {emailService} from "@/lib/email";
 
 type SendEmailInput<K extends EmailTemplateKey> = Readonly<{

@@ -33,8 +33,8 @@
  * @see {@link https://react.email} - React Email documentation
  */
 
-import {InvoiceUploadInactivityReminderEmail} from "./InvoiceUploadInactivityReminderEmail";
 import type {EmailLocale} from "../../_i18n";
+import {InvoiceUploadInactivityReminderEmail} from "./InvoiceUploadInactivityReminderEmail";
 
 /**
  * Props for the 3-day inactivity email component.

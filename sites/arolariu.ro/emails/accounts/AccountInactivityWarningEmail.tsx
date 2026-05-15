@@ -21,7 +21,6 @@
  */
 
 import {Link, Text} from "react-email";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 import {
   BRAND,
   BulletList,
@@ -32,6 +31,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the account inactivity warning email component.
@@ -164,13 +164,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <EmailCard title={t("whatThisMeans.title")}>
-        <BulletList
-          items={[
-            t("whatThisMeans.bullet1"),
-            t("whatThisMeans.bullet2", {daysUntilClosure}),
-            t("whatThisMeans.bullet3"),
-          ]}
-        />
+        <BulletList items={[t("whatThisMeans.bullet1"), t("whatThisMeans.bullet2", {daysUntilClosure}), t("whatThisMeans.bullet3")]} />
       </EmailCard>
 
       <EmailCard title={t("timeline.title")}>
@@ -186,7 +180,9 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
         {t.rich("supportPrompt", {
           supportEmail: BRAND.supportEmail,
           link: (chunks) => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {chunks}
             </Link>
           ),

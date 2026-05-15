@@ -116,9 +116,7 @@ const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
             border: `1px solid ${EMAIL_COLORS.border}`,
           }}
         />
-        <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>
-          {t("qrSubText")}
-        </Text>
+        <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>{t("qrSubText")}</Text>
       </Section>
 
       <EmailCard title={t("howToShareTitle")}>
@@ -143,7 +141,9 @@ const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
 
       <Text style={EmailParagraphStyles}>
         {t("directLinkLabel")}{" "}
-        <Link href={invoiceUrl} style={EmailLinkStyles}>
+        <Link
+          href={invoiceUrl}
+          style={EmailLinkStyles}>
           {invoiceUrl}
         </Link>
       </Text>
@@ -151,7 +151,9 @@ const InvoiceHasBeenMadePublicEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),

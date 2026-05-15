@@ -153,9 +153,7 @@ const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        {t("intro", {state: budgetState, category, period, percent: thresholdPercent})}
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
 
       {isOverBudget ? (
         <Text
@@ -212,7 +210,9 @@ const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("notificationsParagraph", {
           settings: () => (
-            <Link href={`${BRAND.url}/settings/notifications`} style={EmailLinkStyles}>
+            <Link
+              href={`${BRAND.url}/settings/notifications`}
+              style={EmailLinkStyles}>
               {t("notificationsLink")}
             </Link>
           ),
@@ -222,7 +222,9 @@ const SpendingThresholdAlertEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),

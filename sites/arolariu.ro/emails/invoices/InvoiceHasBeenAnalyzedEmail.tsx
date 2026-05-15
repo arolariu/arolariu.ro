@@ -73,13 +73,7 @@ const InvoiceHasBeenAnalyzedEmail = async (props: Readonly<Props>) => {
 
       <EmailCard title={t("whatWasAnalyzedTitle")}>
         <BulletList
-          items={[
-            t("whatWasAnalyzed.0"),
-            t("whatWasAnalyzed.1"),
-            t("whatWasAnalyzed.2"),
-            t("whatWasAnalyzed.3"),
-            t("whatWasAnalyzed.4"),
-          ]}
+          items={[t("whatWasAnalyzed.0"), t("whatWasAnalyzed.1"), t("whatWasAnalyzed.2"), t("whatWasAnalyzed.3"), t("whatWasAnalyzed.4")]}
         />
       </EmailCard>
 
@@ -88,7 +82,9 @@ const InvoiceHasBeenAnalyzedEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),

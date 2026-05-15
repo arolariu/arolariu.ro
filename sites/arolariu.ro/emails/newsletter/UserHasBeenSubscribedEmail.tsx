@@ -68,7 +68,9 @@ const UserHasBeenSubscribedEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),

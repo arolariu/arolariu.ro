@@ -68,11 +68,7 @@ describe("emailService.sendEmail", () => {
     expect(payload.subject).toBe("Welcome");
     expect(payload.react).toBe(reactEl);
     expect(payload.tags).toEqual(
-      expect.arrayContaining([
-        {name: "template", value: "welcome"},
-        {name: "locale", value: "ro"},
-        expect.objectContaining({name: "env"}),
-      ]),
+      expect.arrayContaining([{name: "template", value: "welcome"}, {name: "locale", value: "ro"}, expect.objectContaining({name: "env"})]),
     );
     expect(options).toBeUndefined();
   });

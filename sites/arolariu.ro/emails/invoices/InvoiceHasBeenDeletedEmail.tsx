@@ -75,7 +75,9 @@ const InvoiceHasBeenDeletedEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("body", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),

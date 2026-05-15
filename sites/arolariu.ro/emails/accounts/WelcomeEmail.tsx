@@ -48,7 +48,9 @@ const WelcomeEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),
@@ -56,7 +58,8 @@ const WelcomeEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}<br />
+        {t("signOff.line1")}
+        <br />
         {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>

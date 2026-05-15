@@ -35,7 +35,6 @@
  */
 
 import {Link, Text} from "react-email";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 import {
   BRAND,
   BulletList,
@@ -46,6 +45,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Properties for the invoice upload inactivity reminder email.
@@ -223,9 +223,7 @@ export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props
 
       {daysWithoutUpload >= 14 ? (
         <EmailCard title={t("tip.title")}>
-          <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>
-            {t("tip.message")}
-          </Text>
+          <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t("tip.message")}</Text>
         </EmailCard>
       ) : null}
 
@@ -250,7 +248,9 @@ export async function InvoiceUploadInactivityReminderEmail(props: Readonly<Props
         {t.rich("helpPrompt", {
           supportEmail: BRAND.supportEmail,
           link: (chunks) => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {chunks}
             </Link>
           ),

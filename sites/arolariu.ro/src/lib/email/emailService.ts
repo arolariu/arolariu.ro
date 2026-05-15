@@ -58,12 +58,7 @@ async function sendEmail(options: SendEmailOptions): Promise<void> {
       throw new Error(result.error.message);
     }
 
-    logWithTrace(
-      "info",
-      "Email sent",
-      {to: options.to, template: options.templateKey, locale: options.locale, id: result.data?.id},
-      "api",
-    );
+    logWithTrace("info", "Email sent", {to: options.to, template: options.templateKey, locale: options.locale, id: result.data?.id}, "api");
   });
 }
 

@@ -18,8 +18,8 @@
  * than the entire `messages/` glob, which would also pull in any `.bak` files).
  */
 
-import type {ReactNode} from "react";
 import {createTranslator} from "next-intl";
+import type {ReactNode} from "react";
 
 export type EmailLocale = "en" | "ro" | "fr";
 
@@ -41,10 +41,7 @@ export type EmailMessages = Record<string, unknown>;
  * callbacks (`(chunks?) => ReactNode`), matching next-intl's runtime contract.
  */
 export type EmailTranslator = ((key: string, vars?: Record<string, string | number>) => string) & {
-  rich: (
-    key: string,
-    replacements?: Record<string, string | number | ((chunks?: ReactNode) => ReactNode)>,
-  ) => ReactNode;
+  rich: (key: string, replacements?: Record<string, string | number | ((chunks?: ReactNode) => ReactNode)>) => ReactNode;
 };
 
 /** Loads the full message bundle for a locale. */

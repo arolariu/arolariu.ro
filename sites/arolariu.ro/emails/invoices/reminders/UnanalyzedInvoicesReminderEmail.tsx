@@ -122,7 +122,9 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
           {t.rich("andMore", {
             remaining: count - 5,
             dashboard: () => (
-              <Link href={effectiveInvoicesUrl} style={EmailLinkStyles}>
+              <Link
+                href={effectiveInvoicesUrl}
+                style={EmailLinkStyles}>
                 dashboard
               </Link>
             ),
@@ -131,7 +133,15 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       ) : null}
 
       <EmailCard title={t("analysisProvidedTitle")}>
-        <BulletList items={[t("analysisProvides.0"), t("analysisProvides.1"), t("analysisProvides.2"), t("analysisProvides.3"), t("analysisProvides.4")]} />
+        <BulletList
+          items={[
+            t("analysisProvides.0"),
+            t("analysisProvides.1"),
+            t("analysisProvides.2"),
+            t("analysisProvides.3"),
+            t("analysisProvides.4"),
+          ]}
+        />
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
@@ -140,7 +150,9 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: (chunks) => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {chunks}
             </Link>
           ),

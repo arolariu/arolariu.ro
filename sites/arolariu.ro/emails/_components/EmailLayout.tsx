@@ -30,16 +30,42 @@ type Props = Readonly<{
 
 const styles = {
   body: {backgroundColor: EMAIL_COLORS.background, margin: "0", padding: "32px 0", fontFamily: EMAIL_TYPOGRAPHY.fontFamily},
-  container: {backgroundColor: EMAIL_COLORS.cardBackground, border: `1px solid ${EMAIL_COLORS.border}`, borderRadius: "10px", overflow: "hidden", width: "600px"},
+  container: {
+    backgroundColor: EMAIL_COLORS.cardBackground,
+    border: `1px solid ${EMAIL_COLORS.border}`,
+    borderRadius: "10px",
+    overflow: "hidden",
+    width: "600px",
+  },
   headerBar: {backgroundColor: EMAIL_COLORS.brandBlue, padding: "18px 24px", textAlign: "center" as const},
   logo: {display: "block", margin: "0 auto", width: "140px", height: "auto", maxWidth: "100%"},
   headerTagline: {color: "rgba(255,255,255,0.92)", fontSize: "12px", lineHeight: "18px", margin: "10px 0 0"},
   content: {padding: "28px 32px"},
-  badge: {display: "inline-block", border: `1px solid ${EMAIL_COLORS.border}`, borderRadius: "999px", padding: "6px 10px", fontSize: "12px", lineHeight: "12px", color: EMAIL_COLORS.muted, backgroundColor: EMAIL_COLORS.background, margin: "0 0 12px"},
+  badge: {
+    display: "inline-block",
+    border: `1px solid ${EMAIL_COLORS.border}`,
+    borderRadius: "999px",
+    padding: "6px 10px",
+    fontSize: "12px",
+    lineHeight: "12px",
+    color: EMAIL_COLORS.muted,
+    backgroundColor: EMAIL_COLORS.background,
+    margin: "0 0 12px",
+  },
   heading: {margin: "0 0 14px", fontSize: "24px", lineHeight: "30px", fontWeight: "700", color: EMAIL_COLORS.ink},
   paragraph: {margin: "0 0 14px", fontSize: "16px", lineHeight: "24px", color: EMAIL_COLORS.ink},
   ctaWrap: {textAlign: "center" as const, padding: "8px 0 4px"},
-  button: {display: "inline-block", backgroundColor: EMAIL_COLORS.brandPurple, color: "#ffffff", textDecoration: "none", borderRadius: "10px", padding: "12px 18px", fontSize: "16px", lineHeight: "20px", fontWeight: "700"},
+  button: {
+    display: "inline-block",
+    backgroundColor: EMAIL_COLORS.brandPurple,
+    color: "#ffffff",
+    textDecoration: "none",
+    borderRadius: "10px",
+    padding: "12px 18px",
+    fontSize: "16px",
+    lineHeight: "20px",
+    fontWeight: "700",
+  },
   fallbackLinkText: {margin: "12px 0 0", fontSize: "12px", lineHeight: "18px", color: EMAIL_COLORS.muted},
   link: {color: EMAIL_COLORS.brandPurple, textDecoration: "none"},
   hr: {borderColor: EMAIL_COLORS.border, margin: "0"},
@@ -49,24 +75,48 @@ const styles = {
 } as const;
 
 export async function EmailLayout(props: Props) {
-  const {locale, title, preview, heading, badge, primaryCta, secondaryCta, showUnsubscribe = false, unsubscribeUrl, managePreferencesUrl, children} = props;
+  const {
+    locale,
+    title,
+    preview,
+    heading,
+    badge,
+    primaryCta,
+    secondaryCta,
+    showUnsubscribe = false,
+    unsubscribeUrl,
+    managePreferencesUrl,
+    children,
+  } = props;
 
   const messages = await loadMessages(locale);
   const tLayout = createEmailTranslator({locale, messages, namespace: "email.layout"});
 
   return (
-    <Html lang={locale} dir='ltr'>
+    <Html
+      lang={locale}
+      dir='ltr'>
       <Head>
         <title>{title}</title>
-        <meta name='x-apple-disable-message-reformatting' content='true' />
-        <meta name='format-detection' content='telephone=no,address=no,email=no,date=no,url=no' />
+        <meta
+          name='x-apple-disable-message-reformatting'
+          content='true'
+        />
+        <meta
+          name='format-detection'
+          content='telephone=no,address=no,email=no,date=no,url=no'
+        />
       </Head>
       <Preview>{preview}</Preview>
 
       <Body style={styles.body}>
         <Container style={styles.container}>
           <Section style={styles.headerBar}>
-            <Img src={BRAND.logoUrl} alt={BRAND.name} style={styles.logo} />
+            <Img
+              src={BRAND.logoUrl}
+              alt={BRAND.name}
+              style={styles.logo}
+            />
             <Text style={styles.headerTagline}>{tLayout("tagline")}</Text>
           </Section>
 
@@ -77,12 +127,16 @@ export async function EmailLayout(props: Props) {
 
             {primaryCta ? (
               <Section style={styles.ctaWrap}>
-                <Link href={primaryCta.href} style={styles.button}>
+                <Link
+                  href={primaryCta.href}
+                  style={styles.button}>
                   {primaryCta.label}
                 </Link>
                 <Text style={styles.fallbackLinkText}>
                   {tLayout("buttonFallback")}{" "}
-                  <Link href={primaryCta.href} style={styles.link}>
+                  <Link
+                    href={primaryCta.href}
+                    style={styles.link}>
                     {primaryCta.href}
                   </Link>
                 </Text>
@@ -92,7 +146,9 @@ export async function EmailLayout(props: Props) {
             {secondaryCta ? (
               <Text style={styles.fallbackLinkText}>
                 {tLayout("secondaryFallback")}{" "}
-                <Link href={secondaryCta.href} style={styles.link}>
+                <Link
+                  href={secondaryCta.href}
+                  style={styles.link}>
                   {secondaryCta.label}
                 </Link>
               </Text>
@@ -103,28 +159,42 @@ export async function EmailLayout(props: Props) {
 
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
-              <Link href={BRAND.url} style={styles.link}>{BRAND.name}</Link>
+              <Link
+                href={BRAND.url}
+                style={styles.link}>
+                {BRAND.name}
+              </Link>
             </Text>
             <Text style={styles.footerText}>
               {BRAND.location} •{" "}
-              <Link href={`mailto:${BRAND.supportEmail}`} style={styles.link}>{BRAND.supportEmail}</Link>
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={styles.link}>
+                {BRAND.supportEmail}
+              </Link>
             </Text>
 
             {managePreferencesUrl ? (
               <Text style={styles.footerText}>
-                <Link href={managePreferencesUrl} style={styles.link}>{tLayout("managePreferences")}</Link>
+                <Link
+                  href={managePreferencesUrl}
+                  style={styles.link}>
+                  {tLayout("managePreferences")}
+                </Link>
               </Text>
             ) : null}
 
             {showUnsubscribe && unsubscribeUrl ? (
               <Text style={styles.footerText}>
-                <Link href={unsubscribeUrl} style={styles.link}>{tLayout("unsubscribe")}</Link>
+                <Link
+                  href={unsubscribeUrl}
+                  style={styles.link}>
+                  {tLayout("unsubscribe")}
+                </Link>
               </Text>
             ) : null}
 
-            <Text style={styles.footerFinePrint}>
-              {tLayout("allRightsReserved", {year: new Date().getFullYear(), brand: BRAND.name})}
-            </Text>
+            <Text style={styles.footerFinePrint}>{tLayout("allRightsReserved", {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
           </Section>
         </Container>
       </Body>

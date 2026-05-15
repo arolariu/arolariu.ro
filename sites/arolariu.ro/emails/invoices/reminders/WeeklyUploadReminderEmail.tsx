@@ -126,7 +126,9 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: (chunks) => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {chunks}
             </Link>
           ),

@@ -117,9 +117,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        {t("intro", {invoiceName: `"${invoiceName}"`})}
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
 
       <KeyValueTable
         title={t("invoiceDetailsTitle")}
@@ -162,7 +160,9 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: (chunks) => (
-            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
               {chunks}
             </Link>
           ),
