@@ -130,6 +130,13 @@ describe("sendEmail action", () => {
     expect(result).toEqual({success: false, error: "send boom"});
   });
 
+  it("returns {success: false, error: 'Unknown error'} when a non-Error value is thrown", async () => {
+    // Covers the `err instanceof Error ? err.message : "Unknown error"` fallback branch.
+    mockSend.mockRejectedValueOnce("plain string failure");
+    const result = await sendEmail({templateKey: "welcome", to: "x@y.z", props: {locale: "en"} as never});
+    expect(result).toEqual({success: false, error: "Unknown error"});
+  });
+
   it("returns {success: true} on the happy path", async () => {
     const result = await sendEmail({templateKey: "welcome", to: "x@y.z", props: {locale: "en"} as never});
     expect(result).toEqual({success: true});

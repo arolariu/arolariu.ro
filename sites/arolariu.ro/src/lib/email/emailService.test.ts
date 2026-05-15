@@ -165,6 +165,30 @@ describe("emailService.sendEmail", () => {
     );
   });
 
+  it("uses 'unknown' as the env tag value when NODE_ENV is not set", async () => {
+    // Covers the `process.env["NODE_ENV"] ?? "unknown"` fallback branch.
+    mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
+    const original = process.env["NODE_ENV"];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete (process.env as Record<string, string | undefined>)["NODE_ENV"];
+    try {
+      await emailService.sendEmail({
+        to: "u@e.com",
+        subject: "S",
+        react: reactEl,
+        templateKey: "welcome",
+        locale: "en",
+      });
+      const payload = mockSend.mock.calls[0]![0];
+      const envTag = (payload.tags as readonly {name: string; value: string}[]).find((t) => t.name === "env");
+      expect(envTag?.value).toBe("unknown");
+    } finally {
+      if (original !== undefined) {
+        process.env["NODE_ENV"] = original;
+      }
+    }
+  });
+
   it("reuses the singleton Resend client across multiple sends", async () => {
     mockSend.mockResolvedValue({data: {id: "id_1"}, error: null});
 
