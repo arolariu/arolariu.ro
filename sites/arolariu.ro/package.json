@@ -72,11 +72,11 @@
     "react": "*",
     "react-dom": "*",
     "react-dropzone": "*",
-    "react-email": "^6.1.4",
+    "react-email": "*",
     "react-icons": "*",
     "react-qr-code": "*",
     "recharts": "*",
-    "resend": "^6.12.3",
+    "resend": "*",
     "three": "*",
     "uuid": "*",
     "zustand": "*"
