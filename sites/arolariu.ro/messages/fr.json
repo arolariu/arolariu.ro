@@ -4818,7 +4818,33 @@
       "ctaPrimary": "Voir l'analyse complète"
     },
     "invoiceDeleted": {
-      "subject": "Votre facture a été supprimée"
+      "subject": "Votre facture a été supprimée",
+      "badge": "Factures • Supprimé",
+      "heading": "Facture retirée de votre compte",
+      "preview": "La facture {invoiceLabel} a été retirée de votre compte.",
+      "greeting": "Bonjour {name},",
+      "intro": "Cet email confirme qu'une facture a été retirée de votre compte {brand}. La suppression a été traitée avec succès.",
+      "detailsTitle": "Détails de la suppression",
+      "details": {
+        "invoice": "Facture",
+        "invoiceId": "ID facture",
+        "status": "Statut"
+      },
+      "statusValue": "Supprimé (suppression douce)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "Ce que vous devez savoir",
+      "whatYouShouldKnow": {
+        "0": "Il s'agit d'une suppression douce—les données de la facture peuvent être conservées pendant 30 jours à des fins de récupération.",
+        "1": "Tout accès partagé à cette facture a été automatiquement révoqué.",
+        "2": "Les statistiques et informations seront recalculées pour exclure cette facture.",
+        "3": "Si vous devez récupérer cette facture, contactez le support dans les 30 jours."
+      },
+      "body": "Si vous n'avez pas initié cette suppression ou si vous devez récupérer la facture, veuillez nous contacter immédiatement à <email></email>. Nous sommes là pour vous aider.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir vos factures"
     },
     "invoiceMadePublic": {
       "subject": "Votre facture est maintenant publique"

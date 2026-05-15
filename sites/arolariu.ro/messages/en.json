@@ -4818,7 +4818,33 @@
       "ctaPrimary": "View full analysis"
     },
     "invoiceDeleted": {
-      "subject": "Your invoice was deleted"
+      "subject": "Your invoice was deleted",
+      "badge": "Invoices • Deleted",
+      "heading": "Invoice removed from your account",
+      "preview": "Invoice {invoiceLabel} has been removed from your account.",
+      "greeting": "Hi {name},",
+      "intro": "This email confirms that an invoice has been removed from your {brand} account. The deletion was processed successfully.",
+      "detailsTitle": "Deletion Details",
+      "details": {
+        "invoice": "Invoice",
+        "invoiceId": "Invoice ID",
+        "status": "Status"
+      },
+      "statusValue": "Deleted (soft delete)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "What you should know",
+      "whatYouShouldKnow": {
+        "0": "This is a soft delete—the invoice data may be retained for 30 days for recovery purposes.",
+        "1": "Any shared access to this invoice has been automatically revoked.",
+        "2": "Statistics and insights will be recalculated to exclude this invoice.",
+        "3": "If you need to recover this invoice, contact support within 30 days."
+      },
+      "body": "If you didn't initiate this deletion, or if you need to recover the invoice, please contact us immediately at <email></email>. We're here to help.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoices"
     },
     "invoiceMadePublic": {
       "subject": "Your invoice is now public"

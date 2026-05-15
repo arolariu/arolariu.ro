@@ -4818,7 +4818,33 @@
       "ctaPrimary": "Vizualizează analiza completă"
     },
     "invoiceDeleted": {
-      "subject": "Factura ta a fost ștearsă"
+      "subject": "Factura ta a fost ștearsă",
+      "badge": "Facturi • Șters",
+      "heading": "Factură eliminată din contul tău",
+      "preview": "Factura {invoiceLabel} a fost eliminată din contul tău.",
+      "greeting": "Salut {name},",
+      "intro": "Acest email confirmă că o factură a fost eliminată din contul tău {brand}. Ștergerea a fost procesată cu succes.",
+      "detailsTitle": "Detalii ștergere",
+      "details": {
+        "invoice": "Factură",
+        "invoiceId": "ID factură",
+        "status": "Status"
+      },
+      "statusValue": "Șters (ștergere soft)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "Ce trebuie să știi",
+      "whatYouShouldKnow": {
+        "0": "Aceasta este o ștergere soft—datele facturii pot fi păstrate timp de 30 de zile pentru recuperare.",
+        "1": "Orice acces partajat la această factură a fost revocat automat.",
+        "2": "Statisticile și informațiile vor fi recalculate pentru a exclude această factură.",
+        "3": "Dacă trebuie să recuperezi această factură, contactează suportul în 30 de zile."
+      },
+      "body": "Dacă nu ai inițiat această ștergere sau dacă trebuie să recuperezi factura, te rugăm să ne contactezi imediat la <email></email>. Suntem aici să te ajutăm.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vezi facturile tale"
     },
     "invoiceMadePublic": {
       "subject": "Factura ta este acum publică"
