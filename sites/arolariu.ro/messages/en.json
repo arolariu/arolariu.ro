@@ -5154,7 +5154,54 @@
       "subject": "A month without an upload"
     },
     "incompleteInvoice": {
-      "subject": "You have incomplete invoices"
+      "subject": "You have incomplete invoices",
+      "badge": "Reminder",
+      "heading": "Your invoice needs a quick update",
+      "preview": "{name}, your invoice \"{invoiceName}\" needs some attention.",
+      "greeting": "Hi {name},",
+      "intro": "We analyzed your invoice {invoiceName} but couldn't extract everything. A few details are missing, and completing them will give you better spending insights and more accurate dashboards.",
+      "invoiceDetailsTitle": "Invoice Details",
+      "invoiceLabel": "Invoice",
+      "analyzedOnLabel": "Analyzed on",
+      "missingFieldsLabel": "Missing fields",
+      "whatsMissingTitle": "What's missing",
+      "missingFields": {
+        "merchant": {
+          "label": "Merchant",
+          "suggestion": "Add the store name manually in the edit view"
+        },
+        "items": {
+          "label": "Line items",
+          "suggestion": "Try re-uploading a clearer photo, or add items manually"
+        },
+        "payment": {
+          "label": "Payment info",
+          "suggestion": "Enter the total amount and payment method in the edit view"
+        },
+        "category": {
+          "label": "Invoice category",
+          "suggestion": "Select a category (groceries, fast food, household, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Please review and update this information"
+        }
+      },
+      "tipsTitle": "Tips for better analysis",
+      "tips": {
+        "0": "Use a well-lit, flat surface when photographing receipts",
+        "1": "Ensure the entire receipt is visible and in focus",
+        "2": "PDF receipts from online orders tend to analyze best",
+        "3": "You can always add or correct details manually after analysis"
+      },
+      "bodyText": "Completing these details takes less than a minute and ensures your spending reports stay accurate.",
+      "feedback": "Stuck or need help? Reach out at {supportEmail}.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "Complete your invoice",
+      "secondaryCta": "Re-run analysis"
     },
     "unanalyzedInvoices": {
       "subject": "You have unanalyzed invoices"

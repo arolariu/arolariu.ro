@@ -22,7 +22,8 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - For successfully analyzed invoices
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
 import {
   BRAND,
   BulletList,
@@ -33,6 +34,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
@@ -60,43 +62,10 @@ type Props = Readonly<{
 
   /** Direct link to re-run analysis on this invoice. */
   readonly reanalyzeUrl?: string;
-}>;
 
-/**
- * Maps a missing field to a human-readable description and action suggestion.
- *
- * @param field - The missing field identifier.
- * @returns Object with label and suggestion text.
- */
-function describeField(field: MissingField): {label: string; suggestion: string} {
-  switch (field) {
-    case "merchant":
-      return {
-        label: "Merchant",
-        suggestion: "Add the store name manually in the edit view",
-      };
-    case "items":
-      return {
-        label: "Line items",
-        suggestion: "Try re-uploading a clearer photo, or add items manually",
-      };
-    case "payment":
-      return {
-        label: "Payment info",
-        suggestion: "Enter the total amount and payment method in the edit view",
-      };
-    case "category":
-      return {
-        label: "Invoice category",
-        suggestion: "Select a category (groceries, fast food, household, etc.)",
-      };
-    default:
-      return {
-        label: field,
-        suggestion: "Please review and update this information",
-      };
-  }
-}
+  /** Email locale for translation. */
+  readonly locale?: EmailLocale;
+}>;
 
 /**
  * React component that renders the "Incomplete Invoice Reminder" email.
@@ -122,89 +91,92 @@ function describeField(field: MissingField): {label: string; suggestion: string}
  *   analysisDate="February 8, 2026"
  *   missingFields={["merchant", "items"]}
  *   editInvoiceUrl="https://arolariu.ro/domains/invoices/edit-invoice/abc-123"
+ *   locale="en"
  * />
  * ```
  */
-const IncompleteInvoiceReminderEmail = (props: Readonly<Props>) => {
+const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<React.JSX.Element> => {
   const {username, invoiceName, analysisDate, missingFields, editInvoiceUrl, reanalyzeUrl} = props;
 
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.incompleteInvoice"});
+
   const name = username?.trim() ? username : "there";
-  const descriptions = missingFields.map(describeField);
 
   return (
     <EmailLayout
+      locale={locale}
       title={`${BRAND.name} | Incomplete invoice`}
-      preview={`${name}, your invoice "${invoiceName}" needs some attention.`}
-      badge='Reminder'
-      heading='Your invoice needs a quick update'
-      primaryCta={{href: editInvoiceUrl, label: "Complete your invoice"}}
-      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: "Re-run analysis"} : undefined}
+      preview={t("preview", {name, invoiceName})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: editInvoiceUrl, label: t("primaryCta")}}
+      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : undefined}
       showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        We analyzed your invoice <strong>&quot;{invoiceName}&quot;</strong> but couldn&apos;t extract everything. A few details are missing,
-        and completing them will give you better spending insights and more accurate dashboards.
+        {t.rich("intro", {
+          invoiceName,
+          invoiceName: () => <strong>&quot;{invoiceName}&quot;</strong>,
+        })}
       </Text>
 
       <KeyValueTable
-        title='Invoice Details'
+        title={t("invoiceDetailsTitle")}
         items={[
-          {label: "Invoice", value: invoiceName},
-          {label: "Analyzed on", value: analysisDate},
-          {label: "Missing fields", value: String(missingFields.length)},
+          {label: t("invoiceLabel"), value: invoiceName},
+          {label: t("analyzedOnLabel"), value: analysisDate},
+          {label: t("missingFieldsLabel"), value: String(missingFields.length)},
         ]}
       />
 
-      <EmailCard title="What's missing">
-        {descriptions.map(({label, suggestion}) => (
-          <Text
-            key={label}
-            style={{
-              ...EmailParagraphStyles,
-              fontSize: "14px",
-              margin: "0 0 10px",
-              padding: "10px 12px",
-              backgroundColor: EMAIL_COLORS.warningBackground,
-              border: `1px solid ${EMAIL_COLORS.border}`,
-              borderRadius: "8px",
-            }}>
-            <strong>{label}:</strong> {suggestion}
-          </Text>
-        ))}
+      <EmailCard title={t("whatsMissingTitle")}>
+        {missingFields.map((field) => {
+          const label = t(`missingFields.${field}.label`);
+          const suggestion = t(`missingFields.${field}.suggestion`);
+          return (
+            <Text
+              key={field}
+              style={{
+                ...EmailParagraphStyles,
+                fontSize: "14px",
+                margin: "0 0 10px",
+                padding: "10px 12px",
+                backgroundColor: EMAIL_COLORS.warningBackground,
+                border: `1px solid ${EMAIL_COLORS.border}`,
+                borderRadius: "8px",
+              }}>
+              <strong>{label}:</strong> {suggestion}
+            </Text>
+          );
+        })}
       </EmailCard>
 
-      <EmailCard title='Tips for better analysis'>
-        <BulletList
-          items={[
-            "Use a well-lit, flat surface when photographing receipts",
-            "Ensure the entire receipt is visible and in focus",
-            "PDF receipts from online orders tend to analyze best",
-            "You can always add or correct details manually after analysis",
-          ]}
-        />
+      <EmailCard title={t("tipsTitle")}>
+        <BulletList items={[t("tips.0"), t("tips.1"), t("tips.2"), t("tips.3")]} />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Completing these details takes less than a minute and ensures your spending reports stay accurate.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Stuck or need help? Reach out at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedback", {
+          supportEmail: BRAND.supportEmail,
+          supportEmail: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -217,6 +189,7 @@ IncompleteInvoiceReminderEmail.PreviewProps = {
   missingFields: ["merchant", "items"],
   editInvoiceUrl: "https://arolariu.ro/domains/invoices/edit-invoice/abc-123",
   reanalyzeUrl: "https://arolariu.ro/domains/invoices/view-invoice/abc-123?action=analyze",
+  locale: "en",
 } satisfies Props;
 
 export default IncompleteInvoiceReminderEmail;

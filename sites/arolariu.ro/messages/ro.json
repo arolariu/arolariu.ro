@@ -5154,7 +5154,54 @@
       "subject": "O lună fără o încărcare"
     },
     "incompleteInvoice": {
-      "subject": "Ai facturi incomplete"
+      "subject": "Ai facturi incomplete",
+      "badge": "Memento",
+      "heading": "Factura ta necesită o actualizare rapidă",
+      "preview": "{name}, factura ta \"{invoiceName}\" necesită atenție.",
+      "greeting": "Bună, {name}!",
+      "intro": "Am analizat factura ta {invoiceName}, dar nu am putut extrage totul. Câteva detalii lipsesc, iar completarea lor îți va oferi o perspectivă mai bună asupra cheltuielilor și rapoarte mai precise.",
+      "invoiceDetailsTitle": "Detalii factură",
+      "invoiceLabel": "Factură",
+      "analyzedOnLabel": "Analizată la",
+      "missingFieldsLabel": "Câmpuri lipsă",
+      "whatsMissingTitle": "Ce lipsește",
+      "missingFields": {
+        "merchant": {
+          "label": "Comerciant",
+          "suggestion": "Adaugă manual numele magazinului în vizualizarea de editare"
+        },
+        "items": {
+          "label": "Articole pe rânduri",
+          "suggestion": "Încearcă să reîncarci o fotografie mai clară sau adaugă articolele manual"
+        },
+        "payment": {
+          "label": "Informații de plată",
+          "suggestion": "Introdu suma totală și metoda de plată în vizualizarea de editare"
+        },
+        "category": {
+          "label": "Categorie factură",
+          "suggestion": "Selectează o categorie (produse alimentare, fast food, gospodărie, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Te rugăm să revizuiești și să actualizezi aceste informații"
+        }
+      },
+      "tipsTitle": "Sfaturi pentru o analiză mai bună",
+      "tips": {
+        "0": "Folosește o suprafață bine iluminată și plată când fotografiezi bonuri",
+        "1": "Asigură-te că întregul bon este vizibil și în focus",
+        "2": "Bonurile PDF de la comenzile online tind să fie analizate cel mai bine",
+        "3": "Poți întotdeauna să adaugi sau să corectezi detaliile manual după analiză"
+      },
+      "bodyText": "Completarea acestor detalii durează mai puțin de un minut și asigură acuratețea rapoartelor tale de cheltuieli.",
+      "feedback": "Ai nevoie de ajutor? Contactează-ne la {supportEmail}.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Completează factura",
+      "secondaryCta": "Reanalizeză"
     },
     "unanalyzedInvoices": {
       "subject": "Ai facturi neanaliza­te"

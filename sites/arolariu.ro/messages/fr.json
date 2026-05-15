@@ -5154,7 +5154,54 @@
       "subject": "Un mois sans téléversement"
     },
     "incompleteInvoice": {
-      "subject": "Vous avez des factures incomplètes"
+      "subject": "Vous avez des factures incomplètes",
+      "badge": "Rappel",
+      "heading": "Votre facture nécessite une mise à jour rapide",
+      "preview": "{name}, votre facture \"{invoiceName}\" nécessite une attention.",
+      "greeting": "Bonjour {name},",
+      "intro": "Nous avons analysé votre facture {invoiceName}, mais n'avons pas pu tout extraire. Quelques détails manquent, et les compléter vous donnera de meilleures informations sur vos dépenses et des tableaux de bord plus précis.",
+      "invoiceDetailsTitle": "Détails de la facture",
+      "invoiceLabel": "Facture",
+      "analyzedOnLabel": "Analysée le",
+      "missingFieldsLabel": "Champs manquants",
+      "whatsMissingTitle": "Ce qui manque",
+      "missingFields": {
+        "merchant": {
+          "label": "Commerçant",
+          "suggestion": "Ajoutez manuellement le nom du magasin dans la vue d'édition"
+        },
+        "items": {
+          "label": "Articles ligne par ligne",
+          "suggestion": "Essayez de télécharger à nouveau une photo plus claire, ou ajoutez les articles manuellement"
+        },
+        "payment": {
+          "label": "Informations de paiement",
+          "suggestion": "Entrez le montant total et le mode de paiement dans la vue d'édition"
+        },
+        "category": {
+          "label": "Catégorie de facture",
+          "suggestion": "Sélectionnez une catégorie (épicerie, restauration rapide, ménage, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Veuillez réviser et mettre à jour ces informations"
+        }
+      },
+      "tipsTitle": "Conseils pour une meilleure analyse",
+      "tips": {
+        "0": "Utilisez une surface bien éclairée et plate lors de la photographie des reçus",
+        "1": "Assurez-vous que le reçu entier est visible et net",
+        "2": "Les reçus PDF des commandes en ligne ont tendance à être mieux analysés",
+        "3": "Vous pouvez toujours ajouter ou corriger les détails manuellement après l'analyse"
+      },
+      "bodyText": "Compléter ces détails prend moins d'une minute et garantit que vos rapports de dépenses restent précis.",
+      "feedback": "Besoin d'aide? Contactez-nous à {supportEmail}.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Compléter votre facture",
+      "secondaryCta": "Réanalyser"
     },
     "unanalyzedInvoices": {
       "subject": "Vous avez des factures non analysées"
