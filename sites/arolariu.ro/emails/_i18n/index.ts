@@ -23,8 +23,6 @@
  * in any `.bak` files).
  */
 
-import "server-only";
-
 import {createTranslator, type AbstractIntlMessages} from "next-intl";
 import type {ReactNode} from "react";
 

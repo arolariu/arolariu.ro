@@ -1,5 +1,3 @@
-import "server-only";
-
 import {createEmailTranslator, type EmailLocale, type EmailTranslator, loadMessages} from "../_i18n";
 
 /**

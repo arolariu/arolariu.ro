@@ -1,5 +1,3 @@
-import "server-only";
-
 import type {ReactElement} from "react";
 
 import {
