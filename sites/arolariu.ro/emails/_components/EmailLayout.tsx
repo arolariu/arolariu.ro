@@ -6,7 +6,9 @@
 import type {ReactNode} from "react";
 import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
 
-import {createEmailTranslator, type EmailLocale, loadMessages} from "../_i18n";
+import type {EmailLocale} from "../_i18n";
+
+import {getLayoutTranslator} from "./layoutTranslator";
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
 type Cta = Readonly<{
@@ -74,6 +76,27 @@ const styles = {
   footerFinePrint: {margin: "0", fontSize: "11px", lineHeight: "16px", color: EMAIL_COLORS.muted},
 } as const;
 
+/**
+ * The shared chrome wrapping every email body.
+ *
+ * @remarks
+ * **Self-contained i18n.** Resolves its own `email.layout`-scoped strings
+ * via {@link getLayoutTranslator} (memoised per locale in
+ * `./layoutTranslator.ts`). Templates pass only data — they do **not**
+ * thread a translator function down. This keeps the layout's prop
+ * surface data-shaped and amortises the `loadMessages` +
+ * `createTranslator` pair to one-time-per-locale per warm Node process.
+ *
+ * **Async component.** The first render per locale awaits the memoised
+ * translator construction; subsequent renders hit the in-process cache.
+ * React Email's `render()` and Resend's `react:` payload both await
+ * async components recursively — no caller changes needed.
+ *
+ * **Footer.** Renders `{BRAND.location} • {BRAND.supportEmail}` without
+ * a `"Support:"` label — the email address itself is the affordance.
+ * Intentional removal (see PR #751 review thread); do not "fix" by
+ * re-adding the label.
+ */
 export async function EmailLayout(props: Props) {
   const {
     locale,
@@ -89,8 +112,7 @@ export async function EmailLayout(props: Props) {
     children,
   } = props;
 
-  const messages = await loadMessages(locale);
-  const tLayout = createEmailTranslator({locale, messages, namespace: "email.layout"});
+  const tLayout = await getLayoutTranslator(locale);
 
   return (
     <Html
