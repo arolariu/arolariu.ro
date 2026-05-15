@@ -52,11 +52,32 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next-intl", () => {
+  const mockTranslator = (key: string, vars?: Record<string, unknown>) => {
+    if (!vars) return key;
+    let result = key;
+    Object.entries(vars).forEach(([k, v]) => {
+      result = result.replace(`{${k}}`, String(v));
+    });
+    return result;
+  };
+
   return {
     useTranslations: (namespace?: string) => {
       const mockT = (key: string) => (namespace ? `${namespace}.${key}` : key);
       mockT.rich = (key: string) => (namespace ? `${namespace}.${key}` : key);
       return mockT;
+    },
+    createTranslator: ({locale: _locale, messages, namespace}: {locale?: string; messages: Record<string, unknown>; namespace: string}) => {
+      return (key: string, vars?: Record<string, unknown>) => {
+        const parts = `${namespace}.${key}`.split(".");
+        let value: unknown = messages;
+        for (const part of parts) {
+          if (typeof value !== "object" || value === null) return key;
+          value = (value as Record<string, unknown>)[part];
+        }
+        const text = typeof value === "string" ? value : key;
+        return mockTranslator(text, vars);
+      };
     },
     useLocale: () => "en",
     useFormatter: () => ({dateTime: (d: Date) => d.toISOString(), number: (n: number) => String(n)}),
