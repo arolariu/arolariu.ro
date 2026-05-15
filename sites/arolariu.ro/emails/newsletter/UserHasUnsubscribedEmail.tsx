@@ -32,13 +32,13 @@ const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
 
   const name = username?.trim() ? username : "there";
 
-  const effectiveManagePreferencesUrl = managePreferencesUrl ?? ${BRAND.url}/unsubscribe;
+  const effectiveManagePreferencesUrl = managePreferencesUrl ?? `${BRAND.url}/unsubscribe`;
   const effectiveResubscribeUrl = resubscribeUrl ?? BRAND.url;
 
   return (
     <EmailLayout
       locale={locale}
-      title={${BRAND.name} | Unsubscribed}
+      title={`${BRAND.name} | Unsubscribed`}
       preview={t("preview", {name})}
       badge={t("badge")}
       heading={t("heading")}
@@ -62,7 +62,7 @@ const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={mailto:} style={EmailLinkStyles}>
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),
@@ -80,7 +80,7 @@ const UserHasUnsubscribedEmail = async (props: Readonly<Props>) => {
 
 UserHasUnsubscribedEmail.PreviewProps = {
   username: "Test User",
-  managePreferencesUrl: ${BRAND.url}/unsubscribe,
+  managePreferencesUrl: `${BRAND.url}/unsubscribe`,
   resubscribeUrl: BRAND.url,
   locale: "en",
 } satisfies Props;

@@ -44,13 +44,13 @@ const UserHasBeenSubscribedEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      title={${BRAND.name} | Newsletter subscription}
+      title={`${BRAND.name} | Newsletter subscription`}
       preview={t("preview", {name})}
       badge={t("badge")}
       heading={t("heading")}
       primaryCta={{href: BRAND.url, label: t("ctaPrimary")}}
       showUnsubscribe
-      unsubscribeUrl={${BRAND.url}/unsubscribe}>
+      unsubscribeUrl={`${BRAND.url}/unsubscribe`}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
@@ -69,7 +69,7 @@ const UserHasBeenSubscribedEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("feedbackPrompt", {
           email: () => (
-            <Link href={mailto:} style={EmailLinkStyles}>
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
               {BRAND.supportEmail}
             </Link>
           ),
