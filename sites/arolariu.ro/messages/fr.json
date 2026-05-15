@@ -5230,7 +5230,32 @@
       "primaryCta": "Voir les factures"
     },
     "weeklyUploadReminder": {
-      "subject": "Rappel de téléversement hebdomadaire"
+      "subject": "Votre rappel hebdomadaire de téléchargement",
+      "badge": "Rappel Hebdomadaire",
+      "heading": "Votre contrôle hebdomadaire des reçus",
+      "preview": "Bonjour {name} — voici votre contrôle hebdomadaire des reçus.",
+      "greeting": "Bonjour {name},",
+      "intro": "Voici un aperçu rapide de votre activité de suivi des reçus. Un téléchargement régulier vous donne les informations les plus précises sur vos dépenses.",
+      "metricsLabels": {
+        "thisWeek": "Cette semaine",
+        "lastWeek": "La semaine dernière",
+        "totalInvoices": "Total factures",
+        "totalTracked": "Total suivi"
+      },
+      "quickTipsTitle": "Conseils rapides",
+      "quickTips": {
+        "0": "Téléchargez les reçus juste après les achats — cela prend moins de 30 secondes",
+        "1": "Téléchargez par lot en fin de journée si vous préférez",
+        "2": "Même les petits achats aident à construire une image complète des dépenses"
+      },
+      "bodyText": "Chaque reçu que vous suivez rend vos informations de dépenses plus précises et vos tableaux de bord plus utiles.",
+      "feedback": "Des questions ou des commentaires? Contactez-nous à {supportEmail}.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Télécharger les reçus de cette semaine",
+      "secondaryCta": "Voir le tableau de bord"
     },
     "invoiceStats": {
       "subject": "Vos statistiques de factures"

@@ -5230,7 +5230,32 @@
       "primaryCta": "Vezi facturile"
     },
     "weeklyUploadReminder": {
-      "subject": "Promemoria de încărcare săptămânală"
+      "subject": "Mementoultău săptămânal pentru încărcări",
+      "badge": "Memento Săptămânal",
+      "heading": "Verificarea săptămânală a bonurilor",
+      "preview": "Bună, {name} — iată verificarea săptămânală a bonurilor tale.",
+      "greeting": "Bună, {name}!",
+      "intro": "Iată o privire rapidă asupra activității tale de urmărire a bonurilor. Încărcarea constantă îți oferă cele mai precise informații despre cheltuieli.",
+      "metricsLabels": {
+        "thisWeek": "Săptămâna aceasta",
+        "lastWeek": "Săptămâna trecută",
+        "totalInvoices": "Total facturi",
+        "totalTracked": "Total urmărit"
+      },
+      "quickTipsTitle": "Sfaturi rapide",
+      "quickTips": {
+        "0": "Încarcă bonurile imediat după cumpărături — durează mai puțin de 30 de secunde",
+        "1": "Încarcă în lot la sfârșitul zilei dacă preferi",
+        "2": "Chiar și achizițiile mici ajută la construirea unei imagini complete a cheltuielilor"
+      },
+      "bodyText": "Fiecare bon pe care îl urmărești face ca informațiile despre cheltuieli să fie mai precise și tablourile mai utile.",
+      "feedback": "Ai întrebări sau feedback? Contactează-ne la {supportEmail}.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "primaryCta": "Încarcă bonurile din această săptămână",
+      "secondaryCta": "Vezi tabloul de bord"
     },
     "invoiceStats": {
       "subject": "Statisticile tale de factură"

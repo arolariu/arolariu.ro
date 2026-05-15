@@ -20,8 +20,10 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.
@@ -47,6 +49,9 @@ type Props = Readonly<{
 
   /** Link to the invoices dashboard. */
   readonly dashboardUrl?: string;
+
+  /** Email locale for translation. */
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -72,11 +77,16 @@ type Props = Readonly<{
  *   thisWeekCount={2}
  *   totalInvoices={47}
  *   totalTracked="3,891.20 RON"
+ *   locale="en"
  * />
  * ```
  */
-const WeeklyUploadReminderEmail = (props: Readonly<Props>) => {
+const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.JSX.Element> => {
   const {username, lastWeekCount, thisWeekCount, totalInvoices, totalTracked, uploadUrl, dashboardUrl} = props;
+
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.weeklyUploadReminder"});
 
   const name = username?.trim() ? username : "there";
   const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
@@ -84,58 +94,50 @@ const WeeklyUploadReminderEmail = (props: Readonly<Props>) => {
 
   return (
     <EmailLayout
+      locale={locale}
       title={`${BRAND.name} | Weekly upload reminder`}
-      preview={`Hi ${name} — here's your weekly receipt check-in.`}
-      badge='Weekly Reminder'
-      heading='Your weekly receipt check-in'
-      primaryCta={{href: effectiveUploadUrl, label: "Upload this week's receipts"}}
-      secondaryCta={{href: effectiveDashboardUrl, label: "View dashboard"}}
+      preview={t("preview", {name})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: effectiveUploadUrl, label: t("primaryCta")}}
+      secondaryCta={{href: effectiveDashboardUrl, label: t("secondaryCta")}}
       showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        Here&apos;s a quick look at your receipt tracking activity. Consistent uploading gives you the most accurate spending insights.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 
       <MetricsGrid
         metrics={[
-          {label: "This week", value: String(thisWeekCount)},
-          {label: "Last week", value: String(lastWeekCount)},
-          {label: "Total invoices", value: String(totalInvoices)},
-          {label: "Total tracked", value: totalTracked},
+          {label: t("metricsLabels.thisWeek"), value: String(thisWeekCount)},
+          {label: t("metricsLabels.lastWeek"), value: String(lastWeekCount)},
+          {label: t("metricsLabels.totalInvoices"), value: String(totalInvoices)},
+          {label: t("metricsLabels.totalTracked"), value: totalTracked},
         ]}
       />
 
-      <EmailCard title='Quick tips'>
-        <BulletList
-          items={[
-            "Upload receipts right after shopping — it takes under 30 seconds",
-            "Batch upload at the end of the day if you prefer",
-            "Even small purchases help build a complete spending picture",
-          ]}
-        />
+      <EmailCard title={t("quickTipsTitle")}>
+        <BulletList items={[t("quickTips.0"), t("quickTips.1"), t("quickTips.2")]} />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Every receipt you track makes your spending insights more accurate and your dashboards more useful.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Questions or feedback? Reach us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedback", {
+          supportEmail: BRAND.supportEmail,
+          supportEmail: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -147,6 +149,7 @@ WeeklyUploadReminderEmail.PreviewProps = {
   thisWeekCount: 2,
   totalInvoices: 47,
   totalTracked: "3,891.20 RON",
+  locale: "en",
 } satisfies Props;
 
 export default WeeklyUploadReminderEmail;

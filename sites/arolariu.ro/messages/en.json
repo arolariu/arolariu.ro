@@ -5230,7 +5230,32 @@
       "primaryCta": "View invoices"
     },
     "weeklyUploadReminder": {
-      "subject": "Your weekly upload reminder"
+      "subject": "Your weekly upload reminder",
+      "badge": "Weekly Reminder",
+      "heading": "Your weekly receipt check-in",
+      "preview": "Hi {name} — here's your weekly receipt check-in.",
+      "greeting": "Hi {name},",
+      "intro": "Here's a quick look at your receipt tracking activity. Consistent uploading gives you the most accurate spending insights.",
+      "metricsLabels": {
+        "thisWeek": "This week",
+        "lastWeek": "Last week",
+        "totalInvoices": "Total invoices",
+        "totalTracked": "Total tracked"
+      },
+      "quickTipsTitle": "Quick tips",
+      "quickTips": {
+        "0": "Upload receipts right after shopping — it takes under 30 seconds",
+        "1": "Batch upload at the end of the day if you prefer",
+        "2": "Even small purchases help build a complete spending picture"
+      },
+      "bodyText": "Every receipt you track makes your spending insights more accurate and your dashboards more useful.",
+      "feedback": "Questions or feedback? Reach us at {supportEmail}.",
+      "signOff": {
+        "line1": "Best regards,",
+        "line2": "The {brand} Team"
+      },
+      "primaryCta": "Upload this week's receipts",
+      "secondaryCta": "View dashboard"
     },
     "invoiceStats": {
       "subject": "Your invoice statistics"
