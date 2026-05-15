@@ -4787,7 +4787,35 @@
       "subject": "Votre première facture est arrivée !"
     },
     "invoiceAnalyzed": {
-      "subject": "Votre facture a été analysée"
+      "subject": "Votre facture a été analysée",
+      "badge": "Factures • Analyse Terminée",
+      "heading": "L'analyse de votre facture est prête",
+      "preview": "Votre facture est prête, {name}. Analyse terminée !",
+      "greeting": "Bonjour {name},",
+      "intro": "Bonne nouvelle ! Notre IA a terminé l'analyse de votre facture. Nous avons extrait toutes les informations clés, catégorisé vos articles et généré des aperçus de dépenses pour vous aider à suivre vos finances.",
+      "summaryTitle": "Résumé de la facture",
+      "summary": {
+        "invoiceName": "Nom de la facture",
+        "merchantId": "ID Commerçant",
+        "itemsDetected": "Articles détectés",
+        "totalAmount": "Montant total",
+        "notIdentified": "Pas encore identifié"
+      },
+      "whatWasAnalyzedTitle": "Ce qui a été analysé",
+      "whatWasAnalyzed": {
+        "0": "Identification et catégorisation du commerçant",
+        "1": "Extraction ligne par ligne des articles avec les prix",
+        "2": "Catégorisation automatique des produits (épicerie, boissons, articles ménagers, etc.)",
+        "3": "Détection de la devise et validation du montant",
+        "4": "Extraction de la date et de l'heure lorsque disponible"
+      },
+      "body": "Cliquez sur le bouton ci-dessus pour voir l'analyse complète. Si quelque chose ne va pas—peut-être qu'un produit a été mal catégorisé ou qu'un prix n'a pas été détecté correctement—vous pouvez modifier la facture directement dans votre tableau de bord et les aperçus se mettront à jour automatiquement.",
+      "feedbackPrompt": "Vous avez des questions sur votre analyse ou besoin d'aide ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir l'analyse complète"
     },
     "invoiceDeleted": {
       "subject": "Votre facture a été supprimée"

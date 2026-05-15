@@ -4787,7 +4787,35 @@
       "subject": "Prima ta factură a sosit!"
     },
     "invoiceAnalyzed": {
-      "subject": "Factura ta a fost analizată"
+      "subject": "Factura ta a fost analizată",
+      "badge": "Facturi • Analiză Completă",
+      "heading": "Analiza facturii tale este gata",
+      "preview": "Factura ta este gata, {name}. Analiză completă!",
+      "greeting": "Bună {name},",
+      "intro": "Vești bune! AI-ul nostru a terminat de analizat factura ta. Am extras toate informațiile cheie, am categorisit articolele și am generat perspective asupra cheltuielilor pentru a te ajuta să îți urmărești finanțele.",
+      "summaryTitle": "Rezumat factură",
+      "summary": {
+        "invoiceName": "Nume factură",
+        "merchantId": "ID Comerciant",
+        "itemsDetected": "Articole detectate",
+        "totalAmount": "Suma totală",
+        "notIdentified": "Neidentificat încă"
+      },
+      "whatWasAnalyzedTitle": "Ce a fost analizat",
+      "whatWasAnalyzed": {
+        "0": "Identificarea și categorizarea comerciantului",
+        "1": "Extragerea linie cu linie a articolelor cu prețuri",
+        "2": "Categorizare automată a produselor (produse alimentare, băuturi, articole casnice etc.)",
+        "3": "Detectarea monedei și validarea sumei",
+        "4": "Extragerea datei și orei când este disponibilă"
+      },
+      "body": "Apasă butonul de mai sus pentru a vizualiza analiza completă. Dacă ceva nu arată bine—poate un produs a fost categorizat greșit sau un preț nu a fost detectat corect—poți edita factura direct în tabloul tău de bord și perspectivele se vor actualiza automat.",
+      "feedbackPrompt": "Ai întrebări despre analiză sau ai nevoie de ajutor? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează analiza completă"
     },
     "invoiceDeleted": {
       "subject": "Factura ta a fost ștearsă"

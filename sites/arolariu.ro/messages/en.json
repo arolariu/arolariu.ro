@@ -4787,7 +4787,35 @@
       "subject": "Your first invoice is in!"
     },
     "invoiceAnalyzed": {
-      "subject": "Your invoice has been analyzed"
+      "subject": "Your invoice has been analyzed",
+      "badge": "Invoices • Analysis Complete",
+      "heading": "Your invoice analysis is ready",
+      "preview": "Your invoice is ready, {name}. Analysis complete!",
+      "greeting": "Hi {name},",
+      "intro": "Great news! Our AI has finished analyzing your invoice. We've extracted all the key information, categorized your items, and generated spending insights to help you track your finances.",
+      "summaryTitle": "Invoice Summary",
+      "summary": {
+        "invoiceName": "Invoice name",
+        "merchantId": "Merchant ID",
+        "itemsDetected": "Items detected",
+        "totalAmount": "Total amount",
+        "notIdentified": "Not identified yet"
+      },
+      "whatWasAnalyzedTitle": "What was analyzed",
+      "whatWasAnalyzed": {
+        "0": "Merchant identification and categorization",
+        "1": "Line-by-line item extraction with pricing",
+        "2": "Automatic product categorization (groceries, beverages, household, etc.)",
+        "3": "Currency detection and amount validation",
+        "4": "Date and time extraction when available"
+      },
+      "body": "Click the button above to view the complete analysis. If anything looks off—perhaps a product was miscategorized or a price wasn't detected correctly—you can edit the invoice directly in your dashboard and the insights will update automatically.",
+      "feedbackPrompt": "Have questions about your analysis, or need help? Contact us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View full analysis"
     },
     "invoiceDeleted": {
       "subject": "Your invoice was deleted"

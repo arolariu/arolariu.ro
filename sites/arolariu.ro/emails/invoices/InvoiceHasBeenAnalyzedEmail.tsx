@@ -9,17 +9,22 @@
 
 import {generateRandomInvoice} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
-import {Link, Text} from "@react-email/components";
+import {createTranslator} from "next-intl";
+import {Link, Text} from "react-email";
+
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
 /**
  * Properties for the InvoiceHasBeenAnalyzedEmail component.
  */
 type Props = Readonly<{
   /** The username of the recipient */
-  username: string;
+  readonly username: string;
   /** The analyzed invoice object */
-  invoice: Readonly<Invoice>;
+  readonly invoice: Readonly<Invoice>;
+  /** The locale for the email */
+  readonly locale?: EmailLocale;
 }>;
 
 /**
@@ -31,7 +36,12 @@ type Props = Readonly<{
  * @param props - The username and analyzed invoice details.
  * @returns A rendered React Email template.
  */
-const InvoiceHasBeenAnalyzedEmail = (props: Readonly<Props>) => {
+const InvoiceHasBeenAnalyzedEmail = async (props: Readonly<Props>) => {
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createTranslator({locale, messages, namespace: "email.invoiceAnalyzed"});
+  const tLayout = createTranslator({locale, messages, namespace: "email.layout"});
+
   const {username, invoice} = props;
 
   const invoiceUrl = `${BRAND.url}/domains/invoices/view-invoice/${invoice?.id}`;
@@ -43,59 +53,55 @@ const InvoiceHasBeenAnalyzedEmail = (props: Readonly<Props>) => {
 
   return (
     <EmailLayout
-      title={`${BRAND.name} | Invoice analyzed`}
-      preview={`Your invoice is ready, ${safeName}. Analysis complete!`}
-      badge='Invoices • Analysis Complete'
-      heading='Your invoice analysis is ready'
-      primaryCta={{href: invoiceUrl, label: "View full analysis"}}>
-      <Text style={EmailParagraphStyles}>Hi {safeName},</Text>
+      locale={locale}
+      tLayout={tLayout}
+      title={`${BRAND.name} | ${t("badge")}`}
+      preview={t("preview", {name: safeName})}
+      badge={t("badge")}
+      heading={t("heading")}
+      primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        Great news! Our AI has finished analyzing your invoice. We’ve extracted all the key information, categorized your items, and
-        generated spending insights to help you track your finances.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 
       <KeyValueTable
-        title='Invoice Summary'
+        title={t("summaryTitle")}
         items={[
-          {label: "Invoice name", value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
-          {label: "Merchant ID", value: invoice?.merchantReference ?? "Not identified yet"},
-          {label: "Items detected", value: String(itemCount)},
-          {label: "Total amount", value: totalText},
+          {label: t("summary.invoiceName"), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
+          {label: t("summary.merchantId"), value: invoice?.merchantReference ?? t("summary.notIdentified")},
+          {label: t("summary.itemsDetected"), value: String(itemCount)},
+          {label: t("summary.totalAmount"), value: totalText},
         ]}
       />
 
-      <EmailCard title='What was analyzed'>
+      <EmailCard title={t("whatWasAnalyzedTitle")}>
         <BulletList
           items={[
-            "Merchant identification and categorization",
-            "Line-by-line item extraction with pricing",
-            "Automatic product categorization (groceries, beverages, household, etc.)",
-            "Currency detection and amount validation",
-            "Date and time extraction when available",
+            t("whatWasAnalyzed.0"),
+            t("whatWasAnalyzed.1"),
+            t("whatWasAnalyzed.2"),
+            t("whatWasAnalyzed.3"),
+            t("whatWasAnalyzed.4"),
           ]}
         />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Click the button above to view the complete analysis. If anything looks off—perhaps a product was miscategorized or a price wasn’t
-        detected correctly—you can edit the invoice directly in your dashboard and the insights will update automatically.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Have questions about your analysis, or need help? Contact us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedbackPrompt", {
+          email: () => (
+            <Link href={`mailto:${BRAND.supportEmail}`} style={EmailLinkStyles}>
+              {BRAND.supportEmail}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -104,6 +110,7 @@ const InvoiceHasBeenAnalyzedEmail = (props: Readonly<Props>) => {
 InvoiceHasBeenAnalyzedEmail.PreviewProps = {
   username: "Test User",
   invoice: generateRandomInvoice(),
+  locale: "en" as const,
 } satisfies Props;
 
 export default InvoiceHasBeenAnalyzedEmail;
