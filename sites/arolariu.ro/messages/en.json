@@ -4847,7 +4847,40 @@
       "ctaPrimary": "View your invoices"
     },
     "invoiceMadePublic": {
-      "subject": "Your invoice is now public"
+      "subject": "Your invoice is now public",
+      "badge": "Invoices • Public Link",
+      "heading": "Your invoice is now public",
+      "preview": "Your invoice \"{invoiceName}\" is now public and shareable.",
+      "greeting": "Hi {name},",
+      "intro": "You've successfully made your invoice public. Anyone with the link or QR code below can now view this invoice—no login required. This is perfect for sharing receipts with colleagues, accountants, or for expense reporting.",
+      "detailsTitle": "Invoice details",
+      "details": {
+        "invoiceName": "Invoice name",
+        "invoiceId": "Invoice ID",
+        "merchant": "Merchant",
+        "total": "Total",
+        "created": "Created",
+        "access": "Access"
+      },
+      "accessValue": "Public (anyone with link)",
+      "qrTitle": "Quick Access QR Code",
+      "qrSubText": "Scan with your phone camera for instant access.",
+      "qrAlt": "QR Code for invoice access",
+      "howToShareTitle": "How to share",
+      "howToShare": {
+        "0": "Copy the direct link below and send via email or message",
+        "1": "Print or screenshot the QR code for in-person sharing",
+        "2": "Include in expense reports or reimbursement requests"
+      },
+      "privacyNoticeTitle": "Privacy Notice",
+      "privacyNoticeBody": "Public invoices can be accessed by anyone who has the URL or QR code. To make this invoice private again, update the sharing settings from your invoice page at any time.",
+      "directLinkLabel": "Direct link:",
+      "feedbackPrompt": "Questions about sharing or privacy settings? Contact us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "Open public invoice"
     },
     "invoiceShared": {
       "subject": "{fromName} shared an invoice with you",

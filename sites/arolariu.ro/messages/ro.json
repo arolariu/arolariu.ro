@@ -4847,7 +4847,40 @@
       "ctaPrimary": "Vezi facturile tale"
     },
     "invoiceMadePublic": {
-      "subject": "Factura ta este acum publică"
+      "subject": "Factura ta este acum publică",
+      "badge": "Facturi • Link Public",
+      "heading": "Factura ta este acum publică",
+      "preview": "Factura ta \"{invoiceName}\" este acum publică și partajabilă.",
+      "greeting": "Salut {name},",
+      "intro": "Ai făcut cu succes factura publică. Oricine are linkul sau codul QR de mai jos poate vedea această factură—fără autentificare. Acest lucru este perfect pentru partajarea chitanțelor cu colegi, contabili sau pentru rapoarte de cheltuieli.",
+      "detailsTitle": "Detalii factură",
+      "details": {
+        "invoiceName": "Nume factură",
+        "invoiceId": "ID factură",
+        "merchant": "Comerciant",
+        "total": "Total",
+        "created": "Creat",
+        "access": "Acces"
+      },
+      "accessValue": "Public (oricine cu linkul)",
+      "qrTitle": "Cod QR Acces Rapid",
+      "qrSubText": "Scanează cu camera telefonului pentru acces instant.",
+      "qrAlt": "Cod QR pentru acces factură",
+      "howToShareTitle": "Cum să partajezi",
+      "howToShare": {
+        "0": "Copiază linkul direct de mai jos și trimite prin email sau mesaj",
+        "1": "Printează sau fă screenshot codului QR pentru partajare în persoană",
+        "2": "Include în rapoarte de cheltuieli sau cereri de rambursare"
+      },
+      "privacyNoticeTitle": "Notificare Confidențialitate",
+      "privacyNoticeBody": "Facturile publice pot fi accesate de oricine are URL-ul sau codul QR. Pentru a face această factură privată din nou, actualizează setările de partajare din pagina facturii în orice moment.",
+      "directLinkLabel": "Link direct:",
+      "feedbackPrompt": "Întrebări despre partajare sau setări de confidențialitate? Contactează-ne la <email></email>.",
+      "signOff": {
+        "line1": "Cu drag,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Deschide factura publică"
     },
     "invoiceShared": {
       "subject": "{fromName} a distribuit o factură cu tine",

@@ -4847,7 +4847,40 @@
       "ctaPrimary": "Voir vos factures"
     },
     "invoiceMadePublic": {
-      "subject": "Votre facture est maintenant publique"
+      "subject": "Votre facture est maintenant publique",
+      "badge": "Factures • Lien Public",
+      "heading": "Votre facture est maintenant publique",
+      "preview": "Votre facture \"{invoiceName}\" est désormais publique et partageable.",
+      "greeting": "Bonjour {name},",
+      "intro": "Vous avez réussi à rendre votre facture publique. Toute personne possédant le lien ou le code QR ci-dessous peut désormais consulter cette facture—sans connexion requise. C'est parfait pour partager des reçus avec des collègues, des comptables ou pour les rapports de dépenses.",
+      "detailsTitle": "Détails de la facture",
+      "details": {
+        "invoiceName": "Nom de la facture",
+        "invoiceId": "ID facture",
+        "merchant": "Commerçant",
+        "total": "Total",
+        "created": "Créé",
+        "access": "Accès"
+      },
+      "accessValue": "Public (n'importe qui avec le lien)",
+      "qrTitle": "Code QR d'Accès Rapide",
+      "qrSubText": "Scannez avec l'appareil photo de votre téléphone pour un accès instantané.",
+      "qrAlt": "Code QR pour l'accès à la facture",
+      "howToShareTitle": "Comment partager",
+      "howToShare": {
+        "0": "Copiez le lien direct ci-dessous et envoyez par email ou message",
+        "1": "Imprimez ou capturez le code QR pour un partage en personne",
+        "2": "Incluez dans les rapports de dépenses ou les demandes de remboursement"
+      },
+      "privacyNoticeTitle": "Avis de Confidentialité",
+      "privacyNoticeBody": "Les factures publiques peuvent être consultées par toute personne possédant l'URL ou le code QR. Pour rendre cette facture privée à nouveau, mettez à jour les paramètres de partage depuis votre page de facture à tout moment.",
+      "directLinkLabel": "Lien direct :",
+      "feedbackPrompt": "Des questions sur le partage ou les paramètres de confidentialité ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Ouvrir la facture publique"
     },
     "invoiceShared": {
       "subject": "{fromName} a partagé une facture avec vous",
