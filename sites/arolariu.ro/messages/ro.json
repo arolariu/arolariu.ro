@@ -4822,7 +4822,35 @@
       "ctaPrimary": "Vizualizează factura distribuită"
     },
     "invoiceUnshared": {
-      "subject": "Accesul la o factură partajată a fost revocat"
+      "subject": "Accesul la o factură distribuită a fost revocat",
+      "badge": "Facturi • Acces Revocat",
+      "heading": "Accesul tău la o factură a fost revocat",
+      "preview": "{fromName} a revocat accesul tău la o factură distribuită.",
+      "greeting": "Bună {toName},",
+      "intro": "Îți scriem pentru a te informa că <from></from> a revocat accesul tău la o factură care îți fusese distribuită anterior. Aceasta înseamnă că nu vei mai putea vizualiza această factură.",
+      "detailsTitle": "Detalii revocare",
+      "details": {
+        "revokedBy": "Revocat de",
+        "invoiceId": "ID Factură",
+        "revokedAt": "Revocat la",
+        "yourAccess": "Accesul tău",
+        "accessRevoked": "Revocat",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "Ce înseamnă asta",
+      "whatThisMeans": {
+        "0": "Orice link salvat la această factură nu va mai funcționa pentru tine.",
+        "1": "Această factură nu va mai apărea în lista ta de facturi distribuite.",
+        "2": "Dacă ai nevoie din nou de acces, contactează direct proprietarul facturii."
+      },
+      "body": "Dacă crezi că această schimbare a fost făcută din greșeală, te rugăm să contactezi pe <from></from> sau echipa noastră de suport. Revocările de acces sunt uneori accidentale și suntem bucuroși să ajutăm la facilitarea comunicării dacă este necesar.",
+      "feedbackPrompt": "Ai nevoie de asistență? Trimite-ne un email la <email></email>.",
+      "signOff": {
+        "line1": "Cu stimă,",
+        "line2": "Echipa {brand}"
+      },
+      "ctaPrimary": "Vizualizează facturile tale",
+      "ctaSecondary": "Contactează suportul"
     },
     "spendingAlert": {
       "subject": "Alertă prag de cheltuieli"

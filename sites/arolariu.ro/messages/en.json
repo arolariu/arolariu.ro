@@ -4822,7 +4822,35 @@
       "ctaPrimary": "View shared invoice"
     },
     "invoiceUnshared": {
-      "subject": "Access to a shared invoice was revoked"
+      "subject": "Access to a shared invoice was revoked",
+      "badge": "Invoices • Access Revoked",
+      "heading": "Your access to an invoice was revoked",
+      "preview": "{fromName} revoked your access to a shared invoice.",
+      "greeting": "Hi {toName},",
+      "intro": "We're writing to let you know that <from></from> has revoked your access to an invoice that was previously shared with you. This means you will no longer be able to view this invoice.",
+      "detailsTitle": "Revocation Details",
+      "details": {
+        "revokedBy": "Revoked by",
+        "invoiceId": "Invoice ID",
+        "revokedAt": "Revoked at",
+        "yourAccess": "Your access",
+        "accessRevoked": "Revoked",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "What this means",
+      "whatThisMeans": {
+        "0": "Any bookmarked links to this invoice will no longer work for you.",
+        "1": "This invoice will not appear in your shared invoices list.",
+        "2": "If you need access again, contact the invoice owner directly."
+      },
+      "body": "If you believe this change was made in error, please reach out to <from></from> or contact our support team. Access revocations are sometimes accidental, and we're happy to help facilitate communication if needed.",
+      "feedbackPrompt": "Need assistance? Email us at <email></email>.",
+      "signOff": {
+        "line1": "Cheers,",
+        "line2": "The {brand} Team"
+      },
+      "ctaPrimary": "View your invoices",
+      "ctaSecondary": "Contact support"
     },
     "spendingAlert": {
       "subject": "Spending threshold alert"

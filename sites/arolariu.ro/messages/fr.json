@@ -4822,7 +4822,35 @@
       "ctaPrimary": "Voir la facture partagée"
     },
     "invoiceUnshared": {
-      "subject": "L'accès à une facture partagée a été révoqué"
+      "subject": "L'accès à une facture partagée a été révoqué",
+      "badge": "Factures • Accès Révoqué",
+      "heading": "Votre accès à une facture a été révoqué",
+      "preview": "{fromName} a révoqué votre accès à une facture partagée.",
+      "greeting": "Bonjour {toName},",
+      "intro": "Nous vous écrivons pour vous informer que <from></from> a révoqué votre accès à une facture qui avait été partagée avec vous auparavant. Cela signifie que vous ne pourrez plus consulter cette facture.",
+      "detailsTitle": "Détails de la révocation",
+      "details": {
+        "revokedBy": "Révoqué par",
+        "invoiceId": "ID Facture",
+        "revokedAt": "Révoqué le",
+        "yourAccess": "Votre accès",
+        "accessRevoked": "Révoqué",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "Ce que cela signifie",
+      "whatThisMeans": {
+        "0": "Tous les liens enregistrés vers cette facture ne fonctionneront plus pour vous.",
+        "1": "Cette facture n'apparaîtra plus dans votre liste de factures partagées.",
+        "2": "Si vous avez besoin d'un nouvel accès, contactez directement le propriétaire de la facture."
+      },
+      "body": "Si vous pensez que ce changement a été effectué par erreur, veuillez contacter <from></from> ou notre équipe d'assistance. Les révocations d'accès sont parfois accidentelles et nous sommes heureux de faciliter la communication si nécessaire.",
+      "feedbackPrompt": "Besoin d'aide ? Envoyez-nous un email à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir vos factures",
+      "ctaSecondary": "Contacter le support"
     },
     "spendingAlert": {
       "subject": "Alerte de seuil de dépenses"
