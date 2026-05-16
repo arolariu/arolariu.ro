@@ -114,13 +114,3 @@ export interface LintWorkerResult {
   readonly failedStep?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Legacy aliases — kept for backward compatibility during the rename transition.
-// Remove once all consumers have been updated to the canonical names above.
-// ---------------------------------------------------------------------------
-
-/** @deprecated Use {@link LintWorkerInput} instead. */
-export type ESLintWorkerInput = LintWorkerInput;
-
-/** @deprecated Use {@link LintWorkerResult} instead. */
-export type ESLintWorkerResult = LintWorkerResult;
