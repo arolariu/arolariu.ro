@@ -35,6 +35,15 @@ const CACHE_DIR = "artifacts";
 // ---------------------------------------------------------------------------
 
 /**
+ * npm-installed CLIs that ship as .cmd shims on Windows (instead of .exe binaries).
+ * Since Node.js 18.20 / 20.12 / 21.7, spawn() refuses to run .cmd files directly
+ * as a security mitigation (CVE-2024-27980). We route through cmd.exe /c, which
+ * is a real binary on PATH and resolves the shim via PATHEXT. This avoids both
+ * the spawn EINVAL restriction AND DEP0190 (shell:true with args).
+ */
+const WIN_CMD_SHIMS: ReadonlySet<string> = new Set(["npx", "npm", "yarn", "pnpm"]);
+
+/**
  * Runs a command and captures output (stdout + stderr merged).
  * @param command The command to run
  * @param args Command arguments
@@ -43,14 +52,15 @@ const CACHE_DIR = "artifacts";
  */
 async function runCommand(command: string, args: readonly string[], opts?: {cwd?: string}): Promise<{code: number; output: string}> {
   return new Promise((resolve) => {
-    const child = spawn(command, args as string[], {
+    const needsCmdWrapper = process.platform === "win32" && WIN_CMD_SHIMS.has(command);
+    const [spawnCommand, spawnArgs] = needsCmdWrapper
+      ? ["cmd.exe" as const, ["/c", command, ...args] as string[]]
+      : [command, args as string[]];
+
+    const child = spawn(spawnCommand, spawnArgs, {
       stdio: "pipe",
       windowsHide: true,
       cwd: opts?.cwd,
-      // On Windows, `npx` is a .cmd shim (not a real binary) — spawn() can't resolve it
-      // without going through the shell. Real binaries (node, dotnet, ruff, python) work
-      // either way, so enabling shell on Windows is a strict superset.
-      shell: process.platform === "win32",
     });
 
     let output = "";
