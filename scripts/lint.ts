@@ -83,13 +83,14 @@ function printWorkerResult(result: LintWorkerResult): void {
     console.log(result.resultText);
   }
 
-  if (result.errorCount > 0 || result.warningCount > 0) {
-    const phaseSuffix = result.failedStep ? styleText("red", ` [${result.failedStep} failed]`) : "";
-    if (result.errorCount > 0) {
-      console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`) + phaseSuffix);
-    } else {
-      console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`) + phaseSuffix);
-    }
+  // When a 2-step target fails on a non-ESLint step (svelte-check, dotnet format, dotnet build),
+  // ESLint never runs — so blaming ESLint in the message would mislead the developer.
+  if (result.failedStep && result.failedStep !== "eslint") {
+    console.log(styleText("red", `  ✗ ${result.failedStep} failed — ESLint skipped`));
+  } else if (result.errorCount > 0) {
+    console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
+  } else if (result.warningCount > 0) {
+    console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`));
   } else {
     console.log(styleText("green", `  ✓ No linting issues found for ${result.configName}`));
   }
