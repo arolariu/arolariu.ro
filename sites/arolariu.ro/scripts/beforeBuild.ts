@@ -51,7 +51,14 @@
 export default async function main(): Promise<void> {
   console.info("[arolariu.ro::beforeBuild] Running before build scripts...");
 
-  // 1. Clean the build directory using the clean script
+  // 1. Type-check first (fail-fast — exit before clean if types are broken,
+  //    so the prior .next/storybook-static stays available for fallback).
+  console.info("[arolariu.ro::beforeBuild] Type-checking via typecheck.ts...");
+  await import("./typecheck.ts").then(() => {
+    console.info("[arolariu.ro::beforeBuild] Finished type-check.");
+  });
+
+  // 2. Clean the build directory using the clean script.
   console.info("[arolariu.ro::beforeBuild] Cleaning build directory...");
   await import("./clean.ts").then(() => {
     console.info("[arolariu.ro::beforeBuild] Finished cleaning build directory.");
