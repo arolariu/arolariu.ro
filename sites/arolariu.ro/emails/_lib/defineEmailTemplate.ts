@@ -160,7 +160,12 @@ export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTem
     const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
     const messages = await loadMessages(locale);
     const t = createEmailTranslator({locale, messages, namespace: config.namespace});
-    return config.render({locale, t, props});
+    // Strip `locale` from props before handing to render — the render context
+    // already exposes the resolved locale separately as `ctx.locale`. Keeping
+    // locale on `ctx.props` would diverge from the documented contract and
+    // tempt templates into reading `props.locale` (typed as missing).
+    const {locale: _localeIgnored, ...propsWithoutLocale} = props as P & {readonly locale?: EmailLocale};
+    return config.render({locale, t, props: propsWithoutLocale as P});
   };
 
   const getSubject = async (

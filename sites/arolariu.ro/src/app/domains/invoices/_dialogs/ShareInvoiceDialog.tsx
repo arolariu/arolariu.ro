@@ -279,7 +279,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
           to: email,
           props: {
             fromUsername: fromName,
-            toUsername: email.split("@")[0] ?? "there",
+            toUsername: email.split("@")[0]?.trim() || "there",
             identifier: invoice.id,
             locale,
           },

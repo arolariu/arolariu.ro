@@ -81,6 +81,16 @@ vi.mock("next-intl", async (importOriginal) => {
     ...actual,
     useTranslations: (namespace?: string) => makeTranslator(namespace),
     useLocale: () => "en",
+    // `useFormatter` requires `NextIntlClientProvider` context too — stub it
+    // so components/tests that call it without a provider don't throw. The
+    // returned formatters are minimal stringifiers; assert on raw values,
+    // not on locale-specific formatting.
+    useFormatter: () => ({
+      dateTime: (date: Date | number) => String(date),
+      number: (n: number) => String(n),
+      relativeTime: (date: Date | number) => String(date),
+      list: (items: Iterable<string>) => Array.from(items).join(", "),
+    }),
   };
 });
 

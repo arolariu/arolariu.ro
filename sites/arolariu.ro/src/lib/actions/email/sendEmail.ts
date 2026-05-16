@@ -84,10 +84,18 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
 
   // Subject interpolation: variantProps first (so {days}/{frequency} resolve
   // for variant entries), then caller subjectVars override.
-  const subjectVars = {
-    ...variantProps,
+  //
+  // Coerce variantProps to scalar entries only — non-scalar variants would
+  // break getSubject's ICU interpolation at runtime, and we'd rather catch
+  // the misuse with an empty interpolation than a TypeError.
+  const scalarVariantProps = Object.fromEntries(
+    Object.entries(variantProps).filter(([, v]) => typeof v === "string" || typeof v === "number"),
+  ) as Record<string, string | number>;
+
+  const subjectVars: Readonly<Record<string, string | number>> = {
+    ...scalarVariantProps,
     ...(input.subjectVars ?? {}),
-  } as Readonly<Record<string, string | number>>;
+  };
 
   // The registry union widens `template` across all entries, so we erase
   // the generic at the call site. Type safety is enforced upstream by
