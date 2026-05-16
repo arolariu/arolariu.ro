@@ -56,16 +56,13 @@ public partial class MerchantStorageFoundationService
       or MerchantParentCompanyIdNotSetException
       => LogAndWrapValidation(exception),
 
-    // Pass through broker exceptions that already implement correct HTTP classification markers
-    // (INotFoundException → 404, IAlreadyExistsException → 409, ILockedException → 423, etc.)
-    // Wrapping these in DependencyValidation would mask their intended HTTP status codes.
     MerchantNotFoundException
       or MerchantAlreadyExistsException
       or MerchantLockedException
       or MerchantCosmosDbRateLimitException
       or MerchantUnauthorizedAccessException
       or MerchantForbiddenAccessException
-      => LogAndPassThrough(exception),
+      => LogAndWrapDependencyValidation(exception),
 
     MerchantFailedStorageException
       or OperationCanceledException
@@ -93,15 +90,6 @@ public partial class MerchantStorageFoundationService
     var outer = new MerchantFoundationServiceDependencyValidationException(exception);
     logger.LogMerchantStorageServiceDependencyValidationException(outer.Message);
     return outer;
-  }
-
-  private Exception LogAndPassThrough(Exception exception)
-  {
-    // Log at Foundation layer for observability, but preserve the original exception
-    // with its classification marker interface (INotFoundException, ILockedException, etc.)
-    // so ExceptionToHttpResultMapper can produce the correct HTTP status code.
-    logger.LogMerchantStorageServiceDependencyValidationException(exception.Message);
-    return exception;
   }
 
   private MerchantFoundationServiceException LogAndWrapService(Exception exception)

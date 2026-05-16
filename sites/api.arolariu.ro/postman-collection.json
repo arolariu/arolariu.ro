@@ -2063,7 +2063,7 @@
             },
             "description": "Attempt to retrieve a non-existent invoice. Expected: 404 Not Found.",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/00000000-0000-0000-0000-000000000000",
+              "raw": "{{baseUrl}}/rest/v1/invoices/7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2071,7 +2071,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "00000000-0000-0000-0000-000000000000"
+                "7f4f2ec0-4f3b-4d2b-9c1a-8e6a0d4f7b21"
               ]
             }
           },

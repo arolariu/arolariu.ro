@@ -122,6 +122,19 @@ public sealed class ExceptionToHttpResultMapperTests
     {
     }
   }
+  [SuppressMessage("Performance", "CA1812", Justification = "Instantiated via test methods")]
+  private sealed class DependencyValidationEx : Exception, IDependencyValidationException
+  {
+    public DependencyValidationEx(string message) : base(message) { }
+
+    public DependencyValidationEx()
+    {
+    }
+
+    public DependencyValidationEx(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+  }
   private sealed class ServiceEx : Exception, IServiceException
   {
     public ServiceEx(string m) : base(m) { }
@@ -181,6 +194,22 @@ public sealed class ExceptionToHttpResultMapperTests
     Assert.IsInstanceOfType<ProblemHttpResult>(result);
     var problem = (ProblemHttpResult)result;
     Assert.AreEqual(404, problem.StatusCode);
+  }
+
+  /// <summary>Innermost classifiable exception wins even when outer wrappers are also classifiable.</summary>
+  [TestMethod]
+  public void ToHttpResult_InnermostClassifiableExceptionDrivesClassification()
+  {
+    var inner = new NotFoundEx("missing");
+    var middle = new DependencyValidationEx("dependency validation", inner);
+    var outer = new ServiceEx("service failure", middle);
+
+    var result = ExceptionToHttpResultMapper.ToHttpResult(outer, activity: null);
+
+    Assert.IsInstanceOfType<ProblemHttpResult>(result);
+    var problem = (ProblemHttpResult)result;
+    Assert.AreEqual(404, problem.StatusCode);
+    Assert.AreEqual("missing", problem.ProblemDetails.Detail);
   }
 
   /// <summary>Mapper never leaks <see cref="Exception.Source"/> via the detail payload.</summary>
