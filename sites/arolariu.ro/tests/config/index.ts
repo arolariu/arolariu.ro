@@ -61,7 +61,7 @@ export const WEB_SERVER_CONFIG = {
     ? "npm run build && node scripts/prepareStandalone.ts && cross-env PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/sites/arolariu.ro/server.js"
     : "npx next dev --experimental-https",
   url: isProdBuild() ? "http://localhost:3000" : "https://localhost:3000",
-  timeout: 240_000, // 4 min — accommodates `next build` (~30-90s) plus standalone startup
+  timeout: 600_000, // 10 min — accommodates `next build` (~30-90s), TypeScript checks, plus standalone startup
   ignoreHTTPSErrors: true,
 } as const;
 
