@@ -176,6 +176,10 @@ const nextConfig: NextConfig = {
 
   typescript: {
     tsconfigPath: "tsconfig.json",
+    // tsgo runs in CI's test job; tsc runs locally + in Docker via beforeBuild → typecheck.ts.
+    // Next's bundled tsc pass during `next build` becomes redundant.
+    // `next dev` is unaffected — this flag only gates `next build`.
+    ignoreBuildErrors: true,
   },
 
   pageExtensions: ["ts", "tsx"],
