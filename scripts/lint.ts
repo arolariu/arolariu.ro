@@ -49,6 +49,21 @@ const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
 const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv", "status", "api", "exp"];
 
 /**
+ * For non-ESLint targets, the worker doesn't report a file count.
+ * Render the analysis scope instead so the badge is informative.
+ *
+ * @param configName - The worker's config name (e.g. "[dotnet]", "[ruff]")
+ * @returns A human-readable scope label for the target.
+ */
+function scopeForTarget(configName: string): string {
+  switch (configName) {
+    case "[dotnet]": return "arolariu.slnx";
+    case "[ruff]": return "sites/exp.arolariu.ro";
+    default: return "(unknown)"; // shouldn't hit — ESLint configs always have fileCount > 0 after a real lint
+  }
+}
+
+/**
  * Prints the result from an ESLint worker with formatted output.
  *
  * @remarks
@@ -62,7 +77,12 @@ const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv", "
 function printWorkerResult(result: LintWorkerResult): void {
   const workerInfo = styleText("gray", `[Worker #${result.workerId}]`);
   const timingInfo = styleText("gray", `[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
-  const fileInfo = styleText("gray", `[${result.fileCount} files]`);
+  // For ESLint targets, fileCount reflects the real number of files linted.
+  // For api/exp the underlying tool (dotnet build, ruff check) doesn't report a
+  // count back to the worker, so fileCount stays 0 — show the scope instead.
+  const fileInfo = result.fileCount > 0
+    ? styleText("gray", `[${result.fileCount} files]`)
+    : styleText("gray", `[scope: ${scopeForTarget(result.configName)}]`);
   const memInfo = styleText("gray", `[${formatBytes(result.peakMemoryBytes)}]`);
   console.log(
     styleText("cyan", `\n🔍 Lint target: ${styleText("bold", result.configName)} ${workerInfo}`),
