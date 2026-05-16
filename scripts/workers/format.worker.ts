@@ -79,6 +79,39 @@ async function isToolAvailable(cmd: string): Promise<boolean> {
 }
 
 /**
+ * Resolves how to invoke ruff. Returns the command + args prefix, or `null`
+ * if ruff is not available at all.
+ *
+ * Probe order:
+ *   1. `ruff` on PATH (standard install via pipx, system pip, or PATH-aware install).
+ *   2. `python -m ruff` (fallback for Microsoft Store Python or other sandboxed installs
+ *      where pip places ruff outside PATH but Python itself is reachable).
+ *
+ * Cached at module scope; valid for the lifetime of this worker process.
+ */
+let cachedRuffInvocation: readonly string[] | null | undefined;
+
+async function resolveRuff(): Promise<readonly string[] | null> {
+  if (cachedRuffInvocation !== undefined) return cachedRuffInvocation;
+
+  if (await isToolAvailable("ruff")) {
+    cachedRuffInvocation = ["ruff"];
+    return cachedRuffInvocation;
+  }
+
+  if (await isToolAvailable("python")) {
+    const result = await runCommand("python", ["-m", "ruff", "--version"]);
+    if (result.code === 0) {
+      cachedRuffInvocation = ["python", "-m", "ruff"];
+      return cachedRuffInvocation;
+    }
+  }
+
+  cachedRuffInvocation = null;
+  return cachedRuffInvocation;
+}
+
+/**
  * Checks if code is properly formatted for a target.
  * @param target The target to check
  * @param customPatterns Optional custom file patterns for selective targeting
@@ -95,9 +128,12 @@ async function checkTarget(
 
   if (target === "exp") {
     // Ruff check mode: format check + import sort check (no auto-fix).
-    const formatCheck = await runCommand("ruff", ["format", "--check", "sites/exp.arolariu.ro"]);
+    const ruff = await resolveRuff();
+    if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
+    const [cmd, ...prefix] = ruff as string[];
+    const formatCheck = await runCommand(cmd, [...prefix, "format", "--check", "sites/exp.arolariu.ro"]);
     if (formatCheck.code !== 0) return formatCheck;
-    return runCommand("ruff", ["check", "--select", "I", "sites/exp.arolariu.ro"]);
+    return runCommand(cmd, [...prefix, "check", "--select", "I", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -140,9 +176,12 @@ async function formatTarget(
 
   if (target === "exp") {
     // Ruff write mode: format files + auto-fix only import sorting (isort, rule I).
-    const fmt = await runCommand("ruff", ["format", "sites/exp.arolariu.ro"]);
+    const ruff = await resolveRuff();
+    if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
+    const [cmd, ...prefix] = ruff as string[];
+    const fmt = await runCommand(cmd, [...prefix, "format", "sites/exp.arolariu.ro"]);
     if (fmt.code !== 0) return fmt;
-    return runCommand("ruff", ["check", "--select", "I", "--fix", "sites/exp.arolariu.ro"]);
+    return runCommand(cmd, [...prefix, "check", "--select", "I", "--fix", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -237,16 +276,16 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
   try {
     // Tool availability gate for external-tool targets.
     if (target === "exp") {
-      const available = await isToolAvailable("ruff");
-      if (!available) {
+      const ruff = await resolveRuff();
+      if (!ruff) {
         return {
           target,
           checkPassed: false,
           formatted: false,
           exitCode: 0,
-          resultText: `  ⊘ ${target} skipped: Ruff not found on PATH\n`,
+          resultText: `  ⊘ ${target} skipped: Ruff not found (tried 'ruff' and 'python -m ruff')\n`,
           skipped: true,
-          skipReason: "Ruff not installed. Install via 'pipx install ruff' or 'pip install ruff'.",
+          skipReason: "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
           workerId,
           durationMs: Math.round(performance.now() - startTime),
           workTimeMs: 0,
