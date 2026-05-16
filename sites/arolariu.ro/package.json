@@ -31,6 +31,7 @@
     "build:after": "node scripts/afterBuild.ts",
     "build:debug": "cross-env NODE_ENV=development NEXT_DEBUG=true next build --debug --debug-prerender --profile --no-mangling",
     "clean": "node scripts/clean.ts",
+    "typecheck": "node scripts/typecheck.ts",
     "dev": "npm run clean && next dev --inspect --experimental-https",
     "email": "npm run clean && email dev",
     "start": "next start",
