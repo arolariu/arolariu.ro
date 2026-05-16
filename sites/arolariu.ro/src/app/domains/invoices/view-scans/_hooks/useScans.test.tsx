@@ -51,6 +51,20 @@ vi.mock("zustand/react/shallow", () => ({
   useShallow: vi.fn((fn: unknown) => fn),
 }));
 
+// Mock the toast utility so we can assert on success/error calls.
+// Use `vi.hoisted` because `vi.mock` is hoisted above top-level declarations.
+const {mockToast} = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+vi.mock("@arolariu/components", () => ({
+  toast: mockToast,
+}));
+
 // Import vitest functions AFTER mocks
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -277,6 +291,10 @@ describe("useScans", () => {
 
       expect(syncDone).toBe(true);
       expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      // The suppression contract: with isMountedRef.current=false, the
+      // error toast must NOT fire even though sync rejected. console.error
+      // still logs (the guard wraps only the toast call).
+      expect(mockToast.error).not.toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
     });
 
@@ -326,6 +344,9 @@ describe("useScans", () => {
       expect(mockStoreState.setScans).toHaveBeenCalled();
       expect(mockStoreState.setLastSyncTimestamp).toHaveBeenCalled();
       expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      // The manual-sync contract: success toast fires exactly when
+      // `manual=true && isMountedRef.current=true`.
+      expect(mockToast.success).toHaveBeenCalledWith("Scans synced successfully");
     });
   });
 

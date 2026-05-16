@@ -657,11 +657,12 @@ describe("createWorkerHost", () => {
       const countBefore = events.length;
       unsubscribe();
       // After unsubscribe, future events should not be received.
+      // Pre-assert the event port exists so a torn-down host fails the test
+      // rather than producing a vacuous green.
       const port = getEventPort();
-      if (port) {
-        emitEvent(port, {kind: "log", level: "info", msg: "after-unsub"});
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      }
+      expect(port).not.toBeNull();
+      emitEvent(port!, {kind: "log", level: "info", msg: "after-unsub"});
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
       expect(events.length).toBe(countBefore);
     });
 
@@ -681,15 +682,14 @@ describe("createWorkerHost", () => {
       });
       // Then a good sibling listener.
       host.subscribeToEvents((e) => received.push(e));
+      // Pre-assert the event port exists so a missing port fails the test
+      // rather than producing a vacuous green.
       const port = getEventPort();
-      if (port) {
-        emitEvent(port, {kind: "log", level: "info", msg: "survivor"});
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      }
+      expect(port).not.toBeNull();
+      emitEvent(port!, {kind: "log", level: "info", msg: "survivor"});
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
       // The sibling must have received the event despite the bad listener.
-      if (port) {
-        expect(received).toContainEqual({kind: "log", level: "info", msg: "survivor"});
-      }
+      expect(received).toContainEqual({kind: "log", level: "info", msg: "survivor"});
     });
   });
 

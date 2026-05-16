@@ -25,28 +25,20 @@ beforeEach(() => {
 
 describe("createMockWorker", () => {
   describe("postMessage with StructuredSerializeOptions transfer arg", () => {
-    it("treats a StructuredSerializeOptions object as an empty ports list", () => {
+    it("accepts a non-array transfer arg without throwing", () => {
       // Exercises the `Array.isArray(transfer) ? transfer : []` else-branch
-      // (lines 82-86 of mockWorker.ts). Passing a StructuredSerializeOptions
-      // object (not an array) means no MessagePorts are forwarded.
-      // The bootstrapHandler receives a MessageEvent with an empty ports list.
-      let receivedPorts: MessagePort[] | null = null;
-
-      // Intercept the fakeSelf to inspect what the bootstrap handler gets.
-      // We can do this by creating a mock and calling postMessage with a
-      // StructuredSerializeOptions argument.
+      // (lines 82-86 of mockWorker.ts). When `postMessage` is called with a
+      // `StructuredSerializeOptions` object (not an array), the else-branch
+      // resolves the ports list to `[]`. The bootstrap handler is already
+      // wired by `expose()` and discards the custom-kind message; the only
+      // contract here is that the branch is reachable without throwing.
+      // v8 coverage confirms the branch fires.
       const mock = createMockWorker({api: {ping: async () => "pong"}});
-
-      // Call postMessage with StructuredSerializeOptions (not an array).
-      // The mock ignores the message since the bootstrap handler on fakeSelf
-      // is already set up by expose(). This just exercises the branch.
       const structuredSerializeOpts: StructuredSerializeOptions = {transfer: []};
-      // The worker's postMessage should accept StructuredSerializeOptions
-      // without throwing — the else-branch of `Array.isArray(transfer)` runs.
+
       expect(() => {
         mock.worker.postMessage({kind: "custom-msg"}, structuredSerializeOpts);
       }).not.toThrow();
-      void receivedPorts; // suppress unused-var lint
     });
   });
 

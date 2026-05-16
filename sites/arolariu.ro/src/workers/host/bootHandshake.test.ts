@@ -164,6 +164,13 @@ describe("createBootHandshake", () => {
   it("filters stray ready events arriving after bootstrap (steady-state listener)", async () => {
     // Exercises the `if (nextEv.kind === "ready") return` branch (line 158).
     // After bootstrap, the steady-state listener filters out stray ready events.
+    //
+    // Drive the parent event port directly rather than posting to the
+    // worker-side port. The previous version posted via `getEventPort()` and
+    // relied on the MessageChannel transfer being plumbed — if the harness
+    // ever stops plumbing the channel, the assertion becomes vacuously true.
+    // Calling `parentEventPort.onmessage` directly removes that ambiguity
+    // and pins the filter behaviour on the parent side where it actually lives.
     const events: unknown[] = [];
     const mock = createMockWorker({api: {ping: async () => "pong"}});
     const handshake = createBootHandshake({
@@ -173,13 +180,15 @@ describe("createBootHandshake", () => {
       bootstrapTimeoutMs: 10_000,
     });
     await handshake.ready;
-    // Send a stray ready event — must be filtered by the steady-state listener.
-    const workerEventPort = getEventPort();
-    if (workerEventPort) {
-      emitEvent(workerEventPort, {kind: "ready"});
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    }
-    // No "ready" events should have reached the onEvent sink.
+    // Baseline: confirm the parent port's steady-state handler is wired.
+    const parentEventPort = handshake.parentEventPort;
+    expect(parentEventPort.onmessage).not.toBeNull();
+    const countBefore = events.length;
+    // Drive a stray "ready" event directly into the parent port. The
+    // steady-state listener must filter it before reaching `onEvent`.
+    parentEventPort.onmessage!(new MessageEvent("message", {data: {kind: "ready"}}));
+    // No new event reached the sink.
+    expect(events.length).toBe(countBefore);
     expect(events.find((e) => (e as {kind?: string}).kind === "ready")).toBeUndefined();
   });
 
