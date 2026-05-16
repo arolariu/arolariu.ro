@@ -48,17 +48,20 @@
  *
  * @see {@link clean.main} for cleanup implementation details
  */
+import typeCheck from "./typecheck.ts";
+
 export default async function main(): Promise<void> {
   console.info("[arolariu.ro::beforeBuild] Running before build scripts...");
 
   // 1. Type-check first (fail-fast — exit before clean if types are broken,
   //    so the prior .next/storybook-static stays available for fallback).
   console.info("[arolariu.ro::beforeBuild] Type-checking via typecheck.ts...");
-  await import("./typecheck.ts").then(() => {
-    console.info("[arolariu.ro::beforeBuild] Finished type-check.");
-  });
+  await typeCheck();
+  console.info("[arolariu.ro::beforeBuild] Finished type-check.");
 
   // 2. Clean the build directory using the clean script.
+  //    (clean.ts uses a side-effect-on-import pattern that predates this file;
+  //    a future refactor can migrate it to a named-export pattern matching typecheck.ts.)
   console.info("[arolariu.ro::beforeBuild] Cleaning build directory...");
   await import("./clean.ts").then(() => {
     console.info("[arolariu.ro::beforeBuild] Finished cleaning build directory.");

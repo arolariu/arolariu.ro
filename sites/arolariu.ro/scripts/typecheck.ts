@@ -16,7 +16,7 @@
 
 import {spawn} from "node:child_process";
 
-async function typeCheck(): Promise<void> {
+export default async function typeCheck(): Promise<void> {
   console.info("[arolariu.ro::typecheck] Running tsc --noEmit -p tsconfig.json...");
 
   await new Promise<void>((resolve, reject) => {
@@ -49,4 +49,10 @@ async function typeCheck(): Promise<void> {
   });
 }
 
-await typeCheck();
+// Auto-invoke only when this file is the process entry point (`npm run typecheck`,
+// `node scripts/typecheck.ts`). When `beforeBuild.ts` imports the module, the caller
+// invokes `typeCheck()` explicitly — avoids ESM module-cache pitfalls where a second
+// `import()` is a no-op and never re-runs the top-level side effect.
+if (import.meta.main) {
+  await typeCheck();
+}
