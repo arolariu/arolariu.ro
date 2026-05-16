@@ -157,10 +157,15 @@ jobs:
         run: |
           echo "::group::🧬 Running tsgo --noEmit"
           START_TIME=$(date +%s)
-          # The npm package name (@typescript/native-preview) differs from the
-          # bin name (tsgo). npm's registry does not reverse-lookup bins, so
-          # bare `npx tsgo` fails with E404. -p specifies the package; -y
-          # answers the install prompt non-interactively in CI.
+          # First: generate Next.js route-aware ambient types (PageProps,
+          # LayoutProps, route literal unions) under .next/types/. Without
+          # this step tsgo reports TS2304 for every PageProps/LayoutProps
+          # use across the app (and SVG-import errors that cascade from them).
+          npx next typegen
+          # Then run tsgo. The npm package name (@typescript/native-preview)
+          # differs from the bin name (tsgo); npm's registry does not
+          # reverse-lookup bins, so bare `npx tsgo` fails with E404. -p
+          # specifies the package; -y skips the install prompt in CI.
           npx -y -p @typescript/native-preview tsgo --noEmit -p tsconfig.json
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
