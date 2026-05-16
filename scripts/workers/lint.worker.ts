@@ -275,7 +275,8 @@ export function stepsForTarget(input: LintWorkerInput): readonly LintStep[] {
     case "api":
       return [
         {label: "dotnet format", run: () => runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"])},
-        {label: "dotnet build", run: () => runCommand("dotnet", ["build", "arolariu.slnx", "--verbosity", "quiet"])},
+        // --no-restore: dotnet format (step 1) already restored packages; skipping the redundant restore saves ~15-30s.
+        {label: "dotnet build", run: () => runCommand("dotnet", ["build", "arolariu.slnx", "--no-restore", "--verbosity", "quiet"])},
       ];
 
     case "exp":
