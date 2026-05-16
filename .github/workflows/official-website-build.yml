@@ -152,6 +152,23 @@ jobs:
           generate: 'true'
           cache-key-prefix: 'website'
 
+      - name: 🧬 TypeScript type-check (tsgo)
+        working-directory: './sites/arolariu.ro'
+        run: |
+          echo "::group::🧬 Running tsgo --noEmit"
+          START_TIME=$(date +%s)
+          npx tsgo --noEmit -p tsconfig.json
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Type-check (tsgo) completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "## 🧬 Type-Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | @typescript/native-preview (tsgo) |" >> $GITHUB_STEP_SUMMARY
+
       - name: 🧪 Running unit tests...
         working-directory: './sites/arolariu.ro'
         run: |
