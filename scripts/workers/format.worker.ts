@@ -275,6 +275,13 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
 
   try {
     // Tool availability gate for external-tool targets.
+    //
+    // Skipped-result conventions (apply to both `exp` and `api` branches below):
+    //   - exitCode: 0   → `format all` overall still passes; missing tools don't fail the pipeline.
+    //   - checkPassed: false → a skipped target is NOT counted in `alreadyFormatted` (the
+    //     "clean" tally) — it has its own `skipped` counter and a SKIPPED badge.
+    //   - formatted: false → not counted in the "Fixed" tally either.
+    //   - skipped: true is the sole sentinel the summary uses to bucket the result.
     if (target === "exp") {
       const ruff = await resolveRuff();
       if (!ruff) {
