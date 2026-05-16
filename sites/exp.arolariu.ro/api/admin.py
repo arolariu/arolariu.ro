@@ -33,10 +33,7 @@ def _get_client_id() -> str:
     provider's client ID (MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID) which
     is auto-set by App Service when Easy Auth is configured.
     """
-    return (
-        os.getenv("EXP_ENTRA_APP_CLIENT_ID", "")
-        or os.getenv("MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID", "")
-    )
+    return os.getenv("EXP_ENTRA_APP_CLIENT_ID", "") or os.getenv("MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID", "")
 
 
 def _is_azure_mode() -> bool:
@@ -95,11 +92,7 @@ def _load_azure_config_for_label(label: str) -> dict[str, str]:
     from azure.identity import DefaultAzureCredential
 
     client_id = os.getenv("AZURE_CLIENT_ID")
-    credential = (
-        DefaultAzureCredential(managed_identity_client_id=client_id)
-        if client_id
-        else DefaultAzureCredential()
-    )
+    credential = DefaultAzureCredential(managed_identity_client_id=client_id) if client_id else DefaultAzureCredential()
 
     endpoint = os.getenv("AZURE_APPCONFIG_ENDPOINT", "")
     config = load(
@@ -119,11 +112,7 @@ def _set_azure_config_value(key: str, value: str, label: str) -> None:
     from azure.identity import DefaultAzureCredential
 
     client_id = os.getenv("AZURE_CLIENT_ID")
-    credential = (
-        DefaultAzureCredential(managed_identity_client_id=client_id)
-        if client_id
-        else DefaultAzureCredential()
-    )
+    credential = DefaultAzureCredential(managed_identity_client_id=client_id) if client_id else DefaultAzureCredential()
 
     endpoint = os.getenv("AZURE_APPCONFIG_ENDPOINT", "")
     client = AzureAppConfigurationClient(base_url=endpoint, credential=credential)
@@ -230,10 +219,7 @@ def _build_admin_html(*, infra: str, client_id: str, tenant_id: str, commit_sha:
     is_azure = infra == "azure"
     auth_label = "MSAL (Entra ID)" if is_azure else "None (open)"
     short_sha = commit_sha[:12] if len(commit_sha) >= 12 else commit_sha
-    commit_url = (
-        f"https://github.com/arolariu/arolariu.ro/commit/{commit_sha}"
-        if commit_sha != "unknown" else ""
-    )
+    commit_url = f"https://github.com/arolariu/arolariu.ro/commit/{commit_sha}" if commit_sha != "unknown" else ""
 
     # Pre-build long HTML fragments to stay under line-length limit.
     sha_badge = (
@@ -248,11 +234,11 @@ def _build_admin_html(*, infra: str, client_id: str, tenant_id: str, commit_sha:
         "<span class='tab active' data-label='DEVELOPMENT' onclick='switchLabel(this)'>DEV</span>"
         "<span class='tab' data-label='PRODUCTION' onclick='switchLabel(this)'>PROD</span>"
         "</div>"
-        if is_azure else ""
+        if is_azure
+        else ""
     )
     signin_btn = (
-        "<button class='btn btn-signin' id='btn-signin' onclick='signIn()'>Sign In</button>"
-        if is_azure else ""
+        "<button class='btn btn-signin' id='btn-signin' onclick='signIn()'>Sign In</button>" if is_azure else ""
     )
 
     return f"""\

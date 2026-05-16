@@ -239,8 +239,7 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
     ),
     "Endpoints:AI:OCR:Key": ConfigKeyDocumentation(
         description=(
-            "Credential under the Endpoint hierarchy for API integrations "
-            "that still require an OCR service key."
+            "Credential under the Endpoint hierarchy for API integrations that still require an OCR service key."
         ),
         usage=(
             "API-only and server-only. Prefer managed identity when supported, "
@@ -264,8 +263,7 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
     ),
     "Endpoints:Service:Api": ConfigKeyDocumentation(
         description=(
-            "Base URL of the backend API under the Endpoint hierarchy, "
-            "called by the website from server-only code."
+            "Base URL of the backend API under the Endpoint hierarchy, called by the website from server-only code."
         ),
         usage=(
             "Website-only. Use this value for server-to-server fetches instead "
@@ -278,8 +276,7 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "binary assets and server-side storage helpers."
         ),
         usage=(
-            "Safe for server-side rendering and upload helpers, "
-            "but do not expose raw storage clients to browser code."
+            "Safe for server-side rendering and upload helpers, but do not expose raw storage clients to browser code."
         ),
     ),
     "Identity:Tenant:Id": ConfigKeyDocumentation(
@@ -392,9 +389,7 @@ def get_refresh_interval_for_targets(targets: Sequence[str]) -> int:
     """Return the maximum refresh interval declared by the supplied targets."""
 
     intervals = [
-        index.refresh_interval_seconds
-        for target in targets
-        if (index := get_target_index(target)) is not None
+        index.refresh_interval_seconds for target in targets if (index := get_target_index(target)) is not None
     ]
     return max(intervals, default=DEFAULT_REFRESH_INTERVAL_SECONDS)
 
@@ -406,18 +401,9 @@ def _resolve_config_snapshot(
 ) -> ConfigResolutionResult:
     """Resolve indexed config values and report any missing required keys."""
 
-    missing_required_keys = tuple(
-        sorted(
-            key
-            for key in required_keys
-            if config_snapshot.get(key) is None
-        )
-    )
+    missing_required_keys = tuple(sorted(key for key in required_keys if config_snapshot.get(key) is None))
 
-    resolved_config = {
-        key: config_snapshot.get(key, "")
-        for key in _dedupe(required_keys + optional_keys)
-    }
+    resolved_config = {key: config_snapshot.get(key, "") for key in _dedupe(required_keys + optional_keys)}
 
     return ConfigResolutionResult(missing_required_keys=missing_required_keys, config=resolved_config)
 
