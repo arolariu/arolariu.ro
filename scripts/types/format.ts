@@ -21,8 +21,10 @@
  * - `website`: Main Next.js site (Prettier)
  * - `cv`: CV SvelteKit site (Prettier)
  * - `api`: .NET backend (dotnet format)
+ * - `status`: SvelteKit Status Page (Prettier)
+ * - `exp`: FastAPI Experimental Python service (Ruff)
  */
-export type FormatTarget = "packages" | "website" | "cv" | "api";
+export type FormatTarget = "packages" | "website" | "cv" | "api" | "status" | "exp";
 
 /**
  * Input payload for the format worker thread.
@@ -82,6 +84,10 @@ export interface FormatWorkerResult {
   readonly resultText: string;
   /** Error message if the worker encountered an exception */
   readonly error?: string;
+  /** Whether the target was skipped (e.g. required tool not found on PATH) */
+  readonly skipped?: boolean;
+  /** Human-readable reason why the target was skipped */
+  readonly skipReason?: string;
   /** Worker thread ID (unique per worker) */
   readonly workerId: number;
   /** Total duration including thread startup and module loading (milliseconds) */
