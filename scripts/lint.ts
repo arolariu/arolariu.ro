@@ -155,7 +155,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
 
   // Create Piscina worker pool
   const piscina = new Piscina({
-    filename: new URL("./workers/eslint.worker.ts", import.meta.url).href,
+    filename: new URL("./workers/lint.worker.ts", import.meta.url).href,
     minThreads: 1,
     maxThreads: 3,
     idleTimeout: 500,

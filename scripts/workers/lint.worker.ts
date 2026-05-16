@@ -1,12 +1,18 @@
 /**
- * @fileoverview ESLint worker thread for parallel linting execution.
- * @module scripts/workers/eslint.worker
+ * @fileoverview Lint worker thread for parallel per-target lint execution.
+ * @module scripts/workers/lint.worker
  *
  * @remarks
- * This worker is spawned by Piscina to run ESLint analysis in a separate thread.
- * Each worker re-imports the eslint.config.ts to get the full config by name,
- * uses a per-config cache file to prevent race conditions, and returns
- * serializable results to the main thread.
+ * This worker is spawned by Piscina to run lint analysis for a target in a
+ * separate thread. Each target composes 1 or 2 sequential steps (see
+ * stepsForTarget) and the worker runs them fail-fast, returning a serializable
+ * result to the main thread.
+ *
+ * Supported tools (per target):
+ * - packages, website         → ESLint Node API
+ * - cv, status                → svelte-check + ESLint
+ * - api                       → dotnet format --verify-no-changes + dotnet build
+ * - exp                       → ruff check (probes `ruff` then falls back to `python -m ruff`)
  */
 
 import {ESLint} from "eslint";
