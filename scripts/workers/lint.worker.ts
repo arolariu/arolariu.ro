@@ -17,7 +17,7 @@
 
 import {ESLint} from "eslint";
 import {threadId} from "node:worker_threads";
-import type {ESLintFileStats, ESLintWorkerInput, ESLintWorkerResult} from "../types/lint.ts";
+import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "../types/lint.ts";
 
 /** Number of slowest files to track */
 const TOP_SLOWEST_FILES = 5;
@@ -53,7 +53,7 @@ const CACHE_DIR = "artifacts";
  * @param input - Worker input containing the config name to lint
  * @returns Promise resolving to ESLint results with buffered output
  */
-export default async function eslintWorker(input: ESLintWorkerInput): Promise<ESLintWorkerResult> {
+export default async function eslintWorker(input: LintWorkerInput): Promise<LintWorkerResult> {
   const {configName, filePatterns: inputPatterns} = input;
   const startTime = performance.now();
   const workerId = threadId; // Use threadId for unique worker identification
@@ -72,7 +72,7 @@ export default async function eslintWorker(input: ESLintWorkerInput): Promise<ES
   let workTimeMs = 0;
 
   // Create default error result helper
-  const createErrorResult = (error: string): ESLintWorkerResult => ({
+  const createErrorResult = (error: string): LintWorkerResult => ({
     configName,
     errorCount: 1,
     warningCount: 0,

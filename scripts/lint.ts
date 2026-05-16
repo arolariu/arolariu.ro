@@ -20,7 +20,7 @@ import {
   logWorkerSpawn,
   printWorkerTimeline,
 } from "./common/index.ts";
-import type {ESLintFileStats, ESLintWorkerInput, ESLintWorkerResult} from "./types/lint.ts";
+import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv";
 
@@ -56,7 +56,7 @@ const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
  * @param result - The ESLint worker result.
  * @returns Nothing.
  */
-function printWorkerResult(result: ESLintWorkerResult): void {
+function printWorkerResult(result: LintWorkerResult): void {
   const workerInfo = styleText("gray", `[Worker #${result.workerId}]`);
   const timingInfo = styleText("gray", `[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
   const fileInfo = styleText("gray", `[${result.fileCount} files]`);
@@ -91,7 +91,7 @@ function printWorkerResult(result: ESLintWorkerResult): void {
  *
  * @param results - All worker results containing slowest files data.
  */
-function printSlowestFilesReport(results: ESLintWorkerResult[]): void {
+function printSlowestFilesReport(results: LintWorkerResult[]): void {
   // Collect all file stats from all workers
   const allFileStats: ESLintFileStats[] = [];
   for (const result of results) {
@@ -120,7 +120,7 @@ function printSlowestFilesReport(results: ESLintWorkerResult[]): void {
  *
  * @param results - All worker results containing memory data.
  */
-function printMemorySummary(results: ESLintWorkerResult[]): void {
+function printMemorySummary(results: LintWorkerResult[]): void {
   const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
   const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
   const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
@@ -171,7 +171,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
 
       const progress = createProgressTracker(allTargets.length);
       const dispatchTime = Date.now();
-      const results: (ESLintWorkerResult | null)[] = new Array(allTargets.length).fill(null);
+      const results: (LintWorkerResult | null)[] = new Array(allTargets.length).fill(null);
       const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
         [];
       let failedWorkers = 0;
@@ -188,14 +188,14 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       // Dispatch all targets in parallel
       const promises = allTargets.map((target, index) => {
         const configName = configNameMap[target];
-        const input: ESLintWorkerInput = {
+        const input: LintWorkerInput = {
           configName,
           taskIndex: index,
           dispatchedAt: dispatchTime,
           filePatterns: hasSelectiveTargeting ? filePatterns : undefined,
         };
 
-        return piscina.run(input) as Promise<ESLintWorkerResult>;
+        return piscina.run(input) as Promise<LintWorkerResult>;
       });
 
       // Use Promise.allSettled for graceful degradation
@@ -217,7 +217,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         } else {
           // Worker crashed - create error result
           failedWorkers++;
-          const errorResult: ESLintWorkerResult = {
+          const errorResult: LintWorkerResult = {
             configName: configNameMap[target],
             errorCount: 1,
             warningCount: 0,
@@ -272,7 +272,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       // Print results in consistent order (packages → website → cv)
       let totalErrors = 0;
       let totalWarnings = 0;
-      const validResults: ESLintWorkerResult[] = [];
+      const validResults: LintWorkerResult[] = [];
 
       for (const result of results) {
         if (!result) continue;
@@ -299,7 +299,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
     } else {
       // Single target - still use worker for consistency
       const configName = configNameMap[lintTarget];
-      const input: ESLintWorkerInput = {
+      const input: LintWorkerInput = {
         configName,
         taskIndex: 0,
         dispatchedAt: Date.now(),
@@ -307,7 +307,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       };
 
       try {
-        const result = (await piscina.run(input)) as ESLintWorkerResult;
+        const result = (await piscina.run(input)) as LintWorkerResult;
         printWorkerResult(result);
 
         // Print slowest files for single target too
