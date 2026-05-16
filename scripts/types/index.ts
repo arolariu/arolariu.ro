@@ -39,7 +39,7 @@ export type {
 
 // Re-export worker types from dedicated modules
 export type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./format.ts";
-export type {ESLintWorkerInput, ESLintWorkerResult} from "./lint.ts";
+export type {LintTarget, LintWorkerInput, LintWorkerResult} from "./lint.ts";
 
 // ============================================================================
 // Node.js Package Metadata Types
