@@ -344,8 +344,9 @@ function aggregateResults(args: {
   startTime: number;
   peakMemoryBytes: number;
   results: LintStepResult[];
+  skippedStep?: string;
 }): LintWorkerResult {
-  const {configName, workerId, startTime, peakMemoryBytes, results} = args;
+  const {configName, workerId, startTime, peakMemoryBytes, results, skippedStep} = args;
   const failed = results.find((r) => r.code !== 0);
 
   // Prefer ESLint's structured counts when present in any step's data.
@@ -373,6 +374,7 @@ function aggregateResults(args: {
     peakMemoryBytes,
     slowestFiles,
     failedStep: failed?.label,
+    skippedStep,
   };
 }
 
@@ -441,6 +443,11 @@ export default async function lintWorker(input: LintWorkerInput): Promise<LintWo
       if (r.code !== 0) break; // fail-fast
     }
 
+    // If fail-fast exited early, the next step in the target's pipeline was skipped.
+    // Surfacing its label lets the dispatcher print accurate "X skipped" messaging
+    // per target (api → "dotnet build skipped", cv/status → "eslint skipped").
+    const skippedStep = results.length < steps.length ? steps[results.length]!.label : undefined;
+
     return aggregateResults({
       target,
       configName,
@@ -448,6 +455,7 @@ export default async function lintWorker(input: LintWorkerInput): Promise<LintWo
       startTime,
       peakMemoryBytes,
       results,
+      skippedStep,
     });
   } catch (error) {
     trackMemory();

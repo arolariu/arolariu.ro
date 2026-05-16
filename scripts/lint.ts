@@ -84,9 +84,12 @@ function printWorkerResult(result: LintWorkerResult): void {
   }
 
   // When a 2-step target fails on a non-ESLint step (svelte-check, dotnet format, dotnet build),
-  // ESLint never runs — so blaming ESLint in the message would mislead the developer.
+  // ESLint never runs — but neither do other downstream steps. Use the worker's `skippedStep`
+  // (the actual next step in the target's pipeline) so api gets "dotnet build skipped", not
+  // "ESLint skipped".
   if (result.failedStep && result.failedStep !== "eslint") {
-    console.log(styleText("red", `  ✗ ${result.failedStep} failed — ESLint skipped`));
+    const skippedSuffix = result.skippedStep ? ` — ${result.skippedStep} skipped` : "";
+    console.log(styleText("red", `  ✗ ${result.failedStep} failed${skippedSuffix}`));
   } else if (result.errorCount > 0) {
     console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
   } else if (result.warningCount > 0) {

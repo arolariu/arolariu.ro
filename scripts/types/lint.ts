@@ -112,5 +112,7 @@ export interface LintWorkerResult {
   readonly skipReason?: string;
   /** Label of the step that failed (e.g. "svelte-check", "dotnet build"), if any. */
   readonly failedStep?: string;
+  /** Label of the next step in the pipeline that was skipped due to fail-fast, if any. */
+  readonly skippedStep?: string;
 }
 
