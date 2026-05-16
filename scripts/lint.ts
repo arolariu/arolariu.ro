@@ -283,7 +283,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         printWorkerTimeline(timelineEntries);
       }
 
-      // Print results in consistent order (packages → website → cv)
+      // Print results in `allTargets` order so output is stable across runs.
       let totalErrors = 0;
       let totalWarnings = 0;
       const validResults: LintWorkerResult[] = [];
