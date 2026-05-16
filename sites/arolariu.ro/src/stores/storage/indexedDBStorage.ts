@@ -149,6 +149,7 @@ function getTable<E extends BaseEntity>(db: ZustandDB, tableName: EntityTableNam
       return db.merchants as unknown as Table<E, string>;
     case "scans":
       return db.scans as unknown as Table<E, string>;
+    /* v8 ignore next 2 -- TypeScript's EntityTableName exhausts all valid cases; unreachable at runtime */
     default:
       throw new Error(`Unsupported table name: ${tableName}`);
   }

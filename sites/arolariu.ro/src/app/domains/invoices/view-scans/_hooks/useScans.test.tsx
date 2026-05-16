@@ -51,6 +51,20 @@ vi.mock("zustand/react/shallow", () => ({
   useShallow: vi.fn((fn: unknown) => fn),
 }));
 
+// Mock the toast utility so we can assert on success/error calls.
+// Use `vi.hoisted` because `vi.mock` is hoisted above top-level declarations.
+const {mockToast} = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+vi.mock("@arolariu/components", () => ({
+  toast: mockToast,
+}));
+
 // Import vitest functions AFTER mocks
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -249,6 +263,41 @@ describe("useScans", () => {
       consoleErrorSpy.mockRestore();
     });
 
+    it("should suppress error toast when component is unmounted before sync rejects", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Use a deferred promise so we can control when the fetch resolves/rejects
+      let rejectFetch!: (err: Error) => void;
+      const deferredFetch = new Promise<never>((_, reject) => {
+        rejectFetch = reject;
+      });
+      mockFetchScans.mockReturnValue(deferredFetch);
+
+      const {result, unmount} = renderHook(() => useScans());
+
+      // Kick off the sync — it will await the deferred promise
+      let syncDone = false;
+      const syncPromise = result.current.syncScans().then(() => {
+        syncDone = true;
+      });
+
+      // Unmount to set isMountedRef.current = false
+      unmount();
+
+      // Now reject the deferred fetch
+      rejectFetch(new Error("Network error after unmount"));
+      await syncPromise.catch(() => {});
+      await Promise.resolve(); // flush microtasks
+
+      expect(syncDone).toBe(true);
+      expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      // The suppression contract: with isMountedRef.current=false, the
+      // error toast must NOT fire even though sync rejected. console.error
+      // still logs (the guard wraps only the toast call).
+      expect(mockToast.error).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
     it("should add cachedAt timestamp to fetched scans", async () => {
       const fetchedScans = [
         {
@@ -279,6 +328,25 @@ describe("useScans", () => {
           }),
         ]),
       );
+    });
+  });
+
+  describe("manual sync", () => {
+    it("should show success toast when manual=true and component is mounted", async () => {
+      mockFetchScans.mockResolvedValue([]);
+
+      const {result} = renderHook(() => useScans());
+
+      await act(async () => {
+        await result.current.syncScans(true);
+      });
+
+      expect(mockStoreState.setScans).toHaveBeenCalled();
+      expect(mockStoreState.setLastSyncTimestamp).toHaveBeenCalled();
+      expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      // The manual-sync contract: success toast fires exactly when
+      // `manual=true && isMountedRef.current=true`.
+      expect(mockToast.success).toHaveBeenCalledWith("Scans synced successfully");
     });
   });
 

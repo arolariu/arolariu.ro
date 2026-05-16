@@ -1,5 +1,6 @@
 import {act, render, renderHook} from "@testing-library/react";
 import {StrictMode} from "react";
+import {renderToStaticMarkup} from "react-dom/server";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
 import {createWorkerHost} from "../host";
@@ -88,6 +89,23 @@ describe("useWorker", () => {
     unmount();
     // After unmount, the host's internal state is `disposed`; we can't
     // observe it via the hook anymore.
+  });
+
+  // Coverage: getServerSnapshot — called by React's server-side renderer to
+  // produce an SSR snapshot. Workers are client-only, so the snapshot is
+  // always the host's initial state "idle". Exercised via renderToStaticMarkup
+  // which invokes the server code path of useSyncExternalStore.
+  it("getServerSnapshot returns 'idle' during server rendering", () => {
+    const {factory} = makeFactory();
+    function Probe() {
+      const w = useWorker(factory);
+      return <div data-testid='state'>{w.state}</div>;
+    }
+    // renderToStaticMarkup drives the server-side path of useSyncExternalStore,
+    // which calls getServerSnapshot() instead of getSnapshot().
+    const html = renderToStaticMarkup(<Probe />);
+    // The server snapshot is always "idle" (host initial state before any boot).
+    expect(html).toContain("idle");
   });
 
   // Pins the disposed-host re-creation contract: when an effect re-runs and

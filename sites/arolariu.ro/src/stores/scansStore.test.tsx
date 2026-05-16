@@ -278,6 +278,22 @@ describe("useScansStore", () => {
 
       expect(useScansStore.getState().selectedScans[0]?.name).toBe("New Name");
     });
+
+    it("should only update matching selected scan name and leave others unchanged", () => {
+      // Exercises the falsy branch of selectedScans.map() ternary in updateScanName
+      const scan1 = createTestScan("1", {name: "Original 1"});
+      const scan2 = createTestScan("2", {name: "Original 2"});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().toggleScanSelection(scan1);
+        useScansStore.getState().toggleScanSelection(scan2);
+        useScansStore.getState().updateScanName("1", "Updated 1");
+      });
+
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "1")?.name).toBe("Updated 1");
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "2")?.name).toBe("Original 2");
+    });
   });
 
   describe("updateScanBlobUrl", () => {
@@ -302,6 +318,22 @@ describe("useScansStore", () => {
       });
 
       expect(useScansStore.getState().selectedScans[0]?.blobUrl).toBe("https://new.url/scan.jpg");
+    });
+
+    it("should only update matching selected scan blob URL and leave others unchanged", () => {
+      // Exercises the falsy branch of selectedScans.map() ternary in updateScanBlobUrl
+      const scan1 = createTestScan("1", {blobUrl: "https://old.url/scan1.jpg"});
+      const scan2 = createTestScan("2", {blobUrl: "https://old.url/scan2.jpg"});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().toggleScanSelection(scan1);
+        useScansStore.getState().toggleScanSelection(scan2);
+        useScansStore.getState().updateScanBlobUrl("1", "https://new.url/scan1.jpg");
+      });
+
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "1")?.blobUrl).toBe("https://new.url/scan1.jpg");
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "2")?.blobUrl).toBe("https://old.url/scan2.jpg");
     });
   });
 
@@ -503,6 +535,23 @@ describe("useScansStore", () => {
       expect(useScansStore.getState().scans[0]?.status).toBe(ScanStatus.READY);
       expect(useScansStore.getState().scans[1]?.status).toBe(ScanStatus.READY);
     });
+
+    it("should only update the matching selected scan and leave other selected scans unchanged", () => {
+      // Exercises the falsy branch of selectedScans.map() ternary (s.id !== scanId)
+      const scan1 = createTestScan("1", {status: ScanStatus.READY});
+      const scan2 = createTestScan("2", {status: ScanStatus.READY});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().toggleScanSelection(scan1);
+        useScansStore.getState().toggleScanSelection(scan2);
+        // Updating scan1 while scan2 is also selected exercises the non-matching branch
+        useScansStore.getState().updateScanStatus("1", ScanStatus.ARCHIVED);
+      });
+
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "1")?.status).toBe(ScanStatus.ARCHIVED);
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "2")?.status).toBe(ScanStatus.READY);
+    });
   });
 
   describe("setSelectedScans", () => {
@@ -568,6 +617,22 @@ describe("useScansStore", () => {
 
       const unchanged = useScansStore.getState().scans.find((s) => s.id === "2");
       expect(unchanged?.metadata).toEqual({original: "2"});
+    });
+
+    it("should only update matching selected scan metadata and leave others unchanged", () => {
+      // Exercises the falsy branch of selectedScans.map() ternary in updateScanMetadata
+      const scan1 = createTestScan("1", {metadata: {original: "1"}});
+      const scan2 = createTestScan("2", {metadata: {original: "2"}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().toggleScanSelection(scan1);
+        useScansStore.getState().toggleScanSelection(scan2);
+        useScansStore.getState().updateScanMetadata("1", {changed: "true"});
+      });
+
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "1")?.metadata).toEqual({original: "1", changed: "true"});
+      expect(useScansStore.getState().selectedScans.find((s) => s.id === "2")?.metadata).toEqual({original: "2"});
     });
   });
 

@@ -104,6 +104,94 @@ describe("createBootHandshake", () => {
     expect(closeEvent).toHaveBeenCalled();
   });
 
+  it("handles a 'ready' event arriving after the timeout (bootTimeoutId already null)", async () => {
+    // Exercises the `if (bootTimeoutId !== null)` false branch (line 150).
+    // This race can happen when the timeout fires first (setting bootTimeoutId=null
+    // and rejecting), and then the late ready event still arrives on the port.
+    vi.useFakeTimers();
+    try {
+      const stubWorker: Worker = {
+        postMessage: () => {},
+        terminate: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => true,
+        onmessage: null,
+        onmessageerror: null,
+        onerror: null,
+      } as unknown as Worker;
+
+      const handshake = createBootHandshake({
+        worker: stubWorker,
+        capabilities: CAPS,
+        onEvent: () => {},
+        bootstrapTimeoutMs: 50,
+      });
+      const settled = handshake.ready.catch((e: unknown) => e);
+      // Advance time to fire the bootstrap timeout — sets bootTimeoutId=null.
+      vi.advanceTimersByTime(60);
+      await settled;
+      // Now send a late 'ready' event on the parent port — bootTimeoutId is null.
+      // The port's onmessage handler is still wired (the timeout only sets
+      // bootTimeoutId=null; it doesn't clear the port handler). Calling it
+      // exercises the `if (bootTimeoutId !== null)` false branch.
+      const parentEventPort = handshake.parentEventPort;
+      // The onmessage must still be set after timeout (only bootTimeoutId is cleared).
+      expect(parentEventPort.onmessage).not.toBeNull();
+      expect(() => {
+        parentEventPort.onmessage!(new MessageEvent("message", {data: {kind: "ready"}}));
+      }).not.toThrow();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("teardown() is idempotent — second call is a no-op", async () => {
+    // Exercises the `if (tornDown) return` guard (line 244 of bootHandshake.ts).
+    const mock = createMockWorker({api: {ping: async () => "pong"}});
+    const handshake = createBootHandshake({
+      worker: mock.worker,
+      capabilities: CAPS,
+      onEvent: () => {},
+      bootstrapTimeoutMs: 10_000,
+    });
+    await handshake.ready;
+    handshake.teardown();
+    // Second call must not throw.
+    expect(() => handshake.teardown()).not.toThrow();
+  });
+
+  it("filters stray ready events arriving after bootstrap (steady-state listener)", async () => {
+    // Exercises the `if (nextEv.kind === "ready") return` branch (line 158).
+    // After bootstrap, the steady-state listener filters out stray ready events.
+    //
+    // Drive the parent event port directly rather than posting to the
+    // worker-side port. The previous version posted via `getEventPort()` and
+    // relied on the MessageChannel transfer being plumbed — if the harness
+    // ever stops plumbing the channel, the assertion becomes vacuously true.
+    // Calling `parentEventPort.onmessage` directly removes that ambiguity
+    // and pins the filter behaviour on the parent side where it actually lives.
+    const events: unknown[] = [];
+    const mock = createMockWorker({api: {ping: async () => "pong"}});
+    const handshake = createBootHandshake({
+      worker: mock.worker,
+      capabilities: CAPS,
+      onEvent: (e) => events.push(e),
+      bootstrapTimeoutMs: 10_000,
+    });
+    await handshake.ready;
+    // Baseline: confirm the parent port's steady-state handler is wired.
+    const parentEventPort = handshake.parentEventPort;
+    expect(parentEventPort.onmessage).not.toBeNull();
+    const countBefore = events.length;
+    // Drive a stray "ready" event directly into the parent port. The
+    // steady-state listener must filter it before reaching `onEvent`.
+    parentEventPort.onmessage!(new MessageEvent("message", {data: {kind: "ready"}}));
+    // No new event reached the sink.
+    expect(events.length).toBe(countBefore);
+    expect(events.find((e) => (e as {kind?: string}).kind === "ready")).toBeUndefined();
+  });
+
   it("rethrows synchronously when validateBootstrap rejects malformed capabilities", () => {
     // Exercises the synchronous validation-failure branch of
     // createBootHandshake. validateBootstrap requires `crossOriginIsolated`
@@ -130,6 +218,45 @@ describe("createBootHandshake", () => {
         bootstrapTimeoutMs: 1_000,
       });
     }).toThrow("invalid bootstrap message");
+  });
+
+  it("forwards non-ready events arriving before the handshake completes (defensive parity)", async () => {
+    // This test drives the pre-ready onEvent branch (line 165 of bootHandshake.ts).
+    // We send a non-ready event on the parent event port BEFORE the ready event
+    // by directly triggering the port's onmessage handler.
+    const events: unknown[] = [];
+
+    // Use a stub worker that never replies — we drive the port manually.
+    const stubWorker: Worker = {
+      postMessage: () => {},
+      terminate: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => true,
+      onmessage: null,
+      onmessageerror: null,
+      onerror: null,
+    } as unknown as Worker;
+
+    const handshake = createBootHandshake({
+      worker: stubWorker,
+      capabilities: CAPS,
+      onEvent: (e) => events.push(e),
+      bootstrapTimeoutMs: 10_000,
+    });
+
+    // The parent event port has its onmessage wired by createBootHandshake.
+    // Trigger a pre-ready log event directly — this exercises the defensive
+    // parity branch that forwards non-ready events before handshake completes.
+    const parentEventPort = handshake.parentEventPort;
+    if (parentEventPort.onmessage) {
+      parentEventPort.onmessage(new MessageEvent("message", {data: {kind: "log", level: "info", msg: "pre-ready"}}));
+    }
+    expect(events).toContainEqual({kind: "log", level: "info", msg: "pre-ready"});
+
+    // Clean up: teardown the handshake (avoids the bootstrap timeout leaking).
+    handshake.rejectIfPending(new Error("test done"));
+    handshake.teardown();
   });
 
   it("rethrows synchronously when worker.postMessage throws", () => {

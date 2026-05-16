@@ -521,5 +521,21 @@ describe("my-profile helpers", () => {
       const result = deepMerge(target, source);
       expect(result).toEqual({a: {b: 1}});
     });
+
+    it("should skip inherited enumerable properties from source prototype chain", () => {
+      // Create a source object with an inherited enumerable property via prototype
+      // Object.hasOwn returns false for inherited keys, exercising the false branch at line 160
+      const proto = {inherited: "should-be-skipped"};
+      const source = Object.create(proto) as {inherited: string; own: string};
+      source.own = "included";
+
+      const target = {own: "original", inherited: "not-overwritten"};
+      const result = deepMerge(target, source as unknown as Partial<typeof target>);
+
+      // Own key from source is merged
+      expect(result.own).toBe("included");
+      // Inherited key is NOT merged (Object.hasOwn is false)
+      expect(result.inherited).toBe("not-overwritten");
+    });
   });
 });

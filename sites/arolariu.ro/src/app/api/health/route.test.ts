@@ -203,4 +203,31 @@ describe("/api/health", () => {
     expect(body.build.siteUrl).toBe("unknown");
     expect(body.build.infraMode).toBe("unknown");
   });
+
+  it("uses Azure production URLs when AZURE_CLIENT_ID is set", async () => {
+    // Set AZURE_CLIENT_ID before importing so the module-level constant picks it up
+    vi.stubEnv("AZURE_CLIENT_ID", "test-azure-client-id");
+    mockFetch.mockResolvedValue({ok: true, status: 200});
+
+    const {GET} = await import("./route");
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // With AZURE_CLIENT_ID set, URLs should use https://
+    expect(body.dependencies[0]?.url).toContain("https://exp.arolariu.ro");
+    expect(body.dependencies[1]?.url).toContain("https://api.arolariu.ro");
+  });
+
+  it("returns unknown nextVersion when next/package.json version is undefined", async () => {
+    // Override the next/package.json mock to export version as undefined
+    vi.doMock("next/package.json", () => ({version: undefined}));
+    mockFetch.mockResolvedValue({ok: true, status: 200});
+
+    const {GET} = await import("./route");
+    const response = await GET();
+    const body = await response.json();
+
+    expect(body.process.nextVersion).toBe("unknown");
+  });
 });

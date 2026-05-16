@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {WORKER_PROTOCOL_VERSION} from "../host/workerEnvelope";
-import {__resetForTesting, expose, getEventPort} from "./exposeWorker";
+import {__resetForTesting, expose, getBootstrapCapabilities, getEventPort} from "./exposeWorker";
 
 /**
  * Build a minimal `self`-like object for the test, with `addEventListener`
@@ -97,6 +97,15 @@ describe("expose", () => {
     const fakeSelf = makeFakeSelf();
     expose({greet: async () => "hi"}, {self: fakeSelf as unknown as DedicatedWorkerGlobalScope});
     expect(getEventPort()).toBeNull();
+  });
+
+  it("getBootstrapCapabilities returns null before bootstrap completes", () => {
+    // Exercises line 56 of exposeWorker.ts — `getBootstrapCapabilities()` must
+    // return `null` when called before the bootstrap handshake has completed.
+    const fakeSelf = makeFakeSelf();
+    expose({greet: async () => "hi"}, {self: fakeSelf as unknown as DedicatedWorkerGlobalScope});
+    // No bootstrap fired yet — capabilities pointer is null.
+    expect(getBootstrapCapabilities()).toBeNull();
   });
 
   it("passes non-function API values through unwrapped (else branch)", () => {
