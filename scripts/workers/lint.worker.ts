@@ -47,6 +47,10 @@ async function runCommand(command: string, args: readonly string[], opts?: {cwd?
       stdio: "pipe",
       windowsHide: true,
       cwd: opts?.cwd,
+      // On Windows, `npx` is a .cmd shim (not a real binary) — spawn() can't resolve it
+      // without going through the shell. Real binaries (node, dotnet, ruff, python) work
+      // either way, so enabling shell on Windows is a strict superset.
+      shell: process.platform === "win32",
     });
 
     let output = "";
