@@ -212,6 +212,14 @@ describe("formatDate", () => {
     // null input now returns empty string (safe default)
     expect(formatted).toBe("");
   });
+
+  it("should format with individual year/month/day fields (no dateStyle default)", async () => {
+    const {formatDate} = await import("./utils.generic");
+    // Providing `year` triggers the hasIndividualFields branch — dateStyle must not be injected
+    const formatted = formatDate("2024-06-15", {locale: "en-US", year: "numeric", month: "long", day: "numeric"});
+    expect(formatted).toContain("2024");
+    expect(formatted).toContain("June");
+  });
 });
 
 describe("toSafeDate", () => {
@@ -350,6 +358,36 @@ describe("formatRelativeTime", () => {
   it("should handle future dates", () => {
     const fiveMinFuture = new Date(Date.now() + 5 * 60_000);
     expect(formatRelativeTime(fiveMinFuture)).toContain("from now");
+  });
+
+  it("should return 'in less than a minute' for a future date under 60 seconds", () => {
+    const thirtySecsFuture = new Date(Date.now() + 30_000);
+    expect(formatRelativeTime(thirtySecsFuture)).toBe("in less than a minute");
+  });
+
+  it("should return singular hour form for future dates", () => {
+    const oneHourFuture = new Date(Date.now() + 1 * 3600_000 + 60_000);
+    expect(formatRelativeTime(oneHourFuture)).toBe("1 hour from now");
+  });
+
+  it("should return singular day form for future dates", () => {
+    const oneDayFuture = new Date(Date.now() + 1 * 86400_000 + 60_000);
+    expect(formatRelativeTime(oneDayFuture)).toBe("1 day from now");
+  });
+
+  it("should return singular week form for future dates", () => {
+    const oneWeekFuture = new Date(Date.now() + 7 * 86400_000 + 60_000);
+    expect(formatRelativeTime(oneWeekFuture)).toBe("1 week from now");
+  });
+
+  it("should return plural month form for future dates beyond 5 weeks", () => {
+    const twoMonthsFuture = new Date(Date.now() + 60 * 86400_000);
+    expect(formatRelativeTime(twoMonthsFuture)).toBe("2 months from now");
+  });
+
+  it("should return singular month form for a future date about 1 month away", () => {
+    const oneMonthFuture = new Date(Date.now() + 35 * 86400_000 + 60_000);
+    expect(formatRelativeTime(oneMonthFuture)).toBe("1 month from now");
   });
 });
 

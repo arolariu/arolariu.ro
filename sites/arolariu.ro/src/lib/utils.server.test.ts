@@ -793,6 +793,26 @@ describe("fetchWithTimeout - edge cases", () => {
     const [fetchUrl3] = firstCall3!;
     expect(fetchUrl3).toBe("https://api.example.com/rest/v1/invoices");
   });
+
+  it("should merge caller-supplied headers with trace context headers", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    // Provide explicit headers in options — exercises the `options.headers ? new Headers(options.headers) : new Headers()` true branch
+    const options: RequestInit = {
+      method: "POST",
+      headers: {"Authorization": "Bearer test-token", "Content-Type": "application/json"},
+    };
+
+    await fetchWithTimeout("https://api.example.com/data", options);
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(fetchOptions.headers).toMatchObject({
+      "Authorization": "Bearer test-token",
+      "Content-Type": "application/json",
+    });
+  });
 });
 
 describe("verifyJwtToken", () => {

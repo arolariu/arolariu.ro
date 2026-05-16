@@ -4,10 +4,11 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 const mockFetchConfigValue = vi.fn<(key: string) => Promise<string>>();
+const mockSetSpanAttributes = vi.fn();
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/instrumentation.server", () => ({
-  setSpanAttributes: vi.fn(),
+  setSpanAttributes: (...args: Parameters<typeof mockSetSpanAttributes>) => mockSetSpanAttributes(...args),
   getTraceparentHeader: vi.fn(() => ""),
   injectTraceContextHeaders: vi.fn(() => ({})),
 }));
@@ -22,6 +23,7 @@ describe("featureFlags.server", () => {
   beforeEach(() => {
     vi.resetModules();
     mockFetchConfigValue.mockReset();
+    mockSetSpanAttributes.mockReset();
   });
 
   afterEach(() => {
@@ -88,5 +90,23 @@ describe("featureFlags.server", () => {
     expect(flags).toEqual(DEFAULT_FEATURE_FLAGS);
     expect(flags.commanderEnabled).toBe(true);
     expect(flags.webVitalsEnabled).toBe(false);
+  });
+
+  it("returns defaults when setSpanAttributes throws unexpectedly (outer catch block)", async () => {
+    // Arrange - Successful fetch, but setSpanAttributes throws — exercises the outer catch (line 59)
+    mockFetchConfigValue.mockImplementation(async (key: string) => {
+      if (key === "website.commander.enabled") return "true";
+      if (key === "website.web-vitals.enabled") return "false";
+      return "false";
+    });
+    mockSetSpanAttributes.mockImplementationOnce(() => {
+      throw new Error("Tracing system failure");
+    });
+
+    const {getWebsiteFeatureFlags, DEFAULT_FEATURE_FLAGS} = await import("./featureFlags.server");
+    const flags = await getWebsiteFeatureFlags();
+
+    // Should fall back to defaults on any unexpected error
+    expect(flags).toEqual(DEFAULT_FEATURE_FLAGS);
   });
 });
