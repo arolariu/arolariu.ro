@@ -23,8 +23,12 @@ async function probe(cmd: string): Promise<boolean> {
 }
 
 describe("isToolAvailable probe (mirror of format.worker.ts)", () => {
-  it("returns true for an existing tool (node)", async () => {
-    const result = await probe("node");
+  // Use process.execPath (absolute path to the current node binary) instead of
+  // the bare name "node" so the test doesn't depend on PATH layout. A restricted
+  // environment that runs vitest via npx but omits `node` from PATH would
+  // otherwise produce a spurious failure.
+  it("returns true for an existing tool (current node binary)", async () => {
+    const result = await probe(process.execPath);
     expect(result).toBe(true);
   });
 
