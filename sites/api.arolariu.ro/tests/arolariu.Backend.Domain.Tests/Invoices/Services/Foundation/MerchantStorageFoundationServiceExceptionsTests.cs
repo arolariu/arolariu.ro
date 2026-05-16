@@ -33,68 +33,73 @@ public class MerchantStorageFoundationServiceExceptionsTests
 
   /// <summary>Verifies that a <see cref="MerchantNotFoundException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
   [Fact]
-  public async Task ReadMerchantObject_WhenBrokerThrowsNotFound_ThrowsFoundationDependencyValidationException()
+  public async Task ReadMerchantObject_WhenBrokerThrowsNotFound_ThrowsMerchantNotFoundException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantNotFoundException(Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    // Pass-through: Preserve INotFoundException marker for correct HTTP 404 mapping
+    var ex = await Assert.ThrowsAsync<MerchantNotFoundException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<MerchantNotFoundException>(ex.InnerException);
+    Assert.IsType<MerchantNotFoundException>(ex);
   }
 
-  /// <summary>Verifies that a <see cref="MerchantAlreadyExistsException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/>.</summary>
+  /// <summary>Verifies that a <see cref="MerchantAlreadyExistsException"/> from the broker is passed through to preserve IAlreadyExistsException marker for correct HTTP 409 mapping.</summary>
   [Fact]
-  public async Task CreateMerchantObject_WhenBrokerThrowsAlreadyExists_ThrowsFoundationDependencyValidationException()
+  public async Task CreateMerchantObject_WhenBrokerThrowsAlreadyExists_ThrowsMerchantAlreadyExistsException()
   {
     _broker.Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantAlreadyExistsException(Guid.NewGuid()));
     var merchant = new Merchant { id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid() };
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    // Pass-through: Preserve IAlreadyExistsException marker for correct HTTP 409 mapping
+    var ex = await Assert.ThrowsAsync<MerchantAlreadyExistsException>(
       () => _sut.CreateMerchantObject(merchant));
 
-    Assert.IsType<MerchantAlreadyExistsException>(ex.InnerException);
+    Assert.IsType<MerchantAlreadyExistsException>(ex);
   }
 
-  /// <summary>Verifies that a <see cref="MerchantUnauthorizedAccessException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 401, not 503).</summary>
+  /// <summary>Verifies that a <see cref="MerchantUnauthorizedAccessException"/> from the broker is passed through to preserve IUnauthorizedException marker for correct HTTP 401 mapping.</summary>
   [Fact]
-  public async Task ReadMerchantObject_WhenBrokerThrowsUnauthorized_ThrowsFoundationDependencyValidationException()
+  public async Task ReadMerchantObject_WhenBrokerThrowsUnauthorized_ThrowsMerchantUnauthorizedAccessException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantUnauthorizedAccessException("unauthorized"));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    // Pass-through: Preserve IUnauthorizedException marker for correct HTTP 401 mapping
+    var ex = await Assert.ThrowsAsync<MerchantUnauthorizedAccessException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<MerchantUnauthorizedAccessException>(ex.InnerException);
+    Assert.IsType<MerchantUnauthorizedAccessException>(ex);
   }
 
-  /// <summary>Verifies that a <see cref="MerchantForbiddenAccessException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 403, not 503).</summary>
+  /// <summary>Verifies that a <see cref="MerchantForbiddenAccessException"/> from the broker is passed through to preserve IForbiddenException marker for correct HTTP 403 mapping.</summary>
   [Fact]
-  public async Task ReadMerchantObject_WhenBrokerThrowsForbidden_ThrowsFoundationDependencyValidationException()
+  public async Task ReadMerchantObject_WhenBrokerThrowsForbidden_ThrowsMerchantForbiddenAccessException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    // Pass-through: Preserve IForbiddenException marker for correct HTTP 403 mapping
+    var ex = await Assert.ThrowsAsync<MerchantForbiddenAccessException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<MerchantForbiddenAccessException>(ex.InnerException);
+    Assert.IsType<MerchantForbiddenAccessException>(ex);
   }
 
-  /// <summary>Verifies that a <see cref="MerchantCosmosDbRateLimitException"/> from the broker is wrapped into a <see cref="MerchantFoundationServiceDependencyValidationException"/> (caller-correctable 429, not 503).</summary>
+  /// <summary>Verifies that a <see cref="MerchantCosmosDbRateLimitException"/> from the broker is passed through to preserve IRateLimitedException marker for correct HTTP 429 mapping.</summary>
   [Fact]
-  public async Task ReadMerchantObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
+  public async Task ReadMerchantObject_WhenBrokerThrowsRateLimit_ThrowsMerchantCosmosDbRateLimitException()
   {
     _broker.Setup(b => b.ReadMerchantAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new MerchantCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
-    var ex = await Assert.ThrowsAsync<MerchantFoundationServiceDependencyValidationException>(
+    // Pass-through: Preserve IRateLimitedException marker for correct HTTP 429 mapping
+    var ex = await Assert.ThrowsAsync<MerchantCosmosDbRateLimitException>(
       () => _sut.ReadMerchantObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<MerchantCosmosDbRateLimitException>(ex.InnerException);
+    Assert.IsType<MerchantCosmosDbRateLimitException>(ex);
   }
 
   /// <summary>Regression guard: <see cref="MerchantFailedStorageException"/> must remain in the Dependency tier (downstream unreachable, 503).</summary>
