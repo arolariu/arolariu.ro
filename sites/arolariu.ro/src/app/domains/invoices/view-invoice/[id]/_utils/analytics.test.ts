@@ -35,6 +35,23 @@ vi.mock("@/lib/currency", () => ({
   }),
 }));
 
+describe("getCategorySpending — fallback fill color", () => {
+  it("should use fallback color for category not in CATEGORY_COLORS map", () => {
+    // Cast a numeric value outside the known ProductCategory map keys (e.g., 999)
+    // to exercise the `|| "var(--ac-chart-1)"` branch on line 48.
+    const unknownCategory = 999 as unknown as (typeof ProductCategory)[keyof typeof ProductCategory];
+    const items = [
+      new ProductBuilder().withCategory(unknownCategory).withTotalPrice(25).build(),
+    ];
+
+    const result = getCategorySpending(items);
+
+    expect(result).toHaveLength(1);
+    // Should fall back to "var(--ac-chart-1)" because 999 is not in CATEGORY_COLORS
+    expect(result[0]?.fill).toBe("var(--ac-chart-1)");
+  });
+});
+
 describe("getSpendingTrend", () => {
   it("should return empty array if fewer than 2 invoices", () => {
     const invoice = new InvoiceBuilder().build();
@@ -218,6 +235,64 @@ describe("getSpendingTrend", () => {
 
     expect(result[0]?.invoices[0]?.name).toBe("Invoice abc12345");
   });
+
+  it("should fall back to createdAt when paymentInformation is missing on allInvoices entries", () => {
+    // Lines 172-178: paymentInformation?.transactionDate ?? inv.createdAt,
+    // paymentInformation?.totalCostAmount ?? 0, paymentInformation?.currency?.code ?? "RON"
+    const invoice1 = new InvoiceBuilder()
+      .withId("inv1")
+      .withCreatedAt(new Date("2024-03-10"))
+      .withTransactionDate(new Date("2024-03-10"))
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const invoice2 = new InvoiceBuilder()
+      .withId("inv2")
+      .withCreatedAt(new Date("2024-03-20"))
+      .withTransactionDate(new Date("2024-03-20"))
+      .withPaymentAmount(50)
+      .withPaymentCurrency("RON")
+      .build();
+    // Strip paymentInformation so optional chaining paths fire
+    (invoice2 as any).paymentInformation = null;
+
+    const result = getSpendingTrend(invoice1, [invoice1, invoice2]);
+
+    // invoice2 has no paymentInformation: amount falls back to 0, currency to "RON",
+    // date falls back to invoice2.createdAt (2024-03-20 → same month as invoice1)
+    expect(result).toHaveLength(1);
+    expect(result[0]?.date).toContain("Mar");
+    // invoice2 contributes 0 (null paymentInformation → amount ?? 0)
+    expect(result[0]?.amount).toBe(100);
+  });
+
+  it("should fall back to currentInvoice.createdAt when its paymentInformation is missing", () => {
+    // Line 204: currentInvoice.paymentInformation?.transactionDate ?? currentInvoice.createdAt
+    const invoice1 = new InvoiceBuilder()
+      .withId("inv1")
+      .withCreatedAt(new Date("2024-04-05"))
+      .withTransactionDate(new Date("2024-04-05"))
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const invoice2 = new InvoiceBuilder()
+      .withId("current")
+      .withCreatedAt(new Date("2024-04-15"))
+      .withTransactionDate(new Date("2024-04-15"))
+      .withPaymentAmount(200)
+      .withPaymentCurrency("RON")
+      .build();
+    // Strip paymentInformation from the currentInvoice so line 204 uses createdAt
+    (invoice2 as any).paymentInformation = null;
+
+    const result = getSpendingTrend(invoice2, [invoice1, invoice2]);
+
+    // Both are April — the current month key should match April (from createdAt fallback)
+    expect(result).toHaveLength(1);
+    expect(result[0]?.isCurrent).toBe(true);
+  });
 });
 
 describe("getComparisonStats", () => {
@@ -351,6 +426,78 @@ describe("getComparisonStats", () => {
     expect(result.currentAmount).toBe(500);
     expect(result.averageAmount).toBe(100);
   });
+
+  it("should use fallback values when current invoice paymentInformation is missing (lines 250-254)", () => {
+    // Lines 250-254: currentInvoice.paymentInformation?.totalCostAmount ?? 0,
+    // paymentInformation?.currency?.code ?? "RON", currentInvoice.items?.length ?? 0
+    const currentInvoice = new InvoiceBuilder().withId("current").build();
+    (currentInvoice as any).paymentInformation = null;
+    (currentInvoice as any).items = null;
+
+    const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(100).withPaymentCurrency("RON").build();
+
+    // With fewer than 2 invoices (early-return path with fallback fields):
+    const singleResult = getComparisonStats(currentInvoice, [currentInvoice]);
+    expect(singleResult.currentAmount).toBe(0); // totalCostAmount ?? 0
+    expect(singleResult.currentItemCount).toBe(0); // items?.length ?? 0
+    expect(singleResult.totalInvoices).toBe(1);
+
+    // With 2+ invoices, currentAmountInRON still uses the fallbacks
+    const multiResult = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice]);
+    expect(multiResult.currentAmount).toBe(0);
+    expect(multiResult.currentItemCount).toBe(0);
+  });
+
+  it("should handle missing paymentInformation on other invoices (lines 278-293)", () => {
+    // Lines 278-293: amounts map with optional chaining on other invoices
+    const currentInvoice = new InvoiceBuilder().withId("current").withPaymentAmount(150).withPaymentCurrency("RON").build();
+
+    const otherInvoice1 = new InvoiceBuilder().withId("other1").withPaymentAmount(100).withPaymentCurrency("RON").build();
+    const otherInvoice2 = new InvoiceBuilder().withId("other2").withPaymentAmount(200).withPaymentCurrency("RON").build();
+    // Strip paymentInformation from other2 so optional chaining fires
+    (otherInvoice2 as any).paymentInformation = null;
+
+    const result = getComparisonStats(currentInvoice, [currentInvoice, otherInvoice1, otherInvoice2]);
+
+    // other2 contributes 0 (amount ?? 0); only other1's 100 counts
+    // averageAmount = (100 + 0) / 2 = 50
+    expect(result.averageAmount).toBe(50);
+    // minAmount and maxAmount from [100, 0]
+    expect(result.minAmount).toBe(0);
+    expect(result.maxAmount).toBe(100);
+  });
+
+  it("should handle missing paymentInformation on same-merchant invoices (lines 305-312)", () => {
+    // Lines 305-312: sameMerchantAmounts map with optional chaining
+    const currentInvoice = new InvoiceBuilder()
+      .withId("current")
+      .withMerchantReference("merchant-x")
+      .withPaymentAmount(200)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const sameMerchantInvoice = new InvoiceBuilder()
+      .withId("same")
+      .withMerchantReference("merchant-x")
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+    // Strip paymentInformation so the optional chaining on line 305-308 fires
+    (sameMerchantInvoice as any).paymentInformation = null;
+
+    const differentMerchant = new InvoiceBuilder()
+      .withId("diff")
+      .withMerchantReference("merchant-y")
+      .withPaymentAmount(50)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const result = getComparisonStats(currentInvoice, [currentInvoice, sameMerchantInvoice, differentMerchant]);
+
+    // sameMerchantInvoice has null paymentInformation → amount ?? 0, currency ?? "RON"
+    // sameMerchantAvg = 0 (only same-merchant invoice has 0 amount)
+    expect(result.sameMerchantAvg).toBe(0);
+  });
 });
 
 describe("getMerchantBreakdown", () => {
@@ -430,6 +577,43 @@ describe("getMerchantBreakdown", () => {
     expect(result[0]?.total).toBe(950);
     expect(result[0]?.average).toBe(475);
   });
+
+  it("should filter out invoices with EMPTY_GUID merchant reference", () => {
+    const emptyGuidInvoice = new InvoiceBuilder()
+      .withMerchantReference("00000000-0000-0000-0000-000000000000")
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const validInvoice = new InvoiceBuilder()
+      .withMerchantReference("merchant-valid")
+      .withPaymentAmount(200)
+      .withPaymentCurrency("RON")
+      .build();
+
+    const result = getMerchantBreakdown([emptyGuidInvoice, validInvoice]);
+
+    // Only merchant-valid should appear; EMPTY_GUID invoice is filtered
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe("merchant-valid");
+  });
+
+  it("should use fallback amount/currency when paymentInformation is missing (lines 362-363)", () => {
+    // Lines 362-363: inv.paymentInformation?.totalCostAmount ?? 0 and currency?.code ?? "RON"
+    const invoiceWithoutPayment = new InvoiceBuilder()
+      .withMerchantReference("merchant-nopay")
+      .withPaymentAmount(100)
+      .withPaymentCurrency("RON")
+      .build();
+    (invoiceWithoutPayment as any).paymentInformation = null;
+
+    const result = getMerchantBreakdown([invoiceWithoutPayment]);
+
+    // amount ?? 0 → total = 0, currency ?? "RON" (still RON, toRON(0, "RON", year) = 0)
+    expect(result).toHaveLength(1);
+    expect(result[0]?.total).toBe(0);
+    expect(result[0]?.average).toBe(0);
+  });
 });
 
 describe("getCategoryComparison", () => {
@@ -479,6 +663,36 @@ describe("getCategoryComparison", () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.category).toContain("FRUITS");
     expect(result[0]?.current).toBe(75);
+    expect(result[0]?.average).toBe(0);
+  });
+
+  it("should use fallback empty array when currentInvoice.items is null (line 410)", () => {
+    // Line 410: const currentItems = currentInvoice.items ?? [];
+    const invoice = new InvoiceBuilder().withId("current").build();
+    (invoice as any).items = null;
+
+    const result = getCategoryComparison(invoice, [invoice]);
+
+    // null items falls back to [], so length === 0 → returns []
+    expect(result).toEqual([]);
+  });
+
+  it("should use fallback empty array when other invoice items are null (line 427)", () => {
+    // Line 427: const items = inv.items ?? [];
+    const currentInvoice = new InvoiceBuilder()
+      .withId("current")
+      .withItems([{category: ProductCategory.BEVERAGES, totalPrice: 40} as any])
+      .build();
+
+    const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(50).build();
+    (otherInvoice as any).items = null;
+
+    const result = getCategoryComparison(currentInvoice, [currentInvoice, otherInvoice]);
+
+    // otherInvoice.items ?? [] → empty, so historical average for BEVERAGES = 0
+    expect(result).toHaveLength(1);
+    expect(result[0]?.category).toContain("BEVERAGES");
+    expect(result[0]?.current).toBe(40);
     expect(result[0]?.average).toBe(0);
   });
 });
@@ -855,6 +1069,100 @@ describe("computeShoppingPatterns", () => {
 
     expect(result.spendingByDay[15]?.invoiceIds).toContain("test-invoice-id");
     expect(result.spendingByDay[15]?.invoiceNames).toContain("Test Invoice");
+  });
+
+  it("should compute historical comparison when prior-year same-month invoices exist (lines 618-649)", () => {
+    // This exercises computeHistoricalComparison's inner block:
+    // when `historical && historical.years.size > 0` is true.
+    // We need current-month invoices (Jan 2024) and prior-year same-month invoices (Jan 2023).
+    const currentMonthInvoice = new InvoiceBuilder()
+      .withId("cur-jan-2024")
+      .withName("Jan 2024 Shopping")
+      .withTransactionDate(new Date("2024-01-10"))
+      .withPaymentAmount(150)
+      .build();
+
+    // Historical: January 2023, same day-of-month (10th) → should create comparison
+    const priorYearInvoice = new InvoiceBuilder()
+      .withId("hist-jan-2023")
+      .withName("Jan 2023 Shopping")
+      .withTransactionDate(new Date("2023-01-10"))
+      .withPaymentAmount(100)
+      .build();
+
+    const allInvoices = [currentMonthInvoice, priorYearInvoice];
+    const result = computeShoppingPatterns(allInvoices, new Date("2024-01-01"));
+
+    // Current month has spending on day 10
+    expect(result.spendingByDay[10]?.amount).toBe(150);
+
+    // historicalByDay should have an entry for day 10 (from priorYearInvoice)
+    // meaning historicalByDay[10] is populated and the if-block at line 616 fires
+    expect(result.historicalByDay[10]).toBeDefined();
+    expect(result.historicalByDay[10]?.yearsWithData).toBe(1);
+    expect(result.historicalByDay[10]?.historicalAverage).toBe(100);
+    // current (150) > historical (100) → isAboveAverage = true
+    expect(result.historicalByDay[10]?.isAboveAverage).toBe(true);
+    // percentageDiff = (150-100)/100*100 = 50%
+    expect(result.historicalByDay[10]?.percentageDiff).toBe(50);
+  });
+
+  it("should compute historicalAverage=0 percentageDiff=0 when prior-year amount is zero (line 618)", () => {
+    // Exercise the ternary: percentageDiff = historicalAverage > 0 ? ... : 0
+    const currentMonthInvoice = new InvoiceBuilder()
+      .withId("cur-feb-2024")
+      .withName("Feb 2024 Shopping")
+      .withTransactionDate(new Date("2024-02-05"))
+      .withPaymentAmount(80)
+      .build();
+
+    const priorYearZeroInvoice = new InvoiceBuilder()
+      .withId("hist-feb-2023")
+      .withName("Feb 2023 Shopping")
+      .withTransactionDate(new Date("2023-02-05"))
+      .withPaymentAmount(0)
+      .build();
+
+    const result = computeShoppingPatterns([currentMonthInvoice, priorYearZeroInvoice], new Date("2024-02-01"));
+
+    // historicalAverage = 0 → percentageDiff = 0 (else branch of ternary)
+    expect(result.historicalByDay[5]).toBeDefined();
+    expect(result.historicalByDay[5]?.historicalAverage).toBe(0);
+    expect(result.historicalByDay[5]?.percentageDiff).toBe(0);
+  });
+
+  it("should compute historical comparison with multiple prior years on same day", () => {
+    // Verifies yearsWithData > 1 path through computeHistoricalComparison
+    const currentMonthInvoice = new InvoiceBuilder()
+      .withId("cur-mar-2024")
+      .withName("Mar 2024")
+      .withTransactionDate(new Date("2024-03-20"))
+      .withPaymentAmount(200)
+      .build();
+
+    const year2022Invoice = new InvoiceBuilder()
+      .withId("hist-mar-2022")
+      .withName("Mar 2022")
+      .withTransactionDate(new Date("2022-03-20"))
+      .withPaymentAmount(80)
+      .build();
+
+    const year2023Invoice = new InvoiceBuilder()
+      .withId("hist-mar-2023")
+      .withName("Mar 2023")
+      .withTransactionDate(new Date("2023-03-20"))
+      .withPaymentAmount(120)
+      .build();
+
+    const result = computeShoppingPatterns(
+      [currentMonthInvoice, year2022Invoice, year2023Invoice],
+      new Date("2024-03-01"),
+    );
+
+    expect(result.historicalByDay[20]).toBeDefined();
+    expect(result.historicalByDay[20]?.yearsWithData).toBe(2);
+    // average = (80 + 120) / 2 = 100
+    expect(result.historicalByDay[20]?.historicalAverage).toBe(100);
   });
 });
 
