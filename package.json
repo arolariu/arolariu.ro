@@ -236,6 +236,9 @@
     "webpackbar": "7.0.0",
     "eslint-plugin-react-hooks": {
       "zod-validation-error": "^4.0.2"
+    },
+    "rsbuild-plugin-dts": {
+      "@typescript/native-preview": "7.0.0-dev.20260516.1"
     }
   }
 }
