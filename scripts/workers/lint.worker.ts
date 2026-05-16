@@ -15,10 +15,10 @@
  * - exp                       → ruff check (probes `ruff` then falls back to `python -m ruff`)
  */
 
-import {spawn} from "node:child_process";
 import {threadId} from "node:worker_threads";
 import {ESLint} from "eslint";
 import type {ESLintFileStats, LintTarget, LintWorkerInput, LintWorkerResult} from "../types/lint.ts";
+import {isToolAvailable, resolveRuff, runCommand} from "./shell.ts";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,104 +29,6 @@ const TOP_SLOWEST_FILES = 5;
 
 /** Cache directory for build artifacts */
 const CACHE_DIR = "artifacts";
-
-// ---------------------------------------------------------------------------
-// Child-process helpers (mirrors format.worker.ts from Phase 1)
-// ---------------------------------------------------------------------------
-
-/**
- * npm-installed CLIs that ship as .cmd shims on Windows (instead of .exe binaries).
- * Since Node.js 18.20 / 20.12 / 21.7, spawn() refuses to run .cmd files directly
- * as a security mitigation (CVE-2024-27980). We route through cmd.exe /c, which
- * is a real binary on PATH and resolves the shim via PATHEXT. This avoids both
- * the spawn EINVAL restriction AND DEP0190 (shell:true with args).
- */
-const WIN_CMD_SHIMS: ReadonlySet<string> = new Set(["npx", "npm", "yarn", "pnpm"]);
-
-/**
- * Runs a command and captures output (stdout + stderr merged).
- * @param command The command to run
- * @param args Command arguments
- * @param opts Optional options (cwd)
- * @returns Promise with exit code and merged output
- */
-async function runCommand(command: string, args: readonly string[], opts?: {cwd?: string}): Promise<{code: number; output: string}> {
-  return new Promise((resolve) => {
-    const needsCmdWrapper = process.platform === "win32" && WIN_CMD_SHIMS.has(command);
-    const [spawnCommand, spawnArgs] = needsCmdWrapper
-      ? ["cmd.exe" as const, ["/c", command, ...args] as string[]]
-      : [command, args as string[]];
-
-    const child = spawn(spawnCommand, spawnArgs, {
-      stdio: "pipe",
-      windowsHide: true,
-      cwd: opts?.cwd,
-    });
-
-    let output = "";
-    let errorOutput = "";
-
-    child.stdout?.on("data", (data: Buffer) => {
-      output += data.toString();
-    });
-
-    child.stderr?.on("data", (data: Buffer) => {
-      errorOutput += data.toString();
-    });
-
-    child.on("close", (code) => {
-      resolve({code: code ?? 1, output: output + errorOutput});
-    });
-
-    child.on("error", (error) => {
-      resolve({code: 1, output: error.message});
-    });
-  });
-}
-
-/**
- * Checks whether a CLI tool exists on PATH by attempting `<tool> --version`.
- * @param cmd The tool name (e.g. "ruff", "dotnet")
- * @returns true if the tool exited with code 0
- */
-async function isToolAvailable(cmd: string): Promise<boolean> {
-  const result = await runCommand(cmd, ["--version"]);
-  return result.code === 0;
-}
-
-/**
- * Resolves how to invoke ruff. Returns the command + args prefix, or `null`
- * if ruff is not available at all.
- *
- * Probe order:
- *   1. `ruff` on PATH (standard install via pipx, system pip, or PATH-aware install).
- *   2. `python -m ruff` (fallback for Microsoft Store Python or other sandboxed installs
- *      where pip places ruff outside PATH but Python itself is reachable).
- *
- * Cached at module scope; valid for the lifetime of this worker process.
- * Mirrors format.worker.ts (Phase 1).
- */
-let cachedRuffInvocation: readonly string[] | null | undefined;
-
-async function resolveRuff(): Promise<readonly string[] | null> {
-  if (cachedRuffInvocation !== undefined) return cachedRuffInvocation;
-
-  if (await isToolAvailable("ruff")) {
-    cachedRuffInvocation = ["ruff"];
-    return cachedRuffInvocation;
-  }
-
-  if (await isToolAvailable("python")) {
-    const r = await runCommand("python", ["-m", "ruff", "--version"]);
-    if (r.code === 0) {
-      cachedRuffInvocation = ["python", "-m", "ruff"];
-      return cachedRuffInvocation;
-    }
-  }
-
-  cachedRuffInvocation = null;
-  return cachedRuffInvocation;
-}
 
 // ---------------------------------------------------------------------------
 // ESLint helper
@@ -300,8 +202,8 @@ export function stepsForTarget(input: LintWorkerInput): readonly LintStep[] {
           run: async () => {
             const ruff = await resolveRuff();
             if (!ruff) return {code: 1, output: "Ruff not found (tried 'ruff' and 'python -m ruff')"};
-            const [cmd, ...prefix] = ruff as string[];
-            return runCommand(cmd!, [...prefix, "check", "sites/exp.arolariu.ro"]);
+            const [cmd, ...prefix] = ruff;
+            return runCommand(cmd, [...prefix, "check", "sites/exp.arolariu.ro"]);
           },
         },
       ];

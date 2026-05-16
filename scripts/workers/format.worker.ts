@@ -18,10 +18,10 @@
  * @see {@link FormatWorkerResult} - Output type for this worker
  */
 
-import {spawn} from "node:child_process";
 import {threadId} from "node:worker_threads";
 import {resolveConfigFile} from "prettier";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "../types/format.ts";
+import {isToolAvailable, resolveRuff, runCommand} from "./shell.ts";
 
 /** Cache directory for build artifacts */
 const CACHE_DIR = "artifacts";
@@ -33,83 +33,6 @@ const directoryMap: Record<Exclude<FormatTarget, "api" | "exp">, string> = {
   cv: "sites/cv.arolariu.ro/**",
   status: "sites/status.arolariu.ro/**",
 };
-
-/**
- * Runs a command and captures output.
- * @param command The command to run
- * @param args Command arguments
- * @returns Promise with exit code and output
- */
-async function runCommand(command: string, args: string[]): Promise<{code: number; output: string}> {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      stdio: "pipe",
-      windowsHide: true,
-    });
-
-    let output = "";
-    let errorOutput = "";
-
-    child.stdout?.on("data", (data: Buffer) => {
-      output += data.toString();
-    });
-
-    child.stderr?.on("data", (data: Buffer) => {
-      errorOutput += data.toString();
-    });
-
-    child.on("close", (code) => {
-      resolve({code: code ?? 1, output: output + errorOutput});
-    });
-
-    child.on("error", (error) => {
-      resolve({code: 1, output: error.message});
-    });
-  });
-}
-
-/**
- * Checks whether a CLI tool exists on PATH by attempting `<tool> --version`.
- * @param cmd The tool name (e.g. "ruff", "dotnet")
- * @returns true if the tool exited with code 0
- */
-async function isToolAvailable(cmd: string): Promise<boolean> {
-  const result = await runCommand(cmd, ["--version"]);
-  return result.code === 0;
-}
-
-/**
- * Resolves how to invoke ruff. Returns the command + args prefix, or `null`
- * if ruff is not available at all.
- *
- * Probe order:
- *   1. `ruff` on PATH (standard install via pipx, system pip, or PATH-aware install).
- *   2. `python -m ruff` (fallback for Microsoft Store Python or other sandboxed installs
- *      where pip places ruff outside PATH but Python itself is reachable).
- *
- * Cached at module scope; valid for the lifetime of this worker process.
- */
-let cachedRuffInvocation: readonly string[] | null | undefined;
-
-async function resolveRuff(): Promise<readonly string[] | null> {
-  if (cachedRuffInvocation !== undefined) return cachedRuffInvocation;
-
-  if (await isToolAvailable("ruff")) {
-    cachedRuffInvocation = ["ruff"];
-    return cachedRuffInvocation;
-  }
-
-  if (await isToolAvailable("python")) {
-    const result = await runCommand("python", ["-m", "ruff", "--version"]);
-    if (result.code === 0) {
-      cachedRuffInvocation = ["python", "-m", "ruff"];
-      return cachedRuffInvocation;
-    }
-  }
-
-  cachedRuffInvocation = null;
-  return cachedRuffInvocation;
-}
 
 /**
  * Checks if code is properly formatted for a target.
@@ -130,7 +53,7 @@ async function checkTarget(
     // Ruff check mode: format check + import sort check (no auto-fix).
     const ruff = await resolveRuff();
     if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
-    const [cmd, ...prefix] = ruff as string[];
+    const [cmd, ...prefix] = ruff;
     const formatCheck = await runCommand(cmd, [...prefix, "format", "--check", "sites/exp.arolariu.ro"]);
     if (formatCheck.code !== 0) return formatCheck;
     return runCommand(cmd, [...prefix, "check", "--select", "I", "sites/exp.arolariu.ro"]);
@@ -178,7 +101,7 @@ async function formatTarget(
     // Ruff write mode: format files + auto-fix only import sorting (isort, rule I).
     const ruff = await resolveRuff();
     if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
-    const [cmd, ...prefix] = ruff as string[];
+    const [cmd, ...prefix] = ruff;
     const fmt = await runCommand(cmd, [...prefix, "format", "sites/exp.arolariu.ro"]);
     if (fmt.code !== 0) return fmt;
     return runCommand(cmd, [...prefix, "check", "--select", "I", "--fix", "sites/exp.arolariu.ro"]);
