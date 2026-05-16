@@ -40,9 +40,7 @@ describe("getCategorySpending — fallback fill color", () => {
     // Cast a numeric value outside the known ProductCategory map keys (e.g., 999)
     // to exercise the `|| "var(--ac-chart-1)"` branch on line 48.
     const unknownCategory = 999 as unknown as (typeof ProductCategory)[keyof typeof ProductCategory];
-    const items = [
-      new ProductBuilder().withCategory(unknownCategory).withTotalPrice(25).build(),
-    ];
+    const items = [new ProductBuilder().withCategory(unknownCategory).withTotalPrice(25).build()];
 
     const result = getCategorySpending(items);
 
@@ -1154,10 +1152,7 @@ describe("computeShoppingPatterns", () => {
       .withPaymentAmount(120)
       .build();
 
-    const result = computeShoppingPatterns(
-      [currentMonthInvoice, year2022Invoice, year2023Invoice],
-      new Date("2024-03-01"),
-    );
+    const result = computeShoppingPatterns([currentMonthInvoice, year2022Invoice, year2023Invoice], new Date("2024-03-01"));
 
     expect(result.historicalByDay[20]).toBeDefined();
     expect(result.historicalByDay[20]?.yearsWithData).toBe(2);

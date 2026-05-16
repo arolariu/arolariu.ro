@@ -802,14 +802,14 @@ describe("fetchWithTimeout - edge cases", () => {
     // Provide explicit headers in options — exercises the `options.headers ? new Headers(options.headers) : new Headers()` true branch
     const options: RequestInit = {
       method: "POST",
-      headers: {"Authorization": "Bearer test-token", "Content-Type": "application/json"},
+      headers: {Authorization: "Bearer test-token", "Content-Type": "application/json"},
     };
 
     await fetchWithTimeout("https://api.example.com/data", options);
 
     const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(fetchOptions.headers).toMatchObject({
-      "Authorization": "Bearer test-token",
+      Authorization: "Bearer test-token",
       "Content-Type": "application/json",
     });
   });
