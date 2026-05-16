@@ -475,6 +475,46 @@ describe("fetchScans", () => {
       expect(result[0]?.sizeInBytes).toBe(0);
     });
 
+    it("should skip blobs marked as usedByInvoice", async () => {
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/used-scan.jpg",
+          metadata: {
+            scanId: "used-scan",
+            usedByInvoice: "true",
+          },
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: 1024,
+          },
+        },
+        {
+          name: "scans/test-user-guid/available-scan.jpg",
+          metadata: {
+            scanId: "available-scan",
+          },
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: 512,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      // The used-by-invoice blob must be skipped
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe("available-scan");
+    });
+
     it("should handle blob with no metadata object at all", async () => {
       const mockBlobs = [
         {
