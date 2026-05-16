@@ -95,9 +95,12 @@ export default defineConfig({
         "**/instrumentation.ts",
         "**/proxy.ts",
 
-        // Piscina worker files — run in separate threads, use child_process I/O;
-        // async execution paths cannot be covered by unit tests.
-        "**/*.worker.ts",
+        // Piscina worker files used by the monorepo's CLI scripts (format, lint) —
+        // run in separate threads, use child_process I/O; async execution paths
+        // can't be covered by unit tests. Scoped to scripts/** so user-facing
+        // worker files elsewhere (e.g. sites/arolariu.ro/.../playground.worker.ts)
+        // remain subject to normal coverage rules.
+        "scripts/**/*.worker.ts",
       ],
     },
   },
