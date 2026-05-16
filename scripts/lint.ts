@@ -41,9 +41,16 @@ const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
 };
 
 /**
- * All lint targets in consistent order for parallel execution.
+ * All lint targets, in the order they're dispatched and printed.
  *
  * @remarks
+ * `lint all` runs every target in parallel via Piscina. The pool's wall time is
+ * bounded by the slowest target — currently `api`, which runs
+ * `dotnet format --verify-no-changes` followed by `dotnet build` (~60-120s
+ * on a cold .NET cache). This is a deliberate "do everything" target;
+ * if a faster default is needed in the future, split this into a JS-only
+ * `allTargets` and an `allTargetsFull` that adds api/exp.
+ *
  * Ordering is preserved when printing results to keep output stable across runs.
  */
 const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv", "status", "api", "exp"];
