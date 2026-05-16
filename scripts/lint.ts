@@ -1,5 +1,5 @@
 /**
- * @fileoverview Monorepo ESLint CLI that runs per-target configs in parallel.
+ * @fileoverview Monorepo lint CLI that dispatches per-target tool pipelines in parallel.
  * @module scripts/lint
  *
  * @remarks
@@ -157,7 +157,7 @@ function printMemorySummary(results: LintWorkerResult[]): void {
 async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Promise<number> {
   const hasSelectiveTargeting = filePatterns && filePatterns.length > 0;
   const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
-  console.log(styleText(["bold", "magenta"], `\n🔎 Running ESLint for: ${targetDisplay}`));
+  console.log(styleText(["bold", "magenta"], `\n🔎 Running lint for: ${targetDisplay}`));
 
   if (hasSelectiveTargeting) {
     console.log(styleText("gray", "   Patterns: " + filePatterns.join(", ")));
