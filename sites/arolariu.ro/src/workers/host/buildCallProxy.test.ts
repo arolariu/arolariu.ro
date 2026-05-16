@@ -143,6 +143,74 @@ describe("buildCallProxy", () => {
     expect(endCall).toHaveBeenCalledOnce();
   });
 
+  it("returns undefined for symbol-keyed property access", () => {
+    // Exercises the `typeof prop !== "string"` true branch (line 48).
+    const {proxy} = makeFixture({ping: async () => "pong"});
+    const value = (proxy as unknown as Record<symbol, unknown>)[Symbol.iterator];
+    expect(value).toBeUndefined();
+  });
+
+  it("rejects when getTarget() returns null after ensureReady (no target branch)", async () => {
+    // Exercises the `if (!target)` branch (line 78): getTarget returns null
+    // even after ensureReady, which should throw "no target after ensureReady".
+    const inFlight = createInFlightRegistry();
+    const bridge = createTelemetryBridge("test", {logger: SILENT_LOGGER});
+    type Api = {missing: () => Promise<string>};
+    const proxy = buildCallProxy<Api>({
+      inFlight,
+      bridge,
+      defaultCallTimeoutMs: 0,
+      ensureReady: async () => {},
+      getTarget: () => null, // always returns null
+      lifecycle: {beginCall: () => {}, endCall: () => {}},
+    });
+    const proxyAsRecord = proxy as unknown as Record<string, () => Promise<unknown>>;
+    await expect(proxyAsRecord["missing"]!()).rejects.toThrow("Worker host has no target after ensureReady");
+  });
+
+  it("resolves normally when an AbortSignal is passed but not yet aborted", async () => {
+    // Exercises the `if (signal.aborted)` false branch (line 58) — the signal is
+    // passed as last arg (triggering the instanceof check) but is not aborted,
+    // so the call proceeds normally.
+    const ac = new AbortController();
+    // Do NOT abort — signal.aborted is false.
+    const {proxy} = makeFixture({echo: async (msg: string) => `echo:${msg}`});
+    const echoWithSignal = proxy.echo as unknown as (msg: string, signal: AbortSignal) => Promise<string>;
+    await expect(echoWithSignal("hi", ac.signal)).resolves.toBe("echo:hi");
+  });
+
+  it("rejects with fallback Error when pre-aborted signal has no reason", async () => {
+    // Exercises the `signal.reason ?? new Error("aborted")` fallback in the
+    // pre-aborted path (line 59) when signal.reason is undefined.
+    // ac.abort() with no argument leaves reason as undefined on some runtimes.
+    const ac = new AbortController();
+    ac.abort(); // no reason → reason may be undefined or DOMException
+    const {proxy} = makeFixture({slow: async (_signal: AbortSignal) => "done"});
+    // The call should reject — either with `reason` or with the "aborted" fallback.
+    await expect(proxy.slow(ac.signal)).rejects.toThrow();
+  });
+
+  it("rejects with 'no method' error when the target object lacks the requested method", async () => {
+    // Drives the `typeof fn !== "function"` branch (line 81 of buildCallProxy.ts).
+    // We provide a target that has no methods at all — getTarget() returns an
+    // object with no callable properties, so any prop access yields undefined.
+    const inFlight = createInFlightRegistry();
+    const bridge = createTelemetryBridge("test", {logger: SILENT_LOGGER});
+    // An empty object has no methods; the proxy will call getTarget() and then
+    // try to look up the method by name — undefined is not a function.
+    const emptyTarget = {} as unknown as {missing: () => Promise<string>};
+    const proxy = buildCallProxy<typeof emptyTarget>({
+      inFlight,
+      bridge,
+      defaultCallTimeoutMs: 0,
+      ensureReady: async () => {},
+      getTarget: () => emptyTarget as never,
+      lifecycle: {beginCall: () => {}, endCall: () => {}},
+    });
+    const proxyAsRecord = proxy as unknown as Record<string, () => Promise<unknown>>;
+    await expect(proxyAsRecord["missing"]!()).rejects.toThrow('Worker host has no method "missing"');
+  });
+
   it("rethrows plain Error from the target without WorkerError wrapping", async () => {
     // See the matching note on the __workerError envelope test: explicit
     // `Promise<unknown>` keeps the inferred return type from collapsing

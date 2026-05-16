@@ -355,6 +355,30 @@ describe("useDialog", () => {
     expect(result.current.currentDialog.mode).toBe("edit");
   });
 
+  test("openWith overrides mode and payload at call time", () => {
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "view", {id: 0}), {wrapper});
+
+    act(() => {
+      result.current.openWith("edit", {id: 42});
+    });
+
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
+    expect(result.current.currentDialog.mode).toBe("edit");
+    expect(result.current.currentDialog.payload).toStrictEqual({id: 42});
+  });
+
+  test("openWith falls back to hook-level payload when call-site payload is omitted", () => {
+    const defaultPayload = {id: 99};
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "view", defaultPayload), {wrapper});
+
+    act(() => {
+      result.current.openWith("add"); // no payload argument
+    });
+
+    expect(result.current.currentDialog.mode).toBe("add");
+    expect(result.current.currentDialog.payload).toStrictEqual(defaultPayload);
+  });
+
   test("context maintains singleton reference to dialog state type", () => {
     // Create multiple hooks
     const {result: hook1} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});

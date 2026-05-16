@@ -30,6 +30,33 @@ describe("raceWithSignal", () => {
     ac.abort(new Error("late"));
   });
 
+  it("rejects mid-flight with fallback Error when reason is undefined on mid-flight abort", async () => {
+    // Exercises the `signal.reason ?? new Error("aborted")` fallback inside
+    // the onAbort listener (line 24 of raceWithSignal.ts). This path fires
+    // when the signal aborts mid-flight (not pre-aborted) and reason is
+    // undefined (polyfill path).
+    let triggerAbort!: () => void;
+    const fakeSignal = {
+      aborted: false,
+      reason: undefined as unknown,
+      addEventListener: (_type: string, handler: () => void) => {
+        triggerAbort = handler;
+      },
+      removeEventListener: () => {},
+    } as unknown as AbortSignal;
+
+    const body = new Promise<number>(() => {
+      /* never resolves */
+    });
+    const racePromise = raceWithSignal(body, fakeSignal);
+    racePromise.catch(() => {});
+
+    // Abort mid-flight — reason is still undefined, so the fallback fires.
+    triggerAbort();
+
+    await expect(racePromise).rejects.toThrow("aborted");
+  });
+
   it("uses an Error('aborted') fallback when reason is undefined (polyfill path)", async () => {
     // Spec-compliant runtimes always set `reason`, but a polyfill might not.
     const fakeSignal = {

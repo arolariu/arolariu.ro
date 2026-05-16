@@ -317,6 +317,18 @@ describe("configProxy typed helpers", () => {
 
       expect(result).toBe("");
     });
+
+    it("falls back to API_JWT env var when exp returns empty string", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Auth:JWT:Secret", ""))));
+      process.env["API_JWT"] = "env-jwt-from-empty-exp";
+
+      const {fetchApiJwtSecret, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiJwtSecret();
+
+      expect(result).toBe("env-jwt-from-empty-exp");
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -359,6 +371,18 @@ describe("configProxy typed helpers", () => {
       const result = await fetchResendApiKey();
 
       expect(result).toBe("");
+    });
+
+    it("falls back to RESEND_API_KEY env var when exp returns empty string", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Communication:Email:ApiKey", ""))));
+      process.env["RESEND_API_KEY"] = "re_env_from_empty_exp";
+
+      const {fetchResendApiKey, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchResendApiKey();
+
+      expect(result).toBe("re_env_from_empty_exp");
     });
   });
 });
@@ -559,6 +583,53 @@ describe("configProxy circuit breaker", () => {
     // We verify by checking that fetch was called (which means the conversion succeeded)
     const requestInit = (fetchMock.mock.calls[0] as [string, RequestInit])[1];
     expect(requestInit.headers).toBeDefined();
+  });
+
+  it("uses label=PRODUCTION when SITE_ENV is set to PRODUCTION", async () => {
+    vi.stubEnv("SITE_ENV", "PRODUCTION");
+    vi.resetModules();
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.prod.example.com")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    await fetchConfigValue("Endpoints:Service:Api");
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toContain("label=PRODUCTION");
+
+    vi.unstubAllEnvs();
+  });
+
+  it("returns empty bearer token when Azure credential getToken returns null", async () => {
+    process.env["AZURE_CLIENT_ID"] = "test-managed-identity-id";
+    vi.resetModules();
+
+    vi.doMock("@/lib/azure/credentials", () => ({
+      getAzureCredential: () => ({
+        getToken: vi.fn().mockResolvedValue(null), // null token — exercises line 179
+      }),
+    }));
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.example.com")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    const value = await fetchConfigValue("Endpoints:Service:Api");
+    expect(value).toBe("https://api.example.com");
+
+    // When token is null, no Authorization header should be sent
+    const requestHeaders = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>;
+    expect(requestHeaders["Authorization"]).toBeUndefined();
+
+    delete process.env["AZURE_CLIENT_ID"];
   });
 
   it("should re-close circuit breaker after cooldown", async () => {

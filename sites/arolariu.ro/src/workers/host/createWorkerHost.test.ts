@@ -599,6 +599,43 @@ describe("createWorkerHost", () => {
     });
   });
 
+  describe("idle reboot (lazy-reboot on idle timer)", () => {
+    // Coverage: line 198 of createWorkerHost.ts — the `onIdleHandler` that
+    // calls `tearDownWorker("lazy-reboot")` when the idle timer fires.
+    it("silently tears down the worker when the idle timer fires after all calls complete", async () => {
+      vi.useFakeTimers();
+      try {
+        let mock = createMockWorker({api: greetImpl});
+        let loadCount = 0;
+        const host = createWorkerHost<GreetApi>({
+          name: "idle-reboot",
+          load: () => {
+            loadCount += 1;
+            mock = createMockWorker({api: greetImpl});
+            return mock.worker;
+          },
+          idleTimeoutMs: 500,
+          defaultCallTimeoutMs: 0,
+        });
+        // Boot the worker and make a call so lifecycle reaches 'ready'.
+        await host.warmUp();
+        expect(host.state).toBe("ready");
+        expect(loadCount).toBe(1);
+        // Advance past the idle timeout — this fires the idle timer which calls
+        // tearDownWorker("lazy-reboot"), tearing down the worker silently.
+        vi.advanceTimersByTime(600);
+        // The host state remains at "ready" after lazy-reboot (state not changed).
+        // The next call triggers a fresh boot.
+        const resultPromise = host.api.greet("after-idle");
+        await resultPromise;
+        // A new load() call must have happened for the fresh boot.
+        expect(loadCount).toBe(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe("dispose without prior boot", () => {
     it("dispose on an unbooted host resolves cleanly and leaves state disposed", async () => {
       const mock = createMockWorker({api: greetImpl});
@@ -606,6 +643,53 @@ describe("createWorkerHost", () => {
       expect(host.state).toBe("idle");
       await host.dispose();
       expect(host.state).toBe("disposed");
+    });
+  });
+
+  describe("subscribeToEvents", () => {
+    it("unsubscribeToEvents stops notifications", async () => {
+      // Exercises the `subscribeToEvents` unsubscribe closure (lines 476-478).
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({name: "test", load: () => mock.worker});
+      await host.warmUp();
+      const events: unknown[] = [];
+      const unsubscribe = host.subscribeToEvents((e) => events.push(e));
+      const countBefore = events.length;
+      unsubscribe();
+      // After unsubscribe, future events should not be received.
+      // Pre-assert the event port exists so a torn-down host fails the test
+      // rather than producing a vacuous green.
+      const port = getEventPort();
+      expect(port).not.toBeNull();
+      emitEvent(port!, {kind: "log", level: "info", msg: "after-unsub"});
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      expect(events.length).toBe(countBefore);
+    });
+
+    it("misbehaving event listener does not poison sibling listeners (try/catch guard)", async () => {
+      // Exercises the try/catch around listener invocation in forwardEvent (lines 372-374).
+      // A throwing listener must not prevent sibling listeners from receiving events.
+      const mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => mock.worker,
+      });
+      await host.warmUp();
+      const received: unknown[] = [];
+      // Register a throwing listener first.
+      host.subscribeToEvents(() => {
+        throw new Error("bad listener");
+      });
+      // Then a good sibling listener.
+      host.subscribeToEvents((e) => received.push(e));
+      // Pre-assert the event port exists so a missing port fails the test
+      // rather than producing a vacuous green.
+      const port = getEventPort();
+      expect(port).not.toBeNull();
+      emitEvent(port!, {kind: "log", level: "info", msg: "survivor"});
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      // The sibling must have received the event despite the bad listener.
+      expect(received).toContainEqual({kind: "log", level: "info", msg: "survivor"});
     });
   });
 
@@ -777,6 +861,55 @@ describe("createWorkerHost", () => {
         // The error is wrapped as WorkerError with fallback name "Error" and String(cause) message
         expect(err).toBeInstanceOf(WorkerError);
       }
+    });
+  });
+
+  describe("concurrent ensureReady (bootPromise reuse)", () => {
+    // Coverage: `if (!bootPromise)` false branch (line 443) — when two concurrent
+    // warmUp calls run simultaneously, the second finds bootPromise already set.
+    it("two concurrent warmUp calls share the same boot promise", async () => {
+      const mock = createMockWorker({api: greetImpl});
+      let loadCount = 0;
+      const host = createWorkerHost<GreetApi>({
+        name: "concurrent-boot",
+        load: () => {
+          loadCount += 1;
+          return createMockWorker({api: greetImpl}).worker;
+        },
+        defaultCallTimeoutMs: 0,
+      });
+      // Fire two warmUp calls concurrently before either completes.
+      const [p1, p2] = [host.warmUp(), host.warmUp()];
+      await Promise.all([p1, p2]);
+      // Worker should only have been loaded once (bootPromise deduplicates).
+      expect(loadCount).toBe(1);
+      expect(host.state).toBe("ready");
+      void mock;
+    });
+  });
+
+  describe("restart signal.reason fallback", () => {
+    it("restart signal.reason undefined uses Error('aborted') fallback", async () => {
+      // Exercises the `signal.reason ?? new Error("aborted")` branch (line 490)
+      // where reason is undefined — the polyfill path.
+      let mock = createMockWorker({api: greetImpl});
+      const host = createWorkerHost<GreetApi>({
+        name: "test",
+        load: () => {
+          mock = createMockWorker({api: greetImpl});
+          return mock.worker;
+        },
+      });
+      await host.warmUp();
+      mock.simulateCrash();
+      // Create a fake pre-aborted signal with undefined reason (polyfill behavior).
+      const fakeSignal = {
+        aborted: true,
+        reason: undefined,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      } as unknown as AbortSignal;
+      await expect(host.restart(fakeSignal)).rejects.toThrow("aborted");
     });
   });
 

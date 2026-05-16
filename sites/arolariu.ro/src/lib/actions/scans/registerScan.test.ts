@@ -196,6 +196,74 @@ describe("registerScan", () => {
   });
 
   describe("blob metadata handling", () => {
+    it("should record metadata completion telemetry when setMetadata succeeds", async () => {
+      // Arrange - exercises the setMetadata success branch (lines 170-171 in source).
+      // mockReset: true in vitest.config.ts resets all vi.fn() implementations between tests,
+      // so createBlobClient's chain must be re-established explicitly here.
+      const {createBlobClient} = await import("@/lib/azure/storageClient");
+      const mockSetMetadata = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(createBlobClient).mockResolvedValue({
+        getContainerClient: vi.fn().mockReturnValue({
+          getBlockBlobClient: vi.fn().mockReturnValue({
+            setMetadata: mockSetMetadata,
+          }),
+        }),
+      } as never);
+
+      const {addSpanEvent} = await import("@/instrumentation.server");
+      const mockAddSpanEvent = vi.mocked(addSpanEvent);
+
+      vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+        user: null,
+        userIdentifier: "user_123",
+        userJwt: "mock-jwt-token",
+      });
+
+      const result = await registerScan({
+        scanId: "test-scan-id",
+        blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user_123/test.jpg",
+        fileName: "test.jpg",
+        mimeType: "image/jpeg",
+        sizeInBytes: 1024,
+      });
+
+      // setMetadata succeeded: the success span event at line 170 must be emitted
+      expect(result.success).toBe(true);
+      expect(mockSetMetadata).toHaveBeenCalled();
+      expect(mockAddSpanEvent).toHaveBeenCalledWith("azure.blob.metadata.complete");
+    });
+
+    it("should use fallback blob name extraction when URL has no container prefix", async () => {
+      // Exercises the `?? urlPath.slice(1)` branch at line 166.
+      // The URL does not contain "/invoices/" so split returns undefined and the fallback is used.
+      const {createBlobClient} = await import("@/lib/azure/storageClient");
+      const mockSetMetadata = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(createBlobClient).mockResolvedValue({
+        getContainerClient: vi.fn().mockReturnValue({
+          getBlockBlobClient: vi.fn().mockReturnValue({
+            setMetadata: mockSetMetadata,
+          }),
+        }),
+      } as never);
+
+      vi.spyOn(fetchUserModule, "fetchBFFUserFromAuthService").mockResolvedValue({
+        user: null,
+        userIdentifier: "user_123",
+        userJwt: "mock-jwt-token",
+      });
+
+      // URL without /invoices/ triggers the fallback urlPath.slice(1)
+      const result = await registerScan({
+        scanId: "test-scan-id",
+        blobUrl: "https://storage.blob.core.windows.net/scans/user_123/test.jpg",
+        fileName: "test.jpg",
+        mimeType: "image/jpeg",
+        sizeInBytes: 1024,
+      });
+
+      expect(result.success).toBe(true);
+    });
+
     it("should continue successfully when setMetadata fails (non-fatal)", async () => {
       // Arrange - testing that scan registration succeeds even if metadata fails
       // The actual setMetadata is wrapped in try-catch in the source and is non-fatal

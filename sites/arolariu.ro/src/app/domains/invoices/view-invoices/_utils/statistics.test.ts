@@ -1560,4 +1560,257 @@ describe("Statistics Functions", () => {
       });
     });
   });
+
+  /**
+   * Deep-pass coverage tests targeting specific uncovered branches.
+   * Maps to Phase 6 of the Vitest coverage push.
+   */
+  describe("Deep-pass: Uncovered Branch Coverage", () => {
+    // --- Line 424: computeKPIs with null items array ---
+    describe("computeKPIs - null items array", () => {
+      it("should treat null items as zero items (items?.length ?? 0 branch)", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null items
+        invoice.items = null;
+
+        const result = computeKPIs([invoice]);
+
+        expect(result.totalItems).toBe(0);
+        expect(result.averageItemsPerInvoice).toBe(0);
+      });
+    });
+
+    // --- Line 484: computeMonthlySpending - both transactionDate and createdAt null ---
+    describe("computeMonthlySpending - null transactionDate and createdAt fallback", () => {
+      it("should fall back to new Date() when both transactionDate and createdAt are null", () => {
+        const invoice = createTestInvoice({amount: 50, date: new Date("2025-06-01")});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+        // @ts-expect-error - Intentionally testing null createdAt
+        invoice.createdAt = null;
+
+        // Should not throw; falls back to new Date() so produces current month
+        const result = computeMonthlySpending([invoice]);
+
+        expect(result).toHaveLength(1);
+        // The month key should be a valid YYYY-MM string
+        expect(result[0]?.monthKey).toMatch(/^\d{4}-\d{2}$/);
+      });
+    });
+
+    // --- Line 504: computeMonthlySpending - invoice name fallback branch ---
+    describe("computeMonthlySpending - invoice.name fallback", () => {
+      it("should use invoice id prefix when invoice.name is empty string", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // Force name to empty so the || branch is taken
+        (invoice as {name: string}).name = "";
+
+        const result = computeMonthlySpending([invoice]);
+
+        // The invoices array inside MonthlySpending should contain a fallback name
+        expect(result).toHaveLength(1);
+        const invoiceEntry = result[0]?.invoices[0];
+        expect(invoiceEntry?.name).toMatch(/^Invoice /);
+      });
+
+      it("should use invoice.name when it is non-empty", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        (invoice as {name: string}).name = "My Named Invoice";
+
+        const result = computeMonthlySpending([invoice]);
+
+        expect(result[0]?.invoices[0]?.name).toBe("My Named Invoice");
+      });
+    });
+
+    // --- Line 599: computeCategoryAggregates - null invoice.category fallback ---
+    describe("computeCategoryAggregates - null invoice.category", () => {
+      it("should treat null category as 0 (Uncategorized)", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null category
+        invoice.category = null;
+
+        const result = computeCategoryAggregates([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.categoryId).toBe(0);
+        expect(result[0]?.category).toBe("Uncategorized");
+      });
+    });
+
+    // --- Line 612: computeCategoryAggregates - zero totalSpending branch ---
+    describe("computeCategoryAggregates - zero totalSpending percentage", () => {
+      it("should return 0% when all invoice amounts are zero", () => {
+        const invoice = createTestInvoice({amount: 0, category: 100});
+
+        const result = computeCategoryAggregates([invoice]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.percentage).toBe(0);
+      });
+    });
+
+    // --- Line 713: computeDailySpending - both dates invalid, invoice is skipped ---
+    describe("computeDailySpending - both dates invalid", () => {
+      it("should skip invoice when both transactionDate and createdAt resolve to epoch", () => {
+        const invoice = createTestInvoice({amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing invalid transactionDate
+        invoice.paymentInformation.transactionDate = "not-a-date";
+        // @ts-expect-error - Intentionally testing invalid createdAt
+        invoice.createdAt = "not-a-date";
+
+        const result = computeDailySpending([invoice]);
+
+        // Invoice should be skipped entirely
+        expect(result).toHaveLength(0);
+      });
+    });
+
+    // --- Line 842: computeTimeOfDay - both transactionDate and createdAt null ---
+    describe("computeTimeOfDay - null transactionDate and createdAt fallback", () => {
+      it("should fall back to new Date() when both transactionDate and createdAt are null", () => {
+        const invoice = createTestInvoice({amount: 100});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+        // @ts-expect-error - Intentionally testing null createdAt
+        invoice.createdAt = null;
+
+        // Should not throw; invoice is counted in some segment
+        const result = computeTimeOfDay([invoice]);
+
+        const totalInvoices = result.reduce((sum, s) => sum + s.invoiceCount, 0);
+        expect(totalInvoices).toBe(1);
+      });
+    });
+
+    // --- Lines 906-910, 913: countNewMerchants - merchant before current month branch ---
+    describe("computeMonthComparison - countNewMerchants before-month branch", () => {
+      it("should correctly identify merchant from before current month as not new", () => {
+        // merchant-1 appears in Jan (before Feb current month) and Feb → not new
+        // merchant-2 appears only in Feb → new
+        const invoices = [
+          createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-10")}),
+          createTestInvoice({merchantId: "merchant-1", amount: 150, date: new Date("2025-02-05")}),
+          createTestInvoice({merchantId: "merchant-2", amount: 200, date: new Date("2025-02-15")}),
+          createTestInvoice({merchantId: "merchant-3", amount: 50, date: new Date("2025-01-20")}),
+        ];
+
+        const result = computeMonthComparison(invoices);
+
+        // merchant-2 is new (only in Feb); merchant-1 and merchant-3 are not new
+        expect(result.newMerchantCount).toBe(1);
+      });
+
+      it("should count zero new merchants when all current-month merchants appeared before", () => {
+        const invoices = [
+          createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-10")}),
+          createTestInvoice({merchantId: "merchant-1", amount: 150, date: new Date("2025-02-05")}),
+        ];
+
+        const result = computeMonthComparison(invoices);
+
+        expect(result.newMerchantCount).toBe(0);
+      });
+
+      it("should handle invoice without valid merchant in countNewMerchants", () => {
+        // Empty merchantId should be skipped in countNewMerchants
+        const invoices = [
+          createTestInvoice({merchantId: "", amount: 100, date: new Date("2025-01-10")}),
+          createTestInvoice({merchantId: "", amount: 150, date: new Date("2025-02-05")}),
+        ];
+
+        const result = computeMonthComparison(invoices);
+
+        expect(result.newMerchantCount).toBe(0);
+      });
+    });
+
+    // --- Lines 964-965: computeMonthComparison - previousMonth from monthlyData ---
+    describe("computeMonthComparison - previous month selection", () => {
+      it("should select the second-to-last month as previousMonth when 3+ months exist", () => {
+        const invoices = [
+          createTestInvoice({amount: 100, date: new Date("2025-01-15")}),
+          createTestInvoice({amount: 200, date: new Date("2025-02-15")}),
+          createTestInvoice({amount: 300, date: new Date("2025-03-15")}),
+        ];
+
+        const result = computeMonthComparison(invoices);
+
+        // Current month is March, previous month is February
+        expect(result.currentMonth.monthKey).toBe("2025-03");
+        expect(result.previousMonth?.monthKey).toBe("2025-02");
+        expect(result.spendingDelta).toBe(100); // 300 - 200
+      });
+    });
+
+    // --- Line 1147: computeMerchantTrends - createdAt and transactionDate both null fallback ---
+    describe("computeMerchantTrends - null transactionDate and createdAt fallback", () => {
+      it("should fall back to new Date() when both dates are null for trend computation", () => {
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+        // @ts-expect-error - Intentionally testing null createdAt
+        invoice.createdAt = null;
+
+        // Should not throw; falls back to current date for month key
+        const result = computeMerchantTrends([invoice], 5);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.merchantId).toBe("merchant-1");
+        expect(result[0]?.monthlyData).toHaveLength(1);
+      });
+    });
+
+    // --- Lines 1231-1235: computeMerchantVisitFrequency - initialization of new merchantData entry ---
+    describe("computeMerchantVisitFrequency - multiple merchants initialization", () => {
+      it("should initialize fresh merchant data for each new merchant encountered", () => {
+        const invoices = [
+          createTestInvoice({merchantId: "alpha", amount: 50, date: new Date("2025-01-10")}),
+          createTestInvoice({merchantId: "beta", amount: 75, date: new Date("2025-01-12")}),
+          createTestInvoice({merchantId: "gamma", amount: 25, date: new Date("2025-01-14")}),
+        ];
+
+        const result = computeMerchantVisitFrequency(invoices);
+
+        expect(result).toHaveLength(3);
+        const alpha = result.find((r) => r.merchantId === "alpha");
+        const beta = result.find((r) => r.merchantId === "beta");
+        const gamma = result.find((r) => r.merchantId === "gamma");
+        expect(alpha?.totalVisits).toBe(1);
+        expect(beta?.totalVisits).toBe(1);
+        expect(gamma?.totalVisits).toBe(1);
+      });
+
+      it("should handle null transactionDate in computeMerchantVisitFrequency with createdAt fallback", () => {
+        const invoice = createTestInvoice({merchantId: "merchant-1", amount: 100, date: new Date("2025-01-15")});
+        // @ts-expect-error - Intentionally testing null transactionDate
+        invoice.paymentInformation.transactionDate = null;
+
+        const result = computeMerchantVisitFrequency([invoice]);
+
+        // Should fall back to createdAt; still produce one result
+        expect(result).toHaveLength(1);
+        expect(result[0]?.merchantId).toBe("merchant-1");
+      });
+    });
+
+    // --- Line 1668: computeAllergenFrequency - totalProducts === 0 percentage branch ---
+    // This branch (percentage = 0 when totalProducts === 0) is reached when allergenMap has
+    // entries but totalProducts is 0 — structurally impossible because allergens are only
+    // added when products are iterated (which also increments totalProducts).
+    // Rule-2 skip: the false branch of `totalProducts > 0` in allergenFrequency is a
+    // defensive default that cannot be reached through the public API.
+    //
+    // --- Lines 1286-1287: computeMerchantVisitFrequency - averageBasketSize/averageSpendPerVisit
+    // when visits === 0 --- structurally unreachable since visits is incremented before the
+    // averages are computed. Rule-2 skip.
+    //
+    // --- Line 1593: computeTopProducts - averagePrice when priceCount === 0 ---
+    // Structurally unreachable: priceCount is incremented for every product map entry. Rule-2 skip.
+    //
+    // --- Line 1166: computeMerchantTrends - monthlyMap undefined branch ---
+    // merchantMonthlyData.get(merchantId) is always set in Step 3 for every merchant that
+    // passed isValidMerchantRef, which is the same set that populated sortedMerchants in Step 2.
+    // Rule-2 skip: defensive ternary whose false arm cannot be triggered externally.
+  });
 });

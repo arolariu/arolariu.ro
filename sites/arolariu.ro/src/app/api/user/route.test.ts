@@ -396,6 +396,43 @@ describe("GET /api/user", () => {
     );
   });
 
+  it("should throw and fallback to guest when jwtSecret is null", async () => {
+    mockAuth.mockResolvedValue({
+      isAuthenticated: false,
+      userId: null,
+    });
+    // fetchApiJwtSecret returns null → the guard at line 151 throws
+    mockFetchApiJwtSecret.mockResolvedValue(null);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    const data: UserInformation = await response.json();
+
+    // Error catch block returns fallback guest user
+    expect(data.user).toBeNull();
+    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userJwt).toBe("");
+  });
+
+  it("should throw and fallback to guest when jwtSecret is empty string", async () => {
+    mockAuth.mockResolvedValue({
+      isAuthenticated: true,
+      userId: "user-123",
+    });
+    // fetchApiJwtSecret returns empty string → the guard at line 151 throws
+    mockFetchApiJwtSecret.mockResolvedValue("");
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    const data: UserInformation = await response.json();
+
+    expect(data.user).toBeNull();
+    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+    expect(data.userJwt).toBe("");
+  });
+
   it("should use N/A when user object has no identifiers", async () => {
     const mockUser = {
       id: null,

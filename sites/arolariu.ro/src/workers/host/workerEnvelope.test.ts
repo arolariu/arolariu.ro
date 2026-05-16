@@ -69,6 +69,15 @@ describe("validateBootstrap", () => {
     expect(validateBootstrap(m)).toBe(false);
   });
 
+  it("rejects messages where eventPort is an object but missing postMessage", () => {
+    // Exercises line 91 of workerEnvelope.ts: `if (!hasEventPostMessage) return false`.
+    // The rpcPort has a valid postMessage, but the eventPort only has a duck-typed
+    // object without a callable postMessage — the validator must reject it.
+    const m = makeValid() as Record<string, unknown>;
+    m["eventPort"] = {notPostMessage: true};
+    expect(validateBootstrap(m)).toBe(false);
+  });
+
   it("rejects messages missing capabilities", () => {
     const m = makeValid() as Record<string, unknown>;
     delete m["capabilities"];
