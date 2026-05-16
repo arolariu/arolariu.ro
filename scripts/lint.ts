@@ -22,7 +22,7 @@ import {
 } from "./common/index.ts";
 import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "./types/lint.ts";
 
-type LintTarget = "all" | "packages" | "website" | "cv";
+type LintTarget = "all" | "packages" | "website" | "cv" | "status" | "api" | "exp";
 
 /**
  * Maps lint targets to their ESLint config names.
@@ -35,6 +35,9 @@ const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
   packages: "[@arolariu/packages]",
   website: "[@arolariu/website]",
   cv: "[@arolariu/cv]",
+  status: "[@arolariu/status]",
+  api: "[dotnet]",
+  exp: "[ruff]",
 };
 
 /**
@@ -43,7 +46,7 @@ const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
  * @remarks
  * Ordering is preserved when printing results to keep output stable across runs.
  */
-const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
+const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv", "status", "api", "exp"];
 
 /**
  * Prints the result from an ESLint worker with formatted output.
@@ -62,9 +65,14 @@ function printWorkerResult(result: LintWorkerResult): void {
   const fileInfo = styleText("gray", `[${result.fileCount} files]`);
   const memInfo = styleText("gray", `[${formatBytes(result.peakMemoryBytes)}]`);
   console.log(
-    styleText("cyan", `\n🔍 ESLint config: ${styleText("bold", result.configName)} ${workerInfo}`),
+    styleText("cyan", `\n🔍 Lint target: ${styleText("bold", result.configName)} ${workerInfo}`),
   );
   console.log(styleText("gray", `   ${timingInfo} ${fileInfo} ${memInfo}`));
+
+  if (result.skipped) {
+    console.log(styleText("gray", `  ⊘ ${result.configName} skipped: ${result.skipReason}`));
+    return;
+  }
 
   if (result.error) {
     console.log(styleText("red", `  ✗ Worker error: ${result.error}`));
@@ -76,10 +84,11 @@ function printWorkerResult(result: LintWorkerResult): void {
   }
 
   if (result.errorCount > 0 || result.warningCount > 0) {
+    const phaseSuffix = result.failedStep ? styleText("red", ` [${result.failedStep} failed]`) : "";
     if (result.errorCount > 0) {
-      console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
+      console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`) + phaseSuffix);
     } else {
-      console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`));
+      console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`) + phaseSuffix);
     }
   } else {
     console.log(styleText("green", `  ✓ No linting issues found for ${result.configName}`));
@@ -189,6 +198,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       const promises = allTargets.map((target, index) => {
         const configName = configNameMap[target];
         const input: LintWorkerInput = {
+          target,
           configName,
           taskIndex: index,
           dispatchedAt: dispatchTime,
@@ -282,7 +292,9 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         printWorkerResult(result);
         console.log(styleText("gray", "─────────────────────────────────────────────────"));
 
-        if (result.error) {
+        if (result.skipped) {
+          // Skipped targets don't affect the error/warning totals.
+        } else if (result.error) {
           totalErrors++;
         } else {
           totalErrors += result.errorCount;
@@ -300,6 +312,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       // Single target - still use worker for consistency
       const configName = configNameMap[lintTarget];
       const input: LintWorkerInput = {
+        target: lintTarget,
         configName,
         taskIndex: 0,
         dispatchedAt: Date.now(),
@@ -315,6 +328,9 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
           printSlowestFilesReport([result]);
         }
 
+        if (result.skipped) {
+          return 0; // Skipped targets don't fail the pipeline.
+        }
         if (result.error) {
           return 1;
         }
@@ -348,14 +364,18 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
 
   if (!arg) {
     console.error(styleText("red", "✗ Missing target argument"));
-    console.log(styleText("gray", "\n💡 Usage: lint <all|packages|website|cv> [glob patterns...]"));
+    console.log(styleText("gray", "\n💡 Usage: lint <all|packages|website|cv|status|api|exp> [glob patterns...]"));
     console.log(styleText("gray", "   - all:      Lint all targets"));
     console.log(styleText("gray", "   - packages: Lint component packages"));
     console.log(styleText("gray", "   - website:  Lint main website"));
-    console.log(styleText("gray", "   - cv:       Lint CV site"));
+    console.log(styleText("gray", "   - cv:       Lint CV site (svelte-check + ESLint)"));
+    console.log(styleText("gray", "   - status:   Lint status site (svelte-check + ESLint)"));
+    console.log(styleText("gray", "   - api:      Lint .NET API (dotnet format + dotnet build)"));
+    console.log(styleText("gray", "   - exp:      Lint Python service (ruff check)"));
     console.log(styleText("gray", "\n📁 Selective targeting:"));
     console.log(styleText("gray", '   lint website "src/**/*.tsx"       Lint only TSX files'));
     console.log(styleText("gray", '   lint all "**/*.test.ts"           Lint only test files\n'));
+    console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
     return 1;
   }
 
@@ -375,9 +395,18 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
       case "cv":
         exitCode = await startESLint("cv", filePatterns);
         break;
+      case "status":
+        exitCode = await startESLint("status", filePatterns);
+        break;
+      case "api":
+        exitCode = await startESLint("api", filePatterns);
+        break;
+      case "exp":
+        exitCode = await startESLint("exp", filePatterns);
+        break;
       default:
         console.error(styleText("red", `✗ Invalid target: "${arg}"`));
-        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv\n"));
+        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
         return 1;
     }
 
