@@ -56,3 +56,6 @@ package-lock.json
 **/build/**
 **/out/**
 **/output/**
+
+# Visual Studio extensibility project files (XML-based, owned by VS, not for Prettier)
+**/*.esproj
