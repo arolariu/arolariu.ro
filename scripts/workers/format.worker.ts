@@ -27,10 +27,11 @@ import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "../types
 const CACHE_DIR = "artifacts";
 
 // Directory mappings for Prettier targets
-const directoryMap: Record<Exclude<FormatTarget, "api">, string> = {
+const directoryMap: Record<Exclude<FormatTarget, "api" | "exp">, string> = {
   packages: "packages/components/**",
   website: "sites/arolariu.ro/**",
   cv: "sites/cv.arolariu.ro/**",
+  status: "sites/status.arolariu.ro/**",
 };
 
 /**
@@ -68,6 +69,16 @@ async function runCommand(command: string, args: string[]): Promise<{code: numbe
 }
 
 /**
+ * Checks whether a CLI tool exists on PATH by attempting `<tool> --version`.
+ * @param cmd The tool name (e.g. "ruff", "dotnet")
+ * @returns true if the tool exited with code 0
+ */
+async function isToolAvailable(cmd: string): Promise<boolean> {
+  const result = await runCommand(cmd, ["--version"]);
+  return result.code === 0;
+}
+
+/**
  * Checks if code is properly formatted for a target.
  * @param target The target to check
  * @param customPatterns Optional custom file patterns for selective targeting
@@ -80,6 +91,13 @@ async function checkTarget(
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"]);
+  }
+
+  if (target === "exp") {
+    // Ruff check mode: format check + import sort check (no auto-fix).
+    const formatCheck = await runCommand("ruff", ["format", "--check", "sites/exp.arolariu.ro"]);
+    if (formatCheck.code !== 0) return formatCheck;
+    return runCommand("ruff", ["check", "--select", "I", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -118,6 +136,13 @@ async function formatTarget(
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verbosity", "quiet"]);
+  }
+
+  if (target === "exp") {
+    // Ruff write mode: format files + auto-fix only import sorting (isort, rule I).
+    const fmt = await runCommand("ruff", ["format", "sites/exp.arolariu.ro"]);
+    if (fmt.code !== 0) return fmt;
+    return runCommand("ruff", ["check", "--select", "I", "--fix", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -210,6 +235,48 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
   });
 
   try {
+    // Tool availability gate for external-tool targets.
+    if (target === "exp") {
+      const available = await isToolAvailable("ruff");
+      if (!available) {
+        return {
+          target,
+          checkPassed: false,
+          formatted: false,
+          exitCode: 0,
+          resultText: `  ⊘ ${target} skipped: Ruff not found on PATH\n`,
+          skipped: true,
+          skipReason: "Ruff not installed. Install via 'pipx install ruff' or 'pip install ruff'.",
+          workerId,
+          durationMs: Math.round(performance.now() - startTime),
+          workTimeMs: 0,
+          initTimeMs: 0,
+          fileCount: 0,
+          peakMemoryBytes,
+        };
+      }
+    }
+    if (target === "api") {
+      const available = await isToolAvailable("dotnet");
+      if (!available) {
+        return {
+          target,
+          checkPassed: false,
+          formatted: false,
+          exitCode: 0,
+          resultText: `  ⊘ ${target} skipped: dotnet not found on PATH\n`,
+          skipped: true,
+          skipReason: "dotnet CLI not installed. Install the .NET SDK from https://dot.net/.",
+          workerId,
+          durationMs: Math.round(performance.now() - startTime),
+          workTimeMs: 0,
+          initTimeMs: 0,
+          fileCount: 0,
+          peakMemoryBytes,
+        };
+      }
+    }
+
     // ===== INITIALIZATION PHASE =====
     const initStartTime = performance.now();
 
