@@ -2,6 +2,14 @@ import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {FontContextProvider, useFontContext} from "./FontContext";
 
+// Mock @/lib/utils.client so we can control isBrowserStorageAvailable per-suite.
+// The default (vi.fn returning true) matches the beforeEach localStorage mock below.
+vi.mock("@/lib/utils.client", () => ({
+  isBrowserStorageAvailable: vi.fn(() => true),
+}));
+
+import {isBrowserStorageAvailable} from "@/lib/utils.client";
+
 // Mock next/font/google fonts
 vi.mock("next/font/google", () => ({
   Caudex: vi.fn(() => ({
@@ -365,6 +373,36 @@ describe("FontContext", () => {
       }).toThrow("useFontContext must be used within a FontContextProvider");
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe("when localStorage is unavailable (isBrowserStorageAvailable returns false)", () => {
+    beforeEach(() => {
+      vi.mocked(isBrowserStorageAvailable).mockReturnValue(false);
+    });
+
+    it("should initialise with normal font when localStorage is unavailable", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Falls through to the default "normal" return without reading localStorage
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should not persist font preference when localStorage is unavailable", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      act(() => {
+        result.current.setFont("dyslexic");
+      });
+
+      // State should update in memory even without localStorage
+      expect(result.current.fontType).toBe("dyslexic");
+      // But localStorage.setItem should NOT have been called
+      expect(localStorageMock["selectedFont"]).toBeUndefined();
     });
   });
 

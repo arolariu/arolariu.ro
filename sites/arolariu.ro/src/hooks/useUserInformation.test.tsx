@@ -264,6 +264,35 @@ describe("useUserInformation - abort signal handling", () => {
     });
   });
 
+  describe("DOMException AbortError with non-aborted signal (race condition)", () => {
+    beforeEach(() => {
+      vi.stubEnv("NODE_ENV", "development");
+    });
+
+    it("silences DOMException AbortError even when signal.aborted is false at catch time", async () => {
+      // This covers the second half of the isAbort OR: signal is NOT aborted yet
+      // but a DOMException "AbortError" is thrown — a real race condition in browsers.
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Reject with a DOMException AbortError but do NOT abort the signal
+      mockFetch.mockRejectedValue(new DOMException("The operation was aborted.", "AbortError"));
+
+      const {result} = renderHook(() => useUserInformation());
+
+      await waitFor(() => {
+        // In dev mode, silenced → isError stays false and isLoading is not reset
+        // (shouldSkipLoadingReset = dev && signal.aborted; signal NOT aborted here,
+        //  so isLoading DOES get reset to false)
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Should NOT log the AbortError and should NOT set isError (treated as abort)
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      expect(result.current.isError).toBe(false);
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
   describe("in production mode", () => {
     beforeEach(() => {
       vi.stubEnv("NODE_ENV", "production");

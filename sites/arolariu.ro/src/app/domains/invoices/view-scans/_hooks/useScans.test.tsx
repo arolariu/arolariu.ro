@@ -249,6 +249,37 @@ describe("useScans", () => {
       consoleErrorSpy.mockRestore();
     });
 
+    it("should suppress error toast when component is unmounted before sync rejects", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Use a deferred promise so we can control when the fetch resolves/rejects
+      let rejectFetch!: (err: Error) => void;
+      const deferredFetch = new Promise<never>((_, reject) => {
+        rejectFetch = reject;
+      });
+      mockFetchScans.mockReturnValue(deferredFetch);
+
+      const {result, unmount} = renderHook(() => useScans());
+
+      // Kick off the sync — it will await the deferred promise
+      let syncDone = false;
+      const syncPromise = result.current.syncScans().then(() => {
+        syncDone = true;
+      });
+
+      // Unmount to set isMountedRef.current = false
+      unmount();
+
+      // Now reject the deferred fetch
+      rejectFetch(new Error("Network error after unmount"));
+      await syncPromise.catch(() => {});
+      await Promise.resolve(); // flush microtasks
+
+      expect(syncDone).toBe(true);
+      expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      consoleErrorSpy.mockRestore();
+    });
+
     it("should add cachedAt timestamp to fetched scans", async () => {
       const fetchedScans = [
         {
@@ -279,6 +310,22 @@ describe("useScans", () => {
           }),
         ]),
       );
+    });
+  });
+
+  describe("manual sync", () => {
+    it("should show success toast when manual=true and component is mounted", async () => {
+      mockFetchScans.mockResolvedValue([]);
+
+      const {result} = renderHook(() => useScans());
+
+      await act(async () => {
+        await result.current.syncScans(true);
+      });
+
+      expect(mockStoreState.setScans).toHaveBeenCalled();
+      expect(mockStoreState.setLastSyncTimestamp).toHaveBeenCalled();
+      expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
     });
   });
 
