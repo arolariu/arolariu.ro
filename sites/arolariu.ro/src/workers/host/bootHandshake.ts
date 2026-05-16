@@ -205,6 +205,7 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
   // even after a truthy guard. `typeof rejectBoot === "function"` is a
   // primitive predicate it does narrow correctly.
   const ejectBoot = (err: unknown): void => {
+    /* v8 ignore next - rejectBoot is always non-null at call sites (synchronous failure path only) */
     if (typeof rejectBoot === "function") rejectBoot(err);
   };
 

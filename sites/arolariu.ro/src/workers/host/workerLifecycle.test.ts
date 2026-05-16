@@ -165,6 +165,30 @@ describe("createWorkerLifecycle", () => {
     });
   });
 
+  describe("scheduleIdle guard: inFlight > 0 prevents idle scheduling", () => {
+    // Coverage: line 62 of workerLifecycle.ts — `if (inFlight > 0) return`.
+    // When endCall fires but there are still other in-flight calls, scheduleIdle
+    // must return early without arming the idle timer.
+    it("does not schedule idle timer when a second call is still in-flight after endCall", () => {
+      const onIdle = vi.fn();
+      const lifecycle = createWorkerLifecycle({idleTimeoutMs: 500, onIdle});
+      lifecycle.bootBegin();
+      lifecycle.bootComplete();
+      // Start two concurrent calls.
+      lifecycle.beginCall();
+      lifecycle.beginCall();
+      // End only the first — inFlight is still 1. scheduleIdle should not fire.
+      lifecycle.endCall();
+      vi.advanceTimersByTime(600);
+      // Idle timer must NOT have fired because inFlight is still 1.
+      expect(onIdle).not.toHaveBeenCalled();
+      // End the second call — now inFlight drops to 0 and idle timer can arm.
+      lifecycle.endCall();
+      vi.advanceTimersByTime(600);
+      expect(onIdle).toHaveBeenCalledOnce();
+    });
+  });
+
   describe("inflight tracking", () => {
     it("increments and decrements correctly", () => {
       const lifecycle = createWorkerLifecycle({idleTimeoutMs: 1000});
