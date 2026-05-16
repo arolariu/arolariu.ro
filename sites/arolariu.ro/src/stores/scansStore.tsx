@@ -344,6 +344,7 @@ const createScansSlice = (set: (partial: Partial<ScansStore> | ((state: ScansSto
 /**
  * Development store with DevTools integration
  */
+/* v8 ignore next 10 -- dev-only store factory; unreachable when NODE_ENV !== "development" */
 const createDevStore = () =>
   create<ScansStore>()(
     devtools(
@@ -386,4 +387,5 @@ const createProdStore = () => create<ScansStore>()(persist((set) => createScansS
  * }
  * ```
  */
+/* v8 ignore next -- createDevStore() branch unreachable when NODE_ENV !== "development" */
 export const useScansStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();

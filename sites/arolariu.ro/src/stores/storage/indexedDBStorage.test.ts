@@ -6,8 +6,8 @@
  * The actual Dexie functionality is tested indirectly through the store tests.
  */
 
-import {describe, expect, it, vi} from "vitest";
-import {ZUSTAND_TABLES, createIndexedDBStorage, createSharedStorage} from "./indexedDBStorage";
+import {afterEach, describe, expect, it, vi} from "vitest";
+import {ZUSTAND_TABLES, createIndexedDBStorage, createSharedStorage, getDatabaseInstance, resetDatabaseInstance} from "./indexedDBStorage";
 
 /** Test entity type */
 interface TestEntity {
@@ -503,6 +503,12 @@ describe("resetDatabaseInstance and getDatabaseInstance", () => {
     expect(() => resetDatabaseInstance()).not.toThrow();
   });
 
+  it("should be a no-op when dbInstance is already null", () => {
+    // Call twice: first resets any live instance, second exercises the falsy branch
+    resetDatabaseInstance();
+    expect(() => resetDatabaseInstance()).not.toThrow();
+  });
+
   it("should export getDatabaseInstance function", async () => {
     const {getDatabaseInstance} = await import("./indexedDBStorage");
     expect(typeof getDatabaseInstance).toBe("function");
@@ -763,5 +769,116 @@ describe("Error handling for specific uncovered lines", () => {
     // The function has try-catch to prevent throwing
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("Forced-error catch-branch coverage", () => {
+  /**
+   * These tests force Dexie's db.transaction() to throw so the catch blocks
+   * in getItem / removeItem / createSharedStorage's three methods are exercised.
+   * The spy is restored in afterEach to avoid leaking into other tests.
+   */
+  afterEach(() => {
+    vi.restoreAllMocks();
+    resetDatabaseInstance();
+  });
+
+  it("createIndexedDBStorage.getItem catch branch: logs error and returns null when transaction throws", async () => {
+    // Arrange
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = getDatabaseInstance();
+    expect(db).not.toBeNull();
+    // Force db.transaction to throw so the catch block at lines 204-207 is reached
+    vi.spyOn(db!, "transaction").mockRejectedValue(new Error("simulated getItem failure"));
+
+    const storage = createTestStorage();
+
+    // Act
+    const result = await storage.getItem("any-key");
+
+    // Assert — catch path: returns null and logs the error
+    expect(result).toBeNull();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Error retrieving entities"), expect.any(Error));
+  });
+
+  it("createIndexedDBStorage.removeItem catch branch: logs error and does not throw when transaction throws", async () => {
+    // Arrange
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = getDatabaseInstance();
+    expect(db).not.toBeNull();
+    // Force db.transaction to throw so the catch block at line 266-268 is reached
+    vi.spyOn(db!, "transaction").mockRejectedValue(new Error("simulated removeItem failure"));
+
+    const storage = createTestStorage();
+
+    // Act — must not throw
+    await expect(storage.removeItem("any-key")).resolves.toBeUndefined();
+
+    // Assert — catch path logs the error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Error clearing IndexedDB"), expect.any(Error));
+  });
+
+  it("createSharedStorage.getItem catch branch: logs error and returns null when transaction throws", async () => {
+    // Arrange
+    interface SharedState {
+      data: string;
+    }
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = getDatabaseInstance();
+    expect(db).not.toBeNull();
+    // Force db.transaction to throw so the catch block at lines 303-306 is reached
+    vi.spyOn(db!, "transaction").mockRejectedValue(new Error("simulated shared getItem failure"));
+
+    const storage = createSharedStorage<SharedState>();
+
+    // Act
+    const result = await storage.getItem("shared-key");
+
+    // Assert — catch path: returns null and logs the error
+    expect(result).toBeNull();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Error retrieving from shared storage"), expect.any(Error));
+  });
+
+  it("createSharedStorage.setItem catch branch: logs error and does not throw when transaction throws", async () => {
+    // Arrange
+    interface SharedState {
+      data: string;
+    }
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = getDatabaseInstance();
+    expect(db).not.toBeNull();
+    // Force db.transaction to throw so the catch block at lines 321-323 is reached
+    vi.spyOn(db!, "transaction").mockRejectedValue(new Error("simulated shared setItem failure"));
+
+    const storage = createSharedStorage<SharedState>();
+
+    // Act — must not throw
+    await expect(storage.setItem("shared-key", {state: {data: "x"}, version: 1})).resolves.toBeUndefined();
+
+    // Assert — catch path logs the error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Error storing to shared storage"), expect.any(Error));
+  });
+
+  it("createSharedStorage.removeItem catch branch: logs error and does not throw when transaction throws", async () => {
+    // Arrange
+    interface SharedState {
+      data: string;
+    }
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = getDatabaseInstance();
+    expect(db).not.toBeNull();
+    // Force db.transaction to throw so the catch block at lines 335-337 is reached
+    vi.spyOn(db!, "transaction").mockRejectedValue(new Error("simulated shared removeItem failure"));
+
+    const storage = createSharedStorage<SharedState>();
+
+    // Act — must not throw
+    await expect(storage.removeItem("shared-key")).resolves.toBeUndefined();
+
+    // Assert — catch path logs the error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Error removing from shared storage"), expect.any(Error));
   });
 });

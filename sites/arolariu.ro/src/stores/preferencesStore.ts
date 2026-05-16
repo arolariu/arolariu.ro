@@ -243,6 +243,7 @@ const createPreferencesSlice = (
 /**
  * Development store with DevTools integration.
  */
+/* v8 ignore next 10 -- dev-only store factory; unreachable when NODE_ENV !== "development" */
 const createDevStore = () =>
   create<PreferencesStore>()(
     devtools(
@@ -281,6 +282,7 @@ const createProdStore = () => create<PreferencesStore>()(persist((set, get) => c
  * }
  * ```
  */
+/* v8 ignore next -- createDevStore() branch unreachable when NODE_ENV !== "development" */
 export const usePreferencesStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();
 
 // ===========================================
