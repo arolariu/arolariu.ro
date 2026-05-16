@@ -157,7 +157,11 @@ jobs:
         run: |
           echo "::group::🧬 Running tsgo --noEmit"
           START_TIME=$(date +%s)
-          npx tsgo --noEmit -p tsconfig.json
+          # The npm package name (@typescript/native-preview) differs from the
+          # bin name (tsgo). npm's registry does not reverse-lookup bins, so
+          # bare `npx tsgo` fails with E404. -p specifies the package; -y
+          # answers the install prompt non-interactively in CI.
+          npx -y -p @typescript/native-preview tsgo --noEmit -p tsconfig.json
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "::notice::✅ Type-check (tsgo) completed in ${DURATION}s"
