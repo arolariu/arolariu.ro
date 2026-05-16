@@ -94,6 +94,10 @@ export default defineConfig({
         "**/telemetry.ts",
         "**/instrumentation.ts",
         "**/proxy.ts",
+
+        // Piscina worker files — run in separate threads, use child_process I/O;
+        // async execution paths cannot be covered by unit tests.
+        "**/*.worker.ts",
       ],
     },
   },
