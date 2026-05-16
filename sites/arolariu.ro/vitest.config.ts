@@ -23,12 +23,22 @@ export default mergeConfig(
       exclude: ["**/node_modules/**", "**/tests/**"], // Exclude E2E tests directory
       coverage: {
         exclude: [
+          // ── existing entries ──
           "**/instrumentation.server.ts",
           "**/instrumentation.ts",
           "**/.next/**",
           "**/tests/**",
           "**/export/InvoicePDF.tsx", // @react-pdf/renderer template — not unit-testable
           "**/*.stories.tsx", // Storybook stories
+
+          // ── presentational React components (team policy: not unit-tested) ──
+          "**/emails/**/*.tsx",
+          "src/components/Navigation.tsx",
+          "src/app/_components/PreferencesSubscriptions.tsx",
+
+          // ── SCSS modules (instrumented by v8 as a side effect of import) ──
+          "**/*.module.scss",
+          "**/*.scss",
         ],
       },
     },
