@@ -282,8 +282,8 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
 
     // For Prettier targets, resolve config file (this is the main init cost)
     // For API (.NET), initialization is minimal
-    if (target !== "api") {
-      await resolveConfigFile(); // Pre-warm the config resolution
+    if (target !== "api" && target !== "exp") {
+      await resolveConfigFile(); // Pre-warm the config resolution (Prettier targets only)
     }
     trackMemory();
 
