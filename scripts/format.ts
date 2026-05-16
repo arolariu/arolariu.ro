@@ -23,7 +23,7 @@ import {
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
 /** All available format targets in consistent order */
-const allTargets: FormatTarget[] = ["packages", "website", "cv", "api"];
+const allTargets: FormatTarget[] = ["packages", "website", "cv", "api", "status", "exp"];
 
 /** Target display configuration with icons and colors */
 const targetConfig: Record<FormatTarget, {icon: string; color: (s: string) => string; description: string}> = {
@@ -31,6 +31,8 @@ const targetConfig: Record<FormatTarget, {icon: string; color: (s: string) => st
   website: {icon: "🌐", color: (s: string) => styleText("blue", s), description: "Next.js Website"},
   cv: {icon: "📄", color: (s: string) => styleText("magenta", s), description: "SvelteKit CV"},
   api: {icon: "⚙️", color: (s: string) => styleText("yellow", s), description: ".NET Backend"},
+  status: {icon: "📊", color: (s: string) => styleText("green", s), description: "SvelteKit Status Page"},
+  exp: {icon: "🐍", color: (s: string) => styleText("magentaBright", s), description: "FastAPI Experimental (Python)"},
 };
 
 /** Box drawing characters for fancy borders */
@@ -91,9 +93,12 @@ function createProgressBar(completed: number, total: number, width: number = 20)
  * Creates a status badge for a worker result.
  *
  * @param result - The format worker result.
- * @returns A colored badge (CLEAN/FORMATTED/FAILED).
+ * @returns A colored badge (CLEAN/FORMATTED/FAILED/SKIPPED).
  */
 function createStatusBadge(result: FormatWorkerResult): string {
+  if (result.skipped) {
+    return styleText(["bgGray", "white"], " SKIPPED ");
+  }
   if (result.exitCode !== 0) {
     return styleText(["bgRed", "white"], " FAILED ");
   }
@@ -148,9 +153,11 @@ function printWorkerResult(result: FormatWorkerResult, index?: number): void {
   // Calculate padding: we need to account for ANSI codes in colored strings
   const titleVisibleLength = indexBadge.length + 2 + result.target.length + 1 + config.description.length + 2; // icon is ~2 chars
 
-  // Badge visible lengths: CLEAN=7, FAILED=8, FORMATTED=11
+  // Badge visible lengths: CLEAN=7, SKIPPED=9, FAILED=8, FORMATTED=11
   let badgeVisibleLength = 7; // CLEAN
-  if (result.exitCode !== 0) {
+  if (result.skipped) {
+    badgeVisibleLength = 9; // SKIPPED
+  } else if (result.exitCode !== 0) {
     badgeVisibleLength = 8; // FAILED
   } else if (result.formatted) {
     badgeVisibleLength = 11; // FORMATTED
@@ -228,6 +235,7 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   const alreadyFormatted = results.filter((r) => r.checkPassed).length;
   const formatted = results.filter((r) => r.formatted).length;
   const failed = results.filter((r) => r.exitCode !== 0).length;
+  const skipped = results.filter((r) => r.skipped === true).length;
   const totalDuration = results.reduce((sum, r) => sum + r.durationMs, 0);
   const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
   const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
@@ -240,7 +248,7 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   console.log();
 
   // Progress bar showing success rate
-  const successCount = alreadyFormatted + formatted;
+  const successCount = alreadyFormatted + formatted + skipped;
   const progressBar = createProgressBar(successCount, results.length, 25);
   console.log(`   Success Rate: ${progressBar}`);
   console.log();
@@ -261,6 +269,10 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   if (failed > 0) {
     const bar = styleText("red", "█".repeat(failed));
     console.log(`   ${styleText("red", "●")} ${styleText("bold", "Failed:")}    ${bar} ${styleText("red", String(failed))} target(s) failed`);
+  }
+  if (skipped > 0) {
+    const bar = styleText("gray", "█".repeat(skipped));
+    console.log(`   ${styleText("gray", "●")} ${styleText("bold", "Skipped:")}   ${bar} ${styleText("gray", String(skipped))} target(s) skipped (tool not installed)`);
   }
 
   console.log();
@@ -578,11 +590,13 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
       case "website":
       case "cv":
       case "api":
+      case "status":
+      case "exp":
         exitCode = await runOnSingleTarget(arg, filePatterns);
         break;
       default:
         console.error(styleText("red", `✗ Invalid target: "${arg}"`));
-        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, api\n"));
+        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, api, status, exp\n"));
         return 1;
     }
 
