@@ -18,13 +18,15 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - Sent when AI analysis completes
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
+
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name for email personalization. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -39,7 +41,7 @@ type Props = Readonly<{
 
   /** Direct link to upload another receipt. */
   readonly uploadUrl?: string;
-}>;
+};
 
 /**
  * React component that renders the "First Invoice Uploaded" celebration email.
@@ -66,86 +68,74 @@ type Props = Readonly<{
  * />
  * ```
  */
-const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
-  const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
+const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
+  namespace: "email.firstInvoiceUploaded",
+  render: ({locale, t, props}) => {
+    const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 
-  const name = username?.trim() ? username : "there";
-  const effectiveInvoiceUrl = invoiceUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
-  const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
+    const name = username?.trim() ? username : "there";
+    const effectiveInvoiceUrl = invoiceUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
+    const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
 
-  return (
-    <EmailLayout
-      title={`${BRAND.name} | First invoice uploaded`}
-      preview={`Congratulations, ${name}! Your first invoice is in.`}
-      badge='Milestone'
-      heading='Your first invoice is in!'
-      primaryCta={{href: effectiveInvoiceUrl, label: "View your invoice"}}
-      secondaryCta={{href: effectiveUploadUrl, label: "Upload another receipt"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | ${t("badge")}`}
+        preview={t("preview", {name})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        Congratulations on uploading your first invoice! You&apos;ve taken the first step toward organized, insightful spending tracking.
-        Here&apos;s what we&apos;ve got so far:
-      </Text>
+        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 
-      <KeyValueTable
-        title='Your First Invoice'
-        items={[
-          {label: "Invoice name", value: invoiceName || "Untitled"},
-          {label: "Uploaded", value: uploadDate},
-          {label: "Status", value: "Ready for analysis"},
-        ]}
-      />
-
-      <EmailCard title='What happens next'>
-        <BulletList
+        <KeyValueTable
+          title={t("invoiceSummaryTitle")}
           items={[
-            "We analyze your receipt — our AI extracts items, prices, and merchant info",
-            "You review the results — check the analysis and correct anything that looks off",
-            "Your dashboard updates — spending charts, category breakdowns, and trends start building",
+            {label: t("invoiceSummary.invoiceName"), value: invoiceName || t("untitledFallback")},
+            {label: t("invoiceSummary.uploaded"), value: uploadDate},
+            {label: t("invoiceSummary.status"), value: t("statusValue")},
           ]}
         />
-      </EmailCard>
 
-      <EmailCard title='Features to explore'>
-        <BulletList
-          items={[
-            "Share invoices with family or colleagues for joint expense tracking",
-            "View AI-generated recipe suggestions from your grocery items",
-            "Check allergen warnings on detected food products",
-            "Track spending patterns across merchants, categories, and time periods",
-          ]}
-        />
-      </EmailCard>
+        <EmailCard title={t("whatHappensNextTitle")}>
+          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your
-        dashboard come to life.
-      </Text>
+        <EmailCard title={t("featuresToExploreTitle")}>
+          <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
+        </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Need help or have feedback? Reach us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
-      </Text>
+        <Text style={EmailParagraphStyles}>{t("body")}</Text>
 
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
-        <br />
-        {BRAND.teamName}
-      </Text>
-    </EmailLayout>
-  );
-};
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
 FirstInvoiceUploadedEmail.PreviewProps = {
   username: "Test User",
   invoiceName: "Lidl Groceries — Feb 10",
   uploadDate: "February 10, 2026 at 14:30",
-} satisfies Props;
+  locale: "en",
+};
 
 export default FirstInvoiceUploadedEmail;

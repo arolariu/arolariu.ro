@@ -3,13 +3,13 @@
  * @module emails/components/BulletList
  */
 
-import {Text} from "@react-email/components";
+import {Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Props = Readonly<{
+type Props = {
   readonly items: readonly string[];
-}>;
+};
 
 const styles = {
   item: {

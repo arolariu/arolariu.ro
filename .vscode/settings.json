@@ -16,6 +16,9 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
 
+  // Enable experimental TSGo (Go-based TypeScript) type-checker
+  "js/ts.experimental.useTsgo":true,
+
   // Breadcrumbs Settings
   "breadcrumbs.enabled": true,
   "breadcrumbs.filePath": "on",

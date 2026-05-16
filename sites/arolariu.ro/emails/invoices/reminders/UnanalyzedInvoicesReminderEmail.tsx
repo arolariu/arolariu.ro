@@ -20,13 +20,14 @@
  * @see {@link IncompleteInvoiceReminderEmail} - For partially analyzed invoices
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.
  */
-type UnanalyzedInvoice = Readonly<{
+type UnanalyzedInvoice = {
   /** Invoice name or fallback identifier. */
   readonly name: string;
 
@@ -35,12 +36,12 @@ type UnanalyzedInvoice = Readonly<{
 
   /** Direct link to view/analyze this specific invoice. */
   readonly url: string;
-}>;
+};
 
 /**
  * Properties for the UnanalyzedInvoicesReminderEmail component.
  */
-type Props = Readonly<{
+type Props = {
   /** User's display name. Falls back to "there" if empty. */
   readonly username: string;
 
@@ -49,7 +50,10 @@ type Props = Readonly<{
 
   /** Link to the invoices list page. */
   readonly invoicesUrl?: string;
-}>;
+
+  /** Email locale for translation. */
+  readonly locale?: EmailLocale;
+};
 
 /**
  * React component that renders the "Unanalyzed Invoices Reminder" email.
@@ -74,11 +78,16 @@ type Props = Readonly<{
  *     {name: "Lidl Groceries", uploadDate: "Feb 8, 2026", url: "https://arolariu.ro/domains/invoices/view-invoice/abc"},
  *     {name: "Kaufland Receipt", uploadDate: "Feb 9, 2026", url: "https://arolariu.ro/domains/invoices/view-invoice/def"},
  *   ]}
+ *   locale="en"
  * />
  * ```
  */
-const UnanalyzedInvoicesReminderEmail = (props: Readonly<Props>) => {
+const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<React.JSX.Element> => {
   const {username, invoices, invoicesUrl} = props;
+
+  const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
+  const messages = await loadMessages(locale);
+  const t = createEmailTranslator({locale, messages, namespace: "email.unanalyzedInvoices"});
 
   const name = username?.trim() ? username : "there";
   const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
@@ -87,71 +96,73 @@ const UnanalyzedInvoicesReminderEmail = (props: Readonly<Props>) => {
 
   return (
     <EmailLayout
+      locale={locale}
       title={`${BRAND.name} | Invoices awaiting analysis`}
-      preview={`${name}, you have ${count} invoice${count === 1 ? "" : "s"} waiting for AI analysis.`}
-      badge='Reminder'
-      heading={`${count} invoice${count === 1 ? "" : "s"} waiting for analysis`}
-      primaryCta={{href: effectiveInvoicesUrl, label: "View invoices"}}
+      preview={t("preview", {name, count})}
+      badge={t("badge")}
+      heading={t("heading", {count})}
+      primaryCta={{href: effectiveInvoicesUrl, label: t("primaryCta")}}
       showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
-      <Text style={EmailParagraphStyles}>
-        You have {count} invoice{count === 1 ? "" : "s"} that {count === 1 ? "hasn't" : "haven't"} been analyzed yet. Running our AI
-        analysis unlocks the full value of your uploaded receipts.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("intro", {count})}</Text>
 
       <KeyValueTable
-        title='Invoices awaiting analysis'
+        title={t("invoicesAwaitingTitle")}
         items={displayInvoices.map((invoice) => ({
           label: invoice.name,
-          value: `Uploaded ${invoice.uploadDate}`,
+          value: t("uploadedDate", {date: invoice.uploadDate}),
         }))}
       />
 
       {count > 5 ? (
         <Text style={{...EmailParagraphStyles, fontSize: "13px"}}>
-          …and {count - 5} more. View all in your{" "}
-          <Link
-            href={effectiveInvoicesUrl}
-            style={EmailLinkStyles}>
-            dashboard
-          </Link>
-          .
+          {t.rich("andMore", {
+            remaining: count - 5,
+            dashboard: () => (
+              <Link
+                href={effectiveInvoicesUrl}
+                style={EmailLinkStyles}>
+                dashboard
+              </Link>
+            ),
+          })}
         </Text>
       ) : null}
 
-      <EmailCard title='What analysis provides'>
+      <EmailCard title={t("analysisProvidedTitle")}>
         <BulletList
           items={[
-            "Line-by-line item extraction with prices and categories",
-            "Merchant identification and categorization",
-            "Allergen detection on food products",
-            "Recipe suggestions based on your grocery items",
-            "Automatic spending categorization for dashboard insights",
+            t("analysisProvides.0"),
+            t("analysisProvides.1"),
+            t("analysisProvides.2"),
+            t("analysisProvides.3"),
+            t("analysisProvides.4"),
           ]}
         />
       </EmailCard>
 
-      <Text style={EmailParagraphStyles}>
-        Analysis typically takes under a minute per invoice. Once complete, you&apos;ll receive a notification with the results.
-      </Text>
+      <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
 
       <Text style={EmailParagraphStyles}>
-        Need help? Contact us at{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
+        {t.rich("feedback", {
+          supportEmail: BRAND.supportEmail,
+          link: (chunks) => (
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
+        })}
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
+        {t("signOff.line1")}
         <br />
-        {BRAND.teamName}
+        {t("signOff.line2", {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );
@@ -164,6 +175,7 @@ UnanalyzedInvoicesReminderEmail.PreviewProps = {
     {name: "Kaufland Receipt", uploadDate: "Feb 9, 2026", url: "https://arolariu.ro/domains/invoices/view-invoice/def-456"},
     {name: "Mega Image — Feb 10", uploadDate: "Feb 10, 2026", url: "https://arolariu.ro/domains/invoices/view-invoice/ghi-789"},
   ],
+  locale: "en",
 } satisfies Props;
 
 export default UnanalyzedInvoicesReminderEmail;

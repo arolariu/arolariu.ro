@@ -3,16 +3,16 @@
  * @module emails/components/DonutChart
  */
 
-import {Img, Section, Text} from "@react-email/components";
+import {Img, Section, Text} from "react-email";
 
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
-type Datum = Readonly<{
+type Datum = {
   readonly label: string;
   readonly value: number;
-}>;
+};
 
-type Props = Readonly<{
+type Props = {
   readonly title: string;
   readonly data: readonly Datum[];
 
@@ -21,20 +21,20 @@ type Props = Readonly<{
 
   /** Accessible alt text for the chart image. */
   readonly alt: string;
-}>;
+};
 
-type QuickChartConfig = Readonly<{
+type QuickChartConfig = {
   readonly type: "doughnut";
-  readonly data: Readonly<{
+  readonly data: {
     readonly labels: readonly string[];
-    readonly datasets: ReadonlyArray<Readonly<{readonly data: readonly number[]}>>;
-  }>;
-  readonly options: Readonly<{
-    readonly legend: Readonly<{readonly display: boolean; readonly position: "bottom"}>;
-    readonly tooltips: Readonly<{readonly enabled: boolean}>;
+    readonly datasets: ReadonlyArray<{readonly data: readonly number[]}>;
+  };
+  readonly options: {
+    readonly legend: {readonly display: boolean; readonly position: "bottom"};
+    readonly tooltips: {readonly enabled: boolean};
     readonly cutoutPercentage: number;
-  }>;
-}>;
+  };
+};
 
 const styles = {
   wrap: {

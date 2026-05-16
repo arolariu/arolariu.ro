@@ -4744,5 +4744,543 @@
       },
       "title": "Statistiques Rapides"
     }
+  },
+  "email": {
+    "layout": {
+      "tagline": "Outils pratiques. Informations claires. Conçu pour les dépenses quotidiennes.",
+      "managePreferences": "Gérer les préférences d'email",
+      "unsubscribe": "Se désabonner",
+      "buttonFallback": "Si le bouton ne fonctionne pas, ouvrez ce lien :",
+      "secondaryFallback": "Ou :",
+      "allRightsReserved": "© 2022-{year} {brand}. Tous droits réservés."
+    },
+    "welcome": {
+      "subject": "Bienvenue chez {brand}",
+      "badge": "Bienvenue",
+      "heading": "Bienvenue chez {brand}",
+      "preview": "Bienvenue chez {brand}, {name} ! Commençons.",
+      "greeting": "Bonjour {name},",
+      "intro": "Merci d'avoir rejoint {brand}. Nous sommes ravis de vous compter parmi nous. Notre plateforme vous aide à transformer vos reçus quotidiens en informations financières organisées, grâce à l'analyse par IA.",
+      "howItWorksTitle": "Comment ça marche",
+      "howItWorks": {
+        "0": "Téléversez — prenez une photo ou téléversez un PDF d'un reçu",
+        "1": "Analysez — notre IA extrait les articles, les prix, les marchands et suggère même des recettes à partir des reçus d'épicerie",
+        "2": "Suivez — consultez des tableaux de dépenses par marchand, catégorie, mois ou année"
+      },
+      "whatYouCanDoTitle": "Ce que vous pouvez faire",
+      "whatYouCanDo": {
+        "0": "Recevez des alertes sur les allergènes des produits alimentaires",
+        "1": "Partagez des factures avec votre famille ou vos collègues",
+        "2": "Exportez des statistiques et des rapports de dépenses",
+        "3": "Accédez à vos données depuis n'importe quel appareil"
+      },
+      "body": "Prêt à commencer ? Téléversez votre premier reçu et regardez la magie opérer. Le processus prend moins d'une minute.",
+      "feedbackPrompt": "Des questions ou des commentaires ? Nous serions ravis de vous entendre à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Téléversez votre premier reçu",
+      "ctaSecondary": "Explorez le tableau de bord"
+    },
+    "firstInvoiceUploaded": {
+      "subject": "Votre première facture est arrivée !",
+      "badge": "Étape importante",
+      "heading": "Votre première facture est arrivée !",
+      "preview": "Félicitations, {name} ! Votre première facture est arrivée.",
+      "greeting": "Bonjour {name},",
+      "intro": "Félicitations pour le téléchargement de votre première facture ! Vous avez fait le premier pas vers un suivi organisé et perspicace des dépenses. Voici ce que nous avons jusqu'à présent :",
+      "invoiceSummaryTitle": "Votre Première Facture",
+      "invoiceSummary": {
+        "invoiceName": "Nom de la facture",
+        "uploaded": "Téléchargé",
+        "status": "Statut"
+      },
+      "statusValue": "Prêt pour l'analyse",
+      "untitledFallback": "Sans titre",
+      "whatHappensNextTitle": "Ce qui va suivre",
+      "whatHappensNext": {
+        "0": "Nous analysons votre reçu — notre IA extrait les articles, les prix et les informations sur le commerçant",
+        "1": "Vous examinez les résultats — vérifiez l'analyse et corrigez tout ce qui semble incorrect",
+        "2": "Votre tableau de bord se met à jour — graphiques de dépenses, répartitions par catégorie et tendances commencent à se construire"
+      },
+      "featuresToExploreTitle": "Fonctionnalités à explorer",
+      "featuresToExplore": {
+        "0": "Partagez des factures avec votre famille ou vos collègues pour un suivi des dépenses conjoint",
+        "1": "Consultez les suggestions de recettes générées par l'IA à partir de vos articles d'épicerie",
+        "2": "Vérifiez les avertissements sur les allergènes pour les produits alimentaires détectés",
+        "3": "Suivez les modèles de dépenses par commerçant, catégorie et période"
+      },
+      "body": "Plus vous téléchargez de factures, plus vos informations sur les dépenses deviennent riches. Essayez de télécharger quelques reçus cette semaine pour voir votre tableau de bord prendre vie.",
+      "feedbackPrompt": "Besoin d'aide ou avez-vous des commentaires ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir votre facture",
+      "ctaSecondary": "Télécharger un autre reçu"
+    },
+    "invoiceAnalyzed": {
+      "subject": "Votre facture a été analysée",
+      "badge": "Factures • Analyse Terminée",
+      "heading": "L'analyse de votre facture est prête",
+      "preview": "Votre facture est prête, {name}. Analyse terminée !",
+      "greeting": "Bonjour {name},",
+      "intro": "Bonne nouvelle ! Notre IA a terminé l'analyse de votre facture. Nous avons extrait toutes les informations clés, catégorisé vos articles et généré des aperçus de dépenses pour vous aider à suivre vos finances.",
+      "summaryTitle": "Résumé de la facture",
+      "summary": {
+        "invoiceName": "Nom de la facture",
+        "merchantId": "ID Commerçant",
+        "itemsDetected": "Articles détectés",
+        "totalAmount": "Montant total",
+        "notIdentified": "Pas encore identifié"
+      },
+      "whatWasAnalyzedTitle": "Ce qui a été analysé",
+      "whatWasAnalyzed": {
+        "0": "Identification et catégorisation du commerçant",
+        "1": "Extraction ligne par ligne des articles avec les prix",
+        "2": "Catégorisation automatique des produits (épicerie, boissons, articles ménagers, etc.)",
+        "3": "Détection de la devise et validation du montant",
+        "4": "Extraction de la date et de l'heure lorsque disponible"
+      },
+      "body": "Cliquez sur le bouton ci-dessus pour voir l'analyse complète. Si quelque chose ne va pas—peut-être qu'un produit a été mal catégorisé ou qu'un prix n'a pas été détecté correctement—vous pouvez modifier la facture directement dans votre tableau de bord et les aperçus se mettront à jour automatiquement.",
+      "feedbackPrompt": "Vous avez des questions sur votre analyse ou besoin d'aide ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir l'analyse complète"
+    },
+    "invoiceDeleted": {
+      "subject": "Votre facture a été supprimée",
+      "badge": "Factures • Supprimé",
+      "heading": "Facture retirée de votre compte",
+      "preview": "La facture {invoiceLabel} a été retirée de votre compte.",
+      "greeting": "Bonjour {name},",
+      "intro": "Cet email confirme qu'une facture a été retirée de votre compte {brand}. La suppression a été traitée avec succès.",
+      "detailsTitle": "Détails de la suppression",
+      "details": {
+        "invoice": "Facture",
+        "invoiceId": "ID facture",
+        "status": "Statut"
+      },
+      "statusValue": "Supprimé (suppression douce)",
+      "placeholder": "—",
+      "whatYouShouldKnowTitle": "Ce que vous devez savoir",
+      "whatYouShouldKnow": {
+        "0": "Il s'agit d'une suppression douce—les données de la facture peuvent être conservées pendant 30 jours à des fins de récupération.",
+        "1": "Tout accès partagé à cette facture a été automatiquement révoqué.",
+        "2": "Les statistiques et informations seront recalculées pour exclure cette facture.",
+        "3": "Si vous devez récupérer cette facture, contactez le support dans les 30 jours."
+      },
+      "body": "Si vous n'avez pas initié cette suppression ou si vous devez récupérer la facture, veuillez nous contacter immédiatement à <email></email>. Nous sommes là pour vous aider.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir vos factures"
+    },
+    "invoiceMadePublic": {
+      "subject": "Votre facture est maintenant publique",
+      "badge": "Factures • Lien Public",
+      "heading": "Votre facture est maintenant publique",
+      "preview": "Votre facture \"{invoiceName}\" est désormais publique et partageable.",
+      "greeting": "Bonjour {name},",
+      "intro": "Vous avez réussi à rendre votre facture publique. Toute personne possédant le lien ou le code QR ci-dessous peut désormais consulter cette facture—sans connexion requise. C'est parfait pour partager des reçus avec des collègues, des comptables ou pour les rapports de dépenses.",
+      "detailsTitle": "Détails de la facture",
+      "details": {
+        "invoiceName": "Nom de la facture",
+        "invoiceId": "ID facture",
+        "merchant": "Commerçant",
+        "total": "Total",
+        "created": "Créé",
+        "access": "Accès"
+      },
+      "accessValue": "Public (n'importe qui avec le lien)",
+      "qrTitle": "Code QR d'Accès Rapide",
+      "qrSubText": "Scannez avec l'appareil photo de votre téléphone pour un accès instantané.",
+      "qrAlt": "Code QR pour l'accès à la facture",
+      "howToShareTitle": "Comment partager",
+      "howToShare": {
+        "0": "Copiez le lien direct ci-dessous et envoyez par email ou message",
+        "1": "Imprimez ou capturez le code QR pour un partage en personne",
+        "2": "Incluez dans les rapports de dépenses ou les demandes de remboursement"
+      },
+      "privacyNoticeTitle": "Avis de Confidentialité",
+      "privacyNoticeBody": "Les factures publiques peuvent être consultées par toute personne possédant l'URL ou le code QR. Pour rendre cette facture privée à nouveau, mettez à jour les paramètres de partage depuis votre page de facture à tout moment.",
+      "directLinkLabel": "Lien direct :",
+      "feedbackPrompt": "Des questions sur le partage ou les paramètres de confidentialité ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Ouvrir la facture publique"
+    },
+    "invoiceShared": {
+      "subject": "{fromName} a partagé une facture avec vous",
+      "badge": "Factures • Partagées",
+      "heading": "Une facture a été partagée avec vous",
+      "preview": "{fromName} a partagé une facture avec vous.",
+      "greeting": "Bonjour {toName},",
+      "intro": "Bonne nouvelle ! <from></from> a partagé une facture avec vous sur {brand}. Cela vous donne accès à tous les détails de la facture, y compris les produits détaillés, les informations sur le commerçant et les analyses.",
+      "detailsTitle": "Détails du partage",
+      "details": {
+        "sharedBy": "Partagé par",
+        "invoiceId": "ID Facture"
+      },
+      "whatYouCanDoTitle": "Ce que vous pouvez faire",
+      "whatYouCanDo": {
+        "0": "Voir les détails complets de la facture et la ventilation par article",
+        "1": "Consulter les analyses et les catégories de dépenses",
+        "2": "Télécharger ou imprimer la facture pour vos archives"
+      },
+      "body": "Cliquez sur le bouton ci-dessus pour accéder à la facture partagée. Ce lien restera actif tant que les autorisations de partage seront en place.",
+      "feedbackPrompt": "Vous avez des questions sur ce partage ou besoin d'aide ? Contactez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir la facture partagée"
+    },
+    "invoiceUnshared": {
+      "subject": "L'accès à une facture partagée a été révoqué",
+      "badge": "Factures • Accès Révoqué",
+      "heading": "Votre accès à une facture a été révoqué",
+      "preview": "{fromName} a révoqué votre accès à une facture partagée.",
+      "greeting": "Bonjour {toName},",
+      "intro": "Nous vous écrivons pour vous informer que <from></from> a révoqué votre accès à une facture qui avait été partagée avec vous auparavant. Cela signifie que vous ne pourrez plus consulter cette facture.",
+      "detailsTitle": "Détails de la révocation",
+      "details": {
+        "revokedBy": "Révoqué par",
+        "invoiceId": "ID Facture",
+        "revokedAt": "Révoqué le",
+        "yourAccess": "Votre accès",
+        "accessRevoked": "Révoqué",
+        "notProvided": "—"
+      },
+      "whatThisMeansTitle": "Ce que cela signifie",
+      "whatThisMeans": {
+        "0": "Tous les liens enregistrés vers cette facture ne fonctionneront plus pour vous.",
+        "1": "Cette facture n'apparaîtra plus dans votre liste de factures partagées.",
+        "2": "Si vous avez besoin d'un nouvel accès, contactez directement le propriétaire de la facture."
+      },
+      "body": "Si vous pensez que ce changement a été effectué par erreur, veuillez contacter <from></from> ou notre équipe d'assistance. Les révocations d'accès sont parfois accidentelles et nous sommes heureux de faciliter la communication si nécessaire.",
+      "feedbackPrompt": "Besoin d'aide ? Envoyez-nous un email à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir vos factures",
+      "ctaSecondary": "Contacter le support"
+    },
+    "spendingAlert": {
+      "subject": "Alerte de seuil de dépenses",
+      "badge": "Alerte Dépenses • {percent}%",
+      "heading": "{percent, select, 80 {Attention : vous approchez de la limite de votre budget} 90 {Presque terminé : 90% de votre budget utilisé} 100 {Budget atteint : vous avez atteint votre limite de dépenses} other {Alerte de dépenses}}",
+      "preview": "{name}, vous avez utilisé {percent}% de votre budget {category} pour {period}.",
+      "greeting": "Bonjour {name},",
+      "intro": "{state, select, over {Vous avez atteint votre limite de dépenses pour {category} en {period}. Voici un résumé de votre situation.} other {Vous avez utilisé {percent}% de votre budget {category} pour {period}. Voici un résumé rapide pour vous aider à planifier le reste de la période.}}",
+      "overBudgetWarning": "Vos dépenses ont atteint ou dépassé le budget que vous avez défini. Examinez vos achats récents pour rester sur la bonne voie.",
+      "metricsLabels": {
+        "budgetLimit": "Limite du budget",
+        "currentSpending": "Dépenses actuelles",
+        "remaining": "Restant",
+        "threshold": "Seuil"
+      },
+      "overBudgetValue": "Au-dessus du budget",
+      "detailsTitle": "Détails du Budget",
+      "detailsLabels": {
+        "category": "Catégorie",
+        "period": "Période",
+        "budget": "Budget",
+        "spent": "Dépensé"
+      },
+      "chartTitle": "Dépenses par catégorie",
+      "chartAlt": "Répartition des dépenses par catégorie pour {period}",
+      "tipsTitle": "{state, select, over {Ce que vous pouvez faire} other {Conseils pour rester sur la bonne voie}}",
+      "tipsOverBudget": {
+        "0": "Examinez les achats récents pour identifier les dépenses non essentielles",
+        "1": "Envisagez d'ajuster votre budget s'il ne reflète plus la réalité",
+        "2": "Définissez un seuil plus strict (par exemple 80%) pour des avertissements plus précoces"
+      },
+      "tipsOnTrack": {
+        "0": "Vérifiez vos achats récents pour voir où va la majeure partie",
+        "1": "Priorisez les dépenses essentielles pour le reste de la période",
+        "2": "Envisagez de cuisiner davantage à la maison si les restaurants augmentent les coûts"
+      },
+      "notificationsParagraph": "Vous pouvez ajuster vos seuils de budget et vos préférences de notification dans vos <settings></settings>.",
+      "notificationsLink": "paramètres de notification",
+      "feedbackPrompt": "Des questions ? Contactez-nous à <email></email>.",
+      "ctaPrimary": "Voir le tableau de bord",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
+    },
+    "newsletterSubscribed": {
+      "subject": "Vous êtes abonné !",
+      "badge": "Newsletter",
+      "heading": "Vous êtes inscrit — bienvenue à bord",
+      "preview": "Bienvenue, {name} — vous êtes abonné.",
+      "greeting": "Bonjour {name},",
+      "intro": "Merci de vous être abonné à la newsletter <brand>{brandName}</brand>. Je suis sincèrement ravi de vous avoir ici. Je garderai les communications légères, significatives et dignes de votre temps.",
+      "whatToExpectTitle": "À quoi s'attendre",
+      "whatToExpect": {
+        "0": "Mises à jour de produits et nouvelles fonctionnalités au fur et à mesure de leur lancement",
+        "1": "Nouveaux articles et écrits sur la technologie, la productivité et les finances personnelles",
+        "2": "Points forts occasionnels et ressources sélectionnées (1 à 2 emails par trimestre)"
+      },
+      "body": "Votre boîte de réception est sacrée—je respecte cela. Chaque email est conçu pour apporter une véritable valeur, que ce soit un conseil qui vous fait gagner des heures ou une perspective qui change votre vision des finances personnelles.",
+      "feedbackPrompt": "Des questions, des commentaires ou juste envie de dire bonjour ? Répondez à cet email ou contactez-moi directement à <email></email>.",
+      "ctaPrimary": "Visiter arolariu.ro",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
+    },
+    "newsletterUnsubscribed": {
+      "subject": "Vous avez été désabonné",
+      "badge": "Newsletter",
+      "heading": "Vous avez été désabonné",
+      "preview": "Bonjour {name} — vous avez été désabonné.",
+      "greeting": "Bonjour {name},",
+      "intro": "Cet email confirme que vous avez été retiré de la liste de newsletter <brand>{brandName}</brand>. Je suis désolé de vous voir partir.",
+      "whatHappensNextTitle": "Ce qui se passe ensuite",
+      "whatHappensNext": {
+        "0": "Vous ne recevrez plus de newsletters de notre part à l'avenir.",
+        "1": "Vous pourriez toujours recevoir des emails essentiels de compte et de service si vous utilisez le produit.",
+        "2": "Vous avez changé d'avis ? Vous pouvez vous réabonner à tout moment en utilisant le bouton ci-dessus."
+      },
+      "body": "J'apprécie le temps que vous avez passé avec nous. Si vous avez des commentaires sur les raisons de votre départ ou sur la façon dont je peux m'améliorer, j'aimerais sincèrement les entendre—répondez simplement à cet email.",
+      "feedbackPrompt": "Si vous n'avez pas demandé cette désinscription, ou si vous avez besoin d'aide, veuillez contacter <email></email>.",
+      "ctaPrimary": "Revoir les préférences",
+      "ctaSecondary": "Se réabonner",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      }
+    },
+    "accountInactivity": {
+      "subject": "Vous nous manquez chez {brand}",
+      "badge": "Compte",
+      "heading": "Avis d'inactivité du compte",
+      "preview": "Bonjour {name} — votre compte est inactif depuis {inactiveDays} jours.",
+      "greeting": "Bonjour {name},",
+      "intro": "Ceci est un avertissement que votre compte est inactif depuis <count>{inactiveDays}</count> jours.",
+      "whatThisMeans": {
+        "title": "Ce que cela signifie",
+        "bullet1": "Se connecter gardera votre compte actif.",
+        "bullet2": "S'il n'y a aucune activité pendant les prochains {daysUntilClosure} jours, le compte pourrait être programmé pour fermeture.",
+        "bullet3": "Si vous souhaitez conserver vos données, veuillez agir avant la date limite."
+      },
+      "timeline": {
+        "title": "Chronologie",
+        "inactiveFor": "Inactif depuis",
+        "timeRemaining": "Temps restant",
+        "daysValue": "{days} jours"
+      },
+      "supportPrompt": "Si vous pensez avoir reçu ce message par erreur ou si vous avez besoin d'aide, veuillez contacter <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "footnote": "Note : Cet avis est informatif et destiné à vous aider à éviter de perdre l'accès. Les politiques réelles de rétention des comptes peuvent varier selon la région et le produit.",
+      "cta": {
+        "primary": "Se connecter",
+        "secondary": "Contacter le support"
+      }
+    },
+    "invoiceInactivity": {
+      "subject": "Cela fait {daysWithoutUpload} jours depuis votre dernière facture",
+      "badge": {
+        "3": "Inactivité • 3 jours",
+        "7": "Inactivité • 7 jours",
+        "14": "Inactivité • 14 jours",
+        "30": "Inactivité • 30 jours"
+      },
+      "heading": {
+        "3": "Vérification rapide",
+        "7": "Un rappel doux",
+        "14": "Reprenons le fil",
+        "30": "Cela fait un moment"
+      },
+      "preview": "Bonjour {name} — {days} jours depuis votre dernier téléchargement.",
+      "greeting": "Bonjour {name},",
+      "intro": {
+        "3": "Nous avons remarqué que vous n'avez téléchargé aucune facture récemment.",
+        "7": "Il semble qu'une semaine se soit écoulée depuis votre dernier téléchargement de facture.",
+        "14": "Deux semaines sans téléchargements — besoin d'un petit coup de pouce pour reprendre l'habitude?",
+        "30": "Cela fait environ un mois depuis votre dernier téléchargement — nous pouvons vous aider à reprendre là où vous en étiez."
+      },
+      "whyWorthIt": {
+        "title": "Pourquoi c'est utile",
+        "bullet1": "Gardez votre chronologie de dépenses précise.",
+        "bullet2": "Obtenez des totaux plus propres par commerçant et catégorie.",
+        "bullet3": "Trouvez les reçus plus rapidement quand vous en avez besoin."
+      },
+      "status": {
+        "title": "Statut",
+        "daysWithoutUpload": "Jours sans téléchargement",
+        "lastUpload": "Dernier téléchargement"
+      },
+      "tip": {
+        "title": "Astuce (30 secondes)",
+        "message": "Téléchargez une facture récente aujourd'hui — une petite constance vaut mieux qu'un gros rattrapage."
+      },
+      "important": {
+        "title": "Important",
+        "message": "Si vous êtes bloqué ou si quelque chose ne fonctionne pas, répondez à cet email ou contactez le support — nous vous aiderons."
+      },
+      "helpPrompt": "Besoin d'aide ou avez des questions? Envoyez un email à <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement",
+        "line2": "L'équipe {brand}"
+      },
+      "cta": {
+        "primary": "Télécharger une facture",
+        "secondary": "Voir les factures"
+      }
+    },
+    "incompleteInvoice": {
+      "subject": "Vous avez des factures incomplètes",
+      "badge": "Rappel",
+      "heading": "Votre facture nécessite une mise à jour rapide",
+      "preview": "{name}, votre facture \"{invoiceName}\" nécessite une attention.",
+      "greeting": "Bonjour {name},",
+      "intro": "Nous avons analysé votre facture {invoiceName}, mais n'avons pas pu tout extraire. Quelques détails manquent, et les compléter vous donnera de meilleures informations sur vos dépenses et des tableaux de bord plus précis.",
+      "invoiceDetailsTitle": "Détails de la facture",
+      "invoiceLabel": "Facture",
+      "analyzedOnLabel": "Analysée le",
+      "missingFieldsLabel": "Champs manquants",
+      "whatsMissingTitle": "Ce qui manque",
+      "missingFields": {
+        "merchant": {
+          "label": "Commerçant",
+          "suggestion": "Ajoutez manuellement le nom du magasin dans la vue d'édition"
+        },
+        "items": {
+          "label": "Articles ligne par ligne",
+          "suggestion": "Essayez de télécharger à nouveau une photo plus claire, ou ajoutez les articles manuellement"
+        },
+        "payment": {
+          "label": "Informations de paiement",
+          "suggestion": "Entrez le montant total et le mode de paiement dans la vue d'édition"
+        },
+        "category": {
+          "label": "Catégorie de facture",
+          "suggestion": "Sélectionnez une catégorie (épicerie, restauration rapide, ménage, etc.)"
+        },
+        "unknown": {
+          "label": "{field}",
+          "suggestion": "Veuillez réviser et mettre à jour ces informations"
+        }
+      },
+      "tipsTitle": "Conseils pour une meilleure analyse",
+      "tips": {
+        "0": "Utilisez une surface bien éclairée et plate lors de la photographie des reçus",
+        "1": "Assurez-vous que le reçu entier est visible et net",
+        "2": "Les reçus PDF des commandes en ligne ont tendance à être mieux analysés",
+        "3": "Vous pouvez toujours ajouter ou corriger les détails manuellement après l'analyse"
+      },
+      "bodyText": "Compléter ces détails prend moins d'une minute et garantit que vos rapports de dépenses restent précis.",
+      "feedback": "Bloqué ou besoin d’aide ? Contactez-nous à <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Compléter votre facture",
+      "secondaryCta": "Réanalyser"
+    },
+    "unanalyzedInvoices": {
+      "subject": "Vous avez des factures non analysées",
+      "badge": "Rappel",
+      "heading": "{count, plural, =1 {1 facture en attente d'analyse} other {# factures en attente d'analyse}}",
+      "preview": "{name}, vous avez {count, plural, =1 {1 facture} other {# factures}} en attente d'analyse AI.",
+      "greeting": "Bonjour {name},",
+      "intro": "{count, plural, =1 {Vous avez 1 facture qui n'a pas encore été analysée. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.} other {Vous avez # factures qui n'ont pas encore été analysées. L'exécution de notre analyse AI débloque toute la valeur de vos reçus téléchargés.}}",
+      "invoicesAwaitingTitle": "Factures en attente d'analyse",
+      "uploadedDate": "Téléchargée le {date}",
+      "andMore": "…et {remaining} de plus. Voir tout dans votre <dashboard></dashboard>.",
+      "analysisProvidedTitle": "Ce que l'analyse fournit",
+      "analysisProvides": {
+        "0": "Extraction ligne par ligne des articles avec prix et catégories",
+        "1": "Identification et catégorisation des commerçants",
+        "2": "Détection des allergènes sur les produits alimentaires",
+        "3": "Suggestions de recettes basées sur vos articles d'épicerie",
+        "4": "Catégorisation automatique des dépenses pour les informations du tableau de bord"
+      },
+      "bodyText": "L'analyse prend généralement moins d'une minute par facture. Une fois terminée, vous recevrez une notification avec les résultats.",
+      "feedback": "Besoin d’aide ? Contactez-nous à <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Voir les factures"
+    },
+    "weeklyUploadReminder": {
+      "subject": "Votre rappel hebdomadaire de téléchargement",
+      "badge": "Rappel Hebdomadaire",
+      "heading": "Votre contrôle hebdomadaire des reçus",
+      "preview": "Bonjour {name} — voici votre contrôle hebdomadaire des reçus.",
+      "greeting": "Bonjour {name},",
+      "intro": "Voici un aperçu rapide de votre activité de suivi des reçus. Un téléchargement régulier vous donne les informations les plus précises sur vos dépenses.",
+      "metricsLabels": {
+        "thisWeek": "Cette semaine",
+        "lastWeek": "La semaine dernière",
+        "totalInvoices": "Total factures",
+        "totalTracked": "Total suivi"
+      },
+      "quickTipsTitle": "Conseils rapides",
+      "quickTips": {
+        "0": "Téléchargez les reçus juste après les achats — cela prend moins de 30 secondes",
+        "1": "Téléchargez par lot en fin de journée si vous préférez",
+        "2": "Même les petits achats aident à construire une image complète des dépenses"
+      },
+      "bodyText": "Chaque reçu que vous suivez rend vos informations de dépenses plus précises et vos tableaux de bord plus utiles.",
+      "feedback": "Questions ou retours ? Contactez-nous à <link>{supportEmail}</link>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "primaryCta": "Télécharger les reçus de cette semaine",
+      "secondaryCta": "Voir le tableau de bord"
+    },
+    "invoiceStats": {
+      "subject": "Vos statistiques {frequency, select, daily {quotidiennes} weekly {hebdomadaires} monthly {mensuelles} yearly {annuelles} other {périodiques}} de factures",
+      "frequencyLabel": "{frequency, select, daily {Quotidienne} weekly {Hebdomadaire} monthly {Mensuelle} yearly {Annuelle} other {Périodique}}",
+      "title": "Statistiques de factures {frequencyLabel}",
+      "badge": "Factures",
+      "heading": "Statistiques {frequencyLabel} de factures",
+      "preview": "Statistiques {frequencyLabel} pour {name} — {totalSpend} au total.",
+      "greeting": "Bonjour {name},",
+      "intro": "Voici votre résumé d'activité et de dépenses pour la période <start></start> → <end></end>.",
+      "metrics": {
+        "invoices": "Factures",
+        "scans": "Analyses",
+        "totalSpend": "Dépenses totales",
+        "averagePerInvoice": "Moy. / facture"
+      },
+      "reportDetailsTitle": "Détails du rapport",
+      "reportDetails": {
+        "period": "Période",
+        "currency": "Devise"
+      },
+      "topMerchantsTitle": "Top commerçants",
+      "topCategoriesTitle": "Top catégories",
+      "noDataFallback": "Pas encore de données — téléchargez quelques factures pour débloquer les statistiques.",
+      "breakdownCardTitle": "Répartition des dépenses (par catégorie)",
+      "donutChartTitle": "Distribution des dépenses par catégorie",
+      "donutChartAlt": "Graphique en anneau montrant la répartition des dépenses par catégorie.",
+      "breakdownTableTitle": "Répartition",
+      "breakdownNote": "Remarque : Ce graphique utilise les données de classement par catégorie disponibles pour la période.",
+      "body": "Pour une répartition complète de vos dépenses, visitez votre liste de factures pour consulter les tendances, les commerçants, les catégories et les totaux au fil du temps. Ces informations peuvent vous aider à identifier les habitudes de dépenses et à prendre des décisions financières plus éclairées.",
+      "feedbackPrompt": "Des questions ou quelque chose ne semble pas correct ? Écrivez-nous à <email></email>.",
+      "signOff": {
+        "line1": "Cordialement,",
+        "line2": "L'équipe {brand}"
+      },
+      "ctaPrimary": "Voir les factures",
+      "ctaSecondary": "Télécharger une nouvelle facture"
+    }
   }
 }

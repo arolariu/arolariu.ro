@@ -1,6 +1,7 @@
 "use client";
 
-import {sendInvoiceShareEmail} from "@/lib/actions/email";
+import type {EmailLocale} from "@/../emails/_i18n";
+import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
@@ -19,7 +20,8 @@ import {
   DialogTitle,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useUser} from "@clerk/nextjs";
+import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
@@ -139,6 +141,11 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.shareInvoiceDialog");
+  // Sender's UI locale — forwarded to the recipient so the email matches
+  // the language the sender is composing in. Cast is safe because the
+  // app's next-intl provider is configured for exactly en/ro/fr.
+  const locale = useLocale() as EmailLocale;
+  const {user} = useUser();
   const [sharingMode, setSharingMode] = useState<SharingMode>("selection");
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
@@ -255,7 +262,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
-   * Sends an email invitation to share the invoice privately using the sendInvoiceShareEmail server action.
+   * Sends an email invitation to share the invoice privately using the generic sendEmail server action.
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(
@@ -266,10 +273,18 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       setIsSendingEmail(true);
 
       const sendEmailAction = async () => {
-        const result = await sendInvoiceShareEmail({
-          toEmail: email,
-          toName: email.split("@")[0] ?? "there",
-          invoiceId: invoice.id,
+        const fromName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Someone";
+        const result = await sendEmail({
+          templateKey: "invoice-shared",
+          to: email,
+          props: {
+            fromUsername: fromName,
+            toUsername: email.split("@")[0]?.trim() || "there",
+            identifier: invoice.id,
+            locale,
+          },
+          subjectVars: {fromName},
+          replyTo: user?.emailAddresses?.[0]?.emailAddress,
         });
 
         if (!result.success) {
@@ -288,7 +303,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         },
       );
     },
-    [email, invoice.id, t],
+    [email, invoice.id, locale, t, user],
   );
 
   /**

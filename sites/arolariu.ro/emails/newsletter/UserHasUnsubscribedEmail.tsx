@@ -3,11 +3,12 @@
  * @module emails/newsletter/Unsubscription
  */
 
-import {Link, Text} from "@react-email/components";
+import {Link, Text} from "react-email";
 
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
+import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
 
-type Props = Readonly<{
+type Props = {
   /** The username of the recipient */
   readonly username: string;
 
@@ -16,68 +17,69 @@ type Props = Readonly<{
 
   /** Where to (re)subscribe (optional). */
   readonly resubscribeUrl?: string;
-}>;
-
-const UserHasUnsubscribedEmail = (props: Readonly<Props>) => {
-  const {username, managePreferencesUrl, resubscribeUrl} = props;
-
-  const name = username?.trim() ? username : "there";
-
-  const effectiveManagePreferencesUrl = managePreferencesUrl ?? `${BRAND.url}/unsubscribe`;
-  const effectiveResubscribeUrl = resubscribeUrl ?? BRAND.url;
-
-  return (
-    <EmailLayout
-      title={`${BRAND.name} | Unsubscribed`}
-      preview={`Hi ${name} — you’ve been unsubscribed.`}
-      badge='Newsletter'
-      heading='You’ve been unsubscribed'
-      primaryCta={{href: effectiveManagePreferencesUrl, label: "Review preferences"}}
-      secondaryCta={{href: effectiveResubscribeUrl, label: "Resubscribe"}}>
-      <Text style={EmailParagraphStyles}>Hi {name},</Text>
-
-      <Text style={EmailParagraphStyles}>
-        This email confirms you’ve been removed from the <strong>{BRAND.name}</strong> newsletter list. I’m sorry to see you go.
-      </Text>
-
-      <EmailCard title='What happens next'>
-        <BulletList
-          items={[
-            "You won't receive newsletter updates from us going forward.",
-            "You may still receive essential account and service emails if you use the product.",
-            "Changed your mind? You can resubscribe at any time using the button above.",
-          ]}
-        />
-      </EmailCard>
-
-      <Text style={EmailParagraphStyles}>
-        I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I’d genuinely love to hear
-        it—just reply to this email.
-      </Text>
-
-      <Text style={EmailParagraphStyles}>
-        If you didn’t request this unsubscription, or you need help with anything, please contact{" "}
-        <Link
-          href={`mailto:${BRAND.supportEmail}`}
-          style={EmailLinkStyles}>
-          {BRAND.supportEmail}
-        </Link>
-        .
-      </Text>
-
-      <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {BRAND.signOff},
-        <br />
-        {BRAND.teamName}
-      </Text>
-    </EmailLayout>
-  );
 };
+
+const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
+  namespace: "email.newsletterUnsubscribed",
+  render: ({locale, t, props}) => {
+    const {username, managePreferencesUrl, resubscribeUrl} = props;
+
+    const name = username?.trim() ? username : "there";
+
+    const effectiveManagePreferencesUrl = managePreferencesUrl ?? `${BRAND.url}/unsubscribe`;
+    const effectiveResubscribeUrl = resubscribeUrl ?? BRAND.url;
+
+    return (
+      <EmailLayout
+        locale={locale}
+        title={`${BRAND.name} | Unsubscribed`}
+        preview={t("preview", {name})}
+        badge={t("badge")}
+        heading={t("heading")}
+        primaryCta={{href: effectiveManagePreferencesUrl, label: t("ctaPrimary")}}
+        secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}>
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+
+        <Text style={EmailParagraphStyles}>
+          {t.rich("intro", {
+            brandName: BRAND.name,
+            brand: (chunks) => <strong>{chunks}</strong>,
+          })}
+        </Text>
+
+        <EmailCard title={t("whatHappensNextTitle")}>
+          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        </EmailCard>
+
+        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+
+        <Text style={EmailParagraphStyles}>
+          {t.rich("feedbackPrompt", {
+            email: () => (
+              <Link
+                href={`mailto:${BRAND.supportEmail}`}
+                style={EmailLinkStyles}>
+                {BRAND.supportEmail}
+              </Link>
+            ),
+          })}
+        </Text>
+
+        <Text style={{...EmailParagraphStyles, margin: "0"}}>
+          {t("signOff.line1")}
+          <br />
+          {t("signOff.line2", {brand: BRAND.name})}
+        </Text>
+      </EmailLayout>
+    );
+  },
+});
 
 UserHasUnsubscribedEmail.PreviewProps = {
   username: "Test User",
   managePreferencesUrl: `${BRAND.url}/unsubscribe`,
   resubscribeUrl: BRAND.url,
-} satisfies Props;
+  locale: "en",
+};
 
 export default UserHasUnsubscribedEmail;
