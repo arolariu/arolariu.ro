@@ -60,13 +60,16 @@ public partial class InvoiceStorageFoundationService
       or InvoicePhotoLocationNotCorrectException
       => LogAndWrapValidation(exception),
 
+    // Pass through broker exceptions that already implement correct HTTP classification markers
+    // (INotFoundException → 404, IAlreadyExistsException → 409, ILockedException → 423, etc.)
+    // Wrapping these in DependencyValidation would mask their intended HTTP status codes.
     InvoiceNotFoundException
       or InvoiceAlreadyExistsException
       or InvoiceLockedException
       or InvoiceCosmosDbRateLimitException
       or InvoiceUnauthorizedAccessException
       or InvoiceForbiddenAccessException
-      => LogAndWrapDependencyValidation(exception),
+      => LogAndPassThrough(exception),
 
     InvoiceFailedStorageException
       or OperationCanceledException
@@ -94,6 +97,15 @@ public partial class InvoiceStorageFoundationService
     var outer = new InvoiceFoundationDependencyValidationException(exception);
     logger.LogInvoiceStorageDependencyValidationException(outer.Message);
     return outer;
+  }
+
+  private Exception LogAndPassThrough(Exception exception)
+  {
+    // Log at Foundation layer for observability, but preserve the original exception
+    // with its classification marker interface (INotFoundException, ILockedException, etc.)
+    // so ExceptionToHttpResultMapper can produce the correct HTTP status code.
+    logger.LogInvoiceStorageDependencyValidationException(exception.Message);
+    return exception;
   }
 
   private InvoiceFoundationServiceException LogAndWrapService(Exception exception)

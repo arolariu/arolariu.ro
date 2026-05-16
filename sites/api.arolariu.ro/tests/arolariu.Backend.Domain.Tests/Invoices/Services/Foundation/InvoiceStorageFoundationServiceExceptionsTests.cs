@@ -33,68 +33,73 @@ public class InvoiceStorageFoundationServiceExceptionsTests
 
   /// <summary>Verifies that an <see cref="InvoiceNotFoundException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsNotFound_ThrowsFoundationDependencyValidationException()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsNotFound_ThrowsInvoiceNotFoundException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceNotFoundException(Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+    // Pass-through: Preserve INotFoundException marker for correct HTTP 404 mapping
+    var ex = await Assert.ThrowsAsync<InvoiceNotFoundException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<InvoiceNotFoundException>(ex.InnerException);
+    Assert.IsType<InvoiceNotFoundException>(ex);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceAlreadyExistsException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/>.</summary>
+  /// <summary>Verifies that an <see cref="InvoiceAlreadyExistsException"/> from the broker is passed through to preserve IAlreadyExistsException marker for correct HTTP 409 mapping.</summary>
   [Fact]
-  public async Task CreateInvoiceObject_WhenBrokerThrowsAlreadyExists_ThrowsFoundationDependencyValidationException()
+  public async Task CreateInvoiceObject_WhenBrokerThrowsAlreadyExists_ThrowsInvoiceAlreadyExistsException()
   {
     _broker.Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceAlreadyExistsException(Guid.NewGuid()));
     var invoice = new Invoice { id = Guid.NewGuid(), UserIdentifier = Guid.NewGuid() };
 
-    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+    // Pass-through: Preserve IAlreadyExistsException marker for correct HTTP 409 mapping
+    var ex = await Assert.ThrowsAsync<InvoiceAlreadyExistsException>(
       () => _sut.CreateInvoiceObject(invoice));
 
-    Assert.IsType<InvoiceAlreadyExistsException>(ex.InnerException);
+    Assert.IsType<InvoiceAlreadyExistsException>(ex);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceUnauthorizedAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 401, not 503).</summary>
+  /// <summary>Verifies that an <see cref="InvoiceUnauthorizedAccessException"/> from the broker is passed through to preserve IUnauthorizedException marker for correct HTTP 401 mapping.</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsUnauthorized_ThrowsFoundationDependencyValidationException()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsUnauthorized_ThrowsInvoiceUnauthorizedAccessException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceUnauthorizedAccessException("unauthorized"));
 
-    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+    // Pass-through: Preserve IUnauthorizedException marker for correct HTTP 401 mapping
+    var ex = await Assert.ThrowsAsync<InvoiceUnauthorizedAccessException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<InvoiceUnauthorizedAccessException>(ex.InnerException);
+    Assert.IsType<InvoiceUnauthorizedAccessException>(ex);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceForbiddenAccessException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 403, not 503).</summary>
+  /// <summary>Verifies that an <see cref="InvoiceForbiddenAccessException"/> from the broker is passed through to preserve IForbiddenException marker for correct HTTP 403 mapping.</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsForbidden_ThrowsFoundationDependencyValidationException()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsForbidden_ThrowsInvoiceForbiddenAccessException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceForbiddenAccessException(Guid.NewGuid(), Guid.NewGuid()));
 
-    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+    // Pass-through: Preserve IForbiddenException marker for correct HTTP 403 mapping
+    var ex = await Assert.ThrowsAsync<InvoiceForbiddenAccessException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<InvoiceForbiddenAccessException>(ex.InnerException);
+    Assert.IsType<InvoiceForbiddenAccessException>(ex);
   }
 
-  /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is wrapped into an <see cref="InvoiceFoundationDependencyValidationException"/> (caller-correctable 429, not 503).</summary>
+  /// <summary>Verifies that an <see cref="InvoiceCosmosDbRateLimitException"/> from the broker is passed through to preserve IRateLimitedException marker for correct HTTP 429 mapping.</summary>
   [Fact]
-  public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsFoundationDependencyValidationException()
+  public async Task ReadInvoiceObject_WhenBrokerThrowsRateLimit_ThrowsInvoiceCosmosDbRateLimitException()
   {
     _broker.Setup(b => b.ReadInvoiceAsync(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
       .ThrowsAsync(new InvoiceCosmosDbRateLimitException(TimeSpan.FromSeconds(2), new InvalidOperationException()));
 
-    var ex = await Assert.ThrowsAsync<InvoiceFoundationDependencyValidationException>(
+    // Pass-through: Preserve IRateLimitedException marker for correct HTTP 429 mapping
+    var ex = await Assert.ThrowsAsync<InvoiceCosmosDbRateLimitException>(
       () => _sut.ReadInvoiceObject(Guid.NewGuid(), Guid.NewGuid()));
 
-    Assert.IsType<InvoiceCosmosDbRateLimitException>(ex.InnerException);
+    Assert.IsType<InvoiceCosmosDbRateLimitException>(ex);
   }
 
   /// <summary>Regression guard: <see cref="InvoiceFailedStorageException"/> must remain in the Dependency tier (downstream unreachable, 503).</summary>
