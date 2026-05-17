@@ -92,7 +92,13 @@ export function useScans(): UseScansOutput {
    */
   const syncScans = useCallback(
     async (manual = false): Promise<void> => {
-      if (isSyncing) return;
+      // Read the latest isSyncing directly from the store to avoid a stale
+      // closure. Keeping `isSyncing` out of this callback's dependency array
+      // is what makes `syncScans` referentially stable across renders, which
+      // in turn prevents the auto-sync effect below from re-firing every
+      // time `setIsSyncing` toggles — the original cause of the infinite
+      // sync loop and mobile UI freeze.
+      if (useScansStore.getState().isSyncing) return;
 
       setIsSyncing(true);
 
@@ -116,15 +122,17 @@ export function useScans(): UseScansOutput {
         }
       } catch (error) {
         console.error("Failed to sync scans:", error);
-        // Only show error toast if component is still mounted
-        if (isMountedRef.current) {
+        // Only show error toast for manual sync. Background/auto-sync
+        // failures must stay silent to avoid the toast-spam UX seen on
+        // unreliable mobile networks.
+        if (manual && isMountedRef.current) {
           toast.error("Failed to sync scans");
         }
       } finally {
         setIsSyncing(false);
       }
     },
-    [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp],
+    [setIsSyncing, setScans, setLastSyncTimestamp],
   );
 
   // Auto-sync on mount when hydrated
