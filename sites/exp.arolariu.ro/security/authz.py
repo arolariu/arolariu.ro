@@ -293,9 +293,7 @@ def _authorize_azure_for_targets(
         return AuthorizationResult(False, 401, "Unauthorized caller.")
 
     matched_targets = tuple(
-        target
-        for target in allowed_targets
-        if not caller_ids.isdisjoint(_identity_policy().get(target, set()))
+        target for target in allowed_targets if not caller_ids.isdisjoint(_identity_policy().get(target, set()))
     )
     if not matched_targets:
         return AuthorizationResult(False, 403, "Caller is not allowed for the requested resource.")

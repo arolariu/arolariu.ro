@@ -10,6 +10,7 @@ import pytest
 def reset_config():
     """Reset global config between tests."""
     import config.loader as config_loader
+
     config_loader._config = {}
     config_loader._loaded = False
     config_loader._last_loaded_at = None
@@ -26,22 +27,27 @@ def reset_config():
 class TestGetConfigValue:
     def test_returns_value_for_existing_key(self):
         import config.loader as config_loader
+
         config_loader._config = {"test:key": "test-value"}
         config_loader._loaded = True
         from config.loader import get_config_value
+
         assert get_config_value("test:key") == "test-value"
 
     def test_returns_none_for_missing_key(self):
         import config.loader as config_loader
+
         config_loader._config = {"test:key": "test-value"}
         config_loader._loaded = True
         from config.loader import get_config_value
+
         assert get_config_value("missing:key") is None
 
 
 class TestGetConfigSection:
     def test_returns_matching_keys(self):
         import config.loader as config_loader
+
         config_loader._config = {
             "Endpoints:Storage": "http://storage",
             "Endpoints:SQL": "http://sql",
@@ -49,6 +55,7 @@ class TestGetConfigSection:
         }
         config_loader._loaded = True
         from config.loader import get_config_section
+
         result = get_config_section("Endpoints")
         assert len(result) == 2
         assert "Endpoints:Storage" in result
@@ -115,6 +122,7 @@ class TestLoadLocalConfig:
 class TestRefreshInterval:
     def test_is_refresh_due_when_interval_elapsed(self, monkeypatch):
         import config.loader as config_loader
+
         monkeypatch.setenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "10")
         config_loader._loaded = True
         config_loader._last_loaded_at = 0.0
@@ -123,6 +131,7 @@ class TestRefreshInterval:
 
     def test_is_not_due_when_interval_disabled(self, monkeypatch):
         import config.loader as config_loader
+
         monkeypatch.setenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "0")
         config_loader._loaded = True
         config_loader._last_loaded_at = 0.0

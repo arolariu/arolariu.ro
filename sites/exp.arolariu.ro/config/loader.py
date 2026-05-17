@@ -35,6 +35,7 @@ class ConfigLoaderStats:
     load_count: int
     last_loaded_at: str | None
 
+
 # Global config snapshot. Access is synchronized because request handlers and
 # refresh logic may run concurrently in the same process.
 _config: ConfigSnapshot = {}
@@ -144,11 +145,7 @@ def _load_azure_config(label: str | None = None) -> ConfigSnapshot:
     from azure.identity import DefaultAzureCredential
 
     client_id = os.getenv("AZURE_CLIENT_ID")
-    credential = (
-        DefaultAzureCredential(managed_identity_client_id=client_id)
-        if client_id
-        else DefaultAzureCredential()
-    )
+    credential = DefaultAzureCredential(managed_identity_client_id=client_id) if client_id else DefaultAzureCredential()
 
     endpoint = os.getenv("AZURE_APPCONFIG_ENDPOINT")
     if not endpoint:
@@ -297,11 +294,7 @@ def get_config_section(prefix: str) -> ConfigSnapshot:
 
     config_snapshot = get_config()
     section_prefix = f"{prefix}:"
-    return {
-        key: value
-        for key, value in config_snapshot.items()
-        if key.startswith(section_prefix)
-    }
+    return {key: value for key, value in config_snapshot.items() if key.startswith(section_prefix)}
 
 
 def refresh_config() -> ConfigSnapshot:
@@ -409,7 +402,4 @@ def extract_features(config: Mapping[str, str], feature_ids: Sequence[str]) -> F
     always receive a full feature map for the registered IDs.
     """
 
-    return {
-        feature_id: _resolve_feature_state(config, feature_id)
-        for feature_id in feature_ids
-    }
+    return {feature_id: _resolve_feature_state(config, feature_id) for feature_id in feature_ids}

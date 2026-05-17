@@ -18,54 +18,21 @@
  * @see {@link FormatWorkerResult} - Output type for this worker
  */
 
-import {spawn} from "node:child_process";
 import {threadId} from "node:worker_threads";
 import {resolveConfigFile} from "prettier";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "../types/format.ts";
+import {isToolAvailable, resolveRuff, runCommand} from "./shell.ts";
 
 /** Cache directory for build artifacts */
 const CACHE_DIR = "artifacts";
 
 // Directory mappings for Prettier targets
-const directoryMap: Record<Exclude<FormatTarget, "api">, string> = {
+const directoryMap: Record<Exclude<FormatTarget, "api" | "exp">, string> = {
   packages: "packages/components/**",
   website: "sites/arolariu.ro/**",
   cv: "sites/cv.arolariu.ro/**",
+  status: "sites/status.arolariu.ro/**",
 };
-
-/**
- * Runs a command and captures output.
- * @param command The command to run
- * @param args Command arguments
- * @returns Promise with exit code and output
- */
-async function runCommand(command: string, args: string[]): Promise<{code: number; output: string}> {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      stdio: "pipe",
-      windowsHide: true,
-    });
-
-    let output = "";
-    let errorOutput = "";
-
-    child.stdout?.on("data", (data: Buffer) => {
-      output += data.toString();
-    });
-
-    child.stderr?.on("data", (data: Buffer) => {
-      errorOutput += data.toString();
-    });
-
-    child.on("close", (code) => {
-      resolve({code: code ?? 1, output: output + errorOutput});
-    });
-
-    child.on("error", (error) => {
-      resolve({code: 1, output: error.message});
-    });
-  });
-}
 
 /**
  * Checks if code is properly formatted for a target.
@@ -80,6 +47,16 @@ async function checkTarget(
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", "quiet"]);
+  }
+
+  if (target === "exp") {
+    // Ruff check mode: format check + import sort check (no auto-fix).
+    const ruff = await resolveRuff();
+    if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
+    const [cmd, ...prefix] = ruff;
+    const formatCheck = await runCommand(cmd, [...prefix, "format", "--check", "sites/exp.arolariu.ro"]);
+    if (formatCheck.code !== 0) return formatCheck;
+    return runCommand(cmd, [...prefix, "check", "--select", "I", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -118,6 +95,16 @@ async function formatTarget(
   if (target === "api") {
     // For .NET, custom patterns are not supported via dotnet format CLI easily
     return runCommand("dotnet", ["format", "arolariu.slnx", "--verbosity", "quiet"]);
+  }
+
+  if (target === "exp") {
+    // Ruff write mode: format files + auto-fix only import sorting (isort, rule I).
+    const ruff = await resolveRuff();
+    if (!ruff) return {code: 1, output: "Ruff not found on PATH and not invokable via python -m"};
+    const [cmd, ...prefix] = ruff;
+    const fmt = await runCommand(cmd, [...prefix, "format", "sites/exp.arolariu.ro"]);
+    if (fmt.code !== 0) return fmt;
+    return runCommand(cmd, [...prefix, "check", "--select", "I", "--fix", "sites/exp.arolariu.ro"]);
   }
 
   // Prettier targets - use custom patterns if provided
@@ -210,13 +197,62 @@ export default async function formatWorker(input: FormatWorkerInput): Promise<Fo
   });
 
   try {
+    // Tool availability gate for external-tool targets.
+    //
+    // Skipped-result conventions (apply to both `exp` and `api` branches below):
+    //   - exitCode: 0   → `format all` overall still passes; missing tools don't fail the pipeline.
+    //   - checkPassed: false → a skipped target is NOT counted in `alreadyFormatted` (the
+    //     "clean" tally) — it has its own `skipped` counter and a SKIPPED badge.
+    //   - formatted: false → not counted in the "Fixed" tally either.
+    //   - skipped: true is the sole sentinel the summary uses to bucket the result.
+    if (target === "exp") {
+      const ruff = await resolveRuff();
+      if (!ruff) {
+        return {
+          target,
+          checkPassed: false,
+          formatted: false,
+          exitCode: 0,
+          resultText: `  ⊘ ${target} skipped: Ruff not found (tried 'ruff' and 'python -m ruff')\n`,
+          skipped: true,
+          skipReason: "Ruff not installed. Install via 'pipx install ruff' (recommended), or 'pip install ruff' if Python+pip is configured for PATH access.",
+          workerId,
+          durationMs: Math.round(performance.now() - startTime),
+          workTimeMs: 0,
+          initTimeMs: 0,
+          fileCount: 0,
+          peakMemoryBytes,
+        };
+      }
+    }
+    if (target === "api") {
+      const available = await isToolAvailable("dotnet");
+      if (!available) {
+        return {
+          target,
+          checkPassed: false,
+          formatted: false,
+          exitCode: 0,
+          resultText: `  ⊘ ${target} skipped: dotnet not found on PATH\n`,
+          skipped: true,
+          skipReason: "dotnet CLI not installed. Install the .NET SDK from https://dot.net/.",
+          workerId,
+          durationMs: Math.round(performance.now() - startTime),
+          workTimeMs: 0,
+          initTimeMs: 0,
+          fileCount: 0,
+          peakMemoryBytes,
+        };
+      }
+    }
+
     // ===== INITIALIZATION PHASE =====
     const initStartTime = performance.now();
 
     // For Prettier targets, resolve config file (this is the main init cost)
     // For API (.NET), initialization is minimal
-    if (target !== "api") {
-      await resolveConfigFile(); // Pre-warm the config resolution
+    if (target !== "api" && target !== "exp") {
+      await resolveConfigFile(); // Pre-warm the config resolution (Prettier targets only)
     }
     trackMemory();
 

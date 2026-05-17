@@ -152,15 +152,13 @@ class ApiBuildTimeConfig(ExpModel):
     cognitive_services_endpoint: str = Field(
         alias="Endpoints:AI:OCR",
         description=(
-            "OCR endpoint under the Endpoint hierarchy, "
-            "used by document analysis and related enrichment flows."
+            "OCR endpoint under the Endpoint hierarchy, used by document analysis and related enrichment flows."
         ),
     )
     cognitive_services_key: str = Field(
         alias="Endpoints:AI:OCR:Key",
         description=(
-            "Credential under the Endpoint hierarchy, used by the API "
-            "when an OCR integration still requires a key."
+            "Credential under the Endpoint hierarchy, used by the API when an OCR integration still requires a key."
         ),
     )
 
@@ -201,8 +199,7 @@ class WebsiteBuildTimeConfig(ExpModel):
     api_endpoint: str = Field(
         alias="Endpoints:Service:Api",
         description=(
-            "Base URL of the API service under the Endpoint hierarchy, "
-            "called by the website from server-side code."
+            "Base URL of the API service under the Endpoint hierarchy, called by the website from server-side code."
         ),
     )
     storage_account_endpoint: str = Field(
@@ -248,8 +245,7 @@ class WebsiteRunTimeConfig(WebsiteBuildTimeConfig):
     resend_api_key: str = Field(
         alias="Communication:Email:ApiKey",
         description=(
-            "Optional email API key used by server-side email flows. Empty "
-            "string means email is not configured."
+            "Optional email API key used by server-side email flows. Empty string means email is not configured."
         ),
     )
 

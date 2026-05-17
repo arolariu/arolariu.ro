@@ -114,7 +114,7 @@ jobs:
     name: 🧪 Test phase (1/2)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
@@ -151,6 +151,32 @@ jobs:
           playwright: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
+
+      - name: 🧬 TypeScript type-check (tsgo)
+        working-directory: './sites/arolariu.ro'
+        run: |
+          echo "::group::🧬 Running tsgo --noEmit"
+          START_TIME=$(date +%s)
+          # First: generate Next.js route-aware ambient types (PageProps,
+          # LayoutProps, route literal unions) under .next/types/. Without
+          # this step tsgo reports TS2304 for every PageProps/LayoutProps
+          # use across the app (and SVG-import errors that cascade from them).
+          npx next typegen
+          # Then run tsgo. The npm package name (@typescript/native-preview)
+          # differs from the bin name (tsgo); npm's registry does not
+          # reverse-lookup bins, so bare `npx tsgo` fails with E404. -p
+          # specifies the package; -y skips the install prompt in CI.
+          npx -y -p @typescript/native-preview tsgo --noEmit -p tsconfig.json
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Type-check (tsgo) completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "## 🧬 Type-Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | @typescript/native-preview (tsgo) |" >> $GITHUB_STEP_SUMMARY
 
       - name: 🧪 Running unit tests...
         working-directory: './sites/arolariu.ro'

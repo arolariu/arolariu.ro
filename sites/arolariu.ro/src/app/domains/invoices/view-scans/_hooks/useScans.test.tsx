@@ -42,9 +42,14 @@ vi.mock("@/lib/actions/scans", () => ({
 }));
 
 // Mock the scans store
-vi.mock("@/stores", () => ({
-  useScansStore: vi.fn((selector: (state: typeof mockStoreState) => unknown) => selector(mockStoreState)),
-}));
+vi.mock("@/stores", () => {
+  const useScansStore = vi.fn((selector: (state: typeof mockStoreState) => unknown) => selector(mockStoreState));
+  // The hook reads the latest `isSyncing` via `useScansStore.getState()` to
+  // avoid stale-closure issues; expose it on the mock so tests can exercise
+  // both the in-flight guard and the cross-instance contract.
+  (useScansStore as unknown as {getState: () => typeof mockStoreState}).getState = () => mockStoreState;
+  return {useScansStore};
+});
 
 // Mock zustand shallow
 vi.mock("zustand/react/shallow", () => ({
@@ -255,11 +260,42 @@ describe("useScans", () => {
       const {result} = renderHook(() => useScans());
 
       await act(async () => {
-        await result.current.syncScans();
+        await result.current.syncScans(true);
       });
 
       expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to sync scans:", expect.any(Error));
       expect(mockStoreState.setIsSyncing).toHaveBeenCalledWith(false);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should NOT show error toast for auto-sync (manual=false) failures", async () => {
+      // Regression: previously every auto-sync failure spammed a toast,
+      // which combined with an infinite re-render loop froze the page on
+      // mobile networks. Auto-sync failures must now stay silent.
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockFetchScans.mockRejectedValue(new Error("Network error"));
+
+      const {result} = renderHook(() => useScans());
+
+      await act(async () => {
+        await result.current.syncScans(false);
+      });
+
+      expect(mockToast.error).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should show error toast for manual sync (manual=true) failures", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockFetchScans.mockRejectedValue(new Error("Network error"));
+
+      const {result} = renderHook(() => useScans());
+
+      await act(async () => {
+        await result.current.syncScans(true);
+      });
+
+      expect(mockToast.error).toHaveBeenCalledWith("Failed to sync scans");
       consoleErrorSpy.mockRestore();
     });
 
@@ -275,9 +311,11 @@ describe("useScans", () => {
 
       const {result, unmount} = renderHook(() => useScans());
 
-      // Kick off the sync — it will await the deferred promise
+      // Kick off the sync as a MANUAL sync — manual=true is what makes the
+      // error toast path eligible to fire at all. The mount guard then
+      // suppresses it because the component unmounts before the rejection.
       let syncDone = false;
-      const syncPromise = result.current.syncScans().then(() => {
+      const syncPromise = result.current.syncScans(true).then(() => {
         syncDone = true;
       });
 
@@ -379,6 +417,76 @@ describe("useScans", () => {
       renderHook(() => useScans());
 
       expect(mockFetchScans).not.toHaveBeenCalled();
+    });
+
+    it("should not loop when auto-sync fails (regression for mobile freeze)", async () => {
+      // Regression: when `isSyncing` was a dep of the `syncScans` useCallback,
+      // each `setIsSyncing(true)`/`setIsSyncing(false)` toggle recreated
+      // `syncScans`, which in turn changed the auto-sync effect's deps and
+      // re-fired the effect. On a failing fetch (lastSyncTimestamp stays
+      // null) this created an infinite loop that froze mobile devices and
+      // spammed "failed to sync" toasts. The fix removes `isSyncing` from
+      // the callback's deps and reads it via `useScansStore.getState()`.
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockStoreState.hasHydrated = true;
+      mockStoreState.lastSyncTimestamp = null;
+      mockFetchScans.mockRejectedValue(new Error("Network error"));
+
+      renderHook(() => useScans());
+
+      // Wait for the auto-sync to fire and reject.
+      await waitFor(() => {
+        expect(mockFetchScans).toHaveBeenCalled();
+      });
+
+      // Give React several ticks to flush any re-renders / re-runs that the
+      // old buggy code would have produced.
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+
+      // No auto-sync toast spam.
+      // NOTE: this assertion is what actually caught the regression for the
+      // user-visible symptom. The fetch-count assertion below is a weaker
+      // smoke check — the test mock does not reproduce Zustand's reactivity
+      // (setIsSyncing here is a `vi.fn()` that does NOT mutate state and
+      // therefore does NOT trigger React re-renders), so the in-test loop
+      // never spins up. The referential-stability test below is the real
+      // structural guarantee that the loop cannot occur.
+      expect(mockToast.error).not.toHaveBeenCalled();
+      expect(mockFetchScans).toHaveBeenCalledTimes(1);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should keep syncScans referentially stable when isSyncing toggles (regression invariant)", () => {
+      // STRUCTURAL regression test: the freeze was caused by
+      // `syncScans` being recreated every time `isSyncing` flipped, which
+      // changed the auto-sync useEffect's dep array and re-fired the effect.
+      //
+      // This test forces the mock store's `isSyncing` value to flip across
+      // renders (simulating what `setIsSyncing(true)` then `setIsSyncing(false)`
+      // would do in the real store) and asserts that `syncScans` keeps the
+      // same identity. If `isSyncing` ever sneaks back into the useCallback
+      // dep array, this assertion fails and we have proven the loop is back.
+      mockStoreState.hasHydrated = true;
+      mockStoreState.lastSyncTimestamp = new Date(); // suppress auto-sync
+      mockStoreState.isSyncing = false;
+
+      const {result, rerender} = renderHook(() => useScans());
+      const syncScansAtMount = result.current.syncScans;
+
+      // Flip isSyncing -> true and rerender.
+      mockStoreState.isSyncing = true;
+      rerender();
+      expect(result.current.syncScans).toBe(syncScansAtMount);
+
+      // Flip isSyncing -> false and rerender again.
+      mockStoreState.isSyncing = false;
+      rerender();
+      expect(result.current.syncScans).toBe(syncScansAtMount);
     });
   });
 });

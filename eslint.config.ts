@@ -413,7 +413,96 @@ const packagesEslintConfig: Config = defineConfig({
   },
 })[0] as Config;
 
-const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig);
+const statusEslintConfig: Config = defineConfig({
+  name: "[@arolariu/status]",
+  files: ["sites/status.arolariu.ro/**/*.ts"],
+  languageOptions: {
+    ecmaVersion: "latest",
+    parser: tseslint.parser,
+    parserOptions: {
+      extraFileExtensions: [".svelte"],
+      projectService: {
+        defaultProject: "./sites/status.arolariu.ro/tsconfig.json",
+      },
+      ecmaFeatures: {
+        impliedStrict: true,
+        jsx: false,
+      },
+      tsconfigRootDir: import.meta.dirname,
+      ecmaVersion: "latest",
+      errorOnTypeScriptSyntacticAndSemanticIssues: true,
+      warnOnUnsupportedTypeScriptVersion: true,
+      errorOnUnknownASTType: true,
+      comment: true,
+    },
+    globals: {...globals.browser, ...globals.node},
+  },
+  plugins: {
+    "@eslint/js": eslintPlugin,
+    promise: eslintPluginPromise,
+    sonarjs: eslintPluginSonarJs,
+    security: eslintPluginSecurity,
+    unicorn: eslintPluginUnicorn,
+    "@typescript-eslint": tseslint.plugin,
+    n: eslintPluginNode,
+  },
+  rules: {
+    ...eslintPlugin.configs.recommended.rules,
+    ...eslintPlugin.configs.all.rules,
+    ...eslintPluginUnicorn.configs.all.rules,
+    ...eslintPluginSecurity.configs.recommended.rules,
+    ...eslintPluginSonarJs.configs.recommended.rules,
+    ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
+    ...eslintPluginNode.configs["flat/recommended"].rules,
+    ...eslintPluginPromise.configs["flat/recommended"].rules,
+
+    curly: "off", // we allow single line if statements without braces.
+    "one-var": "off", // we allow multiple variable declarations per file.
+    "no-undef": "off", // svelte + eslint can't accurately detect undefined variables.
+    "sort-keys": "off", // this rule is biased; we use Prettier for sorting.
+    "no-bitwise": "off", // we allow bitwise operators.
+    "no-console": "off", // Console statements are stripped in prod builds.
+    "no-ternary": "off", // we use ternary operators for conditional expressions.
+    "func-style": "off", // we allow both function declarations and expressions.
+    "no-plusplus": "off", // We allow the use of the ++ and -- operators.
+    "no-continue": "off", // we allow continue statements in loops.
+    "sort-imports": "off", // this rule is biased; we use Prettier for sorting.
+    "no-undefined": "off", // we allow undefined values for context init code.
+    "max-statements": "off", // we don't impose a max statements limit on functions.
+    "no-magic-numbers": "off", // Magic numbers are used for prioritization of enums and fields.
+    "no-inline-comments": "off", // we use inline comments to mark things.
+    "no-underscore-dangle": "off", // we use dunder naming for private access modifier mark.
+    "max-lines-per-function": "off", // we don't impose a max lines limit on functions.
+    "max-lines": ["error", {max: 600}], // we allow a maximum of 600 lines per file.
+
+    "react/jsx-indent": "off", // We format via Prettier.
+    "react/jsx-newline": "off", // We use Prettier for formatting.
+    "react/jsx-max-depth": "off", // Sometimes we have deeply nested components.
+    "react/no-multi-comp": "off", // Dialog Container impl. requries all dialogs colocated.
+    "react/jsx-sort-props": "off", // We sort via Prettier.
+    "react/jsx-no-literals": "off", // We allow literal strings in JSX.
+    "react/jsx-indent-props": "off", // We format via Prettier.
+    "react/jsx-curly-newline": "off", // We format via Prettier.
+
+    "unicorn/no-null": "off", // We allow null values.
+    "unicorn/filename-case": "off", // this rule is biased.
+    "unicorn/prefer-dom-node-append": "off", // We support older browsers.
+    "unicorn/prefer-dom-node-remove": "off", // We support older browsers.
+
+    "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
+    "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
+  },
+  settings: {
+    node: {
+      version: "24",
+    },
+  },
+  linterOptions: {
+    reportUnusedDisableDirectives: false,
+  },
+})[0] as Config;
+
+const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
 // Add the global ignores to the default config.
 for (const individualEslintConfig of eslintConfig) {

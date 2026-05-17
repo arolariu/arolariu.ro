@@ -84,10 +84,7 @@ class TestConfigAuthorization:
             )
 
         assert response.status_code == 403
-        assert (
-            response.json()["error"]
-            == "Header target 'api' is not allowed. Expected one of: website."
-        )
+        assert response.json()["error"] == "Header target 'api' is not allowed. Expected one of: website."
 
 
 class TestConfigContract:

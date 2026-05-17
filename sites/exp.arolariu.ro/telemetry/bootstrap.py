@@ -16,10 +16,7 @@ from telemetry.settings import TelemetrySettings, get_telemetry_settings
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_LOG_FORMAT = (
-    "%(asctime)s %(levelname)s %(name)s "
-    "trace_id=%(otelTraceID)s span_id=%(otelSpanID)s %(message)s"
-)
+_DEFAULT_LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s trace_id=%(otelTraceID)s span_id=%(otelSpanID)s %(message)s"
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,9 +235,7 @@ def _configure_tracing(
     tracer_provider = dependencies.TracerProvider(resource=resource, sampler=sampler)
 
     if settings.console_trace_export_enabled:
-        tracer_provider.add_span_processor(
-            dependencies.BatchSpanProcessor(dependencies.ConsoleSpanExporter())
-        )
+        tracer_provider.add_span_processor(dependencies.BatchSpanProcessor(dependencies.ConsoleSpanExporter()))
 
     if settings.azure_export_enabled:
         tracer_provider.add_span_processor(
@@ -252,9 +247,7 @@ def _configure_tracing(
         )
 
     if settings.otlp_export_enabled:
-        tracer_provider.add_span_processor(
-            dependencies.BatchSpanProcessor(dependencies.OTLPSpanExporter())
-        )
+        tracer_provider.add_span_processor(dependencies.BatchSpanProcessor(dependencies.OTLPSpanExporter()))
 
     dependencies.trace_module.set_tracer_provider(tracer_provider)
     return tracer_provider
@@ -340,9 +333,7 @@ def _configure_logging(
         )
 
     if settings.otlp_export_enabled:
-        logger_provider.add_log_record_processor(
-            dependencies.BatchLogRecordProcessor(dependencies.OTLPLogExporter())
-        )
+        logger_provider.add_log_record_processor(dependencies.BatchLogRecordProcessor(dependencies.OTLPLogExporter()))
 
     dependencies.logs_module(logger_provider)
 
@@ -359,11 +350,7 @@ def _get_metric_attributes(
 ) -> dict[str, ScalarAttributeValue]:
     """Drop ``None`` values from metric-attribute dictionaries."""
 
-    return {
-        key: value
-        for key, value in attributes.items()
-        if value is not None
-    }
+    return {key: value for key, value in attributes.items() if value is not None}
 
 
 def _create_observation_callback(
@@ -376,11 +363,11 @@ def _create_observation_callback(
 
     def observe(_options: Any) -> list[Any]:
         return [
-                dependencies.observation_type(
-                    value_getter(),
-                    _get_metric_attributes({"exp.infra.mode": settings.infra_mode}),
-                )
-            ]
+            dependencies.observation_type(
+                value_getter(),
+                _get_metric_attributes({"exp.infra.mode": settings.infra_mode}),
+            )
+        ]
 
     return observe
 
@@ -429,9 +416,11 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
         callbacks=[
             _create_observation_callback(
                 runtime.dependencies,
-                lambda: __import__("runtime.metrics", fromlist=["get_process_runtime_snapshot"])
-                .get_process_runtime_snapshot()
-                .uptime_seconds,
+                lambda: (
+                    __import__("runtime.metrics", fromlist=["get_process_runtime_snapshot"])
+                    .get_process_runtime_snapshot()
+                    .uptime_seconds
+                ),
                 settings=runtime.settings,
             )
         ],
@@ -443,9 +432,11 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
         callbacks=[
             _create_observation_callback(
                 runtime.dependencies,
-                lambda: __import__("runtime.metrics", fromlist=["get_request_metrics_snapshot"])
-                .get_request_metrics_snapshot()
-                .total_requests,
+                lambda: (
+                    __import__("runtime.metrics", fromlist=["get_request_metrics_snapshot"])
+                    .get_request_metrics_snapshot()
+                    .total_requests
+                ),
                 settings=runtime.settings,
             )
         ],
@@ -457,9 +448,11 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
         callbacks=[
             _create_observation_callback(
                 runtime.dependencies,
-                lambda: __import__("runtime.metrics", fromlist=["get_served_config_metrics_snapshot"])
-                .get_served_config_metrics_snapshot()
-                .responses_total,
+                lambda: (
+                    __import__("runtime.metrics", fromlist=["get_served_config_metrics_snapshot"])
+                    .get_served_config_metrics_snapshot()
+                    .responses_total
+                ),
                 settings=runtime.settings,
             )
         ],
@@ -471,9 +464,11 @@ def _configure_custom_metrics(runtime: TelemetryRuntime) -> None:
         callbacks=[
             _create_observation_callback(
                 runtime.dependencies,
-                lambda: __import__("runtime.metrics", fromlist=["get_served_config_metrics_snapshot"])
-                .get_served_config_metrics_snapshot()
-                .values_total,
+                lambda: (
+                    __import__("runtime.metrics", fromlist=["get_served_config_metrics_snapshot"])
+                    .get_served_config_metrics_snapshot()
+                    .values_total
+                ),
                 settings=runtime.settings,
             )
         ],
