@@ -85,7 +85,7 @@ export default function MobileBottomNav(): React.JSX.Element {
     },
     {
       labelKey: "profile",
-      href: "/auth/profile",
+      href: "/my-profile",
       icon: TbUser,
     },
   ];
