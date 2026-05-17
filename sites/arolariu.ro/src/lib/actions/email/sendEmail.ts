@@ -17,7 +17,17 @@ import type {ReactElement} from "react";
 
 import {DEFAULT_LOCALE, type EmailLocale} from "@/../emails/_i18n";
 import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
-import {emailService} from "@/lib/email";
+
+// `emailService` is imported lazily inside the action body — NOT at the top
+// level — so its transitive dependency chain (react-email → prettier) does
+// not enter the static import graph of any client component that imports
+// this server action (e.g. ShareInvoiceDialog). Turbopack's production
+// externalization mishandles prettier by emitting a content-hashed
+// identifier (`prettier-<hash>/plugins/html`) into the surrounding SSR
+// chunk, which then fails ERR_MODULE_NOT_FOUND at request time and surfaces
+// as a masked 500 on unrelated routes (e.g. fetchScans on view-scans).
+// Keeping the chain out of the static graph removes prettier from those
+// chunks entirely.
 
 /**
  * Caller-supplied input to {@link sendEmail}.
@@ -106,6 +116,7 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
     const subject = await entry.template.getSubject(locale, subjectVars);
     const react: ReactElement = await template(renderProps);
 
+    const {emailService} = await import("@/lib/email");
     await emailService.sendEmail({
       to: input.to,
       subject,
