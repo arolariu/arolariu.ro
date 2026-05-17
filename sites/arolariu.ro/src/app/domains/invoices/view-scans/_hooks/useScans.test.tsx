@@ -448,12 +448,45 @@ describe("useScans", () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
       });
 
-      // The critical assertion: a failed auto-sync must NOT cause repeated
-      // fetches. Without the fix this is observed to climb without bound.
-      expect(mockFetchScans).toHaveBeenCalledTimes(1);
-      // And no auto-sync toast spam.
+      // No auto-sync toast spam.
+      // NOTE: this assertion is what actually caught the regression for the
+      // user-visible symptom. The fetch-count assertion below is a weaker
+      // smoke check — the test mock does not reproduce Zustand's reactivity
+      // (setIsSyncing here is a `vi.fn()` that does NOT mutate state and
+      // therefore does NOT trigger React re-renders), so the in-test loop
+      // never spins up. The referential-stability test below is the real
+      // structural guarantee that the loop cannot occur.
       expect(mockToast.error).not.toHaveBeenCalled();
+      expect(mockFetchScans).toHaveBeenCalledTimes(1);
       consoleErrorSpy.mockRestore();
+    });
+
+    it("should keep syncScans referentially stable when isSyncing toggles (regression invariant)", () => {
+      // STRUCTURAL regression test: the freeze was caused by
+      // `syncScans` being recreated every time `isSyncing` flipped, which
+      // changed the auto-sync useEffect's dep array and re-fired the effect.
+      //
+      // This test forces the mock store's `isSyncing` value to flip across
+      // renders (simulating what `setIsSyncing(true)` then `setIsSyncing(false)`
+      // would do in the real store) and asserts that `syncScans` keeps the
+      // same identity. If `isSyncing` ever sneaks back into the useCallback
+      // dep array, this assertion fails and we have proven the loop is back.
+      mockStoreState.hasHydrated = true;
+      mockStoreState.lastSyncTimestamp = new Date(); // suppress auto-sync
+      mockStoreState.isSyncing = false;
+
+      const {result, rerender} = renderHook(() => useScans());
+      const syncScansAtMount = result.current.syncScans;
+
+      // Flip isSyncing -> true and rerender.
+      mockStoreState.isSyncing = true;
+      rerender();
+      expect(result.current.syncScans).toBe(syncScansAtMount);
+
+      // Flip isSyncing -> false and rerender again.
+      mockStoreState.isSyncing = false;
+      rerender();
+      expect(result.current.syncScans).toBe(syncScansAtMount);
     });
   });
 });
