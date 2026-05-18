@@ -251,15 +251,15 @@ export default function MetadataDialog(): React.JSX.Element | null {
     currentDialog: {mode, payload},
   } = useDialog("EDIT_INVOICE__METADATA");
 
-  const metadata = payload as Record<string, string>;
+  const metadata: Record<string, string> | null = payload;
 
   switch (mode) {
     case "add":
       return <AddDialog />;
     case "delete":
-      return <DeleteDialog metadata={metadata} />;
+      return metadata ? <DeleteDialog metadata={metadata} /> : null;
     case "edit":
-      return <UpdateDialog metadata={metadata} />;
+      return metadata ? <UpdateDialog metadata={metadata} /> : null;
     default:
       return null;
   }

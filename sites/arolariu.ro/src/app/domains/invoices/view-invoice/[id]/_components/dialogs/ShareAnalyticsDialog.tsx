@@ -72,11 +72,16 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     close,
   } = useDialog("VIEW_INVOICE__SHARE_ANALYTICS");
 
-  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
+  const invoice: Invoice | null = payload?.invoice ?? null;
+  const merchant: Merchant | null = payload?.merchant ?? null;
 
   const handleCopyImage = useCallback(async () => {
+    if (!invoice || !merchant) {
+      return;
+    }
+
     // Get the image URL from the component
-    const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant?.name ?? ""}/${invoice.id}`;
+    const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant.name}/${invoice.id}`;
 
     // Fetch the image data
     const response = await fetch(imageUrl);
@@ -89,7 +94,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     toast(t("toasts.imageCopied.title"), {
       description: t("toasts.imageCopied.description"),
     });
-  }, [merchant, invoice, t]);
+  }, [invoice, merchant, t]);
 
   const handleSendEmail = useCallback(
     (e: React.MouseEvent) => {
@@ -103,11 +108,17 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   );
 
   const handleDownloadImage = useCallback(() => {
+    if (!merchant) {
+      return;
+    }
+
     // In a real app, this would generate and download an image
     toast(t("toasts.imageSaved.title"), {
-      description: t("toasts.imageSaved.description", {merchant: merchant?.name ?? ""}),
+      description: t("toasts.imageSaved.description", {merchant: merchant.name}),
     });
-  }, [merchant?.name, t]);
+  }, [merchant, t]);
+
+  if (!invoice || !merchant) return <></>;
 
   return (
     <Dialog

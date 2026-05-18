@@ -1,6 +1,7 @@
 "use client";
 
 import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
+import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";
 
 /**
@@ -45,7 +46,7 @@ export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> 
 export type DialogPayloads = {
   EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
   EDIT_INVOICE__IMAGE: string;
-  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan} | null;
+  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number} | null;
   EDIT_INVOICE__MERCHANT: Merchant | null;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant | null;
   EDIT_INVOICE__RECIPE: Recipe;
@@ -58,7 +59,7 @@ export type DialogPayloads = {
   VIEW_INVOICE__EXPORT: undefined;
   VIEW_INVOICES__IMPORT: undefined;
   VIEW_INVOICES__EXPORT: undefined;
-  VIEW_SCANS__CREATE_INVOICE: {selectedScans: InvoiceScan[]};
+  VIEW_SCANS__CREATE_INVOICE: {selectedScans: CachedScan[]};
   SHARED__INVOICE_DELETE: {invoice: Invoice};
   SHARED__INVOICE_SHARE: {invoice: Invoice};
 };

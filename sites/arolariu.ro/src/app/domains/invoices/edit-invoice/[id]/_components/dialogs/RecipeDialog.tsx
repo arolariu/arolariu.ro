@@ -742,17 +742,17 @@ export default function RecipeDialog(): React.JSX.Element {
     currentDialog: {mode, payload},
   } = useDialog("EDIT_INVOICE__RECIPE");
 
-  const recipe = payload as Recipe;
+  const recipe: Recipe | null = payload;
 
   switch (mode) {
     case "add":
       return <CreateDialog />;
     case "delete":
-      return <DeleteDialog recipe={recipe} />;
+      return recipe ? <DeleteDialog recipe={recipe} /> : <></>;
     case "edit":
-      return <UpdateDialog recipe={recipe} />;
+      return recipe ? <UpdateDialog recipe={recipe} /> : <></>;
     case "view":
-      return <ReadDialog recipe={recipe} />;
+      return recipe ? <ReadDialog recipe={recipe} /> : <></>;
     default:
       return <></>;
   }

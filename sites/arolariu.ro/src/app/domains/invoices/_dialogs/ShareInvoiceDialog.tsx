@@ -4,7 +4,6 @@ import type {EmailLocale} from "@/../emails/_i18n";
 import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
-import type {Invoice} from "@/types/invoices";
 import {
   Alert,
   AlertDescription,
@@ -163,7 +162,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   // Null guard: return early if no payload
   if (!payload) return <></>;
 
-  const {invoice} = payload as {invoice: Invoice};
+  const {invoice} = payload;
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 
   /** Check if the invoice is currently public */

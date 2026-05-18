@@ -1,3 +1,4 @@
+import type {Invoice} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import type {ReactNode} from "react";
 import {describe, expect, test, vi} from "vitest";
@@ -5,6 +6,7 @@ import {DialogProvider, useDialog, useDialogs} from "./DialogContext";
 
 // Wrapper component to provide context for the hooks
 const wrapper = ({children}: {children: ReactNode}) => <DialogProvider>{children}</DialogProvider>;
+const mockInvoice = {id: "invoice-1"} as Invoice;
 
 describe("DialogProvider", () => {
   test("should provide the current dialog state", () => {
@@ -157,18 +159,18 @@ describe("useDialog", () => {
   });
 
   test("it opens dialog with correct type and payload", () => {
-    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice: mockInvoice}), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
     expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
-    expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
+    expect(result.current.currentDialog.payload).toStrictEqual({invoice: mockInvoice});
   });
 
   test("it closes dialog and resets state", () => {
-    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice: mockInvoice}), {wrapper});
 
     act(() => {
       result.current.open();
@@ -176,7 +178,7 @@ describe("useDialog", () => {
 
     expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
-    expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
+    expect(result.current.currentDialog.payload).toStrictEqual({invoice: mockInvoice});
 
     act(() => {
       result.current.close();
@@ -186,7 +188,7 @@ describe("useDialog", () => {
   });
 
   test("it opens dialog with correct type, mode, and payload", () => {
-    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice: mockInvoice}), {wrapper});
 
     act(() => {
       result.current.open();
@@ -194,7 +196,7 @@ describe("useDialog", () => {
 
     expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
-    expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
+    expect(result.current.currentDialog.payload).toStrictEqual({invoice: mockInvoice});
   });
 
   test("it does not open dialog if already open", () => {
@@ -306,7 +308,7 @@ describe("useDialog", () => {
   });
 
   test("mode and payload are preserved when opening a dialog", () => {
-    const testPayload = {id: 123, name: "Test"};
+    const testPayload = {sample: "Test"};
     const {result} = renderHook(() => useDialog("EDIT_INVOICE__METADATA", "edit", testPayload), {wrapper});
 
     act(() => {
@@ -319,7 +321,7 @@ describe("useDialog", () => {
   });
 
   test("dialog state is properly reset when closed", () => {
-    const testPayload = {id: 123};
+    const testPayload = {invoice: mockInvoice};
     const {result} = renderHook(() => useDialog("EDIT_INVOICE__ANALYSIS", "view", testPayload), {wrapper});
 
     act(() => {

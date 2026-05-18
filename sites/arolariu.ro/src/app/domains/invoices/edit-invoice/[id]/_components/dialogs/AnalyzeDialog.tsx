@@ -88,7 +88,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
     currentDialog: {payload},
   } = useDialog("EDIT_INVOICE__ANALYSIS");
 
-  const {invoice} = payload as {invoice: Invoice};
+  const invoice: Invoice | null = payload?.invoice ?? null;
 
   const [selectedOption, setSelectedOption] = useState<InvoiceAnalysisOptions>(InvoiceAnalysisOptions.CompleteAnalysis);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -187,6 +187,8 @@ export default function AnalyzeDialog(): React.JSX.Element {
   }, []);
 
   const handleAnalysis = useCallback(async () => {
+    if (!invoice) return;
+
     setIsAnalyzing(true);
     setProgress(0);
 
@@ -265,7 +267,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
       setProgress(0);
       setCurrentStep("");
     }
-  }, [invoice.id, selectedOption, selectedEnhancements, close, t]);
+  }, [invoice, selectedOption, selectedEnhancements, close, t]);
+
+  if (!invoice) return <></>;
 
   const selectedConfig = analysisOptions.find((opt) => opt.id === selectedOption);
 

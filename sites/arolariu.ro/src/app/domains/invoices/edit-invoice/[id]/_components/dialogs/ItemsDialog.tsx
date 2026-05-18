@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ItemsDialog.module.scss";
@@ -77,12 +77,17 @@ export default function ItemsDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__ITEMS");
 
-  const {items} = payload as Invoice;
+  const invoice: Invoice | null = payload;
+  const items = invoice?.items ?? [];
 
-  const [editableItems, setEditableItems] = useState<Product[]>(items || []);
+  const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
     items: editableItems,
   });
+
+  useEffect(() => {
+    setEditableItems(invoice?.items ?? []);
+  }, [invoice]);
 
   const handleSaveChanges = useCallback(() => {
     // TODO: Implement save functionality
@@ -161,6 +166,8 @@ export default function ItemsDialog(): React.JSX.Element {
     },
     [setEditableItems],
   );
+
+  if (!invoice) return <></>;
 
   return (
     <Dialog

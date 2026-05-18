@@ -46,11 +46,6 @@ import styles from "./CreateInvoiceDialog.module.scss";
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
 
-/** Payload type for the dialog */
-interface CreateInvoicePayload {
-  selectedScans: CachedScan[];
-}
-
 /** Formats file size in human-readable format */
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -129,7 +124,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   } = useDialog("VIEW_SCANS__CREATE_INVOICE", "add");
 
   // Get selectedScans from payload
-  const {selectedScans = []} = (payload as CreateInvoicePayload) ?? {};
+  const {selectedScans = []} = payload ?? {};
 
   // Local state for wizard steps
   const [mode, setMode] = useState<CreationMode>("single");

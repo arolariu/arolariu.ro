@@ -65,14 +65,14 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     currentDialog: {payload},
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
 
-  const {invoice} = payload as {invoice: Invoice};
+  const invoice: Invoice | null = payload?.invoice ?? null;
 
   const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
-  const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
+  const invoiceName = invoice?.name || (invoice ? `${invoice.id.slice(0, 8)}` : "");
+  const isConfirmValid = invoice ? confirmText === invoiceName && understoodCheckbox : false;
 
   const handleConfirmTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setConfirmText(e.target.value);
@@ -90,7 +90,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   }, [close]);
 
   const handleDelete = useCallback(async () => {
-    if (!isConfirmValid) return;
+    if (!invoice || !isConfirmValid) return;
 
     setIsDeleting(true);
 
@@ -114,12 +114,14 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     } finally {
       setIsDeleting(false);
     }
-  }, [invoice.id, isConfirmValid, handleClose, router, removeInvoice]);
+  }, [invoice, isConfirmValid, handleClose, router, removeInvoice, t]);
 
   // Calculate deletion impact
-  const itemCount = invoice.items?.length ?? 0;
-  const scanCount = invoice.scans?.length ?? 0;
-  const sharedCount = invoice.sharedWith?.length ?? 0;
+  const itemCount = invoice?.items?.length ?? 0;
+  const scanCount = invoice?.scans?.length ?? 0;
+  const sharedCount = invoice?.sharedWith?.length ?? 0;
+
+  if (!invoice) return <></>;
 
   return (
     <Dialog

@@ -66,7 +66,7 @@ export default function MerchantDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
-  const merchant = payload as Merchant | null;
+  const merchant: Merchant | null = payload;
 
   // Early return if merchant is null
   if (!merchant) {
