@@ -159,16 +159,13 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
-  // Null guard: return early if no payload
-  if (!payload) return <></>;
-
-  const {invoice} = payload;
-  const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
+  const invoice = payload?.invoice ?? null;
+  const shareUrl = invoice ? `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}` : "";
 
   /** Check if the invoice is currently public */
   const isInvoicePublic = useMemo(() => {
-    return invoice.sharedWith?.includes(LAST_GUID) ?? false;
-  }, [invoice.sharedWith]);
+    return invoice?.sharedWith?.includes(LAST_GUID) ?? false;
+  }, [invoice?.sharedWith]);
 
   /** Reset state when dialog closes */
   const handleClose = useCallback(() => {
@@ -188,6 +185,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Inlines the patchInvoice call directly.
    */
   const makeInvoicePublic = useCallback(async (): Promise<void> => {
+    if (!invoice) return;
     const newSharedWith = invoice.sharedWith?.includes(LAST_GUID) ? invoice.sharedWith : [...(invoice.sharedWith ?? []), LAST_GUID];
 
     const result = await patchInvoice({
@@ -198,7 +196,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     if (!result.success) {
       throw new Error(result.error);
     }
-  }, [invoice.id, invoice.sharedWith]);
+  }, [invoice]);
 
   /**
    * Makes the invoice public and copies the share link to clipboard.
@@ -206,6 +204,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyLink = useCallback(() => {
     const copyLinkAction = async () => {
+      if (!invoice) return;
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
@@ -226,7 +225,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
       error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
+  }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -234,6 +233,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyQRCode = useCallback(() => {
     const copyQRCodeAction = async () => {
+      if (!invoice) return;
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
@@ -258,7 +258,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
       error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
+  }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately using the generic sendEmail server action.
@@ -272,6 +272,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       setIsSendingEmail(true);
 
       const sendEmailAction = async () => {
+        if (!invoice) return;
         const fromName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Someone";
         const result = await sendEmail({
           templateKey: "invoice-shared",
@@ -302,7 +303,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         },
       );
     },
-    [email, invoice.id, locale, t, user],
+    [email, invoice, locale, t, user],
   );
 
   /**
@@ -314,6 +315,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     setIsRevoking(true);
 
     const revokeAction = async () => {
+      if (!invoice) return;
       const newSharedWith = (invoice.sharedWith ?? []).filter((id) => id !== LAST_GUID);
 
       const result = await patchInvoice({
@@ -338,7 +340,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
       },
     );
-  }, [invoice.id, invoice.sharedWith, router, handleClose, t]);
+  }, [invoice, router, handleClose, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {
@@ -366,6 +368,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
 
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {
+    if (!invoice) return "";
     if (isInvoicePublic) {
       return t("dialogDescription.currentlyPublic", {invoiceName: invoice.name});
     }
@@ -380,6 +383,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         return "";
     }
   };
+
+  // All hooks above this line must run unconditionally on every render.
+  // The early return below is safe — it comes AFTER every hook.
+  if (!invoice) return <></>;
 
   return (
     <Dialog
