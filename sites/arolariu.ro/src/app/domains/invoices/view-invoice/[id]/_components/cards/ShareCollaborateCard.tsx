@@ -34,7 +34,7 @@ import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, 
 import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
+import {useDialogs} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
 
@@ -84,7 +84,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("IMS--View.shareCollaborate");
   const {invoice, setInvoice} = useInvoiceContext();
-  const {openWith: openShareDialog} = useDialog("SHARED__INVOICE_SHARE");
+  const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
 
   /**
@@ -207,8 +207,8 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * **Performance:** Memoized with useCallback.
    */
   const handleManageSharing = useCallback((): void => {
-    openShareDialog("share", {invoice});
-  }, [invoice, openShareDialog]);
+    openDialog("SHARED__INVOICE_SHARE", "share", {invoice});
+  }, [invoice, openDialog]);
 
   return (
     <Card>
