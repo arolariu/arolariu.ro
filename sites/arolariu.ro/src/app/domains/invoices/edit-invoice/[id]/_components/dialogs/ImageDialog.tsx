@@ -1,4 +1,4 @@
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
+﻿import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -42,7 +42,6 @@ export default function ImageDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__IMAGE");
 
@@ -53,8 +52,8 @@ export default function ImageDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {image})}</DialogTitle>

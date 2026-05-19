@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 // TODO: refactor.
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
@@ -72,7 +72,7 @@ const CreateDialog = () => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {invoice} = useEditInvoiceContext();
   const router = useRouter();
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
     description: "",
@@ -138,7 +138,7 @@ const CreateDialog = () => {
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
@@ -360,13 +360,13 @@ const CreateDialog = () => {
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
@@ -438,7 +438,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
 
@@ -457,8 +457,8 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
           <DialogTitle>{t("update.title")}</DialogTitle>
@@ -665,15 +665,15 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const handleDelete = useCallback(() => {}, []);
 
   return (
     <AlertDialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>

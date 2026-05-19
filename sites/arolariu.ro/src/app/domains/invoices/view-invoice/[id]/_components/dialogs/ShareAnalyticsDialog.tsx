@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Invoice, Merchant} from "@/types/invoices";
@@ -68,7 +68,6 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("VIEW_INVOICE__SHARE_ANALYTICS");
 
@@ -123,8 +122,8 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
@@ -181,7 +180,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   type='email'
                   placeholder={t("email.placeholder")}
                   value={email}
-                  // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                  // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>

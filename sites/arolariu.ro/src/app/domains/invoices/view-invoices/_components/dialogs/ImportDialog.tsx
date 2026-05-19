@@ -38,7 +38,7 @@ const ACCEPT_TYPES: Record<ImportFileFormat, Accept> = {
 export default function ImportDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.importDialog");
   const [files, setFiles] = useState<File[]>([]);
-  const {isOpen, open, close} = useDialog("VIEW_INVOICES__IMPORT");
+  const {isOpen, close} = useDialog("VIEW_INVOICES__IMPORT");
   const [activeTab, setActiveTab] = useState<ImportFileFormat>("csv");
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
 
@@ -115,8 +115,8 @@ export default function ImportDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

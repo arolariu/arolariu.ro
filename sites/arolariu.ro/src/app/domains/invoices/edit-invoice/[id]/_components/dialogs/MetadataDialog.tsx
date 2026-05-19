@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Button,
@@ -32,7 +32,7 @@ export const VALID_METADATA_KEYS = [
 
 const AddDialog = () => {
   const t = useTranslations("IMS--Dialogs.metadataDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
     value: "",
@@ -55,8 +55,8 @@ const AddDialog = () => {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("add.title")}</DialogTitle>
@@ -108,7 +108,7 @@ const AddDialog = () => {
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("IMS--Dialogs.metadataDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,8 +124,8 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("edit.title")}</DialogTitle>
@@ -174,7 +174,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("IMS--Dialogs.metadataDialog");
-  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
+  const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
 
   const handleDelete = useCallback(() => {
     // Delete the metadata
@@ -185,8 +185,8 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("delete.title")}</DialogTitle>

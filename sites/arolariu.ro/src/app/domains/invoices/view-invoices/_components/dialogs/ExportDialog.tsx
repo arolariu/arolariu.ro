@@ -53,7 +53,7 @@ export default function ExportDialog(): React.JSX.Element {
   const [filename, setFilename] = useState<string>(defaultFilename);
   const [copied, setCopied] = useState<boolean>(false);
 
-  const {isOpen, open, close} = useDialog("VIEW_INVOICES__EXPORT");
+  const {isOpen, close} = useDialog("VIEW_INVOICES__EXPORT");
   const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
   const allInvoices = useInvoicesStore((state) => state.entities);
   const invoicesToExport = selectedInvoices.length > 0 ? selectedInvoices : allInvoices;
@@ -126,8 +126,8 @@ export default function ExportDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- inline event handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
@@ -142,7 +142,7 @@ export default function ExportDialog(): React.JSX.Element {
               id='filename'
               placeholder={defaultFilename}
               value={filename}
-              // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+              // eslint-disable-next-line react/jsx-no-bind -- inline event handler
               onChange={(e) => setFilename(e.target.value)}
               className={styles["filenameInput"]}
             />
@@ -155,7 +155,7 @@ export default function ExportDialog(): React.JSX.Element {
               <h3 className={styles["sectionTitle"]}>{t("format.title")}</h3>
               <RadioGroup
                 defaultValue={exportOptions.format}
-                // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                 onValueChange={(format) => handleOptionsChange("format", format as InvoiceExportFormat)}>
                 <div className={styles["radioRow"]}>
                   <RadioGroupItem
@@ -219,7 +219,7 @@ export default function ExportDialog(): React.JSX.Element {
                     nativeButton
                     id='include-metadata'
                     checked={exportOptions.includeMetadata}
-                    // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                    // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeMetadata", checked === true)}
                   />
                   <Label htmlFor='include-metadata'>{t("options.includeMetadata")}</Label>
@@ -229,7 +229,7 @@ export default function ExportDialog(): React.JSX.Element {
                     nativeButton
                     id='include-items'
                     checked={exportOptions.includeProducts}
-                    // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                    // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeProducts", checked === true)}
                   />
                   <Label htmlFor='include-items'>{t("options.includeProducts")}</Label>
@@ -239,7 +239,7 @@ export default function ExportDialog(): React.JSX.Element {
                     nativeButton
                     id='include-merchant'
                     checked={exportOptions.includeMerchant}
-                    // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                    // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeMerchant", checked === true)}
                   />
                   <Label htmlFor='include-merchant'>{t("options.includeMerchant")}</Label>
@@ -254,7 +254,7 @@ export default function ExportDialog(): React.JSX.Element {
                       nativeButton
                       id='csv-include-headers'
                       checked={exportOptions.csvOptions?.includeHeaders ?? false}
-                      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                      // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                       onCheckedChange={(checked) =>
                         handleOptionsChange("csvOptions", {
                           delimiter: exportOptions.csvOptions?.delimiter ?? ",",
@@ -271,7 +271,7 @@ export default function ExportDialog(): React.JSX.Element {
                       id='csv-delimiter'
                       placeholder={t("options.csv.delimiterPlaceholder")}
                       value={exportOptions.csvOptions?.delimiter ?? ","}
-                      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                      // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                       onChange={(e) =>
                         handleOptionsChange("csvOptions", {
                           delimiter: e.target.value,
@@ -289,7 +289,7 @@ export default function ExportDialog(): React.JSX.Element {
                       nativeButton
                       id='json-pretty-print'
                       checked={exportOptions.jsonOptions?.prettyPrint ?? false}
-                      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                      // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                       onCheckedChange={(checked) => handleOptionsChange("jsonOptions", {prettyPrint: checked === true})}
                     />
                     <Label htmlFor='json-pretty-print'>{t("options.json.prettyPrint")}</Label>

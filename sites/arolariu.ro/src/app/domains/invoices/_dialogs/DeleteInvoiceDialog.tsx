@@ -60,7 +60,6 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
   const {
     isOpen,
-    open,
     close,
     currentDialog: {payload},
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
@@ -126,8 +125,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) handleClose(); }}>
       <DialogContent className={styles["dialogContentMaxW"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 // TODO: refactor.
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
@@ -81,7 +81,6 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT_INVOICES");
   const merchant: Merchant | null = payload;
@@ -118,8 +117,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {merchant: merchant?.name ?? ""})}</DialogTitle>

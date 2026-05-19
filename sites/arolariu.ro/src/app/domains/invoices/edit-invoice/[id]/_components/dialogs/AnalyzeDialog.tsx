@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
@@ -83,7 +83,6 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.analyzeDialog");
   const {
     isOpen,
-    open,
     close,
     currentDialog: {payload},
   } = useDialog("EDIT_INVOICE__ANALYSIS");
@@ -276,8 +275,8 @@ export default function AnalyzeDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>
