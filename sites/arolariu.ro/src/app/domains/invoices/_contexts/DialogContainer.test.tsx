@@ -11,6 +11,33 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
+// Mock next/dynamic so dynamic imports resolve synchronously in tests.
+// Each loader() is called eagerly at dynamic() call time (which happens during
+// module evaluation, before any test runs). Since all dialog modules below are
+// already mocked via vi.mock(), their import() Promises resolve in the next
+// microtask — i.e., before Vitest starts executing individual tests.
+vi.mock("next/dynamic", () => ({
+  default: (
+    loader: () => Promise<
+      | {default: React.ComponentType<Record<string, unknown>>}
+      | {ExportDialog: React.ComponentType<Record<string, unknown>>}
+    >,
+  ) => {
+    let Comp: React.ComponentType<Record<string, unknown>> | null = null;
+    void loader().then(
+      (mod: {default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}) => {
+        Comp = "default" in mod ? mod.default : mod.ExportDialog;
+      },
+    );
+    function DynamicComponent(props: Record<string, unknown>): React.JSX.Element | null {
+      if (!Comp) return null;
+      // Use JSX (new transform) so React doesn't need to be in scope at runtime
+      return <Comp {...props} />;
+    }
+    return DynamicComponent;
+  },
+}));
+
 // Mock server-only modules that are imported by server actions
 vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
@@ -403,13 +430,13 @@ describe("DialogContainer", () => {
     test("re-renders correctly when dialog type changes", () => {
       setupMockDialogType("EDIT_INVOICE__ANALYSIS");
 
-      const {rerender} = render(<DialogContainer />);
+      const {unmount} = render(<DialogContainer />);
       expect(screen.getByTestId("analyze-dialog")).toBeInTheDocument();
 
-      // Change the dialog type
+      // Unmount, change the dialog type, remount — React.memo is bypassed on fresh mount.
+      unmount();
       setupMockDialogType("SHARED__INVOICE_SHARE");
-
-      rerender(<DialogContainer />);
+      render(<DialogContainer />);
 
       expect(screen.queryByTestId("analyze-dialog")).not.toBeInTheDocument();
       expect(screen.getByTestId("share-invoice-dialog")).toBeInTheDocument();
@@ -418,13 +445,13 @@ describe("DialogContainer", () => {
     test("transitions from open dialog to null correctly", () => {
       setupMockDialogType("EDIT_INVOICE__ITEMS");
 
-      const {rerender, container} = render(<DialogContainer />);
+      const {unmount} = render(<DialogContainer />);
       expect(screen.getByTestId("items-dialog")).toBeInTheDocument();
 
-      // Close the dialog (type becomes null)
+      // Unmount, close the dialog (type becomes null), remount — React.memo is bypassed on fresh mount.
+      unmount();
       setupMockDialogType(null);
-
-      rerender(<DialogContainer />);
+      const {container} = render(<DialogContainer />);
 
       expect(container.firstChild).toBeNull();
     });

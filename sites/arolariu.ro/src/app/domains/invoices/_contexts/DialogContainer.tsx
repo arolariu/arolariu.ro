@@ -1,80 +1,99 @@
 "use client";
 
-import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
-import ShareInvoiceDialog from "../_dialogs/ShareInvoiceDialog";
-import AddScanDialog from "../edit-invoice/[id]/_components/dialogs/AddScanDialog";
-import AllergenDialog from "../edit-invoice/[id]/_components/dialogs/AllergenDialog";
-import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
-import BulkCategoryDialog from "../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog";
-import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
-import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
-import InvoiceItemsDialog from "../edit-invoice/[id]/_components/dialogs/ItemsDialog";
-import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/MerchantDialog";
-import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
-import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
-import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
-import RemoveScanDialog from "../edit-invoice/[id]/_components/dialogs/RemoveScanDialog";
-import {ExportDialog as ViewInvoiceExportDialog} from "../view-invoice/[id]/_components/dialogs/ExportDialog";
-import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
-import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
-import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
-import CreateInvoiceDialog from "../view-scans/_components/dialogs/CreateInvoiceDialog";
+import dynamic from "next/dynamic";
+import {memo, useMemo} from "react";
 import {useDialogs} from "./DialogContext";
+
+// All dialogs are client-only and lazy-loaded.
+// The Dialog's own open animation masks the import-fetch latency on first open.
+const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AddScanDialog"), {ssr: false});
+const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AllergenDialog"), {ssr: false});
+const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AnalyzeDialog"), {ssr: false});
+const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog"), {ssr: false});
+const CreateInvoiceDialog = dynamic(() => import("../view-scans/_components/dialogs/CreateInvoiceDialog"), {ssr: false});
+const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
+const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/FeedbackDialog"), {ssr: false});
+const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ImageDialog"), {ssr: false});
+const InvoiceItemsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ItemsDialog"), {ssr: false});
+const InvoiceMerchantDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantDialog"), {ssr: false});
+const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog"), {ssr: false});
+const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MetadataDialog"), {ssr: false});
+const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RecipeDialog"), {ssr: false});
+const InvoicesExportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ExportDialog"), {ssr: false});
+const InvoicesImportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ImportDialog"), {ssr: false});
+const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog"), {ssr: false});
+const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog"), {ssr: false});
+const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
+// view-invoice/[id]/_components/dialogs/ExportDialog uses a named export
+const ViewInvoiceExportDialog = dynamic(
+  () => import("../view-invoice/[id]/_components/dialogs/ExportDialog").then((m) => ({default: m.ExportDialog})),
+  {ssr: false},
+);
 
 /**
  * The DialogContainer component manages the visibility and functionality of various dialogs
- * related to invoices, merchants, recipes, and metadata.
+ * related to invoices, merchants, recipes, and metadata. Each dialog is lazy-loaded via
+ * `next/dynamic` so that routes don't ship dialog code until the user actually opens one.
+ *
+ * @remarks
+ * Wrapped in `React.memo` and the switch is memoized on `(type, mode)` so unrelated
+ * context churn doesn't re-render this tree.
+ *
  * @returns The DialogContainer component, CSR'ed.
  */
-export default function DialogContainer(): React.JSX.Element | null {
+function DialogContainerImpl(): React.JSX.Element | null {
   const {
     currentDialog: {type, mode},
   } = useDialogs();
 
-  switch (type) {
-    // edit-invoice/[id] Dialogs
-    case "EDIT_INVOICE__ANALYSIS":
-      return <AnalyzeDialog />;
-    case "EDIT_INVOICE__ITEMS":
-      return <InvoiceItemsDialog />;
-    case "EDIT_INVOICE__ALLERGENS":
-      return <AllergenDialog />;
-    case "EDIT_INVOICE__BULK_CATEGORY":
-      return <BulkCategoryDialog />;
-    case "EDIT_INVOICE__FEEDBACK":
-      return <InvoiceFeedbackDialog />;
-    case "EDIT_INVOICE__MERCHANT":
-      return <InvoiceMerchantDialog />;
-    case "EDIT_INVOICE__MERCHANT_INVOICES":
-      return <InvoiceMerchantReceiptsDialog />;
-    case "EDIT_INVOICE__METADATA":
-      return <InvoiceMetadataDialog />;
-    case "EDIT_INVOICE__IMAGE":
-      return <InvoiceImageDialog />;
-    case "EDIT_INVOICE__SCAN":
-      // Differentiate by mode: "add" shows AddScanDialog, "delete" shows RemoveScanDialog
-      return mode === "add" ? <AddScanDialog /> : <RemoveScanDialog />;
-    case "EDIT_INVOICE__RECIPE":
-      return <InvoiceRecipeDialog />;
-    // view-invoice/[id] Dialogs
-    case "VIEW_INVOICE__SHARE_ANALYTICS":
-      return <ShareAnalyticsDialog />;
-    case "VIEW_INVOICE__EXPORT":
-      return <ViewInvoiceExportDialog />;
-    // view-invoices Dialogs
-    case "VIEW_INVOICES__IMPORT":
-      return <InvoicesImportDialog />;
-    case "VIEW_INVOICES__EXPORT":
-      return <InvoicesExportDialog />;
-    // view-scans Dialogs
-    case "VIEW_SCANS__CREATE_INVOICE":
-      return <CreateInvoiceDialog />;
-    // shared dialogs
-    case "SHARED__INVOICE_DELETE":
-      return <DeleteInvoiceDialog />;
-    case "SHARED__INVOICE_SHARE":
-      return <ShareInvoiceDialog />;
-    default:
-      return null;
-  }
+  return useMemo(() => {
+    switch (type) {
+      // edit-invoice/[id] Dialogs
+      case "EDIT_INVOICE__ANALYSIS":
+        return <AnalyzeDialog />;
+      case "EDIT_INVOICE__ITEMS":
+        return <InvoiceItemsDialog />;
+      case "EDIT_INVOICE__ALLERGENS":
+        return <AllergenDialog />;
+      case "EDIT_INVOICE__BULK_CATEGORY":
+        return <BulkCategoryDialog />;
+      case "EDIT_INVOICE__FEEDBACK":
+        return <InvoiceFeedbackDialog />;
+      case "EDIT_INVOICE__MERCHANT":
+        return <InvoiceMerchantDialog />;
+      case "EDIT_INVOICE__MERCHANT_INVOICES":
+        return <InvoiceMerchantReceiptsDialog />;
+      case "EDIT_INVOICE__METADATA":
+        return <InvoiceMetadataDialog />;
+      case "EDIT_INVOICE__IMAGE":
+        return <InvoiceImageDialog />;
+      case "EDIT_INVOICE__SCAN":
+        // Differentiate by mode: "add" shows AddScanDialog, anything else shows RemoveScanDialog
+        return mode === "add" ? <AddScanDialog /> : <RemoveScanDialog />;
+      case "EDIT_INVOICE__RECIPE":
+        return <InvoiceRecipeDialog />;
+      // view-invoice/[id] Dialogs
+      case "VIEW_INVOICE__SHARE_ANALYTICS":
+        return <ShareAnalyticsDialog />;
+      case "VIEW_INVOICE__EXPORT":
+        return <ViewInvoiceExportDialog />;
+      // view-invoices Dialogs
+      case "VIEW_INVOICES__IMPORT":
+        return <InvoicesImportDialog />;
+      case "VIEW_INVOICES__EXPORT":
+        return <InvoicesExportDialog />;
+      // view-scans Dialogs
+      case "VIEW_SCANS__CREATE_INVOICE":
+        return <CreateInvoiceDialog />;
+      // shared dialogs
+      case "SHARED__INVOICE_DELETE":
+        return <DeleteInvoiceDialog />;
+      case "SHARED__INVOICE_SHARE":
+        return <ShareInvoiceDialog />;
+      default:
+        return null;
+    }
+  }, [type, mode]);
 }
+
+export default memo(DialogContainerImpl);
