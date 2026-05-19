@@ -88,40 +88,38 @@ export function useClipboard(options: UseClipboardOptions = {}): UseClipboardRet
   const [error, setError] = React.useState<Error | null>(null);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Synchronous helper: clears any pending reset and schedules a fresh one.
+  // Extracted to keep the ref read+write off the async path (satisfies
+  // require-atomic-updates: copy() never touches timeoutRef directly).
+  const scheduleReset = React.useCallback(() => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setCopied(false);
+      timeoutRef.current = null;
+    }, timeout);
+  }, [timeout]);
+
   const copy = React.useCallback(
     async (text: string): Promise<void> => {
-      // Clear any existing timeout
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      // Reset error state
       setError(null);
 
       try {
-        // Check if Clipboard API is available
-        if (typeof globalThis.navigator === "undefined" || !globalThis.navigator.clipboard) {
+        if (globalThis.navigator?.clipboard === undefined) {
           throw new Error("Clipboard API is not available");
         }
 
         await globalThis.navigator.clipboard.writeText(text);
         setCopied(true);
-
-        // Reset copied state after timeout
-        timeoutRef.current = setTimeout(() => {
-          setCopied(false);
-          timeoutRef.current = null;
-        }, timeout);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err : new Error("Failed to copy to clipboard");
-
+        scheduleReset();
+      } catch (error_) {
+        const errorMessage = error_ instanceof Error ? error_ : new Error("Failed to copy to clipboard");
         setError(errorMessage);
         setCopied(false);
-        console.error("Copy to clipboard failed:", errorMessage);
       }
     },
-    [timeout],
+    [scheduleReset],
   );
 
   // Cleanup timeout on unmount
