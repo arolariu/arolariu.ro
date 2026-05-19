@@ -29,10 +29,10 @@ import * as React from "react";
  * ```
  */
 export function useTimeout(callback: () => void, delay: number | null): void {
-  const savedCallback = React.useRef(callback);
+  const savedCallbackRef = React.useRef(callback);
 
   React.useLayoutEffect(() => {
-    savedCallback.current = callback;
+    savedCallbackRef.current = callback;
   }, [callback]);
 
   React.useEffect(() => {
@@ -41,7 +41,7 @@ export function useTimeout(callback: () => void, delay: number | null): void {
     }
 
     const timeoutId = globalThis.setTimeout(() => {
-      savedCallback.current();
+      savedCallbackRef.current();
     }, delay);
 
     return () => {
