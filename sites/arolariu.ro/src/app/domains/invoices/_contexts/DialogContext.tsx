@@ -87,9 +87,14 @@ const DialogActionsContext = createContext<DialogActions | undefined>(undefined)
  * DialogProvider component that manages dialog state for the application.
  *
  * @remarks
- * Internally splits state and actions into separate contexts so cards that only
- * dispatch (via `useDialogs().openDialog` or `useDialog().open`) do not re-render
- * when dialog state changes.
+ * Internally splits state and actions into two separate contexts (`DialogStateContext`
+ * and `DialogActionsContext`). The actions context value is stable for the lifetime
+ * of the provider; the state context value changes on every open/close.
+ *
+ * Both `useDialog` and `useDialogs` subscribe to BOTH contexts and therefore
+ * re-render on every dialog state change. The split exists for future flexibility
+ * (a hypothetical actions-only hook could subscribe to actions alone and avoid
+ * state-driven re-renders); today's public hooks do not exploit it.
  *
  * Preserves the "no-op if another dialog is already open" guard from the previous
  * implementation; this is enforced inside the functional setState updater.
@@ -101,7 +106,7 @@ const DialogActionsContext = createContext<DialogActions | undefined>(undefined)
  * </DialogProvider>
  * ```
  */
-export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
+export function DialogProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
   const [dialogState, setDialogState] = useState<DialogCurrent>(INITIAL_STATE);
 
   // Empty deps: functional setState reads `prev` synchronously, no closure over state needed.
@@ -129,10 +134,18 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
  * click time (e.g., per-row click handlers). For card-level "I'm bound to one
  * dialog type" usage, prefer `useDialog`.
  *
+ * Subscribes to both state and actions contexts; the consumer re-renders on
+ * every dialog state change.
+ *
  * @returns Object with `currentDialog`, `isOpen(type)`, `openDialog<T>(type, mode?, payload?)`, `closeDialog`.
  * @throws If used outside a `DialogProvider`.
  */
-export function useDialogs() {
+export function useDialogs(): {
+  currentDialog: DialogCurrent;
+  isOpen: (dialog: DialogType) => boolean;
+  openDialog: DialogActions["openDialog"];
+  closeDialog: DialogActions["closeDialog"];
+} {
   const state = use(DialogStateContext);
   const actions = use(DialogActionsContext);
   if (state === undefined || actions === undefined) {
