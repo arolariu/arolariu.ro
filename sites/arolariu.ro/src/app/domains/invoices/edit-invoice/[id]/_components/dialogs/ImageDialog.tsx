@@ -42,17 +42,20 @@ export default function ImageDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__IMAGE");
 
-  const image = payload as string;
+  const image: string | null = payload;
+
+  if (!image) return <></>;
 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {image})}</DialogTitle>

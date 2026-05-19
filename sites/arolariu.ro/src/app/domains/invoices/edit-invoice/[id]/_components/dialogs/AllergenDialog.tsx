@@ -10,7 +10,7 @@
  */
 
 import updateProduct from "@/lib/actions/invoices/updateProduct";
-import type {Allergen, Invoice, Product} from "@/types/invoices";
+import type {Allergen} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -25,7 +25,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
@@ -52,15 +52,6 @@ const COMMON_ALLERGENS: ReadonlyArray<string> = [
   "Molluscs",
   "Sulfites",
 ] as const;
-
-/**
- * Payload type for the allergen dialog.
- */
-interface AllergenDialogPayload {
-  readonly invoice: Invoice;
-  readonly product: Product;
-  readonly productIndex: number;
-}
 
 /**
  * Dialog for editing allergens on a single product.
@@ -117,11 +108,17 @@ export default function AllergenDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__ALLERGENS");
 
-  const {invoice, product, productIndex} = (payload ?? {}) as Partial<AllergenDialogPayload>;
+  const {invoice, product, productIndex} = payload;
 
   const [allergens, setAllergens] = useState<Allergen[]>(product?.detectedAllergens ?? []);
   const [customAllergen, setCustomAllergen] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setAllergens(product?.detectedAllergens ?? []);
+    setCustomAllergen("");
+    setIsSaving(false);
+  }, [product]);
 
   /**
    * Adds a new allergen to the list.
@@ -228,7 +225,7 @@ export default function AllergenDialog(): React.JSX.Element {
     }
   }, [invoice, product, productIndex, allergens, close, t]);
 
-  if (!product) {
+  if (!invoice || !product || productIndex === undefined) {
     return <></>;
   }
 

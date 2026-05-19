@@ -12,7 +12,7 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
+import {useDialogs} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
 
 type Props = {
@@ -35,8 +35,9 @@ type Props = {
  * - **View All Receipts**: Opens `MerchantReceiptsDialog` showing all invoices
  *   from this merchant with filtering and sorting
  *
- * **Dialog Integration**: Uses `useDialog` hook to open `INVOICE_MERCHANT` and
- * `INVOICE_MERCHANT_INVOICES` dialogs in "view" mode with merchant as payload.
+ * **Dialog Integration**: Uses `useDialogs().openDialog` invoked from button
+ * `onClick` handlers (after the early-return guard narrows merchant to non-null).
+ * This ensures the dialog is never dispatched with a null payload.
  *
  * **Domain Context**: Part of the edit-invoice sidebar, providing quick access
  * to merchant context and cross-invoice navigation.
@@ -56,10 +57,10 @@ type Props = {
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--Cards.merchantCard");
-  const {open: openMerchantInfoDialog} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
-  const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
+  const {openDialog} = useDialogs();
 
-  // Early return if merchant is null
+  // Early return if merchant is null — guards both trigger buttons from rendering,
+  // which guarantees neither dialog can be dispatched with a null payload.
   if (!merchant) {
     return (
       <Card className={styles["card"]}>
@@ -96,7 +97,8 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                   <Button
                     variant='outline'
                     className={styles["actionButton"]}
-                    onClick={openMerchantInfoDialog}>
+                    // eslint-disable-next-line react/jsx-no-bind -- merchant is narrowed non-null here
+                    onClick={() => openDialog("EDIT_INVOICE__MERCHANT", "view", merchant)}>
                     <span>{t("buttons.viewMerchantDetails")}</span>
                     <TbArrowRight className={styles["arrowIcon"]} />
                   </Button>
@@ -115,7 +117,8 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                   <Button
                     variant='outline'
                     className={styles["actionButton"]}
-                    onClick={openMerchantReceiptsDialog}>
+                    // eslint-disable-next-line react/jsx-no-bind -- merchant is narrowed non-null here
+                    onClick={() => openDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant)}>
                     <TbShoppingBag className={styles["buttonIcon"]} />
                     <span>{t("buttons.viewAllReceipts")}</span>
                     <TbArrowRight className={styles["arrowIcon"]} />

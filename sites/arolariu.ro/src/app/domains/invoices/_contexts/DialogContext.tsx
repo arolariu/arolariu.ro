@@ -1,12 +1,13 @@
 "use client";
 
-import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNode} from "react";
+import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
+import type {CachedScan} from "@/types/scans";
+import {createContext, use, useMemo, useState, type ReactNode} from "react";
 
 /**
  * DialogType is a union type representing the different types of dialogs that can be opened.
  * Each string literal corresponds to a specific dialog type.
  * The null value indicates that no dialog is currently open.
- * This is useful for managing the state of the dialog in the application.
  */
 export type DialogType = Readonly<
   | "EDIT_INVOICE__ANALYSIS"
@@ -27,152 +28,172 @@ export type DialogType = Readonly<
   | "VIEW_SCANS__CREATE_INVOICE"
   | "SHARED__INVOICE_DELETE"
   | "SHARED__INVOICE_SHARE"
-> | null; // null is used to indicate no dialog is open
+> | null;
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
-// eslint-disable-next-line sonarjs/redundant-type-aliases
-export type DialogPayload = unknown;
+/**
+ * Compile-time registry mapping each DialogType to its expected payload shape.
+ *
+ * @remarks
+ * Drives type narrowing in `useDialog<T>(...)` and `useDialogs().openDialog<T>(...)`.
+ *
+ * **Soundness contract:** The runtime payload is `unknown`. The narrowing
+ * exposed by `useDialog` is sound only while the dialog reads its payload
+ * under `isOpen === true` — which is the existing DialogContainer contract
+ * (only the active dialog is mounted).
+ */
+export type DialogPayloads = {
+  EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
+  EDIT_INVOICE__IMAGE: string;
+  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
+  EDIT_INVOICE__MERCHANT: Merchant;
+  EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
+  EDIT_INVOICE__RECIPE: Recipe;
+  EDIT_INVOICE__METADATA: Record<string, string>;
+  EDIT_INVOICE__ITEMS: Invoice;
+  EDIT_INVOICE__ALLERGENS: {invoice: Invoice; product: Product; productIndex: number};
+  EDIT_INVOICE__BULK_CATEGORY: {invoice: Invoice; selectedProducts: Product[]; selectedIndices: number[]};
+  EDIT_INVOICE__FEEDBACK: {invoice: Invoice; merchant: Merchant | null};
+  VIEW_INVOICE__SHARE_ANALYTICS: {invoice: Invoice; merchant: Merchant};
+  VIEW_INVOICE__EXPORT: undefined;
+  VIEW_INVOICES__IMPORT: undefined;
+  VIEW_INVOICES__EXPORT: undefined;
+  VIEW_SCANS__CREATE_INVOICE: {selectedScans: CachedScan[]};
+  SHARED__INVOICE_DELETE: {invoice: Invoice};
+  SHARED__INVOICE_SHARE: {invoice: Invoice};
+};
 
 type DialogCurrent = {
   type: DialogType;
   mode: DialogMode;
-  payload: DialogPayload;
+  payload: unknown;
 };
 
-/**
- * Interface representing the value of the Dialog context.
- */
-interface DialogContextValue {
-  currentDialog: DialogCurrent;
-  isOpen: (dialog: DialogType) => boolean;
-  openDialog: (dialog: DialogType, mode?: DialogMode, payload?: DialogPayload) => void;
-  closeDialog: () => void;
-}
+const INITIAL_STATE: DialogCurrent = {type: null, mode: null, payload: null};
 
-/**
- * DialogContext is a React context that provides the current dialog state and functions to manage it.
- * It is initialized with default values, which can be overridden by the provider.
- */
-const DialogContext = createContext<DialogContextValue | undefined>(undefined);
+type DialogActions = {
+  openDialog: <T extends Exclude<DialogType, null>>(dialog: T, mode?: Exclude<DialogMode, null>, payload?: DialogPayloads[T]) => void;
+  closeDialog: () => void;
+};
+
+/** State context — re-renders consumers on every open/close. */
+const DialogStateContext = createContext<DialogCurrent | undefined>(undefined);
+
+/** Actions context — value is stable for the lifetime of the provider. */
+const DialogActionsContext = createContext<DialogActions | undefined>(undefined);
 
 /**
  * DialogProvider component that manages dialog state for the application.
- * This component creates a context that tracks which dialog is currently open
- * and provides methods to open and close dialogs.
+ *
+ * @remarks
+ * Internally splits state and actions into two separate contexts (`DialogStateContext`
+ * and `DialogActionsContext`). The actions context value is stable for the lifetime
+ * of the provider; the state context value changes on every open/close.
+ *
+ * Both `useDialog` and `useDialogs` subscribe to BOTH contexts and therefore
+ * re-render on every dialog state change. The split exists for future flexibility
+ * (a hypothetical actions-only hook could subscribe to actions alone and avoid
+ * state-driven re-renders); today's public hooks do not exploit it.
+ *
+ * Preserves the "no-op if another dialog is already open" guard from the previous
+ * implementation; this is enforced inside the functional setState updater.
+ *
  * @example
  * ```tsx
- * // Wrap your component tree with DialogProvider
  * <DialogProvider>
  *   <YourApp />
  * </DialogProvider>
  * ```
- * @returns A context provider component that manages dialog state
  */
-export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
-  const [dialogState, setDialogState] = useState<DialogCurrent>({
-    type: null,
-    mode: null,
-    payload: null,
-  });
+export function DialogProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
+  const [dialogState, setDialogState] = useState<DialogCurrent>(INITIAL_STATE);
 
-  // Create a stable reference to the current dialog
-  const currentDialogRef = useRef<DialogCurrent>({
-    type: null,
-    mode: null,
-    payload: null,
-  });
-
-  /**
-   * Check to see if a specific dialog is open.
-   * This function takes a dialog type as an argument and returns a boolean indicating
-   * whether that dialog is currently open.
-   * It uses the currentDialog state to determine if the dialog is open.
-   */
-  const isOpen = useCallback((dialog: DialogType) => currentDialogRef.current.type === dialog, []);
-
-  /**
-   * This function tries to open a dialog.
-   * If there is already a dialog open, it does nothing.
-   * If there is no dialog open, it sets the currentDialog state to the new dialog.
-   * This is useful for preventing multiple dialogs from being open at the same time.
-   * It uses the setCurrentDialog function to update the state.
-   */
-  const openDialog = useCallback((dialog: DialogType, mode: DialogMode = "view", payload: DialogPayload = null) => {
-    if (currentDialogRef.current.type === null) {
-      // Update both ref and state atomically
-      currentDialogRef.current = {type: dialog, mode, payload};
-      setDialogState(currentDialogRef.current);
-    }
-  }, []);
-
-  /**
-   * This function closes the currently open dialog.
-   * It sets the currentDialog state back to null,
-   * indicating that no dialog is currently open.
-   * This is useful for resetting the dialog state when a dialog is closed.
-   * It uses the setCurrentDialog function to update the state.
-   * This function does not take any arguments.
-   */
-  const closeDialog = useCallback(() => {
-    currentDialogRef.current = {type: null, mode: null, payload: null};
-    setDialogState(currentDialogRef.current);
-  }, []);
-
-  // The context value
-  const value = useMemo(
+  // Empty deps: functional setState reads `prev` synchronously, no closure over state needed.
+  const actions = useMemo<DialogActions>(
     () => ({
-      currentDialog: currentDialogRef.current,
-      isOpen,
-      openDialog,
-      closeDialog,
+      openDialog: (dialog, mode = "view", payload) =>
+        setDialogState((prev) => (prev.type === null ? {type: dialog, mode, payload: payload ?? null} : prev)),
+      closeDialog: () => setDialogState(INITIAL_STATE),
     }),
-
-    /**
-     * Only dialogState is used in the dependency array.
-     * This is to ensure that the context value is updated when the dialog state changes.
-     * The other functions (isOpen, openDialog, closeDialog) are stable and do not need to be re-created.
-     */
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dialogState],
+    [],
   );
 
-  return <DialogContext value={value}>{children}</DialogContext>;
+  return (
+    <DialogActionsContext value={actions}>
+      <DialogStateContext value={dialogState}>{children}</DialogStateContext>
+    </DialogActionsContext>
+  );
 }
 
 /**
- * Custom hook to use the Dialog context, providing access to the current dialog state and functions to manage it.
- * @returns The current dialog state and functions to manage it.
+ * Hook providing the current dialog state plus dispatch actions.
+ *
+ * @remarks
+ * Use this hook when you need to dispatch dialogs with payloads only known at
+ * click time (e.g., per-row click handlers). For card-level "I'm bound to one
+ * dialog type" usage, prefer `useDialog`.
+ *
+ * Subscribes to both state and actions contexts; the consumer re-renders on
+ * every dialog state change.
+ *
+ * @returns Object with `currentDialog`, `isOpen(type)`, `openDialog<T>(type, mode?, payload?)`, `closeDialog`.
+ * @throws If used outside a `DialogProvider`.
  */
-export function useDialogs() {
-  const context = use(DialogContext);
-  if (context === undefined) {
+export function useDialogs(): {
+  currentDialog: DialogCurrent;
+  isOpen: (dialog: DialogType) => boolean;
+  openDialog: DialogActions["openDialog"];
+  closeDialog: DialogActions["closeDialog"];
+} {
+  const state = use(DialogStateContext);
+  const actions = use(DialogActionsContext);
+  if (state === undefined || actions === undefined) {
     throw new Error("useDialogs must be used within a DialogProvider");
   }
-
-  return context;
+  return {
+    currentDialog: state,
+    isOpen: (dialog: DialogType) => state.type === dialog,
+    openDialog: actions.openDialog,
+    closeDialog: actions.closeDialog,
+  };
 }
 
 /**
- * Is a custom hook that provides an interface for managing dialog state.
- * It returns an object containing the current dialog state and functions to open and close dialogs.
- * @param dialogType The type of dialog to manage (e.g., "share", "merchant", "recipe")
- * @param dialogMode Optional mode for the dialog (e.g., "view", "add", "edit", "delete")
- * @param dialogPayload Optional payload to pass (e.g., data to be displayed in the dialog)
- * @returns An object containing the current dialog state and functions to open and close dialogs
+ * Hook bound to a single dialog type with optional baked-in mode and payload.
+ *
+ * @remarks
+ * The returned `currentDialog.payload` is typed as `DialogPayloads[T]`.
+ * This narrowing is sound only when read under `isOpen === true` (the active
+ * dialog reads its own payload). Cards that only call `open`/`close` and never
+ * read `payload` are unaffected. Callers MUST ensure they never dispatch a
+ * dialog without its required payload — guard your trigger buttons.
+ *
+ * @param dialogType - The dialog this hook is bound to (compile-time enforced).
+ * @param dialogMode - Default mode when `open()` is called (defaults to `"view"`).
+ * @param dialogPayload - Default payload when `open()` is called.
+ * @returns Object with `currentDialog`, `isOpen` (boolean), `open()`, `close()`.
+ * @throws If used outside a `DialogProvider`.
+ *
  * @example
- * const {isOpen, open, close} = useDialog("EDIT_INVOICE__SCAN", "add", invoice);
+ * ```tsx
+ * const {isOpen, open, close} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
+ * ```
  */
-export function useDialog(dialogType: Exclude<DialogType, null>, dialogMode?: Exclude<DialogMode, null>, dialogPayload?: DialogPayload) {
-  const {currentDialog, isOpen, openDialog, closeDialog} = useDialogs();
-
+export function useDialog<T extends Exclude<DialogType, null>>(
+  dialogType: T,
+  dialogMode: Exclude<DialogMode, null> = "view",
+  dialogPayload?: DialogPayloads[T],
+) {
+  const state = use(DialogStateContext);
+  const actions = use(DialogActionsContext);
+  if (state === undefined || actions === undefined) {
+    throw new Error("useDialog must be used within a DialogProvider");
+  }
   return {
-    currentDialog,
-    isOpen: isOpen(dialogType),
-    // Zero-arg open preserves MouseEventHandler compatibility for onClick={open}.
-    open: () => openDialog(dialogType, dialogMode, dialogPayload),
-    // openWith allows overriding mode and payload at call time.
-    openWith: (mode: Exclude<DialogMode, null>, payload?: DialogPayload) => openDialog(dialogType, mode, payload ?? dialogPayload),
-    close: closeDialog,
+    currentDialog: state as {type: DialogType; mode: DialogMode; payload: DialogPayloads[T]},
+    isOpen: state.type === dialogType,
+    open: () => actions.openDialog(dialogType, dialogMode, dialogPayload),
+    close: actions.closeDialog,
   } as const;
 }

@@ -4,7 +4,6 @@ import type {EmailLocale} from "@/../emails/_i18n";
 import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
-import type {Invoice} from "@/types/invoices";
 import {
   Alert,
   AlertDescription,
@@ -160,10 +159,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
-  // Null guard: return early if no payload
-  if (!payload) return <></>;
-
-  const {invoice} = payload as {invoice: Invoice};
+  const {invoice} = payload;
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 
   /** Check if the invoice is currently public */
@@ -199,7 +195,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     if (!result.success) {
       throw new Error(result.error);
     }
-  }, [invoice.id, invoice.sharedWith]);
+  }, [invoice]);
 
   /**
    * Makes the invoice public and copies the share link to clipboard.
@@ -227,7 +223,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
       error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
+  }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -259,7 +255,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
       error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
+  }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately using the generic sendEmail server action.
@@ -303,7 +299,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         },
       );
     },
-    [email, invoice.id, locale, t, user],
+    [email, invoice, locale, t, user],
   );
 
   /**
@@ -339,7 +335,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
         error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
       },
     );
-  }, [invoice.id, invoice.sharedWith, router, handleClose, t]);
+  }, [invoice, router, handleClose, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {Invoice, Product, ProductCategory} from "@/types/invoices";
+import {Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ItemsDialog.module.scss";
@@ -73,16 +73,20 @@ export default function ItemsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__ITEMS");
 
-  const {items} = payload as Invoice;
+  const invoice = payload;
+  const items = invoice.items;
 
-  const [editableItems, setEditableItems] = useState<Product[]>(items || []);
+  const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
     items: editableItems,
   });
+
+  useEffect(() => {
+    setEditableItems(invoice.items);
+  }, [invoice]);
 
   const handleSaveChanges = useCallback(() => {
     // TODO: Implement save functionality
@@ -165,8 +169,10 @@ export default function ItemsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

@@ -2,7 +2,6 @@
 
 import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
 import {useInvoicesStore} from "@/stores";
-import type {Invoice} from "@/types/invoices";
 import {
   Alert,
   AlertDescription,
@@ -60,12 +59,11 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
   const {
     isOpen,
-    open,
     close,
     currentDialog: {payload},
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
 
-  const {invoice} = payload as {invoice: Invoice};
+  const {invoice} = payload;
 
   const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
@@ -114,7 +112,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     } finally {
       setIsDeleting(false);
     }
-  }, [invoice.id, isConfirmValid, handleClose, router, removeInvoice]);
+  }, [invoice, isConfirmValid, handleClose, router, removeInvoice, t]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;
@@ -124,8 +122,10 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) handleClose();
+      }}>
       <DialogContent className={styles["dialogContentMaxW"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>

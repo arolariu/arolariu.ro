@@ -9,7 +9,7 @@
  */
 
 import updateProduct from "@/lib/actions/invoices/updateProduct";
-import type {Invoice, Product, ProductCategory} from "@/types/invoices";
+import type {ProductCategory} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -32,15 +32,6 @@ import {useCallback, useMemo, useState} from "react";
 import {TbTag} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./BulkCategoryDialog.module.scss";
-
-/**
- * Payload type for the bulk category dialog.
- */
-interface BulkCategoryDialogPayload {
-  readonly invoice: Invoice;
-  readonly selectedProducts: Product[];
-  readonly selectedIndices: number[];
-}
 
 /**
  * Dialog for bulk category reassignment of products.
@@ -100,7 +91,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__BULK_CATEGORY");
 
-  const {invoice, selectedProducts, selectedIndices} = (payload ?? {}) as Partial<BulkCategoryDialogPayload>;
+  const {invoice, selectedProducts, selectedIndices} = payload;
 
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -224,7 +215,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
     }
   }, [invoice, selectedProducts, selectedIndices, selectedCategory, close, router, t]);
 
-  if (!selectedProducts || selectedProducts.length === 0) {
+  if (!invoice || selectedProducts.length === 0 || selectedIndices.length === 0) {
     return <></>;
   }
 

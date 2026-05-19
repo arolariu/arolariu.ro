@@ -12,15 +12,6 @@ import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RemoveScanDialog.module.scss";
 
 /**
- * Payload structure for the remove scan dialog.
- */
-type RemoveScanPayload = {
-  invoice: Invoice;
-  scan: InvoiceScan;
-  scanIndex: number;
-};
-
-/**
  * Dialog for confirming removal of a scan from an invoice.
  *
  * @remarks
@@ -47,15 +38,16 @@ export default function RemoveScanDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__SCAN", "delete");
 
-  const data = payload as RemoveScanPayload | null;
-  const invoice = data?.invoice ?? null;
-  const scan = data?.scan ?? null;
-  const scanIndex = data?.scanIndex ?? 0;
+  const data = payload && typeof payload === "object" && "scan" in payload ? payload : null;
+  const invoice: Invoice | null = data?.invoice ?? null;
+  const scan: InvoiceScan | null = data?.scan ?? null;
+  const scanIndex = data?.scanIndex ?? -1;
 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const totalScans = invoice?.scans.length ?? 0;
   const isLastScan = totalScans === 1;
+  const currentScanNumber = scanIndex >= 0 ? scanIndex + 1 : 1;
 
   const handleDelete = useCallback(async () => {
     if (!invoice || !scan) return;
@@ -111,7 +103,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
             {t("title")}
           </DialogTitle>
           <DialogDescription>
-            {isLastScan ? t("descriptionLastScan") : t("description", {current: String(scanIndex + 1), total: String(totalScans)})}
+            {isLastScan ? t("descriptionLastScan") : t("description", {current: String(currentScanNumber), total: String(totalScans)})}
           </DialogDescription>
         </DialogHeader>
 
@@ -120,13 +112,13 @@ export default function RemoveScanDialog(): React.JSX.Element {
             <div className={styles["previewImage"]}>
               <Image
                 src={scan.location}
-                alt={t("scanAlt", {index: String(scanIndex + 1)})}
+                alt={t("scanAlt", {index: String(currentScanNumber)})}
                 width={400}
                 height={300}
                 className={styles["scanPreviewImage"]}
               />
             </div>
-            <p className={styles["previewCaption"]}>{t("scanCaption", {index: String(scanIndex + 1)})}</p>
+            <p className={styles["previewCaption"]}>{t("scanCaption", {index: String(currentScanNumber)})}</p>
           </div>
         ) : null}
 
