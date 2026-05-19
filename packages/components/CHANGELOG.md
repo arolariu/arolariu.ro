@@ -8,6 +8,37 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [2.2.0](https://www.npmjs.com/package/@arolariu/components/v/2.2.0) - 2026-05-19
+
+**🧹 Internal — Code quality**
+
+- 🎯 **0 ESLint errors / 0 warnings**: resolved all 95 findings (92 errors + 3 warnings) across 25 files in `packages/components` without adding any new in-source `eslint-disable` comments.
+
+**🪝 Hooks hardening**
+
+- 🧷 **`useClipboard`**: fixed a race condition between concurrent `copy()` calls by extracting timeout scheduling into a synchronous helper. Removed `console.error` noise (errors are already exposed via the returned `error` state).
+- 🔒 **`useLocalStorage`**: removed `console.error` calls from non-fatal fallback paths (JSON parse failures already return the initial value). Modernized type-narrowing (`instanceof Function` → `typeof === "function"`).
+- 👁️ **`useIntersectionObserver`**: destructured `threshold`/`root`/`rootMargin` into stable locals so React's exhaustive-deps lint passes cleanly.
+- 🏷️ **`useInterval` & `useTimeout`**: renamed internal `savedCallback` ref to `savedCallbackRef` to match the project's ref-naming convention.
+- 🔗 **`useMergedRefs`**: replaced React-19-deprecated `MutableRefObject` with `RefObject` (whose `.current` is now writable). Restructured loop to avoid `continue`.
+- 🔁 **`useControllableState`**: inverted negated condition for clarity.
+
+**🧩 Components**
+
+- 🏹 **forwardRef refactor**: converted 33 `React.forwardRef(function Name(...))` patterns to arrow-callback form across 13 components (`alert-dialog`, `avatar`, `calendar`, `checkbox-group`, `dropdrawer`, `meter`, `navigation-menu`, `progress`, `scratcher`, `separator`, `toast`, `toggle-group`, `toolbar`). Display names preserved.
+- 🔄 **`combobox`**: migrated internal `<PopoverTrigger asChild>` usage to the modern `render` prop, matching the established pattern in `alert-dialog`, `drawer`, `dropdown-menu`.
+- 📅 **`calendar`**: consolidated `react-day-picker` import.
+
+**⚙️ Tooling**
+
+- 🛠️ **ESLint config**: scoped `unicorn/prefer-export-from` and `n/no-unsupported-features/node-builtins` to `off` for `packages/components/**` (the package is browser-only; the import-then-export pattern is required for RSLib dist generation per v2.0.0).
+
+**📚 Migration Guide**
+
+No public API changes. Drop-in replacement for 2.1.x.
+
+---
+
 ### [2.1.0](https://www.npmjs.com/package/@arolariu/components/v/2.1.0) - 2026-04-17
 
 **⬆️ Dependency Updates**
