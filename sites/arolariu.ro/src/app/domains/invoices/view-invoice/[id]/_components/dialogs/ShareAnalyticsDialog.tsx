@@ -107,17 +107,11 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   );
 
   const handleDownloadImage = useCallback(() => {
-    if (!merchant) {
-      return;
-    }
-
     // In a real app, this would generate and download an image
     toast(t("toasts.imageSaved.title"), {
       description: t("toasts.imageSaved.description", {merchant: merchant.name}),
     });
   }, [merchant, t]);
-
-  if (!invoice || !merchant) return <></>;
 
   return (
     <Dialog

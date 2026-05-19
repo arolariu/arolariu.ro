@@ -46,9 +46,9 @@ export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> 
 export type DialogPayloads = {
   EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
   EDIT_INVOICE__IMAGE: string;
-  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number} | null;
-  EDIT_INVOICE__MERCHANT: Merchant | null;
-  EDIT_INVOICE__MERCHANT_INVOICES: Merchant | null;
+  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
+  EDIT_INVOICE__MERCHANT: Merchant;
+  EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
   EDIT_INVOICE__RECIPE: Recipe;
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;
@@ -150,10 +150,11 @@ export function useDialogs() {
  * Hook bound to a single dialog type with optional baked-in mode and payload.
  *
  * @remarks
- * The returned `currentDialog.payload` is typed as `DialogPayloads[T] | null`.
+ * The returned `currentDialog.payload` is typed as `DialogPayloads[T]`.
  * This narrowing is sound only when read under `isOpen === true` (the active
  * dialog reads its own payload). Cards that only call `open`/`close` and never
- * read `payload` are unaffected.
+ * read `payload` are unaffected. Callers MUST ensure they never dispatch a
+ * dialog without its required payload — guard your trigger buttons.
  *
  * @param dialogType - The dialog this hook is bound to (compile-time enforced).
  * @param dialogMode - Default mode when `open()` is called (defaults to `"view"`).
@@ -177,7 +178,7 @@ export function useDialog<T extends Exclude<DialogType, null>>(
     throw new Error("useDialog must be used within a DialogProvider");
   }
   return {
-    currentDialog: state as {type: DialogType; mode: DialogMode; payload: DialogPayloads[T] | null},
+    currentDialog: state as {type: DialogType; mode: DialogMode; payload: DialogPayloads[T]},
     isOpen: state.type === dialogType,
     open: () => actions.openDialog(dialogType, dialogMode, dialogPayload),
     close: actions.closeDialog,

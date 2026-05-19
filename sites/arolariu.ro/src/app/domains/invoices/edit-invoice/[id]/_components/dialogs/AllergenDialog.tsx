@@ -10,7 +10,7 @@
  */
 
 import updateProduct from "@/lib/actions/invoices/updateProduct";
-import type {Allergen, Invoice, Product} from "@/types/invoices";
+import type {Allergen} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -108,9 +108,7 @@ export default function AllergenDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__ALLERGENS");
 
-  const invoice: Invoice | null = payload?.invoice ?? null;
-  const product: Product | null = payload?.product ?? null;
-  const productIndex = payload?.productIndex;
+  const {invoice, product, productIndex} = payload;
 
   const [allergens, setAllergens] = useState<Allergen[]>(product?.detectedAllergens ?? []);
   const [customAllergen, setCustomAllergen] = useState("");

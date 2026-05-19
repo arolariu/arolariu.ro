@@ -1,6 +1,5 @@
 "use client";
 
-import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -71,8 +70,7 @@ export default function FeedbackDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__FEEDBACK");
 
-  const invoice: Invoice | null = payload?.invoice ?? null;
-  const merchant: Merchant | null = payload?.merchant ?? null;
+  const {invoice, merchant} = payload;
   const features = [
     t("features.spendingTrends"),
     t("features.priceComparisons"),
@@ -104,10 +102,6 @@ export default function FeedbackDialog(): React.JSX.Element {
   const handleSubmit = useCallback(
     async (e: React.SubmitEvent) => {
       e.preventDefault();
-
-      if (!invoice) {
-        return;
-      }
 
       // Show loading toast
       const loadingToast = toast(t("toasts.sending.title"), {
@@ -175,8 +169,6 @@ export default function FeedbackDialog(): React.JSX.Element {
   const handleFeedbackChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFeedback(e.target.value);
   }, []);
-
-  if (!invoice) return <></>;
 
   return (
     <Dialog

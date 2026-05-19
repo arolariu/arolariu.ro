@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {Invoice, Product, ProductCategory} from "@/types/invoices";
+import {Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -76,8 +76,8 @@ export default function ItemsDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__ITEMS");
 
-  const invoice: Invoice | null = payload;
-  const items = invoice?.items ?? [];
+  const invoice = payload;
+  const items = invoice.items;
 
   const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
@@ -85,7 +85,7 @@ export default function ItemsDialog(): React.JSX.Element {
   });
 
   useEffect(() => {
-    setEditableItems(invoice?.items ?? []);
+    setEditableItems(invoice.items);
   }, [invoice]);
 
   const handleSaveChanges = useCallback(() => {
@@ -165,8 +165,6 @@ export default function ItemsDialog(): React.JSX.Element {
     },
     [setEditableItems],
   );
-
-  if (!invoice) return <></>;
 
   return (
     <Dialog

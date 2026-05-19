@@ -2,7 +2,7 @@
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -87,7 +87,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
     currentDialog: {payload},
   } = useDialog("EDIT_INVOICE__ANALYSIS");
 
-  const invoice: Invoice | null = payload?.invoice ?? null;
+  const {invoice} = payload;
 
   const [selectedOption, setSelectedOption] = useState<InvoiceAnalysisOptions>(InvoiceAnalysisOptions.CompleteAnalysis);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -186,8 +186,6 @@ export default function AnalyzeDialog(): React.JSX.Element {
   }, []);
 
   const handleAnalysis = useCallback(async () => {
-    if (!invoice) return;
-
     setIsAnalyzing(true);
     setProgress(0);
 
@@ -267,8 +265,6 @@ export default function AnalyzeDialog(): React.JSX.Element {
       setCurrentStep("");
     }
   }, [invoice, selectedOption, selectedEnhancements, close, t]);
-
-  if (!invoice) return <></>;
 
   const selectedConfig = analysisOptions.find((opt) => opt.id === selectedOption);
 

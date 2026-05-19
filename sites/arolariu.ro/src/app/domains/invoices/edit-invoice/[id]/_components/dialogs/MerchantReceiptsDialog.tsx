@@ -83,7 +83,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     isOpen,
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT_INVOICES");
-  const merchant: Merchant | null = payload;
+  const merchant = payload;
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [receipts, setReceipts] = useState<Invoice[]>([]);
@@ -123,7 +123,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title", {merchant: merchant?.name ?? ""})}</DialogTitle>
+          <DialogTitle>{t("title", {merchant: merchant.name})}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 

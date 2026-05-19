@@ -9,7 +9,7 @@
  */
 
 import updateProduct from "@/lib/actions/invoices/updateProduct";
-import type {Invoice, Product, ProductCategory} from "@/types/invoices";
+import type {ProductCategory} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -91,9 +91,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__BULK_CATEGORY");
 
-  const invoice: Invoice | null = payload?.invoice ?? null;
-  const selectedProducts: Product[] = payload?.selectedProducts ?? [];
-  const selectedIndices: number[] = payload?.selectedIndices ?? [];
+  const {invoice, selectedProducts, selectedIndices} = payload;
 
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [isSaving, setIsSaving] = useState(false);
