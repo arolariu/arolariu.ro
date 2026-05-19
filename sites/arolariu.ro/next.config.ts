@@ -144,15 +144,6 @@ const nextConfig: NextConfig = {
 
   transpilePackages: ["import-in-the-middle", "require-in-the-middle"],
 
-  // Force these to be resolved at runtime via Node's module resolver rather
-  // than bundled. Both are on Next.js's default auto-externals list, but
-  // Turbopack production builds were emitting content-hashed identifiers
-  // (e.g. `prettier-3c69a91af3bc4731/plugins/html`) into the server chunk and
-  // failing with ERR_MODULE_NOT_FOUND at request time — surfacing as masked
-  // 500s on server actions (e.g. fetchScans on /domains/invoices/view-scans).
-  // Listing them explicitly here forces the documented externals path.
-  serverExternalPackages: ["prettier", "@react-pdf/renderer"],
-
   experimental: {
     // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,
