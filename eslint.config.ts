@@ -383,6 +383,7 @@ const packagesEslintConfig: Config = defineConfig({
 
     "n/no-unpublished-import": "off", // Packages are published; false positive.
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
+    "n/no-unsupported-features/node-builtins": "off", // Package targets browsers via RSLib bundle; the rule's Node-version-compat checks aren't applicable here and produce false positives.
 
     "sonarjs/pseudo-random": "off", // We allow Math.random for non-crypto use cases.
     "sonarjs/prefer-read-only-props": "off", // We don't enforce read-only props.
@@ -398,6 +399,7 @@ const packagesEslintConfig: Config = defineConfig({
     "unicorn/no-nested-ternary": "off", // We allow nested ternary operators.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/explicit-length-check": "off", // .size sometimes returns a string, not a number.
+    "unicorn/prefer-export-from": "off", // RSLib bundler requires import-then-export pattern for some external types (see CHANGELOG 2.0.0).
     "unicorn/no-abusive-eslint-disable": "warn", // We warn about eslint-disable comments.
   },
   settings: {
