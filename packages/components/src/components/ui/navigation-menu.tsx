@@ -177,7 +177,7 @@ const NavigationMenuItem = BaseNavigationMenu.Item;
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
 const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>(
-  function NavigationMenuTrigger(props, forwardedRef) {
+  (props, forwardedRef) => {
     const {className, children, render, ...otherProps} = props;
 
     return (
@@ -212,7 +212,7 @@ const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenu
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
 const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>(
-  function NavigationMenuContent(props, forwardedRef) {
+  (props, forwardedRef) => {
     const {className, children, render, ...otherProps} = props;
 
     return (
@@ -245,7 +245,7 @@ const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuCon
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLink.Props>(function NavigationMenuLink(props, forwardedRef) {
+const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLink.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (

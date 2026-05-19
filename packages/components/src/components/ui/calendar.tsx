@@ -59,10 +59,10 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
  *
  * @see {@link https://daypicker.dev | React Day Picker Docs}
  */
-const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(function Calendar(
+const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>((
   {className, classNames, showOutsideDays = true, captionLayout = "label", buttonVariant = "ghost", formatters, components, ...props},
   forwardedRef,
-) {
+) => {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}

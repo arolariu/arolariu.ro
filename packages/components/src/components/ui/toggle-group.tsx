@@ -63,7 +63,7 @@ export interface ToggleGroupItemProps extends Omit<ToggleProps, "pressed" | "def
  *
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
-const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroup.Props>(function ToggleGroup(props, forwardedRef) {
+const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroup.Props>((props, forwardedRef) => {
   const {className, children, render, size, variant, ...otherProps} = props;
 
   return (
@@ -97,7 +97,7 @@ const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroup.Props>(function
  *
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
-const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItem.Props>(function ToggleGroupItem(props, forwardedRef) {
+const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItem.Props>((props, forwardedRef) => {
   const {className, size, variant, ...otherProps} = props;
   const context = React.useContext(ToggleGroupContext);
 

@@ -51,7 +51,7 @@ interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof Ba
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>(function Avatar(props, forwardedRef) {
+const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -85,7 +85,7 @@ Avatar.displayName = "Avatar";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImage.Props>(function AvatarImage(props, forwardedRef) {
+const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImage.Props>((props, forwardedRef) => {
   const {className, render, ...otherProps} = props;
 
   return (
@@ -118,7 +118,7 @@ AvatarImage.displayName = "AvatarImage";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallback.Props>(function AvatarFallback(props, forwardedRef) {
+const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallback.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (

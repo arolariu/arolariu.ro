@@ -33,7 +33,7 @@ export interface ProgressProps extends Omit<React.ComponentPropsWithRef<typeof B
  *
  * @see {@link https://base-ui.com/react/components/progress | Base UI Documentation}
  */
-const Progress = React.forwardRef<HTMLDivElement, Progress.Props>(function Progress(props, forwardedRef) {
+const Progress = React.forwardRef<HTMLDivElement, Progress.Props>((props, forwardedRef) => {
   const {className, render, value = 0, ...otherProps} = props;
 
   return (
