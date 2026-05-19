@@ -4,8 +4,7 @@
 
 import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import * as React from "react";
-import type {DateRange, DayPickerProps, Matcher} from "react-day-picker";
-import {DayButton, DayPicker} from "react-day-picker";
+import {DayButton, DayPicker, type DateRange, type DayPickerProps, type Matcher} from "react-day-picker";
 
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utilities";
