@@ -73,11 +73,7 @@ type DialogCurrent = {
 const INITIAL_STATE: DialogCurrent = {type: null, mode: null, payload: null};
 
 type DialogActions = {
-  openDialog: <T extends Exclude<DialogType, null>>(
-    dialog: T,
-    mode?: Exclude<DialogMode, null>,
-    payload?: DialogPayloads[T],
-  ) => void;
+  openDialog: <T extends Exclude<DialogType, null>>(dialog: T, mode?: Exclude<DialogMode, null>, payload?: DialogPayloads[T]) => void;
   closeDialog: () => void;
 };
 
@@ -112,9 +108,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
   const actions = useMemo<DialogActions>(
     () => ({
       openDialog: (dialog, mode = "view", payload) =>
-        setDialogState((prev) =>
-          prev.type === null ? {type: dialog, mode, payload: payload ?? null} : prev,
-        ),
+        setDialogState((prev) => (prev.type === null ? {type: dialog, mode, payload: payload ?? null} : prev)),
       closeDialog: () => setDialogState(INITIAL_STATE),
     }),
     [],

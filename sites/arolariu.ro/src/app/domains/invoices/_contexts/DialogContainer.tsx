@@ -16,7 +16,9 @@ const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_compon
 const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ImageDialog"), {ssr: false});
 const InvoiceItemsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ItemsDialog"), {ssr: false});
 const InvoiceMerchantDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantDialog"), {ssr: false});
-const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog"), {ssr: false});
+const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog"), {
+  ssr: false,
+});
 const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MetadataDialog"), {ssr: false});
 const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RecipeDialog"), {ssr: false});
 const InvoicesExportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ExportDialog"), {ssr: false});

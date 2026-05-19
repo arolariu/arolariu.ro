@@ -53,7 +53,9 @@ export default function ImageDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {image})}</DialogTitle>

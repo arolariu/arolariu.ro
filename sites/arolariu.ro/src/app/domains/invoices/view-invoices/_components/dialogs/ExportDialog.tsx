@@ -127,7 +127,9 @@ export default function ExportDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- inline event handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

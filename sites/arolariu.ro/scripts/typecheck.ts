@@ -29,9 +29,7 @@ function runStep(label: string, command: string, args: readonly string[]): Promi
     // /c — a real binary that resolves PATHEXT for us. Mirrors the pattern in
     // scripts/workers/shell.ts.
     const isWindows = process.platform === "win32";
-    const [spawnCmd, spawnArgs]: [string, string[]] = isWindows
-      ? ["cmd.exe", ["/c", command, ...args]]
-      : [command, [...args]];
+    const [spawnCmd, spawnArgs]: [string, string[]] = isWindows ? ["cmd.exe", ["/c", command, ...args]] : [command, [...args]];
 
     const child = spawn(spawnCmd, spawnArgs, {
       stdio: "inherit",

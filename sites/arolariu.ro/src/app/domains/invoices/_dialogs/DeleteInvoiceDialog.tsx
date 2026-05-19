@@ -126,7 +126,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) handleClose(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) handleClose();
+      }}>
       <DialogContent className={styles["dialogContentMaxW"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>

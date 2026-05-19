@@ -138,7 +138,9 @@ const CreateDialog = () => {
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
@@ -366,7 +368,9 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
@@ -458,7 +462,9 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
           <DialogTitle>{t("update.title")}</DialogTitle>
@@ -673,7 +679,9 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
     <AlertDialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>

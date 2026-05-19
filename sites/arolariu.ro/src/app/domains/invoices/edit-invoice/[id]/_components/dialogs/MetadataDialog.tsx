@@ -56,7 +56,9 @@ const AddDialog = () => {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("add.title")}</DialogTitle>
@@ -125,7 +127,9 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("edit.title")}</DialogTitle>
@@ -186,7 +190,9 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("delete.title")}</DialogTitle>

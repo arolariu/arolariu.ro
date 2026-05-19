@@ -19,8 +19,7 @@ import {describe, expect, test, vi} from "vitest";
 vi.mock("next/dynamic", () => ({
   default: (
     loader: () => Promise<
-      | {default: React.ComponentType<Record<string, unknown>>}
-      | {ExportDialog: React.ComponentType<Record<string, unknown>>}
+      {default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}
     >,
   ) => {
     let Comp: React.ComponentType<Record<string, unknown>> | null = null;
