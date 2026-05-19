@@ -1,4 +1,4 @@
-﻿import {formatEnum} from "@/lib/utils.generic";
+import {formatEnum} from "@/lib/utils.generic";
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,
@@ -73,7 +73,7 @@ export default function MerchantDialog(): React.JSX.Element {
       <Dialog
         open={isOpen}
         // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-        onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
+        onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
         <DialogContent className={styles["dialogContent"]}>
           <DialogHeader className={styles["dialogHeader"]}>
             <DialogTitle>{t("title")}</DialogTitle>
@@ -90,7 +90,7 @@ export default function MerchantDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
+      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader className={styles["dialogHeader"]}>
           <DialogTitle>{t("title")}</DialogTitle>

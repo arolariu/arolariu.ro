@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
@@ -276,7 +276,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
+      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>

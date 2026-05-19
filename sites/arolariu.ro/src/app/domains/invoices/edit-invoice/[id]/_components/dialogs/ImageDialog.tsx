@@ -1,4 +1,4 @@
-﻿import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -53,7 +53,7 @@ export default function ImageDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
+      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {image})}</DialogTitle>

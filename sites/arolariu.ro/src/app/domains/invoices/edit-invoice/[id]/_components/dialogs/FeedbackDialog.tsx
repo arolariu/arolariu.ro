@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";
 import {
@@ -182,7 +182,7 @@ export default function FeedbackDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
+      onOpenChange={(shouldOpen) => { if (!shouldOpen) close(); }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
