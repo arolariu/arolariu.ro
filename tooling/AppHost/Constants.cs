@@ -29,6 +29,7 @@ internal static class Constants
   public const string SqlDataVolume = "arolariu-mssql-data";
   public const string CosmosDataVolume = "arolariu-cosmos-data";
   public const string RedisDataVolume = "arolariu-redis-data";
+  public const string AzuriteDataVolume = "arolariu-azurite-data";
 
   // ── Fixed dev ports — match infra/Local/Storage/docker-compose.yml ──
   public const int ApiPort = 5000;
