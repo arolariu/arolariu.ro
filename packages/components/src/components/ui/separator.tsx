@@ -36,7 +36,7 @@ export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof 
  *
  * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
-const Separator = React.forwardRef<HTMLDivElement, Separator.Props>(function Separator(props, forwardedRef) {
+const Separator = React.forwardRef<HTMLDivElement, Separator.Props>((props, forwardedRef) => {
   const {className, orientation = "horizontal", render, ...otherProps} = props;
 
   return (

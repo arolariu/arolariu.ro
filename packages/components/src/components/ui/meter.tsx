@@ -27,7 +27,7 @@ import styles from "./meter.module.css";
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const Meter = React.forwardRef<HTMLDivElement, Meter.Props>(function Meter(props, forwardedRef) {
+const Meter = React.forwardRef<HTMLDivElement, Meter.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -58,7 +58,7 @@ const Meter = React.forwardRef<HTMLDivElement, Meter.Props>(function Meter(props
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>(function MeterTrack(props, forwardedRef) {
+const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -89,7 +89,7 @@ const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>(function M
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>(function MeterIndicator(props, forwardedRef) {
+const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -120,7 +120,7 @@ const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>(fu
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabel.Props>(function MeterLabel(props, forwardedRef) {
+const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabel.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (

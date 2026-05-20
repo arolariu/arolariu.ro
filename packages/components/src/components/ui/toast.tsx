@@ -598,7 +598,7 @@ function ToastViewportContent(): React.JSX.Element {
  * Toaster is the root viewport container for displaying toast notifications.
  * It should be rendered once at the app root level.
  */
-const Toaster = React.forwardRef<HTMLDivElement, ToasterProps>(function Toaster(
+const Toaster = React.forwardRef<HTMLDivElement, ToasterProps>((
   {
     className,
     closeButton = true,
@@ -610,7 +610,7 @@ const Toaster = React.forwardRef<HTMLDivElement, ToasterProps>(function Toaster(
     visibleToasts = DEFAULT_TOAST_LIMIT,
   },
   forwardedRef,
-) {
+) => {
   const toasterId = React.useId();
 
   React.useEffect(() => {

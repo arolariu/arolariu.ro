@@ -56,11 +56,15 @@ export function useIntersectionObserver(
 ): IntersectionObserverEntry | null {
   const [entry, setEntry] = React.useState<IntersectionObserverEntry | null>(null);
 
+  const threshold = options?.threshold;
+  const root = options?.root;
+  const rootMargin = options?.rootMargin;
+
   React.useEffect(() => {
     const element = ref.current;
 
     // SSR safety: IntersectionObserver is not available on server
-    if (typeof globalThis.IntersectionObserver === "undefined" || !element) {
+    if (globalThis.IntersectionObserver === undefined || !element) {
       return;
     }
 
@@ -68,14 +72,14 @@ export function useIntersectionObserver(
       if (observerEntry) {
         setEntry(observerEntry);
       }
-    }, options);
+    }, {threshold, root, rootMargin});
 
     observer.observe(element);
 
     return () => {
       observer.disconnect();
     };
-  }, [ref, options?.threshold, options?.root, options?.rootMargin]);
+  }, [ref, threshold, root, rootMargin]);
 
   return entry;
 }

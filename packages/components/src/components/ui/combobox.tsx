@@ -336,23 +336,25 @@ const ComboboxTrigger = React.forwardRef<HTMLButtonElement, ComboboxTrigger.Prop
     const selectedLabel = itemLabels.get(value) || "";
 
     return (
-      <PopoverTrigger asChild>
-        <Button
-          ref={ref}
-          variant='outline'
-          role='combobox'
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn(styles.trigger, className)}
-          onClick={() => setOpen(!open)}>
-          {children ?? (
-            <>
-              <span className={cn(styles.triggerValue, !selectedLabel && styles.triggerPlaceholder)}>{selectedLabel || placeholder}</span>
-              <ChevronsUpDown className={styles.triggerIcon} />
-            </>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            ref={ref}
+            variant='outline'
+            role='combobox'
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn(styles.trigger, className)}
+            onClick={() => setOpen(!open)}>
+            {children ?? (
+              <>
+                <span className={cn(styles.triggerValue, !selectedLabel && styles.triggerPlaceholder)}>{selectedLabel || placeholder}</span>
+                <ChevronsUpDown className={styles.triggerIcon} />
+              </>
+            )}
+          </Button>
+        }
+      />
     );
   },
 );

@@ -30,15 +30,12 @@ export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>): Reac
   return React.useCallback(
     (element: T | null) => {
       for (const ref of refs) {
-        if (!ref) {
-          continue;
-        }
-
-        if (typeof ref === "function") {
-          ref(element);
-        } else {
-          // Mutable ref object
-          (ref as React.MutableRefObject<T | null>).current = element;
+        if (ref) {
+          if (typeof ref === "function") {
+            ref(element);
+          } else {
+            (ref as React.RefObject<T | null>).current = element;
+          }
         }
       }
     },

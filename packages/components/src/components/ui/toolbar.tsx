@@ -26,7 +26,7 @@ import styles from "./toolbar.module.css";
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>(function Toolbar(props, forwardedRef) {
+const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -58,7 +58,7 @@ const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>(function Toolbar
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>(function ToolbarButton(props, forwardedRef) {
+const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -92,7 +92,7 @@ const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>(f
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>(function ToolbarGroup(props, forwardedRef) {
+const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -123,7 +123,7 @@ const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>(functi
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props>(function ToolbarSeparator(props, forwardedRef) {
+const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props>((props, forwardedRef) => {
   const {className, render, ...otherProps} = props;
 
   return (
@@ -153,7 +153,7 @@ const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLink.Props>(function ToolbarLink(props, forwardedRef) {
+const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLink.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (

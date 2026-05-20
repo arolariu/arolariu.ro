@@ -43,10 +43,10 @@ const ignoreAnimationError = (): null => null;
  *
  * @see {@link ScratcherProps} for available props
  */
-export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>(function Scratcher(
+export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>((
   {width, height, minScratchPercentage = 50, onComplete, children, className, gradientColors = defaultGradientColors},
   forwardedRef,
-) {
+) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
