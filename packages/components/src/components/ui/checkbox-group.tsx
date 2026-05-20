@@ -26,7 +26,7 @@ import styles from "./checkbox-group.module.css";
  *
  * @see {@link https://base-ui.com/react/components/checkbox-group | Base UI Checkbox Group Docs}
  */
-const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>(function CheckboxGroup(props, forwardedRef) {
+const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroup.Props>((props, forwardedRef) => {
   const {className, render, ...otherProps} = props;
 
   return (

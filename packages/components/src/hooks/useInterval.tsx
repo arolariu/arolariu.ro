@@ -56,11 +56,11 @@ import * as React from "react";
  * ```
  */
 export function useInterval(callback: () => void, delay: number | null): void {
-  const savedCallback = React.useRef(callback);
+  const savedCallbackRef = React.useRef(callback);
 
   // Update ref to latest callback on every render to avoid stale closures
   React.useEffect(() => {
-    savedCallback.current = callback;
+    savedCallbackRef.current = callback;
   }, [callback]);
 
   React.useEffect(() => {
@@ -70,7 +70,7 @@ export function useInterval(callback: () => void, delay: number | null): void {
     }
 
     const intervalId = globalThis.setInterval(() => {
-      savedCallback.current();
+      savedCallbackRef.current();
     }, delay);
 
     return () => {

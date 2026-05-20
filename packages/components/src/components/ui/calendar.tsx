@@ -4,8 +4,7 @@
 
 import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import * as React from "react";
-import type {DateRange, DayPickerProps, Matcher} from "react-day-picker";
-import {DayButton, DayPicker} from "react-day-picker";
+import {DayButton, DayPicker, type DateRange, type DayPickerProps, type Matcher} from "react-day-picker";
 
 import {Button} from "@/components/ui/button";
 import {cn} from "@/lib/utilities";
@@ -59,10 +58,10 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
  *
  * @see {@link https://daypicker.dev | React Day Picker Docs}
  */
-const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(function Calendar(
+const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>((
   {className, classNames, showOutsideDays = true, captionLayout = "label", buttonVariant = "ghost", formatters, components, ...props},
   forwardedRef,
-) {
+) => {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}

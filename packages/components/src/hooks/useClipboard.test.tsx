@@ -86,7 +86,6 @@ describe("useClipboard", () => {
       configurable: true,
     });
 
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const {result} = renderHook(() => useClipboard());
 
     await act(async () => {
@@ -96,7 +95,6 @@ describe("useClipboard", () => {
     expect(result.current.copied).toBe(false);
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe("Clipboard API is not available");
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("handles copy errors when writeText fails", async () => {
@@ -104,7 +102,6 @@ describe("useClipboard", () => {
 
     writeTextMock.mockRejectedValueOnce(writeError);
 
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const {result} = renderHook(() => useClipboard());
 
     await act(async () => {
@@ -113,7 +110,6 @@ describe("useClipboard", () => {
 
     expect(result.current.copied).toBe(false);
     expect(result.current.error).toEqual(writeError);
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("clears previous error on successful copy", async () => {

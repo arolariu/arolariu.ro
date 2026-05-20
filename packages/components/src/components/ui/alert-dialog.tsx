@@ -108,7 +108,7 @@ AlertDialog.displayName = "AlertDialog";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-const AlertDialogTrigger = React.forwardRef<HTMLButtonElement, AlertDialogTrigger.Props>(function AlertDialogTrigger(props, forwardedRef) {
+const AlertDialogTrigger = React.forwardRef<HTMLButtonElement, AlertDialogTrigger.Props>((props, forwardedRef) => {
   // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
@@ -200,7 +200,7 @@ AlertDialogOverlay.displayName = "AlertDialogOverlay";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-const AlertDialogContent = React.forwardRef<HTMLDivElement, AlertDialogContent.Props>(function AlertDialogContent(props, forwardedRef) {
+const AlertDialogContent = React.forwardRef<HTMLDivElement, AlertDialogContent.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -369,7 +369,7 @@ AlertDialogDescription.displayName = "AlertDialogDescription";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-const AlertDialogAction = React.forwardRef<HTMLButtonElement, AlertDialogAction.Props>(function AlertDialogAction(props, forwardedRef) {
+const AlertDialogAction = React.forwardRef<HTMLButtonElement, AlertDialogAction.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -408,7 +408,7 @@ AlertDialogAction.displayName = "AlertDialogAction";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>(function AlertDialogCancel(props, forwardedRef) {
+const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>((props, forwardedRef) => {
   const {className, children, render, ...otherProps} = props;
 
   return (

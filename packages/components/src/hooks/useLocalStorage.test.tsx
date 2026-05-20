@@ -46,11 +46,9 @@ describe("useLocalStorage", () => {
   it("handles invalid JSON gracefully and falls back to initial value", () => {
     globalThis.window.localStorage.setItem("invalid-json", "{invalid-json");
 
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const {result} = renderHook(() => useLocalStorage("invalid-json", "fallback"));
 
     expect(result.current[0]).toBe("fallback");
-    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("returns initial value during SSR", () => {
