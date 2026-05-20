@@ -132,7 +132,13 @@ var cosmosMerchants = cosmosPrimaryDb.AddContainer(
 var storage = builder
     .AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
-        .WithBlobPort(Constants.AzuriteBlobPort))
+        .WithBlobPort(Constants.AzuriteBlobPort)
+        // Persist Azurite's workspace (mounted at /data inside the container)
+        // across F5 restarts — uploaded blobs, the 'invoices' container, and CORS
+        // service-properties all survive container destruction. Without this,
+        // every restart began with an empty namespace and AzuriteBootstrap had
+        // to re-create the container from scratch on each run.
+        .WithDataVolume(Constants.AzuriteDataVolume))
     // Bypass DCP on the blob endpoint (same rationale as SQL/Cosmos above): the
     // AzuriteBootstrap helper below and exp's config.aspire.json both connect to
     // hardcoded localhost:10000 — DCP would map that to a random host port and
