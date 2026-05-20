@@ -33,7 +33,7 @@ import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
 import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
+import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
 
@@ -120,8 +120,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
   const t = useTranslations("IMS--Edit.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
-  const {openWith: openAllergenDialog} = useDialog("EDIT_INVOICE__ALLERGENS");
-  const {openWith: openBulkCategoryDialog} = useDialog("EDIT_INVOICE__BULK_CATEGORY");
+  const {openDialog} = useDialogs();
 
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
@@ -447,13 +446,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       const product = localItems[productIndex];
       if (!product) return;
 
-      openAllergenDialog("edit", {
+      openDialog("EDIT_INVOICE__ALLERGENS", "edit", {
         invoice,
         product,
         productIndex,
       });
     },
-    [localItems, invoice, openAllergenDialog],
+    [localItems, invoice, openDialog],
   );
 
   /**
@@ -472,12 +471,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     // Map selected indices from sorted view to actual localItems indices
     const actualIndices = selectedProducts.map((product) => localItems.indexOf(product));
 
-    openBulkCategoryDialog("edit", {
+    openDialog("EDIT_INVOICE__BULK_CATEGORY", "edit", {
       invoice,
       selectedProducts,
       selectedIndices: actualIndices,
     });
-  }, [selectedIndices, sortedItems, localItems, invoice, openBulkCategoryDialog, t]);
+  }, [selectedIndices, sortedItems, localItems, invoice, openDialog, t]);
 
   /**
    * Determines the visual indicator class for a product based on its completeness status.

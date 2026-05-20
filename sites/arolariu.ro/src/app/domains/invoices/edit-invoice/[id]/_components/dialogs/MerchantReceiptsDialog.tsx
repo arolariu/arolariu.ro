@@ -81,10 +81,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT_INVOICES");
-  const merchant = payload as Merchant | null;
+  const merchant = payload;
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [receipts, setReceipts] = useState<Invoice[]>([]);
@@ -118,11 +117,13 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title", {merchant: merchant?.name ?? ""})}</DialogTitle>
+          <DialogTitle>{t("title", {merchant: merchant.name})}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 

@@ -1,6 +1,5 @@
 "use client";
 
-import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -68,11 +67,10 @@ export default function FeedbackDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("EDIT_INVOICE__FEEDBACK");
 
-  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant | null};
+  const {invoice, merchant} = payload;
   const features = [
     t("features.spendingTrends"),
     t("features.priceComparisons"),
@@ -157,7 +155,7 @@ export default function FeedbackDialog(): React.JSX.Element {
         close();
       }
     },
-    [feedback, invoice.id, rating, selectedFeatures, close, t],
+    [feedback, invoice, rating, selectedFeatures, close, t],
   );
 
   const handleToggleFeature = useCallback((e: React.MouseEvent<HTMLElement>) => {
@@ -175,8 +173,10 @@ export default function FeedbackDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>

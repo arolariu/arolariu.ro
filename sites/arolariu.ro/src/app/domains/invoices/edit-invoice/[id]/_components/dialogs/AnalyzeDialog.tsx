@@ -2,7 +2,7 @@
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -83,12 +83,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.analyzeDialog");
   const {
     isOpen,
-    open,
     close,
     currentDialog: {payload},
   } = useDialog("EDIT_INVOICE__ANALYSIS");
 
-  const {invoice} = payload as {invoice: Invoice};
+  const {invoice} = payload;
 
   const [selectedOption, setSelectedOption] = useState<InvoiceAnalysisOptions>(InvoiceAnalysisOptions.CompleteAnalysis);
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
@@ -265,15 +264,17 @@ export default function AnalyzeDialog(): React.JSX.Element {
       setProgress(0);
       setCurrentStep("");
     }
-  }, [invoice.id, selectedOption, selectedEnhancements, close, t]);
+  }, [invoice, selectedOption, selectedEnhancements, close, t]);
 
   const selectedConfig = analysisOptions.find((opt) => opt.id === selectedOption);
 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
+      onOpenChange={(shouldOpen) => {
+        if (!shouldOpen) close();
+      }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>
