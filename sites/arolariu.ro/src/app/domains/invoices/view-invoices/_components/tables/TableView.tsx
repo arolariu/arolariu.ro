@@ -83,6 +83,28 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
     }
   }, [invoices, selectedInvoices, setSelectedInvoices]);
 
+  /**
+   * Handle key down events for sortable headers (accessibility).
+   *
+   * @remarks
+   * Defined BEFORE the empty-state early return below so React's hook count
+   * stays constant across renders. Moving this `useCallback` past the early
+   * return broke Rules of Hooks when the parent re-rendered from
+   * `invoices=[stale]` (IndexedDB-hydrated Zustand state) to `invoices=[]`
+   * (server returned no rows), which threw
+   * "Rendered fewer hooks than expected". See TableView.test.tsx for the
+   * pinned regression.
+   */
+  const handleSortKeyDown = useCallback(
+    (e: React.KeyboardEvent, field: "date" | "amount" | "name") => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSort(field);
+      }
+    },
+    [onSort],
+  );
+
   if (invoices.length === 0) {
     return (
       <EmptyState
@@ -100,19 +122,6 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const selectedCountOnPage = invoices.filter((inv) => selectedInvoices.some((s) => s.id === inv.id)).length;
   const isAllSelected = invoices.length > 0 && selectedCountOnPage === invoices.length;
   const isIndeterminate = selectedCountOnPage > 0 && selectedCountOnPage < invoices.length;
-
-  /**
-   * Handle key down events for sortable headers (accessibility).
-   */
-  const handleSortKeyDown = useCallback(
-    (e: React.KeyboardEvent, field: "date" | "amount" | "name") => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onSort(field);
-      }
-    },
-    [onSort],
-  );
 
   return (
     <Table>
