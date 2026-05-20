@@ -1,11 +1,13 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import type {Bucket} from "../types/status";
 import {weightedUptime} from "./weightedUptime";
 
 function mk(healthy: number, total: number): Bucket {
   return {
-    t: "2026-04-19T14:00:00Z", status: "Healthy",
-    probes: {healthy, total}, latency: {p50: 100, p99: 200},
+    t: "2026-04-19T14:00:00Z",
+    status: "Healthy",
+    probes: {healthy, total},
+    latency: {p50: 100, p99: 200},
   };
 }
 

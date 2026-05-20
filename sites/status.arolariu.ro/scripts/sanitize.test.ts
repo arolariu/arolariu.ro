@@ -1,4 +1,4 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {sanitizeDescription} from "./sanitize";
 
 describe("sanitizeDescription", () => {
@@ -7,8 +7,7 @@ describe("sanitizeDescription", () => {
   });
 
   it("strips URLs", () => {
-    expect(sanitizeDescription("check https://db.example.com:443 failed"))
-      .toBe("check  failed");
+    expect(sanitizeDescription("check https://db.example.com:443 failed")).toBe("check  failed");
   });
 
   it("strips password= tokens case-insensitively", () => {
@@ -17,8 +16,7 @@ describe("sanitizeDescription", () => {
   });
 
   it("strips key= tokens", () => {
-    expect(sanitizeDescription("auth failed key=abc123 reason"))
-      .toBe("auth failed  reason");
+    expect(sanitizeDescription("auth failed key=abc123 reason")).toBe("auth failed  reason");
   });
 
   it("strips token= and secret= tokens case-insensitively", () => {
@@ -44,7 +42,6 @@ describe("sanitizeDescription", () => {
   });
 
   it("preserves short safe strings", () => {
-    expect(sanitizeDescription("connection pool exhausted"))
-      .toBe("connection pool exhausted");
+    expect(sanitizeDescription("connection pool exhausted")).toBe("connection pool exhausted");
   });
 });

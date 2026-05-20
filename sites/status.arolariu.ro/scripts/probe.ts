@@ -204,7 +204,10 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
       for (const sc of s.subChecks) {
         let arr = durationsByName.get(sc.name);
         /* v8 ignore next */
-        if (arr === undefined) {arr = []; durationsByName.set(sc.name, arr);}
+        if (arr === undefined) {
+          arr = [];
+          durationsByName.set(sc.name, arr);
+        }
         arr.push(sc.durationMs);
       }
     }
@@ -215,9 +218,7 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
       // in `durationsByName`. The fallback exists only to keep the type
       // checker happy.
       /* v8 ignore next 3 */
-      return durations !== undefined && durations.length > 0
-        ? {...sc, sampleDurationsMs: durations}
-        : sc;
+      return durations !== undefined && durations.length > 0 ? {...sc, sampleDurationsMs: durations} : sc;
     });
   }
 
@@ -249,12 +250,7 @@ function aggregateSamples(samples: readonly ProbeResult[]): ProbeResult {
  * they exist only to absorb cold-start latency so the measurement samples
  * reflect steady state.
  */
-async function probeOne(
-  cfg: ServiceConfig,
-  nowIso: string,
-  delaysMs: readonly number[],
-  warmupSampleCount: number,
-): Promise<ProbeResult> {
+async function probeOne(cfg: ServiceConfig, nowIso: string, delaysMs: readonly number[], warmupSampleCount: number): Promise<ProbeResult> {
   // Warmup phase: sequential, results discarded.
   for (let i = 0; i < warmupSampleCount; i++) {
     await warmupFetch(cfg);

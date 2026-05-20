@@ -37,21 +37,23 @@ export interface UseCountTweenOptions {
  * Reduced motion: if `prefers-reduced-motion: reduce` is set at hook creation,
  * the display value snaps to the target without animation.
  */
-export function useCountTween(
-  target: () => number,
-  opts?: UseCountTweenOptions,
-): () => number {
+export function useCountTween(target: () => number, opts?: UseCountTweenOptions): () => number {
   const durationMs = opts?.durationMs ?? 400;
 
   let display = $state(0);
   const raf = {id: null as number | null};
 
-  const prefersReducedMotion = typeof window !== "undefined"
-    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   function animate(from: number, to: number): void {
-    if (raf.id !== null) { cancelAnimationFrame(raf.id); raf.id = null; }
-    if (from === to) { display = to; return; }
+    if (raf.id !== null) {
+      cancelAnimationFrame(raf.id);
+      raf.id = null;
+    }
+    if (from === to) {
+      display = to;
+      return;
+    }
     const start = performance.now();
     function step(now: number) {
       const t = Math.min(1, (now - start) / durationMs);
@@ -66,7 +68,10 @@ export function useCountTween(
   $effect(() => {
     const to = target();
     untrack(() => {
-      if (prefersReducedMotion) { display = to; return; }
+      if (prefersReducedMotion) {
+        display = to;
+        return;
+      }
       animate(display, to);
     });
   });

@@ -76,14 +76,13 @@
   const filtered = $derived.by<readonly Incident[]>(() => {
     if (!incidents) return [];
     const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * 86_400_000;
-    return incidents.incidents
-      .filter(inc =>
-        Date.parse(inc.startedAt) >= cutoffMs
-        && (selectedService === null || inc.service === selectedService),
-      )
-      // Defensive sort so month grouping stays correct even if upstream (e.g.
-      // dev-mode mocks) forgets to sort by startedAt descending.
-      .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
+    return (
+      incidents.incidents
+        .filter((inc) => Date.parse(inc.startedAt) >= cutoffMs && (selectedService === null || inc.service === selectedService))
+        // Defensive sort so month grouping stays correct even if upstream (e.g.
+        // dev-mode mocks) forgets to sort by startedAt descending.
+        .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+    );
   });
 
   // Group incidents by month label ("April 2026"). Preserves existing ordering of `filtered`
@@ -114,8 +113,7 @@
     <IncidentFilterChips
       chips={allChips}
       selected={selectedService}
-      onSelect={(chip) => (selectedService = chip)}
-    />
+      onSelect={(chip) => (selectedService = chip)} />
   {/if}
   {#if !incidents}
     <div class="placeholder">Loading incidents…</div>
@@ -129,15 +127,16 @@
           incident={inc}
           expanded={expandedId === inc.id}
           onToggle={() => (expandedId = expandedId === inc.id ? null : inc.id)}
-          {formatRelative}
-        />
+          {formatRelative} />
       {/each}
     {/each}
   {/if}
 </div>
 
 <style>
-  .incidents { margin-top: var(--sp-xl); }
+  .incidents {
+    margin-top: var(--sp-xl);
+  }
   .heading {
     font-family: var(--font-mono);
     font-weight: 500;
@@ -158,7 +157,9 @@
     margin: var(--sp-md) 0 var(--sp-xs) 0;
   }
   /* `// ` prefix comes from the shared `.label-comment` utility class in app.css */
-  .month-header:first-of-type { margin-top: 0; }
+  .month-header:first-of-type {
+    margin-top: 0;
+  }
   .placeholder {
     padding: var(--sp-sm) var(--sp-md);
     color: var(--text-muted);

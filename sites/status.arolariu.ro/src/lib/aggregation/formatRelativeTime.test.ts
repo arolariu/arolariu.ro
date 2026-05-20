@@ -1,4 +1,4 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {formatRelativeTime} from "./formatRelativeTime";
 
 // Deterministic fixed clock: 2026-04-19T14:00:00Z

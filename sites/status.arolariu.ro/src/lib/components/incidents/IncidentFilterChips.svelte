@@ -46,15 +46,17 @@
   }
 </script>
 
-<div class="filter-chips" role="radiogroup" aria-label="Filter incidents by service">
+<div
+  class="filter-chips"
+  role="radiogroup"
+  aria-label="Filter incidents by service">
   {#each chips as chip, i (chip ?? "__all__")}
     <FilterChip
       label={chipLabel(chip)}
       active={selected === chip}
       variant="underline"
       onClick={() => onSelect(chip)}
-      onKeydown={(e) => handleKeydown(e, i)}
-    />
+      onKeydown={(e) => handleKeydown(e, i)} />
   {/each}
 </div>
 

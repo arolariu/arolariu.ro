@@ -44,17 +44,13 @@
   // True when every bucket in the window carries p75 AND p95. When any bucket
   // is missing either, we can't draw a continuous fan — fall back to the
   // degraded (p50 line + p99 envelope) look that was in place before.
-  const hasFan = $derived(
-    buckets.length > 0 && buckets.every(b =>
-      b.latency.p75 !== undefined && b.latency.p95 !== undefined
-    )
-  );
+  const hasFan = $derived(buckets.length > 0 && buckets.every((b) => b.latency.p75 !== undefined && b.latency.p95 !== undefined));
 
   // yMax clamp: `p50Max * 2` keeps fast services from having their p99 spike
   // completely dominate the chart; 200 is a visual floor so the axis never
   // collapses when every probe is sub-10ms.
-  const p50Max = $derived(Math.max(...buckets.map(b => b.latency.p50), 100));
-  const p99Max = $derived(Math.max(...buckets.map(b => b.latency.p99), 200));
+  const p50Max = $derived(Math.max(...buckets.map((b) => b.latency.p50), 100));
+  const p99Max = $derived(Math.max(...buckets.map((b) => b.latency.p99), 200));
   const yMax = $derived(Math.max(p99Max, p50Max * 2, 200));
 
   function xFor(i: number): number {
@@ -77,13 +73,34 @@
     return [...topFwd, ...bottomRev].join(" ");
   }
 
-  const p50Points = $derived(linePoints(b => b.latency.p50));
-  const p99Points = $derived(linePoints(b => b.latency.p99));
+  const p50Points = $derived(linePoints((b) => b.latency.p50));
+  const p99Points = $derived(linePoints((b) => b.latency.p99));
   // Fan polygons (only valid when hasFan is true). Back-to-front order so the
   // darkest (innermost) band paints last and stays visually in front.
-  const outerBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p95 as number, b => b.latency.p99) : "");
-  const middleBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p75 as number, b => b.latency.p95 as number) : "");
-  const innerBandPoints = $derived(hasFan ? bandPoints(b => b.latency.p50, b => b.latency.p75 as number) : "");
+  const outerBandPoints = $derived(
+    hasFan
+      ? bandPoints(
+          (b) => b.latency.p95 as number,
+          (b) => b.latency.p99,
+        )
+      : "",
+  );
+  const middleBandPoints = $derived(
+    hasFan
+      ? bandPoints(
+          (b) => b.latency.p75 as number,
+          (b) => b.latency.p95 as number,
+        )
+      : "",
+  );
+  const innerBandPoints = $derived(
+    hasFan
+      ? bandPoints(
+          (b) => b.latency.p50,
+          (b) => b.latency.p75 as number,
+        )
+      : "",
+  );
 
   // Degraded-mode polygon (old style): p50 line + p99 envelope down to the x-axis.
   const p99Polygon = $derived.by(() => {
@@ -95,7 +112,11 @@
   });
 
   let hovered = $state<{
-    i: number; x: number; y50: number; y99: number; bucket: Bucket;
+    i: number;
+    x: number;
+    y50: number;
+    y99: number;
+    bucket: Bucket;
   } | null>(null);
   let svgEl = $state<SVGSVGElement | null>(null);
 
@@ -106,14 +127,22 @@
     if (!svgEl || buckets.length === 0) return;
     const rect = svgEl.getBoundingClientRect();
     const xPx = ((e.clientX - rect.left) / rect.width) * CHART_W;
-    if (xPx < PAD_L || xPx > CHART_W - PAD_R) { hovered = null; return; }
+    if (xPx < PAD_L || xPx > CHART_W - PAD_R) {
+      hovered = null;
+      return;
+    }
     const i = Math.round(((xPx - PAD_L) / INNER_W) * (buckets.length - 1));
     const clamped = Math.max(0, Math.min(buckets.length - 1, i));
     const b = buckets[clamped];
-    if (b === undefined) { hovered = null; return; }
+    if (b === undefined) {
+      hovered = null;
+      return;
+    }
     hovered = {i: clamped, x: xFor(clamped), y50: yFor(b.latency.p50), y99: yFor(b.latency.p99), bucket: b};
   }
-  function onPointerLeave() { hovered = null; }
+  function onPointerLeave() {
+    hovered = null;
+  }
 
   function formatAxisLabel(v: number): string {
     if (v >= 1000) return `${(v / 1000).toFixed(1)}s`;
@@ -126,13 +155,13 @@
 
   const desc = $derived.by(() => {
     if (buckets.length === 0) return `Latency trend for ${service}: no data.`;
-    const p50s = buckets.map(b => b.latency.p50);
-    const p99s = buckets.map(b => b.latency.p99);
+    const p50s = buckets.map((b) => b.latency.p50);
+    const p99s = buckets.map((b) => b.latency.p99);
     const p50Range = `${Math.min(...p50s)}-${Math.max(...p50s)}ms`;
     const p99Peak = `${Math.max(...p99s)}ms`;
     if (hasFan) {
-      const p75s = buckets.map(b => b.latency.p75 as number);
-      const p95s = buckets.map(b => b.latency.p95 as number);
+      const p75s = buckets.map((b) => b.latency.p75 as number);
+      const p95s = buckets.map((b) => b.latency.p95 as number);
       return `Latency trend for ${service} across ${buckets.length} buckets: p50 ${p50Range}, p75 peaks at ${Math.max(...p75s)}ms, p95 peaks at ${Math.max(...p95s)}ms, p99 peaks at ${p99Peak}.`;
     }
     return `Latency trend for ${service} across ${buckets.length} buckets. p50 ranges ${p50Range}. p99 peaks at ${p99Peak}.`;
@@ -148,25 +177,69 @@
     onpointermove={onPointerMove}
     onpointerleave={onPointerLeave}
     role="img"
-    aria-label="Latency trend chart"
-  >
+    aria-label="Latency trend chart">
     <desc>{desc}</desc>
     <defs>
-      <linearGradient id="p99-env-{service}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--status-deg)" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="var(--status-deg)" stop-opacity="0"/>
+      <linearGradient
+        id="p99-env-{service}"
+        x1="0"
+        y1="0"
+        x2="0"
+        y2="1">
+        <stop
+          offset="0%"
+          stop-color="var(--status-deg)"
+          stop-opacity="0.25" />
+        <stop
+          offset="100%"
+          stop-color="var(--status-deg)"
+          stop-opacity="0" />
       </linearGradient>
     </defs>
     <!-- grid -->
-    <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={PAD_T + INNER_H} stroke="currentColor" stroke-width="0.5" opacity="0.15"/>
-    <line x1={PAD_L} y1={PAD_T + INNER_H} x2={CHART_W - PAD_R} y2={PAD_T + INNER_H} stroke="currentColor" stroke-width="0.5" opacity="0.15"/>
+    <line
+      x1={PAD_L}
+      y1={PAD_T}
+      x2={PAD_L}
+      y2={PAD_T + INNER_H}
+      stroke="currentColor"
+      stroke-width="0.5"
+      opacity="0.15" />
+    <line
+      x1={PAD_L}
+      y1={PAD_T + INNER_H}
+      x2={CHART_W - PAD_R}
+      y2={PAD_T + INNER_H}
+      stroke="currentColor"
+      stroke-width="0.5"
+      opacity="0.15" />
     {#each [0.25, 0.5, 0.75] as frac}
-      <line x1={PAD_L} y1={PAD_T + INNER_H * frac} x2={CHART_W - PAD_R} y2={PAD_T + INNER_H * frac} stroke="currentColor" stroke-width="0.5" opacity="0.05" stroke-dasharray="2 4"/>
+      <line
+        x1={PAD_L}
+        y1={PAD_T + INNER_H * frac}
+        x2={CHART_W - PAD_R}
+        y2={PAD_T + INNER_H * frac}
+        stroke="currentColor"
+        stroke-width="0.5"
+        opacity="0.05"
+        stroke-dasharray="2 4" />
     {/each}
     <!-- y-axis labels -->
-    <text x={PAD_L - 4} y={PAD_T + 4} text-anchor="end" class="axis-label">{formatAxisLabel(yMax)}</text>
-    <text x={PAD_L - 4} y={PAD_T + INNER_H * 0.5 + 3} text-anchor="end" class="axis-label">{formatAxisLabel(yMax * 0.5)}</text>
-    <text x={PAD_L - 4} y={PAD_T + INNER_H + 3} text-anchor="end" class="axis-label">0</text>
+    <text
+      x={PAD_L - 4}
+      y={PAD_T + 4}
+      text-anchor="end"
+      class="axis-label">{formatAxisLabel(yMax)}</text>
+    <text
+      x={PAD_L - 4}
+      y={PAD_T + INNER_H * 0.5 + 3}
+      text-anchor="end"
+      class="axis-label">{formatAxisLabel(yMax * 0.5)}</text>
+    <text
+      x={PAD_L - 4}
+      y={PAD_T + INNER_H + 3}
+      text-anchor="end"
+      class="axis-label">0</text>
 
     {#if hasFan}
       <!-- percentile fan: outer (p95↔p99), middle (p75↔p95), inner (p50↔p75).
@@ -174,39 +247,73 @@
            front. All three share the service latency accent (var(--status-up)),
            varying alpha only — colorblind-safe via the legend + centerline. -->
       {#if outerBandPoints}
-        <polygon class="band band-outer" points={outerBandPoints}/>
+        <polygon
+          class="band band-outer"
+          points={outerBandPoints} />
       {/if}
       {#if middleBandPoints}
-        <polygon class="band band-middle" points={middleBandPoints}/>
+        <polygon
+          class="band band-middle"
+          points={middleBandPoints} />
       {/if}
       {#if innerBandPoints}
-        <polygon class="band band-inner" points={innerBandPoints}/>
+        <polygon
+          class="band band-inner"
+          points={innerBandPoints} />
       {/if}
     {:else}
       <!-- degraded fallback: p99 envelope (old look) when any bucket
            lacks p75/p95 (pre-upgrade aggregate data). -->
       {#if p99Polygon}
-        <polygon fill="url(#p99-env-{service})" points={p99Polygon}/>
+        <polygon
+          fill="url(#p99-env-{service})"
+          points={p99Polygon} />
       {/if}
       {#if p99Points}
-        <polyline class="p99" fill="none" stroke-width="1.3" points={p99Points}/>
+        <polyline
+          class="p99"
+          fill="none"
+          stroke-width="1.3"
+          points={p99Points} />
       {/if}
     {/if}
 
     <!-- p50 centerline sits on top of everything -->
     {#if p50Points}
-      <polyline class="p50" fill="none" stroke-width="1.5" points={p50Points}/>
+      <polyline
+        class="p50"
+        fill="none"
+        stroke-width="1.5"
+        points={p50Points} />
     {/if}
 
     <!-- hover crosshair -->
     {#if hovered}
-      <line x1={hovered.x} y1={PAD_T} x2={hovered.x} y2={PAD_T + INNER_H} stroke="currentColor" stroke-width="0.8" opacity="0.4" stroke-dasharray="2 2"/>
-      <circle cx={hovered.x} cy={hovered.y99} r="3" class="dot-p99"/>
-      <circle cx={hovered.x} cy={hovered.y50} r="3" class="dot-p50"/>
+      <line
+        x1={hovered.x}
+        y1={PAD_T}
+        x2={hovered.x}
+        y2={PAD_T + INNER_H}
+        stroke="currentColor"
+        stroke-width="0.8"
+        opacity="0.4"
+        stroke-dasharray="2 2" />
+      <circle
+        cx={hovered.x}
+        cy={hovered.y99}
+        r="3"
+        class="dot-p99" />
+      <circle
+        cx={hovered.x}
+        cy={hovered.y50}
+        r="3"
+        class="dot-p50" />
     {/if}
   </svg>
   {#if hovered}
-    <div class="crosshair-label" style="left: {(hovered.x / CHART_W) * 100}%;">
+    <div
+      class="crosshair-label"
+      style="left: {(hovered.x / CHART_W) * 100}%;">
       <strong>{formatTooltipTime(hovered.bucket.t)}</strong>
       <dl class="xh-pcts">
         <div class="xh-row xh-emph">
@@ -250,19 +357,44 @@
     color: var(--text);
     cursor: crosshair;
   }
-  .p50 { stroke: var(--status-up); }
-  .p99 { stroke: var(--status-deg); }
+  .p50 {
+    stroke: var(--status-up);
+  }
+  .p99 {
+    stroke: var(--status-deg);
+  }
   /* Percentile fan bands — alpha varied on the latency accent.
      Outer (p95→p99) lightest; middle (p75→p95) medium; inner (p50→p75) darkest.
      Stroke is a hairline of the same tone so the band edge is readable without
      relying on color alone (legend + p50 centerline remain the primary signal). */
-  .band { stroke: var(--status-up); stroke-width: 0.3; fill: var(--status-up); }
-  .band-outer  { fill-opacity: 0.12; stroke-opacity: 0.25; }
-  .band-middle { fill-opacity: 0.22; stroke-opacity: 0.35; }
-  .band-inner  { fill-opacity: 0.35; stroke-opacity: 0.45; }
+  .band {
+    stroke: var(--status-up);
+    stroke-width: 0.3;
+    fill: var(--status-up);
+  }
+  .band-outer {
+    fill-opacity: 0.12;
+    stroke-opacity: 0.25;
+  }
+  .band-middle {
+    fill-opacity: 0.22;
+    stroke-opacity: 0.35;
+  }
+  .band-inner {
+    fill-opacity: 0.35;
+    stroke-opacity: 0.45;
+  }
 
-  .dot-p50 { fill: var(--status-up); stroke: var(--bg); stroke-width: 1; }
-  .dot-p99 { fill: var(--status-deg); stroke: var(--bg); stroke-width: 1; }
+  .dot-p50 {
+    fill: var(--status-up);
+    stroke: var(--bg);
+    stroke-width: 1;
+  }
+  .dot-p99 {
+    fill: var(--status-deg);
+    stroke: var(--bg);
+    stroke-width: 1;
+  }
   .axis-label {
     font-size: 9px;
     fill: var(--text-muted);
@@ -276,7 +408,10 @@
     margin-top: var(--sp-2xs);
     padding: 0 var(--sp-xs);
   }
-  .legend-hint { margin-left: auto; opacity: 0.6; }
+  .legend-hint {
+    margin-left: auto;
+    opacity: 0.6;
+  }
   .swatch {
     display: inline-block;
     width: 10px;
@@ -284,8 +419,12 @@
     vertical-align: middle;
     margin-right: 4px;
   }
-  .swatch.p50 { background: var(--status-up); }
-  .swatch.p99 { background: var(--status-deg); }
+  .swatch.p50 {
+    background: var(--status-up);
+  }
+  .swatch.p99 {
+    background: var(--status-deg);
+  }
   .band-sw-outer,
   .band-sw-middle,
   .band-sw-inner {
@@ -293,9 +432,15 @@
     border-radius: 1px;
     background: var(--status-up);
   }
-  .band-sw-outer  { opacity: 0.25; }
-  .band-sw-middle { opacity: 0.45; }
-  .band-sw-inner  { opacity: 0.65; }
+  .band-sw-outer {
+    opacity: 0.25;
+  }
+  .band-sw-middle {
+    opacity: 0.45;
+  }
+  .band-sw-inner {
+    opacity: 0.65;
+  }
   .crosshair-label {
     position: absolute;
     top: 0;
@@ -312,7 +457,9 @@
     gap: 2px;
     z-index: 5;
   }
-  .crosshair-label strong { font-size: 10.5px; }
+  .crosshair-label strong {
+    font-size: 10.5px;
+  }
   .xh-pcts {
     margin: 2px 0 0 0;
     padding: 0;
@@ -325,9 +472,22 @@
   .xh-row {
     display: contents;
   }
-  .xh-row dt { opacity: 0.55; }
-  .xh-row dd { margin: 0; text-align: right; }
-  .xh-emph dt, .xh-emph dd { opacity: 1; font-weight: 500; }
-  .xh-mid dt { opacity: 0.55; }
-  .xh-mid dd { opacity: 0.8; }
+  .xh-row dt {
+    opacity: 0.55;
+  }
+  .xh-row dd {
+    margin: 0;
+    text-align: right;
+  }
+  .xh-emph dt,
+  .xh-emph dd {
+    opacity: 1;
+    font-weight: 500;
+  }
+  .xh-mid dt {
+    opacity: 0.55;
+  }
+  .xh-mid dd {
+    opacity: 0.8;
+  }
 </style>

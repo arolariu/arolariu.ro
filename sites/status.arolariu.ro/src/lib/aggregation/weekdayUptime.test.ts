@@ -1,6 +1,6 @@
-import {describe, it, expect} from "vitest";
-import {computeWeekdayUptime} from "./weekdayUptime";
+import {describe, expect, it} from "vitest";
 import type {ServiceSeries} from "../types/status";
+import {computeWeekdayUptime} from "./weekdayUptime";
 
 function bucketAt(iso: string, healthy: number, total: number) {
   return {t: iso, status: "Healthy" as const, probes: {healthy, total}, latency: {p50: 0, p99: 0}};
@@ -10,7 +10,7 @@ describe("computeWeekdayUptime", () => {
   it("returns 7 values Mon..Sun", () => {
     const out = computeWeekdayUptime([]);
     expect(out).toHaveLength(7);
-    expect(out.every(v => v === 100)).toBe(true);
+    expect(out.every((v) => v === 100)).toBe(true);
   });
 
   it("groups by weekday correctly", () => {
@@ -23,7 +23,7 @@ describe("computeWeekdayUptime", () => {
       ],
     };
     const out = computeWeekdayUptime([svc]);
-    expect(out[0]).toBe(50);  // Mon
+    expect(out[0]).toBe(50); // Mon
     expect(out[1]).toBe(100); // Tue
     expect(out[2]).toBe(100); // Wed (no data = 100)
   });

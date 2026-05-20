@@ -48,9 +48,7 @@ export function parseExpArolariuRo(raw: RawResponse, ctx: ProbeContext): ProbeRe
   const bodyStatus = coerceOverall(body);
   if (bodyStatus !== null) {
     const {status: overall, error: overrideError} = reconcileBodyVsHttp(bodyStatus, status);
-    return overrideError
-      ? {...base, overall, error: overrideError}
-      : {...base, overall};
+    return overrideError ? {...base, overall, error: overrideError} : {...base, overall};
   }
 
   if (status >= 200 && status < 300) {

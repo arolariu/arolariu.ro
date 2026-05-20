@@ -54,15 +54,17 @@
   }
 </script>
 
-<div class="pills" role="radiogroup" aria-label="Time window">
+<div
+  class="pills"
+  role="radiogroup"
+  aria-label="Time window">
   {#each FILTER_WINDOWS as window, i (window)}
     <FilterChip
       label={window}
       active={window === activeWindow}
       variant="bracket"
       onClick={() => onChange(window)}
-      onKeydown={(e) => handleKeydown(e, i)}
-    />
+      onKeydown={(e) => handleKeydown(e, i)} />
   {/each}
 </div>
 
@@ -79,5 +81,7 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  .pills::-webkit-scrollbar { display: none; }
+  .pills::-webkit-scrollbar {
+    display: none;
+  }
 </style>

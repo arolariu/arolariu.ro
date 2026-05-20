@@ -201,10 +201,7 @@ describe("runProbe", () => {
       const u = String(url);
       if (u.includes("api.arolariu.ro/health")) {
         const duration = apiDurations[call++ % apiDurations.length];
-        return new Response(
-          JSON.stringify({status: "Healthy", entries: {mssql: {status: "Healthy", duration}}}),
-          {status: 200},
-        );
+        return new Response(JSON.stringify({status: "Healthy", entries: {mssql: {status: "Healthy", duration}}}), {status: 200});
       }
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;

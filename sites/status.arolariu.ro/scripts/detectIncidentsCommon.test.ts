@@ -1,5 +1,5 @@
 // @vitest-environment node
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {buildIncidentId, toSeverity, trackKey, worstSeverity} from "./detectIncidentsCommon";
 
 describe("trackKey", () => {
@@ -35,11 +35,9 @@ describe("toSeverity", () => {
 
 describe("buildIncidentId", () => {
   it("slugifies the timestamp and includes service", () => {
-    expect(buildIncidentId("2026-04-19T14:00:00.000Z", "arolariu.ro"))
-      .toBe("inc-2026-04-19T14-00-00-000Z-arolariu.ro");
+    expect(buildIncidentId("2026-04-19T14:00:00.000Z", "arolariu.ro")).toBe("inc-2026-04-19T14-00-00-000Z-arolariu.ro");
   });
   it("includes sub-check suffix when provided", () => {
-    expect(buildIncidentId("2026-04-19T14:00:00Z", "api.arolariu.ro", "mssql"))
-      .toBe("inc-2026-04-19T14-00-00Z-api.arolariu.ro-mssql");
+    expect(buildIncidentId("2026-04-19T14:00:00Z", "api.arolariu.ro", "mssql")).toBe("inc-2026-04-19T14-00-00Z-api.arolariu.ro-mssql");
   });
 });

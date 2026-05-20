@@ -59,9 +59,7 @@ export function computePopoverPosition(
   const desiredLeft = anchorRect.left + anchorRect.width / 2 + viewport.scrollX;
   const viewportRight = viewport.scrollX + viewport.innerWidth - 8;
   const flipHoriz = desiredLeft + tooltipWidth / 2 > viewportRight;
-  const clampedLeft = flipHoriz
-    ? Math.min(desiredLeft, viewportRight - tooltipWidth / 2)
-    : desiredLeft;
+  const clampedLeft = flipHoriz ? Math.min(desiredLeft, viewportRight - tooltipWidth / 2) : desiredLeft;
   return {
     top: anchorRect.top + viewport.scrollY - 8,
     left: clampedLeft,

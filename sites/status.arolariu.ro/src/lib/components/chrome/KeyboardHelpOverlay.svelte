@@ -34,8 +34,7 @@
   modal
   ariaModal
   ariaLabelledBy="kb-help-title"
-  role="dialog"
->
+  role="dialog">
   <h2 id="kb-help-title">Keyboard shortcuts</h2>
   <dl>
     {#each shortcuts as s (s.keys)}
@@ -45,7 +44,11 @@
       </div>
     {/each}
   </dl>
-  <button type="button" class="close" onclick={onClose} aria-label="Close help">Close</button>
+  <button
+    type="button"
+    class="close"
+    onclick={onClose}
+    aria-label="Close help">Close</button>
 </Popover>
 
 <style>
@@ -64,11 +67,15 @@
     padding: 20px 24px;
     min-width: 320px;
     max-width: 90vw;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 12px 48px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
   :global(:root[data-theme="light"] .kb-help-dialog) {
     background: #ffffff;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 12px 48px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(0, 0, 0, 0.06);
   }
   h2 {
     margin: 0 0 16px;

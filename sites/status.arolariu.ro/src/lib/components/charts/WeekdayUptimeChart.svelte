@@ -39,17 +39,20 @@
     return Math.max(2, (v / 100) * H);
   }
 
-  const desc = $derived(
-    "Uptime by weekday: " + values.map((v, i) => `${labels[i]} ${v}%`).join(", ")
-  );
+  const desc = $derived("Uptime by weekday: " + values.map((v, i) => `${labels[i]} ${v}%`).join(", "));
 </script>
 
-<section class="weekday-chart" aria-label="Uptime by weekday">
+<section
+  class="weekday-chart"
+  aria-label="Uptime by weekday">
   <header>
     <h2>Uptime by weekday</h2>
     <p class="sub">Aggregate across all services · window decides data range</p>
   </header>
-  <svg viewBox="0 0 {W} {H + 18}" role="img" aria-label="Uptime by weekday bar chart">
+  <svg
+    viewBox="0 0 {W} {H + 18}"
+    role="img"
+    aria-label="Uptime by weekday bar chart">
     <desc>{desc}</desc>
     {#each values as v, i (i)}
       <g>
@@ -59,8 +62,7 @@
           width={BAR_W}
           height={barHeight(v)}
           fill={tierColor(v)}
-          rx="1"
-        >
+          rx="1">
           <title>{labels[i]} · {v}% uptime</title>
         </rect>
         <text
@@ -68,8 +70,7 @@
           y={H + 14}
           text-anchor="middle"
           fill="var(--text-muted, var(--text))"
-          font-size="10"
-        >{labels[i]}</text>
+          font-size="10">{labels[i]}</text>
       </g>
     {/each}
   </svg>

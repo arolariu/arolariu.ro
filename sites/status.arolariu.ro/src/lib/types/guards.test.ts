@@ -1,7 +1,14 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {
-  isHealthStatus, isServiceId, isSubCheck, isProbeResult, isBucket,
-  isServiceSeries, isAggregateFile, isIncident, isIncidentsFile,
+  isAggregateFile,
+  isBucket,
+  isHealthStatus,
+  isIncident,
+  isIncidentsFile,
+  isProbeResult,
+  isServiceId,
+  isServiceSeries,
+  isSubCheck,
 } from "./guards";
 
 describe("isHealthStatus", () => {
@@ -53,10 +60,15 @@ describe("isSubCheck", () => {
 
 describe("isProbeResult", () => {
   const valid = {
-    service: "api.arolariu.ro", timestamp: "2026-04-19T14:00:00Z",
-    latencyMs: 142, httpStatus: 200, overall: "Healthy",
+    service: "api.arolariu.ro",
+    timestamp: "2026-04-19T14:00:00Z",
+    latencyMs: 142,
+    httpStatus: 200,
+    overall: "Healthy",
   };
-  it("accepts valid", () => { expect(isProbeResult(valid)).toBe(true); });
+  it("accepts valid", () => {
+    expect(isProbeResult(valid)).toBe(true);
+  });
   it("accepts with subChecks", () => {
     expect(isProbeResult({...valid, subChecks: [{name: "x", status: "Healthy", durationMs: 5}]})).toBe(true);
   });
@@ -85,10 +97,14 @@ describe("isProbeResult", () => {
 
 describe("isBucket", () => {
   const valid = {
-    t: "2026-04-19T14:00:00Z", status: "Healthy",
-    probes: {healthy: 2, total: 2}, latency: {p50: 100, p99: 300},
+    t: "2026-04-19T14:00:00Z",
+    status: "Healthy",
+    probes: {healthy: 2, total: 2},
+    latency: {p50: 100, p99: 300},
   };
-  it("accepts valid", () => { expect(isBucket(valid)).toBe(true); });
+  it("accepts valid", () => {
+    expect(isBucket(valid)).toBe(true);
+  });
   it("rejects missing latency fields", () => {
     expect(isBucket({...valid, latency: {p50: 100}})).toBe(false);
   });
@@ -104,10 +120,14 @@ describe("isBucket", () => {
 });
 
 describe("isServiceSeries", () => {
-  const buckets = [{
-    t: "2026-04-19T14:00:00Z", status: "Healthy",
-    probes: {healthy: 1, total: 1}, latency: {p50: 10, p99: 20},
-  }];
+  const buckets = [
+    {
+      t: "2026-04-19T14:00:00Z",
+      status: "Healthy",
+      probes: {healthy: 1, total: 1},
+      latency: {p50: 10, p99: 20},
+    },
+  ];
   it("accepts minimal", () => {
     expect(isServiceSeries({service: "arolariu.ro", buckets})).toBe(true);
   });
@@ -118,8 +138,8 @@ describe("isServiceSeries", () => {
 
 describe("isAggregateFile", () => {
   const valid30m = {generatedAt: "2026-04-19T14:00:00Z", bucketSize: "30m", windowDays: 14, services: []};
-  const valid1h  = {generatedAt: "2026-04-19T14:00:00Z", bucketSize: "1h",  windowDays: 90, services: []};
-  const valid1d  = {generatedAt: "2026-04-19T14:00:00Z", bucketSize: "1d",  windowDays: 365, services: []};
+  const valid1h = {generatedAt: "2026-04-19T14:00:00Z", bucketSize: "1h", windowDays: 90, services: []};
+  const valid1d = {generatedAt: "2026-04-19T14:00:00Z", bucketSize: "1d", windowDays: 365, services: []};
   it("accepts each valid (bucketSize, windowDays) pair", () => {
     expect(isAggregateFile(valid30m)).toBe(true);
     expect(isAggregateFile(valid1h)).toBe(true);
@@ -129,24 +149,34 @@ describe("isAggregateFile", () => {
     expect(isAggregateFile({...valid30m, bucketSize: "5m"})).toBe(false);
   });
   it("rejects mismatched (bucketSize, windowDays) pairs", () => {
-    expect(isAggregateFile({...valid30m, windowDays: 90})).toBe(false);  // 30m must pair with 14
-    expect(isAggregateFile({...valid1h, windowDays: 14})).toBe(false);   // 1h must pair with 90
-    expect(isAggregateFile({...valid1d, windowDays: 90})).toBe(false);   // 1d must pair with 365
+    expect(isAggregateFile({...valid30m, windowDays: 90})).toBe(false); // 30m must pair with 14
+    expect(isAggregateFile({...valid1h, windowDays: 14})).toBe(false); // 1h must pair with 90
+    expect(isAggregateFile({...valid1d, windowDays: 90})).toBe(false); // 1d must pair with 365
   });
 });
 
 describe("isIncident", () => {
   const validOpen = {
-    id: "inc-1", service: "api.arolariu.ro", status: "open",
-    startedAt: "2026-04-19T14:00:00Z", severity: "Degraded",
-    reason: "slow", probeCount: 2,
+    id: "inc-1",
+    service: "api.arolariu.ro",
+    status: "open",
+    startedAt: "2026-04-19T14:00:00Z",
+    severity: "Degraded",
+    reason: "slow",
+    probeCount: 2,
   };
   const validResolved = {
-    ...validOpen, status: "resolved",
-    resolvedAt: "2026-04-19T15:00:00Z", durationMs: 3600000,
+    ...validOpen,
+    status: "resolved",
+    resolvedAt: "2026-04-19T15:00:00Z",
+    durationMs: 3600000,
   };
-  it("accepts valid open", () => { expect(isIncident(validOpen)).toBe(true); });
-  it("accepts valid resolved", () => { expect(isIncident(validResolved)).toBe(true); });
+  it("accepts valid open", () => {
+    expect(isIncident(validOpen)).toBe(true);
+  });
+  it("accepts valid resolved", () => {
+    expect(isIncident(validResolved)).toBe(true);
+  });
   it("rejects open that carries resolvedAt (invariant: resolved iff resolvedAt set)", () => {
     expect(isIncident({...validOpen, resolvedAt: "2026-04-19T15:00:00Z"})).toBe(false);
   });
@@ -165,8 +195,10 @@ describe("isIncident", () => {
 
 describe("isBucket invariant enforcement", () => {
   const valid = {
-    t: "2026-04-19T14:00:00Z", status: "Healthy",
-    probes: {healthy: 1, total: 2}, latency: {p50: 100, p99: 300},
+    t: "2026-04-19T14:00:00Z",
+    status: "Healthy",
+    probes: {healthy: 1, total: 2},
+    latency: {p50: 100, p99: 300},
   };
   it("rejects healthy > total", () => {
     expect(isBucket({...valid, probes: {healthy: 3, total: 2}})).toBe(false);

@@ -1,4 +1,4 @@
-import {describe, it, expect, vi} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import type {FilterWindow} from "../types/status";
 import {createKeyboardHandler, shouldIgnoreKeydown, type KeyboardBindings} from "./keyboardShortcuts";
 
@@ -12,10 +12,18 @@ function mkEvent(partial: Partial<KeyboardEventInit> & {target?: EventTarget; ke
 
 function mkBindings(active: FilterWindow = "1d", expanded: string | null = null) {
   const state = {active, expanded, helpOpen: false, refreshCount: 0};
-  const setActiveWindow = vi.fn((w: FilterWindow) => { state.active = w; });
-  const setExpandedService = vi.fn((s: string | null) => { state.expanded = s; });
-  const toggleHelp = vi.fn(() => { state.helpOpen = !state.helpOpen; });
-  const refresh = vi.fn(() => { state.refreshCount++; });
+  const setActiveWindow = vi.fn((w: FilterWindow) => {
+    state.active = w;
+  });
+  const setExpandedService = vi.fn((s: string | null) => {
+    state.expanded = s;
+  });
+  const toggleHelp = vi.fn(() => {
+    state.helpOpen = !state.helpOpen;
+  });
+  const refresh = vi.fn(() => {
+    state.refreshCount++;
+  });
   const bindings: KeyboardBindings = {
     getActiveWindow: () => state.active,
     setActiveWindow,

@@ -40,11 +40,7 @@
 
   // Empty-buckets short-circuit avoids running `deriveLatestStatus` on an
   // empty array (its contract requires at least one bucket).
-  const latest = $derived(
-    buckets.length === 0
-      ? "Healthy" as const
-      : deriveLatestStatus({service, buckets})
-  );
+  const latest = $derived(buckets.length === 0 ? ("Healthy" as const) : deriveLatestStatus({service, buckets}));
   const uptime = $derived(computeUptime(buckets));
   const avgLatency = $derived(computeAvgLatency(buckets));
 </script>
@@ -55,9 +51,18 @@
     <span class="name">↳ {name}</span>
   </div>
   <div class="spark-cell"></div>
-  <div class="bar-cell"><UptimeBar {buckets} variant="sub" onSegmentHover={onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs} /></div>
+  <div class="bar-cell"
+    ><UptimeBar
+      {buckets}
+      variant="sub"
+      onSegmentHover={onHover}
+      {tooltipId}
+      {hoveredBucketT}
+      {bucketDurationMs} /></div>
   <div class="uptime">{uptime.toFixed(3)}%</div>
-  <div class="latency" data-tier={latencyTier(avgLatency)}>{avgLatency} ms</div>
+  <div
+    class="latency"
+    data-tier={latencyTier(avgLatency)}>{avgLatency} ms</div>
 </div>
 
 <style>
@@ -73,15 +78,46 @@
     background: var(--surface);
     opacity: 0.9;
   }
-  .row > * { min-width: 0; }
-  .name-col { grid-area: name; display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .spark-cell { grid-area: sparkline; min-width: 0; }
-  .bar-cell { grid-area: bar; min-width: 0; }
-  .uptime { grid-area: uptime; text-align: right; font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
-  .latency { grid-area: latency; text-align: right; font-size: var(--fs-xs); opacity: 0.85; font-variant-numeric: tabular-nums; }
-  .latency[data-tier="fast"] { color: var(--status-up); }
-  .latency[data-tier="ok"]   { color: var(--text); }
-  .latency[data-tier="slow"] { color: var(--status-deg); }
+  .row > * {
+    min-width: 0;
+  }
+  .name-col {
+    grid-area: name;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .spark-cell {
+    grid-area: sparkline;
+    min-width: 0;
+  }
+  .bar-cell {
+    grid-area: bar;
+    min-width: 0;
+  }
+  .uptime {
+    grid-area: uptime;
+    text-align: right;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+  .latency {
+    grid-area: latency;
+    text-align: right;
+    font-size: var(--fs-xs);
+    opacity: 0.85;
+    font-variant-numeric: tabular-nums;
+  }
+  .latency[data-tier="fast"] {
+    color: var(--status-up);
+  }
+  .latency[data-tier="ok"] {
+    color: var(--text);
+  }
+  .latency[data-tier="slow"] {
+    color: var(--status-deg);
+  }
 
   .dot {
     width: 6px;
@@ -90,9 +126,15 @@
     display: inline-block;
     flex-shrink: 0;
   }
-  .dot-healthy { background: var(--status-up); }
-  .dot-degraded { background: var(--status-deg); }
-  .dot-unhealthy { background: var(--status-down); }
+  .dot-healthy {
+    background: var(--status-up);
+  }
+  .dot-degraded {
+    background: var(--status-deg);
+  }
+  .dot-unhealthy {
+    background: var(--status-down);
+  }
   .name {
     white-space: nowrap;
     overflow: hidden;
@@ -109,8 +151,15 @@
       padding-block: var(--sp-sm);
       padding-left: var(--sp-md);
     }
-    .spark-cell { display: none; }
-    .uptime { font-weight: 600; justify-self: end; }
-    .latency { justify-self: end; }
+    .spark-cell {
+      display: none;
+    }
+    .uptime {
+      font-weight: 600;
+      justify-self: end;
+    }
+    .latency {
+      justify-self: end;
+    }
   }
 </style>

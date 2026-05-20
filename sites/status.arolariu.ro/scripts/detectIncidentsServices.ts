@@ -12,6 +12,6 @@ export function serviceSignal(probe: ProbeResult): TrackSignal {
     service: probe.service,
     timestamp: probe.timestamp,
     status: probe.overall,
-    reason: probe.error ?? probe.subChecks?.find(s => s.status !== "Healthy")?.description ?? `HTTP ${probe.httpStatus}`,
+    reason: probe.error ?? probe.subChecks?.find((s) => s.status !== "Healthy")?.description ?? `HTTP ${probe.httpStatus}`,
   };
 }

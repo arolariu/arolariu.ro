@@ -90,9 +90,7 @@
       return;
     }
     if (modal && event.key === "Tab" && surfaceEl) {
-      const focusables = surfaceEl.querySelectorAll<HTMLElement>(
-        'button, [href], input, [tabindex]:not([tabindex="-1"])'
-      );
+      const focusables = surfaceEl.querySelectorAll<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])');
       if (focusables.length === 0) return;
       const first = focusables[0]!;
       const last = focusables[focusables.length - 1]!;
@@ -128,7 +126,10 @@
 
 {#if open}
   {#if modal}
-    <div class="backdrop" onclick={onClose} role="presentation"></div>
+    <div
+      class="backdrop"
+      onclick={onClose}
+      role="presentation"></div>
   {/if}
   <div
     bind:this={surfaceEl}
@@ -138,8 +139,7 @@
     aria-modal={ariaModal}
     aria-labelledby={ariaLabelledBy}
     tabindex={modal ? -1 : undefined}
-    onkeydown={handleKeydown}
-  >
+    onkeydown={handleKeydown}>
     {@render children()}
   </div>
 {/if}

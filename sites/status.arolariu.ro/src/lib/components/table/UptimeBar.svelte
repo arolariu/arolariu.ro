@@ -80,7 +80,7 @@
     // on a non-empty input always yields at least one element. Non-null
     // assertion pins the invariant for noUncheckedIndexedAccess.
     const first = chunk[0]!;
-    const worst = chunk.reduce<Bucket>((w, b) => STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w, first);
+    const worst = chunk.reduce<Bucket>((w, b) => (STATUS_ORDER[b.status] > STATUS_ORDER[w.status] ? b : w), first);
     const healthy = chunk.reduce((s, b) => s + b.probes.healthy, 0);
     const total = chunk.reduce((s, b) => s + b.probes.total, 0);
     const avgP50 = Math.round(chunk.reduce((s, b) => s + b.latency.p50, 0) / chunk.length);
@@ -125,7 +125,10 @@
   }
 </script>
 
-<div class="bar" data-variant={variant} bind:this={barEl}>
+<div
+  class="bar"
+  data-variant={variant}
+  bind:this={barEl}>
   {#each visibleBuckets as bucket, i (bucket.t)}
     <button
       type="button"
@@ -136,8 +139,7 @@
       onmouseenter={(e) => handleEnter(bucket, e)}
       onmouseleave={handleLeave}
       onfocus={(e) => handleEnter(bucket, e)}
-      onblur={handleLeave}
-    ></button>
+      onblur={handleLeave}></button>
   {/each}
 </div>
 
@@ -151,7 +153,9 @@
     width: 100%;
     min-width: 0;
   }
-  .bar[data-variant="sub"] { height: 16px; }
+  .bar[data-variant="sub"] {
+    height: 16px;
+  }
   .seg {
     flex: 1 1 0;
     min-width: 0;
@@ -159,25 +163,44 @@
     padding: 0;
     border-radius: 1px;
     cursor: pointer;
-    transition: transform .12s, filter .12s;
+    transition:
+      transform 0.12s,
+      filter 0.12s;
     animation: segStaggerIn 120ms ease-out backwards;
     animation-delay: calc(min(var(--idx, 0) * 3ms, 180ms));
   }
   @keyframes segStaggerIn {
-    from { opacity: 0; transform: translateY(2px); }
-    to   { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .seg { animation: none; }
+    .seg {
+      animation: none;
+    }
   }
-  .seg:hover, .seg:focus-visible {
+  .seg:hover,
+  .seg:focus-visible {
     transform: scaleY(1.15);
     filter: brightness(1.15);
     outline: none;
     z-index: 1;
   }
-  .seg-healthy { background: var(--status-up); }
-  .seg-degraded { background: var(--status-deg); }
-  .seg-unhealthy { background: var(--status-down); }
-  .bar[data-variant="sub"] .seg-healthy { opacity: 0.75; }
+  .seg-healthy {
+    background: var(--status-up);
+  }
+  .seg-degraded {
+    background: var(--status-deg);
+  }
+  .seg-unhealthy {
+    background: var(--status-down);
+  }
+  .bar[data-variant="sub"] .seg-healthy {
+    opacity: 0.75;
+  }
 </style>

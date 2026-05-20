@@ -27,11 +27,7 @@
   import {isLocalHost} from "$lib/api/mockData";
   import {sliceWindow} from "$lib/aggregation/sliceWindow";
   import {deriveOverallStatus} from "$lib/aggregation/deriveParentStatus";
-  import {
-    bucketDurationMsFor,
-    orderedServices,
-    showWeekdayChart,
-  } from "$lib/routes/pageLogic";
+  import {bucketDurationMsFor, orderedServices, showWeekdayChart} from "$lib/routes/pageLogic";
   import {createKeyboardHandler} from "$lib/routes/keyboardShortcuts";
   import FilterPills from "$lib/components/chrome/FilterPills.svelte";
   import StatusBanner from "$lib/components/summary/StatusBanner.svelte";
@@ -77,9 +73,7 @@
 
   // "loading" sentinel (not HealthStatus) so the banner can distinguish
   // pre-data from healthy.
-  const overallStatus = $derived.by(() =>
-    sliced ? deriveOverallStatus(sliced.services) : "loading" as const
-  );
+  const overallStatus = $derived.by(() => (sliced ? deriveOverallStatus(sliced.services) : ("loading" as const)));
 
   const lastProbeAt = $derived(sliced?.generatedAt);
 
@@ -104,21 +98,33 @@
 
   // Re-runs whenever the derived `granularity` changes (i.e. when the user
   // picks a window that maps to a granularity we haven't loaded yet).
-  $effect(() => { void loadAggregate(granularity); });
+  $effect(() => {
+    void loadAggregate(granularity);
+  });
 
   const handleGlobalKeydown = createKeyboardHandler({
     getActiveWindow: () => activeWindow,
-    setActiveWindow: (w) => { activeWindow = w; },
+    setActiveWindow: (w) => {
+      activeWindow = w;
+    },
     getExpandedService: () => expandedService,
-    setExpandedService: (s) => { expandedService = s; },
-    toggleHelp: () => { helpOpen = !helpOpen; },
-    refresh: () => { void handleRefresh(); },
+    setExpandedService: (s) => {
+      expandedService = s;
+    },
+    toggleHelp: () => {
+      helpOpen = !helpOpen;
+    },
+    refresh: () => {
+      void handleRefresh();
+    },
   });
 
   onMount(() => {
     void loadIncidents();
     window.addEventListener("keydown", handleGlobalKeydown);
-    return () => { window.removeEventListener("keydown", handleGlobalKeydown); };
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeydown);
+    };
   });
 
   async function handleRefresh() {
@@ -148,10 +154,14 @@
   <header class="masthead">
     <div class="masthead-left">
       <h1 class="wordmark">
-        <span class="prompt" aria-hidden="true">$</span>
+        <span
+          class="prompt"
+          aria-hidden="true">$</span>
         <span class="verb">status</span>
         <span class="target">arolariu.ro</span>
-        <span class="cursor" aria-hidden="true">_</span>
+        <span
+          class="cursor"
+          aria-hidden="true">_</span>
       </h1>
       <p class="kicker">
         <span class="bracket">[</span>
@@ -166,27 +176,44 @@
         <span class="local-badge">[ local mocks ]</span>
       {/if}
       <LightModeToggle />
-      <RefreshButton {refreshing} onClick={handleRefresh}/>
+      <RefreshButton
+        {refreshing}
+        onClick={handleRefresh} />
     </div>
   </header>
 
-  <StatusBanner {overallStatus} {lastProbeAt}/>
+  <StatusBanner
+    {overallStatus}
+    {lastProbeAt} />
 
   {#if sliced}
-    <SummaryStats services={sliced.services} {incidents} windowFilter={activeWindow}/>
+    <SummaryStats
+      services={sliced.services}
+      {incidents}
+      windowFilter={activeWindow} />
   {/if}
 
   <div class="controls">
-    <FilterPills {activeWindow} onChange={(w) => { activeWindow = w; }}/>
+    <FilterPills
+      {activeWindow}
+      onChange={(w) => {
+        activeWindow = w;
+      }} />
   </div>
 
   {#if loadError}
-    <div class="error" role="alert">
-      Status data unreachable — <button type="button" onclick={handleRefresh}>retry</button>
+    <div
+      class="error"
+      role="alert">
+      Status data unreachable — <button
+        type="button"
+        onclick={handleRefresh}>retry</button>
     </div>
   {/if}
 
-  <section class="status-table" aria-label="Service uptime table">
+  <section
+    class="status-table"
+    aria-label="Service uptime table">
     <div class="status-table__header">
       <div>Service</div>
       <div>p50 trend</div>
@@ -199,12 +226,12 @@
       <!-- Skeleton shape mirrors a typical expanded-row layout
            (2 rows, 2 indented sub-rows, 2 more rows) so the transition
            into real data feels continuous rather than popping. -->
-      <SkeletonRow/>
-      <SkeletonRow/>
-      <SkeletonRow indent/>
-      <SkeletonRow indent/>
-      <SkeletonRow/>
-      <SkeletonRow/>
+      <SkeletonRow />
+      <SkeletonRow />
+      <SkeletonRow indent />
+      <SkeletonRow indent />
+      <SkeletonRow />
+      <SkeletonRow />
     {:else if sliced.services.length === 0}
       <div class="empty">No probes recorded yet — first data in ≤30 min.</div>
     {:else}
@@ -221,8 +248,7 @@
               {onHover}
               tooltipId={TOOLTIP_ID}
               hoveredBucketT={hoveredBucket?.t ?? null}
-              {bucketDurationMs}
-            />
+              {bucketDurationMs} />
           {/each}
         </div>
       {/key}
@@ -233,7 +259,9 @@
     <WeekdayUptimeChart services={ordered} />
   {/if}
 
-  <IncidentList {incidents} windowFilter={activeWindow}/>
+  <IncidentList
+    {incidents}
+    windowFilter={activeWindow} />
 
   <footer class="footer label-comment">
     Polled every 30 min via GitHub Actions · data served from arolariu/arolariu.ro status-data branch
@@ -242,9 +270,15 @@
   <!-- Single route-level tooltip instance; every UptimeBar segment updates
        the shared `hoveredBucket` / `hoveredAnchor` rather than instantiating
        its own tooltip, which keeps the DOM flat. -->
-  <SegmentTooltip bucket={hoveredBucket} anchor={hoveredAnchor} id={TOOLTIP_ID} {bucketDurationMs}/>
+  <SegmentTooltip
+    bucket={hoveredBucket}
+    anchor={hoveredAnchor}
+    id={TOOLTIP_ID}
+    {bucketDurationMs} />
 
-  <KeyboardHelpOverlay open={helpOpen} onClose={() => (helpOpen = false)} />
+  <KeyboardHelpOverlay
+    open={helpOpen}
+    onClose={() => (helpOpen = false)} />
 </main>
 
 <style>
@@ -267,7 +301,9 @@
     margin-bottom: var(--sp-xl);
     animation: consolePrint 450ms cubic-bezier(0.2, 0, 0, 1) both;
   }
-  .masthead-left { min-width: 0; }
+  .masthead-left {
+    min-width: 0;
+  }
   .masthead-right {
     display: flex;
     align-items: center;
@@ -288,9 +324,18 @@
     gap: 0.45em;
     flex-wrap: wrap;
   }
-  .wordmark .prompt { color: var(--accent); font-weight: 600; }
-  .wordmark .verb { color: var(--text-muted); font-weight: 400; }
-  .wordmark .target { color: var(--text); font-weight: 500; }
+  .wordmark .prompt {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .wordmark .verb {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  .wordmark .target {
+    color: var(--text);
+    font-weight: 500;
+  }
   .wordmark .cursor {
     color: var(--accent);
     font-weight: 500;
@@ -309,11 +354,23 @@
     gap: 6px;
     flex-wrap: wrap;
   }
-  .kicker .bracket { color: var(--accent-dim); }
-  .kicker .sep { color: var(--accent-dim); margin: 0 2px; }
+  .kicker .bracket {
+    color: var(--accent-dim);
+  }
+  .kicker .sep {
+    color: var(--accent-dim);
+    margin: 0 2px;
+  }
   @container statusPage (max-width: 640px) {
-    .masthead { flex-direction: column; align-items: flex-start; }
-    .masthead-right { padding-bottom: 0; align-self: stretch; justify-content: flex-end; }
+    .masthead {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .masthead-right {
+      padding-bottom: 0;
+      align-self: stretch;
+      justify-content: flex-end;
+    }
   }
   /* Section: window filter pill strip */
   .controls {
@@ -360,24 +417,49 @@
     background: transparent;
     border-bottom: 1px solid var(--border);
   }
-  .status-table__header > * { min-width: 0; }
-  .status-table__header > :nth-child(1) { grid-area: name; }
-  .status-table__header > :nth-child(2) { grid-area: sparkline; text-align: center; }
-  .status-table__header > :nth-child(3) { grid-area: bar; }
-  .status-table__header > :nth-child(4) { grid-area: uptime; text-align: right; }
-  .status-table__header > :nth-child(5) { grid-area: latency; text-align: right; }
+  .status-table__header > * {
+    min-width: 0;
+  }
+  .status-table__header > :nth-child(1) {
+    grid-area: name;
+  }
+  .status-table__header > :nth-child(2) {
+    grid-area: sparkline;
+    text-align: center;
+  }
+  .status-table__header > :nth-child(3) {
+    grid-area: bar;
+  }
+  .status-table__header > :nth-child(4) {
+    grid-area: uptime;
+    text-align: right;
+  }
+  .status-table__header > :nth-child(5) {
+    grid-area: latency;
+    text-align: right;
+  }
   @container statusPage (max-width: 640px) {
-    .status-table__header { display: none; }
+    .status-table__header {
+      display: none;
+    }
   }
   .status-rows-slot {
     animation: fadeIn 180ms ease-out;
   }
   @keyframes fadeIn {
-    from { opacity: 0.45; transform: translateY(-2px); }
-    to   { opacity: 1;    transform: none; }
+    from {
+      opacity: 0.45;
+      transform: translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
-    .status-rows-slot { animation: none; }
+    .status-rows-slot {
+      animation: none;
+    }
   }
   .empty {
     padding: 24px;
@@ -409,8 +491,14 @@
     letter-spacing: 0.02em;
   }
   @media (max-width: 768px) {
-    .status-table__header { grid-template-columns: 1fr 1.5fr 60px; }
-    .status-table__header > :nth-child(2) { display: none; }
-    .status-table__header > :nth-child(5) { display: none; }
+    .status-table__header {
+      grid-template-columns: 1fr 1.5fr 60px;
+    }
+    .status-table__header > :nth-child(2) {
+      display: none;
+    }
+    .status-table__header > :nth-child(5) {
+      display: none;
+    }
   }
 </style>

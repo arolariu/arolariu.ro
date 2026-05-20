@@ -34,12 +34,7 @@
 
   const DEFAULT_DURATION = 30 * 60_000;
 
-  let {
-    bucket,
-    anchor,
-    id = `tooltip-${Math.random().toString(36).slice(2, 9)}`,
-    bucketDurationMs = DEFAULT_DURATION,
-  }: Props = $props();
+  let {bucket, anchor, id = `tooltip-${Math.random().toString(36).slice(2, 9)}`, bucketDurationMs = DEFAULT_DURATION}: Props = $props();
 
   let tooltipEl = $state<HTMLDivElement | null>(null);
 
@@ -78,8 +73,7 @@
     {id}
     class="tooltip"
     role="tooltip"
-    style="top: {position().top}px; left: {position().left}px;"
-  >
+    style="top: {position().top}px; left: {position().left}px;">
     <header class="tip-head">
       <div class="time-range">
         <span class="time-primary">{formatTime(bucket.t)}</span>
@@ -108,8 +102,12 @@
     <div class="latency-viz">
       <div class="latency-label">Latency</div>
       <div class="latency-bar">
-        <div class="latency-p99" style="width: {p99Pct}%"></div>
-        <div class="latency-p50" style="left: {p50Pct}%"></div>
+        <div
+          class="latency-p99"
+          style="width: {p99Pct}%"></div>
+        <div
+          class="latency-p50"
+          style="left: {p50Pct}%"></div>
       </div>
       <dl class="latency-percentiles">
         <div class="pct pct-emph">
@@ -134,11 +132,14 @@
     {#if bucket.worstSubCheck}
       <div class="reason">
         <strong>{bucket.worstSubCheck.name}</strong> <em>{bucket.worstSubCheck.status}</em>
-        {#if bucket.worstSubCheck.description} — {bucket.worstSubCheck.description}{/if}
+        {#if bucket.worstSubCheck.description}
+          — {bucket.worstSubCheck.description}{/if}
       </div>
     {/if}
 
-    <span class="arrow" aria-hidden="true"></span>
+    <span
+      class="arrow"
+      aria-hidden="true"></span>
   </div>
 {/if}
 
@@ -189,8 +190,12 @@
     font-size: var(--fs-xs);
     flex-wrap: wrap;
   }
-  .time-arrow { opacity: 0.4; }
-  .time-secondary { opacity: 0.75; }
+  .time-arrow {
+    opacity: 0.4;
+  }
+  .time-secondary {
+    opacity: 0.75;
+  }
 
   .badge {
     padding: 2px 7px;
@@ -202,9 +207,21 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .badge-healthy { background: var(--status-up-bg); color: var(--status-up); border: 1px solid var(--status-up-border); }
-  .badge-degraded { background: var(--status-deg-bg); color: var(--status-deg); border: 1px solid var(--status-deg-border); }
-  .badge-unhealthy { background: var(--status-down-bg); color: var(--status-down); border: 1px solid var(--status-down-border); }
+  .badge-healthy {
+    background: var(--status-up-bg);
+    color: var(--status-up);
+    border: 1px solid var(--status-up-border);
+  }
+  .badge-degraded {
+    background: var(--status-deg-bg);
+    color: var(--status-deg);
+    border: 1px solid var(--status-deg-border);
+  }
+  .badge-unhealthy {
+    background: var(--status-down-bg);
+    color: var(--status-down);
+    border: 1px solid var(--status-down-border);
+  }
 
   .rel-age {
     font-size: 10px;
@@ -220,11 +237,23 @@
     margin: 0 0 var(--sp-xs) 0;
     padding: 0;
   }
-  .tip-grid dt { opacity: 0.55; }
-  .tip-grid dd { margin: 0; text-align: right; }
-  .mono { font-variant-numeric: tabular-nums; }
-  .faint { opacity: 0.5; }
-  .detail { opacity: 0.6; font-size: 10px; }
+  .tip-grid dt {
+    opacity: 0.55;
+  }
+  .tip-grid dd {
+    margin: 0;
+    text-align: right;
+  }
+  .mono {
+    font-variant-numeric: tabular-nums;
+  }
+  .faint {
+    opacity: 0.5;
+  }
+  .detail {
+    opacity: 0.6;
+    font-size: 10px;
+  }
 
   /* Section: latency visualization — bar, percentile grid, worst sub-check reason */
   .latency-viz {
@@ -273,7 +302,9 @@
     gap: 4px 6px;
     font-size: 10px;
   }
-  .latency-percentiles .pct { margin: 0; }
+  .latency-percentiles .pct {
+    margin: 0;
+  }
   .latency-percentiles dt {
     font-size: 9px;
     opacity: 0.55;
@@ -285,9 +316,15 @@
     margin: 0;
     font-variant-numeric: tabular-nums;
   }
-  .pct-emph dt { opacity: 0.7; }
-  .pct-emph dd { font-weight: 500; }
-  .pct-mid dd { opacity: 0.75; }
+  .pct-emph dt {
+    opacity: 0.7;
+  }
+  .pct-emph dd {
+    font-weight: 500;
+  }
+  .pct-mid dd {
+    opacity: 0.75;
+  }
 
   .reason {
     margin-top: var(--sp-xs);

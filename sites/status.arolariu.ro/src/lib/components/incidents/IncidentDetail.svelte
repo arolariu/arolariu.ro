@@ -19,33 +19,28 @@
   let {incident}: Props = $props();
 
   const startedAt = $derived(new Date(incident.startedAt));
-  const resolvedAt = $derived(
-    incident.status === "resolved" ? new Date(incident.resolvedAt) : null,
-  );
+  const resolvedAt = $derived(incident.status === "resolved" ? new Date(incident.resolvedAt) : null);
   // "ongoing" when open so the duration column still renders a meaningful
   // value rather than an em-dash.
-  const durationText = $derived(
-    incident.status === "resolved" ? formatDuration(incident.durationMs) : "ongoing",
-  );
+  const durationText = $derived(incident.status === "resolved" ? formatDuration(incident.durationMs) : "ongoing");
 </script>
 
-<div class="detail" role="region" aria-label="Incident detail">
+<div
+  class="detail"
+  role="region"
+  aria-label="Incident detail">
   <dl>
     <div class="row">
       <dt>Started</dt>
       <dd>
-        <time datetime={incident.startedAt}
-          >{startedAt.toISOString().slice(0, 16).replace("T", " ")} UTC</time
-        >
+        <time datetime={incident.startedAt}>{startedAt.toISOString().slice(0, 16).replace("T", " ")} UTC</time>
       </dd>
     </div>
     {#if resolvedAt && incident.status === "resolved"}
       <div class="row">
         <dt>Resolved</dt>
         <dd>
-          <time datetime={incident.resolvedAt}
-            >{resolvedAt.toISOString().slice(0, 16).replace("T", " ")} UTC</time
-          >
+          <time datetime={incident.resolvedAt}>{resolvedAt.toISOString().slice(0, 16).replace("T", " ")} UTC</time>
         </dd>
       </div>
     {/if}

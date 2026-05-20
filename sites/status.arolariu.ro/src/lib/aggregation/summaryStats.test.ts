@@ -1,6 +1,6 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import type {IncidentsFile, ServiceSeries} from "../types/status";
-import {computeOverallUptime, computeAvgLatency, computeIncidentCount, computeMttr} from "./summaryStats";
+import {computeAvgLatency, computeIncidentCount, computeMttr, computeOverallUptime} from "./summaryStats";
 
 function mkSeries(service: string, buckets: Array<{healthy: number; total: number; p50: number}>): ServiceSeries {
   return {
@@ -20,7 +20,10 @@ describe("computeOverallUptime", () => {
   });
   it("weighted by probe counts across services+buckets, 3-decimal precision", () => {
     const s = [
-      mkSeries("arolariu.ro", [{healthy: 3, total: 3, p50: 100}, {healthy: 2, total: 3, p50: 200}]),
+      mkSeries("arolariu.ro", [
+        {healthy: 3, total: 3, p50: 100},
+        {healthy: 2, total: 3, p50: 200},
+      ]),
       mkSeries("cv.arolariu.ro", [{healthy: 6, total: 6, p50: 30}]),
     ];
     // (3+2+6) / (3+3+6) = 11/12 = 91.6666… → rounded to 91.667 at 3 decimals
@@ -47,7 +50,10 @@ describe("computeAvgLatency", () => {
   });
   it("unweighted mean of p50 across buckets", () => {
     const s = [
-      mkSeries("arolariu.ro", [{healthy: 1, total: 1, p50: 100}, {healthy: 1, total: 1, p50: 200}]),
+      mkSeries("arolariu.ro", [
+        {healthy: 1, total: 1, p50: 100},
+        {healthy: 1, total: 1, p50: 200},
+      ]),
       mkSeries("cv.arolariu.ro", [{healthy: 1, total: 1, p50: 300}]),
     ];
     expect(computeAvgLatency(s)).toBe(200); // (100+200+300)/3
@@ -55,11 +61,17 @@ describe("computeAvgLatency", () => {
 });
 
 describe("computeIncidentCount", () => {
-  const inc = (startedAt: string, status: "open" | "resolved"): IncidentsFile["incidents"][number] => ({
-    id: `inc-${startedAt}`, service: "arolariu.ro", startedAt,
-    severity: "Degraded", reason: "x", probeCount: 2, status,
-    ...(status === "resolved" ? {resolvedAt: new Date(Date.parse(startedAt) + 3_600_000).toISOString(), durationMs: 3_600_000} : {}),
-  } as IncidentsFile["incidents"][number]);
+  const inc = (startedAt: string, status: "open" | "resolved"): IncidentsFile["incidents"][number] =>
+    ({
+      id: `inc-${startedAt}`,
+      service: "arolariu.ro",
+      startedAt,
+      severity: "Degraded",
+      reason: "x",
+      probeCount: 2,
+      status,
+      ...(status === "resolved" ? {resolvedAt: new Date(Date.parse(startedAt) + 3_600_000).toISOString(), durationMs: 3_600_000} : {}),
+    }) as IncidentsFile["incidents"][number];
 
   it("returns zeros for null input", () => {
     expect(computeIncidentCount(null, "1d")).toEqual({total: 0, open: 0, resolved: 0});
@@ -91,10 +103,28 @@ describe("computeMttr", () => {
     const file: IncidentsFile = {
       generatedAt: new Date(now).toISOString(),
       incidents: [
-        {id: "1", service: "arolariu.ro", startedAt: start, severity: "Degraded", reason: "x", probeCount: 2,
-         status: "resolved", resolvedAt: start, durationMs: 60_000}, // 1 min
-        {id: "2", service: "arolariu.ro", startedAt: start, severity: "Degraded", reason: "x", probeCount: 2,
-         status: "resolved", resolvedAt: start, durationMs: 180_000}, // 3 min
+        {
+          id: "1",
+          service: "arolariu.ro",
+          startedAt: start,
+          severity: "Degraded",
+          reason: "x",
+          probeCount: 2,
+          status: "resolved",
+          resolvedAt: start,
+          durationMs: 60_000,
+        }, // 1 min
+        {
+          id: "2",
+          service: "arolariu.ro",
+          startedAt: start,
+          severity: "Degraded",
+          reason: "x",
+          probeCount: 2,
+          status: "resolved",
+          resolvedAt: start,
+          durationMs: 180_000,
+        }, // 3 min
       ] as IncidentsFile["incidents"],
     };
     expect(computeMttr(file, "1d")).toBe(120_000); // avg of 60k + 180k
