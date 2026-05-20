@@ -21,23 +21,14 @@
  * must be added here (plus `SERVICE_IDS`, `SERVICE_DISPLAY_ORDER`, and
  * the probe configuration) to become representable.
  */
-export type ServiceId =
-  | "arolariu.ro"
-  | "api.arolariu.ro"
-  | "exp.arolariu.ro"
-  | "cv.arolariu.ro";
+export type ServiceId = "arolariu.ro" | "api.arolariu.ro" | "exp.arolariu.ro" | "cv.arolariu.ro";
 
 /**
  * Runtime list mirror of the `ServiceId` union, used for membership checks
  * in type guards and for iteration at call sites that can't rely on the
  * compile-time union (e.g. schema validation).
  */
-export const SERVICE_IDS: readonly ServiceId[] = [
-  "arolariu.ro",
-  "api.arolariu.ro",
-  "exp.arolariu.ro",
-  "cv.arolariu.ro",
-];
+export const SERVICE_IDS: readonly ServiceId[] = ["arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro"];
 
 /**
  * Ternary health classification, ordered by severity (Healthy < Degraded < Unhealthy).
@@ -255,8 +246,7 @@ export interface IncidentsFile {
  * union here so individual components can type their filter prop without
  * referencing the config record.
  */
-export type FilterWindow =
-  | "1d" | "3d" | "7d" | "14d" | "30d" | "60d" | "90d" | "180d" | "365d";
+export type FilterWindow = "1d" | "3d" | "7d" | "14d" | "30d" | "60d" | "90d" | "180d" | "365d";
 
 /**
  * Per-window configuration. Single source of truth for anything the UI / logic
@@ -284,15 +274,15 @@ export interface WindowConfig {
  * least two probes per bar.
  */
 export const WINDOW_CONFIGS: Record<FilterWindow, WindowConfig> = {
-  "1d":   {days: 1,   granularity: "fine",   showWeekday: false},
-  "3d":   {days: 3,   granularity: "fine",   showWeekday: false},
-  "7d":   {days: 7,   granularity: "fine",   showWeekday: false},
-  "14d":  {days: 14,  granularity: "fine",   showWeekday: true},
-  "30d":  {days: 30,  granularity: "hourly", showWeekday: true},
-  "60d":  {days: 60,  granularity: "hourly", showWeekday: true},
-  "90d":  {days: 90,  granularity: "hourly", showWeekday: true},
-  "180d": {days: 180, granularity: "daily",  showWeekday: true},
-  "365d": {days: 365, granularity: "daily",  showWeekday: true},
+  "1d": {days: 1, granularity: "fine", showWeekday: false},
+  "3d": {days: 3, granularity: "fine", showWeekday: false},
+  "7d": {days: 7, granularity: "fine", showWeekday: false},
+  "14d": {days: 14, granularity: "fine", showWeekday: true},
+  "30d": {days: 30, granularity: "hourly", showWeekday: true},
+  "60d": {days: 60, granularity: "hourly", showWeekday: true},
+  "90d": {days: 90, granularity: "hourly", showWeekday: true},
+  "180d": {days: 180, granularity: "daily", showWeekday: true},
+  "365d": {days: 365, granularity: "daily", showWeekday: true},
 };
 
 /** Canonical filter-window order for UI iteration and keyboard `1..9` jumps. */

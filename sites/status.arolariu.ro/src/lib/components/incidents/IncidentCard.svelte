@@ -32,23 +32,30 @@
   let {incident, expanded, onToggle, formatRelative}: Props = $props();
 </script>
 
-<article class="item" data-status={incident.status}>
+<article
+  class="item"
+  data-status={incident.status}>
   <button
     type="button"
     class="item-head"
     aria-expanded={expanded}
     aria-controls={`incident-detail-${incident.id}`}
-    onclick={onToggle}
-  >
-    <div class="item-rail" aria-hidden="true"></div>
+    onclick={onToggle}>
+    <div
+      class="item-rail"
+      aria-hidden="true"></div>
     <div class="item-body">
       <div class="head">
         <strong class="service-name">{incident.service}{incident.subCheck ? ` · ${incident.subCheck}` : ""}</strong>
         <span class="pill pill-{incident.status}">{incident.status === "open" ? "Ongoing" : "Resolved"}</span>
         <span class="severity severity-{incident.severity.toLowerCase()}">{incident.severity}</span>
-        <span class="chevron" aria-hidden="true">{expanded ? "▾" : "▸"}</span>
+        <span
+          class="chevron"
+          aria-hidden="true">{expanded ? "▾" : "▸"}</span>
       </div>
-      <div class="meta" title={incident.startedAt}>
+      <div
+        class="meta"
+        title={incident.startedAt}>
         <span>Started {formatRelative(incident.startedAt)}</span>
         {#if incident.status === "resolved"}
           <span class="sep">·</span>
@@ -62,7 +69,9 @@
     </div>
   </button>
   {#if expanded}
-    <div id={`incident-detail-${incident.id}`} class="item-detail-wrap">
+    <div
+      id={`incident-detail-${incident.id}`}
+      class="item-detail-wrap">
       <IncidentDetail {incident} />
     </div>
   {/if}
@@ -78,7 +87,9 @@
     overflow: hidden;
     position: relative;
   }
-  .item:last-child { border-bottom: 0; }
+  .item:last-child {
+    border-bottom: 0;
+  }
   .item-head {
     all: unset;
     display: grid;
@@ -95,13 +106,19 @@
     outline: 0;
     background: var(--surface-hover);
   }
-  .item-head:hover { background: var(--surface-hover); }
+  .item-head:hover {
+    background: var(--surface-hover);
+  }
   .item-rail {
     background: var(--status-deg);
     border-radius: 4px;
   }
-  .item[data-status="open"] .item-rail { background: var(--status-down); }
-  .item-body { min-width: 0; }
+  .item[data-status="open"] .item-rail {
+    background: var(--status-down);
+  }
+  .item-body {
+    min-width: 0;
+  }
   .chevron {
     margin-left: auto;
     opacity: 0.5;
@@ -135,8 +152,12 @@
     background: transparent;
     border: 1px solid currentColor;
   }
-  .pill-open    { color: var(--status-down); }
-  .pill-resolved { color: var(--status-up); }
+  .pill-open {
+    color: var(--status-down);
+  }
+  .pill-resolved {
+    color: var(--status-up);
+  }
   .severity {
     font-family: var(--font-body);
     font-size: 10px;
@@ -145,8 +166,12 @@
     letter-spacing: 0.12em;
     font-weight: 500;
   }
-  .severity-unhealthy { color: var(--status-down); }
-  .severity-degraded { color: var(--status-deg); }
+  .severity-unhealthy {
+    color: var(--status-down);
+  }
+  .severity-degraded {
+    color: var(--status-deg);
+  }
   .meta {
     display: flex;
     flex-wrap: wrap;
@@ -155,7 +180,9 @@
     font-size: var(--fs-xs);
     opacity: 0.7;
   }
-  .sep { opacity: 0.5; }
+  .sep {
+    opacity: 0.5;
+  }
   code {
     background: var(--surface-hover);
     padding: 1px 5px;

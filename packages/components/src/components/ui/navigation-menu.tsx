@@ -176,25 +176,23 @@ const NavigationMenuItem = BaseNavigationMenu.Item;
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>(
-  (props, forwardedRef) => {
-    const {className, children, render, ...otherProps} = props;
+const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>((props, forwardedRef) => {
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNavigationMenu.Trigger
-        {...otherProps}
-        ref={forwardedRef}
-        render={useRender({
-          defaultTagName: "button",
-          render: render as never,
-          props: mergeProps({className: cn(styles.trigger, className)}, {}),
-        })}>
-        {children}
-        <ChevronDown className={styles.triggerIcon} />
-      </BaseNavigationMenu.Trigger>
-    );
-  },
-);
+  return (
+    <BaseNavigationMenu.Trigger
+      {...otherProps}
+      ref={forwardedRef}
+      render={useRender({
+        defaultTagName: "button",
+        render: render as never,
+        props: mergeProps({className: cn(styles.trigger, className)}, {}),
+      })}>
+      {children}
+      <ChevronDown className={styles.triggerIcon} />
+    </BaseNavigationMenu.Trigger>
+  );
+});
 
 /**
  * Renders the navigation menu content.
@@ -211,24 +209,22 @@ const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenu
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>(
-  (props, forwardedRef) => {
-    const {className, children, render, ...otherProps} = props;
+const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>((props, forwardedRef) => {
+  const {className, children, render, ...otherProps} = props;
 
-    return (
-      <BaseNavigationMenu.Content
-        {...otherProps}
-        ref={forwardedRef}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.content, className)}, {}),
-        })}>
-        {children}
-      </BaseNavigationMenu.Content>
-    );
-  },
-);
+  return (
+    <BaseNavigationMenu.Content
+      {...otherProps}
+      ref={forwardedRef}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.content, className)}, {}),
+      })}>
+      {children}
+    </BaseNavigationMenu.Content>
+  );
+});
 
 /**
  * Renders the navigation menu link.

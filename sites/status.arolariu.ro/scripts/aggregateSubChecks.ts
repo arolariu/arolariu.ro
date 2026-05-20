@@ -15,13 +15,22 @@ export function groupSubChecks(
     if (!p.subChecks) continue;
     const bucket = bucketStart(new Date(p.timestamp), size);
     let perService = byService.get(p.service);
-    if (!perService) {perService = new Map(); byService.set(p.service, perService);}
+    if (!perService) {
+      perService = new Map();
+      byService.set(p.service, perService);
+    }
     const samples = p.sampleCount ?? 1;
     for (const sc of p.subChecks) {
       let perSub = perService.get(sc.name);
-      if (!perSub) {perSub = new Map(); perService.set(sc.name, perSub);}
+      if (!perSub) {
+        perSub = new Map();
+        perService.set(sc.name, perSub);
+      }
       let acc = perSub.get(bucket);
-      if (!acc) {acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0}; perSub.set(bucket, acc);}
+      if (!acc) {
+        acc = {statuses: [], latencies: [], httpStatuses: [], sampleCount: 0, healthySamples: 0};
+        perSub.set(bucket, acc);
+      }
       acc.statuses.push(sc.status);
       // Mirror the main-service fan-out: if the probe captured per-sample
       // sub-check durations, feed all of them into the percentile calc. Legacy

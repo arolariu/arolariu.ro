@@ -18,12 +18,7 @@ import {
 } from "../types/status";
 
 /** Display order for service rows on the status page. Drives `orderedServices`. */
-export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = [
-  "arolariu.ro",
-  "api.arolariu.ro",
-  "exp.arolariu.ro",
-  "cv.arolariu.ro",
-];
+export const SERVICE_DISPLAY_ORDER: readonly ServiceId[] = ["arolariu.ro", "api.arolariu.ro", "exp.arolariu.ro", "cv.arolariu.ro"];
 
 /**
  * Returns services sorted by the canonical display order. Unknown service

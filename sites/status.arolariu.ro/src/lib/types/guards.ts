@@ -13,9 +13,16 @@
  */
 
 import {
-  SERVICE_IDS, type AggregateFile, type Bucket, type HealthStatus,
-  type Incident, type IncidentsFile, type ProbeResult, type ServiceId,
-  type ServiceSeries, type SubCheck,
+  SERVICE_IDS,
+  type AggregateFile,
+  type Bucket,
+  type HealthStatus,
+  type Incident,
+  type IncidentsFile,
+  type ProbeResult,
+  type ServiceId,
+  type ServiceSeries,
+  type SubCheck,
 } from "./status";
 
 /** True when `v` is a plain object (not an array, not `null`). */

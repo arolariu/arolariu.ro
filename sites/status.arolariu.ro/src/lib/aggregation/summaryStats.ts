@@ -28,7 +28,7 @@ const MS_PER_DAY = 86_400_000;
  * Worst-service sub-line formats at 1 decimal at the render site.
  */
 export function computeOverallUptime(services: readonly ServiceSeries[]): number {
-  const allBuckets = services.flatMap(s => [...s.buckets]);
+  const allBuckets = services.flatMap((s) => [...s.buckets]);
   return weightedUptime(allBuckets);
 }
 
@@ -65,9 +65,9 @@ export interface IncidentCounts {
 export function computeIncidentCount(incidents: IncidentsFile | null, windowFilter: FilterWindow): IncidentCounts {
   if (!incidents) return {total: 0, open: 0, resolved: 0};
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
-  const scoped = incidents.incidents.filter(inc => Date.parse(inc.startedAt) >= cutoffMs);
-  const open = scoped.filter(i => i.status === "open").length;
-  const resolved = scoped.filter(i => i.status === "resolved").length;
+  const scoped = incidents.incidents.filter((inc) => Date.parse(inc.startedAt) >= cutoffMs);
+  const open = scoped.filter((i) => i.status === "open").length;
+  const resolved = scoped.filter((i) => i.status === "resolved").length;
   return {total: scoped.length, open, resolved};
 }
 
@@ -80,9 +80,8 @@ export function computeMttr(incidents: IncidentsFile | null, windowFilter: Filte
   if (!incidents) return undefined;
   const cutoffMs = Date.now() - WINDOW_CONFIGS[windowFilter].days * MS_PER_DAY;
   const resolved = incidents.incidents.filter(
-    (inc): inc is ResolvedIncident => inc.status === "resolved"
-      && Date.parse(inc.startedAt) >= cutoffMs
-      && typeof inc.durationMs === "number"
+    (inc): inc is ResolvedIncident =>
+      inc.status === "resolved" && Date.parse(inc.startedAt) >= cutoffMs && typeof inc.durationMs === "number",
   );
   if (resolved.length === 0) return undefined;
   const sum = resolved.reduce((s, inc) => s + inc.durationMs, 0);

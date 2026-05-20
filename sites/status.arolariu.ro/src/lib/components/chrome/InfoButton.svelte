@@ -37,8 +37,7 @@
     onclick={(e) => {
       e.stopPropagation();
       toggle();
-    }}
-  >
+    }}>
     <span aria-hidden="true">i</span>
   </button>
   <Popover
@@ -47,8 +46,7 @@
     surfaceClass="info-popover"
     role="tooltip"
     surfaceId={id}
-    anchorEl={buttonEl ?? null}
-  >
+    anchorEl={buttonEl ?? null}>
     {text}
   </Popover>
 </span>
@@ -108,9 +106,13 @@
     letter-spacing: 0.01em;
     text-transform: none;
     line-height: 1.5;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
   }
   :global(:root[data-theme="light"]) .info-wrap :global(.info-popover) {
-    box-shadow: 0 8px 24px rgba(21, 16, 10, 0.18), 0 0 0 1px rgba(21, 16, 10, 0.04);
+    box-shadow:
+      0 8px 24px rgba(21, 16, 10, 0.18),
+      0 0 0 1px rgba(21, 16, 10, 0.04);
   }
 </style>

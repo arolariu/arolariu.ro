@@ -21,7 +21,9 @@
 export function useMinuteTick(): () => number {
   let nowTick = $state(Date.now());
   $effect(() => {
-    const id = setInterval(() => { nowTick = Date.now(); }, 60_000);
+    const id = setInterval(() => {
+      nowTick = Date.now();
+    }, 60_000);
     return () => clearInterval(id);
   });
   return () => nowTick;

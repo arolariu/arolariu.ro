@@ -55,20 +55,41 @@
     tabindex="0"
     aria-expanded={expanded}
     onclick={onToggle}
-    onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
-  >
-    <span class="dot dot-{latest.toLowerCase()}" class:pulse={latest !== "Healthy"}></span>
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onToggle();
+      }
+    }}>
+    <span
+      class="dot dot-{latest.toLowerCase()}"
+      class:pulse={latest !== "Healthy"}></span>
     <span class="name">{series.service}</span>
-    <span class="caret" aria-hidden="true">{expanded ? "▾" : "▸"}</span>
+    <span
+      class="caret"
+      aria-hidden="true">{expanded ? "▾" : "▸"}</span>
   </div>
   <div class="spark-cell"><LatencySparkline buckets={series.buckets} /></div>
-  <div class="bar-cell"><UptimeBar buckets={series.buckets} onSegmentHover={onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs} /></div>
+  <div class="bar-cell"
+    ><UptimeBar
+      buckets={series.buckets}
+      onSegmentHover={onHover}
+      {tooltipId}
+      {hoveredBucketT}
+      {bucketDurationMs} /></div>
   <div class="uptime">{uptime.toFixed(3)}%</div>
-  <div class="latency" data-tier={latencyTier(avgLatency)}>{avgLatency} ms</div>
+  <div
+    class="latency"
+    data-tier={latencyTier(avgLatency)}>{avgLatency} ms</div>
 </div>
 
 {#if expanded}
-  <ServiceDetailPanel {series} {bucketDurationMs} {onHover} {tooltipId} {hoveredBucketT}/>
+  <ServiceDetailPanel
+    {series}
+    {bucketDurationMs}
+    {onHover}
+    {tooltipId}
+    {hoveredBucketT} />
 {/if}
 
 <style>
@@ -81,10 +102,14 @@
     padding: var(--sp-sm) var(--sp-md);
     border-bottom: 1px solid var(--border);
     font-size: var(--fs-body);
-    transition: background .12s;
+    transition: background 0.12s;
   }
-  .row:hover { background: var(--surface-hover); }
-  .row > * { min-width: 0; }
+  .row:hover {
+    background: var(--surface-hover);
+  }
+  .row > * {
+    min-width: 0;
+  }
   .name-col {
     grid-area: name;
     display: flex;
@@ -98,34 +123,77 @@
     outline: 2px solid var(--status-up);
     outline-offset: 2px;
   }
-  .spark-cell { grid-area: sparkline; min-width: 0; display: block; }
-  .bar-cell { grid-area: bar; min-width: 0; }
-  .uptime { grid-area: uptime; text-align: right; font-variant-numeric: tabular-nums; }
-  .latency { grid-area: latency; text-align: right; font-variant-numeric: tabular-nums; opacity: 0.85; }
-  .latency[data-tier="fast"] { color: var(--status-up); }
-  .latency[data-tier="ok"]   { color: var(--text); }
-  .latency[data-tier="slow"] { color: var(--status-deg); }
+  .spark-cell {
+    grid-area: sparkline;
+    min-width: 0;
+    display: block;
+  }
+  .bar-cell {
+    grid-area: bar;
+    min-width: 0;
+  }
+  .uptime {
+    grid-area: uptime;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .latency {
+    grid-area: latency;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+  .latency[data-tier="fast"] {
+    color: var(--status-up);
+  }
+  .latency[data-tier="ok"] {
+    color: var(--text);
+  }
+  .latency[data-tier="slow"] {
+    color: var(--status-deg);
+  }
 
   .dot {
-    width: 8px; height: 8px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     display: inline-block;
     flex-shrink: 0;
   }
-  .dot-healthy { background: var(--status-up); box-shadow: 0 0 8px rgba(63,185,80,0.5); }
-  .dot-degraded { background: var(--status-deg); box-shadow: 0 0 8px rgba(210,153,34,0.5); }
-  .dot-unhealthy { background: var(--status-down); box-shadow: 0 0 8px rgba(248,81,73,0.5); }
+  .dot-healthy {
+    background: var(--status-up);
+    box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+  }
+  .dot-degraded {
+    background: var(--status-deg);
+    box-shadow: 0 0 8px rgba(210, 153, 34, 0.5);
+  }
+  .dot-unhealthy {
+    background: var(--status-down);
+    box-shadow: 0 0 8px rgba(248, 81, 73, 0.5);
+  }
   .dot.pulse {
     animation: dotPulse 2s ease-in-out infinite;
   }
   @keyframes dotPulse {
-    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-    50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 15%, transparent); }
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 15%, transparent);
+    }
   }
-  .dot-degraded.pulse { color: var(--status-deg); }
-  .dot-unhealthy.pulse { color: var(--status-down); }
+  .dot-degraded.pulse {
+    color: var(--status-deg);
+  }
+  .dot-unhealthy.pulse {
+    color: var(--status-down);
+  }
   @media (prefers-reduced-motion: reduce) {
-    .dot.pulse { animation: none; }
+    .dot.pulse {
+      animation: none;
+    }
   }
   .name {
     font-weight: 500;
@@ -136,10 +204,12 @@
   .caret {
     font-size: 10px;
     opacity: 0.4;
-    transition: transform .15s;
+    transition: transform 0.15s;
     margin-left: auto;
   }
-  .name-col[aria-expanded="true"] .caret { transform: rotate(90deg); }
+  .name-col[aria-expanded="true"] .caret {
+    transform: rotate(90deg);
+  }
 
   /* Section: narrow-viewport stacking.
      Driven by the .page container (statusPage) so it fires based on the
@@ -154,8 +224,15 @@
       gap: var(--sp-xs) var(--sp-sm);
       padding-block: var(--sp-md);
     }
-    .spark-cell { display: none; }
-    .uptime { font-weight: 600; justify-self: end; }
-    .latency { justify-self: end; }
+    .spark-cell {
+      display: none;
+    }
+    .uptime {
+      font-weight: 600;
+      justify-self: end;
+    }
+    .latency {
+      justify-self: end;
+    }
   }
 </style>

@@ -89,7 +89,7 @@
     "cursor-global": true,
     "cursor-workspace": true,
     "windsurf": true
-},
+  },
   "chat.notifyWindowOnConfirmation": "windowNotFocused",
   "chat.promptFiles": true,
   "chat.renderRelatedFiles": false,

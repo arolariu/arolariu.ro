@@ -1,4 +1,4 @@
-import {test, expect} from "@playwright/test";
+import {expect, test} from "@playwright/test";
 import {readFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -16,16 +16,24 @@ test.describe("status page", () => {
   test.beforeEach(async ({page}) => {
     // Clear localStorage to avoid 30-min cache from previous tests
     await page.addInitScript(() => {
-      try { localStorage.clear(); } catch { /* ignore */ }
+      try {
+        localStorage.clear();
+      } catch {
+        /* ignore */
+      }
     });
     await page.route(/raw\.githubusercontent\.com.+fine\.json/, (route) =>
-      route.fulfill({status: 200, contentType: "application/json", body: fixtures.fine}));
+      route.fulfill({status: 200, contentType: "application/json", body: fixtures.fine}),
+    );
     await page.route(/raw\.githubusercontent\.com.+hourly\.json/, (route) =>
-      route.fulfill({status: 200, contentType: "application/json", body: fixtures.hourly}));
+      route.fulfill({status: 200, contentType: "application/json", body: fixtures.hourly}),
+    );
     await page.route(/raw\.githubusercontent\.com.+daily\.json/, (route) =>
-      route.fulfill({status: 200, contentType: "application/json", body: fixtures.daily}));
+      route.fulfill({status: 200, contentType: "application/json", body: fixtures.daily}),
+    );
     await page.route(/raw\.githubusercontent\.com.+incidents\.json/, (route) =>
-      route.fulfill({status: 200, contentType: "application/json", body: fixtures.incidents}));
+      route.fulfill({status: 200, contentType: "application/json", body: fixtures.incidents}),
+    );
   });
 
   test("shows skeleton then data", async ({page}) => {
@@ -84,8 +92,7 @@ test.describe("status page", () => {
   });
 
   test("network error shows retry button", async ({page}) => {
-    await page.route(/raw\.githubusercontent\.com.+fine\.json/, (route) =>
-      route.fulfill({status: 500, body: ""}));
+    await page.route(/raw\.githubusercontent\.com.+fine\.json/, (route) => route.fulfill({status: 500, body: ""}));
     await page.goto("/?mocks=off");
     await expect(page.getByRole("alert")).toContainText("unreachable");
   });
@@ -129,7 +136,10 @@ test.describe("status page", () => {
     // <svg> with at least one <polyline>. Polylines with axis-aligned points
     // have zero bounding-box height in Chromium's visibility heuristic, so use
     // toBeAttached rather than toBeVisible on the polyline itself.
-    const detailPanel = page.locator('[role="region"]').filter({hasText: /Latency trend/i}).first();
+    const detailPanel = page
+      .locator('[role="region"]')
+      .filter({hasText: /Latency trend/i})
+      .first();
     await expect(detailPanel).toBeVisible();
     await expect(detailPanel.locator("svg polyline").first()).toBeAttached();
     // Press Escape to collapse — this also verifies the keyboard shortcut wiring.

@@ -33,22 +33,32 @@
 
   // Object.entries gives a stable-enough iteration order for the sub-series
   // map. Empty when the service has no sub-checks.
-  const subEntries = $derived(
-    series.subSeries ? Object.entries(series.subSeries) : []
-  );
+  const subEntries = $derived(series.subSeries ? Object.entries(series.subSeries) : []);
 </script>
 
-<section class="detail" aria-label={`Detail for ${series.service}`}>
+<section
+  class="detail"
+  aria-label={`Detail for ${series.service}`}>
   {#if subEntries.length > 0}
     <div class="subchecks">
       {#each subEntries as [name, buckets] (name)}
-        <SubServiceRow service={series.service} {name} {buckets} {onHover} {tooltipId} {hoveredBucketT} {bucketDurationMs}/>
+        <SubServiceRow
+          service={series.service}
+          {name}
+          {buckets}
+          {onHover}
+          {tooltipId}
+          {hoveredBucketT}
+          {bucketDurationMs} />
       {/each}
     </div>
   {/if}
   <div class="chart-block">
     <h4 class="chart-heading">Latency percentiles · p50 / p75 / p95 / p99 over the selected window</h4>
-    <LatencyChart buckets={series.buckets} service={series.service} {bucketDurationMs}/>
+    <LatencyChart
+      buckets={series.buckets}
+      service={series.service}
+      {bucketDurationMs} />
   </div>
 </section>
 
@@ -60,10 +70,18 @@
     animation: slideIn 200ms ease-out;
   }
   @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
-  .subchecks { margin-bottom: var(--sp-sm); }
+  .subchecks {
+    margin-bottom: var(--sp-sm);
+  }
   .chart-heading {
     font-size: var(--fs-xs);
     text-transform: uppercase;
@@ -73,6 +91,8 @@
     font-weight: 600;
   }
   @media (prefers-reduced-motion: reduce) {
-    .detail { animation: none; }
+    .detail {
+      animation: none;
+    }
   }
 </style>

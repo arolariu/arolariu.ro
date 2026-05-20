@@ -8,7 +8,7 @@ import {trackKey, type TrackSignal} from "./detectIncidentsCommon";
  */
 export function subCheckSignals(probe: ProbeResult): TrackSignal[] {
   if (!probe.subChecks) return [];
-  return probe.subChecks.map(sc => ({
+  return probe.subChecks.map((sc) => ({
     key: trackKey(probe.service, sc.name),
     service: probe.service,
     subCheck: sc.name,

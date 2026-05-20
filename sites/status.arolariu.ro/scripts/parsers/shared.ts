@@ -9,10 +9,7 @@ import type {HealthStatus} from "../../src/lib/types/status";
  *
  * Returns the adjusted status, along with an optional error string to propagate.
  */
-export function reconcileBodyVsHttp(
-  bodyStatus: HealthStatus,
-  httpStatus: number,
-): {status: HealthStatus; error?: string} {
+export function reconcileBodyVsHttp(bodyStatus: HealthStatus, httpStatus: number): {status: HealthStatus; error?: string} {
   if (bodyStatus === "Healthy" && httpStatus >= 500) {
     return {status: "Unhealthy", error: `HTTP ${httpStatus}`};
   }

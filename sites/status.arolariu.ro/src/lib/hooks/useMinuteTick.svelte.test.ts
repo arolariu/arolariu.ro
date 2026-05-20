@@ -1,5 +1,5 @@
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import {flushSync} from "svelte";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMinuteTick} from "./useMinuteTick.svelte";
 
 describe("useMinuteTick", () => {

@@ -25,9 +25,7 @@
   /** Tweened accessor for the headline total so window changes animate. */
   const displayIncidents = useCountTween(() => incCount.total);
   /** "slow" when anything is ongoing; "fast" when nothing happened; otherwise "ok". */
-  const tier = $derived(
-    incCount.open > 0 ? "slow" : incCount.total === 0 ? "fast" : "ok"
-  );
+  const tier = $derived(incCount.open > 0 ? "slow" : incCount.total === 0 ? "fast" : "ok");
 </script>
 
 <dl class="card">

@@ -420,10 +420,7 @@ function DropDrawer({children, ...props}: DropDrawerRootProps): React.JSX.Elemen
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Drawer Docs}
  */
-const DropDrawerTrigger = React.forwardRef<HTMLButtonElement, DropDrawerTriggerProps>((
-  {className, children, ...props},
-  forwardedRef,
-) => {
+const DropDrawerTrigger = React.forwardRef<HTMLButtonElement, DropDrawerTriggerProps>(({className, children, ...props}, forwardedRef) => {
   const {isMobile} = useDropDrawerContext();
 
   return isMobile ? (
@@ -461,10 +458,7 @@ const DropDrawerTrigger = React.forwardRef<HTMLButtonElement, DropDrawerTriggerP
  *
  * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
  */
-const DropDrawerContent = React.forwardRef<HTMLDivElement, DropDrawerContentProps>((
-  {className, children, ...props},
-  forwardedRef,
-) => {
+const DropDrawerContent = React.forwardRef<HTMLDivElement, DropDrawerContentProps>(({className, children, ...props}, forwardedRef) => {
   const {isMobile} = useDropDrawerContext();
   const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
   const [submenuTitle, setSubmenuTitle] = React.useState<string | null>(null);

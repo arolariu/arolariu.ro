@@ -20,7 +20,9 @@
     // reloading. applyTheme re-evaluates matchMedia each call.
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => { if (theme === "auto") applyTheme("auto"); };
+    const onChange = () => {
+      if (theme === "auto") applyTheme("auto");
+    };
     // addEventListener is the modern API; fall back silently if unavailable.
     if (typeof mql.addEventListener === "function") {
       mql.addEventListener("change", onChange);
@@ -47,9 +49,10 @@
   type="button"
   onclick={cycle}
   aria-label="Toggle color theme (currently {label})"
-  title="Theme: {label}"
->
-  <span class="icon" aria-hidden="true">{icon}</span>
+  title="Theme: {label}">
+  <span
+    class="icon"
+    aria-hidden="true">{icon}</span>
   <span class="label">{label}</span>
 </button>
 
@@ -67,7 +70,9 @@
     gap: 6px;
     align-items: center;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
   .theme-toggle:hover {
     color: var(--text);
@@ -82,5 +87,7 @@
     font-size: 10px;
     line-height: 1;
   }
-  .label { font-weight: 400; }
+  .label {
+    font-weight: 400;
+  }
 </style>

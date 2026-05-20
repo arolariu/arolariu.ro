@@ -26,11 +26,20 @@
   let {services, incidents, windowFilter}: Props = $props();
 </script>
 
-<section class="summary-stats" data-testid="summary-stats" aria-label="Summary statistics">
-  <OverallUptimeCard {services} {windowFilter} />
+<section
+  class="summary-stats"
+  data-testid="summary-stats"
+  aria-label="Summary statistics">
+  <OverallUptimeCard
+    {services}
+    {windowFilter} />
   <AvgLatencyCard {services} />
-  <IncidentsCard {incidents} {windowFilter} />
-  <MttrCard {incidents} {windowFilter} />
+  <IncidentsCard
+    {incidents}
+    {windowFilter} />
+  <MttrCard
+    {incidents}
+    {windowFilter} />
 </section>
 
 <style>
@@ -59,11 +68,21 @@
     position: relative;
     animation: consolePrint 500ms cubic-bezier(0.2, 0, 0, 1) both;
   }
-  .summary-stats :global(> .card:last-child) { border-right: 0; }
-  .summary-stats :global(> .card:nth-child(1)) { animation-delay: 60ms; }
-  .summary-stats :global(> .card:nth-child(2)) { animation-delay: 120ms; }
-  .summary-stats :global(> .card:nth-child(3)) { animation-delay: 180ms; }
-  .summary-stats :global(> .card:nth-child(4)) { animation-delay: 240ms; }
+  .summary-stats :global(> .card:last-child) {
+    border-right: 0;
+  }
+  .summary-stats :global(> .card:nth-child(1)) {
+    animation-delay: 60ms;
+  }
+  .summary-stats :global(> .card:nth-child(2)) {
+    animation-delay: 120ms;
+  }
+  .summary-stats :global(> .card:nth-child(3)) {
+    animation-delay: 180ms;
+  }
+  .summary-stats :global(> .card:nth-child(4)) {
+    animation-delay: 240ms;
+  }
 
   .summary-stats :global(.card dt) {
     font-family: var(--font-mono);
@@ -93,9 +112,15 @@
     font-variant-numeric: tabular-nums;
     color: var(--text);
   }
-  .summary-stats :global(.card .value.tier-fast) { color: var(--status-up); }
-  .summary-stats :global(.card .value.tier-ok)   { color: var(--text); }
-  .summary-stats :global(.card .value.tier-slow) { color: var(--status-deg); }
+  .summary-stats :global(.card .value.tier-fast) {
+    color: var(--status-up);
+  }
+  .summary-stats :global(.card .value.tier-ok) {
+    color: var(--text);
+  }
+  .summary-stats :global(.card .value.tier-slow) {
+    color: var(--status-deg);
+  }
   .summary-stats :global(.card .sub) {
     margin: 10px 0 0 0;
     font-family: var(--font-mono);
@@ -126,8 +151,15 @@
       border-left: 0;
       border-right: 0;
     }
-    .summary-stats :global(> .card) { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .summary-stats :global(> .card:nth-child(2n)) { border-right: 0; }
-    .summary-stats :global(> .card:nth-child(n+3)) { border-bottom: 0; }
+    .summary-stats :global(> .card) {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-stats :global(> .card:nth-child(2n)) {
+      border-right: 0;
+    }
+    .summary-stats :global(> .card:nth-child(n + 3)) {
+      border-bottom: 0;
+    }
   }
 </style>

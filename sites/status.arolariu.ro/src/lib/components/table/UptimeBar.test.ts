@@ -1,5 +1,5 @@
-import {describe, it, expect, vi} from "vitest";
-import {render, fireEvent, screen} from "@testing-library/svelte";
+import {fireEvent, render, screen} from "@testing-library/svelte";
+import {describe, expect, it, vi} from "vitest";
 import type {Bucket} from "../../types/status";
 import UptimeBar from "./UptimeBar.svelte";
 
@@ -9,10 +9,7 @@ function mkBucket(t: string, status: "Healthy" | "Degraded" | "Unhealthy"): Buck
 
 describe("UptimeBar", () => {
   it("renders one button per bucket", () => {
-    const buckets = [
-      mkBucket("2026-04-19T14:00:00Z", "Healthy"),
-      mkBucket("2026-04-19T14:30:00Z", "Degraded"),
-    ];
+    const buckets = [mkBucket("2026-04-19T14:00:00Z", "Healthy"), mkBucket("2026-04-19T14:30:00Z", "Degraded")];
     render(UptimeBar, {props: {buckets, onSegmentHover: vi.fn()}});
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });

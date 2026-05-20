@@ -598,49 +598,51 @@ function ToastViewportContent(): React.JSX.Element {
  * Toaster is the root viewport container for displaying toast notifications.
  * It should be rendered once at the app root level.
  */
-const Toaster = React.forwardRef<HTMLDivElement, ToasterProps>((
-  {
-    className,
-    closeButton = true,
-    containerAriaLabel = DEFAULT_VIEWPORT_ARIA_LABEL,
-    duration = DEFAULT_TOAST_DURATION,
-    position = "bottom-right",
-    style,
-    toastOptions,
-    visibleToasts = DEFAULT_TOAST_LIMIT,
+const Toaster = React.forwardRef<HTMLDivElement, ToasterProps>(
+  (
+    {
+      className,
+      closeButton = true,
+      containerAriaLabel = DEFAULT_VIEWPORT_ARIA_LABEL,
+      duration = DEFAULT_TOAST_DURATION,
+      position = "bottom-right",
+      style,
+      toastOptions,
+      visibleToasts = DEFAULT_TOAST_LIMIT,
+    },
+    forwardedRef,
+  ) => {
+    const toasterId = React.useId();
+
+    React.useEffect(() => {
+      toasterRegistrations.set(toasterId, {
+        closeButton,
+        toastOptions: toastOptions ?? {},
+      });
+
+      return () => {
+        toasterRegistrations.delete(toasterId);
+      };
+    }, [closeButton, toastOptions, toasterId]);
+
+    return (
+      <Toast.Provider
+        limit={visibleToasts}
+        timeout={duration}
+        toastManager={toastManager}>
+        <Toast.Portal>
+          <Toast.Viewport
+            ref={forwardedRef}
+            aria-label={containerAriaLabel}
+            className={cn(styles.viewport, positionStyles[position], className)}
+            style={style}>
+            <ToastViewportContent />
+          </Toast.Viewport>
+        </Toast.Portal>
+      </Toast.Provider>
+    );
   },
-  forwardedRef,
-) => {
-  const toasterId = React.useId();
-
-  React.useEffect(() => {
-    toasterRegistrations.set(toasterId, {
-      closeButton,
-      toastOptions: toastOptions ?? {},
-    });
-
-    return () => {
-      toasterRegistrations.delete(toasterId);
-    };
-  }, [closeButton, toastOptions, toasterId]);
-
-  return (
-    <Toast.Provider
-      limit={visibleToasts}
-      timeout={duration}
-      toastManager={toastManager}>
-      <Toast.Portal>
-        <Toast.Viewport
-          ref={forwardedRef}
-          aria-label={containerAriaLabel}
-          className={cn(styles.viewport, positionStyles[position], className)}
-          style={style}>
-          <ToastViewportContent />
-        </Toast.Viewport>
-      </Toast.Portal>
-    </Toast.Provider>
-  );
-});
+);
 
 Toaster.displayName = "Toaster";
 

@@ -68,11 +68,14 @@ export function useIntersectionObserver(
       return;
     }
 
-    const observer = new globalThis.IntersectionObserver(([observerEntry]) => {
-      if (observerEntry) {
-        setEntry(observerEntry);
-      }
-    }, {threshold, root, rootMargin});
+    const observer = new globalThis.IntersectionObserver(
+      ([observerEntry]) => {
+        if (observerEntry) {
+          setEntry(observerEntry);
+        }
+      },
+      {threshold, root, rootMargin},
+    );
 
     observer.observe(element);
 

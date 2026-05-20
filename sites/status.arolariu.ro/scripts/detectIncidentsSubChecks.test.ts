@@ -1,20 +1,26 @@
 // @vitest-environment node
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {subCheckSignals} from "./detectIncidentsSubChecks";
 
 describe("subCheckSignals", () => {
   it("returns [] when no subChecks on the probe", () => {
     const sigs = subCheckSignals({
-      service: "arolariu.ro", timestamp: "2026-04-19T14:00:00Z",
-      latencyMs: 100, httpStatus: 200, overall: "Healthy",
+      service: "arolariu.ro",
+      timestamp: "2026-04-19T14:00:00Z",
+      latencyMs: 100,
+      httpStatus: 200,
+      overall: "Healthy",
     });
     expect(sigs).toHaveLength(0);
   });
 
   it("produces one signal per sub-check with namespaced track key", () => {
     const sigs = subCheckSignals({
-      service: "api.arolariu.ro", timestamp: "2026-04-19T14:00:00Z",
-      latencyMs: 100, httpStatus: 200, overall: "Degraded",
+      service: "api.arolariu.ro",
+      timestamp: "2026-04-19T14:00:00Z",
+      latencyMs: 100,
+      httpStatus: 200,
+      overall: "Degraded",
       subChecks: [
         {name: "mssql", status: "Degraded", durationMs: 500, description: "slow"},
         {name: "cosmosdb", status: "Healthy", durationMs: 40},

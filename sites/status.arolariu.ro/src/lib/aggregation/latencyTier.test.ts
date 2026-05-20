@@ -1,5 +1,5 @@
-import {describe, it, expect} from "vitest";
-import {latencyTier, LATENCY_THRESHOLDS} from "./latencyTier";
+import {describe, expect, it} from "vitest";
+import {LATENCY_THRESHOLDS, latencyTier} from "./latencyTier";
 
 describe("latencyTier", () => {
   it("classifies well-below-200 p50 as 'fast'", () => {

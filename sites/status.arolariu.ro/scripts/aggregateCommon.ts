@@ -11,12 +11,17 @@ import type {Bucket, BucketSize, HealthStatus, SubCheckSummary} from "../src/lib
  * for `1h` rounds down to the hour; for `1d` rounds down to 00:00Z.
  */
 export function bucketStart(d: Date, size: BucketSize): string {
-  const t = new Date(Date.UTC(
-    d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(),
-    size === "1d" ? 0 : d.getUTCHours(),
-    size === "30m" ? Math.floor(d.getUTCMinutes() / 30) * 30 : 0,
-    0, 0,
-  ));
+  const t = new Date(
+    Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate(),
+      size === "1d" ? 0 : d.getUTCHours(),
+      size === "30m" ? Math.floor(d.getUTCMinutes() / 30) * 30 : 0,
+      0,
+      0,
+    ),
+  );
   return t.toISOString();
 }
 
@@ -41,8 +46,13 @@ export function mode(values: readonly number[]): number | undefined {
   if (values.length === 0) return undefined;
   const counts = new Map<number, number>();
   for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
-  let best = values[0]; let bestCount = 0;
-  for (const [v, c] of counts) if (c > bestCount) {best = v; bestCount = c;}
+  let best = values[0];
+  let bestCount = 0;
+  for (const [v, c] of counts)
+    if (c > bestCount) {
+      best = v;
+      bestCount = c;
+    }
   return best;
 }
 
@@ -84,9 +94,10 @@ export function makeBucket(t: string, acc: BucketAccumulator): Bucket {
   };
   let worstSubCheck: SubCheckSummary | undefined;
   if (acc.worstSub !== undefined) {
-    worstSubCheck = acc.worstSub.description !== undefined
-      ? {name: acc.worstSub.name, status: acc.worstSub.status, description: acc.worstSub.description}
-      : {name: acc.worstSub.name, status: acc.worstSub.status};
+    worstSubCheck =
+      acc.worstSub.description !== undefined
+        ? {name: acc.worstSub.name, status: acc.worstSub.status, description: acc.worstSub.description}
+        : {name: acc.worstSub.name, status: acc.worstSub.status};
   }
   return {
     ...base,

@@ -34,8 +34,7 @@
   aria-checked={active}
   tabindex={active ? 0 : -1}
   onclick={onClick}
-  onkeydown={onKeydown}
->
+  onkeydown={onKeydown}>
   {label}
 </button>
 
@@ -51,9 +50,13 @@
     cursor: pointer;
     font-variant-numeric: tabular-nums;
     position: relative;
-    transition: color .15s ease, border-color .15s ease;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
-  .chip:hover { color: var(--text); }
+  .chip:hover {
+    color: var(--text);
+  }
   .chip:focus-visible {
     outline: 0;
     color: var(--text);
