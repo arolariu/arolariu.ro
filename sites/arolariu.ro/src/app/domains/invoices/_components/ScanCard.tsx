@@ -35,7 +35,6 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {
   TbCheck,
@@ -283,14 +282,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               </div>
             ) : (
               <>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> chosen over next/image; see spec 2026-05-21-view-scans-deferred-mount-design.md */}
+                <img
                   src={scan.blobUrl}
                   alt={scan.name}
-                  fill
                   className={styles["imagePreview"]}
                   loading='lazy'
-                  sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-                  unoptimized
+                  decoding='async'
                 />
                 {/* Preview overlay icon for images - use zoom icon */}
                 <div className={styles["previewOverlay"]}>
@@ -462,12 +460,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
           ) : (
             <div className={styles["previewImageContainer"]}>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> chosen over next/image; see spec 2026-05-21-view-scans-deferred-mount-design.md */}
+              <img
                 src={scan.blobUrl}
                 alt={scan.name}
-                fill
                 className={styles["previewImage"]}
-                unoptimized
+                decoding='async'
               />
             </div>
           )}

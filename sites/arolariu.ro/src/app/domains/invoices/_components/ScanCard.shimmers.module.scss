@@ -1,0 +1,43 @@
+// ===========================================
+// SCAN CARD SHIMMER STYLES
+// ===========================================
+//
+// Placeholder skeleton rules used by <CardShimmer> in ScanCard.shimmers.tsx,
+// rendered both in the pre-hydration loading grid and inside <DeferredMount>
+// for off-screen cards.
+//
+// Colocated with ScanCard.shimmers.tsx so the shimmer is a fully
+// self-contained component (markup + styles in the same folder).
+
+@use '../../../../styles/abstracts' as *;
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.skeletonImage {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  border-radius: radius('md');
+}
+
+.skeletonInfo {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  padding-inline: space(2);
+}
+
+.skeletonName {
+  height: space(4);
+  width: 70%;
+  border-radius: radius('sm');
+}
+
+.skeletonMeta {
+  height: space(3);
+  width: 50%;
+  border-radius: radius('sm');
+}
