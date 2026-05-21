@@ -6,11 +6,12 @@
  */
 
 import type {CachedScan} from "@/types/scans";
-import {Button, Skeleton} from "@arolariu/components";
+import {Button, Skeleton, useIsMobile} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
+import DeferredMount from "../../_components/DeferredMount";
 import EmptyState from "../../_components/EmptyState";
 import ScanCard from "../../_components/ScanCard";
 import {useScans} from "../_hooks/useScans";
@@ -49,6 +50,26 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
 }
 
 /**
+ * Shimmer placeholder matching a ScanCard's outer dimensions.
+ *
+ * @remarks
+ * Used in two places: (1) inside the pre-hydration loading grid (multiple
+ * shimmers), and (2) inside <DeferredMount> as the placeholder for off-screen
+ * cards. Sharing one component keeps the visual layout consistent.
+ */
+function CardShimmer(): React.JSX.Element {
+  return (
+    <div className={styles["skeletonCard"]}>
+      <Skeleton className={styles["skeletonImage"]} />
+      <div className={styles["skeletonInfo"]}>
+        <Skeleton className={styles["skeletonName"]} />
+        <Skeleton className={styles["skeletonMeta"]} />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Grid display for scans with selection support.
  */
 export default function ScansGrid(): React.JSX.Element {
@@ -56,16 +77,7 @@ export default function ScansGrid(): React.JSX.Element {
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
   const [page, setPage] = useState(0);
 
-  // Detect mobile viewport
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = (): void => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   /**
    * Filter out scans without required fields.
@@ -95,15 +107,7 @@ export default function ScansGrid(): React.JSX.Element {
     return (
       <div className={styles["scansGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
-          <div
-            key={skeletonKey}
-            className={styles["skeletonCard"]}>
-            <Skeleton className={styles["skeletonImage"]} />
-            <div className={styles["skeletonInfo"]}>
-              <Skeleton className={styles["skeletonName"]} />
-              <Skeleton className={styles["skeletonMeta"]} />
-            </div>
-          </div>
+          <CardShimmer key={skeletonKey} />
         ))}
       </div>
     );
@@ -139,11 +143,13 @@ export default function ScansGrid(): React.JSX.Element {
               animate={{opacity: 1}}
               exit={{opacity: 0}}
               transition={{duration: 0.15, ease: "easeOut"}}>
-              <ScanCardWrapper
-                scan={scan}
-                isSelected={selectedScans.some((s) => s.id === scan.id)}
-                onToggleSelection={toggleSelection}
-              />
+              <DeferredMount placeholder={<CardShimmer />}>
+                <ScanCardWrapper
+                  scan={scan}
+                  isSelected={selectedScans.some((s) => s.id === scan.id)}
+                  onToggleSelection={toggleSelection}
+                />
+              </DeferredMount>
             </motion.div>
           ))}
         </AnimatePresence>
