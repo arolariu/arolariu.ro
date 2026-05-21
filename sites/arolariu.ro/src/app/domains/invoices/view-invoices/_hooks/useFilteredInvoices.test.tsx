@@ -22,8 +22,9 @@ const createDefaultFilters = (): FilterState => ({
   amountMax: null,
   categories: [],
   paymentTypes: [],
-  sortBy: null,
-  sortOrder: null,
+  currencies: [],
+  sortBy: "date",
+  sortOrder: "desc",
   view: "table",
 });
 
@@ -1258,6 +1259,59 @@ describe("useFilteredInvoices", () => {
 
       // Assert: All invoices returned (sorted by date-desc)
       expect(result.current).toHaveLength(3);
+    });
+  });
+
+  describe("Currency filtering", () => {
+    it("excludes invoices whose currency is not in the filter set", () => {
+      const ron = new InvoiceBuilder()
+        .withName("RON Invoice")
+        .withPaymentInformation({
+          totalCostAmount: 100,
+          currency: {code: "RON", name: "Romanian Leu", symbol: "lei"},
+          transactionDate: new Date("2024-01-15"),
+          paymentType: PaymentType.Cash,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+        })
+        .build();
+      const eur = new InvoiceBuilder()
+        .withName("EUR Invoice")
+        .withPaymentInformation({
+          totalCostAmount: 50,
+          currency: {code: "EUR", name: "Euro", symbol: "€"},
+          transactionDate: new Date("2024-02-10"),
+          paymentType: PaymentType.Card,
+          totalTaxAmount: 0,
+          subtotalAmount: 0,
+          tipAmount: 0,
+        })
+        .build();
+
+      const filters = {...createDefaultFilters(), currencies: ["RON"]};
+      const {result} = renderHook(() => useFilteredInvoices([ron, eur], filters));
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.name).toBe("RON Invoice");
+    });
+
+    it("empty currencies array means pass-through (no filter applied)", () => {
+      const ron = new InvoiceBuilder().withName("RON").build();
+      const eur = new InvoiceBuilder().withName("EUR").build();
+      const {result} = renderHook(() => useFilteredInvoices([ron, eur], createDefaultFilters()));
+      expect(result.current).toHaveLength(2);
+    });
+
+    it("treats missing currency.code as 'RON' when filtering by RON", () => {
+      const malformed = new InvoiceBuilder().withName("Malformed").build();
+      const noCode: Invoice = {
+        ...malformed,
+        paymentInformation: {...malformed.paymentInformation, currency: {code: "", name: "", symbol: ""}},
+      };
+      const filters = {...createDefaultFilters(), currencies: ["RON"]};
+      const {result} = renderHook(() => useFilteredInvoices([noCode], filters));
+      expect(result.current).toHaveLength(1);
     });
   });
 });
