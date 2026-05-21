@@ -30,6 +30,7 @@ export type FilterState = {
   amountMax: number | null;
   categories: number[];
   paymentTypes: number[];
+  currencies: string[];
   sortBy: "date" | "amount" | "name" | null;
   sortOrder: "asc" | "desc" | null;
   view: "table" | "grid";
@@ -155,8 +156,13 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
           ?.split(",")
           .map(Number)
           .filter((n) => !Number.isNaN(n)) ?? [],
-      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? null,
-      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? null,
+      currencies:
+        searchParams
+          .get("cur")
+          ?.split(",")
+          .filter((c) => c.length > 0) ?? [],
+      sortBy: (searchParams.get("sortBy") as FilterState["sortBy"]) ?? "date",
+      sortOrder: (searchParams.get("sortOrder") as FilterState["sortOrder"]) ?? "desc",
       view: (searchParams.get("view") as "table" | "grid") ?? "table",
     }),
     [searchParams],
@@ -230,8 +236,15 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.delete("pay");
       }
 
-      // Sort params: always write BOTH or NEITHER
-      if (merged.sortBy !== null && merged.sortOrder !== null) {
+      if (merged.currencies.length > 0) {
+        params.set("cur", merged.currencies.join(","));
+      } else {
+        params.delete("cur");
+      }
+
+      // Sort params: write only when value differs from the new default
+      // (default = date/desc → no params in URL keeps it clean)
+      if (merged.sortBy && merged.sortOrder && !(merged.sortBy === "date" && merged.sortOrder === "desc")) {
         params.set("sortBy", merged.sortBy);
         params.set("sortOrder", merged.sortOrder);
       } else {
@@ -285,6 +298,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
     if (filters.amountMin !== null || filters.amountMax !== null) count++;
     if (filters.categories.length > 0) count++;
     if (filters.paymentTypes.length > 0) count++;
+    if (filters.currencies.length > 0) count++;
     return count;
   }, [filters]);
 
