@@ -85,6 +85,7 @@ type Props = {
  * tactile thumb-reach affordance to close the sheet (filters still apply
  * reactively as the user edits).
  */
+// eslint-disable-next-line complexity -- top-level filter component coordinates 6 cards + 4 debounced inputs + view-mode toggle; splitting would create artificial boundaries
 export default function FilterBar({
   filters,
   onFiltersChange,
@@ -123,6 +124,40 @@ export default function FilterBar({
     }
     return Math.max(1000, Math.ceil(max / 100) * 100);
   }, [invoices]);
+
+  // ── Amount slider — local "wet" state for instant thumb feedback,
+  //    debounced before pushing to URL/filters so dragging doesn't trigger
+  //    a re-render per pixel of travel.
+  const [sliderValue, setSliderValue] = useState<[number, number]>(() => [
+    filters.amountMin ?? 0,
+    filters.amountMax ?? amountMax,
+  ]);
+  const debouncedSlider = useDebounce(sliderValue, 200);
+
+  // Re-sync local slider when filters change externally (Clear all,
+  // number-input edits, etc.). Uses React's render-time setState pattern —
+  // tracking the last-seen external value and updating in render avoids
+  // the cascading-render anti-pattern of doing this from useEffect.
+  const [lastSyncedExternal, setLastSyncedExternal] = useState<[number, number]>(() => [
+    filters.amountMin ?? 0,
+    filters.amountMax ?? amountMax,
+  ]);
+  const externalMin = filters.amountMin ?? 0;
+  const externalMax = filters.amountMax ?? amountMax;
+  if (lastSyncedExternal[0] !== externalMin || lastSyncedExternal[1] !== externalMax) {
+    setLastSyncedExternal([externalMin, externalMax]);
+    setSliderValue([externalMin, externalMax]);
+  }
+
+  // Push debounced slider value to filters when it diverges from current filter state.
+  useEffect(() => {
+    const [min, max] = debouncedSlider;
+    const nextMin = min === 0 ? null : min;
+    const nextMax = max === amountMax ? null : max;
+    if (nextMin !== filters.amountMin || nextMax !== filters.amountMax) {
+      onFiltersChange({amountMin: nextMin, amountMax: nextMax});
+    }
+  }, [debouncedSlider, amountMax, filters.amountMin, filters.amountMax, onFiltersChange]);
 
   // ── Date-preset active state ──
   const activeDatePreset = useMemo(
@@ -189,16 +224,10 @@ export default function FilterBar({
     [onFiltersChange],
   );
 
-  const handleAmountSliderChange = useCallback(
-    (value: number[]) => {
-      const [min, max] = value;
-      onFiltersChange({
-        amountMin: min === 0 ? null : (min ?? null),
-        amountMax: max === amountMax ? null : (max ?? null),
-      });
-    },
-    [amountMax, onFiltersChange],
-  );
+  const handleAmountSliderChange = useCallback((value: number[]) => {
+    const [min = 0, max = 0] = value;
+    setSliderValue([min, max]);
+  }, []);
 
   const handleCategoryToggle = useCallback(
     (category: number) => {
@@ -433,7 +462,7 @@ export default function FilterBar({
             min={0}
             max={amountMax}
             step={1}
-            value={[filters.amountMin ?? 0, filters.amountMax ?? amountMax]}
+            value={sliderValue}
             onValueChange={handleAmountSliderChange}
           />
         </div>
