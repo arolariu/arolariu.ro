@@ -73,9 +73,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -188,6 +191,7 @@
 // ===========================================
 .scansGrid {
   @include grid(1, space(4));
+  min-height: 38rem; // Ensure the section is tall enough to accommodate at least 2 rows of scan cards
 
   // 2-column layout on small screens (not 3)
   @include respond-below('sm') {
