@@ -15,7 +15,6 @@ export default function LicenseBreakdown(): React.JSX.Element {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
-  // TODO -- must be dynamic.
   const mitPercentage = Math.round((69 / 86) * 100);
   const apachePercentage = 100 - mitPercentage;
 
@@ -45,7 +44,7 @@ export default function LicenseBreakdown(): React.JSX.Element {
             <Card className={styles["licenseCard"]}>
               <CardContent className={styles["cardContent"]}>
                 <div className={styles["cardHeader"]}>
-                  <div className={`${styles["iconWrapper"]} ${styles["gradientCyanBlue"]}`}>
+                  <div className={styles["iconWrapper"]}>
                     <TbLicense className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
@@ -80,7 +79,7 @@ export default function LicenseBreakdown(): React.JSX.Element {
             <Card className={styles["licenseCard"]}>
               <CardContent className={styles["cardContent"]}>
                 <div className={styles["cardHeader"]}>
-                  <div className={`${styles["iconWrapper"]} ${styles["gradientOrangeRed"]}`}>
+                  <div className={styles["iconWrapper"]}>
                     <TbScale className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
