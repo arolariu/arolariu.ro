@@ -3313,14 +3313,26 @@
         "amountMax": "Max amount",
         "amountMin": "Min amount",
         "amountRange": "Amount Range",
+        "anyValue": "any",
         "button": "Filters",
         "categories": "Categories",
         "category": "Category",
         "clear": "Clear all",
+        "currency": "Currency",
+        "currencyAny": "any",
         "dateFrom": "From date",
+        "datePresets": {
+          "30d": "30d",
+          "90d": "90d",
+          "all": "All time",
+          "custom": "Custom",
+          "ytd": "YTD"
+        },
         "dateRange": "Date Range",
         "dateTo": "To date",
+        "defaultValue": "default",
         "paymentTypes": "Payment Types",
+        "showResults": "Show {count, plural, one {# result} other {# results}}",
         "sortBy": "Sort By",
         "sortOptions": {
           "amountHighToLow": "Amount (high to low)",
@@ -3328,8 +3340,7 @@
           "dateNewest": "Date (newest first)",
           "dateOldest": "Date (oldest first)",
           "nameAZ": "Name (A-Z)",
-          "nameZA": "Name (Z-A)",
-          "none": "No sorting (default order)"
+          "nameZA": "Name (Z-A)"
         },
         "timeOfDay": "Time of day",
         "title": "Filters"
