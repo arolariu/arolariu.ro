@@ -376,3 +376,134 @@
   width: 100%;
   cursor: pointer;
 }
+
+
+// ===========================================
+// NEW PANEL — variant J (2026-05-21 overhaul)
+// ===========================================
+
+.panelGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: space(3);
+
+  @include respond-below('md') {
+    grid-template-columns: 1fr;
+    gap: space(3);
+  }
+}
+
+.cardSection {
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(3);
+  background-color: color('background');
+  @include transition(border-color, background-color);
+}
+
+.cardSectionActive {
+  border-color: color-alpha('primary', 0.3);
+  background-color: color-alpha('primary', 0.04);
+}
+
+.cardSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(2);
+}
+
+.cardSectionTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  display: inline-flex;
+  align-items: center;
+  gap: space(1.5);
+}
+
+.activeValuePill {
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  border: 1px solid color-alpha('primary', 0.3);
+  border-radius: radius('sm');
+  padding: space(0.5) space(2);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  max-width: 12rem;
+  @include truncate;
+}
+
+.inactiveLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.datePresetRow {
+  display: flex;
+  gap: space(1.5);
+  flex-wrap: wrap;
+  margin-bottom: space(2);
+}
+
+.datePresetButton {
+  background-color: color('background');
+  border: 1px solid color('border');
+  border-radius: radius('md');
+  padding: space(1) space(2.5);
+  font-size: font-size('xs');
+  color: color('foreground');
+  cursor: pointer;
+  @include transition(background-color, border-color);
+
+  @include respond-below('md') {
+    min-height: space(11);
+    flex: 1;
+  }
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.datePresetButtonActive {
+  background-color: color('primary');
+  color: color('primary-foreground');
+  border-color: color('primary');
+
+  &:hover {
+    background-color: color('primary');
+    opacity: 0.9;
+  }
+}
+
+.amountSliderWrapper {
+  margin-top: space(2);
+  padding: 0 space(1);
+}
+
+.mobileShowResultsBar {
+  position: sticky;
+  bottom: 0;
+  background-color: color('background');
+  border-top: 1px solid color('border');
+  padding: space(3);
+  padding-bottom: calc(#{space(3)} + env(safe-area-inset-bottom, 0));
+}
+
+.mobileShowResultsButton {
+  width: 100%;
+  min-height: space(12);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.panelHeaderActiveBadge {
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  border-radius: radius('full');
+  padding: space(0.5) space(2);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  margin-left: space(2);
+}
