@@ -1,14 +1,13 @@
 "use client";
 
 import {formatDate} from "@/lib/utils.generic";
+import type {Invoice} from "@/types/invoices";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
   Calendar,
-  Checkbox,
   Input,
-  Label,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -20,6 +19,7 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  Slider,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -28,9 +28,11 @@ import {
   useWindowSize,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
+import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../_utils/datePresets";
+import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
 import styles from "./FilterBar.module.scss";
 
 /**
@@ -47,52 +49,42 @@ type Props = {
   viewMode: "table" | "grid";
   /** Callback when view mode changes (updates URL) */
   onViewModeChange: (mode: "table" | "grid") => void;
+  /** Full unfiltered invoice list — drives dynamic option derivation and slider bounds. */
+  invoices: ReadonlyArray<Invoice>;
+  /** Count after filters apply — drives the mobile "Show N results" CTA label. */
+  filteredCount: number;
 };
 
 /**
- * Advanced filter bar component for invoice list with URL-based state management.
+ * Advanced filter bar component for the invoice list, with URL-based state
+ * management and a card-based panel UX (variant J, spec
+ * `2026-05-21-view-invoices-filter-overhaul-design.md`).
  *
  * @remarks
- * Provides comprehensive filtering and sorting capabilities with all state synchronized
- * to URL search parameters via the parent component's `useInvoiceFilters` hook.
+ * Outer shell (search input, view toggle, mobile Sheet wrapper, desktop
+ * inline-panel container) matches the prior design. The panel internals are
+ * a 2-column card grid (single column on mobile) with six cards: Date Range,
+ * Amount Range, Currency, Categories, Payment Types, Sort By.
  *
- * **Filter Capabilities**:
- * - Debounced search input (300ms delay before updating URL)
- * - Date range filtering (from/to dates stored as ISO strings in URL)
- * - Amount range filtering (min/max amounts)
- * - Multi-select category and payment type filters
- * - Sort options (date, amount, name - ascending/descending)
- * - View mode toggle (table/grid) stored in URL
+ * **Active state**: each card highlights with a tinted background + colored
+ * border + a small active-value pill in its header when its filter is set.
  *
- * **URL Integration**:
- * - All filter changes update URL search params via `onFiltersChange` callback
- * - Date values are converted between Date objects (for Calendar) and ISO strings (for URL)
- * - Search input is debounced to avoid excessive URL updates
- * - Filter state is bookmarkable and shareable
+ * **Dynamic option lists**: Currency, Categories, Payment Types are derived
+ * from the FULL unfiltered invoice array (not the post-filter set) so that
+ * filtering down doesn't dead-end the chip rails. Cards with empty derived
+ * lists are hidden entirely.
  *
- * **Responsive Design**:
- * - Uses Popover on desktop for compact filter panel
- * - Uses Sheet (side panel) on mobile for better touch interaction
- * - Automatically adjusts filter UI based on screen size
+ * **Date presets**: 4 quick-buttons (30d / 90d / YTD / All time) control
+ * the From/To Calendar popovers as a true controlled component via
+ * `computePresetRange`. Active preset is derived from current From/To via
+ * `deriveActivePreset` — no extra URL state.
  *
- * **Performance**:
- * - Debounced search prevents excessive re-renders and URL updates
- * - Uses `useCallback` for all event handlers to avoid unnecessary re-renders
- * - Filter panel only renders when open (via Popover/Sheet)
+ * **Sort default**: defaults to "Date (newest first)"; the dropdown has no
+ * "none" option.
  *
- * @param props - Component props
- * @returns FilterBar component
- *
- * @example
- * ```tsx
- * <FilterBar
- *   filters={urlFilters}
- *   onFiltersChange={updateUrlFilters}
- *   activeFilterCount={3}
- *   viewMode="table"
- *   onViewModeChange={setViewMode}
- * />
- * ```
+ * **Mobile**: sticky "Show N results" CTA at the bottom of the Sheet —
+ * tactile thumb-reach affordance to close the sheet (filters still apply
+ * reactively as the user edits).
  */
 export default function FilterBar({
   filters,
@@ -100,6 +92,8 @@ export default function FilterBar({
   activeFilterCount,
   viewMode,
   onViewModeChange,
+  invoices,
+  filteredCount,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--List.invoicesView");
   const locale = useLocale();
@@ -117,17 +111,36 @@ export default function FilterBar({
     }
   }, [debouncedSearch, filters.search, onFiltersChange]);
 
-  /**
-   * Handle search input change.
-   */
+  // ── Dynamic option lists, derived from the FULL invoice set ──
+  const availableCurrencies = useMemo(() => computeAvailableCurrencies(invoices), [invoices]);
+  const availableCategories = useMemo(() => computeAvailableCategories(invoices), [invoices]);
+  const availablePaymentTypes = useMemo(() => computeAvailablePaymentTypes(invoices), [invoices]);
+
+  // ── Slider bounds — ceiling = max(1000, ceil(highest amount / 100) * 100) ──
+  const amountMax = useMemo(() => {
+    const max = invoices.reduce((acc, inv) => Math.max(acc, inv.paymentInformation.totalCostAmount), 0);
+    return Math.max(1000, Math.ceil(max / 100) * 100);
+  }, [invoices]);
+
+  // ── Date-preset active state ──
+  const activeDatePreset = useMemo(
+    () => deriveActivePreset(filters.dateFrom, filters.dateTo, new Date()),
+    [filters.dateFrom, filters.dateTo],
+  );
+
+  // ── Per-card active predicates ──
+  const isDateActive = filters.dateFrom !== null || filters.dateTo !== null;
+  const isAmountActive = filters.amountMin !== null || filters.amountMax !== null;
+  const isCurrencyActive = filters.currencies.length > 0;
+  const isCategoryActive = filters.categories.length > 0;
+  const isPaymentActive = filters.paymentTypes.length > 0;
+  const isSortActive = !(filters.sortBy === "date" && filters.sortOrder === "desc");
+
+  // ── Handlers ──
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
   }, []);
 
-  /**
-   * Clear all active filters by resetting to defaults.
-   * This updates the URL to remove all filter parameters.
-   */
   const handleClearFilters = useCallback(() => {
     setSearchInput("");
     onFiltersChange({
@@ -138,32 +151,26 @@ export default function FilterBar({
       amountMax: null,
       categories: [],
       paymentTypes: [],
-      sortBy: null,
-      sortOrder: null,
+      currencies: [],
+      sortBy: "date",
+      sortOrder: "desc",
     });
   }, [onFiltersChange]);
 
-  /**
-   * Handle date range change.
-   * Converts Date objects to ISO strings for URL storage.
-   */
   const handleDateFromChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateFrom: date ? date.toISOString().split("T")[0] : null});
+      onFiltersChange({dateFrom: date ? (date.toISOString().split("T")[0] ?? null) : null});
     },
     [onFiltersChange],
   );
 
   const handleDateToChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateTo: date ? date.toISOString().split("T")[0] : null});
+      onFiltersChange({dateTo: date ? (date.toISOString().split("T")[0] ?? null) : null});
     },
     [onFiltersChange],
   );
 
-  /**
-   * Handle amount range change.
-   */
   const handleAmountMinChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value ? Number.parseFloat(e.target.value) : null;
@@ -180,9 +187,17 @@ export default function FilterBar({
     [onFiltersChange],
   );
 
-  /**
-   * Handle category toggle.
-   */
+  const handleAmountSliderChange = useCallback(
+    (value: number[]) => {
+      const [min, max] = value;
+      onFiltersChange({
+        amountMin: min === 0 ? null : (min ?? null),
+        amountMax: max === amountMax ? null : (max ?? null),
+      });
+    },
+    [amountMax, onFiltersChange],
+  );
+
   const handleCategoryToggle = useCallback(
     (category: number) => {
       const newCategories = filters.categories.includes(category)
@@ -193,9 +208,6 @@ export default function FilterBar({
     [filters.categories, onFiltersChange],
   );
 
-  /**
-   * Handle payment type toggle.
-   */
   const handlePaymentTypeToggle = useCallback(
     (paymentType: number) => {
       const newPaymentTypes = filters.paymentTypes.includes(paymentType)
@@ -206,105 +218,141 @@ export default function FilterBar({
     [filters.paymentTypes, onFiltersChange],
   );
 
-  /**
-   * Handle sort change.
-   * Splits the combined value (e.g., "date-desc") into separate sortBy and sortOrder.
-   * Special value "none" clears sorting.
-   */
-  const handleSortChange = useCallback(
-    (value: string) => {
-      if (value === "none") {
-        onFiltersChange({sortBy: null, sortOrder: null});
-        return;
-      }
-      const parts = value.split("-");
-      const direction = parts.pop() as "asc" | "desc";
-      const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
-      onFiltersChange({
-        sortBy: field,
-        sortOrder: direction,
-      });
+  const handleCurrencyToggle = useCallback(
+    (code: string) => {
+      const next = filters.currencies.includes(code)
+        ? filters.currencies.filter((c) => c !== code)
+        : [...filters.currencies, code];
+      onFiltersChange({currencies: next});
+    },
+    [filters.currencies, onFiltersChange],
+  );
+
+  const handlePresetClick = useCallback(
+    (preset: DatePresetKey) => {
+      const range = computePresetRange(preset, new Date());
+      onFiltersChange({dateFrom: range.from, dateTo: range.to});
     },
     [onFiltersChange],
   );
 
-  /**
-   * Render category filter options.
-   */
-  const renderCategoryFilters = (): React.JSX.Element => {
-    const categories = [
-      {value: InvoiceCategory.GROCERY, label: t("categories.groceries")},
-      {value: InvoiceCategory.FAST_FOOD, label: t("categories.dining")},
-      {value: InvoiceCategory.HOME_CLEANING, label: t("categories.utilities")},
-      {value: InvoiceCategory.CAR_AUTO, label: t("categories.travel")},
-      {value: InvoiceCategory.OTHER, label: t("categories.other")},
-    ];
+  const handleSortChange = useCallback(
+    (value: string) => {
+      const parts = value.split("-");
+      const direction = parts.pop() as "asc" | "desc";
+      const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
+      onFiltersChange({sortBy: field, sortOrder: direction});
+    },
+    [onFiltersChange],
+  );
 
-    return (
-      <div className={styles["filterSection"]}>
-        <Label className={styles["filterLabel"]}>{t("filters.categories")}</Label>
-        <div className={styles["categoryChips"]}>
-          {categories.map((category) => (
-            <Badge
-              key={category.value}
-              variant={filters.categories.includes(category.value) ? "default" : "outline"}
-              className={styles["categoryChip"]}
-              onClick={() => handleCategoryToggle(category.value)}>
-              {category.label}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // ── Label helpers (kept inline so they pick up the right `t` namespace) ──
+  const formatCurrencyList = useCallback(
+    (codes: ReadonlyArray<string>): string =>
+      codes.length <= 2 ? codes.join(", ") : `${codes.slice(0, 2).join(", ")}, +${codes.length - 2}`,
+    [],
+  );
 
-  /**
-   * Render payment type filter options.
-   */
-  const renderPaymentTypeFilters = (): React.JSX.Element => {
-    const paymentTypes = [
-      {value: PaymentType.Cash, label: "Cash"},
-      {value: PaymentType.Card, label: "Card"},
-      {value: PaymentType.Transfer, label: "Transfer"},
-      {value: PaymentType.MobilePayment, label: "Mobile"},
-      {value: PaymentType.Voucher, label: "Voucher"},
-      {value: PaymentType.Other, label: "Other"},
-    ];
+  const getCategoryLabel = useCallback(
+    (cat: InvoiceCategory): string => {
+      switch (cat) {
+        case InvoiceCategory.GROCERY:
+          return t("categories.groceries");
+        case InvoiceCategory.FAST_FOOD:
+          return t("categories.dining");
+        case InvoiceCategory.HOME_CLEANING:
+          return t("categories.utilities");
+        case InvoiceCategory.CAR_AUTO:
+          return t("categories.travel");
+        case InvoiceCategory.OTHER:
+        case InvoiceCategory.NOT_DEFINED:
+        default:
+          return t("categories.other");
+      }
+    },
+    [t],
+  );
 
-    return (
-      <div className={styles["filterSection"]}>
-        <Label className={styles["filterLabel"]}>{t("filters.paymentTypes")}</Label>
-        <div className={styles["paymentTypeList"]}>
-          {paymentTypes.map((paymentType) => (
-            <div
-              key={paymentType.value}
-              className={styles["checkboxItem"]}>
-              <Checkbox
-                nativeButton
-                id={`payment-${paymentType.value}`}
-                checked={filters.paymentTypes.includes(paymentType.value)}
-                onCheckedChange={() => handlePaymentTypeToggle(paymentType.value)}
-              />
-              <Label
-                htmlFor={`payment-${paymentType.value}`}
-                className={styles["checkboxLabel"]}>
-                {paymentType.label}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  const getPaymentTypeLabel = useCallback((pt: PaymentType): string => {
+    switch (pt) {
+      case PaymentType.Cash:
+        return "Cash";
+      case PaymentType.Card:
+        return "Card";
+      case PaymentType.Transfer:
+        return "Transfer";
+      case PaymentType.MobilePayment:
+        return "Mobile";
+      case PaymentType.Voucher:
+        return "Voucher";
+      case PaymentType.Other:
+      case PaymentType.Unknown:
+      default:
+        return "Other";
+    }
+  }, []);
 
-  /**
-   * Render filter panel content.
-   */
+  const getSortLabel = useCallback(
+    (sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string => {
+      if (sortBy === "date" && sortOrder === "desc") return t("filters.sortOptions.dateNewest");
+      if (sortBy === "date" && sortOrder === "asc") return t("filters.sortOptions.dateOldest");
+      if (sortBy === "amount" && sortOrder === "desc") return t("filters.sortOptions.amountHighToLow");
+      if (sortBy === "amount" && sortOrder === "asc") return t("filters.sortOptions.amountLowToHigh");
+      if (sortBy === "name" && sortOrder === "asc") return t("filters.sortOptions.nameAZ");
+      if (sortBy === "name" && sortOrder === "desc") return t("filters.sortOptions.nameZA");
+      return "";
+    },
+    [t],
+  );
+
+  const dateActivePillText = useMemo(() => {
+    if (!isDateActive) return null;
+    if (activeDatePreset === "30d") return t("filters.datePresets.30d");
+    if (activeDatePreset === "90d") return t("filters.datePresets.90d");
+    if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
+    if (filters.dateFrom && filters.dateTo)
+      return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
+    if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
+    if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
+    return null;
+  }, [isDateActive, activeDatePreset, filters.dateFrom, filters.dateTo, locale, t]);
+
+  const amountActivePillText = useMemo(() => {
+    if (!isAmountActive) return null;
+    const min = filters.amountMin ?? 0;
+    const max = filters.amountMax ?? amountMax;
+    return `${min} – ${max}`;
+  }, [isAmountActive, filters.amountMin, filters.amountMax, amountMax]);
+
+  // ────────────────────────────────────────────────────────────
+  // Panel body — card grid (single-column on mobile via SCSS)
+  // ────────────────────────────────────────────────────────────
   const renderFilterPanel = (): React.JSX.Element => (
-    <div className={styles["filterPanel"]}>
-      {/* Date Range Filter */}
-      <div className={styles["filterSection"]}>
-        <Label className={styles["filterLabel"]}>{t("filters.dateRange")}</Label>
+    <div className={styles["panelGrid"]}>
+      {/* ─────── Date Range ─────── */}
+      <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
+        <div className={styles["cardSectionHeader"]}>
+          <span className={styles["cardSectionTitle"]}>
+            <TbCalendar /> {t("filters.dateRange")}
+          </span>
+          {dateActivePillText ? (
+            <span className={styles["activeValuePill"]}>{dateActivePillText}</span>
+          ) : (
+            <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+          )}
+        </div>
+        <div className={styles["datePresetRow"]}>
+          {(["30d", "90d", "ytd", "all"] as const).map((preset) => (
+            <button
+              key={preset}
+              type='button'
+              className={`${styles["datePresetButton"]} ${activeDatePreset === preset ? styles["datePresetButtonActive"] : ""}`}
+              // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
+              onClick={() => handlePresetClick(preset)}>
+              {t(`filters.datePresets.${preset}`)}
+            </button>
+          ))}
+        </div>
         <div className={styles["dateRangeInputs"]}>
           <Popover>
             <PopoverTrigger
@@ -347,9 +395,18 @@ export default function FilterBar({
         </div>
       </div>
 
-      {/* Amount Range Filter */}
-      <div className={styles["filterSection"]}>
-        <Label className={styles["filterLabel"]}>{t("filters.amountRange")}</Label>
+      {/* ─────── Amount Range ─────── */}
+      <div className={`${styles["cardSection"]} ${isAmountActive ? styles["cardSectionActive"] : ""}`}>
+        <div className={styles["cardSectionHeader"]}>
+          <span className={styles["cardSectionTitle"]}>
+            <TbCurrencyDollar /> {t("filters.amountRange")}
+          </span>
+          {amountActivePillText ? (
+            <span className={styles["activeValuePill"]}>{amountActivePillText}</span>
+          ) : (
+            <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+          )}
+        </div>
         <div className={styles["amountRangeInputs"]}>
           <div className={styles["amountInputWrapper"]}>
             <TbCurrencyDollar className={styles["currencyIcon"]} />
@@ -372,25 +429,116 @@ export default function FilterBar({
             />
           </div>
         </div>
+        <div className={styles["amountSliderWrapper"]}>
+          <Slider
+            min={0}
+            max={amountMax}
+            step={1}
+            value={[filters.amountMin ?? 0, filters.amountMax ?? amountMax]}
+            onValueChange={handleAmountSliderChange}
+          />
+        </div>
       </div>
 
-      {/* Category Filter */}
-      {renderCategoryFilters()}
+      {/* ─────── Currency (dynamic) ─────── */}
+      {availableCurrencies.length > 0 && (
+        <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
+          <div className={styles["cardSectionHeader"]}>
+            <span className={styles["cardSectionTitle"]}>💵 {t("filters.currency")}</span>
+            {isCurrencyActive ? (
+              <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
+            ) : (
+              <span className={styles["inactiveLabel"]}>{t("filters.currencyAny")}</span>
+            )}
+          </div>
+          <div className={styles["categoryChips"]}>
+            {availableCurrencies.map((code) => (
+              <Badge
+                key={code}
+                variant={filters.currencies.includes(code) ? "default" : "outline"}
+                className={styles["categoryChip"]}
+                // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
+                onClick={() => handleCurrencyToggle(code)}>
+                {code}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* Payment Type Filter */}
-      {renderPaymentTypeFilters()}
+      {/* ─────── Categories (dynamic) ─────── */}
+      {availableCategories.length > 0 && (
+        <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
+          <div className={styles["cardSectionHeader"]}>
+            <span className={styles["cardSectionTitle"]}>📂 {t("filters.categories")}</span>
+            {isCategoryActive ? (
+              <span className={styles["activeValuePill"]}>
+                {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
+              </span>
+            ) : (
+              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+            )}
+          </div>
+          <div className={styles["categoryChips"]}>
+            {availableCategories.map((cat) => (
+              <Badge
+                key={cat}
+                variant={filters.categories.includes(cat) ? "default" : "outline"}
+                className={styles["categoryChip"]}
+                // eslint-disable-next-line react/jsx-no-bind -- cat is a stable enum value
+                onClick={() => handleCategoryToggle(cat)}>
+                {getCategoryLabel(cat)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* Sort By */}
-      <div className={styles["filterSection"]}>
-        <Label className={styles["filterLabel"]}>{t("filters.sortBy")}</Label>
+      {/* ─────── Payment Types (dynamic) ─────── */}
+      {availablePaymentTypes.length > 0 && (
+        <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
+          <div className={styles["cardSectionHeader"]}>
+            <span className={styles["cardSectionTitle"]}>💳 {t("filters.paymentTypes")}</span>
+            {isPaymentActive ? (
+              <span className={styles["activeValuePill"]}>
+                {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
+              </span>
+            ) : (
+              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+            )}
+          </div>
+          <div className={styles["categoryChips"]}>
+            {availablePaymentTypes.map((pt) => (
+              <Badge
+                key={pt}
+                variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
+                className={styles["categoryChip"]}
+                // eslint-disable-next-line react/jsx-no-bind -- pt is a stable enum value
+                onClick={() => handlePaymentTypeToggle(pt)}>
+                {getPaymentTypeLabel(pt)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─────── Sort By ─────── */}
+      <div className={`${styles["cardSection"]} ${isSortActive ? styles["cardSectionActive"] : ""}`}>
+        <div className={styles["cardSectionHeader"]}>
+          <span className={styles["cardSectionTitle"]}>↕ {t("filters.sortBy")}</span>
+          {isSortActive ? (
+            <span className={styles["activeValuePill"]}>{getSortLabel(filters.sortBy, filters.sortOrder)}</span>
+          ) : (
+            <span className={styles["inactiveLabel"]}>{t("filters.defaultValue")}</span>
+          )}
+        </div>
         <Select
-          value={filters.sortBy && filters.sortOrder ? `${filters.sortBy}-${filters.sortOrder}` : "none"}
+          value={`${filters.sortBy}-${filters.sortOrder}`}
           onValueChange={handleSortChange}>
           <SelectTrigger className={styles["sortSelect"]}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='none'>{t("filters.sortOptions.none")}</SelectItem>
             <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
             <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
             <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>
@@ -418,7 +566,7 @@ export default function FilterBar({
           />
         </div>
 
-        {/* Filter Button with Badge */}
+        {/* Filter Button — mobile opens Sheet, desktop toggles inline panel */}
         {isMobile ? (
           <Sheet
             open={isFilterOpen}
@@ -442,7 +590,14 @@ export default function FilterBar({
             />
             <SheetContent className={styles["filterSheet"]}>
               <div className={styles["sheetHeader"]}>
-                <h3 className={styles["sheetTitle"]}>{t("filters.title")}</h3>
+                <h3 className={styles["sheetTitle"]}>
+                  {t("filters.title")}
+                  {activeFilterCount > 0 && (
+                    <span className={styles["panelHeaderActiveBadge"]}>
+                      {t("filters.activeCount", {count: String(activeFilterCount)})}
+                    </span>
+                  )}
+                </h3>
                 {activeFilterCount > 0 && (
                   <Button
                     variant='ghost'
@@ -454,7 +609,15 @@ export default function FilterBar({
                   </Button>
                 )}
               </div>
-              {renderFilterPanel()}
+              <div style={{flex: 1, overflowY: "auto"}}>{renderFilterPanel()}</div>
+              <div className={styles["mobileShowResultsBar"]}>
+                <Button
+                  className={styles["mobileShowResultsButton"]}
+                  // eslint-disable-next-line react/jsx-no-bind -- inline close handler
+                  onClick={() => setIsFilterOpen(false)}>
+                  {t("filters.showResults", {count: filteredCount})}
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
         ) : (
@@ -462,6 +625,7 @@ export default function FilterBar({
             variant='outline'
             size='sm'
             className={styles["filterButton"]}
+            // eslint-disable-next-line react/jsx-no-bind -- inline toggle handler
             onClick={() => setIsFilterOpen((prev) => !prev)}
             aria-expanded={isFilterOpen}
             aria-controls='inline-filter-panel'>
@@ -500,6 +664,7 @@ export default function FilterBar({
                     variant={viewMode === "table" ? "default" : "ghost"}
                     size='sm'
                     className={styles["viewButtonLeft"]}
+                    // eslint-disable-next-line react/jsx-no-bind -- inline mode setter
                     onClick={() => onViewModeChange("table")}>
                     <TbTable className={styles["viewIcon"]} />
                   </Button>
@@ -515,6 +680,7 @@ export default function FilterBar({
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size='sm'
                     className={styles["viewButtonRight"]}
+                    // eslint-disable-next-line react/jsx-no-bind -- inline mode setter
                     onClick={() => onViewModeChange("grid")}>
                     <TbCards className={styles["viewIcon"]} />
                   </Button>
@@ -532,7 +698,14 @@ export default function FilterBar({
           id='inline-filter-panel'
           className={styles["inlineFilterPanel"]}>
           <div className={styles["inlineFilterHeader"]}>
-            <h4 className={styles["inlineFilterTitle"]}>{t("filters.title")}</h4>
+            <h4 className={styles["inlineFilterTitle"]}>
+              {t("filters.title")}
+              {activeFilterCount > 0 && (
+                <span className={styles["panelHeaderActiveBadge"]}>
+                  {t("filters.activeCount", {count: String(activeFilterCount)})}
+                </span>
+              )}
+            </h4>
             <div className={styles["inlineFilterActions"]}>
               {activeFilterCount > 0 && (
                 <Button
@@ -547,6 +720,7 @@ export default function FilterBar({
               <Button
                 variant='ghost'
                 size='sm'
+                // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                 onClick={() => setIsFilterOpen(false)}
                 aria-label={t("filters.title")}
                 className={styles["clearButton"]}>
@@ -555,13 +729,6 @@ export default function FilterBar({
             </div>
           </div>
           {renderFilterPanel()}
-        </div>
-      )}
-
-      {/* Active filter count indicator */}
-      {activeFilterCount > 0 && (
-        <div className={styles["activeFiltersBar"]}>
-          <span className={styles["activeFiltersText"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
         </div>
       )}
     </div>
