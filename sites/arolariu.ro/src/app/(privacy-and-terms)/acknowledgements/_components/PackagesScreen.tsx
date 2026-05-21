@@ -47,20 +47,6 @@ type SortField = Readonly<"name" | "dependencies" | "type">;
 type PackageType = Readonly<"all" | "production" | "development">;
 
 /**
- * Component that displays a badge indicating the type of package (production or development).
- * @returns A badge indicating the type of package.
- */
-function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.packagesScreen.badge");
-
-  return type === "production" ? (
-    <span className={styles["productionBadge"]}>{t("production")}</span>
-  ) : (
-    <span className={styles["developmentBadge"]}>{t("development")}</span>
-  );
-}
-
-/**
  * Component that displays a dialog with the dependencies of a package.
  * @returns A dialog with the dependencies of a package.
  */
@@ -314,7 +300,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         <TableCell className={styles["packageName"]}>{pkg.name}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>{pkg.version}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>
-                          <PackageBadge type={extractPackageType(pkg)} />
+                          {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
                         </TableCell>
                         <TableCell className={styles["hiddenLg"]}>
                           <p className={styles["descriptionText"]}>{pkg.description}</p>
