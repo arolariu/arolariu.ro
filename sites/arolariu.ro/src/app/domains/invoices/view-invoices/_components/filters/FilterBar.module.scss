@@ -398,7 +398,7 @@
   border-radius: radius('lg');
   padding: space(3);
   background-color: color('background');
-  @include transition(border-color, background-color);
+  @include transition((border-color, background-color));
 }
 
 .cardSectionActive {
@@ -454,7 +454,7 @@
   font-size: font-size('xs');
   color: color('foreground');
   cursor: pointer;
-  @include transition(background-color, border-color);
+  @include transition((background-color, border-color));
 
   @include respond-below('md') {
     min-height: space(11);
