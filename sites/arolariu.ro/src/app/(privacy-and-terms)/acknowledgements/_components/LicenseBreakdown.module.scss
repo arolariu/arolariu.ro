@@ -130,6 +130,18 @@
   @include gradient-bg();
 }
 
+.progressFillGpl {
+  height: 100%;
+  border-radius: radius('full');
+  @include gradient-bg();
+}
+
+.progressFillOther {
+  height: 100%;
+  border-radius: radius('full');
+  @include gradient-bg();
+}
+
 // ===========================================
 // FOOTER
 // ===========================================

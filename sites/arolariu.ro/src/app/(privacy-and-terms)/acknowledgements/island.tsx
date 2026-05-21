@@ -61,7 +61,7 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <Contributors />
 
       {/* License breakdown */}
-      <LicenseBreakdown />
+      <LicenseBreakdown packages={packages} />
 
       {/* NPM packages browser */}
       <section className={styles["packagesSection"]}>

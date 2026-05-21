@@ -962,8 +962,12 @@
     "licenses": {
       "apache": "Apache 2.0",
       "apacheDescription": "Licență open-source prietenoasă pentru întreprinderi",
+      "gpl": "Licență GPL",
+      "gplDescription": "Licență copyleft care asigură că codul rămâne liber",
       "mit": "Licență MIT",
       "mitDescription": "Licență permisivă care permite utilizare largă",
+      "other": "Alte Licențe",
+      "otherDescription": "Licențe custom sau diverse alte licențe open-source",
       "title": "Distribuția Licențelor"
     },
     "metadata": {

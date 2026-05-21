@@ -962,8 +962,12 @@
     "licenses": {
       "apache": "Apache 2.0",
       "apacheDescription": "Enterprise-friendly open-source license",
+      "gpl": "GPL License",
+      "gplDescription": "Copyleft license ensuring code remains free",
       "mit": "MIT License",
       "mitDescription": "Permissive license allowing broad use",
+      "other": "Other Licenses",
+      "otherDescription": "Custom or miscellaneous open-source licenses",
       "title": "License Distribution"
     },
     "metadata": {

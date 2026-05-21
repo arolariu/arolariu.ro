@@ -962,8 +962,12 @@
     "licenses": {
       "apache": "Apache 2.0",
       "apacheDescription": "Licence open-source adaptée aux entreprises",
+      "gpl": "Licence GPL",
+      "gplDescription": "Licence copyleft garantissant que le code reste libre",
       "mit": "Licence MIT",
       "mitDescription": "Licence permissive permettant une utilisation large",
+      "other": "Autres Licences",
+      "otherDescription": "Licences personnalisées ou diverses licences open-source",
       "title": "Distribution des Licences"
     },
     "metadata": {
