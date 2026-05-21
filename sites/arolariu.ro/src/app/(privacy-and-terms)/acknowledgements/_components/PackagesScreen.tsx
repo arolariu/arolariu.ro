@@ -241,13 +241,13 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                     animate={{opacity: 1, y: 0}}
                     transition={{duration: 0.3, delay: index * 0.1}}>
                     <Card className={styles["packageCard"]}>
+                      <div className={extractPackageType(pkg) === "production" ? styles["productionBanner"] : styles["developmentBanner"]}>
+                        {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
+                      </div>
                       <CardHeader>
                         <div className={styles["cardHeaderRow"]}>
                           <CardTitle className={styles["cardTitle"]}>{pkg.name}</CardTitle>
                           <span className={styles["versionBadge"]}>{pkg.version}</span>
-                        </div>
-                        <div className={styles["badgeContainer"]}>
-                          <PackageBadge type={extractPackageType(pkg)} />
                         </div>
                         <CardDescription>{pkg.description}</CardDescription>
                       </CardHeader>
