@@ -288,7 +288,9 @@
 
 .badgeRequired {
   margin-left: space(2);
-  @include gradient-bg();
+  background: color('muted');
+  color: color('muted-foreground');
+  border: 1px solid color('border');
 }
 
 .badgeOptional {
