@@ -141,7 +141,11 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   <option value='ro'>Română (RO)</option>
                   <option value='fr'>Français (FR)</option>
                 </select>
-                <TbChevronDown className={styles["selectChevron"]} />
+                <TbChevronDown
+                  aria-hidden='true'
+                  focusable={false}
+                  className={styles["selectChevron"]}
+                />
               </div>
             </div>
           </CardHeader>
