@@ -49,17 +49,16 @@ export default function DeferredMount({
   className,
 }: Props): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
-  const [activated, setActivated] = useState(false);
+  // When IntersectionObserver is unavailable (very old WebViews), activate
+  // immediately via the initializer so the effect never has to setState
+  // synchronously — keeps react-hooks/set-state-in-effect happy and avoids
+  // an unnecessary first-render → effect → re-render cycle in the fallback path.
+  const [activated, setActivated] = useState(() => typeof IntersectionObserver === "undefined");
 
   useEffect(() => {
     if (activated) return;
     const el = ref.current;
     if (!el) return;
-
-    if (typeof IntersectionObserver === "undefined") {
-      setActivated(true);
-      return;
-    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -79,7 +78,9 @@ export default function DeferredMount({
   }, [activated]);
 
   return (
-    <div ref={ref} className={className}>
+    <div
+      ref={ref}
+      className={className}>
       {activated ? children : placeholder}
     </div>
   );
