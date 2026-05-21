@@ -101,6 +101,7 @@
   }
 
   button {
+
     // Larger touch target on mobile (min 44px)
     @include respond-below('md') {
       min-width: space(11); // 44px
@@ -390,20 +391,20 @@
   height: 1.75rem;
   width: 1.75rem;
   border-radius: radius('full');
-  background-color: rgba(255, 255, 255, 0.8);
-  color: color('muted-foreground');
+  background-color: color-alpha('secondary', 0.2);
+  color: color('foreground');
   @include shadow('sm');
 
   &:hover {
-    background-color: white;
+    background-color: color-alpha('secondary', 0.3);
   }
 
   @include dark {
-    background-color: color-alpha('foreground', 0.8);
-    color: color('muted-foreground');
+    background-color: color-alpha('secondary', 0.2);
+    color: color('foreground');
 
     &:hover {
-      background-color: color('foreground');
+      background-color: color-alpha('secondary', 0.3);
     }
   }
 
@@ -487,8 +488,8 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
-
