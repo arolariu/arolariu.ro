@@ -1,8 +1,7 @@
 "use client";
 
 import {formatDate} from "@/lib/utils.generic";
-import type {Invoice} from "@/types/invoices";
-import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import {InvoiceCategory, PaymentType, type Invoice} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -118,7 +117,10 @@ export default function FilterBar({
 
   // ── Slider bounds — ceiling = max(1000, ceil(highest amount / 100) * 100) ──
   const amountMax = useMemo(() => {
-    const max = invoices.reduce((acc, inv) => Math.max(acc, inv.paymentInformation.totalCostAmount), 0);
+    let max = 0;
+    for (const inv of invoices) {
+      if (inv.paymentInformation.totalCostAmount > max) max = inv.paymentInformation.totalCostAmount;
+    }
     return Math.max(1000, Math.ceil(max / 100) * 100);
   }, [invoices]);
 
@@ -264,8 +266,6 @@ export default function FilterBar({
           return t("categories.utilities");
         case InvoiceCategory.CAR_AUTO:
           return t("categories.travel");
-        case InvoiceCategory.OTHER:
-        case InvoiceCategory.NOT_DEFINED:
         default:
           return t("categories.other");
       }
@@ -285,8 +285,6 @@ export default function FilterBar({
         return "Mobile";
       case PaymentType.Voucher:
         return "Voucher";
-      case PaymentType.Other:
-      case PaymentType.Unknown:
       default:
         return "Other";
     }
@@ -327,6 +325,7 @@ export default function FilterBar({
   // ────────────────────────────────────────────────────────────
   // Panel body — card grid (single-column on mobile via SCSS)
   // ────────────────────────────────────────────────────────────
+  // eslint-disable-next-line sonarjs/cognitive-complexity, complexity -- six conditionally-rendered card sections; extracting per-card sub-components would obscure the linear visual order without simplifying logic
   const renderFilterPanel = (): React.JSX.Element => (
     <div className={styles["panelGrid"]}>
       {/* ─────── Date Range ─────── */}
@@ -693,7 +692,7 @@ export default function FilterBar({
       </div>
 
       {/* Inline filter panel (desktop only) — collapses below the search bar */}
-      {!isMobile && isFilterOpen && (
+      {!isMobile && isFilterOpen ? (
         <div
           id='inline-filter-panel'
           className={styles["inlineFilterPanel"]}>
@@ -730,7 +729,7 @@ export default function FilterBar({
           </div>
           {renderFilterPanel()}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

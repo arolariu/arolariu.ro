@@ -13,8 +13,7 @@
  * enum values used by category and payment type).
  */
 
-import type {Invoice} from "@/types/invoices";
-import type {InvoiceCategory, PaymentType} from "@/types/invoices";
+import type {Invoice, InvoiceCategory, PaymentType} from "@/types/invoices";
 
 const DEFAULT_CURRENCY_CODE = "RON";
 
@@ -36,7 +35,7 @@ export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): Re
   const codes = invoices.map((i) => i.paymentInformation.currency?.code || DEFAULT_CURRENCY_CODE);
   const freq = buildFrequencyMap(codes);
   return [...freq.entries()]
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const freqDelta = b[1] - a[1];
       if (freqDelta !== 0) return freqDelta;
       return a[0].localeCompare(b[0]);
@@ -53,7 +52,7 @@ export function computeAvailableCategories(invoices: ReadonlyArray<Invoice>): Re
   const values = invoices.map((i) => i.category);
   const freq = buildFrequencyMap(values);
   return [...freq.entries()]
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const freqDelta = b[1] - a[1];
       if (freqDelta !== 0) return freqDelta;
       return (a[0] as number) - (b[0] as number);
@@ -69,7 +68,7 @@ export function computeAvailablePaymentTypes(invoices: ReadonlyArray<Invoice>): 
   const values = invoices.map((i) => i.paymentInformation.paymentType);
   const freq = buildFrequencyMap(values);
   return [...freq.entries()]
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const freqDelta = b[1] - a[1];
       if (freqDelta !== 0) return freqDelta;
       return (a[0] as number) - (b[0] as number);

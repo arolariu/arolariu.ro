@@ -41,7 +41,7 @@ export function computePresetRange(preset: DatePresetKey, now: Date): {from: str
     return {from: toIsoDate(yearStart), to};
   }
   const days = preset === "30d" ? 30 : 90;
-  const from = new Date(now.getTime());
+  const from = new Date(now);
   from.setUTCDate(from.getUTCDate() - days);
   return {from: toIsoDate(from), to};
 }
