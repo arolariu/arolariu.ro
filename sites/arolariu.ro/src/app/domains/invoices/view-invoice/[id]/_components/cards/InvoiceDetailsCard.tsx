@@ -289,8 +289,8 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedItems.map((item) => (
-                    <TableRow key={item.productCode}>
+                  {paginatedItems.map((item, index) => (
+                    <TableRow key={`${item.name}-${startIndex + index}`}>
                       <TableCell>
                         <div className={styles["itemCell"]}>
                           <p className={styles["itemName"]}>{item.name}</p>
