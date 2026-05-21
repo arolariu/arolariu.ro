@@ -949,6 +949,7 @@
           "packages": "3"
         }
       },
+      "packages": "{count, plural, one {# package} other {# packages}}",
       "subtitle": "Organizations and individuals whose packages we rely on most",
       "title": "Top Contributors"
     },
@@ -968,6 +969,7 @@
       "mitDescription": "Permissive license allowing broad use",
       "other": "Other Licenses",
       "otherDescription": "Custom or miscellaneous open-source licenses",
+      "packages": "{count, plural, one {# package} other {# packages}}",
       "title": "License Distribution"
     },
     "metadata": {
@@ -1035,24 +1037,24 @@
       "development": {
         "description": "Build-time tools",
         "label": "Development",
-        "value": "48"
+        "value": "{count}"
       },
       "mitLicense": {
         "description": "Most common license",
         "label": "MIT Licensed",
-        "value": "69"
+        "value": "{count}"
       },
       "production": {
         "description": "Runtime dependencies",
         "label": "Production",
-        "value": "38"
+        "value": "{count}"
       },
       "subtitle": "A snapshot of the open-source ecosystem powering this platform",
       "title": "Dependency Overview",
       "total": {
         "description": "Dependencies used",
         "label": "Total Packages",
-        "value": "86"
+        "value": "{count}"
       }
     },
     "title": "Acknowledgements"

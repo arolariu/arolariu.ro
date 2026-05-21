@@ -55,7 +55,7 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <Hero lastUpdatedDate={lastUpdatedDate} />
 
       {/* Statistics dashboard */}
-      <Stats />
+      <Stats packages={packages} />
 
       {/* Top contributors */}
       <Contributors />

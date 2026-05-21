@@ -65,7 +65,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                   </div>
                   <div className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("mit")}</h3>
-                    <p className={styles["packageCount"]}>{mitCount} packages</p>
+                    <p className={styles["packageCount"]}>{t("packages", {count: mitCount})}</p>
                   </div>
                 </div>
 
@@ -100,7 +100,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                   </div>
                   <div className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("apache")}</h3>
-                    <p className={styles["packageCount"]}>{apacheCount} packages</p>
+                    <p className={styles["packageCount"]}>{t("packages", {count: apacheCount})}</p>
                   </div>
                 </div>
 
@@ -135,7 +135,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                   </div>
                   <div className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("gpl")}</h3>
-                    <p className={styles["packageCount"]}>{gplCount} packages</p>
+                    <p className={styles["packageCount"]}>{t("packages", {count: gplCount})}</p>
                   </div>
                 </div>
 
@@ -170,7 +170,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                   </div>
                   <div className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("other")}</h3>
-                    <p className={styles["packageCount"]}>{otherCount} packages</p>
+                    <p className={styles["packageCount"]}>{t("packages", {count: otherCount})}</p>
                   </div>
                 </div>
 

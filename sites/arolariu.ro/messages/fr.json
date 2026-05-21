@@ -949,6 +949,7 @@
           "packages": "3"
         }
       },
+      "packages": "{count, plural, one {# paquet} other {# paquets}}",
       "subtitle": "Organisations et individus dont nous dépendons le plus",
       "title": "Principaux Contributeurs"
     },
@@ -968,6 +969,7 @@
       "mitDescription": "Licence permissive permettant une utilisation large",
       "other": "Autres Licences",
       "otherDescription": "Licences personnalisées ou diverses licences open-source",
+      "packages": "{count, plural, one {# paquet} other {# paquets}}",
       "title": "Distribution des Licences"
     },
     "metadata": {
@@ -1035,24 +1037,24 @@
       "development": {
         "description": "Outils de build",
         "label": "Développement",
-        "value": "48"
+        "value": "{count}"
       },
       "mitLicense": {
         "description": "Licence la plus courante",
         "label": "Licence MIT",
-        "value": "69"
+        "value": "{count}"
       },
       "production": {
         "description": "Dépendances d'exécution",
         "label": "Production",
-        "value": "38"
+        "value": "{count}"
       },
       "subtitle": "Un aperçu de l'écosystème open-source qui alimente cette plateforme",
       "title": "Aperçu des Dépendances",
       "total": {
         "description": "Dépendances utilisées",
         "label": "Total des Packages",
-        "value": "86"
+        "value": "{count}"
       }
     },
     "title": "Remerciements"

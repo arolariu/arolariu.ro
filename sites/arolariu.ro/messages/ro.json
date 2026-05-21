@@ -949,6 +949,7 @@
           "packages": "3"
         }
       },
+      "packages": "{count, plural, one {# pachet} few {# pachete} other {# de pachete}}",
       "subtitle": "Organizații și indivizi pe ale căror pachete ne bazăm cel mai mult",
       "title": "Contributori Principali"
     },
@@ -968,6 +969,7 @@
       "mitDescription": "Licență permisivă care permite utilizare largă",
       "other": "Alte Licențe",
       "otherDescription": "Licențe custom sau diverse alte licențe open-source",
+      "packages": "{count, plural, one {# pachet} few {# pachete} other {# de pachete}}",
       "title": "Distribuția Licențelor"
     },
     "metadata": {
@@ -1035,24 +1037,24 @@
       "development": {
         "description": "Instrumente de build",
         "label": "Dezvoltare",
-        "value": "48"
+        "value": "{count}"
       },
       "mitLicense": {
         "description": "Cea mai comună licență",
         "label": "Licență MIT",
-        "value": "69"
+        "value": "{count}"
       },
       "production": {
         "description": "Dependențe runtime",
         "label": "Producție",
-        "value": "38"
+        "value": "{count}"
       },
       "subtitle": "O privire asupra ecosistemului open-source care alimentează această platformă",
       "title": "Prezentare Generală a Dependențelor",
       "total": {
         "description": "Dependențe utilizate",
         "label": "Total Pachete",
-        "value": "86"
+        "value": "{count}"
       }
     },
     "title": "Mulțumiri"
