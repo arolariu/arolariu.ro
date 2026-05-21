@@ -72,22 +72,6 @@ function formatFileSize(bytes: number): string {
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
   const t = useTranslations("IMS--ViewScans.scanCard");
 
-  // Guard against incomplete scan data
-  if (!scan.blobUrl && !scan.name) {
-    return (
-      <Card className={styles["card"]}>
-        <CardContent className={styles["cardContentFlush"]}>
-          <div className={styles["previewArea"]}>
-            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
-          </div>
-          <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t("loading")}</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -138,21 +122,29 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     setNewName(scan.name);
   }, [scan.name]);
 
-  const handleSaveRename = useCallback((): void => {
-    const trimmedName = newName.trim();
-    if (trimmedName && trimmedName !== scan.name) {
-      updateScanName(scan.id, trimmedName);
-      toast.success(t("rename"));
-      setJustRenamed(true);
-      setTimeout(() => setJustRenamed(false), 300);
-    }
-    setIsRenaming(false);
-  }, [newName, scan.id, scan.name, updateScanName, t]);
+  const handleSaveRename = useCallback(
+    (event?: React.SyntheticEvent): void => {
+      event?.preventDefault();
+      const trimmedName = newName.trim();
+      if (trimmedName && trimmedName !== scan.name) {
+        updateScanName(scan.id, trimmedName);
+        toast.success(t("rename"));
+        setJustRenamed(true);
+        setTimeout(() => setJustRenamed(false), 300);
+      }
+      setIsRenaming(false);
+    },
+    [newName, scan.id, scan.name, updateScanName, t],
+  );
 
-  const handleCancelRename = useCallback((): void => {
-    setIsRenaming(false);
-    setNewName(scan.name);
-  }, [scan.name]);
+  const handleCancelRename = useCallback(
+    (event?: React.SyntheticEvent): void => {
+      event?.preventDefault();
+      setIsRenaming(false);
+      setNewName(scan.name);
+    },
+    [scan.name],
+  );
 
   const handleRenameKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -259,6 +251,22 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     },
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
+
+  // Guard against incomplete scan data
+  if (!scan.blobUrl && !scan.name) {
+    return (
+      <Card className={styles["card"]}>
+        <CardContent className={styles["cardContentFlush"]}>
+          <div className={styles["previewArea"]}>
+            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
+          </div>
+          <div className={styles["fileInfo"]}>
+            <div className={styles["fileName"]}>{t("loading")}</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -401,14 +409,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   <Button
                     size='sm'
                     variant='ghost'
-                    onClick={handleSaveRename}
+                    onMouseDown={handleSaveRename}
                     className={styles["renameSaveButton"]}>
                     <TbCheck className={styles["renameIcon"]} />
                   </Button>
                   <Button
                     size='sm'
                     variant='ghost'
-                    onClick={handleCancelRename}
+                    onMouseDown={handleCancelRename}
                     className={styles["renameCancelButton"]}>
                     <TbX className={styles["renameIcon"]} />
                   </Button>
