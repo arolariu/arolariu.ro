@@ -156,7 +156,7 @@ export default function ExportDialog(): React.JSX.Element {
             <CardContent className={styles["cardContent"]}>
               <h3 className={styles["sectionTitle"]}>{t("format.title")}</h3>
               <RadioGroup
-                defaultValue={exportOptions.format}
+                value={exportOptions.format}
                 // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                 onValueChange={(format) => handleOptionsChange("format", format as InvoiceExportFormat)}>
                 <div className={styles["radioRow"]}>
