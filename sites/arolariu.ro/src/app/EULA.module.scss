@@ -82,6 +82,28 @@
   cursor: pointer;
 }
 
+.selectWrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.selectChevron {
+  position: absolute;
+  right: space(3);
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  color: color('muted-foreground');
+  @include transition(color);
+
+  // Hover effect linked to wrapper
+  .selectWrapper:hover & {
+    color: color('foreground');
+  }
+}
+
 .localeSelect {
   width: 100%;
   cursor: pointer;
@@ -92,9 +114,6 @@
   border-radius: radius('md');
   background-color: color('background');
   color: color('foreground');
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right space(2) center;
   @include transition(border-color);
 
   &:hover {
