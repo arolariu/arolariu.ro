@@ -52,11 +52,7 @@
 }
 
 .statsCardValueDefault {
-  color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: white;
-  }
+  color: abstracts.color('foreground');
 }
 
 .statsCardValueGreen {
@@ -77,7 +73,7 @@
 
 .statsCardLabel {
   font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color-alpha('foreground', 0.7);
 }
 
 // ===========================================
@@ -86,13 +82,13 @@
 .scanStatsBar {
   margin-bottom: abstracts.space(6);
   border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.color('muted-foreground');
-  background-color: white;
+  border: 1px solid abstracts.color-alpha('secondary', 0.2);
+  background-color: abstracts.color-alpha('secondary', 0.1);
   padding: abstracts.space(4);
 
   @include abstracts.dark {
-    border-color: abstracts.color('muted-foreground');
-    background-color: abstracts.color('muted-foreground');
+    border-color: abstracts.color-alpha('secondary', 0.35);
+    background-color: abstracts.color-alpha('secondary', 0.15);
   }
 }
 
@@ -112,7 +108,7 @@
 
 .selectHint {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground');
+  color: abstracts.color-alpha('foreground', 0.7);
 }
 
 .hiddenMobile {
