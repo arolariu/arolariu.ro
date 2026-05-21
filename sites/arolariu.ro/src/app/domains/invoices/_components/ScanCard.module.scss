@@ -391,20 +391,29 @@
   height: 1.75rem;
   width: 1.75rem;
   border-radius: radius('full');
-  background-color: color-alpha('secondary', 0.2);
+  background-color: color('background');
+  border: 1px solid color('border');
   color: color('foreground');
+  @include flex-center;
   @include shadow('sm');
+  @include transition(all);
 
   &:hover {
-    background-color: color-alpha('secondary', 0.3);
+    background-color: color('accent');
+    color: color('accent-foreground');
+    border-color: color('border');
+    @include shadow('md');
   }
 
   @include dark {
-    background-color: color-alpha('secondary', 0.2);
+    background-color: color('background');
+    border: 1px solid color('border');
     color: color('foreground');
 
     &:hover {
-      background-color: color-alpha('secondary', 0.3);
+      background-color: color('accent');
+      color: color('accent-foreground');
+      border-color: color('border');
     }
   }
 
