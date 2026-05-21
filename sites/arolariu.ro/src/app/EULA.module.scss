@@ -347,10 +347,11 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  @include gradient-bg();
+  background: color('primary');
+  color: color('primary-foreground');
 
   &:hover {
-    background-color: color-alpha('primary', 0.9);
+    background: color-alpha('primary', 0.9);
   }
 }
 
