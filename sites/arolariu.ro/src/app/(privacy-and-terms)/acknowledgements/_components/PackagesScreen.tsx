@@ -253,13 +253,15 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                       </CardHeader>
                       <CardContent className={styles["cardContent"]}>
                         <div className={styles["cardDetails"]}>
-                          <div className={styles["detailRow"]}>
-                            <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
-                          </div>
-                          <div className={styles["detailRow"]}>
-                            <span className={styles["detailLabel"]}>
-                              {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
-                            </span>
+                          <div className={styles["detailsContent"]}>
+                            <div className={styles["detailRow"]}>
+                              <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
+                            </div>
+                            <div className={styles["detailRow"]}>
+                              <span className={styles["detailLabel"]}>
+                                {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
+                              </span>
+                            </div>
                           </div>
                           <div className={styles["cardActions"]}>
                             <a

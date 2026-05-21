@@ -136,9 +136,15 @@
 .cardDetails {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  margin-top: auto;
 
   @include spaced-children(space(2));
+}
+
+.detailsContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
 }
 
 .detailRow {
@@ -156,8 +162,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto;
-  padding-top: space(4);
+  margin-top: space(4);
 }
 
 .websiteLink {
