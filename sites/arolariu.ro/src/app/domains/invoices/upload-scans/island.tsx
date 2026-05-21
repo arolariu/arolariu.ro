@@ -22,7 +22,6 @@ import {
   TbPhoto,
   TbShieldCheck,
 } from "react-icons/tb";
-import {AnimatedCounter} from "../_components/AnimatedCounter";
 import {FadeIn} from "../_components/FadeIn";
 import OnboardingOverlay from "../_components/OnboardingOverlay";
 import WorkflowProgress from "../_components/WorkflowProgress";
@@ -64,95 +63,6 @@ function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.E
       <TbCheck className={styles["tipIcon"]} />
       <span className={styles["tipText"]}>{children}</span>
     </li>
-  );
-}
-
-/**
- * Upload statistics component.
- */
-function UploadStats(): React.JSX.Element | null {
-  const t = useTranslations("IMS--UploadScans");
-  const {pendingUploads, sessionStats} = useScanUpload();
-
-  // Current batch stats (from pending uploads)
-  const uploading = pendingUploads.filter((u) => u.status === "uploading").length;
-  const pending = pendingUploads.filter((u) => u.status === "idle").length;
-  const failedInQueue = pendingUploads.filter((u) => u.status === "failed").length;
-
-  // Session stats (persisted even after uploads complete and are removed)
-  const {totalAdded, totalCompleted, totalFailed} = sessionStats;
-
-  // Don't show if no activity this session
-  if (totalAdded === 0 && pendingUploads.length === 0) return null;
-
-  // Show "View Scans" button when all uploads are done (nothing pending or uploading)
-  const allDone = totalCompleted > 0 && pending === 0 && uploading === 0;
-
-  return (
-    <motion.div
-      initial={{opacity: 0, y: 10}}
-      animate={{opacity: 1, y: 0}}
-      className={styles["statsBar"]}>
-      <div className={styles["statsContent"]}>
-        <div className={styles["statsGroup"]}>
-          {/* Session total */}
-          <div className={styles["statItem"]}>
-            <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>
-              <AnimatedCounter value={totalAdded} />
-            </p>
-            <p className={styles["statLabel"]}>{t("stats.added")}</p>
-          </div>
-          {/* Pending in current batch */}
-          {pending > 0 && (
-            <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>
-                <AnimatedCounter value={pending} />
-              </p>
-              <p className={styles["statLabel"]}>{t("stats.pending")}</p>
-            </div>
-          )}
-          {/* Currently uploading */}
-          {uploading > 0 && (
-            <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>
-                <AnimatedCounter value={uploading} />
-              </p>
-              <p className={styles["statLabel"]}>{t("stats.uploading")}</p>
-            </div>
-          )}
-          {/* Session completed (persistent) */}
-          {totalCompleted > 0 && (
-            <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>
-                <AnimatedCounter value={totalCompleted} />
-              </p>
-              <p className={styles["statLabel"]}>{t("stats.completed")}</p>
-            </div>
-          )}
-          {/* Session failed (persistent) + current queue failures */}
-          {(totalFailed > 0 || failedInQueue > 0) && (
-            <div className={styles["statItem"]}>
-              <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>
-                <AnimatedCounter value={totalFailed + failedInQueue} />
-              </p>
-              <p className={styles["statLabel"]}>{t("stats.failed")}</p>
-            </div>
-          )}
-        </div>
-
-        {allDone ? (
-          <Button
-            className={styles["viewScansButton"]}
-            render={
-              <Link href='/domains/invoices/view-scans'>
-                {t("buttons.viewScans")}
-                <TbArrowRight className={styles["arrowIcon"]} />
-              </Link>
-            }
-          />
-        ) : null}
-      </div>
-    </motion.div>
   );
 }
 
@@ -316,9 +226,6 @@ function UploadContent(): React.JSX.Element {
           </div>
         </div>
       </FadeIn>
-
-      {/* Upload Stats (when there are pending uploads) */}
-      <UploadStats />
 
       {/* Main Content Area */}
       <div className={styles["contentGrid"]}>
