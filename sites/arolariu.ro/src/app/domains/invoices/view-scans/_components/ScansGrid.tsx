@@ -6,7 +6,7 @@
  */
 
 import type {CachedScan} from "@/types/scans";
-import {Button, Skeleton, useIsMobile} from "@arolariu/components";
+import {Button, useIsMobile} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
@@ -14,6 +14,7 @@ import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import DeferredMount from "../../_components/DeferredMount";
 import EmptyState from "../../_components/EmptyState";
 import ScanCard from "../../_components/ScanCard";
+import {CardShimmer} from "../../_components/ScanCard.shimmers";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansGrid.module.scss";
 
@@ -46,26 +47,6 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
       isSelected={isSelected}
       onToggleSelect={handleToggle}
     />
-  );
-}
-
-/**
- * Shimmer placeholder matching a ScanCard's outer dimensions.
- *
- * @remarks
- * Used in two places: (1) inside the pre-hydration loading grid (multiple
- * shimmers), and (2) inside <DeferredMount> as the placeholder for off-screen
- * cards. Sharing one component keeps the visual layout consistent.
- */
-function CardShimmer(): React.JSX.Element {
-  return (
-    <div className={styles["skeletonCard"]}>
-      <Skeleton className={styles["skeletonImage"]} />
-      <div className={styles["skeletonInfo"]}>
-        <Skeleton className={styles["skeletonName"]} />
-        <Skeleton className={styles["skeletonMeta"]} />
-      </div>
-    </div>
   );
 }
 
