@@ -251,7 +251,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         </div>
                         <CardDescription>{pkg.description}</CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className={styles["cardContent"]}>
                         <div className={styles["cardDetails"]}>
                           <div className={styles["detailRow"]}>
                             <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}

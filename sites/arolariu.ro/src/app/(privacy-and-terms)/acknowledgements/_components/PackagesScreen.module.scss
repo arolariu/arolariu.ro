@@ -76,6 +76,14 @@
 // ===========================================
 .packageCard {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .srOnly {
@@ -128,6 +136,7 @@
 .cardDetails {
   display: flex;
   flex-direction: column;
+  flex: 1;
 
   @include spaced-children(space(2));
 }
@@ -147,7 +156,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: space(4);
+  margin-top: auto;
+  padding-top: space(4);
 }
 
 .websiteLink {
