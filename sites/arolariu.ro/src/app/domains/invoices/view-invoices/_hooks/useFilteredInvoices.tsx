@@ -19,6 +19,9 @@ import type {FilterState} from "./useInvoiceFilters";
  * - Amount range: Filters by total cost amount (inclusive)
  * - Categories: Multi-select filter (OR logic)
  * - Payment types: Multi-select filter (OR logic)
+ * - Currencies: Multi-select filter (OR logic) on `invoice.paymentInformation.currency.code`,
+ *   with `"RON"` as the fallback for invoices missing a currency code (matches the
+ *   codebase-wide default in `_utils/statistics.ts`).
  *
  * **Sorting:**
  * Supports sorting by date, amount, and name with separate field and direction parameters.
@@ -94,6 +97,15 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     // Apply payment type filter (OR logic)
     if (filters.paymentTypes.length > 0) {
       filtered = filtered.filter((invoice) => filters.paymentTypes.includes(invoice.paymentInformation.paymentType));
+    }
+
+    // Apply currency filter (OR logic, like categories / paymentTypes).
+    // Falls back to "RON" for invoices missing currency.code — matches the
+    // codebase-wide default established in _utils/statistics.ts.
+    if (filters.currencies.length > 0) {
+      filtered = filtered.filter((invoice) =>
+        filters.currencies.includes(invoice.paymentInformation.currency?.code || "RON"),
+      );
     }
 
     // Apply sorting (only if both sortBy and sortOrder are set)

@@ -181,6 +181,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
         activeFilterCount={activeFilterCount}
         viewMode={filters.view}
         onViewModeChange={handleViewModeChange}
+        filteredCount={filteredInvoices.length}
       />
       {viewContent}
     </div>

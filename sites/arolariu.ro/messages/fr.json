@@ -3313,14 +3313,26 @@
         "amountMax": "Montant max.",
         "amountMin": "Montant min.",
         "amountRange": "Plage de montants",
+        "anyValue": "tout",
         "button": "Filtres",
         "categories": "Catégories",
         "category": "Catégorie",
         "clear": "Tout effacer",
+        "currency": "Devise",
+        "currencyAny": "toutes",
         "dateFrom": "Date de début",
+        "datePresets": {
+          "30d": "30j",
+          "90d": "90j",
+          "all": "Tout",
+          "custom": "Personnalisé",
+          "ytd": "Année"
+        },
         "dateRange": "Plage de dates",
         "dateTo": "Date de fin",
+        "defaultValue": "défaut",
         "paymentTypes": "Types de paiement",
+        "showResults": "Afficher {count, plural, one {# résultat} other {# résultats}}",
         "sortBy": "Trier par",
         "sortOptions": {
           "amountHighToLow": "Montant (décroissant)",
@@ -3328,11 +3340,25 @@
           "dateNewest": "Date (plus récente)",
           "dateOldest": "Date (plus ancienne)",
           "nameAZ": "Nom (A-Z)",
-          "nameZA": "Nom (Z-A)",
-          "none": "Aucun"
+          "nameZA": "Nom (Z-A)"
         },
         "timeOfDay": "Moment de la journée",
-        "title": "Filtres"
+        "title": "Filtres",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        },
+        "dynamicHint": "Ces options sont remplies à partir de vos factures — seules les valeurs présentes dans vos données apparaissent ici.",
+        "paymentTypeLabels": {
+          "card": "Carte",
+          "cash": "Espèces",
+          "mobile": "Mobile",
+          "other": "Autre",
+          "transfer": "Virement",
+          "voucher": "Bon"
+        }
       },
       "placeholderPanel": "D’autres filtres seront bientôt disponibles.",
       "searchPlaceholder": "Rechercher des factures...",
