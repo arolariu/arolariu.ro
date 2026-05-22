@@ -103,7 +103,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       return "private";
     }
 
-    const lastEntry = invoice.sharedWith[invoice.sharedWith.length - 1];
+    const lastEntry = invoice.sharedWith.at(-1);
     if (lastEntry === LAST_GUID) {
       return "public";
     }

@@ -209,13 +209,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * **Performance:** Memoized to recompute only when items change.
    */
   const totals = useMemo(() => {
-    return invoice.items.reduce(
-      (acc, item) => ({
-        quantity: acc.quantity + item.quantity,
-        price: acc.price + item.totalPrice,
-      }),
-      {quantity: 0, price: 0},
-    );
+    let quantity = 0;
+    let price = 0;
+    for (const item of invoice.items) {
+      quantity += item.quantity;
+      price += item.totalPrice;
+    }
+    return {quantity, price};
   }, [invoice.items]);
 
   /**

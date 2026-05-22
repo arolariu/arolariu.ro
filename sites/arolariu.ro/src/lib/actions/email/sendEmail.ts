@@ -104,7 +104,7 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
 
   const subjectVars: Readonly<Record<string, string | number>> = {
     ...scalarVariantProps,
-    ...(input.subjectVars ?? {}),
+    ...input.subjectVars,
   };
 
   // The registry union widens `template` across all entries, so we erase

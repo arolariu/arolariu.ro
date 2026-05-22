@@ -79,7 +79,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     }
 
     // Sort by upload time
-    const sorted = [...readyScans].sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
+    const sorted = readyScans.toSorted((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
 
     // Find the largest group within 5 minutes
     const FIVE_MINUTES_MS = 5 * 60 * 1000;

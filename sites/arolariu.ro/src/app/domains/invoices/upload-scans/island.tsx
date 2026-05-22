@@ -109,7 +109,7 @@ function UploadContent(): React.JSX.Element {
       }, 500);
       return () => clearTimeout(timer);
     }
-    return undefined;
+    return;
   }, [pendingUploads, sessionStats.totalCompleted]);
 
   /**

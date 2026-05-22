@@ -193,10 +193,11 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     });
 
     // Compute average spending for this month
-    const totalSpending = sameMonthInvoices.reduce((sum, inv) => {
+    let totalSpending = 0;
+    for (const inv of sameMonthInvoices) {
       const year = toSafeDate(inv.paymentInformation.transactionDate).getFullYear();
-      return sum + toRON(inv.paymentInformation.totalCostAmount, inv.paymentInformation.currency?.code ?? "RON", year);
-    }, 0);
+      totalSpending += toRON(inv.paymentInformation.totalCostAmount, inv.paymentInformation.currency?.code ?? "RON", year);
+    }
 
     const monthAverage = sameMonthInvoices.length > 0 ? totalSpending / sameMonthInvoices.length : 0;
 

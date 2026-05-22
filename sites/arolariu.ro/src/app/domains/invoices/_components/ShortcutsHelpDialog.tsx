@@ -85,7 +85,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
   const t = useTranslations("IMS--Common.shortcuts");
 
   // Detect if user is on macOS for Cmd vs Ctrl display
-  const isMac = typeof window !== "undefined" && navigator.platform.toUpperCase().includes("MAC");
+  const isMac = typeof navigator !== "undefined" && navigator.platform.toUpperCase().includes("MAC");
   const modifierKey = isMac ? "⌘" : "Ctrl";
 
   /**

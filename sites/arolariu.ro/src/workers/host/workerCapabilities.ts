@@ -45,8 +45,8 @@ export function getCapabilities(): WorkerCapabilities {
   const result: {-readonly [K in keyof WorkerCapabilities]: WorkerCapabilities[K]} = {
     crossOriginIsolated: isolated,
     // Optional chain already short-circuits to undefined for missing prop;
-    // `!= null` (loose-equality intentional) covers both undefined and null.
-    hasWebGpu: nav?.gpu != null,
+    // explicit `!== undefined` covers the null-vs-undefined ambiguity.
+    hasWebGpu: nav?.gpu !== undefined,
   };
 
   if (typeof nav?.hardwareConcurrency === "number") {

@@ -504,7 +504,16 @@ const statusEslintConfig: Config = defineConfig({
   },
 })[0] as Config;
 
-const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
+const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig, {
+  // Worker-runtime files use MessagePort.postMessage(value) which intentionally has no targetOrigin
+  // (only Window.postMessage requires one). The unicorn rule can't distinguish the two surfaces.
+  // See docs/superpowers/specs/2026-05-22-sites-eslint-cleanup-design.md (Escalation section).
+  name: "[@arolariu/website-workers-runtime]",
+  files: ["sites/arolariu.ro/src/workers/runtime/**/*.{ts,tsx}"],
+  rules: {
+    "unicorn/require-post-message-target-origin": "off",
+  },
+});
 
 // Add the global ignores to the default config.
 for (const individualEslintConfig of eslintConfig) {
