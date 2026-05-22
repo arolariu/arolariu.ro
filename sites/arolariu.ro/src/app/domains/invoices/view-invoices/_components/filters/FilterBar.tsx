@@ -18,7 +18,6 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
-  Slider,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -48,7 +47,7 @@ type Props = {
   viewMode: "table" | "grid";
   /** Callback when view mode changes (updates URL) */
   onViewModeChange: (mode: "table" | "grid") => void;
-  /** Full unfiltered invoice list — drives dynamic option derivation and slider bounds. */
+  /** Full unfiltered invoice list — drives dynamic option derivation for the multi-select cards. */
   invoices: ReadonlyArray<Invoice>;
   /** Count after filters apply — drives the mobile "Show N results" CTA label. */
   filteredCount: number;
@@ -85,7 +84,6 @@ type Props = {
  * tactile thumb-reach affordance to close the sheet (filters still apply
  * reactively as the user edits).
  */
-// eslint-disable-next-line complexity -- top-level filter component coordinates 6 cards + 4 debounced inputs + view-mode toggle; splitting would create artificial boundaries
 export default function FilterBar({
   filters,
   onFiltersChange,
@@ -115,49 +113,6 @@ export default function FilterBar({
   const availableCurrencies = useMemo(() => computeAvailableCurrencies(invoices), [invoices]);
   const availableCategories = useMemo(() => computeAvailableCategories(invoices), [invoices]);
   const availablePaymentTypes = useMemo(() => computeAvailablePaymentTypes(invoices), [invoices]);
-
-  // ── Slider bounds — ceiling = max(1000, ceil(highest amount / 100) * 100) ──
-  const amountMax = useMemo(() => {
-    let max = 0;
-    for (const inv of invoices) {
-      if (inv.paymentInformation.totalCostAmount > max) max = inv.paymentInformation.totalCostAmount;
-    }
-    return Math.max(1000, Math.ceil(max / 100) * 100);
-  }, [invoices]);
-
-  // ── Amount slider — local "wet" state for instant thumb feedback,
-  //    debounced before pushing to URL/filters so dragging doesn't trigger
-  //    a re-render per pixel of travel.
-  const [sliderValue, setSliderValue] = useState<[number, number]>(() => [
-    filters.amountMin ?? 0,
-    filters.amountMax ?? amountMax,
-  ]);
-  const debouncedSlider = useDebounce(sliderValue, 200);
-
-  // Re-sync local slider when filters change externally (Clear all,
-  // number-input edits, etc.). Uses React's render-time setState pattern —
-  // tracking the last-seen external value and updating in render avoids
-  // the cascading-render anti-pattern of doing this from useEffect.
-  const [lastSyncedExternal, setLastSyncedExternal] = useState<[number, number]>(() => [
-    filters.amountMin ?? 0,
-    filters.amountMax ?? amountMax,
-  ]);
-  const externalMin = filters.amountMin ?? 0;
-  const externalMax = filters.amountMax ?? amountMax;
-  if (lastSyncedExternal[0] !== externalMin || lastSyncedExternal[1] !== externalMax) {
-    setLastSyncedExternal([externalMin, externalMax]);
-    setSliderValue([externalMin, externalMax]);
-  }
-
-  // Push debounced slider value to filters when it diverges from current filter state.
-  useEffect(() => {
-    const [min, max] = debouncedSlider;
-    const nextMin = min === 0 ? null : min;
-    const nextMax = max === amountMax ? null : max;
-    if (nextMin !== filters.amountMin || nextMax !== filters.amountMax) {
-      onFiltersChange({amountMin: nextMin, amountMax: nextMax});
-    }
-  }, [debouncedSlider, amountMax, filters.amountMin, filters.amountMax, onFiltersChange]);
 
   // ── Date-preset active state ──
   const activeDatePreset = useMemo(
@@ -223,11 +178,6 @@ export default function FilterBar({
     },
     [onFiltersChange],
   );
-
-  const handleAmountSliderChange = useCallback((value: number[]) => {
-    const [min = 0, max = 0] = value;
-    setSliderValue([min, max]);
-  }, []);
 
   const handleCategoryToggle = useCallback(
     (category: number) => {
@@ -346,10 +296,11 @@ export default function FilterBar({
 
   const amountActivePillText = useMemo(() => {
     if (!isAmountActive) return null;
-    const min = filters.amountMin ?? 0;
-    const max = filters.amountMax ?? amountMax;
-    return `${min} – ${max}`;
-  }, [isAmountActive, filters.amountMin, filters.amountMax, amountMax]);
+    if (filters.amountMin !== null && filters.amountMax !== null) return `${filters.amountMin} – ${filters.amountMax}`;
+    if (filters.amountMin !== null) return `≥ ${filters.amountMin}`;
+    if (filters.amountMax !== null) return `≤ ${filters.amountMax}`;
+    return null;
+  }, [isAmountActive, filters.amountMin, filters.amountMax]);
 
   // ────────────────────────────────────────────────────────────
   // Panel body — card grid (single-column on mobile via SCSS)
@@ -456,15 +407,6 @@ export default function FilterBar({
               className={styles["amountInput"]}
             />
           </div>
-        </div>
-        <div className={styles["amountSliderWrapper"]}>
-          <Slider
-            min={0}
-            max={amountMax}
-            step={1}
-            value={sliderValue}
-            onValueChange={handleAmountSliderChange}
-          />
         </div>
       </div>
 
