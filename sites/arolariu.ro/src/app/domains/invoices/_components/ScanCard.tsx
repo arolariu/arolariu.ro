@@ -265,7 +265,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [handleOpenPreview],
   );
 
-  const handleStopPropagation = useCallback((e: React.MouseEvent): void => {
+  const handleStopPropagation = useCallback((e: React.SyntheticEvent): void => {
     e.stopPropagation();
   }, []);
 
@@ -331,7 +331,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Selection checkbox */}
             <div
               className={styles["checkboxPosition"]}
-              onClick={handleStopPropagation}>
+              role='presentation'
+              onClick={handleStopPropagation}
+              onKeyDown={handleStopPropagation}>
               <Checkbox
                 checked={isSelected}
                 nativeButton
@@ -343,7 +345,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Actions menu */}
             <div
               className={styles["actionsPosition"]}
-              onClick={handleStopPropagation}>
+              role='presentation'
+              onClick={handleStopPropagation}
+              onKeyDown={handleStopPropagation}>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
@@ -441,6 +445,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             ) : (
               <div
                 className={styles["fileNameContainer"]}
+                role='presentation'
                 onDoubleClick={handleStartRename}>
                 <motion.p
                   className={styles["fileName"]}

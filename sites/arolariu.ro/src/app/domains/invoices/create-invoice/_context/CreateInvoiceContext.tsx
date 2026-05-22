@@ -251,26 +251,48 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     }
   }, [selectedScans, invoiceDetails, markScansAsUsedByInvoice, router]);
 
-  const contextValue: CreateInvoiceContextValue = {
-    currentStep,
-    goToStep,
-    goNext,
-    goBack,
-    canGoNext,
-    selectedScans,
-    toggleScan,
-    selectAllScans,
-    clearSelection,
-    hasScans: readyScans.length > 0,
-    invoiceDetails,
-    setName,
-    setCategory,
-    setPaymentType,
-    setTransactionDate,
-    setDescription,
-    isCreating,
-    createInvoiceWithScans,
-  };
+  const contextValue: CreateInvoiceContextValue = useMemo(
+    () => ({
+      currentStep,
+      goToStep,
+      goNext,
+      goBack,
+      canGoNext,
+      selectedScans,
+      toggleScan,
+      selectAllScans,
+      clearSelection,
+      hasScans: readyScans.length > 0,
+      invoiceDetails,
+      setName,
+      setCategory,
+      setPaymentType,
+      setTransactionDate,
+      setDescription,
+      isCreating,
+      createInvoiceWithScans,
+    }),
+    [
+      currentStep,
+      goToStep,
+      goNext,
+      goBack,
+      canGoNext,
+      selectedScans,
+      toggleScan,
+      selectAllScans,
+      clearSelection,
+      readyScans.length,
+      invoiceDetails,
+      setName,
+      setCategory,
+      setPaymentType,
+      setTransactionDate,
+      setDescription,
+      isCreating,
+      createInvoiceWithScans,
+    ],
+  );
 
   return <CreateInvoiceContext.Provider value={contextValue}>{children}</CreateInvoiceContext.Provider>;
 }

@@ -33,6 +33,17 @@ import {
 } from "../_components";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 
+// Module-level render functions for t.rich()
+const renderCountStrong = (chunks: React.ReactNode): React.JSX.Element => <strong>{chunks}</strong>;
+
+const renderSupportLink = (chunks: React.ReactNode): React.JSX.Element => (
+  <Link
+    href={`mailto:${BRAND.supportEmail}`}
+    style={EmailLinkStyles}>
+    {chunks}
+  </Link>
+);
+
 /**
  * Properties for the account inactivity warning email component.
  *
@@ -159,7 +170,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("intro", {
           inactiveDays,
-          count: (chunks) => <strong>{chunks}</strong>,
+          count: renderCountStrong,
         })}
       </Text>
 
@@ -179,13 +190,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("supportPrompt", {
           supportEmail: BRAND.supportEmail,
-          link: (chunks) => (
-            <Link
-              href={`mailto:${BRAND.supportEmail}`}
-              style={EmailLinkStyles}>
-              {chunks}
-            </Link>
-          ),
+          link: renderSupportLink,
         })}
       </Text>
 

@@ -35,6 +35,15 @@ import {
 } from "../../_components";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
 
+// Module-level render function for t.rich()
+const renderSupportLink = (chunks: React.ReactNode): React.JSX.Element => (
+  <Link
+    href={`mailto:${BRAND.supportEmail}`}
+    style={EmailLinkStyles}>
+    {chunks}
+  </Link>
+);
+
 /**
  * Describes what's missing from an incomplete invoice.
  */
@@ -159,13 +168,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          link: (chunks) => (
-            <Link
-              href={`mailto:${BRAND.supportEmail}`}
-              style={EmailLinkStyles}>
-              {chunks}
-            </Link>
-          ),
+          link: renderSupportLink,
         })}
       </Text>
 

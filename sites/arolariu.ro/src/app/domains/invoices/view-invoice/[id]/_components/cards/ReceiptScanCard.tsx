@@ -172,6 +172,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                       transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
                       transformOrigin,
                     }}
+                    role='presentation'
                     onMouseMove={handleMouseMove}>
                     {/* Plain <img> with direct HTTP GET — bypasses next/image optimization
                         so the request goes straight to the storage URL. */}

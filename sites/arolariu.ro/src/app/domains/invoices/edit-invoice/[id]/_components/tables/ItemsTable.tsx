@@ -31,7 +31,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
@@ -125,6 +125,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
+  // Ref-driven focus for the inline edit input — explicit alternative to
+  // jsx-a11y/no-autofocus. Only one input is mounted at a time (because the
+  // input is conditionally rendered per editingCell.field), so a single ref suffices.
+  const editInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editingCell) editInputRef.current?.focus();
+  }, [editingCell]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -700,12 +707,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     <div className={styles["cellWithIndicators"]}>
                       {isEditing && editingCell.field === "name" ? (
                         <Input
+                          ref={editInputRef}
                           type='text'
                           value={editValues[`${index}-name`] ?? ""}
                           onChange={createEditChangeHandler(index, "name")}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
-                          autoFocus
                           aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.name})}
                           className={styles["editInput"]}
                         />
@@ -759,12 +766,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     onClick={!isEditing && !isSoftDeleted ? onCellClickQuantity : undefined}>
                     {isEditing && editingCell.field === "quantity" ? (
                       <Input
+                        ref={editInputRef}
                         type='number'
                         value={editValues[`${index}-quantity`] ?? ""}
                         onChange={createEditChangeHandler(index, "quantity")}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        autoFocus
                         aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.name})}
                         className={styles["editInput"]}
                       />
@@ -777,13 +784,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     onClick={!isEditing && !isSoftDeleted ? onCellClickPrice : undefined}>
                     {isEditing && editingCell.field === "price" ? (
                       <Input
+                        ref={editInputRef}
                         type='number'
                         step='0.01'
                         value={editValues[`${index}-price`] ?? ""}
                         onChange={(e) => handleEditChange(index, "price", e.target.value)}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        autoFocus
                         aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.name})}
                         className={styles["editInput"]}
                       />

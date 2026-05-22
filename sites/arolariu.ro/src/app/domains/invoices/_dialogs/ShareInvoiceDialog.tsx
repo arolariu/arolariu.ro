@@ -30,6 +30,9 @@ import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
+// Module-level render function for t.rich()
+const renderStrong = (chunks: React.ReactNode): React.JSX.Element => <strong>{chunks}</strong>;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -77,7 +80,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.publicTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.publicDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
+                {t.rich("selection.publicDescription", {strong: renderStrong})}
               </CardDescription>
             </div>
           </CardHeader>
@@ -93,7 +96,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.privateTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.privateDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
+                {t.rich("selection.privateDescription", {strong: renderStrong})}
               </CardDescription>
             </div>
           </CardHeader>

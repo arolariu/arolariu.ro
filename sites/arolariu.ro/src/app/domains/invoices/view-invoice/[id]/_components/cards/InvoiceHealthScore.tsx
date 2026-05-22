@@ -57,6 +57,9 @@ import {TbAlertCircle, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink, TbSp
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceHealthScore.module.scss";
 
+// Module-level render function for t.rich()
+const renderStrong = (chunks: React.ReactNode): React.JSX.Element => <strong>{chunks}</strong>;
+
 /**
  * Represents a single score factor with its achievement status.
  *
@@ -445,7 +448,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                     {suggestion.params
                       ? t.rich(`suggestions.${suggestion.key}` as "suggestions.incompleteProducts", {
                           count: String(suggestion.params["count"] ?? ""),
-                          strong: (chunks) => <strong>{chunks}</strong>,
+                          strong: renderStrong,
                         })
                       : t(`suggestions.${suggestion.key}` as "suggestions.noProducts")}
                   </span>

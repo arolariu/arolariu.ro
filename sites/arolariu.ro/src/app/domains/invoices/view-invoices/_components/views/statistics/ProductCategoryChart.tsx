@@ -54,6 +54,9 @@ type CustomTooltipProps = {
   readonly currency: string;
 };
 
+/** Empty payload placeholder used when no tooltip data is available. */
+const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
+
 /**
  * Custom tooltip for the product category chart.
  *
@@ -61,7 +64,7 @@ type CustomTooltipProps = {
  * Displays category name, total spending, product count, and percentage
  * in a formatted card overlay.
  */
-function CustomTooltip({active = false, payload = [], currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
+function CustomTooltip({active = false, payload = EMPTY_TOOLTIP_PAYLOAD, currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.productCategory");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;

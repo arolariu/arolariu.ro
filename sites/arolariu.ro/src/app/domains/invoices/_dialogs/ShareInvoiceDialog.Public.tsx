@@ -10,6 +10,9 @@ import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShie
 import QRCode from "react-qr-code";
 import styles from "./ShareInvoiceDialog.Public.module.scss";
 
+// Module-level render function for t.rich()
+const renderStrong = (chunks: React.ReactNode): React.JSX.Element => <strong>{chunks}</strong>;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -153,7 +156,7 @@ export function AlreadyPublicMode({
         <TbGlobe className={styles["globeAlertIcon"]} />
         <AlertTitle className={styles["alertOrangeTitle"]}>{t("alreadyPublic.title")}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("alreadyPublic.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("alreadyPublic.description", {strong: renderStrong})}
         </AlertDescription>
       </Alert>
 
@@ -210,7 +213,7 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
         <AlertTitle className={styles["alertOrangeTitle"]}>{t("warning.title")}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("warning.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("warning.description", {strong: renderStrong})}
         </AlertDescription>
       </Alert>
 
