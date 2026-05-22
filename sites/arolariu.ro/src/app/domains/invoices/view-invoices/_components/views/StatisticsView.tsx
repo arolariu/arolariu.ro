@@ -130,12 +130,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   // Currency distribution
   const currencyDistribution = useMemo(() => computeCurrencyDistribution(invoices), [invoices]);
 
-  // Determine currency from first invoice's payment info
-  const currency = useMemo(() => {
-    if (invoices.length === 0) return "RON";
-    const [firstInvoice] = invoices;
-    return firstInvoice?.paymentInformation.currency?.code ?? "RON";
-  }, [invoices]);
+  // Aggregate statistics are normalized and displayed in RON
+  const currency = "RON";
 
   // Handle empty state
   if (invoices.length === 0) {
