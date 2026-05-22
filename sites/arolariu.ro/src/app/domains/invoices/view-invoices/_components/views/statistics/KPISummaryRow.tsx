@@ -19,18 +19,18 @@ type Props = {
 };
 
 type KPICardProps = {
-  readonly icon: React.ReactNode;
+  readonly icon: React.JSX.Element;
   readonly label: string;
   readonly value: string;
   readonly subtitle: string;
-  readonly trend?: {value: number; isPositive: boolean} | null;
+  readonly trend: {value: number; isPositive: boolean} | null;
   readonly index: number;
 };
 
 /**
  * Individual KPI card with icon, value, and optional trend indicator.
  */
-function KPICard({icon, label, value, subtitle, trend = null, index}: Readonly<KPICardProps>): React.JSX.Element {
+function KPICard({icon, label, value, subtitle, trend, index}: Readonly<KPICardProps>): React.JSX.Element {
   return (
     <motion.div
       initial={{opacity: 0, y: 20}}
@@ -80,6 +80,7 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
       label: t("totalSpending"),
       value: `${formatAmount(data.totalSpending)} ${currency}`,
       subtitle: `${data.invoiceCount} invoices`,
+      trend: null,
     },
     {
       icon: <TbReceipt size={24} />,
@@ -88,18 +89,21 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
       subtitle: t("avgPerInvoice", {
         amount: data.invoiceCount > 0 ? formatAmount(data.totalSpending / data.invoiceCount) : formatAmount(0),
       }),
+      trend: null,
     },
     {
       icon: <TbBuildingStore size={24} />,
       label: t("topMerchant"),
       value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t("noneYet"),
       subtitle: data.mostFrequentMerchant ? t("visits", {count: String(data.mostFrequentMerchant.count)}) : "",
+      trend: null,
     },
     {
       icon: <TbShoppingCart size={24} />,
       label: t("averageItems"),
       value: formatAmount(data.averageItemsPerInvoice, "en-US", 1),
       subtitle: t("acrossInvoices", {count: String(data.invoiceCount)}),
+      trend: null,
     },
   ];
 

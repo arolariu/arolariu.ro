@@ -37,8 +37,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active?: boolean;
-  readonly payload?: TooltipPayloadItem[];
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
   readonly currency: string;
   readonly getMerchantName: (id: string) => string;
 };
@@ -46,7 +46,7 @@ type CustomTooltipProps = {
 /**
  * Custom tooltip for the merchant leaderboard.
  */
-function CustomTooltip({active = false, payload = [], currency, getMerchantName}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.merchantLeaderboard");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -150,6 +150,8 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
               <ChartTooltip
                 content={
                   <CustomTooltip
+                    active={false}
+                    payload={[]}
                     currency={currency}
                     getMerchantName={getMerchantName}
                   />
