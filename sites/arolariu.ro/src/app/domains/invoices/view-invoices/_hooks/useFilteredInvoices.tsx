@@ -136,8 +136,10 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
           break;
         }
         default: {
-          const _exhaustive: never = sortField;
-          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+          // sortBy ultimately comes from URL params via a type assertion, so a malformed
+          // or legacy URL (e.g., ?sortBy=foo) can deliver a value outside the declared
+          // union. Treat unknown sort fields as "no sort applied" rather than crashing.
+          break;
         }
       }
     }

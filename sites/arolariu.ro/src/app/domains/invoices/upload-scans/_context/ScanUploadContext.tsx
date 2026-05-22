@@ -161,9 +161,11 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
       const BATCH_SIZE = 5;
       for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
         const batch = newUploads.slice(i, i + BATCH_SIZE);
-        // Yield to browser to prevent UI blocking
+        // Yield to the browser (macrotask) so it can paint/respond between batches.
+        // Note: an awaited Promise that resolves synchronously only yields a microtask,
+        // which is NOT enough for the browser to render between batches.
         await new Promise<void>((resolve) => {
-          resolve();
+          setTimeout(resolve, 0);
         });
         setPendingUploads((prev) => [...prev, ...batch]);
       }

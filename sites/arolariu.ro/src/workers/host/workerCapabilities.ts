@@ -44,9 +44,10 @@ export function getCapabilities(): WorkerCapabilities {
 
   const result: {-readonly [K in keyof WorkerCapabilities]: WorkerCapabilities[K]} = {
     crossOriginIsolated: isolated,
-    // Optional chain already short-circuits to undefined for missing prop;
-    // explicit `!== undefined` covers the null-vs-undefined ambiguity.
-    hasWebGpu: nav?.gpu !== undefined,
+    // Treat both null and undefined as "WebGPU is not available". Some polyfills /
+    // partial implementations may set navigator.gpu to null rather than leaving it
+    // unset, and we want both shapes to report hasWebGpu: false.
+    hasWebGpu: nav?.gpu !== undefined && nav.gpu !== null,
   };
 
   if (typeof nav?.hardwareConcurrency === "number") {

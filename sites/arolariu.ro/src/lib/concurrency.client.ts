@@ -59,8 +59,8 @@
  * const processed = await withConcurrencyLimit(processTasks, 3);
  * ```
  */
-export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<T[]> {
-  const results: T[] = Array.from({length: tasks.length});
+export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<Array<T | undefined>> {
+  const results: Array<T | undefined> = Array.from({length: tasks.length});
   let currentIndex = 0;
   let hasFailed = false;
 
