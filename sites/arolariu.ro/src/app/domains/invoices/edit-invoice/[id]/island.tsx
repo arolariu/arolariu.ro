@@ -187,8 +187,8 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
             </motion.div>
           </div>
         </section>
+        <DialogContainer />
       </EditInvoiceContextProvider>
-      <DialogContainer />
     </DialogProvider>
   );
 }
