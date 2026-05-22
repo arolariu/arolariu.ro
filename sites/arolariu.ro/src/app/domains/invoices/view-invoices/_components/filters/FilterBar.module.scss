@@ -348,6 +348,22 @@
   }
 }
 
+.chipButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  border-radius: radius('full');
+
+  &:focus-visible {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+}
+
 // ===========================================
 // PAYMENT TYPE LIST
 // ===========================================
@@ -495,6 +511,11 @@
     background-color: color('primary');
     opacity: 0.9;
   }
+}
+
+.sheetBodyScrollable {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .mobileShowResultsBar {

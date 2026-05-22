@@ -18,8 +18,9 @@ import {useCallback, useMemo} from "react";
  * @property amountMax - Maximum amount for amount range filter
  * @property categories - Selected invoice categories (comma-separated enum values)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
- * @property sortBy - Sort field (date, amount, name, or null for no sorting)
- * @property sortOrder - Sort direction (asc, desc, or null for no sorting)
+ * @property currencies - Selected ISO 4217 currency codes (comma-separated, URL key `cur`)
+ * @property sortBy - Sort field. Defaults to `"date"`.
+ * @property sortOrder - Sort direction. Defaults to `"desc"`.
  * @property view - Current view mode (table or grid)
  */
 export type FilterState = {
@@ -290,6 +291,10 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * - Amount range (if either min or max is set)
    * - Categories (if any selected)
    * - Payment types (if any selected)
+   * - Currencies (if any selected)
+   * - Sort (if non-default — anything other than date/desc)
+   *
+   * View mode is intentionally excluded — it's a UI preference, not a filter.
    */
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -299,6 +304,10 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
     if (filters.categories.length > 0) count++;
     if (filters.paymentTypes.length > 0) count++;
     if (filters.currencies.length > 0) count++;
+    // Sort is "active" when not the default (date/desc). Matches the Sort card's
+    // active-visual logic in FilterBar.tsx so the header badge and the card
+    // highlight stay in sync.
+    if (!(filters.sortBy === "date" && filters.sortOrder === "desc")) count++;
     return count;
   }, [filters]);
 

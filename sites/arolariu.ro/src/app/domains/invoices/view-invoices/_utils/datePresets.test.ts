@@ -40,8 +40,8 @@ describe("computePresetRange", () => {
 });
 
 describe("deriveActivePreset", () => {
-  it("returns null when both from and to are null", () => {
-    expect(deriveActivePreset(null, null, NOW)).toBeNull();
+  it("returns 'all' when both from and to are null (no date restriction == All time)", () => {
+    expect(deriveActivePreset(null, null, NOW)).toBe("all");
   });
 
   it("returns '30d' when from/to exactly match the 30d range", () => {

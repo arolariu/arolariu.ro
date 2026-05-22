@@ -19,6 +19,9 @@ import type {FilterState} from "./useInvoiceFilters";
  * - Amount range: Filters by total cost amount (inclusive)
  * - Categories: Multi-select filter (OR logic)
  * - Payment types: Multi-select filter (OR logic)
+ * - Currencies: Multi-select filter (OR logic) on `invoice.paymentInformation.currency.code`,
+ *   with `"RON"` as the fallback for invoices missing a currency code (matches the
+ *   codebase-wide default in `_utils/statistics.ts`).
  *
  * **Sorting:**
  * Supports sorting by date, amount, and name with separate field and direction parameters.

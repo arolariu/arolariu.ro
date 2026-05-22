@@ -3350,7 +3350,15 @@
           "500plus": "500+",
           "50to100": "50-100"
         },
-        "dynamicHint": "Ces options sont remplies à partir de vos factures — seules les valeurs présentes dans vos données apparaissent ici."
+        "dynamicHint": "Ces options sont remplies à partir de vos factures — seules les valeurs présentes dans vos données apparaissent ici.",
+        "paymentTypeLabels": {
+          "card": "Carte",
+          "cash": "Espèces",
+          "mobile": "Mobile",
+          "other": "Autre",
+          "transfer": "Virement",
+          "voucher": "Bon"
+        }
       },
       "placeholderPanel": "D’autres filtres seront bientôt disponibles.",
       "searchPlaceholder": "Rechercher des factures...",

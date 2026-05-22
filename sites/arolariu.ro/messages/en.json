@@ -3338,6 +3338,14 @@
         "dateTo": "To date",
         "defaultValue": "default",
         "dynamicHint": "These options are populated from your invoices — only values present in your data appear here.",
+        "paymentTypeLabels": {
+          "card": "Card",
+          "cash": "Cash",
+          "mobile": "Mobile",
+          "other": "Other",
+          "transfer": "Transfer",
+          "voucher": "Voucher"
+        },
         "paymentTypes": "Payment Types",
         "showResults": "Show {count, plural, one {# result} other {# results}}",
         "sortBy": "Sort By",

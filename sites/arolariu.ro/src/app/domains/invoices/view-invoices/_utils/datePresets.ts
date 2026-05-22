@@ -57,7 +57,8 @@ export function deriveActivePreset(
   to: string | null,
   now: Date,
 ): DatePresetKey | "custom" | null {
-  if (from === null && to === null) return null;
+  // No date range set ↔ "All time" preset is active (no restriction).
+  if (from === null && to === null) return "all";
   for (const preset of ["30d", "90d", "ytd"] as const) {
     const range = computePresetRange(preset, now);
     if (range.from === from && range.to === to) return preset;

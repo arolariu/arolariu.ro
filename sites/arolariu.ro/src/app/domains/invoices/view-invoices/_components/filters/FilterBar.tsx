@@ -166,18 +166,29 @@ export default function FilterBar({
     });
   }, [onFiltersChange]);
 
+  // Format a local Date as YYYY-MM-DD using local (not UTC) components so a
+  // user in a positive timezone doesn't see their picked calendar day shifted
+  // back by one. Same shape datePresets.ts uses internally for its UTC-safe
+  // ranges; here we want the LOCAL calendar day the picker actually showed.
+  const formatLocalDate = useCallback((date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, []);
+
   const handleDateFromChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateFrom: date ? (date.toISOString().split("T")[0] ?? null) : null});
+      onFiltersChange({dateFrom: date ? formatLocalDate(date) : null});
     },
-    [onFiltersChange],
+    [onFiltersChange, formatLocalDate],
   );
 
   const handleDateToChange = useCallback(
     (date: Date | undefined) => {
-      onFiltersChange({dateTo: date ? (date.toISOString().split("T")[0] ?? null) : null});
+      onFiltersChange({dateTo: date ? formatLocalDate(date) : null});
     },
-    [onFiltersChange],
+    [onFiltersChange, formatLocalDate],
   );
 
   const handleAmountMinChange = useCallback(
@@ -290,22 +301,25 @@ export default function FilterBar({
     [t],
   );
 
-  const getPaymentTypeLabel = useCallback((pt: PaymentType): string => {
-    switch (pt) {
-      case PaymentType.Cash:
-        return "Cash";
-      case PaymentType.Card:
-        return "Card";
-      case PaymentType.Transfer:
-        return "Transfer";
-      case PaymentType.MobilePayment:
-        return "Mobile";
-      case PaymentType.Voucher:
-        return "Voucher";
-      default:
-        return "Other";
-    }
-  }, []);
+  const getPaymentTypeLabel = useCallback(
+    (pt: PaymentType): string => {
+      switch (pt) {
+        case PaymentType.Cash:
+          return t("filters.paymentTypeLabels.cash");
+        case PaymentType.Card:
+          return t("filters.paymentTypeLabels.card");
+        case PaymentType.Transfer:
+          return t("filters.paymentTypeLabels.transfer");
+        case PaymentType.MobilePayment:
+          return t("filters.paymentTypeLabels.mobile");
+        case PaymentType.Voucher:
+          return t("filters.paymentTypeLabels.voucher");
+        default:
+          return t("filters.paymentTypeLabels.other");
+      }
+    },
+    [t],
+  );
 
   const getSortLabel = useCallback(
     (sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string => {
@@ -382,6 +396,7 @@ export default function FilterBar({
             <button
               key={preset}
               type='button'
+              aria-pressed={activeDatePreset === preset}
               className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
               // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
               onClick={() => handlePresetClick(preset)}>
@@ -470,6 +485,7 @@ export default function FilterBar({
             <button
               key={presetKey}
               type='button'
+              aria-pressed={activeAmountPreset === presetKey}
               className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
               // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
               onClick={() => handleAmountPresetClick(presetKey)}>
@@ -495,14 +511,19 @@ export default function FilterBar({
           </div>
           <div className={styles["categoryChips"]}>
             {availableCurrencies.map((code) => (
-              <Badge
+              <button
                 key={code}
-                variant={filters.currencies.includes(code) ? "default" : "outline"}
-                className={styles["categoryChip"]}
+                type='button'
+                aria-pressed={filters.currencies.includes(code)}
+                className={styles["chipButton"]}
                 // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
                 onClick={() => handleCurrencyToggle(code)}>
-                {code}
-              </Badge>
+                <Badge
+                  variant={filters.currencies.includes(code) ? "default" : "outline"}
+                  className={styles["categoryChip"]}>
+                  {code}
+                </Badge>
+              </button>
             ))}
           </div>
         </div>
@@ -526,14 +547,19 @@ export default function FilterBar({
           </div>
           <div className={styles["categoryChips"]}>
             {availableCategories.map((cat) => (
-              <Badge
+              <button
                 key={cat}
-                variant={filters.categories.includes(cat) ? "default" : "outline"}
-                className={styles["categoryChip"]}
+                type='button'
+                aria-pressed={filters.categories.includes(cat)}
+                className={styles["chipButton"]}
                 // eslint-disable-next-line react/jsx-no-bind -- cat is a stable enum value
                 onClick={() => handleCategoryToggle(cat)}>
-                {getCategoryLabel(cat)}
-              </Badge>
+                <Badge
+                  variant={filters.categories.includes(cat) ? "default" : "outline"}
+                  className={styles["categoryChip"]}>
+                  {getCategoryLabel(cat)}
+                </Badge>
+              </button>
             ))}
           </div>
         </div>
@@ -557,14 +583,19 @@ export default function FilterBar({
           </div>
           <div className={styles["categoryChips"]}>
             {availablePaymentTypes.map((pt) => (
-              <Badge
+              <button
                 key={pt}
-                variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
-                className={styles["categoryChip"]}
+                type='button'
+                aria-pressed={filters.paymentTypes.includes(pt)}
+                className={styles["chipButton"]}
                 // eslint-disable-next-line react/jsx-no-bind -- pt is a stable enum value
                 onClick={() => handlePaymentTypeToggle(pt)}>
-                {getPaymentTypeLabel(pt)}
-              </Badge>
+                <Badge
+                  variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
+                  className={styles["categoryChip"]}>
+                  {getPaymentTypeLabel(pt)}
+                </Badge>
+              </button>
             ))}
           </div>
         </div>
@@ -658,7 +689,7 @@ export default function FilterBar({
                   </Button>
                 )}
               </div>
-              <div style={{flex: 1, overflowY: "auto"}}>{renderFilterPanel()}</div>
+              <div className={styles["sheetBodyScrollable"]}>{renderFilterPanel()}</div>
               <div className={styles["mobileShowResultsBar"]}>
                 <Button
                   className={styles["mobileShowResultsButton"]}

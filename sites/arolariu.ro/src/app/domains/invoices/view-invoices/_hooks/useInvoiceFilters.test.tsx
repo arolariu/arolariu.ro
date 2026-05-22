@@ -427,9 +427,10 @@ describe("useInvoiceFilters", () => {
       expect(result.current.activeFilterCount).toBe(5);
     });
 
-    it("should not count sort and view mode as active filters", () => {
+    it("should not count default sort or view mode as active filters", () => {
+      // Default sort is now date/desc — only view-mode change should NOT contribute.
       // Arrange
-      const mockSearchParams = new URLSearchParams("?sortBy=amount&sortOrder=asc&view=grid");
+      const mockSearchParams = new URLSearchParams("?view=grid");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act
@@ -437,6 +438,17 @@ describe("useInvoiceFilters", () => {
 
       // Assert
       expect(result.current.activeFilterCount).toBe(0);
+    });
+
+    it("should count non-default sort as an active filter", () => {
+      // Anything other than date/desc counts toward the badge to keep the
+      // header in sync with the Sort card's active visual.
+      const mockSearchParams = new URLSearchParams("?sortBy=amount&sortOrder=asc");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      expect(result.current.activeFilterCount).toBe(1);
     });
   });
 
