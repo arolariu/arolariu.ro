@@ -516,27 +516,7 @@ const statusEslintConfig: Config = defineConfig({
   },
 })[0] as Config;
 
-const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig, {
-  // Worker-runtime files use MessagePort.postMessage(value) which intentionally has no targetOrigin
-  // (only Window.postMessage requires one). The unicorn rule can't distinguish the two surfaces.
-  // See docs/superpowers/specs/2026-05-22-sites-eslint-cleanup-design.md (Escalation section).
-  name: "[@arolariu/website-workers-runtime]",
-  files: ["sites/arolariu.ro/src/workers/runtime/**/*.{ts,tsx}"],
-  rules: {
-    "unicorn/require-post-message-target-origin": "off",
-  },
-}, {
-  // Worker host and runtime use MessagePort.onmessage (property assignment) rather than
-  // addEventListener because setting `onmessage` implicitly calls port.start(); addEventListener
-  // does not, so messages would be queued indefinitely. The handler-swap from bootstrap to
-  // steady-state mode also depends on the property-replacement semantics, which the matching
-  // unit tests in sites/arolariu.ro/src/workers/host/*.test.ts directly exercise.
-  name: "[@arolariu/website-workers-message-ports]",
-  files: ["sites/arolariu.ro/src/workers/host/**/*.{ts,tsx}", "sites/arolariu.ro/src/workers/runtime/**/*.{ts,tsx}"],
-  rules: {
-    "unicorn/prefer-add-event-listener": "off",
-  },
-});
+const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
 // Add the global ignores to the default config.
 for (const individualEslintConfig of eslintConfig) {
