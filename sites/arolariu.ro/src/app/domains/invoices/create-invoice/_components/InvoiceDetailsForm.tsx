@@ -32,7 +32,6 @@ import {
   Textarea,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
@@ -61,11 +60,10 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
               <span className={styles["pdfLabel"]}>PDF</span>
             </div>
           ) : (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element -- scan thumbnails are dynamic Azure Blob URLs not configured in next.config remotePatterns; <Image unoptimized> adds no value
+            <img
               src={scan.blobUrl}
               alt={scan.name}
-              fill
-              unoptimized
               className={styles["thumbnailImage"]}
             />
           )}

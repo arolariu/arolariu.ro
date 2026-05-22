@@ -15,7 +15,6 @@ import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useFormatter, useTranslations} from "next-intl";
-import Image from "next/image";
 import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
@@ -79,11 +78,10 @@ export default function ReviewStep(): React.JSX.Element {
                     <TbFileTypePdf className={styles["pdfIcon"]} />
                   </div>
                 ) : (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element -- dynamic Azure Blob URL not configured in next.config remotePatterns
+                  <img
                     src={scan.blobUrl}
                     alt={scan.name}
-                    fill
-                    unoptimized
                     className={styles["scanImage"]}
                   />
                 )}

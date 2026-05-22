@@ -25,7 +25,6 @@ import {ScanStatus} from "@/types/scans";
 import {Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCheck, TbFileTypePdf} from "react-icons/tb";
@@ -155,11 +154,10 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
                   <TbFileTypePdf className={styles["pdfIcon"]} />
                 </div>
               ) : (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element -- dynamic Azure Blob URL not configured in next.config remotePatterns
+                <img
                   src={scan.blobUrl}
                   alt={scan.name}
-                  fill
-                  unoptimized
                   className={styles["thumbnailImage"]}
                 />
               )}
