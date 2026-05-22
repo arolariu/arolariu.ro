@@ -1,7 +1,8 @@
 "use client";
 
 import {formatDate} from "@/lib/utils.generic";
-import {InvoiceCategory, PaymentType, type Invoice} from "@/types/invoices";
+import {useInvoicesStore} from "@/stores";
+import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -47,8 +48,6 @@ type Props = {
   viewMode: "table" | "grid";
   /** Callback when view mode changes (updates URL) */
   onViewModeChange: (mode: "table" | "grid") => void;
-  /** Full unfiltered invoice list — drives dynamic option derivation for the multi-select cards. */
-  invoices: ReadonlyArray<Invoice>;
   /** Count after filters apply — drives the mobile "Show N results" CTA label. */
   filteredCount: number;
 };
@@ -104,12 +103,16 @@ export default function FilterBar({
   activeFilterCount,
   viewMode,
   onViewModeChange,
-  invoices,
   filteredCount,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--List.invoicesView");
   const locale = useLocale();
   const {isMobile} = useWindowSize();
+  // Read full unfiltered invoice list straight from the store — matches the
+  // established pattern in this directory (BulkActionsToolbar, ExportDialog,
+  // GridView, TableView all read state.entities directly; useInvoices() is
+  // called once upstream in island.tsx and triggers the fetch).
+  const invoices = useInvoicesStore((state) => state.entities);
   const [searchInput, setSearchInput] = useState<string>(filters.search);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
