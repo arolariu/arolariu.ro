@@ -66,6 +66,12 @@
   @include respond-to('lg') {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  & > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
 }
 
 // ===========================================
