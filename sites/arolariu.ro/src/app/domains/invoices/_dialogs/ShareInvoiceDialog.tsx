@@ -30,9 +30,6 @@ import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
-// Module-level render function for t.rich()
-const renderStrong = (chunks: React.ReactNode): React.JSX.Element => <strong>{chunks}</strong>;
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -80,7 +77,10 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.publicTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.publicDescription", {strong: renderStrong})}
+                {t.rich("selection.publicDescription", {
+                  // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </CardDescription>
             </div>
           </CardHeader>
@@ -96,7 +96,10 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.privateTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.privateDescription", {strong: renderStrong})}
+                {t.rich("selection.privateDescription", {
+                  // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </CardDescription>
             </div>
           </CardHeader>
