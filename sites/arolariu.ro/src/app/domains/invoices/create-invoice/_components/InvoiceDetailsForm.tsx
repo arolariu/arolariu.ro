@@ -14,6 +14,7 @@
  */
 
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
+import Image from "next/image";
 import {
   Button,
   Calendar,
@@ -60,9 +61,11 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
               <span className={styles["pdfLabel"]}>PDF</span>
             </div>
           ) : (
-            <img
+            <Image
               src={scan.blobUrl}
               alt={scan.name}
+              fill
+              unoptimized
               className={styles["thumbnailImage"]}
             />
           )}
