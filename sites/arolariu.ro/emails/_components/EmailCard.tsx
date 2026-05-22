@@ -31,8 +31,7 @@ const styles = {
   },
 } as const;
 
-export function EmailCard(props: Props) {
-  const {title, children} = props;
+export function EmailCard({title = "", children}: Readonly<Props>) {
 
   return (
     <Section style={styles.card}>

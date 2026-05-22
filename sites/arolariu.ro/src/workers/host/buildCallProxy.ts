@@ -67,7 +67,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         // `Promise.race` — the loser still settles asynchronously after the
         // race completes. Applies to `crashPromise`, `wrapped`, and
         // `bodyPromise` below.
-        crashPromise.catch(() => {});
+        crashPromise.catch((): void => {});
 
         const body = async (): Promise<unknown> => {
           await deps.ensureReady();
@@ -106,7 +106,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
             });
 
             if (timeoutPromise) {
-              wrapped.catch(() => {});
+              wrapped.catch((): void => {});
               return await Promise.race([wrapped, timeoutPromise]);
             }
             return await wrapped;
@@ -117,7 +117,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         };
 
         const bodyPromise = body();
-        bodyPromise.catch(() => {});
+        bodyPromise.catch((): void => {});
         return Promise.race([bodyPromise, crashPromise]).finally(() => {
           removeFromInFlight?.();
         });

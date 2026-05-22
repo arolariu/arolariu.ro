@@ -397,8 +397,8 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedItems.map((item, index) => (
-                      <TableRow key={`${item.productCode}-${index}`}>
+                    {sortedItems.map((item) => (
+                      <TableRow key={item.productCode ?? item.name}>
                         <TableCell>
                           <div className={styles["itemCell"]}>
                             <div className={styles["itemNameRow"]}>

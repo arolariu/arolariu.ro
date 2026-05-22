@@ -97,20 +97,19 @@ const styles = {
  * Intentional removal (see PR #751 review thread); do not "fix" by
  * re-adding the label.
  */
-export async function EmailLayout(props: Props) {
-  const {
-    locale,
-    title,
-    preview,
-    heading,
-    badge,
-    primaryCta,
-    secondaryCta,
-    showUnsubscribe = false,
-    unsubscribeUrl,
-    managePreferencesUrl,
-    children,
-  } = props;
+export default async function EmailLayout({
+  locale = "en",
+  title,
+  preview,
+  heading,
+  badge = "",
+  primaryCta = undefined,
+  secondaryCta = undefined,
+  showUnsubscribe = false,
+  unsubscribeUrl = "",
+  managePreferencesUrl = "",
+  children,
+}: Readonly<Props>): Promise<React.JSX.Element> {
 
   const tLayout = await getLayoutTranslator(locale);
 

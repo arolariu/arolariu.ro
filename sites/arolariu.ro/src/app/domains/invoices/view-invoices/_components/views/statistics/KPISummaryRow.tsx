@@ -30,7 +30,7 @@ type KPICardProps = {
 /**
  * Individual KPI card with icon, value, and optional trend indicator.
  */
-function KPICard({icon, label, value, subtitle, trend, index}: KPICardProps): React.JSX.Element {
+function KPICard({icon, label, value, subtitle, trend = null, index}: Readonly<KPICardProps>): React.JSX.Element {
   return (
     <motion.div
       initial={{opacity: 0, y: 20}}

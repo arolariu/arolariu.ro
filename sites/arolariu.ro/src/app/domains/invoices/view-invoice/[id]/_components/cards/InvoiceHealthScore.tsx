@@ -436,9 +436,9 @@ export function InvoiceHealthScore(): React.JSX.Element {
               </Button>
             </div>
             <div className={styles["suggestionsList"]}>
-              {suggestions.map((suggestion, index) => (
+              {suggestions.map((suggestion) => (
                 <div
-                  key={`${suggestion.key}-${index}`}
+                  key={suggestion.key}
                   className={styles["suggestionItem"]}>
                   <suggestion.icon className={styles["suggestionIcon"]} />
                   <span className={styles["suggestionText"]}>

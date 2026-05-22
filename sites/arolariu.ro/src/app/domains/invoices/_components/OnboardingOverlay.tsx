@@ -181,16 +181,17 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
         {/* Footer with dots and navigation */}
         <div className={styles["footer"]}>
           <div className={styles["dots"]}>
-            {steps.map((_, index) => (
+            {steps.map((step) => (
               <button
-                key={index}
-                className={`${styles["dot"]} ${index === currentStep ? styles["dotActive"] : ""}`}
-                onClick={createStepClickHandler(index)}
+                type="button"
+                key={step.title}
+                className={`${styles["dot"]} ${steps.indexOf(step) === currentStep ? styles["dotActive"] : ""}`}
+                onClick={createStepClickHandler(steps.indexOf(step))}
                 aria-label={`${t("stepOf", {
-                  current: String(index + 1),
+                  current: String(steps.indexOf(step) + 1),
                   total: String(steps.length),
                 })}`}
-                aria-current={index === currentStep}
+                aria-current={steps.indexOf(step) === currentStep}
               />
             ))}
           </div>

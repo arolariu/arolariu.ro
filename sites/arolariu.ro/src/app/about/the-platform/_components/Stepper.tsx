@@ -117,7 +117,7 @@ export default function Stepper(): React.JSX.Element {
 
                   {/* Expandable details */}
                   <AnimatePresence>
-                    {isExpanded && (
+                    {isExpanded ? (
                       <motion.div
                         initial={{height: 0, opacity: 0}}
                         animate={{height: "auto", opacity: 1}}
@@ -141,7 +141,7 @@ export default function Stepper(): React.JSX.Element {
                             ))}
                         </ul>
                       </motion.div>
-                    )}
+                    ) : null}
                   </AnimatePresence>
 
                   <button

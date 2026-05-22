@@ -230,7 +230,7 @@ const CreateDialog = () => {
             <div className={styles["fieldGroup"]}>
               {recipe.ingredients.map((ingredient, idx) => (
                 <div
-                  key={idx}
+                  key={`ingredient-${idx}`}
                   className={styles["ingredientItem"]}>
                   <div className={styles["ingredientRow"]}>
                     <div className={styles["ingredientInput"]}>
@@ -407,7 +407,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <ul className={styles["ingredientReadList"]}>
               {recipe?.ingredients.map((ingredient, idx) => (
                 <li
-                  key={idx}
+                  key={`read-ingredient-${idx}`}
                   className={styles["readText"]}>
                   {ingredient}
                 </li>

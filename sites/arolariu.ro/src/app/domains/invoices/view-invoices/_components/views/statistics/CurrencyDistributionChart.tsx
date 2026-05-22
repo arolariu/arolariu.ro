@@ -161,6 +161,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
             <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
           </div>
           <button
+            type="button"
             onClick={handleToggleRON}
             className={styles["toggleButton"]}
             aria-label={t("toggleLabel")}

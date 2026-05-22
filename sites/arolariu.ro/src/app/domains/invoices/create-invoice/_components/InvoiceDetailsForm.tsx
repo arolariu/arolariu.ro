@@ -129,11 +129,11 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
 
       <div className={styles["contentWrapper"]}>
         {/* Scan Thumbnail - shown on mobile top, desktop right */}
-        {firstScan && (
+        {firstScan ? (
           <div className={styles["thumbnailColumn"]}>
             <ScanThumbnail scan={firstScan} />
           </div>
-        )}
+        ) : null}
 
         {/* Form Column */}
         <Card className={styles["formCard"]}>

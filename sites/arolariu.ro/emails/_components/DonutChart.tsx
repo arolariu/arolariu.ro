@@ -91,8 +91,7 @@ function buildQuickChartUrl(data: readonly Datum[]): string {
   return `https://quickchart.io/chart?c=${encoded}&w=520&h=300&backgroundColor=white&format=png`;
 }
 
-export function DonutChart(props: Props) {
-  const {title, data, chartImageUrl, alt} = props;
+export function DonutChart({title, data, chartImageUrl = "", alt}: Readonly<Props>) {
 
   const nonEmpty = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   if (nonEmpty.length === 0) {

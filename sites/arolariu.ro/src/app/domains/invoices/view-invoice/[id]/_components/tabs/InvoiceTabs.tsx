@@ -136,9 +136,9 @@ export function InvoiceTabs(): React.JSX.Element {
                               <h4 className={styles["sectionTitle"]}>{t("recipe.ingredients")}</h4>
                             </div>
                             <ul className={styles["ingredientsList"]}>
-                              {recipe.ingredients.map((ingredient, index) => (
+                              {recipe.ingredients.map((ingredient) => (
                                 <li
-                                  key={`${ingredient}-${index}`}
+                                  key={ingredient}
                                   className={styles["ingredientItem"]}>
                                   {ingredient}
                                 </li>
@@ -148,15 +148,15 @@ export function InvoiceTabs(): React.JSX.Element {
                         )}
 
                         {/* Instructions */}
-                        {recipe.instructions && (
+                        {recipe.instructions ? (
                           <div className={styles["instructionsSection"]}>
                             <h4 className={styles["sectionTitle"]}>{t("recipe.instructions")}</h4>
                             <p className={styles["instructionsText"]}>{recipe.instructions}</p>
                           </div>
-                        )}
+                        ) : null}
 
                         {/* External Link */}
-                        {hasValidReference && (
+                        {hasValidReference ? (
                           <Button
                             variant='link'
                             className={styles["recipeLink"]}
@@ -169,7 +169,7 @@ export function InvoiceTabs(): React.JSX.Element {
                               <TbExternalLink className={styles["externalLinkIcon"]} />
                             </a>
                           </Button>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   );

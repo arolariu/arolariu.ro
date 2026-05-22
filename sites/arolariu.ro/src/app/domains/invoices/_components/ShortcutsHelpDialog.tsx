@@ -120,9 +120,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
               key={shortcut.descriptionKey}
               className={styles["shortcutRow"]}>
               <KbdGroup className={styles["kbdGroup"]}>
-                {shortcut.keys.map((key, index) => (
+                {shortcut.keys.map((key) => (
                   <Kbd
-                    key={`${key}-${index}`}
+                    key={key}
                     className={styles["kbd"]}>
                     {key}
                   </Kbd>

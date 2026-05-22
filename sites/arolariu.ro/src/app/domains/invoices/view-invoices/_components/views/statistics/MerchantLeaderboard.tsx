@@ -46,7 +46,7 @@ type CustomTooltipProps = {
 /**
  * Custom tooltip for the merchant leaderboard.
  */
-function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active = false, payload = [], currency, getMerchantName}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.merchantLeaderboard");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;

@@ -644,13 +644,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 className={styles["tableHeaderRightSortable"]}
                 onClick={handleSortByQuantity}>
                 {t("columns.quantity")}
-                {sortField === "quantity" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
+                {sortField === "quantity" ? <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span> : null}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
                 onClick={handleSortByPrice}>
                 {t("columns.price")}
-                {sortField === "price" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
+                {sortField === "price" ? <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span> : null}
               </TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("columns.total")}</TableHead>
               <TableHead className={styles["tableHeaderCenter"]}>{t("columns.actions")}</TableHead>
@@ -731,7 +731,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {hasAllergens && !isSoftDeleted && (
+                          {hasAllergens && !isSoftDeleted ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger
@@ -749,7 +749,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          )}
+                          ) : null}
                         </>
                       )}
                     </div>

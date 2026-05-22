@@ -289,6 +289,7 @@ Items: ${invoice.items.length}
         <div className={styles["exportOptions"]}>
           {/* PDF Export Card */}
           <button
+            type="button"
             className={styles["exportCard"]}
             onClick={handleExportPDF}
             disabled={isGeneratingPDF}>
@@ -304,6 +305,7 @@ Items: ${invoice.items.length}
 
           {/* CSV Export Card */}
           <button
+            type="button"
             className={styles["exportCard"]}
             onClick={handleExportCSV}>
             <div className={styles["exportCardIcon"]}>
@@ -318,6 +320,7 @@ Items: ${invoice.items.length}
 
           {/* JSON Export Card */}
           <button
+            type="button"
             className={styles["exportCard"]}
             onClick={handleExportJSON}>
             <div className={styles["exportCardIcon"]}>
@@ -332,6 +335,7 @@ Items: ${invoice.items.length}
 
           {/* Copy Summary Card */}
           <button
+            type="button"
             className={styles["exportCard"]}
             onClick={handleCopySummary}>
             <div className={styles["exportCardIcon"]}>

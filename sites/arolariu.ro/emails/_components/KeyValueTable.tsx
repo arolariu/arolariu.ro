@@ -52,8 +52,7 @@ const styles = {
   },
 } as const;
 
-export function KeyValueTable(props: Props) {
-  const {title, items} = props;
+export function KeyValueTable({title = "", items}: Readonly<Props>) {
 
   return (
     <Section style={styles.wrap}>

@@ -87,36 +87,34 @@ export default function ScanSelector(): React.JSX.Element {
         </div>
 
         <div className={styles["actions"]}>
-          {selectedScans.length > 0 && (
+          {selectedScans.length > 0 ? (
             <Badge
               variant='secondary'
               className={styles["selectedBadge"]}>
               {t("selectedCount", {count: String(selectedScans.length)})}
             </Badge>
-          )}
+          ) : null}
 
-          {hasScans && (
-            <>
-              {allSelected ? (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={clearSelection}>
-                  <TbX />
-                  {t("clearAll")}
-                </Button>
-              ) : (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={selectAllScans}
-                  disabled={readyScans.length > 5}>
-                  <TbCheck />
-                  {t("selectAll")}
-                </Button>
-              )}
-            </>
-          )}
+          {hasScans ? (
+            allSelected ? (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={clearSelection}>
+                <TbX />
+                {t("clearAll")}
+              </Button>
+            ) : (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={selectAllScans}
+                disabled={readyScans.length > 5}>
+                <TbCheck />
+                {t("selectAll")}
+              </Button>
+            )
+          ) : null}
         </div>
       </div>
 

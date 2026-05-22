@@ -265,7 +265,7 @@ export default function AllergenDialog(): React.JSX.Element {
               <div className={styles["allergenList"]}>
                 {allergens.map((allergen, index) => (
                   <Badge
-                    key={`${allergen.name}-${index}`}
+                    key={allergen.name}
                     variant='secondary'
                     className={styles["allergenBadge"]}>
                     <span>{allergen.name}</span>

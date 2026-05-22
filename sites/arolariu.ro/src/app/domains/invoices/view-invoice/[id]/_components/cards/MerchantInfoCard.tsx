@@ -345,7 +345,7 @@ export function MerchantInfoCard(): React.JSX.Element {
           )}
 
           {/* Google Maps Link */}
-          {googleMapsUrl && (
+          {googleMapsUrl ? (
             <Button
               variant='outline'
               asChild
@@ -358,7 +358,7 @@ export function MerchantInfoCard(): React.JSX.Element {
                 {t("viewOnMap")}
               </a>
             </Button>
-          )}
+          ) : null}
         </div>
       </CardContent>
       <CardFooter>

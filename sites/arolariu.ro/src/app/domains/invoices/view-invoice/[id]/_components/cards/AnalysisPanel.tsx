@@ -242,7 +242,7 @@ export function AnalysisPanel(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["idleState"]}>
               {/* Last Analyzed Info */}
-              {invoice.lastUpdatedAt && (
+              {invoice.lastUpdatedAt ? (
                 <div className={styles["lastAnalyzed"]}>
                   <div className={styles["infoRow"]}>
                     <TbClock className={styles["infoIcon"]} />
@@ -261,7 +261,7 @@ export function AnalysisPanel(): React.JSX.Element {
                     </div>
                   )}
                 </div>
-              )}
+              ) : null}
 
               {/* Quick Re-Analyze Button */}
               <div className={styles["quickAction"]}>
@@ -302,7 +302,7 @@ export function AnalysisPanel(): React.JSX.Element {
                                 className={styles["optionButton"]}>
                                 {option.icon}
                                 <span className={styles["optionLabel"]}>{option.label}</span>
-                                {selectedOption === option.id && isAnalyzing && <TbCheck className={styles["activeIcon"]} />}
+                                {selectedOption === option.id && isAnalyzing ? <TbCheck className={styles["activeIcon"]} /> : null}
                               </Button>
                             }
                           />

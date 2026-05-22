@@ -234,9 +234,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           <div className={styles["section"]}>
             <Label className={styles["sectionLabel"]}>{t("labels.selectedProducts")}</Label>
             <div className={styles["productList"]}>
-              {selectedProducts.slice(0, 5).map((product, index) => (
+              {selectedProducts.slice(0, 5).map((product) => (
                 <div
-                  key={`${product.name}-${index}`}
+                  key={product.name}
                   className={styles["productItem"]}>
                   <span className={styles["productName"]}>{product.name}</span>
                 </div>
@@ -276,7 +276,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           </div>
 
           {/* Progress Indicator */}
-          {updateProgress && (
+          {updateProgress ? (
             <div className={styles["section"]}>
               <Label className={styles["sectionLabel"]}>{t("labels.progress")}</Label>
               <p className={styles["progressText"]}>
@@ -286,7 +286,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 })}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
 
         <DialogFooter>

@@ -89,7 +89,7 @@ export default function PostUploadPrompt({
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {isVisible ? (
         <motion.div
           className={styles["overlay"]}
           initial={{opacity: 0}}
@@ -192,7 +192,7 @@ export default function PostUploadPrompt({
             </Card>
           </motion.div>
         </motion.div>
-      )}
+      ) : null}
     </AnimatePresence>
   );
 }

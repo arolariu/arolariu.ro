@@ -61,7 +61,7 @@ type CustomTooltipProps = {
  * Displays category name, total spending, product count, and percentage
  * in a formatted card overlay.
  */
-function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active = false, payload = [], currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.productCategory");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;

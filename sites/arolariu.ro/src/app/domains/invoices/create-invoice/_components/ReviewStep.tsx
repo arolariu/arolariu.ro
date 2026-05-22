@@ -138,7 +138,7 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailValue"]}>{format.dateTime(invoiceDetails.transactionDate, {dateStyle: "long"})}</div>
           </div>
 
-          {invoiceDetails.description && (
+          {invoiceDetails.description ? (
             <div className={styles["detailRow"]}>
               <div className={styles["detailLabel"]}>
                 <TbFileDescription />
@@ -146,7 +146,7 @@ export default function ReviewStep(): React.JSX.Element {
               </div>
               <div className={styles["detailValue"]}>{invoiceDetails.description}</div>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
