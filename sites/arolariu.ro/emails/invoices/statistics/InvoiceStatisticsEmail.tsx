@@ -132,16 +132,16 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
         secondaryCta={{href: effectiveCreateInvoiceUrl, label: t("ctaSecondary")}}
         locale={locale}
         showUnsubscribe={false}
-        unsubscribeUrl=""
-        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
+        {" "}
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
             start: () => <strong>{periodStart}</strong>,
             end: () => <strong>{periodEnd}</strong>,
           })}
         </Text>
-
         <MetricsGrid
           metrics={[
             {label: t("metrics.invoices"), value: String(totals.invoicesCount)},
@@ -150,25 +150,21 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             {label: t("metrics.averagePerInvoice"), value: safeFormatCurrency(totals.averageSpend, currency)},
           ]}
         />
-
         <EmailCard title={t("reportDetailsTitle")}>
           <KeyValueTable
-            title=""
+            title=''
             items={[
               {label: t("reportDetails.period"), value: `${periodStart} → ${periodEnd}`},
               {label: t("reportDetails.currency"), value: currency},
             ]}
           />
         </EmailCard>
-
         <EmailCard title={t("topMerchantsTitle")}>
           <BulletList items={rankedItems(topMerchants, currency, noDataFallback)} />
         </EmailCard>
-
         <EmailCard title={t("topCategoriesTitle")}>
           <BulletList items={rankedItems(topCategories, currency, noDataFallback)} />
         </EmailCard>
-
         {breakdownForChart.length > 0 ? (
           <EmailCard title={t("breakdownCardTitle")}>
             <DonutChart
@@ -193,9 +189,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             )}
           </EmailCard>
         ) : null}
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -207,7 +201,6 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

@@ -52,11 +52,11 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
         primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
         secondaryCta={null}
         showUnsubscribe={false}
-        unsubscribeUrl=""
-        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
+        {" "}
+        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
-
         <KeyValueTable
           title={t("detailsTitle")}
           items={[
@@ -65,11 +65,9 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
             {label: t("details.status"), value: t("statusValue")},
           ]}
         />
-
         <EmailCard title={t("whatYouShouldKnowTitle")}>
           <BulletList items={[t("whatYouShouldKnow.0"), t("whatYouShouldKnow.1"), t("whatYouShouldKnow.2"), t("whatYouShouldKnow.3")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("body", {
             email: () => (
@@ -81,7 +79,6 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

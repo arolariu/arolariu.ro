@@ -114,10 +114,10 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       secondaryCta={null}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
+      {" "}
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro", {count})}</Text>
-
       <KeyValueTable
         title={t("invoicesAwaitingTitle")}
         items={displayInvoices.map((invoice) => ({
@@ -125,7 +125,6 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
           value: t("uploadedDate", {date: invoice.uploadDate}),
         }))}
       />
-
       {count > 5 ? (
         <Text style={{...EmailParagraphStyles, fontSize: "13px"}}>
           {t.rich("andMore", {
@@ -134,7 +133,6 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
           })}
         </Text>
       ) : null}
-
       <EmailCard title={t("analysisProvidedTitle")}>
         <BulletList
           items={[
@@ -146,16 +144,13 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
           ]}
         />
       </EmailCard>
-
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
-
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: renderSupportLink,
         })}
       </Text>
-
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
         {t("signOff.line1")}
         <br />

@@ -105,10 +105,10 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : null}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
+      {" "}
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
-
       <KeyValueTable
         title={t("invoiceDetailsTitle")}
         items={[
@@ -117,7 +117,6 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           {label: t("missingFieldsLabel"), value: String(missingFields.length)},
         ]}
       />
-
       <EmailCard title={t("whatsMissingTitle")}>
         {missingFields.map((field) => {
           const label = t(`missingFields.${field}.label`);
@@ -139,20 +138,16 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           );
         })}
       </EmailCard>
-
       <EmailCard title={t("tipsTitle")}>
         <BulletList items={[t("tips.0"), t("tips.1"), t("tips.2"), t("tips.3")]} />
       </EmailCard>
-
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
-
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: renderSupportLink,
         })}
       </Text>
-
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
         {t("signOff.line1")}
         <br />

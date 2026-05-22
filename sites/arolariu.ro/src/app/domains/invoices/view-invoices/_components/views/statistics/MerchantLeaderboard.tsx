@@ -37,8 +37,8 @@ type TooltipPayloadItem = {
 };
 
 type CustomTooltipProps = {
-  readonly active: boolean;
-  readonly payload: TooltipPayloadItem[];
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
   readonly currency: string;
   readonly getMerchantName: (id: string) => string;
 };
@@ -82,6 +82,23 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
       return merchant?.name ?? t("unknownMerchant");
     },
     [getMerchantById, t],
+  );
+
+  /**
+   * Render-prop adapter for Recharts' ChartTooltip. Recharts injects
+   * `active` and `payload` at hover time; we spread those in and add our
+   * own context (`currency`, `getMerchantName`).
+   */
+  const renderTooltip = useCallback(
+    (props: {active?: boolean; payload?: readonly unknown[]}) => (
+      <CustomTooltip
+        active={props.active}
+        payload={props.payload as TooltipPayloadItem[] | undefined}
+        currency={currency}
+        getMerchantName={getMerchantName}
+      />
+    ),
+    [currency, getMerchantName],
   );
 
   const chartConfig = {
@@ -147,16 +164,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <ChartTooltip
-                content={
-                  <CustomTooltip
-                    active={false}
-                    payload={[]}
-                    currency={currency}
-                    getMerchantName={getMerchantName}
-                  />
-                }
-              />
+              <ChartTooltip content={renderTooltip} />
               <Bar
                 dataKey='totalSpent'
                 fill='var(--ac-chart-2)'

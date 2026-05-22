@@ -146,10 +146,10 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         secondaryCta={null}
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-        managePreferencesUrl={`${BRAND.url}/settings/notifications`}>        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+        managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
+        {" "}
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
-
         {isOverBudget ? (
           <Text
             style={{
@@ -163,7 +163,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {t("overBudgetWarning")}
           </Text>
         ) : null}
-
         <MetricsGrid
           metrics={[
             {label: t("metricsLabels.budgetLimit"), value: budgetLimit},
@@ -172,7 +171,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {label: t("metricsLabels.threshold"), value: `${thresholdPercent}%`},
           ]}
         />
-
         <KeyValueTable
           title={t("detailsTitle")}
           items={[
@@ -182,7 +180,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {label: t("detailsLabels.spent"), value: currentSpending},
           ]}
         />
-
         {categoryBreakdown.length > 0 ? (
           <DonutChart
             title={t("chartTitle")}
@@ -191,7 +188,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             alt={t("chartAlt", {period})}
           />
         ) : null}
-
         <EmailCard title={t("tipsTitle", {state: budgetState})}>
           <BulletList
             items={
@@ -201,7 +197,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             }
           />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("notificationsParagraph", {
             settings: () => (
@@ -213,7 +208,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -225,7 +219,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

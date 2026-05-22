@@ -102,10 +102,10 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       secondaryCta={{href: effectiveDashboardUrl, label: t("secondaryCta")}}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
+      {" "}
+      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro")}</Text>
-
       <MetricsGrid
         metrics={[
           {label: t("metricsLabels.thisWeek"), value: String(thisWeekCount)},
@@ -114,20 +114,16 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
           {label: t("metricsLabels.totalTracked"), value: totalTracked},
         ]}
       />
-
       <EmailCard title={t("quickTipsTitle")}>
         <BulletList items={[t("quickTips.0"), t("quickTips.1"), t("quickTips.2")]} />
       </EmailCard>
-
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
-
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
           link: renderSupportLink,
         })}
       </Text>
-
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
         {t("signOff.line1")}
         <br />

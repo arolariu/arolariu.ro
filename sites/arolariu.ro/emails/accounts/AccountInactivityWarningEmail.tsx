@@ -146,8 +146,8 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       primaryCta={{href: effectiveSignInUrl, label: t("cta.primary")}}
       secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("cta.secondary")}}
       showUnsubscribe={false}
-      unsubscribeUrl=""
-      managePreferencesUrl="">
+      unsubscribeUrl=''
+      managePreferencesUrl=''>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
@@ -163,7 +163,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
 
       <EmailCard title={t("timeline.title")}>
         <KeyValueTable
-          title=""
+          title=''
           items={[
             {label: t("timeline.inactiveFor"), value: t("timeline.daysValue", {days: inactiveDays})},
             {label: t("timeline.timeRemaining"), value: t("timeline.daysValue", {days: daysUntilClosure})},

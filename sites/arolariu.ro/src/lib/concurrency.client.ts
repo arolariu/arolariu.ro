@@ -129,9 +129,9 @@ export async function withConcurrencyLimitAndProgress<T>(
     onProgress?: (completed: number, total: number) => void;
     onTaskComplete?: (result: T | Error, index: number) => void;
   } = {},
-): Promise<Array<T | Error>> {
+): Promise<Array<T | Error | undefined>> {
   const {limit = 5, onProgress, onTaskComplete} = options;
-  const results: Array<T | Error> = Array.from({length: tasks.length});
+  const results: Array<T | Error | undefined> = Array.from({length: tasks.length});
   let currentIndex = 0;
   let completedCount = 0;
 

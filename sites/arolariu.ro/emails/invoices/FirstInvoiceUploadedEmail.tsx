@@ -87,11 +87,11 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
         primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
         secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}
         showUnsubscribe={false}
-        unsubscribeUrl=""
-        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
+        {" "}
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
-
         <KeyValueTable
           title={t("invoiceSummaryTitle")}
           items={[
@@ -100,17 +100,13 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
             {label: t("invoiceSummary.status"), value: t("statusValue")},
           ]}
         />
-
         <EmailCard title={t("whatHappensNextTitle")}>
           <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
         </EmailCard>
-
         <EmailCard title={t("featuresToExploreTitle")}>
           <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -122,7 +118,6 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

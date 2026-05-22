@@ -47,21 +47,19 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
         secondaryCta={null}
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
+        managePreferencesUrl=''>
+        {" "}
+        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
             brandName: BRAND.name,
             brand: (chunks) => <strong>{chunks}</strong>,
           })}
         </Text>
-
         <EmailCard title={t("whatToExpectTitle")}>
           <BulletList items={[t("whatToExpect.0"), t("whatToExpect.1"), t("whatToExpect.2")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -73,7 +71,6 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />
