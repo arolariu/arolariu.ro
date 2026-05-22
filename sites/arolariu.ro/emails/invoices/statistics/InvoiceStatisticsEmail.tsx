@@ -130,8 +130,10 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
         heading={t("heading", {frequencyLabel: label})}
         primaryCta={{href: effectiveInvoicesUrl, label: t("ctaPrimary")}}
         secondaryCta={{href: effectiveCreateInvoiceUrl, label: t("ctaSecondary")}}
-        locale={locale}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        locale={locale}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
@@ -151,6 +153,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
 
         <EmailCard title={t("reportDetailsTitle")}>
           <KeyValueTable
+            title=""
             items={[
               {label: t("reportDetails.period"), value: `${periodStart} → ${periodEnd}`},
               {label: t("reportDetails.currency"), value: currency},
@@ -171,7 +174,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             <DonutChart
               title={t("donutChartTitle")}
               data={breakdownForChart}
-              chartImageUrl={categorySpendChartUrl}
+              chartImageUrl={categorySpendChartUrl ?? ""}
               alt={t("donutChartAlt")}
             />
 

@@ -101,10 +101,9 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       heading={t("heading")}
       primaryCta={{href: effectiveUploadUrl, label: t("primaryCta")}}
       secondaryCta={{href: effectiveDashboardUrl, label: t("secondaryCta")}}
-      showUnsubscribe
+      showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 

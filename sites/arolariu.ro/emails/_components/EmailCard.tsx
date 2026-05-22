@@ -9,7 +9,7 @@ import {Section, Text} from "react-email";
 import {EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 
 type Props = {
-  readonly title?: string;
+  readonly title: string;
   readonly children: ReactNode;
 };
 
@@ -31,7 +31,7 @@ const styles = {
   },
 } as const;
 
-export function EmailCard({title = "", children}: Readonly<Props>) {
+export function EmailCard({title, children}: Readonly<Props>) {
   return (
     <Section style={styles.card}>
       {title ? <Text style={styles.title}>{title}</Text> : null}

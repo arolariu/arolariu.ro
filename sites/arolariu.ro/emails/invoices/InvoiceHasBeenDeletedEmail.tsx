@@ -49,8 +49,11 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
         preview={t("preview", {invoiceLabel})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
+        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
 
         <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
 

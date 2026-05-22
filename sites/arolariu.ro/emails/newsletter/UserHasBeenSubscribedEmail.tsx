@@ -44,9 +44,10 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
         badge={t("badge")}
         heading={t("heading")}
         primaryCta={{href: BRAND.url, label: t("ctaPrimary")}}
-        showUnsubscribe
-        unsubscribeUrl={`${BRAND.url}/unsubscribe`}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        secondaryCta={null}
+        showUnsubscribe={true}
+        unsubscribeUrl={`${BRAND.url}/unsubscribe`}
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

@@ -73,8 +73,11 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
         preview={t("preview", {invoiceName})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
+        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
 
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 

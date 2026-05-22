@@ -49,8 +49,11 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
         preview={t("preview", {fromName: safeFrom})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
+        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
 
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

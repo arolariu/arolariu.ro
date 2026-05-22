@@ -14,19 +14,19 @@ import {getLayoutTranslator} from "./layoutTranslator";
 type Cta = {
   readonly href: string;
   readonly label: string;
-};
+} | null;
 
 type Props = {
   readonly locale: EmailLocale;
   readonly title: string;
   readonly preview: string;
   readonly heading: string;
-  readonly badge?: string;
-  readonly primaryCta?: Cta;
-  readonly secondaryCta?: Cta;
-  readonly showUnsubscribe?: boolean;
-  readonly unsubscribeUrl?: string;
-  readonly managePreferencesUrl?: string;
+  readonly badge: string;
+  readonly primaryCta: Cta;
+  readonly secondaryCta: Cta;
+  readonly showUnsubscribe: boolean;
+  readonly unsubscribeUrl: string;
+  readonly managePreferencesUrl: string;
   readonly children: ReactNode;
 };
 
@@ -98,16 +98,16 @@ const styles = {
  * re-adding the label.
  */
 export default async function EmailLayout({
-  locale = "en",
+  locale,
   title,
   preview,
   heading,
-  badge = "",
-  primaryCta = undefined,
-  secondaryCta = undefined,
-  showUnsubscribe = false,
-  unsubscribeUrl = "",
-  managePreferencesUrl = "",
+  badge,
+  primaryCta,
+  secondaryCta,
+  showUnsubscribe,
+  unsubscribeUrl,
+  managePreferencesUrl,
   children,
 }: Readonly<Props>): Promise<React.JSX.Element> {
   const tLayout = await getLayoutTranslator(locale);

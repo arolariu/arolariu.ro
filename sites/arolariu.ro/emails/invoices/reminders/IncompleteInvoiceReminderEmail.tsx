@@ -103,11 +103,10 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       badge={t("badge")}
       heading={t("heading")}
       primaryCta={{href: editInvoiceUrl, label: t("primaryCta")}}
-      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : undefined}
-      showUnsubscribe
+      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : null}
+      showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
 

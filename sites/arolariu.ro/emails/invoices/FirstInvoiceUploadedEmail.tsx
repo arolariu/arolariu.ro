@@ -85,8 +85,10 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
         badge={t("badge")}
         heading={t("heading")}
         primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
 

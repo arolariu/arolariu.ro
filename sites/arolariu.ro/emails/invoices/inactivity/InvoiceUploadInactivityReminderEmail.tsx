@@ -117,8 +117,10 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
         badge={t(`badge.${dayKey}`)}
         heading={t(`heading.${dayKey}`)}
         primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
-        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
         <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
 
@@ -128,6 +130,7 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
 
         <EmailCard title={t("status.title")}>
           <KeyValueTable
+            title=""
             items={[
               {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
               {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},

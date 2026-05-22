@@ -143,10 +143,10 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         badge={t("badge", {percent: thresholdPercent})}
         heading={t("heading", {percent: thresholdPercent})}
         primaryCta={{href: effectiveDashboardUrl, label: t("ctaPrimary")}}
-        showUnsubscribe
+        secondaryCta={null}
+        showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-        managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        managePreferencesUrl={`${BRAND.url}/settings/notifications`}>        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
         <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
 
@@ -187,7 +187,7 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
           <DonutChart
             title={t("chartTitle")}
             data={categoryBreakdown}
-            chartImageUrl={chartImageUrl}
+            chartImageUrl={chartImageUrl ?? ""}
             alt={t("chartAlt", {period})}
           />
         ) : null}

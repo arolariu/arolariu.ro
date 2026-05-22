@@ -40,8 +40,10 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
         badge={t("badge")}
         heading={t("heading")}
         primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("ctaSecondary")}}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
+        secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("ctaSecondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=""
+        managePreferencesUrl="">        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
 
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

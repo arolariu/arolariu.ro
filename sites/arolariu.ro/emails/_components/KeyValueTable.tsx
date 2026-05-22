@@ -13,7 +13,7 @@ type Item = {
 };
 
 type Props = {
-  readonly title?: string;
+  readonly title: string;
   readonly items: readonly Item[];
 };
 
@@ -52,7 +52,7 @@ const styles = {
   },
 } as const;
 
-export function KeyValueTable({title = "", items}: Readonly<Props>) {
+export function KeyValueTable({title, items}: Readonly<Props>) {
   return (
     <Section style={styles.wrap}>
       {title ? <Text style={styles.title}>{title}</Text> : null}

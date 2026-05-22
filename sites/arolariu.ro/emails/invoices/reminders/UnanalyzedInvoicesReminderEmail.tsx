@@ -112,10 +112,10 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       badge={t("badge")}
       heading={t("heading", {count})}
       primaryCta={{href: effectiveInvoicesUrl, label: t("primaryCta")}}
-      showUnsubscribe
+      secondaryCta={null}
+      showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
-      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+      managePreferencesUrl={`${BRAND.url}/settings/notifications`}>      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>{t("intro", {count})}</Text>
 
