@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
@@ -75,10 +76,13 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
-  const getMerchantName = (id: string): string => {
-    const merchant = getMerchantById(id);
-    return merchant?.name ?? t("unknownMerchant");
-  };
+  const getMerchantName = useCallback(
+    (id: string): string => {
+      const merchant = getMerchantById(id);
+      return merchant?.name ?? t("unknownMerchant");
+    },
+    [getMerchantById, t],
+  );
 
   const chartConfig = {
     totalSpent: {

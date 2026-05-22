@@ -15,6 +15,7 @@ import {
 import type {User} from "@clerk/nextjs/server";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbEdit, TbShieldCheck} from "react-icons/tb";
 import {getInitials} from "../_utils/helpers";
 import styles from "./ProfileHeader.module.scss";
@@ -26,6 +27,10 @@ type Props = Readonly<{
 
 export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element {
   const t = useTranslations("Profile");
+
+  const handleManageOnClerk = useCallback(() => {
+    window.open(userIdentifier ? `https://accounts.clerk.dev/user/${userIdentifier}` : "https://accounts.clerk.dev", "_blank");
+  }, [userIdentifier]);
 
   return (
     <motion.div
@@ -72,9 +77,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
             <div className={styles["sheetBody"]}>
               <Button
                 className={styles["manageButton"]}
-                onClick={() =>
-                  window.open(userIdentifier ? `https://accounts.clerk.dev/user/${userIdentifier}` : "https://accounts.clerk.dev", "_blank")
-                }>
+                onClick={handleManageOnClerk}>
                 <TbShieldCheck className={styles["iconSmSize"]} />
                 {t("header.manageOnClerk")}
               </Button>

@@ -98,6 +98,16 @@ export function ReceiptScanCard(): React.JSX.Element {
     setDialogZoomLevel((prev) => (prev === 1 ? 2 : 1));
   }, []);
 
+  const handleDialogImageKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleDialogImageClick();
+      }
+    },
+    [handleDialogImageClick],
+  );
+
   const handleDialogResetZoom = useCallback(() => {
     setDialogZoomLevel(1);
     setDialogTransformOrigin("center center");
@@ -200,12 +210,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   role='button'
                   tabIndex={0}
                   aria-label={t("controls.toggleZoom")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleDialogImageClick();
-                    }
-                  }}>
+                  onKeyDown={handleDialogImageKeyDown}>
                   {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

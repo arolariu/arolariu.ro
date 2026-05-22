@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import type {ProductCategorySpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
 
@@ -128,6 +129,17 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
     };
   }
 
+  const renderTooltip = useCallback(
+    ({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
+      <CustomTooltip
+        active={active}
+        payload={payload as CustomTooltipProps["payload"]}
+        currency={currency}
+      />
+    ),
+    [currency],
+  );
+
   const coloredData = data.map((item, index) => ({
     ...item,
     fill: `var(--ac-chart-${(index % 5) + 1})`,
@@ -164,15 +176,7 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 axisLine={false}
                 width={110}
               />
-              <ChartTooltip
-                content={({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
-                  <CustomTooltip
-                    active={active}
-                    payload={payload as CustomTooltipProps["payload"]}
-                    currency={currency}
-                  />
-                )}
-              />
+              <ChartTooltip content={renderTooltip} />
               <Bar
                 dataKey='totalSpent'
                 radius={[0, 4, 4, 0]}
