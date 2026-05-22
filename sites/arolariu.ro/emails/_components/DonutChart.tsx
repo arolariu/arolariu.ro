@@ -16,8 +16,8 @@ type Props = {
   readonly title: string;
   readonly data: readonly Datum[];
 
-  /** Optional pre-rendered chart image URL (preferred for privacy/consistency). */
-  readonly chartImageUrl?: string;
+  /** Pre-rendered chart image URL (preferred for privacy/consistency). */
+  readonly chartImageUrl: string;
 
   /** Accessible alt text for the chart image. */
   readonly alt: string;
@@ -91,13 +91,13 @@ function buildQuickChartUrl(data: readonly Datum[]): string {
   return `https://quickchart.io/chart?c=${encoded}&w=520&h=300&backgroundColor=white&format=png`;
 }
 
-export function DonutChart({title, data, chartImageUrl = "", alt}: Readonly<Props>) {
+export function DonutChart({title, data, chartImageUrl, alt}: Readonly<Props>) {
   const nonEmpty = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   if (nonEmpty.length === 0) {
     return null;
   }
 
-  const src = chartImageUrl ?? buildQuickChartUrl(nonEmpty);
+  const src = chartImageUrl || buildQuickChartUrl(nonEmpty);
 
   return (
     <Section style={styles.wrap}>
