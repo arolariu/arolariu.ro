@@ -525,6 +525,17 @@ const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesE
   rules: {
     "unicorn/require-post-message-target-origin": "off",
   },
+}, {
+  // Worker host and runtime use MessagePort.onmessage (property assignment) rather than
+  // addEventListener because setting `onmessage` implicitly calls port.start(); addEventListener
+  // does not, so messages would be queued indefinitely. The handler-swap from bootstrap to
+  // steady-state mode also depends on the property-replacement semantics, which the matching
+  // unit tests in sites/arolariu.ro/src/workers/host/*.test.ts directly exercise.
+  name: "[@arolariu/website-workers-message-ports]",
+  files: ["sites/arolariu.ro/src/workers/host/**/*.{ts,tsx}", "sites/arolariu.ro/src/workers/runtime/**/*.{ts,tsx}"],
+  rules: {
+    "unicorn/prefer-add-event-listener": "off",
+  },
 });
 
 // Add the global ignores to the default config.
