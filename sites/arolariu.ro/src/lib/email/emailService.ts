@@ -10,7 +10,7 @@ import {render} from "react-email";
 
 import {logWithTrace, withSpan} from "@/instrumentation.server";
 
-import type {EmailLocale} from "@/../emails/_i18n";
+import type {EmailLocale} from "@/../emails/_lib/i18n";
 
 import {getResendClient} from "./resendClient";
 

@@ -22,8 +22,7 @@
 
 import {Text} from "react-email";
 import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
-import {renderStrong, renderSupportLink} from "../_lib/intlRenderers";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderStrong, renderSupportLink} from "../_lib/i18n";
 
 /**
  * Properties for the account inactivity warning email component.

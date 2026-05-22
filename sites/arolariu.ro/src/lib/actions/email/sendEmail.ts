@@ -15,7 +15,7 @@
 import {auth} from "@clerk/nextjs/server";
 import type {ReactElement} from "react";
 
-import {DEFAULT_LOCALE, type EmailLocale} from "@/../emails/_i18n";
+import {DEFAULT_LOCALE, type EmailLocale} from "@/../emails/_lib/i18n";
 import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
 
 // `emailService` is imported lazily inside the action body — NOT at the top

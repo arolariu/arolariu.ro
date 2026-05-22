@@ -1,6 +1,6 @@
 import type {ReactElement} from "react";
 
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "./i18n";
 
 /**
  * Render-time context handed to a template's `render` callback.

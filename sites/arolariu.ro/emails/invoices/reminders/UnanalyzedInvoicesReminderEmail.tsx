@@ -22,8 +22,7 @@
 
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
-import {renderSupportLink} from "../../_lib/intlRenderers";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderSupportLink} from "../../_lib/i18n";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.

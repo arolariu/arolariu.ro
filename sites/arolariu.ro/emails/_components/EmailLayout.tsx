@@ -6,7 +6,7 @@
 import type {ReactNode} from "react";
 import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
 
-import type {EmailLocale} from "../_i18n";
+import type {EmailLocale} from "../_lib/i18n";
 
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 import {getLayoutTranslator} from "./layoutTranslator";

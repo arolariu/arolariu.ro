@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 
-import * as i18n from "../_i18n";
+import * as i18n from "./i18n";
 import {defineEmailTemplate} from "./defineEmailTemplate";
 
 const FIXTURE_MESSAGES = {

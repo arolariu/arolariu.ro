@@ -1,4 +1,4 @@
-import {createEmailTranslator, type EmailLocale, type EmailTranslator, loadMessages} from "../_i18n";
+import {createEmailTranslator, type EmailLocale, type EmailTranslator, loadMessages} from "../_lib/i18n";
 
 /**
  * @fileoverview Memoised `email.layout`-scoped translator per locale.

@@ -1,6 +1,6 @@
 "use client";
 
-import type {EmailLocale} from "@/../emails/_i18n";
+import type {EmailLocale} from "@/../emails/_lib/i18n";
 import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";

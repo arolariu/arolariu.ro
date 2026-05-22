@@ -24,8 +24,7 @@
 
 import {Text} from "react-email";
 import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
-import {renderSupportLink} from "../../_lib/intlRenderers";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderSupportLink} from "../../_lib/i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
