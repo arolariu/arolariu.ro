@@ -439,14 +439,21 @@
   font-size: font-size('xs');
 }
 
-.datePresetRow {
+.presetRow {
   display: flex;
   gap: space(1.5);
   flex-wrap: wrap;
   margin-bottom: space(2);
 }
 
-.datePresetButton {
+.amountPresetRow {
+  display: flex;
+  gap: space(1.5);
+  flex-wrap: wrap;
+  margin-top: space(2);
+}
+
+.presetButton {
   background-color: color('background');
   border: 1px solid color('border');
   border-radius: radius('md');
@@ -466,7 +473,7 @@
   }
 }
 
-.datePresetButtonActive {
+.presetButtonActive {
   background-color: color('primary');
   color: color('primary-foreground');
   border-color: color('primary');

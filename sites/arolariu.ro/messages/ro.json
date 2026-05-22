@@ -3343,7 +3343,13 @@
           "nameZA": "Nume (Z-A)"
         },
         "timeOfDay": "Momentul zilei",
-        "title": "Filtre"
+        "title": "Filtre",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        }
       },
       "placeholderPanel": "Vor fi adăugate în curând mai multe controale de filtrare.",
       "searchPlaceholder": "Caută facturi...",

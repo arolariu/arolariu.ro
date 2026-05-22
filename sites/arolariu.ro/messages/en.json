@@ -3312,6 +3312,12 @@
         "activeCount": "{count} active",
         "amountMax": "Max amount",
         "amountMin": "Min amount",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        },
         "amountRange": "Amount Range",
         "anyValue": "any",
         "button": "Filters",

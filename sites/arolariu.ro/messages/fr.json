@@ -3343,7 +3343,13 @@
           "nameZA": "Nom (Z-A)"
         },
         "timeOfDay": "Moment de la journée",
-        "title": "Filtres"
+        "title": "Filtres",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        }
       },
       "placeholderPanel": "D’autres filtres seront bientôt disponibles.",
       "searchPlaceholder": "Rechercher des factures...",

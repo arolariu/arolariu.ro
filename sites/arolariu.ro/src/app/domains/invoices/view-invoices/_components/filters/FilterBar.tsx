@@ -54,6 +54,20 @@ type Props = {
 };
 
 /**
+ * Quick-amount presets shown as chips beneath the Min/Max number inputs.
+ * Each preset writes both bounds to filters when clicked (or clears them
+ * when the preset is already active — tap-to-toggle).
+ */
+type AmountPresetKey = "0-50" | "50-100" | "100-500" | "500+";
+
+const AMOUNT_PRESETS = [
+  {key: "0-50", labelKey: "0to50", min: 0, max: 50},
+  {key: "50-100", labelKey: "50to100", min: 50, max: 100},
+  {key: "100-500", labelKey: "100to500", min: 100, max: 500},
+  {key: "500+", labelKey: "500plus", min: 500, max: null},
+] as const satisfies ReadonlyArray<{key: AmountPresetKey; labelKey: string; min: number; max: number | null}>;
+
+/**
  * Advanced filter bar component for the invoice list, with URL-based state
  * management and a card-based panel UX (variant J, spec
  * `2026-05-21-view-invoices-filter-overhaul-design.md`).
@@ -177,6 +191,27 @@ export default function FilterBar({
       onFiltersChange({amountMax: value});
     },
     [onFiltersChange],
+  );
+
+  // ── Amount preset (chip) active-state derivation + click handler ──
+  const activeAmountPreset = useMemo<AmountPresetKey | null>(() => {
+    for (const preset of AMOUNT_PRESETS) {
+      if (filters.amountMin === preset.min && filters.amountMax === preset.max) return preset.key;
+    }
+    return null;
+  }, [filters.amountMin, filters.amountMax]);
+
+  const handleAmountPresetClick = useCallback(
+    (presetKey: AmountPresetKey) => {
+      // Tap-to-toggle: clicking the already-active preset clears the amount filter.
+      if (activeAmountPreset === presetKey) {
+        onFiltersChange({amountMin: null, amountMax: null});
+        return;
+      }
+      const preset = AMOUNT_PRESETS.find((p) => p.key === presetKey);
+      if (preset) onFiltersChange({amountMin: preset.min, amountMax: preset.max});
+    },
+    [activeAmountPreset, onFiltersChange],
   );
 
   const handleCategoryToggle = useCallback(
@@ -320,12 +355,12 @@ export default function FilterBar({
             <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
           )}
         </div>
-        <div className={styles["datePresetRow"]}>
+        <div className={styles["presetRow"]}>
           {(["30d", "90d", "ytd", "all"] as const).map((preset) => (
             <button
               key={preset}
               type='button'
-              className={`${styles["datePresetButton"]} ${activeDatePreset === preset ? styles["datePresetButtonActive"] : ""}`}
+              className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
               // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
               onClick={() => handlePresetClick(preset)}>
               {t(`filters.datePresets.${preset}`)}
@@ -407,6 +442,18 @@ export default function FilterBar({
               className={styles["amountInput"]}
             />
           </div>
+        </div>
+        <div className={styles["amountPresetRow"]}>
+          {AMOUNT_PRESETS.map(({key: presetKey, labelKey}) => (
+            <button
+              key={presetKey}
+              type='button'
+              className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
+              // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
+              onClick={() => handleAmountPresetClick(presetKey)}>
+              {t(`filters.amountPresets.${labelKey}`)}
+            </button>
+          ))}
         </div>
       </div>
 
