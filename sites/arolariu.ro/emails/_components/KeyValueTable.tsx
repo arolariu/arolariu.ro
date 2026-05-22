@@ -53,7 +53,6 @@ const styles = {
 } as const;
 
 export function KeyValueTable({title = "", items}: Readonly<Props>) {
-
   return (
     <Section style={styles.wrap}>
       {title ? <Text style={styles.title}>{title}</Text> : null}

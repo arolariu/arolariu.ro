@@ -92,7 +92,6 @@ function buildQuickChartUrl(data: readonly Datum[]): string {
 }
 
 export function DonutChart({title, data, chartImageUrl = "", alt}: Readonly<Props>) {
-
   const nonEmpty = data.filter((d) => Number.isFinite(d.value) && d.value > 0);
   if (nonEmpty.length === 0) {
     return null;

@@ -49,8 +49,13 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange, sortBy, sortDirection, onSort} =
     props;
 
+  /** Sorts the invoice table by the merchant name column. */
   const handleSortByName = useCallback(() => onSort("name"), [onSort]);
+
+  /** Sorts the invoice table by the transaction date column. */
   const handleSortByDate = useCallback(() => onSort("date"), [onSort]);
+
+  /** Sorts the invoice table by the total amount column. */
   const handleSortByAmount = useCallback(() => onSort("amount"), [onSort]);
   const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);

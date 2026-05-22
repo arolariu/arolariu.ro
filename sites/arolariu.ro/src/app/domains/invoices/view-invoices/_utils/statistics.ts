@@ -710,7 +710,7 @@ export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpe
     if (date.getTime() === 0) {
       date = toSafeDate(invoice.createdAt);
     }
-    
+
     // Skip invoice if both dates are invalid
     if (date.getTime() !== 0) {
       // Create day key (YYYY-MM-DD)

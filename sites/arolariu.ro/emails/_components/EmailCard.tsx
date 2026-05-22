@@ -32,7 +32,6 @@ const styles = {
 } as const;
 
 export function EmailCard({title = "", children}: Readonly<Props>) {
-
   return (
     <Section style={styles.card}>
       {title ? <Text style={styles.title}>{title}</Text> : null}

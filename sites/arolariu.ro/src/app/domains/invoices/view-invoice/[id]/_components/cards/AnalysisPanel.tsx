@@ -195,9 +195,16 @@ export function AnalysisPanel(): React.JSX.Element {
     await handleAnalyze(InvoiceAnalysisOptions.CompleteAnalysis);
   }, [handleAnalyze]);
 
-  const createAnalyzeHandler = useCallback((optionId: InvoiceAnalysisOptions) => {
-    return () => handleAnalyze(optionId);
-  }, [handleAnalyze]);
+  /**
+   * Factory: returns a stable click handler for triggering analysis with a specific option.
+   * Each option button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createAnalyzeHandler = useCallback(
+    (optionId: InvoiceAnalysisOptions) => {
+      return () => handleAnalyze(optionId);
+    },
+    [handleAnalyze],
+  );
 
   return (
     <Card className={styles["card"]}>

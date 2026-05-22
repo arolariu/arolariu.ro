@@ -28,6 +28,10 @@ type Props = Readonly<{
 export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element {
   const t = useTranslations("Profile");
 
+  /**
+   * Opens the Clerk account management dashboard in a new tab.
+   * Links directly to the user's account page if userIdentifier is available.
+   */
   const handleManageOnClerk = useCallback(() => {
     window.open(userIdentifier ? `https://accounts.clerk.dev/user/${userIdentifier}` : "https://accounts.clerk.dev", "_blank");
   }, [userIdentifier]);

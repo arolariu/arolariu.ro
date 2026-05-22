@@ -103,9 +103,7 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     // Falls back to "RON" for invoices missing currency.code — matches the
     // codebase-wide default established in _utils/statistics.ts.
     if (filters.currencies.length > 0) {
-      filtered = filtered.filter((invoice) =>
-        filters.currencies.includes(invoice.paymentInformation.currency?.code || "RON"),
-      );
+      filtered = filtered.filter((invoice) => filters.currencies.includes(invoice.paymentInformation.currency?.code || "RON"));
     }
 
     // Apply sorting (only if both sortBy and sortOrder are set)

@@ -103,25 +103,31 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     return () => clearTimeout(timeoutId);
   }, [payload]);
 
+  /** Updates the search query as the user types in the search input. */
   const handleSearchQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, []);
 
-  // Handle date filter change
+  /** Filters receipts by the selected date range. */
   const handleDateFilterChange = useCallback((_value: string) => {
     // Handle date filter selection
   }, []);
 
-  // Handle sort change
-  const handleSortChange = useCallback((_value: string) => {
-    // Handle sort option selection
-    resetPagination();
-  }, [resetPagination]);
+  /** Sorts receipts by the selected criteria and resets pagination. */
+  const handleSortChange = useCallback(
+    (_value: string) => {
+      // Handle sort option selection
+      resetPagination();
+    },
+    [resetPagination],
+  );
 
+  /** Navigates to the previous page of receipts. */
   const handlePreviousPage = useCallback(() => {
     setCurrentPage(currentPage - 1);
   }, [currentPage, setCurrentPage]);
 
+  /** Navigates to the next page of receipts. */
   const handleNextPage = useCallback(() => {
     setCurrentPage(currentPage + 1);
   }, [currentPage, setCurrentPage]);

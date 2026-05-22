@@ -60,12 +60,14 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
   const t = useTranslations("IMS--Cards.merchantCard");
   const {openDialog} = useDialogs();
 
+  /** Opens the merchant details dialog (narrowed non-null by guard). */
   const handleOpenMerchantDialog = useCallback(() => {
     if (merchant) {
       openDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
     }
   }, [merchant, openDialog]);
 
+  /** Opens the merchant receipts dialog (narrowed non-null by guard). */
   const handleOpenMerchantReceiptsDialog = useCallback(() => {
     if (merchant) {
       openDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);

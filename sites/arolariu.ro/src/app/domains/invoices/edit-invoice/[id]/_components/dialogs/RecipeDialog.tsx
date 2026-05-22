@@ -85,6 +85,7 @@ const CreateDialog = () => {
   } satisfies Recipe);
   const [isSaving, setIsSaving] = useState(false);
 
+  /** Updates recipe fields as the user types in form inputs. */
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
     console.log(name, value);
@@ -94,6 +95,10 @@ const CreateDialog = () => {
     }));
   }, []);
 
+  /**
+   * Creates a new recipe and adds it to the invoice's possible recipes list.
+   * Saves via patchInvoice server action and refreshes the page on success.
+   */
   const handleCreate = useCallback(async () => {
     setIsSaving(true);
 
@@ -134,6 +139,7 @@ const CreateDialog = () => {
     }
   }, [recipe, invoice, t, close, router]);
 
+  /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (!shouldOpen) close();
@@ -141,10 +147,12 @@ const CreateDialog = () => {
     [close],
   );
 
+  /** Generates an AI-suggested recipe name based on ingredients (placeholder). */
   const handleGenerateName = useCallback(() => {
     // Placeholder - future implementation
   }, []);
 
+  /** Updates the recipe difficulty level from the dropdown selection. */
   const handleDifficultyChange = useCallback((value: string) => {
     setRecipe((prev) => ({
       ...prev,
@@ -152,6 +160,7 @@ const CreateDialog = () => {
     }));
   }, []);
 
+  /** Enhances instructions with AI-generated improvements (placeholder). */
   const handleEnhanceInstructions = useCallback(() => {
     // Placeholder - future implementation
   }, []);
@@ -378,6 +387,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
+  /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (!shouldOpen) close();
@@ -464,23 +474,28 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
 
+  /** Generates an AI-suggested recipe name based on ingredients (placeholder). */
   const generateName = useCallback(() => {
     // Placeholder - future implementation
   }, []);
 
+  /** Enhances instructions with AI-generated improvements (placeholder). */
   const enhanceInstructions = useCallback(() => {
     // Placeholder - future implementation
   }, []);
 
+  /** Updates recipe fields as the user types in form inputs. */
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
     console.log(name, value);
   }, []);
 
+  /** Saves the updated recipe and closes the dialog. */
   const handleCreate = useCallback(() => {
     close();
   }, [close]);
 
+  /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (!shouldOpen) close();
@@ -488,6 +503,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
     [close],
   );
 
+  /** Updates the recipe difficulty level from the dropdown selection. */
   const handleDifficultyChange = useCallback((value: string) => {
     const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
     setRecipeDetails((prev) => ({
@@ -702,10 +718,12 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
+  /** Deletes the recipe from the invoice (placeholder). */
   const handleDelete = useCallback(() => {
     // Placeholder - future implementation
   }, []);
 
+  /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (!shouldOpen) close();

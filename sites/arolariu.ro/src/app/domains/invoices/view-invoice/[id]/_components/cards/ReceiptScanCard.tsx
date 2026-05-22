@@ -98,6 +98,10 @@ export function ReceiptScanCard(): React.JSX.Element {
     setDialogZoomLevel((prev) => (prev === 1 ? 2 : 1));
   }, []);
 
+  /**
+   * Handles keyboard interactions for the dialog image zoom functionality.
+   * Triggers zoom toggle on Enter or Space key, matching click behavior for accessibility.
+   */
   const handleDialogImageKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "Enter" || e.key === " ") {

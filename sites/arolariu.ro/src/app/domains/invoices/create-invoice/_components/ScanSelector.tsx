@@ -65,14 +65,23 @@ export default function ScanSelector(): React.JSX.Element {
     setPage(0);
   }, [readyScans.length]);
 
-  const createToggleScanHandler = useCallback((scan: typeof readyScans[0]) => {
-    return () => toggleScan(scan);
-  }, [toggleScan]);
+  /**
+   * Factory: returns a stable toggle handler for a specific scan.
+   * Each scan gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createToggleScanHandler = useCallback(
+    (scan: (typeof readyScans)[0]) => {
+      return () => toggleScan(scan);
+    },
+    [toggleScan],
+  );
 
+  /** Navigates to the previous page of scans. */
   const handlePreviousPage = useCallback(() => {
     setPage((p) => Math.max(0, p - 1));
   }, []);
 
+  /** Navigates to the next page of scans. */
   const handleNextPage = useCallback(() => {
     setPage((p) => Math.min(totalPages - 1, p + 1));
   }, [totalPages]);

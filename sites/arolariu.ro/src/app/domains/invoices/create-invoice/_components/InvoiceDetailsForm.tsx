@@ -14,7 +14,6 @@
  */
 
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
-import Image from "next/image";
 import {
   Button,
   Calendar,
@@ -33,6 +32,7 @@ import {
   Textarea,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
@@ -85,6 +85,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   const {invoiceDetails, setName, setCategory, setPaymentType, setTransactionDate, setDescription, selectedScans} =
     useCreateInvoiceContext();
 
+  /** Updates the invoice name as the user types. */
   const handleNameChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setName(e.target.value);
@@ -92,6 +93,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     [setName],
   );
 
+  /** Updates the invoice category selection. */
   const handleCategoryChange = useCallback(
     (value: string) => {
       setCategory(Number.parseInt(value, 10) as InvoiceCategory);
@@ -99,6 +101,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     [setCategory],
   );
 
+  /** Updates the payment type selection. */
   const handlePaymentTypeChange = useCallback(
     (value: string) => {
       setPaymentType(Number.parseInt(value, 10) as PaymentType);
@@ -106,6 +109,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     [setPaymentType],
   );
 
+  /** Updates the transaction date from the calendar picker. */
   const handleTransactionDateChange = useCallback(
     (date: Date | undefined) => {
       if (date) setTransactionDate(date);
@@ -113,6 +117,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     [setTransactionDate],
   );
 
+  /** Updates the invoice description as the user types. */
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setDescription(e.target.value);

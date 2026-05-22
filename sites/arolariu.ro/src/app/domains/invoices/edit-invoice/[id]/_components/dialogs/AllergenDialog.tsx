@@ -182,21 +182,37 @@ export default function AllergenDialog(): React.JSX.Element {
     [handleAddAllergen, customAllergen],
   );
 
+  /** Updates the custom allergen input field as the user types. */
   const handleCustomAllergenChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setCustomAllergen(e.target.value);
   }, []);
 
+  /** Adds the allergen from the custom input field. */
   const handleAddCustomAllergen = useCallback(() => {
     handleAddAllergen(customAllergen);
   }, [handleAddAllergen, customAllergen]);
 
-  const createRemoveAllergenHandler = useCallback((index: number) => {
-    return () => handleRemoveAllergen(index);
-  }, [handleRemoveAllergen]);
+  /**
+   * Factory: returns a stable remove handler for a specific allergen.
+   * Each allergen badge gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createRemoveAllergenHandler = useCallback(
+    (index: number) => {
+      return () => handleRemoveAllergen(index);
+    },
+    [handleRemoveAllergen],
+  );
 
-  const createAddAllergenHandler = useCallback((name: string) => {
-    return () => handleAddAllergen(name);
-  }, [handleAddAllergen]);
+  /**
+   * Factory: returns a stable add handler for a specific allergen.
+   * Each quick-add button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createAddAllergenHandler = useCallback(
+    (name: string) => {
+      return () => handleAddAllergen(name);
+    },
+    [handleAddAllergen],
+  );
 
   /**
    * Saves allergen changes via updateProduct.

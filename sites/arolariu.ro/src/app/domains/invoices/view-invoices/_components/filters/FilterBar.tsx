@@ -250,9 +250,7 @@ export default function FilterBar({
 
   const handleCurrencyToggle = useCallback(
     (code: string) => {
-      const next = filters.currencies.includes(code)
-        ? filters.currencies.filter((c) => c !== code)
-        : [...filters.currencies, code];
+      const next = filters.currencies.includes(code) ? filters.currencies.filter((c) => c !== code) : [...filters.currencies, code];
       onFiltersChange({currencies: next});
     },
     [filters.currencies, onFiltersChange],
@@ -276,17 +274,38 @@ export default function FilterBar({
     [onFiltersChange],
   );
 
-  const createPresetClickHandler = useCallback((preset: DatePresetKey) => {
-    return () => handlePresetClick(preset);
-  }, [handlePresetClick]);
+  /**
+   * Factory: returns a stable click handler for date preset chips.
+   * Each preset button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createPresetClickHandler = useCallback(
+    (preset: DatePresetKey) => {
+      return () => handlePresetClick(preset);
+    },
+    [handlePresetClick],
+  );
 
-  const createAmountPresetClickHandler = useCallback((presetKey: AmountPresetKey) => {
-    return () => handleAmountPresetClick(presetKey);
-  }, [handleAmountPresetClick]);
+  /**
+   * Factory: returns a stable click handler for amount preset chips.
+   * Each preset button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createAmountPresetClickHandler = useCallback(
+    (presetKey: AmountPresetKey) => {
+      return () => handleAmountPresetClick(presetKey);
+    },
+    [handleAmountPresetClick],
+  );
 
-  const createCurrencyToggleHandler = useCallback((code: string) => {
-    return () => handleCurrencyToggle(code);
-  }, [handleCurrencyToggle]);
+  /**
+   * Factory: returns a stable toggle handler for currency chips.
+   * Each currency chip gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createCurrencyToggleHandler = useCallback(
+    (code: string) => {
+      return () => handleCurrencyToggle(code);
+    },
+    [handleCurrencyToggle],
+  );
 
   // ── Label helpers (kept inline so they pick up the right `t` namespace) ──
   const formatCurrencyList = useCallback(
@@ -351,8 +370,7 @@ export default function FilterBar({
     if (activeDatePreset === "30d") return t("filters.datePresets.30d");
     if (activeDatePreset === "90d") return t("filters.datePresets.90d");
     if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
-    if (filters.dateFrom && filters.dateTo)
-      return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
+    if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
     if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
     if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
     return null;
@@ -391,254 +409,254 @@ export default function FilterBar({
   const renderFilterPanel = (): React.JSX.Element => (
     <TooltipProvider>
       <div className={styles["panelGrid"]}>
-      {/* ─────── Date Range ─────── */}
-      <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
-        <div className={styles["cardSectionHeader"]}>
-          <span className={styles["cardSectionTitle"]}>
-            <TbCalendar /> {t("filters.dateRange")}
-          </span>
-          {dateActivePillText ? (
-            <span className={styles["activeValuePill"]}>{dateActivePillText}</span>
-          ) : (
-            <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-          )}
-        </div>
-        <div className={styles["presetRow"]}>
-          {(["30d", "90d", "ytd", "all"] as const).map((preset) => (
-            <button
-              key={preset}
-              type='button'
-              aria-pressed={activeDatePreset === preset}
-              className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
-              // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
-              onClick={createPresetClickHandler(preset)}>
-              {t(`filters.datePresets.${preset}`)}
-            </button>
-          ))}
-        </div>
-        <div className={styles["dateRangeInputs"]}>
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant='outline'
-                  className={styles["dateButton"]}>
-                  <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
-                </Button>
-              }
-            />
-            <PopoverContent className={styles["calendarPopover"]}>
-              <Calendar
-                mode='single'
-                selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                onSelect={handleDateFromChange}
-              />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant='outline'
-                  className={styles["dateButton"]}>
-                  <TbCalendar className={styles["dateIcon"]} />
-                  {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
-                </Button>
-              }
-            />
-            <PopoverContent className={styles["calendarPopover"]}>
-              <Calendar
-                mode='single'
-                selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                onSelect={handleDateToChange}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {/* ─────── Amount Range ─────── */}
-      <div className={`${styles["cardSection"]} ${isAmountActive ? styles["cardSectionActive"] : ""}`}>
-        <div className={styles["cardSectionHeader"]}>
-          <span className={styles["cardSectionTitle"]}>
-            <TbCurrencyDollar /> {t("filters.amountRange")}
-          </span>
-          {amountActivePillText ? (
-            <span className={styles["activeValuePill"]}>{amountActivePillText}</span>
-          ) : (
-            <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-          )}
-        </div>
-        <div className={styles["amountRangeInputs"]}>
-          <div className={styles["amountInputWrapper"]}>
-            <TbCurrencyDollar className={styles["currencyIcon"]} />
-            <Input
-              type='number'
-              placeholder={t("filters.amountMin")}
-              value={filters.amountMin ?? ""}
-              onChange={handleAmountMinChange}
-              className={styles["amountInput"]}
-            />
-          </div>
-          <div className={styles["amountInputWrapper"]}>
-            <TbCurrencyDollar className={styles["currencyIcon"]} />
-            <Input
-              type='number'
-              placeholder={t("filters.amountMax")}
-              value={filters.amountMax ?? ""}
-              onChange={handleAmountMaxChange}
-              className={styles["amountInput"]}
-            />
-          </div>
-        </div>
-        <div className={styles["amountPresetRow"]}>
-          {AMOUNT_PRESETS.map(({key: presetKey, labelKey}) => (
-            <button
-              key={presetKey}
-              type='button'
-              aria-pressed={activeAmountPreset === presetKey}
-              className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
-              // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
-              onClick={createAmountPresetClickHandler(presetKey)}>
-              {t(`filters.amountPresets.${labelKey}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ─────── Currency (dynamic) ─────── */}
-      {availableCurrencies.length > 0 && (
-        <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
+        {/* ─────── Date Range ─────── */}
+        <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
             <span className={styles["cardSectionTitle"]}>
-              💵 {t("filters.currency")}
-              {dynamicHint}
+              <TbCalendar /> {t("filters.dateRange")}
             </span>
-            {isCurrencyActive ? (
-              <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
-            ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.currencyAny")}</span>
-            )}
-          </div>
-          <div className={styles["categoryChips"]}>
-            {availableCurrencies.map((code) => (
-              <button
-                key={code}
-                type='button'
-                aria-pressed={filters.currencies.includes(code)}
-                className={styles["chipButton"]}
-                // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
-                onClick={createCurrencyToggleHandler(code)}>
-                <Badge
-                  variant={filters.currencies.includes(code) ? "default" : "outline"}
-                  className={styles["categoryChip"]}>
-                  {code}
-                </Badge>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ─────── Categories (dynamic) ─────── */}
-      {availableCategories.length > 0 && (
-        <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
-          <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>
-              📂 {t("filters.categories")}
-              {dynamicHint}
-            </span>
-            {isCategoryActive ? (
-              <span className={styles["activeValuePill"]}>
-                {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
-              </span>
+            {dateActivePillText ? (
+              <span className={styles["activeValuePill"]}>{dateActivePillText}</span>
             ) : (
               <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
             )}
           </div>
-          <div className={styles["categoryChips"]}>
-            {availableCategories.map((cat) => (
+          <div className={styles["presetRow"]}>
+            {(["30d", "90d", "ytd", "all"] as const).map((preset) => (
               <button
-                key={cat}
+                key={preset}
                 type='button'
-                aria-pressed={filters.categories.includes(cat)}
-                className={styles["chipButton"]}
-                // eslint-disable-next-line react/jsx-no-bind -- cat is a stable enum value
-                onClick={() => handleCategoryToggle(cat)}>
-                <Badge
-                  variant={filters.categories.includes(cat) ? "default" : "outline"}
-                  className={styles["categoryChip"]}>
-                  {getCategoryLabel(cat)}
-                </Badge>
+                aria-pressed={activeDatePreset === preset}
+                className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
+                // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
+                onClick={createPresetClickHandler(preset)}>
+                {t(`filters.datePresets.${preset}`)}
               </button>
             ))}
           </div>
+          <div className={styles["dateRangeInputs"]}>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["dateButton"]}>
+                    <TbCalendar className={styles["dateIcon"]} />
+                    {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
+                  </Button>
+                }
+              />
+              <PopoverContent className={styles["calendarPopover"]}>
+                <Calendar
+                  mode='single'
+                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+                  onSelect={handleDateFromChange}
+                />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["dateButton"]}>
+                    <TbCalendar className={styles["dateIcon"]} />
+                    {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
+                  </Button>
+                }
+              />
+              <PopoverContent className={styles["calendarPopover"]}>
+                <Calendar
+                  mode='single'
+                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+                  onSelect={handleDateToChange}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      )}
 
-      {/* ─────── Payment Types (dynamic) ─────── */}
-      {availablePaymentTypes.length > 0 && (
-        <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
+        {/* ─────── Amount Range ─────── */}
+        <div className={`${styles["cardSection"]} ${isAmountActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
             <span className={styles["cardSectionTitle"]}>
-              💳 {t("filters.paymentTypes")}
-              {dynamicHint}
+              <TbCurrencyDollar /> {t("filters.amountRange")}
             </span>
-            {isPaymentActive ? (
-              <span className={styles["activeValuePill"]}>
-                {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
-              </span>
+            {amountActivePillText ? (
+              <span className={styles["activeValuePill"]}>{amountActivePillText}</span>
             ) : (
               <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
             )}
           </div>
-          <div className={styles["categoryChips"]}>
-            {availablePaymentTypes.map((pt) => (
+          <div className={styles["amountRangeInputs"]}>
+            <div className={styles["amountInputWrapper"]}>
+              <TbCurrencyDollar className={styles["currencyIcon"]} />
+              <Input
+                type='number'
+                placeholder={t("filters.amountMin")}
+                value={filters.amountMin ?? ""}
+                onChange={handleAmountMinChange}
+                className={styles["amountInput"]}
+              />
+            </div>
+            <div className={styles["amountInputWrapper"]}>
+              <TbCurrencyDollar className={styles["currencyIcon"]} />
+              <Input
+                type='number'
+                placeholder={t("filters.amountMax")}
+                value={filters.amountMax ?? ""}
+                onChange={handleAmountMaxChange}
+                className={styles["amountInput"]}
+              />
+            </div>
+          </div>
+          <div className={styles["amountPresetRow"]}>
+            {AMOUNT_PRESETS.map(({key: presetKey, labelKey}) => (
               <button
-                key={pt}
+                key={presetKey}
                 type='button'
-                aria-pressed={filters.paymentTypes.includes(pt)}
-                className={styles["chipButton"]}
-                // eslint-disable-next-line react/jsx-no-bind -- pt is a stable enum value
-                onClick={() => handlePaymentTypeToggle(pt)}>
-                <Badge
-                  variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
-                  className={styles["categoryChip"]}>
-                  {getPaymentTypeLabel(pt)}
-                </Badge>
+                aria-pressed={activeAmountPreset === presetKey}
+                className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
+                // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
+                onClick={createAmountPresetClickHandler(presetKey)}>
+                {t(`filters.amountPresets.${labelKey}`)}
               </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* ─────── Sort By ─────── */}
-      <div className={`${styles["cardSection"]} ${isSortActive ? styles["cardSectionActive"] : ""}`}>
-        <div className={styles["cardSectionHeader"]}>
-          <span className={styles["cardSectionTitle"]}>↕ {t("filters.sortBy")}</span>
-          {isSortActive ? (
-            <span className={styles["activeValuePill"]}>{getSortLabel(filters.sortBy, filters.sortOrder)}</span>
-          ) : (
-            <span className={styles["inactiveLabel"]}>{t("filters.defaultValue")}</span>
-          )}
+        {/* ─────── Currency (dynamic) ─────── */}
+        {availableCurrencies.length > 0 && (
+          <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
+            <div className={styles["cardSectionHeader"]}>
+              <span className={styles["cardSectionTitle"]}>
+                💵 {t("filters.currency")}
+                {dynamicHint}
+              </span>
+              {isCurrencyActive ? (
+                <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
+              ) : (
+                <span className={styles["inactiveLabel"]}>{t("filters.currencyAny")}</span>
+              )}
+            </div>
+            <div className={styles["categoryChips"]}>
+              {availableCurrencies.map((code) => (
+                <button
+                  key={code}
+                  type='button'
+                  aria-pressed={filters.currencies.includes(code)}
+                  className={styles["chipButton"]}
+                  // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
+                  onClick={createCurrencyToggleHandler(code)}>
+                  <Badge
+                    variant={filters.currencies.includes(code) ? "default" : "outline"}
+                    className={styles["categoryChip"]}>
+                    {code}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─────── Categories (dynamic) ─────── */}
+        {availableCategories.length > 0 && (
+          <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
+            <div className={styles["cardSectionHeader"]}>
+              <span className={styles["cardSectionTitle"]}>
+                📂 {t("filters.categories")}
+                {dynamicHint}
+              </span>
+              {isCategoryActive ? (
+                <span className={styles["activeValuePill"]}>
+                  {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
+                </span>
+              ) : (
+                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+              )}
+            </div>
+            <div className={styles["categoryChips"]}>
+              {availableCategories.map((cat) => (
+                <button
+                  key={cat}
+                  type='button'
+                  aria-pressed={filters.categories.includes(cat)}
+                  className={styles["chipButton"]}
+                  // eslint-disable-next-line react/jsx-no-bind -- cat is a stable enum value
+                  onClick={() => handleCategoryToggle(cat)}>
+                  <Badge
+                    variant={filters.categories.includes(cat) ? "default" : "outline"}
+                    className={styles["categoryChip"]}>
+                    {getCategoryLabel(cat)}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─────── Payment Types (dynamic) ─────── */}
+        {availablePaymentTypes.length > 0 && (
+          <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
+            <div className={styles["cardSectionHeader"]}>
+              <span className={styles["cardSectionTitle"]}>
+                💳 {t("filters.paymentTypes")}
+                {dynamicHint}
+              </span>
+              {isPaymentActive ? (
+                <span className={styles["activeValuePill"]}>
+                  {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
+                </span>
+              ) : (
+                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+              )}
+            </div>
+            <div className={styles["categoryChips"]}>
+              {availablePaymentTypes.map((pt) => (
+                <button
+                  key={pt}
+                  type='button'
+                  aria-pressed={filters.paymentTypes.includes(pt)}
+                  className={styles["chipButton"]}
+                  // eslint-disable-next-line react/jsx-no-bind -- pt is a stable enum value
+                  onClick={() => handlePaymentTypeToggle(pt)}>
+                  <Badge
+                    variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
+                    className={styles["categoryChip"]}>
+                    {getPaymentTypeLabel(pt)}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ─────── Sort By ─────── */}
+        <div className={`${styles["cardSection"]} ${isSortActive ? styles["cardSectionActive"] : ""}`}>
+          <div className={styles["cardSectionHeader"]}>
+            <span className={styles["cardSectionTitle"]}>↕ {t("filters.sortBy")}</span>
+            {isSortActive ? (
+              <span className={styles["activeValuePill"]}>{getSortLabel(filters.sortBy, filters.sortOrder)}</span>
+            ) : (
+              <span className={styles["inactiveLabel"]}>{t("filters.defaultValue")}</span>
+            )}
+          </div>
+          <Select
+            value={`${filters.sortBy}-${filters.sortOrder}`}
+            onValueChange={handleSortChange}>
+            <SelectTrigger className={styles["sortSelect"]}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
+              <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
+              <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>
+              <SelectItem value='amount-asc'>{t("filters.sortOptions.amountLowToHigh")}</SelectItem>
+              <SelectItem value='name-asc'>{t("filters.sortOptions.nameAZ")}</SelectItem>
+              <SelectItem value='name-desc'>{t("filters.sortOptions.nameZA")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={`${filters.sortBy}-${filters.sortOrder}`}
-          onValueChange={handleSortChange}>
-          <SelectTrigger className={styles["sortSelect"]}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
-            <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
-            <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>
-            <SelectItem value='amount-asc'>{t("filters.sortOptions.amountLowToHigh")}</SelectItem>
-            <SelectItem value='name-asc'>{t("filters.sortOptions.nameAZ")}</SelectItem>
-            <SelectItem value='name-desc'>{t("filters.sortOptions.nameZA")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       </div>
     </TooltipProvider>
   );
@@ -685,9 +703,7 @@ export default function FilterBar({
                 <h3 className={styles["sheetTitle"]}>
                   {t("filters.title")}
                   {activeFilterCount > 0 && (
-                    <span className={styles["panelHeaderActiveBadge"]}>
-                      {t("filters.activeCount", {count: String(activeFilterCount)})}
-                    </span>
+                    <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
                   )}
                 </h3>
                 {activeFilterCount > 0 && (
@@ -793,9 +809,7 @@ export default function FilterBar({
             <h4 className={styles["inlineFilterTitle"]}>
               {t("filters.title")}
               {activeFilterCount > 0 && (
-                <span className={styles["panelHeaderActiveBadge"]}>
-                  {t("filters.activeCount", {count: String(activeFilterCount)})}
-                </span>
+                <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
               )}
             </h4>
             <div className={styles["inlineFilterActions"]}>

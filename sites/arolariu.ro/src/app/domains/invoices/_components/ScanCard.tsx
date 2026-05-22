@@ -212,10 +212,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         // 4. Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.addEventListener("loadend", () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]!);
-          }, {once: true});
+          reader.addEventListener(
+            "loadend",
+            () => {
+              const result = reader.result as string;
+              resolve(result.split(",")[1]!);
+            },
+            {once: true},
+          );
           reader.addEventListener("error", () => reject(new Error("Failed to read blob")), {once: true});
           reader.readAsDataURL(blob);
         });
@@ -252,9 +256,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
+  /** Rotates the scan image 90 degrees clockwise. */
   const handleRotate90 = useCallback(() => handleRotate(90), [handleRotate]);
+  /** Rotates the scan image 90 degrees counterclockwise. */
   const handleRotateMinus90 = useCallback(() => handleRotate(-90), [handleRotate]);
 
+  /** Opens the preview dialog when Enter or Space is pressed. */
   const handlePreviewKeyDown = useCallback(
     (e: React.KeyboardEvent): void => {
       if (e.key === "Enter" || e.key === " ") {
@@ -265,10 +272,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [handleOpenPreview],
   );
 
+  /** Stops event propagation to prevent triggering parent click handlers. */
   const handleStopPropagation = useCallback((e: React.SyntheticEvent): void => {
     e.stopPropagation();
   }, []);
 
+  /** Updates the scan name input field as the user types. */
   const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     setNewName(e.target.value);
   }, []);
@@ -485,7 +494,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}
                 title={scan.name}
-                sandbox="allow-scripts allow-same-origin"
+                sandbox='allow-scripts allow-same-origin'
               />
             </div>
           ) : (

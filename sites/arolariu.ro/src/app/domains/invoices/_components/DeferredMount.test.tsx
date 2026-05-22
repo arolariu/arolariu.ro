@@ -24,9 +24,7 @@ const {observerInstances, originalIntersectionObserver} = vi.hoisted(() => ({
     disconnect: ReturnType<typeof vi.fn>;
     observedElement: Element | null;
   }>,
-  originalIntersectionObserver: globalThis.IntersectionObserver as
-    | typeof IntersectionObserver
-    | undefined,
+  originalIntersectionObserver: globalThis.IntersectionObserver as typeof IntersectionObserver | undefined,
 }));
 
 function installIntersectionObserverMock(): void {

@@ -112,25 +112,19 @@ function UploadContent(): React.JSX.Element {
     return;
   }, [pendingUploads, sessionStats.totalCompleted]);
 
-  /**
-   * Navigate to create invoice page.
-   */
+  /** Navigates to the create invoice page after dismissing the prompt. */
   const handleCreateInvoice = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/create-invoice");
   }, [router]);
 
-  /**
-   * Navigate to view scans page.
-   */
+  /** Navigates to the view scans page after dismissing the prompt. */
   const handleViewScans = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/view-scans");
   }, [router]);
 
-  /**
-   * Dismiss the prompt and stay on page.
-   */
+  /** Dismisses the post-upload prompt and stays on the upload page. */
   const handleDismiss = useCallback((): void => {
     setShowPrompt(false);
   }, []);

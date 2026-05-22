@@ -110,7 +110,6 @@ export default async function EmailLayout({
   managePreferencesUrl = "",
   children,
 }: Readonly<Props>): Promise<React.JSX.Element> {
-
   const tLayout = await getLayoutTranslator(locale);
 
   return (

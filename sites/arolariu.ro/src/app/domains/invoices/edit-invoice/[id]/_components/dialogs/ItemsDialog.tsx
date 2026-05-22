@@ -121,54 +121,63 @@ export default function ItemsDialog(): React.JSX.Element {
     [setEditableItems],
   );
 
-  const handleValueChangeAtIndex = useCallback((index: number) => {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-      const {name, value} = e.target;
+  /**
+   * Factory: returns a stable input change handler for a specific item by index.
+   * Supports editing name, quantity, quantityUnit, and price fields.
+   */
+  const handleValueChangeAtIndex = useCallback(
+    (index: number) => {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
 
-      setEditableItems((prev) => {
-        // Validate index is within bounds
-        if (index < 0 || index >= prev.length) {
-          return prev; // Early return if index is invalid
-        }
-
-        const currentItem = prev.at(index);
-
-        if (!currentItem) {
-          return prev;
-        }
-
-        // Use specific property assignments with functional approach
-        const getUpdatedItem = (): Product => {
-          switch (name) {
-            case "name":
-              return {...currentItem, name: value};
-            case "quantity":
-              return {...currentItem, quantity: Number.parseFloat(value)};
-            case "quantityUnit":
-              return {...currentItem, quantityUnit: value};
-            case "price":
-              return {...currentItem, price: Number.parseFloat(value)};
-            default:
-              return currentItem;
+        setEditableItems((prev) => {
+          // Validate index is within bounds
+          if (index < 0 || index >= prev.length) {
+            return prev; // Early return if index is invalid
           }
-        };
 
-        const updatedItem = getUpdatedItem();
+          const currentItem = prev.at(index);
 
-        if (updatedItem === currentItem) {
-          // No changes made
-          return prev;
-        }
+          if (!currentItem) {
+            return prev;
+          }
 
-        return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
-      });
-    };
-  }, [setEditableItems]);
+          // Use specific property assignments with functional approach
+          const getUpdatedItem = (): Product => {
+            switch (name) {
+              case "name":
+                return {...currentItem, name: value};
+              case "quantity":
+                return {...currentItem, quantity: Number.parseFloat(value)};
+              case "quantityUnit":
+                return {...currentItem, quantityUnit: value};
+              case "price":
+                return {...currentItem, price: Number.parseFloat(value)};
+              default:
+                return currentItem;
+            }
+          };
 
+          const updatedItem = getUpdatedItem();
+
+          if (updatedItem === currentItem) {
+            // No changes made
+            return prev;
+          }
+
+          return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
+        });
+      };
+    },
+    [setEditableItems],
+  );
+
+  /** Navigates to the previous page of items. */
   const handlePreviousPage = useCallback(() => {
     setCurrentPage(currentPage - 1);
   }, [currentPage, setCurrentPage]);
 
+  /** Navigates to the next page of items. */
   const handleNextPage = useCallback(() => {
     setCurrentPage(currentPage + 1);
   }, [currentPage, setCurrentPage]);

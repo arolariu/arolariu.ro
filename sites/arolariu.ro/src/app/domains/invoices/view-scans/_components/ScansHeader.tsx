@@ -37,6 +37,10 @@ export default function ScansHeader(): React.JSX.Element {
   const t = useTranslations("IMS--ViewScans.header");
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
 
+  /**
+   * Triggers a forced sync of scans from the server.
+   * Always includes force=true to bypass cache.
+   */
   const handleSyncScans = useCallback(() => {
     syncScans(true);
   }, [syncScans]);

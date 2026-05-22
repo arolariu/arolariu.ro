@@ -212,9 +212,7 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         className={styles["alertOrange"]}>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
         <AlertTitle className={styles["alertOrangeTitle"]}>{t("warning.title")}</AlertTitle>
-        <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("warning.description", {strong: renderStrong})}
-        </AlertDescription>
+        <AlertDescription className={styles["alertOrangeDesc"]}>{t.rich("warning.description", {strong: renderStrong})}</AlertDescription>
       </Alert>
 
       <ShareLinkAndQRTabs

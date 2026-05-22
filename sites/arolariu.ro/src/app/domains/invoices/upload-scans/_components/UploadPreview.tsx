@@ -242,10 +242,12 @@ export default function UploadPreview(): React.JSX.Element | null {
     }
   }, [page, currentPageUploads.length, pendingUploads.length]);
 
+  /** Navigates to the previous page of uploads. */
   const handlePreviousPage = useCallback(() => {
     setPage((p) => Math.max(0, p - 1));
   }, []);
 
+  /** Navigates to the next page of uploads. */
   const handleNextPage = useCallback(() => {
     setPage((p) => Math.min(totalPages - 1, p + 1));
   }, [totalPages]);

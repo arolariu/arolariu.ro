@@ -64,7 +64,11 @@ const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
  * Displays category name, total spending, product count, and percentage
  * in a formatted card overlay.
  */
-function CustomTooltip({active = false, payload = EMPTY_TOOLTIP_PAYLOAD, currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
+function CustomTooltip({
+  active = false,
+  payload = EMPTY_TOOLTIP_PAYLOAD,
+  currency,
+}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.productCategory");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -132,6 +136,10 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
     };
   }
 
+  /**
+   * Factory: returns a stable tooltip render function with currency context.
+   * Wraps the CustomTooltip component to inject the currency prop.
+   */
   const renderTooltip = useCallback(
     ({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
       <CustomTooltip

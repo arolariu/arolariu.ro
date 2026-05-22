@@ -83,6 +83,7 @@ export default function PostUploadPrompt({
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--UploadScans.postUpload");
 
+  /** Prevents click events from bubbling to the overlay's dismiss handler. */
   const handleStopPropagation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);

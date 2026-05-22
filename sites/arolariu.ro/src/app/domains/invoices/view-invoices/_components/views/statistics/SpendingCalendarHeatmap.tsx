@@ -263,10 +263,12 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
   const dayLabels = [t("days.sun"), t("days.mon"), t("days.tue"), t("days.wed"), t("days.thu"), t("days.fri"), t("days.sat")];
 
+  /** Navigates to the previous month in the heatmap. */
   const handlePreviousMonth = useCallback((): void => {
     setMonthOffset((prev) => prev + 1);
   }, []);
 
+  /** Navigates to the next month in the heatmap (bounded at current month). */
   const handleNextMonth = useCallback((): void => {
     setMonthOffset((prev) => Math.max(0, prev - 1));
   }, []);

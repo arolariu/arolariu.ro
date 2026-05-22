@@ -169,6 +169,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
 
+  /** Dismisses the improvement suggestions panel. */
   const handleDismissSuggestions = useCallback(() => {
     setShowSuggestions(false);
   }, []);

@@ -235,11 +235,18 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setEditValues((prev) => ({...prev, [`${rowIndex}-${field}`]: value}));
   }, []);
 
-  const createEditChangeHandler = useCallback((rowIndex: number, field: string) => {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleEditChange(rowIndex, field, e.target.value);
-    };
-  }, [handleEditChange]);
+  /**
+   * Factory: returns a stable input change handler for editing a specific cell.
+   * Each editable cell gets its own callback to avoid re-rendering on unrelated edits.
+   */
+  const createEditChangeHandler = useCallback(
+    (rowIndex: number, field: string) => {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleEditChange(rowIndex, field, e.target.value);
+      };
+    },
+    [handleEditChange],
+  );
 
   // Handle save edit (Enter or blur)
   const handleSaveEdit = useCallback(() => {
@@ -518,50 +525,60 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     return "";
   }, []);
 
-  // Factory for creating stable select row handlers
-  const createSelectRowHandler = useCallback(
-    (index: number) => () => handleSelectRow(index),
-    [handleSelectRow],
-  );
+  /**
+   * Factory: returns a stable click handler for selecting a specific row.
+   * Each row checkbox gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createSelectRowHandler = useCallback((index: number) => () => handleSelectRow(index), [handleSelectRow]);
 
-  // Factory for creating stable cell click handlers
+  /**
+   * Factory: returns a stable click handler for editing a specific cell at index.
+   * Each editable cell gets its own callback to avoid re-rendering on unrelated clicks.
+   */
   const createCellClickHandler = useCallback(
     (index: number, field: "name" | "price" | "quantity") => () => handleCellClick(index, field),
     [handleCellClick],
   );
 
-  // Factory for creating stable action handlers
-  const createRestoreHandler = useCallback(
-    (index: number) => () => handleRestore(index),
-    [handleRestore],
-  );
+  /**
+   * Factory: returns a stable click handler for restoring a soft-deleted product.
+   * Each restore button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createRestoreHandler = useCallback((index: number) => () => handleRestore(index), [handleRestore]);
 
-  const createEditAllergensHandler = useCallback(
-    (index: number) => () => handleEditAllergens(index),
-    [handleEditAllergens],
-  );
+  /**
+   * Factory: returns a stable click handler for opening the allergen edit dialog.
+   * Each allergen button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createEditAllergensHandler = useCallback((index: number) => () => handleEditAllergens(index), [handleEditAllergens]);
 
-  const createSoftDeleteHandler = useCallback(
-    (index: number) => () => handleSoftDelete(index),
-    [handleSoftDelete],
-  );
+  /**
+   * Factory: returns a stable click handler for soft-deleting a product.
+   * Each delete button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createSoftDeleteHandler = useCallback((index: number) => () => handleSoftDelete(index), [handleSoftDelete]);
 
+  /** Updates the search query as the user types in the search input. */
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   }, []);
 
+  /** Opens the bulk delete confirmation dialog. */
   const handleShowDeleteDialog = useCallback(() => {
     setShowDeleteDialog(true);
   }, []);
 
+  /** Sorts items by the "name" column. */
   const handleSortByName = useCallback(() => {
     handleSort("name");
   }, [handleSort]);
 
+  /** Sorts items by the "quantity" column. */
   const handleSortByQuantity = useCallback(() => {
     handleSort("quantity");
   }, [handleSort]);
 
+  /** Sorts items by the "price" column. */
   const handleSortByPrice = useCallback(() => {
     handleSort("price");
   }, [handleSort]);
@@ -959,4 +976,3 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     </div>
   );
 }
-

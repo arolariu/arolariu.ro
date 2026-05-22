@@ -126,6 +126,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
   const t = useTranslations("IMS--Stats.currencyDistribution");
   const [showRON, setShowRON] = useState(false);
 
+  /** Toggles between displaying amounts in original currencies vs RON equivalent. */
   const handleToggleRON = useCallback(() => {
     setShowRON(!showRON);
   }, [showRON]);
@@ -161,7 +162,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
             <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
           </div>
           <button
-            type="button"
+            type='button'
             onClick={handleToggleRON}
             className={styles["toggleButton"]}
             aria-label={t("toggleLabel")}

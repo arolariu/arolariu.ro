@@ -92,6 +92,7 @@ export default function InvoicePreferences(): React.JSX.Element {
     [setPreferences],
   );
 
+  /** Updates the default invoice view mode preference. */
   const handleDefaultViewModeChange = useCallback(
     (value: string) => {
       updatePreference("defaultViewMode", value as "table" | "grid");
@@ -99,6 +100,7 @@ export default function InvoicePreferences(): React.JSX.Element {
     [updatePreference],
   );
 
+  /** Updates the default sort order preference. */
   const handleDefaultSortByChange = useCallback(
     (value: string) => {
       updatePreference("defaultSortBy", value);
@@ -106,6 +108,7 @@ export default function InvoicePreferences(): React.JSX.Element {
     [updatePreference],
   );
 
+  /** Updates the default page size preference. */
   const handleDefaultPageSizeChange = useCallback(
     (value: string) => {
       updatePreference("defaultPageSize", Number.parseInt(value, 10));
@@ -113,6 +116,7 @@ export default function InvoicePreferences(): React.JSX.Element {
     [updatePreference],
   );
 
+  /** Updates the preferred display currency. */
   const handleCurrencyChange = useCallback(
     (value: string) => {
       updatePreference("currency", value);
@@ -120,6 +124,7 @@ export default function InvoicePreferences(): React.JSX.Element {
     [updatePreference],
   );
 
+  /** Toggles the visibility of statistics on the homepage. */
   const handleShowStatisticsChange = useCallback(
     (checked: boolean | "indeterminate") => {
       updatePreference("showStatisticsOnHome", checked === true);

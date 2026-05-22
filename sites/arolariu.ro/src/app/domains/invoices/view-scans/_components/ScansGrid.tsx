@@ -83,10 +83,12 @@ export default function ScansGrid(): React.JSX.Element {
     setPage(0);
   }, [validScans.length]);
 
+  /** Navigates to the previous page of scans. */
   const handlePreviousPage = useCallback(() => {
     setPage((p) => Math.max(0, p - 1));
   }, []);
 
+  /** Navigates to the next page of scans. */
   const handleNextPage = useCallback(() => {
     setPage((p) => Math.min(totalPages - 1, p + 1));
   }, [totalPages]);

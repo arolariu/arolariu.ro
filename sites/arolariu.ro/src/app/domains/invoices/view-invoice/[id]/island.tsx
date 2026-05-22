@@ -57,6 +57,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   // Calculate health score percentage for compact display
   const healthScorePercentage = useMemo(() => calculateHealthScorePercentage(invoice), [invoice]);
 
+  /** Opens the invoice health score detailed breakdown dialog. */
   const handleShowHealthDialog = useCallback(() => {
     setShowHealthDialog(true);
   }, []);

@@ -28,9 +28,7 @@ import {useDialog} from "../_contexts/DialogContext";
 import styles from "./DeleteInvoiceDialog.module.scss";
 
 // Module-level render function for t.rich()
-const renderConfirmHighlight = (chunks: React.ReactNode): React.JSX.Element => (
-  <span className={styles["confirmHighlight"]}>{chunks}</span>
-);
+const renderConfirmHighlight = (chunks: React.ReactNode): React.JSX.Element => <span className={styles["confirmHighlight"]}>{chunks}</span>;
 
 /**
  * Dialog for confirming and executing invoice deletion.

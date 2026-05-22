@@ -94,13 +94,21 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
     }
   }, [currentStep]);
 
-  const createStepClickHandler = useCallback((index: number) => {
-    return () => {
-      setDirection(index > currentStep ? 1 : -1);
-      setCurrentStep(index);
-    };
-  }, [currentStep]);
+  /**
+   * Factory: returns a stable click handler for the given step index.
+   * Sets navigation direction based on whether moving forward or back.
+   */
+  const createStepClickHandler = useCallback(
+    (index: number) => {
+      return () => {
+        setDirection(index > currentStep ? 1 : -1);
+        setCurrentStep(index);
+      };
+    },
+    [currentStep],
+  );
 
+  /** Updates the "don't show again" checkbox state. */
   const handleDontShowAgainChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setDontShowAgain(e.target.checked);
   }, []);
@@ -183,7 +191,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
           <div className={styles["dots"]}>
             {steps.map((step) => (
               <button
-                type="button"
+                type='button'
                 key={step.title}
                 className={`${styles["dot"]} ${steps.indexOf(step) === currentStep ? styles["dotActive"] : ""}`}
                 onClick={createStepClickHandler(steps.indexOf(step))}
