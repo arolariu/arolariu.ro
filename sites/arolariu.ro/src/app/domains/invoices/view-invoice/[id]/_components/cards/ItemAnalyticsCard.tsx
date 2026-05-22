@@ -286,13 +286,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
 
   /** Sorts items by the "name" column. */
   const handleSortByName = useCallback(() => handleSort("name"), [handleSort]);
-  
+
   /** Sorts items by the "category" column. */
   const handleSortByCategory = useCallback(() => handleSort("category"), [handleSort]);
-  
+
   /** Sorts items by the "price" column. */
   const handleSortByPrice = useCallback(() => handleSort("price"), [handleSort]);
-  
+
   /** Sorts items by the "quantity" column. */
   const handleSortByQuantity = useCallback(() => handleSort("quantity"), [handleSort]);
 

@@ -21,15 +21,7 @@
  */
 
 import {Text} from "react-email";
-import {
-  BRAND,
-  BulletList,
-  EMAIL_COLORS,
-  EmailCard,
-  EmailLayout,
-  EmailParagraphStyles,
-  KeyValueTable,
-} from "../_components";
+import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailParagraphStyles, KeyValueTable} from "../_components";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
 import {renderStrong, renderSupportLink} from "../_lib/intlRenderers";
 
