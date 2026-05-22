@@ -30,9 +30,9 @@
     "@testing-library/svelte": "*",
     "@types/node": "*",
     "sass": "*",
-    "svelte": "*",
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
+    "svelte": "*",
     "typescript": "*",
     "vite": "*",
     "vitest": "*"
