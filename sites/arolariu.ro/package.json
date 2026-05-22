@@ -105,6 +105,7 @@
     "globals": "*",
     "msw": "*",
     "postcss": "*",
+    "raw-loader": "*",
     "sass": "*",
     "typescript": "*",
     "vitest": "*"
