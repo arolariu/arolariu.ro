@@ -709,23 +709,24 @@ export function computeDailySpending(invoices: ReadonlyArray<Invoice>): DailySpe
     // If transaction date is invalid, fall back to createdAt
     if (date.getTime() === 0) {
       date = toSafeDate(invoice.createdAt);
-      // Skip invoice if both dates are invalid
-      if (date.getTime() === 0) continue;
     }
+    
+    // Skip invoice if both dates are invalid
+    if (date.getTime() !== 0) {
+      // Create day key (YYYY-MM-DD)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const dayKey = `${year}-${month}-${day}`;
 
-    // Create day key (YYYY-MM-DD)
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const dayKey = `${year}-${month}-${day}`;
+      const amount = getAmountInRON(invoice);
+      const existing = dayMap.get(dayKey) ?? {amount: 0, count: 0};
 
-    const amount = getAmountInRON(invoice);
-    const existing = dayMap.get(dayKey) ?? {amount: 0, count: 0};
-
-    dayMap.set(dayKey, {
-      amount: existing.amount + amount,
-      count: existing.count + 1,
-    });
+      dayMap.set(dayKey, {
+        amount: existing.amount + amount,
+        count: existing.count + 1,
+      });
+    }
   }
 
   const result: DailySpending[] = [];
@@ -1124,10 +1125,10 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
 
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!isValidMerchantRef(merchantId)) continue;
-
-    const amount = getAmountInRON(invoice);
-    merchantTotals.set(merchantId, (merchantTotals.get(merchantId) ?? 0) + amount);
+    if (isValidMerchantRef(merchantId)) {
+      const amount = getAmountInRON(invoice);
+      merchantTotals.set(merchantId, (merchantTotals.get(merchantId) ?? 0) + amount);
+    }
   }
 
   // Step 2: Select top N merchants
@@ -1142,20 +1143,20 @@ export function computeMerchantTrends(invoices: ReadonlyArray<Invoice>, topN: nu
 
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!isValidMerchantRef(merchantId) || !topMerchantIds.has(merchantId)) continue;
+    if (isValidMerchantRef(merchantId) && topMerchantIds.has(merchantId)) {
+      const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
+      const date = new Date(transactionDate);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
-    const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
-    const date = new Date(transactionDate);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const amount = getAmountInRON(invoice);
 
-    const amount = getAmountInRON(invoice);
+      if (!merchantMonthlyData.has(merchantId)) {
+        merchantMonthlyData.set(merchantId, new Map());
+      }
 
-    if (!merchantMonthlyData.has(merchantId)) {
-      merchantMonthlyData.set(merchantId, new Map());
+      const monthlyMap = merchantMonthlyData.get(merchantId)!;
+      monthlyMap.set(monthKey, (monthlyMap.get(monthKey) ?? 0) + amount);
     }
-
-    const monthlyMap = merchantMonthlyData.get(merchantId)!;
-    monthlyMap.set(monthKey, (monthlyMap.get(monthKey) ?? 0) + amount);
   }
 
   // Step 4: Build result array
@@ -1226,31 +1227,31 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
   // Aggregate data per merchant
   for (const invoice of invoices) {
     const merchantId = invoice.merchantReference;
-    if (!isValidMerchantRef(merchantId)) continue;
+    if (isValidMerchantRef(merchantId)) {
+      const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
+      const date = new Date(transactionDate);
+      const dayOfWeek = date.getDay();
 
-    const transactionDate = invoice.paymentInformation?.transactionDate ?? invoice.createdAt ?? new Date();
-    const date = new Date(transactionDate);
-    const dayOfWeek = date.getDay();
+      const itemCount = invoice.items?.length ?? 0;
+      const amount = getAmountInRON(invoice);
 
-    const itemCount = invoice.items?.length ?? 0;
-    const amount = getAmountInRON(invoice);
+      if (!merchantData.has(merchantId)) {
+        merchantData.set(merchantId, {
+          visits: 0,
+          dates: [],
+          dayOfWeekCounts: new Map(),
+          totalItems: 0,
+          totalSpend: 0,
+        });
+      }
 
-    if (!merchantData.has(merchantId)) {
-      merchantData.set(merchantId, {
-        visits: 0,
-        dates: [],
-        dayOfWeekCounts: new Map(),
-        totalItems: 0,
-        totalSpend: 0,
-      });
+      const data = merchantData.get(merchantId)!;
+      data.visits += 1;
+      data.dates.push(date);
+      data.dayOfWeekCounts.set(dayOfWeek, (data.dayOfWeekCounts.get(dayOfWeek) ?? 0) + 1);
+      data.totalItems += itemCount;
+      data.totalSpend += amount;
     }
-
-    const data = merchantData.get(merchantId)!;
-    data.visits += 1;
-    data.dates.push(date);
-    data.dayOfWeekCounts.set(dayOfWeek, (data.dayOfWeekCounts.get(dayOfWeek) ?? 0) + 1);
-    data.totalItems += itemCount;
-    data.totalSpend += amount;
   }
 
   // Build result array
@@ -1483,18 +1484,18 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
     const items = invoice.items ?? [];
     for (const product of items) {
       // Skip soft-deleted products
-      if (product.metadata?.isSoftDeleted) continue;
+      if (!product.metadata?.isSoftDeleted) {
+        const category = product.category ?? 0;
+        const productPriceRON = toRON(product.totalPrice, currencyCode, year);
 
-      const category = product.category ?? 0;
-      const productPriceRON = toRON(product.totalPrice, currencyCode, year);
+        const existing = categoryMap.get(category) ?? {totalSpent: 0, productCount: 0};
+        categoryMap.set(category, {
+          totalSpent: existing.totalSpent + productPriceRON,
+          productCount: existing.productCount + 1,
+        });
 
-      const existing = categoryMap.get(category) ?? {totalSpent: 0, productCount: 0};
-      categoryMap.set(category, {
-        totalSpent: existing.totalSpent + productPriceRON,
-        productCount: existing.productCount + 1,
-      });
-
-      grandTotal += productPriceRON;
+        grandTotal += productPriceRON;
+      }
     }
   }
 
@@ -1560,31 +1561,28 @@ export function computeTopProducts(invoices: ReadonlyArray<Invoice>, topN = 10):
 
     const items = invoice.items ?? [];
     for (const product of items) {
-      // Skip soft-deleted products
-      if (product.metadata?.isSoftDeleted) continue;
+      // Skip soft-deleted products and products without names
+      if (!product.metadata?.isSoftDeleted && product.name) {
+        const productName = product.name;
+        const productPriceRON = toRON(product.totalPrice, currencyCode, year);
+        const unitPriceRON = toRON(product.price, currencyCode, year);
 
-      // Use product name
-      const productName = product.name;
-      if (!productName) continue;
+        const existing = productMap.get(productName) ?? {
+          totalQuantity: 0,
+          totalSpent: 0,
+          purchaseCount: 0,
+          priceSum: 0,
+          priceCount: 0,
+        };
 
-      const productPriceRON = toRON(product.totalPrice, currencyCode, year);
-      const unitPriceRON = toRON(product.price, currencyCode, year);
-
-      const existing = productMap.get(productName) ?? {
-        totalQuantity: 0,
-        totalSpent: 0,
-        purchaseCount: 0,
-        priceSum: 0,
-        priceCount: 0,
-      };
-
-      productMap.set(productName, {
-        totalQuantity: existing.totalQuantity + product.quantity,
-        totalSpent: existing.totalSpent + productPriceRON,
-        purchaseCount: existing.purchaseCount + 1,
-        priceSum: existing.priceSum + unitPriceRON,
-        priceCount: existing.priceCount + 1,
-      });
+        productMap.set(productName, {
+          totalQuantity: existing.totalQuantity + product.quantity,
+          totalSpent: existing.totalSpent + productPriceRON,
+          purchaseCount: existing.purchaseCount + 1,
+          priceSum: existing.priceSum + unitPriceRON,
+          priceCount: existing.priceCount + 1,
+        });
+      }
     }
   }
 
@@ -1641,23 +1639,23 @@ export function computeAllergenFrequency(invoices: ReadonlyArray<Invoice>): Alle
     const items = invoice.items ?? [];
     for (const product of items) {
       // Skip soft-deleted products
-      if (product.metadata?.isSoftDeleted) continue;
+      if (!product.metadata?.isSoftDeleted) {
+        totalProducts++;
 
-      totalProducts++;
-
-      const allergens = product.detectedAllergens ?? [];
-      for (const allergen of allergens) {
-        const existing = allergenMap.get(allergen.name);
-        if (existing) {
-          allergenMap.set(allergen.name, {
-            description: existing.description,
-            productCount: existing.productCount + 1,
-          });
-        } else {
-          allergenMap.set(allergen.name, {
-            description: allergen.description,
-            productCount: 1,
-          });
+        const allergens = product.detectedAllergens ?? [];
+        for (const allergen of allergens) {
+          const existing = allergenMap.get(allergen.name);
+          if (existing) {
+            allergenMap.set(allergen.name, {
+              description: existing.description,
+              productCount: existing.productCount + 1,
+            });
+          } else {
+            allergenMap.set(allergen.name, {
+              description: allergen.description,
+              productCount: 1,
+            });
+          }
         }
       }
     }

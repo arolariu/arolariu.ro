@@ -164,6 +164,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         case "category":
           comparison = a.category - b.category;
           break;
+        default: {
+          const _exhaustive: never = sortField;
+          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+        }
       }
 
       return sortDirection === "asc" ? comparison : -comparison;
@@ -603,9 +607,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const index = (currentPage - 1) * pageSize + pageIndex;
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
-              const isSoftDeleted = item.metadata.isSoftDeleted;
-              const isEdited = item.metadata.isEdited;
-              const hasAllergens = item.detectedAllergens.length > 0;
+              const {isSoftDeleted, isEdited} = item.metadata;
+              const {detectedAllergens} = item;
+              const hasAllergens = detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
 
               return (

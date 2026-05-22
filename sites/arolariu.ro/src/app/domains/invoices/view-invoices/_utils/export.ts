@@ -66,27 +66,21 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
 
 /**
  * Exports the given invoices to a CSV file.
- * @param invoices The items to export to CSV format.
- * @param options The options for export such as delimiter symbol, column headers.
- * @param filename The custom filename for the export (without extension).
+ * @param _invoices The items to export to CSV format.
+ * @param _options The options for export such as delimiter symbol, column headers.
+ * @param _filename The custom filename for the export (without extension).
  */
-function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
-  void invoices;
-  void options;
-  void filename;
+function exportToCsv(_invoices: ReadonlyArray<Invoice>, _options: InvoiceExportRequest, _filename?: string): void {
   throw new Error("CSV export is not yet implemented. Please use JSON export.");
 }
 
 /**
  * Exports the given invoices to a PDF file.
- * @param invoices The items to export to PDF format.
- * @param options The options for export such as page size, orientation.
- * @param filename The custom filename for the export (without extension).
+ * @param _invoices The items to export to PDF format.
+ * @param _options The options for export such as page size, orientation.
+ * @param _filename The custom filename for the export (without extension).
  */
-function exportToPdf(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest, filename?: string): void {
-  void invoices;
-  void options;
-  void filename;
+function exportToPdf(_invoices: ReadonlyArray<Invoice>, _options: InvoiceExportRequest, _filename?: string): void {
   throw new Error("PDF export is not yet implemented. Please use JSON export.");
 }
 

@@ -30,7 +30,7 @@ import styles from "./InvoicePreferences.module.scss";
 /**
  * Invoice display and behavior preferences.
  */
-export interface InvoicePreferences {
+export interface InvoicePreferencesType {
   /** Default view mode for invoice lists */
   defaultViewMode: "table" | "grid";
   /** Default sort field for invoice lists */
@@ -46,7 +46,7 @@ export interface InvoicePreferences {
 /**
  * Default invoice preferences.
  */
-const DEFAULT_PREFERENCES: InvoicePreferences = {
+const DEFAULT_PREFERENCES: InvoicePreferencesType = {
   defaultViewMode: "table",
   defaultSortBy: "dateDesc",
   defaultPageSize: 10,
@@ -72,7 +72,7 @@ const DEFAULT_PREFERENCES: InvoicePreferences = {
 export default function InvoicePreferences(): React.JSX.Element {
   const t = useTranslations("IMS--Common.preferences");
 
-  const [preferences, setPreferences] = useLocalStorage<InvoicePreferences>("invoice-preferences", DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useLocalStorage<InvoicePreferencesType>("invoice-preferences", DEFAULT_PREFERENCES);
 
   /**
    * Handles saving preferences with success feedback.
@@ -86,7 +86,7 @@ export default function InvoicePreferences(): React.JSX.Element {
    * Updates a single preference field.
    */
   const updatePreference = useCallback(
-    <K extends keyof InvoicePreferences>(key: K, value: InvoicePreferences[K]) => {
+    <K extends keyof InvoicePreferencesType>(key: K, value: InvoicePreferencesType[K]) => {
       setPreferences((prev) => ({...prev, [key]: value}));
     },
     [setPreferences],

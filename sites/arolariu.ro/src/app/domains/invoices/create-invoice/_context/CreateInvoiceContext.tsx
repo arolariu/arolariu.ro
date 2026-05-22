@@ -117,12 +117,10 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     if (currentStep === "select-scans") {
       setCurrentStep("details");
       // Auto-suggest name from first scan
-      if (selectedScans.length > 0 && !invoiceDetails.name) {
-        const firstScan = selectedScans[0];
-        if (firstScan) {
-          const firstName = firstScan.name.replaceAll(/\.[^/.]+$/gu, "");
-          setInvoiceDetails((prev) => ({...prev, name: firstName}));
-        }
+      const [firstScan] = selectedScans;
+      if (selectedScans.length > 0 && !invoiceDetails.name && firstScan) {
+        const firstName = firstScan.name.replaceAll(/\.[^/.]+$/gu, "");
+        setInvoiceDetails((prev) => ({...prev, name: firstName}));
       }
     } else if (currentStep === "details") {
       setCurrentStep("review");
@@ -190,16 +188,27 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
     setIsCreating(true);
     try {
       // Use first scan as initial scan for invoice creation
-      const firstScan = selectedScans[0];
+      const [firstScan] = selectedScans;
       if (!firstScan) {
         throw new Error("No scans selected");
       }
 
       // Map scan type to InvoiceScanType enum
-      let scanType: InvoiceScanType = InvoiceScanType.UNKNOWN;
-      if (firstScan.scanType === "JPEG") scanType = InvoiceScanType.JPEG;
-      else if (firstScan.scanType === "PNG") scanType = InvoiceScanType.PNG;
-      else if (firstScan.scanType === "PDF") scanType = InvoiceScanType.PDF;
+      let scanType: InvoiceScanType;
+      switch (firstScan.scanType) {
+        case "JPEG":
+          scanType = InvoiceScanType.JPEG;
+          break;
+        case "PNG":
+          scanType = InvoiceScanType.PNG;
+          break;
+        case "PDF":
+          scanType = InvoiceScanType.PDF;
+          break;
+        default:
+          scanType = InvoiceScanType.UNKNOWN;
+          break;
+      }
 
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)

@@ -162,7 +162,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
       for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
         const batch = newUploads.slice(i, i + BATCH_SIZE);
         // Yield to browser to prevent UI blocking
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise<void>((resolve) => { resolve(); });
         setPendingUploads((prev) => [...prev, ...batch]);
       }
 

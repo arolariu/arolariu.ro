@@ -57,7 +57,6 @@ export async function loadMessages(locale: EmailLocale = DEFAULT_LOCALE): Promis
       return (await import("../../messages/ro.json")).default as EmailMessages;
     case "fr":
       return (await import("../../messages/fr.json")).default as EmailMessages;
-    case "en":
     default:
       return (await import("../../messages/en.json")).default as EmailMessages;
   }
