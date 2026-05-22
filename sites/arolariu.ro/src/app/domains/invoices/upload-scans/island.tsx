@@ -10,7 +10,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {
   TbArrowLeft,
   TbArrowRight,
@@ -115,25 +115,25 @@ function UploadContent(): React.JSX.Element {
   /**
    * Navigate to create invoice page.
    */
-  const handleCreateInvoice = (): void => {
+  const handleCreateInvoice = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/create-invoice");
-  };
+  }, [router]);
 
   /**
    * Navigate to view scans page.
    */
-  const handleViewScans = (): void => {
+  const handleViewScans = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/view-scans");
-  };
+  }, [router]);
 
   /**
    * Dismiss the prompt and stay on page.
    */
-  const handleDismiss = (): void => {
+  const handleDismiss = useCallback((): void => {
     setShowPrompt(false);
-  };
+  }, []);
 
   return (
     <section className={styles["contentSection"]}>

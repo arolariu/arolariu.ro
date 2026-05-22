@@ -83,6 +83,14 @@ export default function ScansGrid(): React.JSX.Element {
     setPage(0);
   }, [validScans.length]);
 
+  const handlePreviousPage = useCallback(() => {
+    setPage((p) => Math.max(0, p - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setPage((p) => Math.min(totalPages - 1, p + 1));
+  }, [totalPages]);
+
   // Show loading state
   if (!hasHydrated || (isSyncing && validScans.length === 0)) {
     return (
@@ -141,7 +149,7 @@ export default function ScansGrid(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
             {t("pagination.previous")}
@@ -152,7 +160,7 @@ export default function ScansGrid(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
             {t("pagination.next")}
             <TbChevronRight />

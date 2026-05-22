@@ -25,7 +25,7 @@ import {formatAmount} from "@/lib/utils.generic";
 import {Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbCurrencyDollar, TbSwitchHorizontal} from "react-icons/tb";
 import type {CurrencyDistribution} from "../../../_utils/statistics";
 import styles from "./CurrencyDistributionChart.module.scss";
@@ -126,6 +126,10 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
   const t = useTranslations("IMS--Stats.currencyDistribution");
   const [showRON, setShowRON] = useState(false);
 
+  const handleToggleRON = useCallback(() => {
+    setShowRON(!showRON);
+  }, [showRON]);
+
   // Handle single currency scenario
   if (data.length === 1) {
     const [currency] = data;
@@ -157,7 +161,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
             <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
           </div>
           <button
-            onClick={() => setShowRON(!showRON)}
+            onClick={handleToggleRON}
             className={styles["toggleButton"]}
             aria-label={t("toggleLabel")}
             title={t("toggleLabel")}>

@@ -121,8 +121,8 @@ export default function ItemsDialog(): React.JSX.Element {
     [setEditableItems],
   );
 
-  const handleValueChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleValueChangeAtIndex = useCallback((index: number) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
       const {name, value} = e.target;
 
       setEditableItems((prev) => {
@@ -162,9 +162,16 @@ export default function ItemsDialog(): React.JSX.Element {
 
         return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
       });
-    },
-    [setEditableItems],
-  );
+    };
+  }, [setEditableItems]);
+
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
 
   return (
     <Dialog
@@ -205,7 +212,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='name'
                           value={item.name}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["nameInput"]}
                         />
                       </TableCell>
@@ -215,7 +222,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='quantity'
                           value={item.quantity}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInput"]}
                         />
                       </TableCell>
@@ -225,7 +232,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='quantityUnit'
                           value={item.quantityUnit}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInput"]}
                         />
                       </TableCell>
@@ -235,7 +242,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='price'
                           value={item.price}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInputRight"]}
                         />
                       </TableCell>
@@ -283,7 +290,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       size='sm'
                       aria-label={t("aria.previousPage", {page: String(currentPage - 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                      onClick={() => setCurrentPage(currentPage - 1)}
+                      onClick={handlePreviousPage}
                       disabled={currentPage === 1}>
                       {t("buttons.previous")}
                     </Button>
@@ -292,7 +299,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       size='sm'
                       aria-label={t("aria.nextPage", {page: String(currentPage + 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      onClick={handleNextPage}
                       disabled={currentPage === totalPages}>
                       {t("buttons.next")}
                     </Button>

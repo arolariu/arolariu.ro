@@ -32,6 +32,7 @@ import {
   Textarea,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
@@ -81,6 +82,41 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   const {invoiceDetails, setName, setCategory, setPaymentType, setTransactionDate, setDescription, selectedScans} =
     useCreateInvoiceContext();
 
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setName(e.target.value);
+    },
+    [setName],
+  );
+
+  const handleCategoryChange = useCallback(
+    (value: string) => {
+      setCategory(Number.parseInt(value, 10) as InvoiceCategory);
+    },
+    [setCategory],
+  );
+
+  const handlePaymentTypeChange = useCallback(
+    (value: string) => {
+      setPaymentType(Number.parseInt(value, 10) as PaymentType);
+    },
+    [setPaymentType],
+  );
+
+  const handleTransactionDateChange = useCallback(
+    (date: Date | undefined) => {
+      if (date) setTransactionDate(date);
+    },
+    [setTransactionDate],
+  );
+
+  const handleDescriptionChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setDescription(e.target.value);
+    },
+    [setDescription],
+  );
+
   // Get first selected scan for preview
   const [firstScan] = selectedScans;
 
@@ -110,7 +146,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                 type='text'
                 placeholder={t("fields.name.placeholder")}
                 value={invoiceDetails.name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
                 required
               />
               <p className={styles["fieldHint"]}>{t("fields.name.hint")}</p>
@@ -121,7 +157,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='invoice-category'>{t("fields.category.label")}</Label>
               <Select
                 value={invoiceDetails.category.toString()}
-                onValueChange={(value) => setCategory(Number.parseInt(value, 10) as InvoiceCategory)}>
+                onValueChange={handleCategoryChange}>
                 <SelectTrigger id='invoice-category'>
                   <SelectValue placeholder={t("fields.category.placeholder")} />
                 </SelectTrigger>
@@ -141,7 +177,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='payment-type'>{t("fields.paymentType.label")}</Label>
               <Select
                 value={invoiceDetails.paymentType.toString()}
-                onValueChange={(value) => setPaymentType(Number.parseInt(value, 10) as PaymentType)}>
+                onValueChange={handlePaymentTypeChange}>
                 <SelectTrigger id='payment-type'>
                   <SelectValue placeholder={t("fields.paymentType.placeholder")} />
                 </SelectTrigger>
@@ -176,7 +212,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   <Calendar
                     mode='single'
                     selected={invoiceDetails.transactionDate}
-                    onSelect={(date) => date && setTransactionDate(date)}
+                    onSelect={handleTransactionDateChange}
                     initialFocus
                   />
                 </PopoverContent>
@@ -190,7 +226,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                 id='invoice-description'
                 placeholder={t("fields.description.placeholder")}
                 value={invoiceDetails.description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={handleDescriptionChange}
                 rows={4}
                 className={styles["descriptionTextarea"]}
               />

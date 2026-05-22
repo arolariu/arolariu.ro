@@ -276,6 +276,18 @@ export default function FilterBar({
     [onFiltersChange],
   );
 
+  const createPresetClickHandler = useCallback((preset: DatePresetKey) => {
+    return () => handlePresetClick(preset);
+  }, [handlePresetClick]);
+
+  const createAmountPresetClickHandler = useCallback((presetKey: AmountPresetKey) => {
+    return () => handleAmountPresetClick(presetKey);
+  }, [handleAmountPresetClick]);
+
+  const createCurrencyToggleHandler = useCallback((code: string) => {
+    return () => handleCurrencyToggle(code);
+  }, [handleCurrencyToggle]);
+
   // ── Label helpers (kept inline so they pick up the right `t` namespace) ──
   const formatCurrencyList = useCallback(
     (codes: ReadonlyArray<string>): string =>
@@ -399,7 +411,7 @@ export default function FilterBar({
               aria-pressed={activeDatePreset === preset}
               className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
               // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
-              onClick={() => handlePresetClick(preset)}>
+              onClick={createPresetClickHandler(preset)}>
               {t(`filters.datePresets.${preset}`)}
             </button>
           ))}
@@ -488,7 +500,7 @@ export default function FilterBar({
               aria-pressed={activeAmountPreset === presetKey}
               className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
               // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
-              onClick={() => handleAmountPresetClick(presetKey)}>
+              onClick={createAmountPresetClickHandler(presetKey)}>
               {t(`filters.amountPresets.${labelKey}`)}
             </button>
           ))}
@@ -517,7 +529,7 @@ export default function FilterBar({
                 aria-pressed={filters.currencies.includes(code)}
                 className={styles["chipButton"]}
                 // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
-                onClick={() => handleCurrencyToggle(code)}>
+                onClick={createCurrencyToggleHandler(code)}>
                 <Badge
                   variant={filters.currencies.includes(code) ? "default" : "outline"}
                   className={styles["categoryChip"]}>

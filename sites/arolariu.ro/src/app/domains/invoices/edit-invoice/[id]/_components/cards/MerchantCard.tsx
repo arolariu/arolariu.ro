@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
@@ -59,6 +60,18 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
   const t = useTranslations("IMS--Cards.merchantCard");
   const {openDialog} = useDialogs();
 
+  const handleOpenMerchantDialog = useCallback(() => {
+    if (merchant) {
+      openDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
+    }
+  }, [merchant, openDialog]);
+
+  const handleOpenMerchantReceiptsDialog = useCallback(() => {
+    if (merchant) {
+      openDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
+    }
+  }, [merchant, openDialog]);
+
   // Early return if merchant is null — guards both trigger buttons from rendering,
   // which guarantees neither dialog can be dispatched with a null payload.
   if (!merchant) {
@@ -98,7 +111,7 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                     variant='outline'
                     className={styles["actionButton"]}
                     // eslint-disable-next-line react/jsx-no-bind -- merchant is narrowed non-null here
-                    onClick={() => openDialog("EDIT_INVOICE__MERCHANT", "view", merchant)}>
+                    onClick={handleOpenMerchantDialog}>
                     <span>{t("buttons.viewMerchantDetails")}</span>
                     <TbArrowRight className={styles["arrowIcon"]} />
                   </Button>
@@ -118,7 +131,7 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                     variant='outline'
                     className={styles["actionButton"]}
                     // eslint-disable-next-line react/jsx-no-bind -- merchant is narrowed non-null here
-                    onClick={() => openDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant)}>
+                    onClick={handleOpenMerchantReceiptsDialog}>
                     <TbShoppingBag className={styles["buttonIcon"]} />
                     <span>{t("buttons.viewAllReceipts")}</span>
                     <TbArrowRight className={styles["arrowIcon"]} />

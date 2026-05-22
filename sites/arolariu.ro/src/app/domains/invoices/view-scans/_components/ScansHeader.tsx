@@ -9,6 +9,7 @@ import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
+import {useCallback} from "react";
 import {TbFileInvoice, TbInfoCircle, TbRefresh, TbUpload} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansHeader.module.scss";
@@ -35,6 +36,10 @@ function formatRelativeTime(date: Date): string {
 export default function ScansHeader(): React.JSX.Element {
   const t = useTranslations("IMS--ViewScans.header");
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
+
+  const handleSyncScans = useCallback(() => {
+    syncScans(true);
+  }, [syncScans]);
 
   return (
     <div className={styles["header"]}>
@@ -121,7 +126,7 @@ export default function ScansHeader(): React.JSX.Element {
               render={
                 <Button
                   variant='outline'
-                  onClick={() => syncScans(true)}
+                  onClick={handleSyncScans}
                   disabled={isSyncing}
                   className={styles["outlineButton"]}>
                   <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />

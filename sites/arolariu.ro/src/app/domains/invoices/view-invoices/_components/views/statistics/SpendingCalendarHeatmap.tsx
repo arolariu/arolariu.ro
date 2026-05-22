@@ -39,7 +39,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import type {DailySpending} from "../../../_utils/statistics";
 import styles from "./SpendingCalendarHeatmap.module.scss";
@@ -263,13 +263,13 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
   const dayLabels = [t("days.sun"), t("days.mon"), t("days.tue"), t("days.wed"), t("days.thu"), t("days.fri"), t("days.sat")];
 
-  const handlePreviousMonth = (): void => {
+  const handlePreviousMonth = useCallback((): void => {
     setMonthOffset((prev) => prev + 1);
-  };
+  }, []);
 
-  const handleNextMonth = (): void => {
+  const handleNextMonth = useCallback((): void => {
     setMonthOffset((prev) => Math.max(0, prev - 1));
-  };
+  }, []);
 
   return (
     <Card className={styles["card"]}>

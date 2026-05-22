@@ -195,6 +195,10 @@ export function AnalysisPanel(): React.JSX.Element {
     await handleAnalyze(InvoiceAnalysisOptions.CompleteAnalysis);
   }, [handleAnalyze]);
 
+  const createAnalyzeHandler = useCallback((optionId: InvoiceAnalysisOptions) => {
+    return () => handleAnalyze(optionId);
+  }, [handleAnalyze]);
+
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["header"]}>
@@ -291,8 +295,7 @@ export function AnalysisPanel(): React.JSX.Element {
                           <TooltipTrigger
                             render={
                               <Button
-                                // eslint-disable-next-line react/jsx-no-bind -- simple handler
-                                onClick={() => handleAnalyze(option.id)}
+                                onClick={createAnalyzeHandler(option.id)}
                                 disabled={isAnalyzing}
                                 variant='outline'
                                 size='sm'

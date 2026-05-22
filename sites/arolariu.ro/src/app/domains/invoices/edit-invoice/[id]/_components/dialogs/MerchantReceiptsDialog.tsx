@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantReceiptsDialog.module.scss";
@@ -103,16 +103,28 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     return () => clearTimeout(timeoutId);
   }, [payload]);
 
+  const handleSearchQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
   // Handle date filter change
-  const handleDateFilterChange = (_value: string) => {
+  const handleDateFilterChange = useCallback((_value: string) => {
     // Handle date filter selection
-  };
+  }, []);
 
   // Handle sort change
-  const handleSortChange = (_value: string) => {
+  const handleSortChange = useCallback((_value: string) => {
     // Handle sort option selection
     resetPagination();
-  };
+  }, [resetPagination]);
+
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
 
   return (
     <Dialog
@@ -135,7 +147,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 placeholder={t("searchPlaceholder")}
                 className={styles["searchInput"]}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchQueryChange}
               />
             </div>
             <div className={styles["filterControls"]}>
@@ -217,14 +229,14 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='sm'
-                        onClick={() => setCurrentPage(currentPage - 1)}
+                        onClick={handlePreviousPage}
                         disabled={currentPage === 1}>
                         {t("buttons.previous")}
                       </Button>
                       <Button
                         variant='ghost'
                         size='sm'
-                        onClick={() => setCurrentPage(currentPage + 1)}
+                        onClick={handleNextPage}
                         disabled={currentPage === totalPages}>
                         {t("buttons.next")}
                       </Button>

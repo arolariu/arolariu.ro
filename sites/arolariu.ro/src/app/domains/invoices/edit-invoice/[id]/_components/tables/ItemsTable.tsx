@@ -228,6 +228,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setEditValues((prev) => ({...prev, [`${rowIndex}-${field}`]: value}));
   }, []);
 
+  const createEditChangeHandler = useCallback((rowIndex: number, field: string) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleEditChange(rowIndex, field, e.target.value);
+    };
+  }, [handleEditChange]);
+
   // Handle save edit (Enter or blur)
   const handleSaveEdit = useCallback(() => {
     if (!editingCell) return;
@@ -696,7 +702,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         <Input
                           type='text'
                           value={editValues[`${index}-name`] ?? ""}
-                          onChange={(e) => handleEditChange(index, "name", e.target.value)}
+                          onChange={createEditChangeHandler(index, "name")}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
                           autoFocus
@@ -755,7 +761,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                       <Input
                         type='number'
                         value={editValues[`${index}-quantity`] ?? ""}
-                        onChange={(e) => handleEditChange(index, "quantity", e.target.value)}
+                        onChange={createEditChangeHandler(index, "quantity")}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
                         autoFocus

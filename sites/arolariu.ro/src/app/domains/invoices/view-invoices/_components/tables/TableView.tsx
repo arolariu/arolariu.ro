@@ -48,6 +48,10 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const t = useTranslations("IMS--List.tableView");
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange, sortBy, sortDirection, onSort} =
     props;
+
+  const handleSortByName = useCallback(() => onSort("name"), [onSort]);
+  const handleSortByDate = useCallback(() => onSort("date"), [onSort]);
+  const handleSortByAmount = useCallback(() => onSort("amount"), [onSort]);
   const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);
 
@@ -138,7 +142,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           </TableHead>
           <TableHead
             className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
-            onClick={() => onSort("name")}
+            onClick={handleSortByName}
             role='columnheader'
             aria-sort={sortBy === "name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
             tabIndex={0}
@@ -154,7 +158,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableHead>{t("columns.category")}</TableHead>
           <TableHead
             className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
-            onClick={() => onSort("date")}
+            onClick={handleSortByDate}
             role='columnheader'
             aria-sort={sortBy === "date" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
             tabIndex={0}
@@ -169,7 +173,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           </TableHead>
           <TableHead
             className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
-            onClick={() => onSort("amount")}
+            onClick={handleSortByAmount}
             role='columnheader'
             aria-sort={sortBy === "amount" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
             tabIndex={0}

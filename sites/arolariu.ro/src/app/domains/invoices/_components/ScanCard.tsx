@@ -252,6 +252,27 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
+  const handleRotate90 = useCallback(() => handleRotate(90), [handleRotate]);
+  const handleRotateMinus90 = useCallback(() => handleRotate(-90), [handleRotate]);
+
+  const handlePreviewKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleOpenPreview();
+      }
+    },
+    [handleOpenPreview],
+  );
+
+  const handleStopPropagation = useCallback((e: React.MouseEvent): void => {
+    e.stopPropagation();
+  }, []);
+
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewName(e.target.value);
+  }, []);
+
   // Guard against incomplete scan data
   if (!scan.blobUrl && !scan.name) {
     return (
@@ -278,12 +299,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             onClick={handleOpenPreview}
             role='button'
             tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleOpenPreview();
-              }
-            }}>
+            onKeyDown={handlePreviewKeyDown}>
             {scan.mimeType === "application/pdf" ? (
               <div className={styles["pdfPlaceholder"]}>
                 <TbFileTypePdf className={styles["pdfIcon"]} />
@@ -315,7 +331,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Selection checkbox */}
             <div
               className={styles["checkboxPosition"]}
-              onClick={(e) => e.stopPropagation()}>
+              onClick={handleStopPropagation}>
               <Checkbox
                 checked={isSelected}
                 nativeButton
@@ -327,7 +343,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Actions menu */}
             <div
               className={styles["actionsPosition"]}
-              onClick={(e) => e.stopPropagation()}>
+              onClick={handleStopPropagation}>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
@@ -347,13 +363,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   {scan.mimeType !== "application/pdf" && (
                     <>
                       <DropdownMenuItem
-                        onClick={() => handleRotate(90)}
+                        onClick={handleRotate90}
                         disabled={isRotating}>
                         <TbRotateClockwise className={styles["trashIcon"]} />
                         {t("actions.rotateCW")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleRotate(-90)}
+                        onClick={handleRotateMinus90}
                         disabled={isRotating}>
                         <TbRotate className={styles["trashIcon"]} />
                         {t("actions.rotateCCW")}
@@ -399,7 +415,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 <Input
                   ref={inputRef}
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={handleNameChange}
                   onKeyDown={handleRenameKeyDown}
                   onBlur={handleCancelRename}
                   placeholder={t("renamePlaceholder")}

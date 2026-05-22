@@ -13,6 +13,7 @@
 import {Button, Card, CardContent} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbArrowRight, TbCheck, TbEye, TbX} from "react-icons/tb";
 import styles from "./PostUploadPrompt.module.scss";
 
@@ -82,6 +83,10 @@ export default function PostUploadPrompt({
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--UploadScans.postUpload");
 
+  const handleStopPropagation = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -98,7 +103,7 @@ export default function PostUploadPrompt({
             animate={{opacity: 1, scale: 1, y: 0}}
             exit={{opacity: 0, scale: 0.9, y: 20}}
             transition={{duration: 0.3, ease: "easeOut"}}
-            onClick={(e) => e.stopPropagation()}>
+            onClick={handleStopPropagation}>
             <Card className={styles["card"]}>
               <CardContent className={styles["content"]}>
                 {/* Dismiss button */}

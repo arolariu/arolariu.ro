@@ -52,7 +52,7 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TbAlertCircle, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink, TbSparkles, TbX} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceHealthScore.module.scss";
@@ -165,6 +165,10 @@ export function InvoiceHealthScore(): React.JSX.Element {
   const t = useTranslations("IMS--View.healthScore");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
+
+  const handleDismissSuggestions = useCallback(() => {
+    setShowSuggestions(false);
+  }, []);
 
   /**
    * Compute comprehensive score factors with weighted scoring.
@@ -426,7 +430,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
               <Button
                 variant='ghost'
                 size='sm'
-                onClick={() => setShowSuggestions(false)}
+                onClick={handleDismissSuggestions}
                 className={styles["dismissButton"]}>
                 <TbX className={styles["dismissIcon"]} />
               </Button>
