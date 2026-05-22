@@ -191,9 +191,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <p className={styles["infoLabelPlain"]}>{t("labels.ronEquivalent")}</p>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger>
-                      <p className={styles["infoValue"]}>≈ {formatCurrency(ronEquivalent.amountInRon, {currencyCode: "RON", locale})}</p>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      className={styles["helpTrigger"]}
+                      render={
+                        <p className={styles["infoValueHelp"]}>
+                          ≈ {formatCurrency(ronEquivalent.amountInRon, {currencyCode: "RON", locale})}
+                        </p>
+                      }
+                    />
                     <TooltipContent>
                       <p>
                         {t("tooltips.exchangeRate", {
@@ -289,8 +294,8 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedItems.map((item) => (
-                    <TableRow key={item.productCode}>
+                  {paginatedItems.map((item, index) => (
+                    <TableRow key={`${item.name}-${startIndex + index}`}>
                       <TableCell>
                         <div className={styles["itemCell"]}>
                           <p className={styles["itemName"]}>{item.name}</p>

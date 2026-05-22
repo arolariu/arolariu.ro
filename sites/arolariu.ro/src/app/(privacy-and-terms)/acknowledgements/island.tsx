@@ -55,13 +55,13 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <Hero lastUpdatedDate={lastUpdatedDate} />
 
       {/* Statistics dashboard */}
-      <Stats />
+      <Stats packages={packages} />
 
       {/* Top contributors */}
       <Contributors />
 
       {/* License breakdown */}
-      <LicenseBreakdown />
+      <LicenseBreakdown packages={packages} />
 
       {/* NPM packages browser */}
       <section className={styles["packagesSection"]}>

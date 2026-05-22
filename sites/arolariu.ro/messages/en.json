@@ -949,6 +949,7 @@
           "packages": "3"
         }
       },
+      "packages": "{count, plural, one {# package} other {# packages}}",
       "subtitle": "Organizations and individuals whose packages we rely on most",
       "title": "Top Contributors"
     },
@@ -962,8 +963,13 @@
     "licenses": {
       "apache": "Apache 2.0",
       "apacheDescription": "Enterprise-friendly open-source license",
+      "gpl": "GPL License",
+      "gplDescription": "Copyleft license ensuring code remains free",
       "mit": "MIT License",
       "mitDescription": "Permissive license allowing broad use",
+      "other": "Other Licenses",
+      "otherDescription": "Custom or miscellaneous open-source licenses",
+      "packages": "{count, plural, one {# package} other {# packages}}",
       "title": "License Distribution"
     },
     "metadata": {
@@ -1031,24 +1037,24 @@
       "development": {
         "description": "Build-time tools",
         "label": "Development",
-        "value": "48"
+        "value": "{count}"
       },
       "mitLicense": {
         "description": "Most common license",
         "label": "MIT Licensed",
-        "value": "69"
+        "value": "{count}"
       },
       "production": {
         "description": "Runtime dependencies",
         "label": "Production",
-        "value": "38"
+        "value": "{count}"
       },
       "subtitle": "A snapshot of the open-source ecosystem powering this platform",
       "title": "Dependency Overview",
       "total": {
         "description": "Dependencies used",
         "label": "Total Packages",
-        "value": "86"
+        "value": "{count}"
       }
     },
     "title": "Acknowledgements"
@@ -3306,15 +3312,42 @@
         "activeCount": "{count} active",
         "amountMax": "Max amount",
         "amountMin": "Min amount",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        },
         "amountRange": "Amount Range",
+        "anyValue": "any",
         "button": "Filters",
         "categories": "Categories",
         "category": "Category",
         "clear": "Clear all",
+        "currency": "Currency",
+        "currencyAny": "any",
         "dateFrom": "From date",
+        "datePresets": {
+          "30d": "30d",
+          "90d": "90d",
+          "all": "All time",
+          "custom": "Custom",
+          "ytd": "YTD"
+        },
         "dateRange": "Date Range",
         "dateTo": "To date",
+        "defaultValue": "default",
+        "dynamicHint": "These options are populated from your invoices — only values present in your data appear here.",
+        "paymentTypeLabels": {
+          "card": "Card",
+          "cash": "Cash",
+          "mobile": "Mobile",
+          "other": "Other",
+          "transfer": "Transfer",
+          "voucher": "Voucher"
+        },
         "paymentTypes": "Payment Types",
+        "showResults": "Show {count, plural, one {# result} other {# results}}",
         "sortBy": "Sort By",
         "sortOptions": {
           "amountHighToLow": "Amount (high to low)",
@@ -3322,8 +3355,7 @@
           "dateNewest": "Date (newest first)",
           "dateOldest": "Date (oldest first)",
           "nameAZ": "Name (A-Z)",
-          "nameZA": "Name (Z-A)",
-          "none": "No sorting (default order)"
+          "nameZA": "Name (Z-A)"
         },
         "timeOfDay": "Time of day",
         "title": "Filters"

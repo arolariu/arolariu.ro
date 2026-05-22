@@ -76,6 +76,40 @@
 // ===========================================
 .packageCard {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.productionBanner {
+  background-color: color('primary');
+  color: white;
+  text-align: center;
+  font-size: font-size('xs');
+  font-weight: font-weight('bold');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: space(1) 0;
+  width: 100%;
+}
+
+.developmentBanner {
+  background-color: color('secondary');
+  color: color('secondary-foreground');
+  text-align: center;
+  font-size: font-size('xs');
+  font-weight: font-weight('bold');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: space(1) 0;
+  width: 100%;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .srOnly {
@@ -128,8 +162,15 @@
 .cardDetails {
   display: flex;
   flex-direction: column;
+  margin-top: auto;
 
   @include spaced-children(space(2));
+}
+
+.detailsContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
 }
 
 .detailRow {
@@ -259,35 +300,7 @@
 // ===========================================
 // BADGES
 // ===========================================
-.productionBadge {
-  display: inline-block;
-  padding: space(1.5) space(3);
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
-  border-radius: radius('full');
-  background-color: color('primary');
-  color: white;
-  @include transition(background-color);
-
-  &:hover {
-    background-color: color-alpha('primary', 0.85);
-  }
-}
-
-.developmentBadge {
-  display: inline-block;
-  padding: space(1.5) space(3);
-  font-size: font-size('xs');
-  font-weight: font-weight('medium');
-  border-radius: radius('full');
-  background-color: color('secondary');
-  color: color('secondary-foreground');
-  @include transition(background-color);
-
-  &:hover {
-    background-color: color-alpha('secondary', 0.85);
-  }
-}
+// Removed legacy badge classes as we are now using top-aligned banners
 
 // ===========================================
 // FOOTER

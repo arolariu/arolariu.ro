@@ -44,8 +44,9 @@ describe("useInvoiceFilters", () => {
         amountMax: null,
         categories: [],
         paymentTypes: [],
-        sortBy: null,
-        sortOrder: null,
+        currencies: [],
+        sortBy: "date",
+        sortOrder: "desc",
         view: "table",
       });
     });
@@ -426,9 +427,10 @@ describe("useInvoiceFilters", () => {
       expect(result.current.activeFilterCount).toBe(5);
     });
 
-    it("should not count sort and view mode as active filters", () => {
+    it("should not count default sort or view mode as active filters", () => {
+      // Default sort is now date/desc — only view-mode change should NOT contribute.
       // Arrange
-      const mockSearchParams = new URLSearchParams("?sortBy=amount&sortOrder=asc&view=grid");
+      const mockSearchParams = new URLSearchParams("?view=grid");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act
@@ -436,6 +438,78 @@ describe("useInvoiceFilters", () => {
 
       // Assert
       expect(result.current.activeFilterCount).toBe(0);
+    });
+
+    it("should count non-default sort as an active filter", () => {
+      // Anything other than date/desc counts toward the badge to keep the
+      // header in sync with the Sort card's active visual.
+      const mockSearchParams = new URLSearchParams("?sortBy=amount&sortOrder=asc");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+
+      const {result} = renderHook(() => useInvoiceFilters());
+
+      expect(result.current.activeFilterCount).toBe(1);
+    });
+  });
+
+  describe("currencies field", () => {
+    it("parses ?cur=RON,EUR into filters.currencies", () => {
+      const mockSearchParams = new URLSearchParams("?cur=RON,EUR");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      expect(result.current.filters.currencies).toEqual(["RON", "EUR"]);
+    });
+
+    it("defaults to empty array when ?cur is absent", () => {
+      const mockSearchParams = new URLSearchParams("");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      expect(result.current.filters.currencies).toEqual([]);
+    });
+
+    it("writes 'cur' to URL when setFilters({currencies}) is called", () => {
+      const mockSearchParams = new URLSearchParams("");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      result.current.setFilters({currencies: ["RON", "EUR"]});
+      const lastCall = mockReplace.mock.calls.at(-1)?.[0] as string;
+      expect(lastCall).toContain("cur=RON%2CEUR");
+    });
+
+    it("removes 'cur' from URL when setFilters({currencies: []}) is called", () => {
+      const mockSearchParams = new URLSearchParams("?cur=RON,EUR");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      result.current.setFilters({currencies: []});
+      const lastCall = mockReplace.mock.calls.at(-1)?.[0] as string;
+      expect(lastCall).not.toContain("cur=");
+    });
+
+    it("counts non-empty currencies toward activeFilterCount", () => {
+      const mockSearchParams = new URLSearchParams("?cur=RON");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      expect(result.current.activeFilterCount).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("sort default flip", () => {
+    it("defaults sortBy to 'date' and sortOrder to 'desc' when both URL params are absent", () => {
+      const mockSearchParams = new URLSearchParams("");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      expect(result.current.filters.sortBy).toBe("date");
+      expect(result.current.filters.sortOrder).toBe("desc");
+    });
+
+    it("does not write sortBy/sortOrder to URL when value matches the new default", () => {
+      const mockSearchParams = new URLSearchParams("");
+      (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
+      const {result} = renderHook(() => useInvoiceFilters());
+      result.current.setFilters({sortBy: "date", sortOrder: "desc"});
+      const lastCall = mockReplace.mock.calls.at(-1)?.[0] as string;
+      expect(lastCall).not.toContain("sortBy=");
+      expect(lastCall).not.toContain("sortOrder=");
     });
   });
 });

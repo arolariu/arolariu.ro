@@ -27,7 +27,7 @@ import {
 import {motion} from "motion/react";
 import {type Locale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
-import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "react-icons/tb";
+import {TbCheck, TbChevronDown, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "react-icons/tb";
 import RenderPrivacyPolicyScreen from "./(privacy-and-terms)/privacy-policy/island";
 import RenderTermsOfServiceScreen from "./(privacy-and-terms)/terms-of-service/island";
 import styles from "./EULA.module.scss";
@@ -130,16 +130,23 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <TbGlobe className={styles["globeIcon"]} />
                 {t("language")}
               </Label>
-              <select
-                title={t("language")}
-                id='locale-select'
-                defaultValue={locale}
-                onChange={handleLocaleChange}
-                className={styles["localeSelect"]}>
-                <option value='en'>English (EN)</option>
-                <option value='ro'>Română (RO)</option>
-                <option value='fr'>Français (FR)</option>
-              </select>
+              <div className={styles["selectWrapper"]}>
+                <select
+                  title={t("language")}
+                  id='locale-select'
+                  defaultValue={locale}
+                  onChange={handleLocaleChange}
+                  className={styles["localeSelect"]}>
+                  <option value='en'>English (EN)</option>
+                  <option value='ro'>Română (RO)</option>
+                  <option value='fr'>Français (FR)</option>
+                </select>
+                <TbChevronDown
+                  aria-hidden='true'
+                  focusable={false}
+                  className={styles["selectChevron"]}
+                />
+              </div>
             </div>
           </CardHeader>
 

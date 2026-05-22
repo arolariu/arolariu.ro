@@ -174,6 +174,19 @@ const nextConfig: NextConfig = {
     },
   },
 
+  turbopack: {
+    rules: {
+      // Embed `.csv` files as raw text strings at build time so they can be
+      // imported via `import csv from "./file.csv?raw"`. Mirrors Vite's
+      // built-in `?raw` query support, which Vitest relies on for the same
+      // imports — see `src/lib/currency/converter.ts`.
+      "*.csv": {
+        loaders: ["raw-loader"],
+        as: "*.js",
+      },
+    },
+  },
+
   typescript: {
     tsconfigPath: "tsconfig.json",
     // tsgo runs in CI's test job; tsc runs locally + in Docker via beforeBuild → typecheck.ts.

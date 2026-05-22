@@ -27,20 +27,20 @@ describe("toRON", () => {
 
   it("should convert EUR to RON using 2024 rates", () => {
     const result = toRON(100, "EUR", 2024);
-    // 100 * 4.9735 = 497.35
-    expect(result).toBe(497.35);
+    // 100 * 4.9746 = 497.46
+    expect(result).toBe(497.46);
   });
 
   it("should convert USD to RON using 2023 rates", () => {
     const result = toRON(200, "USD", 2023);
-    // 200 * 4.5725 = 914.50
-    expect(result).toBe(914.5);
+    // 200 * 4.5763 = 915.26
+    expect(result).toBe(915.26);
   });
 
   it("should convert GBP to RON", () => {
     const result = toRON(50, "GBP", 2024);
-    // 50 * 5.8020 = 290.10
-    expect(result).toBe(290.1);
+    // 50 * 5.8762 = 293.81
+    expect(result).toBe(293.81);
   });
 
   it("should convert new currencies added in 50-currency expansion", () => {
@@ -72,22 +72,25 @@ describe("toRON", () => {
   it("should handle negative amounts (refunds)", () => {
     const result = toRON(-50, "EUR", 2024);
     expect(result).toBeLessThan(0);
-    // -50 * 4.9735 = -248.675, which rounds to -248.67 or -248.68 depending on IEEE 754
-    expect(Math.abs(result + 248.675)).toBeLessThan(0.01);
+    // -50 * 4.9746 = -248.73, which rounds to -248.73 (within IEEE 754 precision)
+    expect(Math.abs(result + 248.73)).toBeLessThan(0.01);
   });
 
   it("should fall back to nearest year for unavailable years", () => {
-    // 2017 is not in our data, should fall back to 2018
-    const result2017 = toRON(100, "EUR", 2017);
-    const result2018 = toRON(100, "EUR", 2018);
-    expect(result2017).toBe(result2018);
+    // 1990 is well before any data; should fall back to the first available year.
+    const result1990 = toRON(100, "EUR", 1990);
+    const firstYear = getAvailableYears()[0]!;
+    const resultFirst = toRON(100, "EUR", firstYear);
+    expect(result1990).toBe(resultFirst);
   });
 
   it("should fall back to nearest year for far future years", () => {
-    // 2030 is not in our data, should fall back to 2025 (nearest)
-    const result2030 = toRON(100, "EUR", 2030);
-    const result2025 = toRON(100, "EUR", 2025);
-    expect(result2030).toBe(result2025);
+    // 3000 is well past any data; should fall back to the last available year.
+    const result3000 = toRON(100, "EUR", 3000);
+    const lastYears = getAvailableYears();
+    const lastYear = lastYears[lastYears.length - 1]!;
+    const resultLast = toRON(100, "EUR", lastYear);
+    expect(result3000).toBe(resultLast);
   });
 
   it("should return the original amount for unknown currencies", () => {
@@ -115,16 +118,18 @@ describe("toRONDetailed", () => {
 
   it("should return conversion details for EUR", () => {
     const result = toRONDetailed(100, "EUR", 2024);
-    expect(result.amountInRon).toBe(497.35);
-    expect(result.rateUsed).toBe(4.9735);
+    expect(result.amountInRon).toBe(497.46);
+    expect(result.rateUsed).toBe(4.9746);
     expect(result.rateYear).toBe(2024);
     expect(result.isExactYearMatch).toBe(true);
   });
 
   it("should indicate when year fallback was used", () => {
-    const result = toRONDetailed(100, "EUR", 2017);
+    // 1990 is well before any data — should trigger fallback to the first available year.
+    const result = toRONDetailed(100, "EUR", 1990);
+    const firstYear = getAvailableYears()[0]!;
     expect(result.isExactYearMatch).toBe(false);
-    expect(result.rateYear).toBe(2018); // Nearest available year
+    expect(result.rateYear).toBe(firstYear); // Nearest available year
     expect(result.amountInRon).toBeGreaterThan(0);
   });
 
@@ -244,7 +249,9 @@ describe("edge cases", () => {
     const years = getAvailableYears();
     for (const year of years) {
       const result = toRON(100, "EUR", year);
-      expect(result).toBeGreaterThan(400); // EUR/RON always above 4.0
+      // EUR/RON historical range: ~1.99 RON (year 2000, post-introduction)
+      // up to ~5.11 RON (2026). Bounds keep margin on both sides.
+      expect(result).toBeGreaterThan(190); // EUR/RON always above 1.9
       expect(result).toBeLessThan(600); // EUR/RON always below 6.0
     }
   });
@@ -298,7 +305,7 @@ describe("edge cases", () => {
 
   it("should handle year far outside available range (ancient year)", () => {
     // Test with year 1900 where no data exists
-    // Should fall back to nearest available year (2018 is the first year in data)
+    // Should fall back to nearest available year (the first year in data)
     const years = getAvailableYears();
     const firstYear = years[0]!;
 
@@ -315,7 +322,7 @@ describe("edge cases", () => {
 
   it("should handle year far outside available range (far future year)", () => {
     // Test with year 3000 where no data exists
-    // Should fall back to nearest available year (2025 is likely the last year in data)
+    // Should fall back to nearest available year (the last year in data)
     const years = getAvailableYears();
     const lastYear = years[years.length - 1]!;
 

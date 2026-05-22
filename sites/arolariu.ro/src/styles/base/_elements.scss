@@ -42,7 +42,12 @@ body {
 // ===========================================
 // HEADINGS
 // ===========================================
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: font-weight('semibold');
   line-height: line-height('tight');
   color: hsl(var(--foreground));
@@ -53,10 +58,21 @@ h1, h2, h3, h4, h5, h6 {
 // e.g. font-size('5xl') → clamp(2.25rem, 2rem + 1.25vw, 3rem)
 // This replaces the old breakpoint jumps (e.g. 4xl→5xl at md) with
 // continuous scaling — smoother UX, less CSS, better intermediate sizes.
-h1 { font-size: font-size('5xl'); }
-h2 { font-size: font-size('4xl'); }
-h3 { font-size: font-size('3xl'); }
-h4 { font-size: font-size('2xl'); }
+h1 {
+  font-size: font-size('5xl');
+}
+
+h2 {
+  font-size: font-size('4xl');
+}
+
+h3 {
+  font-size: font-size('3xl');
+}
+
+h4 {
+  font-size: font-size('2xl');
+}
 
 h5 {
   font-size: font-size('lg');
@@ -76,7 +92,9 @@ p {
     &:last-child {
       margin-block-end: 0;
     }
-  } @else {
+  }
+
+  @else {
     margin-bottom: space(4);
 
     &:last-child {
@@ -141,7 +159,9 @@ blockquote {
   @if $enable-logical-properties {
     border-inline-start: 4px solid hsl(var(--border));
     padding-inline-start: space(4);
-  } @else {
+  }
+
+  @else {
     border-left: 4px solid hsl(var(--border));
     padding-left: space(4);
   }
@@ -157,7 +177,9 @@ hr {
   @if $enable-logical-properties {
     margin-block: space(8);
     margin-inline: 0;
-  } @else {
+  }
+
+  @else {
     margin: space(8) 0;
   }
 }
@@ -177,4 +199,19 @@ hr {
 ::selection {
   background-color: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
+}
+
+// ===========================================
+// GLOBAL DIALOG & OVERLAY LAYERS
+// ===========================================
+// Since dialog backdrop and popup classes are defined in @arolariu/components
+// (which should not be changed directly), we elevate their z-index properties
+// here to ensure they always render above dynamic interactive buttons and triggers.
+[role="dialog"],
+div[class*="popup-"] {
+  z-index: z('modal') !important;
+}
+
+div[class*="backdrop-"] {
+  z-index: z('modal-backdrop') !important;
 }

@@ -949,6 +949,7 @@
           "packages": "3"
         }
       },
+      "packages": "{count, plural, one {# pachet} few {# pachete} other {# de pachete}}",
       "subtitle": "Organizații și indivizi pe ale căror pachete ne bazăm cel mai mult",
       "title": "Contributori Principali"
     },
@@ -962,8 +963,13 @@
     "licenses": {
       "apache": "Apache 2.0",
       "apacheDescription": "Licență open-source prietenoasă pentru întreprinderi",
+      "gpl": "Licență GPL",
+      "gplDescription": "Licență copyleft care asigură că codul rămâne liber",
       "mit": "Licență MIT",
       "mitDescription": "Licență permisivă care permite utilizare largă",
+      "other": "Alte Licențe",
+      "otherDescription": "Licențe custom sau diverse alte licențe open-source",
+      "packages": "{count, plural, one {# pachet} few {# pachete} other {# de pachete}}",
       "title": "Distribuția Licențelor"
     },
     "metadata": {
@@ -1031,24 +1037,24 @@
       "development": {
         "description": "Instrumente de build",
         "label": "Dezvoltare",
-        "value": "48"
+        "value": "{count}"
       },
       "mitLicense": {
         "description": "Cea mai comună licență",
         "label": "Licență MIT",
-        "value": "69"
+        "value": "{count}"
       },
       "production": {
         "description": "Dependențe runtime",
         "label": "Producție",
-        "value": "38"
+        "value": "{count}"
       },
       "subtitle": "O privire asupra ecosistemului open-source care alimentează această platformă",
       "title": "Prezentare Generală a Dependențelor",
       "total": {
         "description": "Dependențe utilizate",
         "label": "Total Pachete",
-        "value": "86"
+        "value": "{count}"
       }
     },
     "title": "Mulțumiri"
@@ -3307,14 +3313,26 @@
         "amountMax": "Sumă maximă",
         "amountMin": "Sumă minimă",
         "amountRange": "Interval de sumă",
+        "anyValue": "orice",
         "button": "Filtre",
         "categories": "Categorii",
         "category": "Categorie",
         "clear": "Șterge tot",
+        "currency": "Monedă",
+        "currencyAny": "orice",
         "dateFrom": "De la data",
+        "datePresets": {
+          "30d": "30z",
+          "90d": "90z",
+          "all": "Tot timpul",
+          "custom": "Personalizat",
+          "ytd": "An curent"
+        },
         "dateRange": "Interval de date",
         "dateTo": "Până la data",
+        "defaultValue": "implicit",
         "paymentTypes": "Tipuri de plată",
+        "showResults": "Afișează {count, plural, one {# rezultat} other {# rezultate}}",
         "sortBy": "Sortare după",
         "sortOptions": {
           "amountHighToLow": "Sumă (descrescător)",
@@ -3322,11 +3340,25 @@
           "dateNewest": "Dată (cele mai recente)",
           "dateOldest": "Dată (cele mai vechi)",
           "nameAZ": "Nume (A-Z)",
-          "nameZA": "Nume (Z-A)",
-          "none": "Fără sortare (ordine implicită)"
+          "nameZA": "Nume (Z-A)"
         },
         "timeOfDay": "Momentul zilei",
-        "title": "Filtre"
+        "title": "Filtre",
+        "amountPresets": {
+          "0to50": "0-50",
+          "100to500": "100-500",
+          "500plus": "500+",
+          "50to100": "50-100"
+        },
+        "dynamicHint": "Aceste opțiuni sunt populate din facturile tale — apar doar valorile prezente în datele tale.",
+        "paymentTypeLabels": {
+          "card": "Card",
+          "cash": "Numerar",
+          "mobile": "Mobil",
+          "other": "Altul",
+          "transfer": "Transfer",
+          "voucher": "Tichet"
+        }
       },
       "placeholderPanel": "Vor fi adăugate în curând mai multe controale de filtrare.",
       "searchPlaceholder": "Caută facturi...",

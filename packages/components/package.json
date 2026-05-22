@@ -102,9 +102,9 @@
   "peerDependencies": {
     "@base-ui/react": "^1",
     "motion": "^12",
-    "react": "^18.2 || ^19",
     "react-dom": "^18.2 || ^19",
     "react-hook-form": "^7",
+    "react": "^18.2 || ^19",
     "recharts": "^3.8"
   },
   "devDependencies": {
@@ -117,18 +117,18 @@
     "@storybook/addon-links": "*",
     "@storybook/addon-themes": "*",
     "@types/node": "*",
-    "@types/react": "*",
     "@types/react-dom": "*",
+    "@types/react": "*",
     "motion": "*",
     "playwright": "*",
     "postcss": "*",
-    "react": "*",
     "react-dom": "*",
     "react-hook-form": "*",
+    "react": "*",
     "recharts": "*",
-    "storybook": "*",
     "storybook-addon-rslib": "*",
     "storybook-react-rsbuild": "*",
+    "storybook": "*",
     "typescript": "*"
   },
   "publishConfig": {

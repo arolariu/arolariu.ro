@@ -59,10 +59,10 @@
 .summaryIconBox {
   border-radius: radius('lg');
   padding: space(2);
-  @include gradient-bg();
+  background-color: color-alpha('secondary', 0.15);
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3);
+    background-color: color-alpha('secondary', 0.25);
   }
 }
 
@@ -209,7 +209,7 @@
 
 .inputGreen {
   border-color: color('success');
-  
+
   &:focus-visible {
     outline: 2px solid color('success');
     outline-offset: 2px;

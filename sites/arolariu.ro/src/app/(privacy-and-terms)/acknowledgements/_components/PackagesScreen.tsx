@@ -47,20 +47,6 @@ type SortField = Readonly<"name" | "dependencies" | "type">;
 type PackageType = Readonly<"all" | "production" | "development">;
 
 /**
- * Component that displays a badge indicating the type of package (production or development).
- * @returns A badge indicating the type of package.
- */
-function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.packagesScreen.badge");
-
-  return type === "production" ? (
-    <span className={styles["productionBadge"]}>{t("production")}</span>
-  ) : (
-    <span className={styles["developmentBadge"]}>{t("development")}</span>
-  );
-}
-
-/**
  * Component that displays a dialog with the dependencies of a package.
  * @returns A dialog with the dependencies of a package.
  */
@@ -241,25 +227,27 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                     animate={{opacity: 1, y: 0}}
                     transition={{duration: 0.3, delay: index * 0.1}}>
                     <Card className={styles["packageCard"]}>
+                      <div className={extractPackageType(pkg) === "production" ? styles["productionBanner"] : styles["developmentBanner"]}>
+                        {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
+                      </div>
                       <CardHeader>
                         <div className={styles["cardHeaderRow"]}>
                           <CardTitle className={styles["cardTitle"]}>{pkg.name}</CardTitle>
                           <span className={styles["versionBadge"]}>{pkg.version}</span>
                         </div>
-                        <div className={styles["badgeContainer"]}>
-                          <PackageBadge type={extractPackageType(pkg)} />
-                        </div>
                         <CardDescription>{pkg.description}</CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className={styles["cardContent"]}>
                         <div className={styles["cardDetails"]}>
-                          <div className={styles["detailRow"]}>
-                            <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
-                          </div>
-                          <div className={styles["detailRow"]}>
-                            <span className={styles["detailLabel"]}>
-                              {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
-                            </span>
+                          <div className={styles["detailsContent"]}>
+                            <div className={styles["detailRow"]}>
+                              <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
+                            </div>
+                            <div className={styles["detailRow"]}>
+                              <span className={styles["detailLabel"]}>
+                                {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
+                              </span>
+                            </div>
                           </div>
                           <div className={styles["cardActions"]}>
                             <a
@@ -312,7 +300,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         <TableCell className={styles["packageName"]}>{pkg.name}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>{pkg.version}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>
-                          <PackageBadge type={extractPackageType(pkg)} />
+                          {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
                         </TableCell>
                         <TableCell className={styles["hiddenLg"]}>
                           <p className={styles["descriptionText"]}>{pkg.description}</p>

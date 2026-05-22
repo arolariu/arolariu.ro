@@ -81,20 +81,16 @@
 .iconWrapper {
   padding: space(3);
   border-radius: radius('full');
-}
-
-.gradientCyanBlue {
-  @include gradient-bg();
-}
-
-.gradientOrangeRed {
-  @include gradient-bg();
+  background-color: color-alpha('secondary', 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon {
   height: 1.5rem;
   width: 1.5rem;
-  color: white;
+  color: color('secondary-foreground');
 }
 
 .licenseInfo {
@@ -129,6 +125,18 @@
 }
 
 .progressFillOrange {
+  height: 100%;
+  border-radius: radius('full');
+  @include gradient-bg();
+}
+
+.progressFillGpl {
+  height: 100%;
+  border-radius: radius('full');
+  @include gradient-bg();
+}
+
+.progressFillOther {
   height: 100%;
   border-radius: radius('full');
   @include gradient-bg();

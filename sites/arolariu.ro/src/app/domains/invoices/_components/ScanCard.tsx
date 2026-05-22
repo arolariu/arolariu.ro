@@ -35,7 +35,6 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import Image from "next/image";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {
   TbCheck,
@@ -72,22 +71,6 @@ function formatFileSize(bytes: number): string {
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
   const t = useTranslations("IMS--ViewScans.scanCard");
-
-  // Guard against incomplete scan data
-  if (!scan.blobUrl && !scan.name) {
-    return (
-      <Card className={styles["card"]}>
-        <CardContent className={styles["cardContentFlush"]}>
-          <div className={styles["previewArea"]}>
-            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
-          </div>
-          <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t("loading")}</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -139,21 +122,29 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     setNewName(scan.name);
   }, [scan.name]);
 
-  const handleSaveRename = useCallback((): void => {
-    const trimmedName = newName.trim();
-    if (trimmedName && trimmedName !== scan.name) {
-      updateScanName(scan.id, trimmedName);
-      toast.success(t("rename"));
-      setJustRenamed(true);
-      setTimeout(() => setJustRenamed(false), 300);
-    }
-    setIsRenaming(false);
-  }, [newName, scan.id, scan.name, updateScanName, t]);
+  const handleSaveRename = useCallback(
+    (event?: React.SyntheticEvent): void => {
+      event?.preventDefault();
+      const trimmedName = newName.trim();
+      if (trimmedName && trimmedName !== scan.name) {
+        updateScanName(scan.id, trimmedName);
+        toast.success(t("rename"));
+        setJustRenamed(true);
+        setTimeout(() => setJustRenamed(false), 300);
+      }
+      setIsRenaming(false);
+    },
+    [newName, scan.id, scan.name, updateScanName, t],
+  );
 
-  const handleCancelRename = useCallback((): void => {
-    setIsRenaming(false);
-    setNewName(scan.name);
-  }, [scan.name]);
+  const handleCancelRename = useCallback(
+    (event?: React.SyntheticEvent): void => {
+      event?.preventDefault();
+      setIsRenaming(false);
+      setNewName(scan.name);
+    },
+    [scan.name],
+  );
 
   const handleRenameKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -261,6 +252,22 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
+  // Guard against incomplete scan data
+  if (!scan.blobUrl && !scan.name) {
+    return (
+      <Card className={styles["card"]}>
+        <CardContent className={styles["cardContentFlush"]}>
+          <div className={styles["previewArea"]}>
+            <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
+          </div>
+          <div className={styles["fileInfo"]}>
+            <div className={styles["fileName"]}>{t("loading")}</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
@@ -283,14 +290,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               </div>
             ) : (
               <>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> chosen over next/image; see spec 2026-05-21-view-scans-deferred-mount-design.md */}
+                <img
                   src={scan.blobUrl}
                   alt={scan.name}
-                  fill
                   className={styles["imagePreview"]}
                   loading='lazy'
-                  sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-                  unoptimized
+                  decoding='async'
                 />
                 {/* Preview overlay icon for images - use zoom icon */}
                 <div className={styles["previewOverlay"]}>
@@ -403,14 +409,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   <Button
                     size='sm'
                     variant='ghost'
-                    onClick={handleSaveRename}
+                    onMouseDown={handleSaveRename}
                     className={styles["renameSaveButton"]}>
                     <TbCheck className={styles["renameIcon"]} />
                   </Button>
                   <Button
                     size='sm'
                     variant='ghost'
-                    onClick={handleCancelRename}
+                    onMouseDown={handleCancelRename}
                     className={styles["renameCancelButton"]}>
                     <TbX className={styles["renameIcon"]} />
                   </Button>
@@ -462,12 +468,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
           ) : (
             <div className={styles["previewImageContainer"]}>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> chosen over next/image; see spec 2026-05-21-view-scans-deferred-mount-design.md */}
+              <img
                 src={scan.blobUrl}
                 alt={scan.name}
-                fill
                 className={styles["previewImage"]}
-                unoptimized
+                decoding='async'
               />
             </div>
           )}
