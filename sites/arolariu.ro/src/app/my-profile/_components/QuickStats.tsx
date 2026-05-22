@@ -1,9 +1,12 @@
 "use client";
 
+import {useInvoicesStore} from "@/stores/invoicesStore";
+import {useMerchantsStore} from "@/stores/merchantsStore";
+import {useScansStore} from "@/stores/scansStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {TbBrain, TbBuilding, TbCloud, TbFileInvoice, TbReceipt, TbScan} from "react-icons/tb";
+import {TbBuilding, TbCloud, TbFileInvoice, TbScan} from "react-icons/tb";
 import {formatStorageSize} from "../_utils/helpers";
 import type {UserStatistics} from "../_utils/types";
 import styles from "./QuickStats.module.scss";
@@ -13,23 +16,31 @@ type Props = Readonly<{
 }>;
 
 const STAT_CARDS = [
-  {key: "invoices", icon: TbFileInvoice, field: "totalInvoices"},
-  {key: "merchants", icon: TbBuilding, field: "totalMerchants"},
-  {key: "scans", icon: TbScan, field: "totalScans"},
-  {key: "saved", icon: TbReceipt, field: "totalSaved", prefix: "$", decimals: 2},
-  {key: "monthly", icon: TbReceipt, field: "monthlyAverage", prefix: "$", decimals: 2},
-  {key: "aiQueries", icon: TbBrain, field: "aiQueriesUsed"},
+  {key: "invoices", icon: TbFileInvoice},
+  {key: "merchants", icon: TbBuilding},
+  {key: "scans", icon: TbScan},
 ] as const;
 
 export function QuickStats({statistics}: Props): React.JSX.Element {
   const t = useTranslations("Profile.stats");
 
+  const invoicesCount = useInvoicesStore((state) => state.entities.length);
+  const merchantsCount = useMerchantsStore((state) => state.entities.length);
+  const scansCount = useScansStore((state) => state.scans.length);
+
   const storagePercentage = (statistics.storageUsed / statistics.storageLimit) * 100;
 
-  const formatValue = (card: (typeof STAT_CARDS)[number]): string => {
-    const value = statistics[card.field as keyof UserStatistics] as number;
-    const formatted = "decimals" in card ? value.toFixed(card.decimals) : value.toString();
-    return "prefix" in card ? `${card.prefix}${formatted}` : formatted;
+  const getStatValue = (key: string): number => {
+    switch (key) {
+      case "invoices":
+        return invoicesCount;
+      case "merchants":
+        return merchantsCount;
+      case "scans":
+        return scansCount;
+      default:
+        return 0;
+    }
   };
 
   return (
@@ -52,7 +63,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
                 <card.icon className={styles["cardIcon"]} />
               </CardHeader>
               <CardContent>
-                <div className={styles["statValue"]}>{formatValue(card)}</div>
+                <div className={styles["statValue"]}>{getStatValue(card.key)}</div>
                 <p className={styles["statDescription"]}>{t(`${card.key}.description`)}</p>
               </CardContent>
             </Card>
