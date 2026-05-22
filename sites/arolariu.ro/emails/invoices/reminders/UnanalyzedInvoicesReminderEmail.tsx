@@ -23,15 +23,7 @@
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
-
-// Module-level render function for t.rich()
-const renderSupportLink = (chunks: React.ReactNode): React.JSX.Element => (
-  <Link
-    href={`mailto:${BRAND.supportEmail}`}
-    style={EmailLinkStyles}>
-    {chunks}
-  </Link>
-);
+import {renderSupportLink} from "../../_lib/intlRenderers";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.
