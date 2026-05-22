@@ -225,14 +225,14 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
 
   try {
     opts.worker.postMessage(bootstrap, [rpc.transferable, event.transferable]);
-  } catch (err) {
-    ejectBoot(err);
+  } catch (error) {
+    ejectBoot(error);
     if (bootTimeoutId !== null) {
       clearTimeout(bootTimeoutId);
       bootTimeoutId = null;
     }
     closePorts();
-    throw err;
+    throw error;
   }
 
   return {

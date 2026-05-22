@@ -57,7 +57,6 @@ function mapDifficultyToComplexity(difficulty: string): RecipeComplexity {
       return RecipeComplexity.Easy;
     case "Hard":
       return RecipeComplexity.Hard;
-    case "Normal":
     default:
       return RecipeComplexity.Normal;
   }
@@ -567,7 +566,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
                 setRecipeDetails((prev) => ({
                   ...prev,
-                  complexity: complexity,
+                  complexity,
                 }));
               }}>
               <SelectTrigger>

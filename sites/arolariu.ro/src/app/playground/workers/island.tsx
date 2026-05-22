@@ -100,7 +100,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     [],
   );
   const host = useWorker(factory);
-  const state = host.state;
+  const {state} = host;
 
   useWorkerEvent(host, (e) => {
     setLogs((prev) => {
@@ -120,8 +120,8 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     try {
       const result = await fn();
       setCallState({status: "success", method, result});
-    } catch (err) {
-      setCallState({status: "error", method, error: asError(err)});
+    } catch (error) {
+      setCallState({status: "error", method, error: asError(error)});
     }
   };
 
@@ -169,8 +169,8 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     try {
       await transient.api.sleep(5_000);
       setCallState({status: "success", method: "timeoutSlow", result: "no timeout (unexpected)"});
-    } catch (err) {
-      setCallState({status: "error", method: "timeoutSlow", error: asError(err)});
+    } catch (error) {
+      setCallState({status: "error", method: "timeoutSlow", error: asError(error)});
     } finally {
       void transient.dispose();
     }

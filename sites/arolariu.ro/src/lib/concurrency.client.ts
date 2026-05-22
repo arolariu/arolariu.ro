@@ -71,13 +71,13 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
 
-      if (!task) continue;
-
-      try {
-        results[taskIndex] = await task();
-      } catch (error) {
-        hasFailed = true;
-        throw error;
+      if (task) {
+        try {
+          results[taskIndex] = await task();
+        } catch (error) {
+          hasFailed = true;
+          throw error;
+        }
       }
     }
   };
@@ -140,20 +140,20 @@ export async function withConcurrencyLimitAndProgress<T>(
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
 
-      if (!task) continue;
-
-      try {
-        const result = await task();
-        results[taskIndex] = result;
-        completedCount++;
-        onTaskComplete?.(result, taskIndex);
-        onProgress?.(completedCount, tasks.length);
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        results[taskIndex] = err;
-        completedCount++;
-        onTaskComplete?.(err, taskIndex);
-        onProgress?.(completedCount, tasks.length);
+      if (task) {
+        try {
+          const result = await task();
+          results[taskIndex] = result;
+          completedCount++;
+          onTaskComplete?.(result, taskIndex);
+          onProgress?.(completedCount, tasks.length);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          results[taskIndex] = err;
+          completedCount++;
+          onTaskComplete?.(err, taskIndex);
+          onProgress?.(completedCount, tasks.length);
+        }
       }
     }
   };

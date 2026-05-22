@@ -35,7 +35,7 @@ export default function Stepper(): React.JSX.Element {
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
   const handleStepClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const eventId = e.currentTarget.dataset["eventId"];
+    const {eventId} = e.currentTarget.dataset;
     if (eventId) setExpandedEvent((prev) => (prev === eventId ? null : eventId));
   }, []);
 

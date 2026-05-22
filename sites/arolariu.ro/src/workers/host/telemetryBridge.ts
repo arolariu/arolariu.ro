@@ -101,7 +101,6 @@ export function createTelemetryBridge(name: string, options: CreateTelemetryBrid
           // from an out-of-date worker bundle.
           const exhaustive: never = event;
           logger.warn(`[worker:${name}] Unknown WorkerEvent kind`, {event: exhaustive});
-          return;
         }
       }
     },

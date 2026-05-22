@@ -141,6 +141,10 @@ export function ShareCollaborateCard(): React.JSX.Element {
         return TbWorld;
       case "shared":
         return TbUsers;
+      default: {
+        const _exhaustive: never = sharingStatus;
+        throw new Error(`Unhandled sharingStatus: ${String(_exhaustive)}`);
+      }
     }
   }, [sharingStatus]);
 
@@ -160,6 +164,10 @@ export function ShareCollaborateCard(): React.JSX.Element {
         return "destructive";
       case "shared":
         return "secondary";
+      default: {
+        const _exhaustive: never = sharingStatus;
+        throw new Error(`Unhandled sharingStatus: ${String(_exhaustive)}`);
+      }
     }
   }, [sharingStatus]);
 
@@ -187,9 +195,10 @@ export function ShareCollaborateCard(): React.JSX.Element {
           if (result.success) {
             setInvoice(result.invoice);
             toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
-          } else {
-            toast.error(t("toggleError"));
+            return;
           }
+          toast.error(t("toggleError"));
+          return;
         })
         .catch((error) => {
           console.error("Failed to toggle public status:", error);

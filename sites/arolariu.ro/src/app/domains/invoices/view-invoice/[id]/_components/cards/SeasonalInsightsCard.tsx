@@ -41,13 +41,16 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
 
   for (const inv of invoices) {
     for (const item of inv.items) {
-      if (item.metadata.isSoftDeleted) continue;
-      const category = item.category;
-      if (!historicalAvg[category]) {
-        historicalAvg[category] = {total: 0, count: 0};
+      if (item.metadata.isSoftDeleted) {
+        // Skip soft-deleted items
+      } else {
+        const {category} = item;
+        if (!historicalAvg[category]) {
+          historicalAvg[category] = {total: 0, count: 0};
+        }
+        historicalAvg[category].total += item.totalPrice ?? 0;
+        historicalAvg[category].count += 1;
       }
-      historicalAvg[category].total += item.totalPrice ?? 0;
-      historicalAvg[category].count += 1;
     }
   }
   return historicalAvg;

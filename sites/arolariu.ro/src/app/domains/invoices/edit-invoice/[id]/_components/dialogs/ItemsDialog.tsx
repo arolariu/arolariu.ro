@@ -77,7 +77,7 @@ export default function ItemsDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__ITEMS");
 
   const invoice = payload;
-  const items = invoice.items;
+  const {items} = invoice;
 
   const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({

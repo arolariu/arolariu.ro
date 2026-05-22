@@ -26,8 +26,7 @@
 
 import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
-import type {Invoice} from "@/types/invoices";
-import {MerchantCategory} from "@/types/invoices";
+import {MerchantCategory, type Invoice} from "@/types/invoices";
 import {
   Area,
   AreaChart,
@@ -165,7 +164,7 @@ export function MerchantInfoCard(): React.JSX.Element {
       .map((inv: Invoice) => toSafeDate(inv.paymentInformation.transactionDate))
       .toSorted((a, b) => b.getTime() - a.getTime());
 
-    const lastVisitDate = sortedDates[0];
+    const [lastVisitDate] = sortedDates;
     const daysAgo = lastVisitDate ? Math.floor((Date.now() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     return {count, avgSpend, daysAgo};
@@ -180,7 +179,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     const categoryCounts = new Map<MerchantCategory, number>();
     merchantInvoices.forEach(() => {
-      const category = merchant.category;
+      const {category} = merchant;
       const currentCount = categoryCounts.get(category) ?? 0;
       categoryCounts.set(category, currentCount + 1);
     });

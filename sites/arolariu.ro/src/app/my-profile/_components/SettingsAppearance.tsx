@@ -183,7 +183,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
 
   const handleLocaleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      const locale = e.currentTarget.dataset["locale"];
+      const {locale} = e.currentTarget.dataset;
       if (locale) handleLocaleChange(locale);
     },
     [handleLocaleChange],

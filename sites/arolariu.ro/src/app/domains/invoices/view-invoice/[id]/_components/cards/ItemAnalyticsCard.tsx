@@ -193,6 +193,10 @@ export function ItemAnalyticsCard(): React.JSX.Element {
         case "quantity":
           comparison = a.quantity - b.quantity;
           break;
+        default: {
+          const _exhaustive: never = sortField;
+          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+        }
       }
 
       return sortDirection === "asc" ? comparison : -comparison;

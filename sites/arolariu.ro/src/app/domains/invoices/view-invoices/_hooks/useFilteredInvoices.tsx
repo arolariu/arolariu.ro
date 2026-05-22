@@ -111,8 +111,7 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     // Apply sorting (only if both sortBy and sortOrder are set)
     const sorted = [...filtered];
     if (filters.sortBy !== null && filters.sortOrder !== null) {
-      const sortField = filters.sortBy; // "date" | "amount" | "name"
-      const sortOrder = filters.sortOrder; // "asc" | "desc"
+      const {sortBy: sortField, sortOrder} = filters;
       const direction = sortOrder === "asc" ? 1 : -1;
 
       switch (sortField) {
@@ -137,6 +136,10 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
         case "name": {
           sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
           break;
+        }
+        default: {
+          const _exhaustive: never = sortField;
+          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
         }
       }
     }

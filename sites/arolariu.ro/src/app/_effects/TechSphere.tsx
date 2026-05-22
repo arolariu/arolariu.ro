@@ -135,7 +135,7 @@ export default function TechSphere(): React.JSX.Element {
 
     const intersectionObserver = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
+        const [entry] = entries;
         if (!entry) return;
         isInView = entry.isIntersecting;
         if (isInView) {

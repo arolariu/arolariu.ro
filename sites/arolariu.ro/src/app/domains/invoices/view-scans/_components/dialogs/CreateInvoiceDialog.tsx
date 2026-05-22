@@ -208,7 +208,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
       if (result.errors.length > 0 && result.invoices.length > 0) {
         // Show partial failure toast with first error details
-        const firstError = result.errors[0];
+        const [firstError] = result.errors;
         const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
         const partialFailMessage = t("errors.partialFail", {count: String(result.errors.length)});
         toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
@@ -238,11 +238,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (shouldOpen) open();
-      else {
+      else if (step !== "creating") {
         // Prevent closing during creation to avoid interrupting API call
-        if (step !== "creating") {
-          handleClose();
-        }
+        handleClose();
       }
     },
     [open, handleClose, step],

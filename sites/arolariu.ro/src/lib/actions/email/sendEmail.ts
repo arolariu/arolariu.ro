@@ -128,8 +128,8 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
     });
 
     return {success: true};
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
     return {success: false, error: msg};
   }
 }

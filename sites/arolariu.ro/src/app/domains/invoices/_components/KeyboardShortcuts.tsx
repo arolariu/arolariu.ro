@@ -48,7 +48,7 @@ type ShortcutDef = {
 function shouldBlockShortcuts(element: Element | null): boolean {
   if (!element) return false;
 
-  const tagName = element.tagName;
+  const {tagName} = element;
   const isInput = tagName === "INPUT" || tagName === "TEXTAREA";
   const isContentEditable = element instanceof HTMLElement && element.isContentEditable;
 

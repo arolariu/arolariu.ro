@@ -82,7 +82,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
     useCreateInvoiceContext();
 
   // Get first selected scan for preview
-  const firstScan = selectedScans[0];
+  const [firstScan] = selectedScans;
 
   return (
     <div className={styles["container"]}>

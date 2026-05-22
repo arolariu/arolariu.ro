@@ -213,16 +213,16 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.delete("to");
       }
 
-      if (merged.amountMin !== null) {
-        params.set("min", String(merged.amountMin));
-      } else {
+      if (merged.amountMin === null) {
         params.delete("min");
+      } else {
+        params.set("min", String(merged.amountMin));
       }
 
-      if (merged.amountMax !== null) {
-        params.set("max", String(merged.amountMax));
-      } else {
+      if (merged.amountMax === null) {
         params.delete("max");
+      } else {
+        params.set("max", String(merged.amountMax));
       }
 
       if (merged.categories.length > 0) {
@@ -253,10 +253,10 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
         params.delete("sortOrder");
       }
 
-      if (merged.view !== "table") {
-        params.set("view", merged.view);
-      } else {
+      if (merged.view === "table") {
         params.delete("view");
+      } else {
+        params.set("view", merged.view);
       }
 
       // Replace URL without adding to history or scrolling

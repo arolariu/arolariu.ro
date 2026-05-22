@@ -53,12 +53,18 @@ export type EmailTranslator = ((key: string, vars?: Readonly<Record<string, stri
 /** Loads the full message bundle for a locale. */
 export async function loadMessages(locale: EmailLocale = DEFAULT_LOCALE): Promise<EmailMessages> {
   switch (locale) {
-    case "ro":
-      return (await import("../../messages/ro.json")).default as EmailMessages;
-    case "fr":
-      return (await import("../../messages/fr.json")).default as EmailMessages;
-    default:
-      return (await import("../../messages/en.json")).default as EmailMessages;
+    case "ro": {
+      const roModule = await import("../../messages/ro.json");
+      return roModule.default as EmailMessages;
+    }
+    case "fr": {
+      const frModule = await import("../../messages/fr.json");
+      return frModule.default as EmailMessages;
+    }
+    default: {
+      const enModule = await import("../../messages/en.json");
+      return enModule.default as EmailMessages;
+    }
   }
 }
 

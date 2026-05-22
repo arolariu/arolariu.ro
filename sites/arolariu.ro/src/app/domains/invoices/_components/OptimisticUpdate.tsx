@@ -71,9 +71,9 @@ export function useOptimisticUpdate<T>(initialData: T): OptimisticState<T> {
         const result = await serverAction();
         committedRef.current = result; // Update committed state
         setData(result); // Server truth
-      } catch (err) {
+      } catch (error) {
         setData(previousData); // Rollback to last committed
-        setError(err instanceof Error ? err.message : "Update failed");
+        setError(error instanceof Error ? error.message : "Update failed");
       } finally {
         setIsPending(false);
       }

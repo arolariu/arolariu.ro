@@ -250,7 +250,7 @@ Items: ${invoice.items.length}
       ).toBlob();
 
       // Create filename with invoice name and date
-      const transactionDate = new Date(invoice.paymentInformation.transactionDate).toISOString().split("T")[0]; // YYYY-MM-DD
+      const [transactionDate] = new Date(invoice.paymentInformation.transactionDate).toISOString().split("T"); // YYYY-MM-DD
       const safeName = invoice.name.replaceAll(/[^a-z0-9]/gu, "-").toLowerCase(); // Sanitize name
       const filename = `invoice-${safeName}-${transactionDate}.pdf`;
 
