@@ -490,11 +490,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           </DialogHeader>
           {scan.mimeType === "application/pdf" ? (
             <div className={styles["pdfPreviewContainer"]}>
+              {/* eslint-disable-next-line react/iframe-missing-sandbox -- browser-native PDF viewers don't render reliably inside a sandboxed iframe; tradeoff documented per PR #789 review */}
               <iframe
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}
                 title={scan.name}
-                sandbox='allow-scripts allow-same-origin'
               />
             </div>
           ) : (

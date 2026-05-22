@@ -30,7 +30,7 @@ import styles from "./InvoicePreferences.module.scss";
 /**
  * Invoice display and behavior preferences.
  */
-export interface InvoicePreferencesType {
+export type InvoicePreferencesType = {
   /** Default view mode for invoice lists */
   defaultViewMode: "table" | "grid";
   /** Default sort field for invoice lists */
@@ -41,7 +41,7 @@ export interface InvoicePreferencesType {
   showStatisticsOnHome: boolean;
   /** Preferred display currency */
   currency: string;
-}
+};
 
 /**
  * Default invoice preferences.
