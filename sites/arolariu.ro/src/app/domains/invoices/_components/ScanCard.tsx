@@ -177,8 +177,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
         const img = new globalThis.Image();
         await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Failed to load image"));
+          img.addEventListener("load", () => resolve(), {once: true});
+          img.addEventListener("error", () => reject(new Error("Failed to load image")), {once: true});
           img.src = objectUrl;
         });
 
@@ -212,11 +212,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         // 4. Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => {
+          reader.addEventListener("loadend", () => {
             const result = reader.result as string;
             resolve(result.split(",")[1]!);
-          };
-          reader.onerror = () => reject(new Error("Failed to read blob"));
+          }, {once: true});
+          reader.addEventListener("error", () => reject(new Error("Failed to read blob")), {once: true});
           reader.readAsDataURL(blob);
         });
 

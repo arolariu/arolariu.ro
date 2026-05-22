@@ -222,7 +222,7 @@ export function getTransactionYear(transactionDate: Date | string | undefined | 
  * ```
  */
 export function getSupportedCurrencies(): ReadonlyArray<string> {
-  return [...availableCurrencies].sort();
+  return [...availableCurrencies].toSorted((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -231,7 +231,7 @@ export function getSupportedCurrencies(): ReadonlyArray<string> {
  * @returns Sorted array of years
  */
 export function getAvailableYears(): ReadonlyArray<number> {
-  return [...availableYears].sort((a, b) => a - b);
+  return [...availableYears].toSorted((a, b) => a - b);
 }
 
 /**

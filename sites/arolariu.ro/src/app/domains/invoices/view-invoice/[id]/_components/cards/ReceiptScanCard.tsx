@@ -111,9 +111,9 @@ export function ReceiptScanCard(): React.JSX.Element {
     const link = document.createElement("a");
     link.href = currentScanSrc;
     link.download = `receipt-scan-${currentScanIndex + 1}.jpg`;
-    document.body.appendChild(link);
+    document.body.append(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   }, [currentScanSrc, currentScanIndex]);
 
   // Mouse move handler for card view - updates transform origin based on cursor position

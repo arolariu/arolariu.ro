@@ -94,7 +94,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     () =>
       createWorkerHost<PlaygroundWorkerApi>({
         name: "playground",
-        load: () => new Worker(new URL("./playground.worker.ts", import.meta.url), {type: "module"}),
+        load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
         idleTimeoutMs: 60_000,
       }),
     [],
@@ -163,7 +163,7 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     setCallState({status: "pending", method: "timeoutSlow"});
     const transient = createWorkerHost<PlaygroundWorkerApi>({
       name: "playground-timeout",
-      load: () => new Worker(new URL("./playground.worker.ts", import.meta.url), {type: "module"}),
+      load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
       defaultCallTimeoutMs: 100,
     });
     try {

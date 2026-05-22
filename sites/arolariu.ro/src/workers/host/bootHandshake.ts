@@ -144,7 +144,7 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
       reject(new WorkerCrashError([]));
     }, opts.bootstrapTimeoutMs);
 
-    event.parent.onmessage = (e: MessageEvent): void => {
+    event.parent.addEventListener("message", (e: MessageEvent): void => {
       const ev = e.data as WorkerEvent;
       if (ev.kind === "ready") {
         if (bootTimeoutId !== null) {
@@ -152,18 +152,19 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
           bootTimeoutId = null;
         }
         // Swap to steady-state mode for the rest of the worker's lifetime.
-        event.parent.onmessage = (next: MessageEvent): void => {
+        event.parent.removeEventListener("message", arguments.callee as EventListener);
+        event.parent.addEventListener("message", (next: MessageEvent): void => {
           const nextEv = next.data as WorkerEvent;
           // Filter stray `ready` events that arrive after bootstrap.
           if (nextEv.kind === "ready") return;
           opts.onEvent(nextEv);
-        };
+        });
         resolve();
         return;
       }
       // Defensive parity: forward any non-ready event arriving before handshake.
       opts.onEvent(ev);
-    };
+    });
   }).finally(() => {
     rejectBoot = null;
   });

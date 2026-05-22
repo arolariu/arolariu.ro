@@ -49,7 +49,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
 
       return (...args: unknown[]): Promise<unknown> => {
         // 1) AbortSignal-as-last-arg detection (synchronous reject path).
-        const last = args[args.length - 1];
+        const last = args.at(-1);
         let signal: AbortSignal | undefined;
         let callArgs = args;
         if (last instanceof AbortSignal) {
@@ -78,7 +78,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           if (!target) throw new Error(`Worker host has no target after ensureReady()`);
           const fn = (target as Record<string, unknown>)[prop];
           if (typeof fn !== "function") {
-            throw new Error(`Worker host has no method "${prop}"`);
+            throw new TypeError(`Worker host has no method "${prop}"`);
           }
           deps.lifecycle.beginCall();
 

@@ -225,12 +225,12 @@ InvoiceStatisticsEmail.PreviewProps = {
   topMerchants: [
     {name: "Lidl", totalSpend: 412.5},
     {name: "Kaufland", totalSpend: 318.2},
-    {name: "Carrefour", totalSpend: 215.0},
+    {name: "Carrefour", totalSpend: 215},
   ],
   topCategories: [
-    {name: "Groceries", totalSpend: 720.0},
-    {name: "Dining", totalSpend: 280.0},
-    {name: "Transport", totalSpend: 150.0},
+    {name: "Groceries", totalSpend: 720},
+    {name: "Dining", totalSpend: 280},
+    {name: "Transport", totalSpend: 150},
   ],
   locale: "en",
 };

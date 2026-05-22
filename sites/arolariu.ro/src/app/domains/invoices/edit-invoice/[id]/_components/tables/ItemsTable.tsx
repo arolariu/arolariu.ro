@@ -252,8 +252,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       if (field === "name" || field === "quantityUnit") {
         item[field] = value;
       } else if (field === "price" || field === "quantity") {
-        const numValue = parseFloat(value);
-        if (!isNaN(numValue) && numValue >= 0) {
+        const numValue = Number.parseFloat(value);
+        if (!Number.isNaN(numValue) && numValue >= 0) {
           item[field] = numValue;
           // Recalculate totalPrice
           item.totalPrice = (item.price ?? 0) * (item.quantity ?? 0);
@@ -885,3 +885,4 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     </div>
   );
 }
+

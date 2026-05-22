@@ -49,7 +49,7 @@ function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRe
   const link = document.createElement("a");
   const defaultFilename = `invoices_${Date.now()}`;
   // Sanitize filename to prevent path traversal or invalid characters
-  let safeName = filename ? filename.replace(/[^a-zA-Z0-9._-]/g, "_") : defaultFilename;
+  let safeName = filename ? filename.replaceAll(/[^a-zA-Z0-9._-]/gu, "_") : defaultFilename;
   // Handle edge cases after sanitization
   safeName = safeName.trim();
   if (!safeName || safeName === "." || safeName === "..") {

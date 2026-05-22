@@ -121,7 +121,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='invoice-category'>{t("fields.category.label")}</Label>
               <Select
                 value={invoiceDetails.category.toString()}
-                onValueChange={(value) => setCategory(Number.parseInt(value) as InvoiceCategory)}>
+                onValueChange={(value) => setCategory(Number.parseInt(value, 10) as InvoiceCategory)}>
                 <SelectTrigger id='invoice-category'>
                   <SelectValue placeholder={t("fields.category.placeholder")} />
                 </SelectTrigger>
@@ -141,7 +141,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='payment-type'>{t("fields.paymentType.label")}</Label>
               <Select
                 value={invoiceDetails.paymentType.toString()}
-                onValueChange={(value) => setPaymentType(Number.parseInt(value) as PaymentType)}>
+                onValueChange={(value) => setPaymentType(Number.parseInt(value, 10) as PaymentType)}>
                 <SelectTrigger id='payment-type'>
                   <SelectValue placeholder={t("fields.paymentType.placeholder")} />
                 </SelectTrigger>

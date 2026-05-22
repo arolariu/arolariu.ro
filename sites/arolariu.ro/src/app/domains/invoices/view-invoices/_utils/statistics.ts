@@ -64,7 +64,7 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  * - Have a non-zero length
  */
 function isValidMerchantRef(ref: string | undefined | null): boolean {
-  return ref != null && ref !== EMPTY_GUID && ref.length > 0;
+  return ref !== null && ref !== undefined && ref !== EMPTY_GUID && ref.length > 0;
 }
 
 /**
@@ -1260,7 +1260,7 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
     // Calculate average visits per month
     const sortedDates = data.dates.toSorted((a, b) => a.getTime() - b.getTime());
     const [firstDate] = sortedDates;
-    const lastDate = sortedDates[sortedDates.length - 1];
+    const lastDate = sortedDates.at(-1);
 
     let monthsSpan = 1; // Default to 1 month minimum
 

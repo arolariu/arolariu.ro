@@ -145,7 +145,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     return Array.from(monthlyTotals.entries())
       .map(([month, amount]) => ({month, amount}))
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         const dateA = new Date(`${a.month} 01`);
         const dateB = new Date(`${b.month} 01`);
         return dateA.getTime() - dateB.getTime();
@@ -163,7 +163,7 @@ export function MerchantInfoCard(): React.JSX.Element {
 
     const sortedDates = merchantInvoices
       .map((inv: Invoice) => toSafeDate(inv.paymentInformation.transactionDate))
-      .sort((a, b) => b.getTime() - a.getTime());
+      .toSorted((a, b) => b.getTime() - a.getTime());
 
     const lastVisitDate = sortedDates[0];
     const daysAgo = lastVisitDate ? Math.floor((Date.now() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -194,7 +194,7 @@ export function MerchantInfoCard(): React.JSX.Element {
         percentage: (count / total) * 100,
       }))
       .filter((item) => item.count > 0)
-      .sort((a, b) => b.count - a.count);
+      .toSorted((a, b) => b.count - a.count);
   }, [merchantInvoices, merchant.category]);
 
   /**

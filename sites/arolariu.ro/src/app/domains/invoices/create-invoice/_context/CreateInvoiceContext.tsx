@@ -120,7 +120,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       if (selectedScans.length > 0 && !invoiceDetails.name) {
         const firstScan = selectedScans[0];
         if (firstScan) {
-          const firstName = firstScan.name.replace(/\.[^/.]+$/, "");
+          const firstName = firstScan.name.replaceAll(/\.[^/.]+$/gu, "");
           setInvoiceDetails((prev) => ({...prev, name: firstName}));
         }
       }

@@ -60,7 +60,7 @@
  * ```
  */
 export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<T[]> {
-  const results: T[] = new Array(tasks.length);
+  const results: T[] = Array.from({length: tasks.length});
   let currentIndex = 0;
   let hasFailed = false;
 
@@ -131,7 +131,7 @@ export async function withConcurrencyLimitAndProgress<T>(
   } = {},
 ): Promise<Array<T | Error>> {
   const {limit = 5, onProgress, onTaskComplete} = options;
-  const results: Array<T | Error> = new Array(tasks.length);
+  const results: Array<T | Error> = Array.from({length: tasks.length});
   let currentIndex = 0;
   let completedCount = 0;
 

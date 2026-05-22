@@ -162,7 +162,7 @@ export default function Stepper(): React.JSX.Element {
           className={styles["futureIndicator"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
-          transition={{duration: 0.5, delay: 1.0}}>
+          transition={{duration: 0.5, delay: 1}}>
           <motion.div
             className={styles["futureIconWrapper"]}
             animate={{
