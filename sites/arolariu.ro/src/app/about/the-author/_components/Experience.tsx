@@ -2,7 +2,7 @@
 
 import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
-import {AnimatePresence, motion} from "motion/react";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import React, {useCallback, useState} from "react";
 import {CgMicrosoft} from "react-icons/cg";
@@ -133,8 +133,6 @@ export default function Experience(): React.JSX.Element {
     },
   ] satisfies ExperienceType[];
 
-  const currentExperience = experiences.at(activeExpIndex)!;
-
   return (
     <section className={styles["section"]}>
       <div className={styles["container"]}>
@@ -187,95 +185,117 @@ export default function Experience(): React.JSX.Element {
 
           {/* Timeline Content */}
           <div className={styles["experienceCard"]}>
-            <AnimatePresence mode='wait'>
-              <motion.div
-                initial={{opacity: 0, x: 20}}
-                animate={{opacity: 1, x: 0}}
-                exit={{opacity: 0, x: -20}}
-                transition={{duration: 0.3}}
-                className={styles["card"]}>
-                <div className={styles["cardAccentTop"]} />
-
-                <div className={styles["cardHeader"]}>
-                  <div>
-                    <h3 className={styles["cardTitle"]}>{currentExperience.role}</h3>
-                    <div className={styles["cardCompany"]}>
-                      <span>{currentExperience.company}</span>
-                    </div>
-                    <div className={styles["cardLocation"]}>
-                      <TbMap className={styles["cardMetaIcon"]} />
-                      <span>{currentExperience.location}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles["logoWrapper"]}>
-                    <motion.div className={styles["logoInner"]}>{currentExperience.logo}</motion.div>
-                  </div>
-                </div>
-
-                <p className={styles["cardDescription"]}>{currentExperience.description}</p>
-
-                <div className={styles["cardSection"]}>
-                  <h4 className={styles["cardSectionTitle"]}>{t("responsibilitiesLabel")}</h4>
-                  <ul className={styles["list"]}>
-                    {currentExperience.responsibilities.map((responsability, i) => (
-                      <motion.li
-                        key={`${responsability.slice(0, 20)}`}
-                        className={styles["listItem"]}
-                        initial={{opacity: 0, x: -10}}
-                        animate={{opacity: 1, x: 0}}
-                        transition={{delay: i * 0.1, duration: 0.3}}>
-                        <TbChevronRight className={styles["listIcon"]} />
-                        <span>{responsability}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className={styles["cardSection"]}>
-                  <h4 className={styles["cardSectionTitle"]}>{t("achievementsLabel")}</h4>
-                  <ul className={styles["list"]}>
-                    {currentExperience.achievements.map((achievement, i) => (
-                      <motion.li
-                        key={`${achievement.slice(0, 20)}`}
-                        className={styles["listItem"]}
-                        initial={{opacity: 0, x: -10}}
-                        animate={{opacity: 1, x: 0}}
-                        transition={{delay: i * 0.1, duration: 0.3}}>
-                        <TbChevronRight className={styles["listIcon"]} />
-                        <span>{achievement}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className={styles["cardSectionTitle"]}>{t("techSkillsLabel")}</h4>
-                  <div className={styles["skills"]}>
-                    {currentExperience.skills.map((skill, i) => (
-                      <motion.div
-                        key={`${skill.slice(0, 20)}`}
-                        initial={{opacity: 0, scale: 0.8}}
-                        animate={{opacity: 1, scale: 1}}
-                        transition={{delay: i * 0.5, duration: 0.3}}>
-                        <Badge
-                          variant='secondary'
-                          className={styles["skillBadge"]}>
-                          {skill}
-                        </Badge>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
+            {experiences.map((experience, index) => {
+              const isActive = activeExpIndex === index;
+              const xOffset = index > activeExpIndex ? 20 : -20;
+              return (
                 <motion.div
-                  className={styles["cardAccentBottom"]}
-                  initial={{width: "0%"}}
-                  animate={{width: "100%"}}
-                  transition={{duration: 3, delay: 0.3}}
-                />
-              </motion.div>
-            </AnimatePresence>
+                  key={`${experience.company}-${experience.period}`}
+                  initial={{opacity: 0, x: 20}}
+                  animate={{
+                    opacity: isActive ? 1 : 0,
+                    x: isActive ? 0 : xOffset,
+                    pointerEvents: isActive ? "auto" : "none",
+                  }}
+                  transition={{duration: 0.3}}
+                  className={`${styles["card"]} ${isActive ? styles["cardActive"] : styles["cardInactive"]}`}
+                  style={{
+                    gridArea: "1 / 1 / 2 / 2",
+                    zIndex: isActive ? 1 : 0,
+                  }}>
+                  <div className={styles["cardAccentTop"]} />
+
+                  <div className={styles["cardHeader"]}>
+                    <div>
+                      <h3 className={styles["cardTitle"]}>{experience.role}</h3>
+                      <div className={styles["cardCompany"]}>
+                        <span>{experience.company}</span>
+                      </div>
+                      <div className={styles["cardLocation"]}>
+                        <TbMap className={styles["cardMetaIcon"]} />
+                        <span>{experience.location}</span>
+                      </div>
+                    </div>
+
+                    <div className={styles["logoWrapper"]}>
+                      <motion.div className={styles["logoInner"]}>{experience.logo}</motion.div>
+                    </div>
+                  </div>
+
+                  <p className={styles["cardDescription"]}>{experience.description}</p>
+
+                  {experience.responsibilities.length > 0 && (
+                    <div className={styles["cardSection"]}>
+                      <h4 className={styles["cardSectionTitle"]}>{t("responsibilitiesLabel")}</h4>
+                      <ul className={styles["list"]}>
+                        {experience.responsibilities.map((responsability, i) => (
+                          <li
+                            key={`${responsability.slice(0, 20)}`}
+                            className={styles["listItem"]}>
+                            <motion.div
+                              initial={{opacity: 0, x: -10}}
+                              animate={isActive ? {opacity: 1, x: 0} : {opacity: 0, x: -10}}
+                              transition={{delay: i * 0.05, duration: 0.3}}
+                              style={{display: "flex", alignItems: "flex-start"}}>
+                              <TbChevronRight className={styles["listIcon"]} />
+                              <span>{responsability}</span>
+                            </motion.div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {experience.achievements.length > 0 && (
+                    <div className={styles["cardSection"]}>
+                      <h4 className={styles["cardSectionTitle"]}>{t("achievementsLabel")}</h4>
+                      <ul className={styles["list"]}>
+                        {experience.achievements.map((achievement, i) => (
+                          <li
+                            key={`${achievement.slice(0, 20)}`}
+                            className={styles["listItem"]}>
+                            <motion.div
+                              initial={{opacity: 0, x: -10}}
+                              animate={isActive ? {opacity: 1, x: 0} : {opacity: 0, x: -10}}
+                              transition={{delay: i * 0.05, duration: 0.3}}
+                              style={{display: "flex", alignItems: "flex-start"}}>
+                              <TbChevronRight className={styles["listIcon"]} />
+                              <span>{achievement}</span>
+                            </motion.div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className={styles["cardSectionTitle"]}>{t("techSkillsLabel")}</h4>
+                    <div className={styles["skills"]}>
+                      {experience.skills.map((skill, i) => (
+                        <motion.div
+                          key={`${skill.slice(0, 20)}`}
+                          initial={{opacity: 0, scale: 0.8}}
+                          animate={isActive ? {opacity: 1, scale: 1} : {opacity: 0, scale: 0.8}}
+                          transition={{delay: i * 0.02, duration: 0.3}}>
+                          <Badge
+                            variant='secondary'
+                            className={styles["skillBadge"]}>
+                            {skill}
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <motion.div
+                    className={styles["cardAccentBottom"]}
+                    initial={{width: "0%"}}
+                    animate={isActive ? {width: "100%"} : {width: "0%"}}
+                    transition={{duration: 3, delay: 0.3}}
+                  />
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -189,14 +189,15 @@
 // Experience card
 .experienceCard {
   position: relative;
-  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
 }
 
 .card {
   position: relative;
   top: 0;
   left: 0;
-  height: 100%;
   width: 100%;
   overflow: hidden;
   border-radius: radius('xl');
@@ -204,6 +205,14 @@
   background-color: color('card');
   padding: space(6);
   @include shadow('lg');
+}
+
+.cardActive {
+  // Any extra active state styles
+}
+
+.cardInactive {
+  // Any extra inactive state styles
 }
 
 // Card accent bars
