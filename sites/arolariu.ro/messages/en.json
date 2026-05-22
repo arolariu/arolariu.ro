@@ -3337,6 +3337,7 @@
         "dateRange": "Date Range",
         "dateTo": "To date",
         "defaultValue": "default",
+        "dynamicHint": "These options are populated from your invoices — only values present in your data appear here.",
         "paymentTypes": "Payment Types",
         "showResults": "Show {count, plural, one {# result} other {# results}}",
         "sortBy": "Sort By",

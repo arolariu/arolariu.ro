@@ -3349,7 +3349,8 @@
           "100to500": "100-500",
           "500plus": "500+",
           "50to100": "50-100"
-        }
+        },
+        "dynamicHint": "Ces options sont remplies à partir de vos factures — seules les valeurs présentes dans vos données apparaissent ici."
       },
       "placeholderPanel": "D’autres filtres seront bientôt disponibles.",
       "searchPlaceholder": "Rechercher des factures...",

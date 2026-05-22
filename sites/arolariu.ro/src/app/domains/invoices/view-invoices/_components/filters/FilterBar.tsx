@@ -28,7 +28,7 @@ import {
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
+import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbInfoCircle, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../_utils/datePresets";
 import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
@@ -340,12 +340,31 @@ export default function FilterBar({
     return null;
   }, [isAmountActive, filters.amountMin, filters.amountMax]);
 
+  // Small (i) tooltip rendered next to the title of every dynamically-populated
+  // filter card (Currency, Categories, Payment Types) — explains that the chip
+  // set reflects the user's own data rather than a fixed taxonomy.
+  const dynamicHint = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            className={styles["dynamicHintIcon"]}
+            aria-label={t("filters.dynamicHint")}>
+            <TbInfoCircle aria-hidden='true' />
+          </span>
+        }
+      />
+      <TooltipContent>{t("filters.dynamicHint")}</TooltipContent>
+    </Tooltip>
+  );
+
   // ────────────────────────────────────────────────────────────
   // Panel body — card grid (single-column on mobile via SCSS)
   // ────────────────────────────────────────────────────────────
   // eslint-disable-next-line sonarjs/cognitive-complexity, complexity -- six conditionally-rendered card sections; extracting per-card sub-components would obscure the linear visual order without simplifying logic
   const renderFilterPanel = (): React.JSX.Element => (
-    <div className={styles["panelGrid"]}>
+    <TooltipProvider>
+      <div className={styles["panelGrid"]}>
       {/* ─────── Date Range ─────── */}
       <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
         <div className={styles["cardSectionHeader"]}>
@@ -464,7 +483,10 @@ export default function FilterBar({
       {availableCurrencies.length > 0 && (
         <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>💵 {t("filters.currency")}</span>
+            <span className={styles["cardSectionTitle"]}>
+              💵 {t("filters.currency")}
+              {dynamicHint}
+            </span>
             {isCurrencyActive ? (
               <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
             ) : (
@@ -490,7 +512,10 @@ export default function FilterBar({
       {availableCategories.length > 0 && (
         <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>📂 {t("filters.categories")}</span>
+            <span className={styles["cardSectionTitle"]}>
+              📂 {t("filters.categories")}
+              {dynamicHint}
+            </span>
             {isCategoryActive ? (
               <span className={styles["activeValuePill"]}>
                 {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
@@ -518,7 +543,10 @@ export default function FilterBar({
       {availablePaymentTypes.length > 0 && (
         <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>💳 {t("filters.paymentTypes")}</span>
+            <span className={styles["cardSectionTitle"]}>
+              💳 {t("filters.paymentTypes")}
+              {dynamicHint}
+            </span>
             {isPaymentActive ? (
               <span className={styles["activeValuePill"]}>
                 {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
@@ -568,7 +596,8 @@ export default function FilterBar({
           </SelectContent>
         </Select>
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 
   return (

@@ -422,6 +422,19 @@
   gap: space(1.5);
 }
 
+.dynamicHintIcon {
+  color: color('muted-foreground');
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  @include transition(color);
+
+  &:hover,
+  &:focus-visible {
+    color: color('foreground');
+  }
+}
+
 .activeValuePill {
   background-color: color-alpha('primary', 0.1);
   color: color('primary');

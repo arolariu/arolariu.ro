@@ -3349,7 +3349,8 @@
           "100to500": "100-500",
           "500plus": "500+",
           "50to100": "50-100"
-        }
+        },
+        "dynamicHint": "Aceste opțiuni sunt populate din facturile tale — apar doar valorile prezente în datele tale."
       },
       "placeholderPanel": "Vor fi adăugate în curând mai multe controale de filtrare.",
       "searchPlaceholder": "Caută facturi...",
