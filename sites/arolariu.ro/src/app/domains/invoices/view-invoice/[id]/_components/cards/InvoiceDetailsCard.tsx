@@ -191,9 +191,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <p className={styles["infoLabelPlain"]}>{t("labels.ronEquivalent")}</p>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger>
-                      <p className={styles["infoValue"]}>≈ {formatCurrency(ronEquivalent.amountInRon, {currencyCode: "RON", locale})}</p>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      className={styles["helpTrigger"]}
+                      render={
+                        <p className={styles["infoValueHelp"]}>
+                          ≈ {formatCurrency(ronEquivalent.amountInRon, {currencyCode: "RON", locale})}
+                        </p>
+                      }
+                    />
                     <TooltipContent>
                       <p>
                         {t("tooltips.exchangeRate", {

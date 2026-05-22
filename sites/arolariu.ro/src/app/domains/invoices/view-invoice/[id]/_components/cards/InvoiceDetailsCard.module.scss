@@ -39,6 +39,15 @@
   font-weight: font-weight('medium');
 }
 
+.helpTrigger {
+  cursor: help;
+}
+
+.infoValueHelp {
+  font-weight: font-weight('medium');
+  cursor: help;
+}
+
 .totalAmount {
   font-size: font-size('lg');
   font-weight: font-weight('semibold');
