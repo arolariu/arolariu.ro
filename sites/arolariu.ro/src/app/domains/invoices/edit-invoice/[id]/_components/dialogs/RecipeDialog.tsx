@@ -134,12 +134,32 @@ const CreateDialog = () => {
     }
   }, [recipe, invoice, t, close, router]);
 
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) close();
+    },
+    [close],
+  );
+
+  const handleGenerateName = useCallback(() => {
+    // Placeholder - future implementation
+  }, []);
+
+  const handleDifficultyChange = useCallback((value: string) => {
+    setRecipe((prev) => ({
+      ...prev,
+      complexity: mapDifficultyToComplexity(value),
+    }));
+  }, []);
+
+  const handleEnhanceInstructions = useCallback(() => {
+    // Placeholder - future implementation
+  }, []);
+
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
@@ -159,7 +179,7 @@ const CreateDialog = () => {
                           type='button'
                           variant='outline'
                           size='sm'
-                          onClick={() => {}}
+                          onClick={handleGenerateName}
                           className={styles["generateButton"]}>
                           <TbSparkles className={styles["sparklesIcon"]} />
                           {t("actions.generateName")}
@@ -237,12 +257,7 @@ const CreateDialog = () => {
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
               value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
-              onValueChange={(value) => {
-                setRecipe((prev) => ({
-                  ...prev,
-                  complexity: mapDifficultyToComplexity(value),
-                }));
-              }}>
+              onValueChange={handleDifficultyChange}>
               <SelectTrigger>
                 <SelectValue placeholder={t("placeholders.selectDifficulty")} />
               </SelectTrigger>
@@ -266,7 +281,7 @@ const CreateDialog = () => {
                         type='button'
                         variant='outline'
                         size='sm'
-                        onClick={() => {}}>
+                        onClick={handleEnhanceInstructions}>
                         <TbWand className={styles["addIcon"]} />
                         {t("actions.enhanceInstructions")}
                       </Button>
@@ -363,13 +378,17 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) close();
+    },
+    [close],
+  );
+
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
@@ -445,25 +464,42 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
 
-  const generateName = () => {};
-  const enhanceInstructions = () => {};
+  const generateName = useCallback(() => {
+    // Placeholder - future implementation
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const enhanceInstructions = useCallback(() => {
+    // Placeholder - future implementation
+  }, []);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
     console.log(name, value);
-  };
+  }, []);
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     close();
-  };
+  }, [close]);
+
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) close();
+    },
+    [close],
+  );
+
+  const handleDifficultyChange = useCallback((value: string) => {
+    const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
+    setRecipeDetails((prev) => ({
+      ...prev,
+      complexity,
+    }));
+  }, []);
 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
           <DialogTitle>{t("update.title")}</DialogTitle>
@@ -562,13 +598,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
               value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
-              onValueChange={(value) => {
-                const complexity = RecipeComplexity[value as keyof typeof RecipeComplexity];
-                setRecipeDetails((prev) => ({
-                  ...prev,
-                  complexity,
-                }));
-              }}>
+              onValueChange={handleDifficultyChange}>
               <SelectTrigger>
                 <SelectValue placeholder={t("placeholders.selectDifficulty")} />
               </SelectTrigger>
@@ -672,15 +702,21 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
 
-  const handleDelete = useCallback(() => {}, []);
+  const handleDelete = useCallback(() => {
+    // Placeholder - future implementation
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) close();
+    },
+    [close],
+  );
 
   return (
     <AlertDialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) close();
-      }}>
+      onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>

@@ -505,6 +505,54 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     return "";
   }, []);
 
+  // Factory for creating stable select row handlers
+  const createSelectRowHandler = useCallback(
+    (index: number) => () => handleSelectRow(index),
+    [handleSelectRow],
+  );
+
+  // Factory for creating stable cell click handlers
+  const createCellClickHandler = useCallback(
+    (index: number, field: "name" | "price" | "quantity") => () => handleCellClick(index, field),
+    [handleCellClick],
+  );
+
+  // Factory for creating stable action handlers
+  const createRestoreHandler = useCallback(
+    (index: number) => () => handleRestore(index),
+    [handleRestore],
+  );
+
+  const createEditAllergensHandler = useCallback(
+    (index: number) => () => handleEditAllergens(index),
+    [handleEditAllergens],
+  );
+
+  const createSoftDeleteHandler = useCallback(
+    (index: number) => () => handleSoftDelete(index),
+    [handleSoftDelete],
+  );
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  const handleShowDeleteDialog = useCallback(() => {
+    setShowDeleteDialog(true);
+  }, []);
+
+  const handleSortByName = useCallback(() => {
+    handleSort("name");
+  }, [handleSort]);
+
+  const handleSortByQuantity = useCallback(() => {
+    handleSort("quantity");
+  }, [handleSort]);
+
+  const handleSortByPrice = useCallback(() => {
+    handleSort("price");
+  }, [handleSort]);
+
   return (
     <div>
       <div className={styles["headerRow"]}>
@@ -540,7 +588,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             type='text'
             placeholder={t("search.placeholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className={styles["searchInput"]}
           />
         </div>
@@ -558,7 +606,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <Button
               variant='destructive'
               size='sm'
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={handleShowDeleteDialog}
               className={styles["deleteButton"]}>
               <TbTrash className={styles["deleteIcon"]} />
               {t("bulkToolbar.deleteSelected")}
@@ -582,19 +630,19 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               </TableHead>
               <TableHead
                 className={styles["tableHeaderSortable"]}
-                onClick={() => handleSort("name")}>
+                onClick={handleSortByName}>
                 {t("columns.name")}
                 {sortField === "name" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
-                onClick={() => handleSort("quantity")}>
+                onClick={handleSortByQuantity}>
                 {t("columns.quantity")}
                 {sortField === "quantity" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
-                onClick={() => handleSort("price")}>
+                onClick={handleSortByPrice}>
                 {t("columns.price")}
                 {sortField === "price" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
@@ -612,6 +660,15 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const hasAllergens = detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
 
+              // Create stable handlers for this specific row
+              const onSelectRow = createSelectRowHandler(index);
+              const onCellClickName = createCellClickHandler(index, "name");
+              const onCellClickQuantity = createCellClickHandler(index, "quantity");
+              const onCellClickPrice = createCellClickHandler(index, "price");
+              const onRestore = createRestoreHandler(index);
+              const onEditAllergens = createEditAllergensHandler(index);
+              const onSoftDelete = createSoftDeleteHandler(index);
+
               return (
                 <motion.tr
                   key={`${item.name}-${index}`}
@@ -625,7 +682,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     <Checkbox
                       nativeButton
                       checked={isSelected}
-                      onCheckedChange={() => handleSelectRow(index)}
+                      onCheckedChange={onSelectRow}
                       aria-label={t("columns.selectRow", {name: item.name})}
                       className={styles["selectCheckbox"]}
                       disabled={isSoftDeleted}
@@ -633,7 +690,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   </td>
                   <td
                     className={`${styles["tableCell"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "name")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickName : undefined}>
                     <div className={styles["cellWithIndicators"]}>
                       {isEditing && editingCell.field === "name" ? (
                         <Input
@@ -693,7 +750,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   </td>
                   <td
                     className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "quantity")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickQuantity : undefined}>
                     {isEditing && editingCell.field === "quantity" ? (
                       <Input
                         type='number'
@@ -711,7 +768,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   </td>
                   <td
                     className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "price")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickPrice : undefined}>
                     {isEditing && editingCell.field === "price" ? (
                       <Input
                         type='number'
@@ -741,7 +798,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                 <Button
                                   variant='ghost'
                                   size='sm'
-                                  onClick={() => handleRestore(index)}
+                                  onClick={onRestore}
                                   disabled={isSaving}
                                   className={styles["actionButton"]}>
                                   <TbRefresh className={styles["actionIcon"]} />
@@ -762,7 +819,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                   <Button
                                     variant='ghost'
                                     size='sm'
-                                    onClick={() => handleEditAllergens(index)}
+                                    onClick={onEditAllergens}
                                     disabled={isSaving}
                                     className={styles["actionButton"]}>
                                     <TbFlask className={styles["actionIcon"]} />
@@ -781,7 +838,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                   <Button
                                     variant='ghost'
                                     size='sm'
-                                    onClick={() => handleSoftDelete(index)}
+                                    onClick={onSoftDelete}
                                     disabled={isSaving}
                                     className={styles["actionButton"]}>
                                     <TbTrash className={styles["actionIcon"]} />
