@@ -23,7 +23,16 @@
  */
 
 import {Link, Text} from "react-email";
-import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
+import {
+  BRAND,
+  BulletList,
+  EMAIL_COLORS,
+  EmailCard,
+  EmailLayout,
+  EmailLinkStyles,
+  EmailParagraphStyles,
+  KeyValueTable,
+} from "../../_components";
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**

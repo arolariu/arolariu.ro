@@ -1,9 +1,9 @@
 "use client";
 
-import type {EmailLocale} from "@/types/emails";
 import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
+import type {EmailLocale} from "@/types/emails";
 import {
   Alert,
   AlertDescription,
