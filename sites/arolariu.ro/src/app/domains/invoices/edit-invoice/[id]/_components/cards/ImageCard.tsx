@@ -64,9 +64,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
   const currentScan = scans[currentScanIndex];
   const currentScanSrc = currentScan?.location || "https://dummyimage.com/600x900&text=placeholder+image";
 
-  // Dialog hooks - using consolidated EDIT_INVOICE__SCAN with mode differentiation
-  const {open: openAddScan} = useDialog("EDIT_INVOICE__SCAN", "add", invoice);
-  const {open: openRemoveScan} = useDialog("EDIT_INVOICE__SCAN", "delete", {
+  // Dialog hooks - dedicated dialog types per intent for type-safe payloads.
+  const {open: openAddScan} = useDialog("EDIT_INVOICE__ADD_SCAN", "add", {invoice});
+  const {open: openRemoveScan} = useDialog("EDIT_INVOICE__REMOVE_SCAN", "delete", {
     invoice,
     scan: currentScan!,
     scanIndex: currentScanIndex,

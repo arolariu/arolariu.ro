@@ -12,7 +12,8 @@ import {createContext, use, useMemo, useState, type ReactNode} from "react";
 export type DialogType = Readonly<
   | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__IMAGE"
-  | "EDIT_INVOICE__SCAN"
+  | "EDIT_INVOICE__ADD_SCAN"
+  | "EDIT_INVOICE__REMOVE_SCAN"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
   | "EDIT_INVOICE__RECIPE"
@@ -48,7 +49,8 @@ export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> 
 export type DialogPayloads = {
   EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
   EDIT_INVOICE__IMAGE: string;
-  EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
+  EDIT_INVOICE__ADD_SCAN: {invoice: Invoice};
+  EDIT_INVOICE__REMOVE_SCAN: {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
   EDIT_INVOICE__MERCHANT: Merchant;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
   EDIT_INVOICE__RECIPE: Recipe;

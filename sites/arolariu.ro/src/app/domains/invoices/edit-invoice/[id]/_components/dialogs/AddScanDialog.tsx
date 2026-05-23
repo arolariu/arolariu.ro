@@ -67,9 +67,9 @@ export default function AddScanDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("EDIT_INVOICE__SCAN", "add");
+  } = useDialog("EDIT_INVOICE__ADD_SCAN", "add");
 
-  const invoice: Invoice | null = payload && typeof payload === "object" && !("scan" in payload) ? (payload as Invoice) : null;
+  const invoice: Invoice | null = payload?.invoice ?? null;
 
   const [file, setFile] = useState<File | null>(null);
   const [scanType, setScanType] = useState<InvoiceScanType>(InvoiceScanType.JPEG);

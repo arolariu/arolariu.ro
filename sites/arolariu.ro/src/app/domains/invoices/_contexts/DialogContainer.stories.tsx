@@ -65,7 +65,13 @@ const dialogTypes = [
     color: "#06b6d4",
   },
   {icon: <TbPhoto style={{height: "1.25rem", width: "1.25rem"}} />, type: "EDIT_INVOICE__IMAGE", label: "Image View", color: "#6366f1"},
-  {icon: <TbPhoto style={{height: "1.25rem", width: "1.25rem"}} />, type: "EDIT_INVOICE__SCAN", label: "Add/Remove Scan", color: "#14b8a6"},
+  {icon: <TbPhoto style={{height: "1.25rem", width: "1.25rem"}} />, type: "EDIT_INVOICE__ADD_SCAN", label: "Add Scan", color: "#14b8a6"},
+  {
+    icon: <TbPhoto style={{height: "1.25rem", width: "1.25rem"}} />,
+    type: "EDIT_INVOICE__REMOVE_SCAN",
+    label: "Remove Scan",
+    color: "#14b8a6",
+  },
   {
     icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
     type: "EDIT_INVOICE__RECIPE",

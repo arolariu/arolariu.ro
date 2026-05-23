@@ -47,7 +47,7 @@ const ViewInvoiceExportDialog = dynamic(
  */
 function DialogContainerImpl(): React.JSX.Element | null {
   const {
-    currentDialog: {type, mode},
+    currentDialog: {type},
   } = useDialogs();
 
   return useMemo(() => {
@@ -71,9 +71,10 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <InvoiceMetadataDialog />;
       case "EDIT_INVOICE__IMAGE":
         return <InvoiceImageDialog />;
-      case "EDIT_INVOICE__SCAN":
-        // Differentiate by mode: "add" shows AddScanDialog, anything else shows RemoveScanDialog
-        return mode === "add" ? <AddScanDialog /> : <RemoveScanDialog />;
+      case "EDIT_INVOICE__ADD_SCAN":
+        return <AddScanDialog />;
+      case "EDIT_INVOICE__REMOVE_SCAN":
+        return <RemoveScanDialog />;
       case "EDIT_INVOICE__RECIPE":
         return <InvoiceRecipeDialog />;
       // view-invoice/[id] Dialogs
@@ -101,7 +102,7 @@ function DialogContainerImpl(): React.JSX.Element | null {
       default:
         return null;
     }
-  }, [type, mode]);
+  }, [type]);
 }
 
 export default memo(DialogContainerImpl);
