@@ -159,33 +159,33 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       // Update each product individually
       for (let i = 0; i < selectedProducts.length; i++) {
         const product = selectedProducts[i];
-        if (!product) continue;
+        if (product) {
+          setUpdateProgress({current: i + 1, total: selectedProducts.length});
 
-        setUpdateProgress({current: i + 1, total: selectedProducts.length});
+          try {
+            const result = await updateProduct({
+              invoiceId: invoice.id,
+              payload: {
+                originalProductName: product.name,
+                name: product.name,
+                category: selectedCategory,
+                quantity: product.quantity,
+                quantityUnit: product.quantityUnit,
+                productCode: product.productCode,
+                price: product.price,
+                detectedAllergens: product.detectedAllergens,
+              },
+            });
 
-        try {
-          const result = await updateProduct({
-            invoiceId: invoice.id,
-            payload: {
-              originalProductName: product.name,
-              name: product.name,
-              category: selectedCategory,
-              quantity: product.quantity,
-              quantityUnit: product.quantityUnit,
-              productCode: product.productCode,
-              price: product.price,
-              detectedAllergens: product.detectedAllergens,
-            },
-          });
-
-          if (result.success) {
-            successCount++;
-          } else {
-            errors.push(`${product.name}: ${result.error}`);
+            if (result.success) {
+              successCount++;
+            } else {
+              errors.push(`${product.name}: ${result.error}`);
+            }
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            errors.push(`${product.name}: ${errorMessage}`);
           }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          errors.push(`${product.name}: ${errorMessage}`);
         }
       }
 
@@ -234,9 +234,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           <div className={styles["section"]}>
             <Label className={styles["sectionLabel"]}>{t("labels.selectedProducts")}</Label>
             <div className={styles["productList"]}>
-              {selectedProducts.slice(0, 5).map((product, index) => (
+              {selectedProducts.slice(0, 5).map((product) => (
                 <div
-                  key={`${product.name}-${index}`}
+                  key={product.name}
                   className={styles["productItem"]}>
                   <span className={styles["productName"]}>{product.name}</span>
                 </div>
@@ -256,7 +256,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               {t("labels.newCategory")}
             </Label>
             <Select
-              value={selectedCategory !== null ? String(selectedCategory) : undefined}
+              value={selectedCategory === null ? undefined : String(selectedCategory)}
               onValueChange={handleCategoryChange}>
               <SelectTrigger
                 id='category-select'
@@ -276,7 +276,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           </div>
 
           {/* Progress Indicator */}
-          {updateProgress && (
+          {updateProgress ? (
             <div className={styles["section"]}>
               <Label className={styles["sectionLabel"]}>{t("labels.progress")}</Label>
               <p className={styles["progressText"]}>
@@ -286,7 +286,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 })}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
 
         <DialogFooter>

@@ -41,13 +41,16 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
 
   for (const inv of invoices) {
     for (const item of inv.items) {
-      if (item.metadata.isSoftDeleted) continue;
-      const category = item.category;
-      if (!historicalAvg[category]) {
-        historicalAvg[category] = {total: 0, count: 0};
+      if (item.metadata.isSoftDeleted) {
+        // Skip soft-deleted items
+      } else {
+        const {category} = item;
+        if (!historicalAvg[category]) {
+          historicalAvg[category] = {total: 0, count: 0};
+        }
+        historicalAvg[category].total += item.totalPrice ?? 0;
+        historicalAvg[category].count += 1;
       }
-      historicalAvg[category].total += item.totalPrice ?? 0;
-      historicalAvg[category].count += 1;
     }
   }
   return historicalAvg;
@@ -193,10 +196,11 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     });
 
     // Compute average spending for this month
-    const totalSpending = sameMonthInvoices.reduce((sum, inv) => {
+    let totalSpending = 0;
+    for (const inv of sameMonthInvoices) {
       const year = toSafeDate(inv.paymentInformation.transactionDate).getFullYear();
-      return sum + toRON(inv.paymentInformation.totalCostAmount, inv.paymentInformation.currency?.code ?? "RON", year);
-    }, 0);
+      totalSpending += toRON(inv.paymentInformation.totalCostAmount, inv.paymentInformation.currency?.code ?? "RON", year);
+    }
 
     const monthAverage = sameMonthInvoices.length > 0 ? totalSpending / sameMonthInvoices.length : 0;
 

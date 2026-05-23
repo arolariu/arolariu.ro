@@ -179,7 +179,39 @@ export default function AllergenDialog(): React.JSX.Element {
         handleAddAllergen(customAllergen);
       }
     },
-    [customAllergen, handleAddAllergen],
+    [handleAddAllergen, customAllergen],
+  );
+
+  /** Updates the custom allergen input field as the user types. */
+  const handleCustomAllergenChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomAllergen(e.target.value);
+  }, []);
+
+  /** Adds the allergen from the custom input field. */
+  const handleAddCustomAllergen = useCallback(() => {
+    handleAddAllergen(customAllergen);
+  }, [handleAddAllergen, customAllergen]);
+
+  /**
+   * Factory: returns a stable remove handler for a specific allergen.
+   * Each allergen badge gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createRemoveAllergenHandler = useCallback(
+    (index: number) => {
+      return () => handleRemoveAllergen(index);
+    },
+    [handleRemoveAllergen],
+  );
+
+  /**
+   * Factory: returns a stable add handler for a specific allergen.
+   * Each quick-add button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createAddAllergenHandler = useCallback(
+    (name: string) => {
+      return () => handleAddAllergen(name);
+    },
+    [handleAddAllergen],
   );
 
   /**
@@ -249,13 +281,13 @@ export default function AllergenDialog(): React.JSX.Element {
               <div className={styles["allergenList"]}>
                 {allergens.map((allergen, index) => (
                   <Badge
-                    key={`${allergen.name}-${index}`}
+                    key={allergen.name}
                     variant='secondary'
                     className={styles["allergenBadge"]}>
                     <span>{allergen.name}</span>
                     <button
                       type='button'
-                      onClick={() => handleRemoveAllergen(index)}
+                      onClick={createRemoveAllergenHandler(index)}
                       className={styles["removeButton"]}
                       aria-label={t("aria.removeAllergen", {name: allergen.name})}>
                       <TbX className={styles["removeIcon"]} />
@@ -278,7 +310,7 @@ export default function AllergenDialog(): React.JSX.Element {
                     variant='outline'
                     size='sm'
                     disabled={isAdded}
-                    onClick={() => handleAddAllergen(allergenName)}
+                    onClick={createAddAllergenHandler(allergenName)}
                     className={styles["quickAddButton"]}>
                     {allergenName}
                   </Button>
@@ -299,7 +331,7 @@ export default function AllergenDialog(): React.JSX.Element {
                 id='custom-allergen'
                 type='text'
                 value={customAllergen}
-                onChange={(e) => setCustomAllergen(e.target.value)}
+                onChange={handleCustomAllergenChange}
                 onKeyDown={handleKeyDown}
                 placeholder={t("placeholders.customAllergen")}
                 className={styles["customInput"]}
@@ -307,7 +339,7 @@ export default function AllergenDialog(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => handleAddAllergen(customAllergen)}
+                onClick={handleAddCustomAllergen}
                 disabled={!customAllergen.trim()}
                 className={styles["addButton"]}>
                 <TbPlus className={styles["addIcon"]} />

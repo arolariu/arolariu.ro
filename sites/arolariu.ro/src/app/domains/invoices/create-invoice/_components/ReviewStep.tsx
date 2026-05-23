@@ -78,6 +78,7 @@ export default function ReviewStep(): React.JSX.Element {
                     <TbFileTypePdf className={styles["pdfIcon"]} />
                   </div>
                 ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- dynamic Azure Blob URL not configured in next.config remotePatterns
                   <img
                     src={scan.blobUrl}
                     alt={scan.name}
@@ -138,7 +139,7 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailValue"]}>{format.dateTime(invoiceDetails.transactionDate, {dateStyle: "long"})}</div>
           </div>
 
-          {invoiceDetails.description && (
+          {invoiceDetails.description ? (
             <div className={styles["detailRow"]}>
               <div className={styles["detailLabel"]}>
                 <TbFileDescription />
@@ -146,7 +147,7 @@ export default function ReviewStep(): React.JSX.Element {
               </div>
               <div className={styles["detailValue"]}>{invoiceDetails.description}</div>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 

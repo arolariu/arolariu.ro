@@ -77,7 +77,7 @@ function WizardNavigation(): React.JSX.Element {
 
   return (
     <div className={styles["navigation"]}>
-      {showBack && (
+      {showBack ? (
         <Button
           variant='outline'
           onClick={goBack}
@@ -85,16 +85,16 @@ function WizardNavigation(): React.JSX.Element {
           <TbArrowLeft />
           {t("navigation.back")}
         </Button>
-      )}
+      ) : null}
 
-      {showNext && (
+      {showNext ? (
         <Button
           onClick={goNext}
           disabled={!canGoNext || isCreating}
           className={styles["nextButton"]}>
           {t("navigation.next")}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

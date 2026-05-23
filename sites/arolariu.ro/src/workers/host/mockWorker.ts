@@ -57,7 +57,7 @@ export function createMockWorker<TApi extends Record<string, unknown>>(options: 
   let errorHandler: ((event: ErrorEvent) => void) | null = null;
   let messageErrorHandler: ((event: MessageEvent) => void) | null = null;
   let terminated = false;
-  let resolveTerminated!: () => void;
+  let resolveTerminated: () => void = () => {};
   const whenTerminated = new Promise<void>((resolve) => {
     resolveTerminated = resolve;
   });

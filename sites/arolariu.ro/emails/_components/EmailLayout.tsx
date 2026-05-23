@@ -6,7 +6,7 @@
 import type {ReactNode} from "react";
 import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from "react-email";
 
-import type {EmailLocale} from "../_i18n";
+import type {EmailLocale} from "../_lib/i18n";
 
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 import {getLayoutTranslator} from "./layoutTranslator";
@@ -14,19 +14,19 @@ import {getLayoutTranslator} from "./layoutTranslator";
 type Cta = {
   readonly href: string;
   readonly label: string;
-};
+} | null;
 
 type Props = {
   readonly locale: EmailLocale;
   readonly title: string;
   readonly preview: string;
   readonly heading: string;
-  readonly badge?: string;
-  readonly primaryCta?: Cta;
-  readonly secondaryCta?: Cta;
-  readonly showUnsubscribe?: boolean;
-  readonly unsubscribeUrl?: string;
-  readonly managePreferencesUrl?: string;
+  readonly badge: string;
+  readonly primaryCta: Cta;
+  readonly secondaryCta: Cta;
+  readonly showUnsubscribe: boolean;
+  readonly unsubscribeUrl: string;
+  readonly managePreferencesUrl: string;
   readonly children: ReactNode;
 };
 
@@ -97,21 +97,19 @@ const styles = {
  * Intentional removal (see PR #751 review thread); do not "fix" by
  * re-adding the label.
  */
-export async function EmailLayout(props: Props) {
-  const {
-    locale,
-    title,
-    preview,
-    heading,
-    badge,
-    primaryCta,
-    secondaryCta,
-    showUnsubscribe = false,
-    unsubscribeUrl,
-    managePreferencesUrl,
-    children,
-  } = props;
-
+export default async function EmailLayout({
+  locale,
+  title,
+  preview,
+  heading,
+  badge,
+  primaryCta,
+  secondaryCta,
+  showUnsubscribe,
+  unsubscribeUrl,
+  managePreferencesUrl,
+  children,
+}: Readonly<Props>): Promise<React.JSX.Element> {
   const tLayout = await getLayoutTranslator(locale);
 
   return (

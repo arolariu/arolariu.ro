@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import type {ProductCategorySpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
 
@@ -53,6 +54,9 @@ type CustomTooltipProps = {
   readonly currency: string;
 };
 
+/** Empty payload placeholder used when no tooltip data is available. */
+const EMPTY_TOOLTIP_PAYLOAD: TooltipPayloadItem[] = [];
+
 /**
  * Custom tooltip for the product category chart.
  *
@@ -60,7 +64,11 @@ type CustomTooltipProps = {
  * Displays category name, total spending, product count, and percentage
  * in a formatted card overlay.
  */
-function CustomTooltip({active, payload = [], currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({
+  active = false,
+  payload = EMPTY_TOOLTIP_PAYLOAD,
+  currency,
+}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.productCategory");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -128,6 +136,21 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
     };
   }
 
+  /**
+   * Factory: returns a stable tooltip render function with currency context.
+   * Wraps the CustomTooltip component to inject the currency prop.
+   */
+  const renderTooltip = useCallback(
+    ({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
+      <CustomTooltip
+        active={active}
+        payload={payload as CustomTooltipProps["payload"]}
+        currency={currency}
+      />
+    ),
+    [currency],
+  );
+
   const coloredData = data.map((item, index) => ({
     ...item,
     fill: `var(--ac-chart-${(index % 5) + 1})`,
@@ -164,15 +187,7 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
                 axisLine={false}
                 width={110}
               />
-              <ChartTooltip
-                content={({active, payload}: {active?: boolean; payload?: readonly unknown[]}) => (
-                  <CustomTooltip
-                    active={active}
-                    payload={payload as CustomTooltipProps["payload"]}
-                    currency={currency}
-                  />
-                )}
-              />
+              <ChartTooltip content={renderTooltip} />
               <Bar
                 dataKey='totalSpent'
                 radius={[0, 4, 4, 0]}

@@ -51,11 +51,13 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
         preview={t("preview", {name: safeName})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
+        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
-
         <KeyValueTable
           title={t("summaryTitle")}
           items={[
@@ -65,15 +67,12 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
             {label: t("summary.totalAmount"), value: totalText},
           ]}
         />
-
         <EmailCard title={t("whatWasAnalyzedTitle")}>
           <BulletList
             items={[t("whatWasAnalyzed.0"), t("whatWasAnalyzed.1"), t("whatWasAnalyzed.2"), t("whatWasAnalyzed.3"), t("whatWasAnalyzed.4")]}
           />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -85,7 +84,6 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

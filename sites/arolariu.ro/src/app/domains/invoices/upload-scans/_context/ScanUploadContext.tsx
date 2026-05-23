@@ -117,10 +117,10 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   const addScan = useScansStore((state) => state.addScan);
 
   // Batched progress updates to reduce React re-renders during concurrent uploads
-  const pendingProgressUpdates = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(
+  const pendingProgressUpdatesRef = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(
     new Map(),
   );
-  const rafId = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   /**
    * Add files to the upload queue.
@@ -161,8 +161,12 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
       const BATCH_SIZE = 5;
       for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
         const batch = newUploads.slice(i, i + BATCH_SIZE);
-        // Yield to browser to prevent UI blocking
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        // Yield to the browser (macrotask) so it can paint/respond between batches.
+        // Note: an awaited Promise that resolves synchronously only yields a microtask,
+        // which is NOT enough for the browser to render between batches.
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 0);
+        });
         setPendingUploads((prev) => [...prev, ...batch]);
       }
 
@@ -216,13 +220,13 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
    */
   const batchedUpdateProgress = useCallback(
     (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
-      pendingProgressUpdates.current.set(id, {status, progress, error, blobUrl});
+      pendingProgressUpdatesRef.current.set(id, {status, progress, error, blobUrl});
 
-      if (rafId.current === null) {
-        rafId.current = requestAnimationFrame(() => {
-          const updates = new Map(pendingProgressUpdates.current);
-          pendingProgressUpdates.current.clear();
-          rafId.current = null;
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          const updates = new Map(pendingProgressUpdatesRef.current);
+          pendingProgressUpdatesRef.current.clear();
+          rafIdRef.current = null;
 
           setPendingUploads((prev) =>
             prev.map((u) => {

@@ -115,11 +115,11 @@ export function ExportDialog(): React.JSX.Element {
       // CSV Rows - one per product
       for (const item of invoice.items) {
         const row = [
-          `"${item.name.replace(/"/g, '""')}"`, // Escape quotes in product name
+          `"${item.name.replaceAll('"', '""')}"`, // Escape quotes in product name
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),
-          `"${String(item.category).replace(/"/g, '""')}"`,
+          `"${String(item.category).replaceAll('"', '""')}"`,
         ];
         csvRows.push(row.join(","));
       }
@@ -130,9 +130,9 @@ export function ExportDialog(): React.JSX.Element {
       const link = document.createElement("a");
       link.href = url;
       link.download = `invoice-${invoice.id}.csv`;
-      document.body.appendChild(link);
+      document.body.append(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
       URL.revokeObjectURL(url);
 
       toast.success(t("csvSuccess"));
@@ -165,9 +165,9 @@ export function ExportDialog(): React.JSX.Element {
       const link = document.createElement("a");
       link.href = url;
       link.download = `invoice-${invoice.id}.json`;
-      document.body.appendChild(link);
+      document.body.append(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
       URL.revokeObjectURL(url);
 
       toast.success(t("jsonSuccess"));
@@ -250,8 +250,8 @@ Items: ${invoice.items.length}
       ).toBlob();
 
       // Create filename with invoice name and date
-      const transactionDate = new Date(invoice.paymentInformation.transactionDate).toISOString().split("T")[0]; // YYYY-MM-DD
-      const safeName = invoice.name.replace(/[^a-z0-9]/gi, "-").toLowerCase(); // Sanitize name
+      const [transactionDate] = new Date(invoice.paymentInformation.transactionDate).toISOString().split("T"); // YYYY-MM-DD
+      const safeName = invoice.name.replaceAll(/[^a-z0-9]/gu, "-").toLowerCase(); // Sanitize name
       const filename = `invoice-${safeName}-${transactionDate}.pdf`;
 
       // Create download link
@@ -259,9 +259,9 @@ Items: ${invoice.items.length}
       const link = document.createElement("a");
       link.href = url;
       link.download = filename;
-      document.body.appendChild(link);
+      document.body.append(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
       URL.revokeObjectURL(url);
 
       toast.dismiss(loadingToastId);
@@ -289,6 +289,7 @@ Items: ${invoice.items.length}
         <div className={styles["exportOptions"]}>
           {/* PDF Export Card */}
           <button
+            type='button'
             className={styles["exportCard"]}
             onClick={handleExportPDF}
             disabled={isGeneratingPDF}>
@@ -304,6 +305,7 @@ Items: ${invoice.items.length}
 
           {/* CSV Export Card */}
           <button
+            type='button'
             className={styles["exportCard"]}
             onClick={handleExportCSV}>
             <div className={styles["exportCardIcon"]}>
@@ -318,6 +320,7 @@ Items: ${invoice.items.length}
 
           {/* JSON Export Card */}
           <button
+            type='button'
             className={styles["exportCard"]}
             onClick={handleExportJSON}>
             <div className={styles["exportCardIcon"]}>
@@ -332,6 +335,7 @@ Items: ${invoice.items.length}
 
           {/* Copy Summary Card */}
           <button
+            type='button'
             className={styles["exportCard"]}
             onClick={handleCopySummary}>
             <div className={styles["exportCardIcon"]}>

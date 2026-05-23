@@ -242,6 +242,16 @@ export default function UploadPreview(): React.JSX.Element | null {
     }
   }, [page, currentPageUploads.length, pendingUploads.length]);
 
+  /** Navigates to the previous page of uploads. */
+  const handlePreviousPage = useCallback(() => {
+    setPage((p) => Math.max(0, p - 1));
+  }, []);
+
+  /** Navigates to the next page of uploads. */
+  const handleNextPage = useCallback(() => {
+    setPage((p) => Math.min(totalPages - 1, p + 1));
+  }, [totalPages]);
+
   if (pendingUploads.length === 0) {
     return null;
   }
@@ -278,7 +288,7 @@ export default function UploadPreview(): React.JSX.Element | null {
           <Button
             variant='outline'
             size='sm'
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
             {t("preview.pagination.previous")}
@@ -293,7 +303,7 @@ export default function UploadPreview(): React.JSX.Element | null {
           <Button
             variant='outline'
             size='sm'
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
             {t("preview.pagination.next")}
             <TbChevronRight />

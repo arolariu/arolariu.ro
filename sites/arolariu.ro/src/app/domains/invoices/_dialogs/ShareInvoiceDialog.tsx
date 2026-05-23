@@ -1,9 +1,9 @@
 "use client";
 
-import type {EmailLocale} from "@/../emails/_i18n";
 import {sendEmail} from "@/lib/actions/email";
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
+import type {EmailLocale} from "@/types/emails";
 import {
   Alert,
   AlertDescription,
@@ -77,7 +77,10 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.publicTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.publicDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
+                {t.rich("selection.publicDescription", {
+                  // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </CardDescription>
             </div>
           </CardHeader>
@@ -93,7 +96,10 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className={styles["cardTitleBase"]}>{t("selection.privateTitle")}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.privateDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
+                {t.rich("selection.privateDescription", {
+                  // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </CardDescription>
             </div>
           </CardHeader>
@@ -262,7 +268,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(
-    (e: React.FormEvent) => {
+    (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!email) return;
 

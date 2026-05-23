@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantReceiptsDialog.module.scss";
@@ -103,16 +103,34 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     return () => clearTimeout(timeoutId);
   }, [payload]);
 
-  // Handle date filter change
-  const handleDateFilterChange = (_value: string) => {
-    // Handle date filter selection
-  };
+  /** Updates the search query as the user types in the search input. */
+  const handleSearchQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
-  // Handle sort change
-  const handleSortChange = (_value: string) => {
-    // Handle sort option selection
-    resetPagination();
-  };
+  /** Filters receipts by the selected date range. */
+  const handleDateFilterChange = useCallback((_value: string) => {
+    // Handle date filter selection
+  }, []);
+
+  /** Sorts receipts by the selected criteria and resets pagination. */
+  const handleSortChange = useCallback(
+    (_value: string) => {
+      // Handle sort option selection
+      resetPagination();
+    },
+    [resetPagination],
+  );
+
+  /** Navigates to the previous page of receipts. */
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  /** Navigates to the next page of receipts. */
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
 
   return (
     <Dialog
@@ -135,7 +153,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 placeholder={t("searchPlaceholder")}
                 className={styles["searchInput"]}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchQueryChange}
               />
             </div>
             <div className={styles["filterControls"]}>
@@ -217,14 +235,14 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='sm'
-                        onClick={() => setCurrentPage(currentPage - 1)}
+                        onClick={handlePreviousPage}
                         disabled={currentPage === 1}>
                         {t("buttons.previous")}
                       </Button>
                       <Button
                         variant='ghost'
                         size='sm'
-                        onClick={() => setCurrentPage(currentPage + 1)}
+                        onClick={handleNextPage}
                         disabled={currentPage === totalPages}>
                         {t("buttons.next")}
                       </Button>

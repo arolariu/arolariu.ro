@@ -60,16 +60,16 @@ export function AnimatedCounter({value, duration = 1, decimals = 0, prefix = "",
     return latest.toFixed(decimals);
   });
 
-  const prevValue = useRef(0);
+  const prevValueRef = useRef(0);
 
   useEffect(() => {
     const controls = animate(motionValue, value, {
       duration,
       ease: "easeOut",
-      from: prevValue.current,
+      from: prevValueRef.current,
     });
 
-    prevValue.current = value;
+    prevValueRef.current = value;
 
     return () => {
       controls.stop();

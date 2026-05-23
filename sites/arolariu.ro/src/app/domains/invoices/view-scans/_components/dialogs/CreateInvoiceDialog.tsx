@@ -208,7 +208,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
 
       if (result.errors.length > 0 && result.invoices.length > 0) {
         // Show partial failure toast with first error details
-        const firstError = result.errors[0];
+        const [firstError] = result.errors;
         const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
         const partialFailMessage = t("errors.partialFail", {count: String(result.errors.length)});
         toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
@@ -238,11 +238,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (shouldOpen) open();
-      else {
+      else if (step !== "creating") {
         // Prevent closing during creation to avoid interrupting API call
-        if (step !== "creating") {
-          handleClose();
-        }
+        handleClose();
       }
     },
     [open, handleClose, step],
@@ -443,7 +441,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
                   <div>
-                    {error.scanName && <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p>}
+                    {error.scanName ? <p className={styles["completeErrorItemScanName"]}>{error.scanName}</p> : null}
                     <p className={styles["completeErrorItemText"]}>{error.message}</p>
                   </div>
                 </div>
@@ -490,9 +488,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           {errors.length > 0 && (
             <div className={styles["completeErrorsList"]}>
               <p className={styles["completeErrorsListTitle"]}>{t("complete.errorsLabel")}</p>
-              {errors.map((error, index) => (
+              {errors.map((error) => (
                 <div
-                  key={`error-${index}-${error.message?.slice(0, 30)}`}
+                  key={error.scanId ?? error.message ?? "unknown-error"}
                   className={styles["completeErrorItem"]}>
                   <TbX className={styles["completeErrorItemIcon"]} />
                   <p className={styles["completeErrorItemText"]}>{error.message}</p>

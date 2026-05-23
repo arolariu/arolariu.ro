@@ -132,7 +132,7 @@ function MerchantVisitCard({
  * @param topN - Number of merchants to display (default: 6)
  * @returns Merchant visit patterns grid component
  */
-export function MerchantVisitChart({data, currency, topN = 6}: Props): React.JSX.Element {
+export function MerchantVisitChart({data, currency, topN = 6}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--Stats.merchantVisit");
   const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);

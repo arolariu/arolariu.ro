@@ -22,7 +22,7 @@
 
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.
@@ -100,13 +100,11 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       heading={t("heading")}
       primaryCta={{href: effectiveUploadUrl, label: t("primaryCta")}}
       secondaryCta={{href: effectiveDashboardUrl, label: t("secondaryCta")}}
-      showUnsubscribe
+      showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
       <Text style={EmailParagraphStyles}>{t("intro")}</Text>
-
       <MetricsGrid
         metrics={[
           {label: t("metricsLabels.thisWeek"), value: String(thisWeekCount)},
@@ -115,16 +113,14 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
           {label: t("metricsLabels.totalTracked"), value: totalTracked},
         ]}
       />
-
       <EmailCard title={t("quickTipsTitle")}>
         <BulletList items={[t("quickTips.0"), t("quickTips.1"), t("quickTips.2")]} />
       </EmailCard>
-
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
-
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
             <Link
               href={`mailto:${BRAND.supportEmail}`}
@@ -134,7 +130,6 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
           ),
         })}
       </Text>
-
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
         {t("signOff.line1")}
         <br />

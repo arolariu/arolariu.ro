@@ -51,8 +51,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   useEffect(() => {
     invoices.slice(0, 20).forEach((inv) => {
       const scanUrl = inv.scans?.[0]?.location;
-      if (scanUrl && typeof window !== "undefined") {
-        const img = new window.Image();
+      if (scanUrl && typeof globalThis !== "undefined") {
+        const img = new globalThis.Image();
         img.src = scanUrl;
       }
     });

@@ -155,7 +155,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   const handleCategoryChange = useCallback(
     async (newCategory: string) => {
       setIsCategoryChanging(true);
-      const category = parseInt(newCategory, 10) as InvoiceCategory;
+      const category = Number.parseInt(newCategory, 10) as InvoiceCategory;
       const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
       let successCount = 0;
       let failureCount = 0;

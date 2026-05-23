@@ -103,16 +103,13 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
     // Falls back to "RON" for invoices missing currency.code — matches the
     // codebase-wide default established in _utils/statistics.ts.
     if (filters.currencies.length > 0) {
-      filtered = filtered.filter((invoice) =>
-        filters.currencies.includes(invoice.paymentInformation.currency?.code || "RON"),
-      );
+      filtered = filtered.filter((invoice) => filters.currencies.includes(invoice.paymentInformation.currency?.code || "RON"));
     }
 
     // Apply sorting (only if both sortBy and sortOrder are set)
     const sorted = [...filtered];
     if (filters.sortBy !== null && filters.sortOrder !== null) {
-      const sortField = filters.sortBy; // "date" | "amount" | "name"
-      const sortOrder = filters.sortOrder; // "asc" | "desc"
+      const {sortBy: sortField, sortOrder} = filters;
       const direction = sortOrder === "asc" ? 1 : -1;
 
       switch (sortField) {
@@ -136,6 +133,12 @@ export function useFilteredInvoices(invoices: ReadonlyArray<Invoice>, filters: F
         }
         case "name": {
           sorted.sort((a, b) => direction * a.name.localeCompare(b.name));
+          break;
+        }
+        default: {
+          // sortBy ultimately comes from URL params via a type assertion, so a malformed
+          // or legacy URL (e.g., ?sortBy=foo) can deliver a value outside the declared
+          // union. Treat unknown sort fields as "no sort applied" rather than crashing.
           break;
         }
       }

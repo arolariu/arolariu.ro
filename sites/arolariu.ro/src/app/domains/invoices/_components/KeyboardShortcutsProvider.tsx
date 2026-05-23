@@ -10,7 +10,7 @@
  * to a client component.
  */
 
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import KeyboardShortcuts from "./KeyboardShortcuts";
 import ShortcutsHelpDialog from "./ShortcutsHelpDialog";
 
@@ -56,13 +56,18 @@ type KeyboardShortcutsProviderProps = {
 export default function KeyboardShortcutsProvider({children}: Readonly<KeyboardShortcutsProviderProps>): React.JSX.Element {
   const [showHelp, setShowHelp] = useState(false);
 
+  /** Opens the keyboard shortcuts help dialog. */
+  const handleShowHelp = useCallback(() => setShowHelp(true), []);
+  /** Closes the keyboard shortcuts help dialog. */
+  const handleCloseHelp = useCallback(() => setShowHelp(false), []);
+
   return (
     <>
       {children}
-      <KeyboardShortcuts onShowHelp={() => setShowHelp(true)} />
+      <KeyboardShortcuts onShowHelp={handleShowHelp} />
       <ShortcutsHelpDialog
         open={showHelp}
-        onClose={() => setShowHelp(false)}
+        onClose={handleCloseHelp}
       />
     </>
   );

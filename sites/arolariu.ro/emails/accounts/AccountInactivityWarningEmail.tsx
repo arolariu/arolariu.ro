@@ -31,7 +31,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_lib/i18n";
 
 /**
  * Properties for the account inactivity warning email component.
@@ -153,12 +153,16 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       badge={t("badge")}
       heading={t("heading")}
       primaryCta={{href: effectiveSignInUrl, label: t("cta.primary")}}
-      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("cta.secondary")}}>
+      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("cta.secondary")}}
+      showUnsubscribe={false}
+      unsubscribeUrl=''
+      managePreferencesUrl=''>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
         {t.rich("intro", {
           inactiveDays,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           count: (chunks) => <strong>{chunks}</strong>,
         })}
       </Text>
@@ -169,6 +173,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
 
       <EmailCard title={t("timeline.title")}>
         <KeyValueTable
+          title=''
           items={[
             {label: t("timeline.inactiveFor"), value: t("timeline.daysValue", {days: inactiveDays})},
             {label: t("timeline.timeRemaining"), value: t("timeline.daysValue", {days: daysUntilClosure})},
@@ -179,6 +184,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("supportPrompt", {
           supportEmail: BRAND.supportEmail,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
             <Link
               href={`mailto:${BRAND.supportEmail}`}

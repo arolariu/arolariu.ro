@@ -35,7 +35,7 @@ export default function Stepper(): React.JSX.Element {
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
   const handleStepClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const eventId = e.currentTarget.dataset["eventId"];
+    const {eventId} = e.currentTarget.dataset;
     if (eventId) setExpandedEvent((prev) => (prev === eventId ? null : eventId));
   }, []);
 
@@ -117,7 +117,7 @@ export default function Stepper(): React.JSX.Element {
 
                   {/* Expandable details */}
                   <AnimatePresence>
-                    {isExpanded && (
+                    {isExpanded ? (
                       <motion.div
                         initial={{height: 0, opacity: 0}}
                         animate={{height: "auto", opacity: 1}}
@@ -141,7 +141,7 @@ export default function Stepper(): React.JSX.Element {
                             ))}
                         </ul>
                       </motion.div>
-                    )}
+                    ) : null}
                   </AnimatePresence>
 
                   <button
@@ -162,7 +162,7 @@ export default function Stepper(): React.JSX.Element {
           className={styles["futureIndicator"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
-          transition={{duration: 0.5, delay: 1.0}}>
+          transition={{duration: 0.5, delay: 1}}>
           <motion.div
             className={styles["futureIconWrapper"]}
             animate={{

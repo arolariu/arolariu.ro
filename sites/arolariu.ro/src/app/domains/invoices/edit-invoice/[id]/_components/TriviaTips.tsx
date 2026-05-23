@@ -19,7 +19,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useMemo} from "react";
+import {useCallback, useMemo} from "react";
 import {TbAlertCircle, TbArrowRight, TbBulb, TbCheck, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp, TbX} from "react-icons/tb";
 import styles from "./TriviaTips.module.scss";
 
@@ -238,9 +238,21 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   /**
    * Dismiss a context tip and persist to localStorage.
    */
-  const dismissTip = (tipId: string): void => {
+  /** Dismisses a context tip and persists to localStorage. */
+  const dismissTip = useCallback((tipId: string): void => {
     setDismissedTips((prev) => [...prev, tipId]);
-  };
+  }, []);
+
+  /**
+   * Factory: returns a stable dismiss handler for a specific tip.
+   * Each tip gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createDismissTipHandler = useCallback(
+    (tipId: string) => {
+      return () => dismissTip(tipId);
+    },
+    [dismissTip],
+  );
 
   // Mock savings tips
   const savingsTips = [
@@ -329,7 +341,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                   <Button
                     variant='ghost'
                     size='sm'
-                    onClick={() => dismissTip(tip.id)}
+                    onClick={createDismissTipHandler(tip.id)}
                     className={styles["dismissButton"]}>
                     <TbX className={styles["dismissIcon"]} />
                   </Button>

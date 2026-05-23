@@ -73,8 +73,8 @@ type Props = {
   /** Breakdown of spending by category for the donut chart. */
   readonly categoryBreakdown: readonly SpendingCategory[];
 
-  /** Optional pre-rendered chart image URL. */
-  readonly chartImageUrl?: string;
+  /** Pre-rendered chart image URL. */
+  readonly chartImageUrl: string;
 
   /** Link to the spending dashboard. */
   readonly dashboardUrl?: string;
@@ -143,13 +143,12 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         badge={t("badge", {percent: thresholdPercent})}
         heading={t("heading", {percent: thresholdPercent})}
         primaryCta={{href: effectiveDashboardUrl, label: t("ctaPrimary")}}
-        showUnsubscribe
+        secondaryCta={null}
+        showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
         <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
-
         {isOverBudget ? (
           <Text
             style={{
@@ -163,7 +162,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {t("overBudgetWarning")}
           </Text>
         ) : null}
-
         <MetricsGrid
           metrics={[
             {label: t("metricsLabels.budgetLimit"), value: budgetLimit},
@@ -172,7 +170,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {label: t("metricsLabels.threshold"), value: `${thresholdPercent}%`},
           ]}
         />
-
         <KeyValueTable
           title={t("detailsTitle")}
           items={[
@@ -182,7 +179,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             {label: t("detailsLabels.spent"), value: currentSpending},
           ]}
         />
-
         {categoryBreakdown.length > 0 ? (
           <DonutChart
             title={t("chartTitle")}
@@ -191,7 +187,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             alt={t("chartAlt", {period})}
           />
         ) : null}
-
         <EmailCard title={t("tipsTitle", {state: budgetState})}>
           <BulletList
             items={
@@ -201,7 +196,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             }
           />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("notificationsParagraph", {
             settings: () => (
@@ -213,7 +207,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -225,7 +218,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />
@@ -249,6 +241,7 @@ SpendingThresholdAlertEmail.PreviewProps = {
     {label: "Fast Food", value: 85},
     {label: "Household", value: 47.5},
   ],
+  chartImageUrl: "https://quickchart.io/chart?c=%7Btype:'doughnut'%7D",
   locale: "en",
 };
 

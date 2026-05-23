@@ -43,7 +43,7 @@ type CustomTooltipProps = {
 /**
  * Custom tooltip for the spending chart.
  */
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active = false, payload = [], currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.spendingOverTime");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -57,7 +57,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
-      {data.invoices && data.invoices.length > 0 && (
+      {data.invoices && data.invoices.length > 0 ? (
         <ul className={styles["tooltipInvoices"]}>
           {data.invoices.slice(0, 10).map((inv) => (
             <li
@@ -74,7 +74,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
           )}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

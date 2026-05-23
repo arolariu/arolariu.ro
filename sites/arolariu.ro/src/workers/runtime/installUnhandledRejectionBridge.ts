@@ -29,7 +29,7 @@ import {emitEvent} from "./emitEvent";
  */
 export function installUnhandledRejectionBridge(scope: DedicatedWorkerGlobalScope, port: MessagePort): () => void {
   const handler = (event: PromiseRejectionEvent): void => {
-    const reason = event.reason;
+    const {reason} = event;
     const text = reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason);
     emitEvent(port, {
       kind: "log",

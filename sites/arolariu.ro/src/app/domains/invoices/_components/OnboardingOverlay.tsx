@@ -94,6 +94,25 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
     }
   }, [currentStep]);
 
+  /**
+   * Factory: returns a stable click handler for the given step index.
+   * Sets navigation direction based on whether moving forward or back.
+   */
+  const createStepClickHandler = useCallback(
+    (index: number) => {
+      return () => {
+        setDirection(index > currentStep ? 1 : -1);
+        setCurrentStep(index);
+      };
+    },
+    [currentStep],
+  );
+
+  /** Updates the "don't show again" checkbox state. */
+  const handleDontShowAgainChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDontShowAgain(e.target.checked);
+  }, []);
+
   // Don't render if onboarding is complete or permanently dismissed
   if (onboardingComplete || onboardingDismissed) {
     return null;
@@ -170,14 +189,12 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
         {/* Footer with dots and navigation */}
         <div className={styles["footer"]}>
           <div className={styles["dots"]}>
-            {steps.map((_, index) => (
+            {steps.map((step, index) => (
               <button
-                key={index}
+                type='button'
+                key={step.title}
                 className={`${styles["dot"]} ${index === currentStep ? styles["dotActive"] : ""}`}
-                onClick={() => {
-                  setDirection(index > currentStep ? 1 : -1);
-                  setCurrentStep(index);
-                }}
+                onClick={createStepClickHandler(index)}
                 aria-label={`${t("stepOf", {
                   current: String(index + 1),
                   total: String(steps.length),
@@ -194,7 +211,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 type='checkbox'
                 className={styles["checkbox"]}
                 checked={dontShowAgain}
-                onChange={(e) => setDontShowAgain(e.target.checked)}
+                onChange={handleDontShowAgainChange}
               />
               <span className={styles["checkboxText"]}>{t("dontShowAgain")}</span>
             </label>

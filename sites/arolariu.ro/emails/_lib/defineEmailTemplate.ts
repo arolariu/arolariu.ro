@@ -1,6 +1,6 @@
 import type {ReactElement} from "react";
 
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "./i18n";
 
 /**
  * Render-time context handed to a template's `render` callback.
@@ -164,7 +164,7 @@ export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTem
     // already exposes the resolved locale separately as `ctx.locale`. Keeping
     // locale on `ctx.props` would diverge from the documented contract and
     // tempt templates into reading `props.locale` (typed as missing).
-    const {locale: _localeIgnored, ...propsWithoutLocale} = props as P & {readonly locale?: EmailLocale};
+    const {locale: _locale, ...propsWithoutLocale} = props as P & {readonly locale?: EmailLocale};
     return config.render({locale, t, props: propsWithoutLocale as P});
   };
 

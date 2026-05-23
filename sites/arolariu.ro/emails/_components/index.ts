@@ -14,6 +14,6 @@ export {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
 export {BulletList} from "./BulletList";
 export {DonutChart} from "./DonutChart";
 export {EmailCard} from "./EmailCard";
-export {EmailHrStyles, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "./EmailLayout";
+export {EmailHrStyles, default as EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "./EmailLayout";
 export {KeyValueTable} from "./KeyValueTable";
 export {MetricsGrid} from "./MetricsGrid";

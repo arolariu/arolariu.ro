@@ -168,8 +168,8 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <div className={styles["ingredientsSection"]}>
           <h4 className={styles["ingredientsLabel"]}>{t("ingredients.label")}</h4>
           <ul className={styles["ingredientsList"]}>
-            {ingredients.slice(0, 3).map((ingredient, index) => (
-              <li key={`${ingredient}-${index}`}>{ingredient}</li>
+            {ingredients.slice(0, 3).map((ingredient) => (
+              <li key={ingredient}>{ingredient}</li>
             ))}
             {ingredients.length > 3 && (
               <TooltipProvider>

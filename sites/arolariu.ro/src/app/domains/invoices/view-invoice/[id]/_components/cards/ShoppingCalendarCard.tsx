@@ -147,10 +147,10 @@ function CustomDayButton({
   day,
   className = "",
   disabled = false,
-  "aria-label": ariaLabel,
-  "aria-pressed": ariaPressed,
+  "aria-label": ariaLabel = "",
+  "aria-pressed": ariaPressed = false,
   tabIndex = 0,
-}: DayButtonProps): React.JSX.Element {
+}: Readonly<DayButtonProps>): React.JSX.Element {
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
   const {date} = day;
   const dayNum = date.getDate();

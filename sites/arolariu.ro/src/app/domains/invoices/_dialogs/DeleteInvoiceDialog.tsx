@@ -216,6 +216,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                   <Label htmlFor='confirm-name'>
                     {t.rich("confirmation.typeToConfirm", {
                       name: invoiceName,
+                      // eslint-disable-next-line react/no-unstable-nested-components -- single-call site; hoisting is more boilerplate than benefit
                       highlight: (chunks) => <span className={styles["confirmHighlight"]}>{chunks}</span>,
                     })}
                   </Label>

@@ -37,22 +37,21 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
         badge={t("badge")}
         heading={t("heading")}
         primaryCta={{href: effectiveManagePreferencesUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}>
+        secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
             brandName: BRAND.name,
             brand: (chunks) => <strong>{chunks}</strong>,
           })}
         </Text>
-
         <EmailCard title={t("whatHappensNextTitle")}>
           <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -64,7 +63,6 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

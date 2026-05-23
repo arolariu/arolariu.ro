@@ -59,8 +59,8 @@
  * const processed = await withConcurrencyLimit(processTasks, 3);
  * ```
  */
-export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<T[]> {
-  const results: T[] = new Array(tasks.length);
+export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, limit: number = 5): Promise<Array<T | undefined>> {
+  const results: Array<T | undefined> = Array.from({length: tasks.length});
   let currentIndex = 0;
   let hasFailed = false;
 
@@ -71,13 +71,13 @@ export async function withConcurrencyLimit<T>(tasks: Array<() => Promise<T>>, li
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
 
-      if (!task) continue;
-
-      try {
-        results[taskIndex] = await task();
-      } catch (error) {
-        hasFailed = true;
-        throw error;
+      if (task) {
+        try {
+          results[taskIndex] = await task();
+        } catch (error) {
+          hasFailed = true;
+          throw error;
+        }
       }
     }
   };
@@ -129,9 +129,9 @@ export async function withConcurrencyLimitAndProgress<T>(
     onProgress?: (completed: number, total: number) => void;
     onTaskComplete?: (result: T | Error, index: number) => void;
   } = {},
-): Promise<Array<T | Error>> {
+): Promise<Array<T | Error | undefined>> {
   const {limit = 5, onProgress, onTaskComplete} = options;
-  const results: Array<T | Error> = new Array(tasks.length);
+  const results: Array<T | Error | undefined> = Array.from({length: tasks.length});
   let currentIndex = 0;
   let completedCount = 0;
 
@@ -140,20 +140,20 @@ export async function withConcurrencyLimitAndProgress<T>(
       const taskIndex = currentIndex++;
       const task = tasks[taskIndex];
 
-      if (!task) continue;
-
-      try {
-        const result = await task();
-        results[taskIndex] = result;
-        completedCount++;
-        onTaskComplete?.(result, taskIndex);
-        onProgress?.(completedCount, tasks.length);
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        results[taskIndex] = err;
-        completedCount++;
-        onTaskComplete?.(err, taskIndex);
-        onProgress?.(completedCount, tasks.length);
+      if (task) {
+        try {
+          const result = await task();
+          results[taskIndex] = result;
+          completedCount++;
+          onTaskComplete?.(result, taskIndex);
+          onProgress?.(completedCount, tasks.length);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          results[taskIndex] = err;
+          completedCount++;
+          onTaskComplete?.(err, taskIndex);
+          onProgress?.(completedCount, tasks.length);
+        }
       }
     }
   };

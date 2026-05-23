@@ -31,7 +31,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} from "react-icons/tb";
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
@@ -125,6 +125,13 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   // Local state for item management
   const [localItems, setLocalItems] = useState<Product[]>(invoice.items);
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
+  // Ref-driven focus for the inline edit input — explicit alternative to
+  // jsx-a11y/no-autofocus. Only one input is mounted at a time (because the
+  // input is conditionally rendered per editingCell.field), so a single ref suffices.
+  const editInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editingCell) editInputRef.current?.focus();
+  }, [editingCell]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -164,6 +171,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         case "category":
           comparison = a.category - b.category;
           break;
+        default: {
+          const _exhaustive: never = sortField;
+          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+        }
       }
 
       return sortDirection === "asc" ? comparison : -comparison;
@@ -224,6 +235,19 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     setEditValues((prev) => ({...prev, [`${rowIndex}-${field}`]: value}));
   }, []);
 
+  /**
+   * Factory: returns a stable input change handler for editing a specific cell.
+   * Each editable cell gets its own callback to avoid re-rendering on unrelated edits.
+   */
+  const createEditChangeHandler = useCallback(
+    (rowIndex: number, field: string) => {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleEditChange(rowIndex, field, e.target.value);
+      };
+    },
+    [handleEditChange],
+  );
+
   // Handle save edit (Enter or blur)
   const handleSaveEdit = useCallback(() => {
     if (!editingCell) return;
@@ -252,8 +276,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
       if (field === "name" || field === "quantityUnit") {
         item[field] = value;
       } else if (field === "price" || field === "quantity") {
-        const numValue = parseFloat(value);
-        if (!isNaN(numValue) && numValue >= 0) {
+        const numValue = Number.parseFloat(value);
+        if (!Number.isNaN(numValue) && numValue >= 0) {
           item[field] = numValue;
           // Recalculate totalPrice
           item.totalPrice = (item.price ?? 0) * (item.quantity ?? 0);
@@ -501,6 +525,64 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
     return "";
   }, []);
 
+  /**
+   * Factory: returns a stable click handler for selecting a specific row.
+   * Each row checkbox gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createSelectRowHandler = useCallback((index: number) => () => handleSelectRow(index), [handleSelectRow]);
+
+  /**
+   * Factory: returns a stable click handler for editing a specific cell at index.
+   * Each editable cell gets its own callback to avoid re-rendering on unrelated clicks.
+   */
+  const createCellClickHandler = useCallback(
+    (index: number, field: "name" | "price" | "quantity") => () => handleCellClick(index, field),
+    [handleCellClick],
+  );
+
+  /**
+   * Factory: returns a stable click handler for restoring a soft-deleted product.
+   * Each restore button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createRestoreHandler = useCallback((index: number) => () => handleRestore(index), [handleRestore]);
+
+  /**
+   * Factory: returns a stable click handler for opening the allergen edit dialog.
+   * Each allergen button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createEditAllergensHandler = useCallback((index: number) => () => handleEditAllergens(index), [handleEditAllergens]);
+
+  /**
+   * Factory: returns a stable click handler for soft-deleting a product.
+   * Each delete button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createSoftDeleteHandler = useCallback((index: number) => () => handleSoftDelete(index), [handleSoftDelete]);
+
+  /** Updates the search query as the user types in the search input. */
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  /** Opens the bulk delete confirmation dialog. */
+  const handleShowDeleteDialog = useCallback(() => {
+    setShowDeleteDialog(true);
+  }, []);
+
+  /** Sorts items by the "name" column. */
+  const handleSortByName = useCallback(() => {
+    handleSort("name");
+  }, [handleSort]);
+
+  /** Sorts items by the "quantity" column. */
+  const handleSortByQuantity = useCallback(() => {
+    handleSort("quantity");
+  }, [handleSort]);
+
+  /** Sorts items by the "price" column. */
+  const handleSortByPrice = useCallback(() => {
+    handleSort("price");
+  }, [handleSort]);
+
   return (
     <div>
       <div className={styles["headerRow"]}>
@@ -536,7 +618,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             type='text'
             placeholder={t("search.placeholder")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className={styles["searchInput"]}
           />
         </div>
@@ -554,7 +636,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <Button
               variant='destructive'
               size='sm'
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={handleShowDeleteDialog}
               className={styles["deleteButton"]}>
               <TbTrash className={styles["deleteIcon"]} />
               {t("bulkToolbar.deleteSelected")}
@@ -578,21 +660,21 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               </TableHead>
               <TableHead
                 className={styles["tableHeaderSortable"]}
-                onClick={() => handleSort("name")}>
+                onClick={handleSortByName}>
                 {t("columns.name")}
                 {sortField === "name" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
-                onClick={() => handleSort("quantity")}>
+                onClick={handleSortByQuantity}>
                 {t("columns.quantity")}
-                {sortField === "quantity" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
+                {sortField === "quantity" ? <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span> : null}
               </TableHead>
               <TableHead
                 className={styles["tableHeaderRightSortable"]}
-                onClick={() => handleSort("price")}>
+                onClick={handleSortByPrice}>
                 {t("columns.price")}
-                {sortField === "price" && <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span>}
+                {sortField === "price" ? <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span> : null}
               </TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("columns.total")}</TableHead>
               <TableHead className={styles["tableHeaderCenter"]}>{t("columns.actions")}</TableHead>
@@ -603,10 +685,19 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               const index = (currentPage - 1) * pageSize + pageIndex;
               const isEditing = editingCell?.rowIndex === index;
               const isSelected = selectedIndices.has(index);
-              const isSoftDeleted = item.metadata.isSoftDeleted;
-              const isEdited = item.metadata.isEdited;
-              const hasAllergens = item.detectedAllergens.length > 0;
+              const {isSoftDeleted, isEdited} = item.metadata;
+              const {detectedAllergens} = item;
+              const hasAllergens = detectedAllergens.length > 0;
               const indicatorClass = getProductIndicatorClass(item);
+
+              // Create stable handlers for this specific row
+              const onSelectRow = createSelectRowHandler(index);
+              const onCellClickName = createCellClickHandler(index, "name");
+              const onCellClickQuantity = createCellClickHandler(index, "quantity");
+              const onCellClickPrice = createCellClickHandler(index, "price");
+              const onRestore = createRestoreHandler(index);
+              const onEditAllergens = createEditAllergensHandler(index);
+              const onSoftDelete = createSoftDeleteHandler(index);
 
               return (
                 <motion.tr
@@ -621,7 +712,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                     <Checkbox
                       nativeButton
                       checked={isSelected}
-                      onCheckedChange={() => handleSelectRow(index)}
+                      onCheckedChange={onSelectRow}
                       aria-label={t("columns.selectRow", {name: item.name})}
                       className={styles["selectCheckbox"]}
                       disabled={isSoftDeleted}
@@ -629,16 +720,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   </td>
                   <td
                     className={`${styles["tableCell"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "name")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickName : undefined}>
                     <div className={styles["cellWithIndicators"]}>
                       {isEditing && editingCell.field === "name" ? (
                         <Input
+                          ref={editInputRef}
                           type='text'
                           value={editValues[`${index}-name`] ?? ""}
-                          onChange={(e) => handleEditChange(index, "name", e.target.value)}
+                          onChange={createEditChangeHandler(index, "name")}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
-                          autoFocus
                           aria-label={t("editing.fieldLabel", {field: t("columns.name"), name: item.name})}
                           className={styles["editInput"]}
                         />
@@ -664,7 +755,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          {hasAllergens && !isSoftDeleted && (
+                          {hasAllergens && !isSoftDeleted ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger
@@ -682,22 +773,22 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          )}
+                          ) : null}
                         </>
                       )}
                     </div>
                   </td>
                   <td
                     className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "quantity")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickQuantity : undefined}>
                     {isEditing && editingCell.field === "quantity" ? (
                       <Input
+                        ref={editInputRef}
                         type='number'
                         value={editValues[`${index}-quantity`] ?? ""}
-                        onChange={(e) => handleEditChange(index, "quantity", e.target.value)}
+                        onChange={createEditChangeHandler(index, "quantity")}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        autoFocus
                         aria-label={t("editing.fieldLabel", {field: t("columns.quantity"), name: item.name})}
                         className={styles["editInput"]}
                       />
@@ -707,16 +798,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   </td>
                   <td
                     className={`${styles["tableCellRight"]} ${styles["tableCellEditable"]} ${isSoftDeleted ? styles["strikethrough"] : ""}`}
-                    onClick={() => !isEditing && !isSoftDeleted && handleCellClick(index, "price")}>
+                    onClick={!isEditing && !isSoftDeleted ? onCellClickPrice : undefined}>
                     {isEditing && editingCell.field === "price" ? (
                       <Input
+                        ref={editInputRef}
                         type='number'
                         step='0.01'
                         value={editValues[`${index}-price`] ?? ""}
                         onChange={(e) => handleEditChange(index, "price", e.target.value)}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        autoFocus
                         aria-label={t("editing.fieldLabel", {field: t("columns.price"), name: item.name})}
                         className={styles["editInput"]}
                       />
@@ -737,7 +828,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                 <Button
                                   variant='ghost'
                                   size='sm'
-                                  onClick={() => handleRestore(index)}
+                                  onClick={onRestore}
                                   disabled={isSaving}
                                   className={styles["actionButton"]}>
                                   <TbRefresh className={styles["actionIcon"]} />
@@ -758,7 +849,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                   <Button
                                     variant='ghost'
                                     size='sm'
-                                    onClick={() => handleEditAllergens(index)}
+                                    onClick={onEditAllergens}
                                     disabled={isSaving}
                                     className={styles["actionButton"]}>
                                     <TbFlask className={styles["actionIcon"]} />
@@ -777,7 +868,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                   <Button
                                     variant='ghost'
                                     size='sm'
-                                    onClick={() => handleSoftDelete(index)}
+                                    onClick={onSoftDelete}
                                     disabled={isSaving}
                                     className={styles["actionButton"]}>
                                     <TbTrash className={styles["actionIcon"]} />

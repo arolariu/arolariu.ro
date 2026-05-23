@@ -204,7 +204,8 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
 
   // Mark successfully converted scans as used (best-effort)
   if (convertedScanIds.length > 0) {
-    const blobNames = scans.filter((s) => convertedScanIds.includes(s.id)).map(extractBlobNameFromScan);
+    const convertedSet = new Set(convertedScanIds);
+    const blobNames = scans.filter((s) => convertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
 
     markScansAsUsed({blobNames}).catch((error) => {
       console.warn("Failed to mark scans as used (non-critical):", error);
@@ -272,8 +273,8 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     );
 
     // Mark successfully converted scans as used (best-effort)
-    const allConvertedScanIds = [firstScan.id, ...convertedScanIds];
-    const blobNames = scans.filter((s) => allConvertedScanIds.includes(s.id)).map(extractBlobNameFromScan);
+    const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
+    const blobNames = scans.filter((s) => allConvertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
 
     markScansAsUsed({blobNames}).catch((error) => {
       console.warn("Failed to mark scans as used (non-critical):", error);

@@ -49,15 +49,12 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
 
       return (...args: unknown[]): Promise<unknown> => {
         // 1) AbortSignal-as-last-arg detection (synchronous reject path).
-        const last = args[args.length - 1];
-        let signal: AbortSignal | undefined;
-        let callArgs = args;
-        if (last instanceof AbortSignal) {
-          signal = last;
-          callArgs = args.slice(0, -1);
-          if (signal.aborted) {
-            return Promise.reject(signal.reason ?? new Error("aborted"));
-          }
+        const last = args.at(-1);
+        const hasAbortSignal = last instanceof AbortSignal;
+        const signal: AbortSignal | undefined = hasAbortSignal ? last : undefined;
+        const callArgs = hasAbortSignal ? args.slice(0, -1) : args;
+        if (signal?.aborted) {
+          return Promise.reject(signal.reason ?? new Error("aborted"));
         }
 
         // 2) Register in-flight synchronously so a crash mid-`ensureReady`
@@ -70,7 +67,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         // `Promise.race` — the loser still settles asynchronously after the
         // race completes. Applies to `crashPromise`, `wrapped`, and
         // `bodyPromise` below.
-        crashPromise.catch(() => {});
+        crashPromise.catch((): void => {});
 
         const body = async (): Promise<unknown> => {
           await deps.ensureReady();
@@ -78,7 +75,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           if (!target) throw new Error(`Worker host has no target after ensureReady()`);
           const fn = (target as Record<string, unknown>)[prop];
           if (typeof fn !== "function") {
-            throw new Error(`Worker host has no method "${prop}"`);
+            throw new TypeError(`Worker host has no method "${prop}"`);
           }
           deps.lifecycle.beginCall();
 
@@ -86,7 +83,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
           let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
           let timeoutPromise: Promise<never> | null = null;
           if (deps.defaultCallTimeoutMs > 0 && Number.isFinite(deps.defaultCallTimeoutMs)) {
-            timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutPromise = new Promise<never>((_resolve, reject) => {
               timeoutHandle = setTimeout(() => {
                 reject(new WorkerTimeoutError(prop, Math.round(performance.now() - callStartMs)));
               }, deps.defaultCallTimeoutMs);
@@ -98,18 +95,18 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
               const callPromise = (async (): Promise<unknown> => {
                 try {
                   return await (fn as (...a: unknown[]) => Promise<unknown>)(...callArgs);
-                } catch (cause) {
-                  if (typeof cause === "object" && cause !== null && (cause as {__workerError?: unknown}).__workerError === true) {
-                    throw new WorkerError(cause, prop);
+                } catch (error) {
+                  if (typeof error === "object" && error !== null && (error as {__workerError?: unknown}).__workerError === true) {
+                    throw new WorkerError(error, prop);
                   }
-                  throw cause;
+                  throw error;
                 }
               })();
               return raceWithSignal(callPromise, signal);
             });
 
             if (timeoutPromise) {
-              wrapped.catch(() => {});
+              wrapped.catch((): void => {});
               return await Promise.race([wrapped, timeoutPromise]);
             }
             return await wrapped;
@@ -120,7 +117,7 @@ export function buildCallProxy<TApi>(deps: CallProxyDeps<TApi>): Remote<TApi> {
         };
 
         const bodyPromise = body();
-        bodyPromise.catch(() => {});
+        bodyPromise.catch((): void => {});
         return Promise.race([bodyPromise, crashPromise]).finally(() => {
           removeFromInFlight?.();
         });

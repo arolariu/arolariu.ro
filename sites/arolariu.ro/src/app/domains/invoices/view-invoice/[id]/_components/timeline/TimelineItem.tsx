@@ -7,8 +7,7 @@
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import type {TranslationValues} from "next-intl";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale, useTranslations, type TranslationValues} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
 import {TimelineEvent, TimelineEventType} from "../../_types/timeline";
 import styles from "./TimelineItem.module.scss";

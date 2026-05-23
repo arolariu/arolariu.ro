@@ -33,12 +33,14 @@ export default function PreferencesSubscriptions(): React.JSX.Element | null {
 
     const channel = new BroadcastChannel("zustand-preferences-sync");
     let isSyncing = false;
+    let syncResetTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const onMessage = (event: MessageEvent<PreferencesPersistedState>): void => {
       isSyncing = true;
       usePreferencesStore.setState(event.data);
-      setTimeout(() => {
+      syncResetTimeoutId = setTimeout(() => {
         isSyncing = false;
+        syncResetTimeoutId = null;
       }, 100);
     };
     channel.addEventListener("message", onMessage);
@@ -50,6 +52,7 @@ export default function PreferencesSubscriptions(): React.JSX.Element | null {
     });
 
     return () => {
+      if (syncResetTimeoutId !== null) clearTimeout(syncResetTimeoutId);
       channel.removeEventListener("message", onMessage);
       channel.close();
       unsubscribe();

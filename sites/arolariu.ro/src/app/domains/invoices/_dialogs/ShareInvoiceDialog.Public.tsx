@@ -153,7 +153,10 @@ export function AlreadyPublicMode({
         <TbGlobe className={styles["globeAlertIcon"]} />
         <AlertTitle className={styles["alertOrangeTitle"]}>{t("alreadyPublic.title")}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("alreadyPublic.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("alreadyPublic.description", {
+            // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </AlertDescription>
       </Alert>
 
@@ -210,7 +213,10 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
         <AlertTitle className={styles["alertOrangeTitle"]}>{t("warning.title")}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("warning.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("warning.description", {
+            // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </AlertDescription>
       </Alert>
 

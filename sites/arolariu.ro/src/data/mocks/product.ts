@@ -105,7 +105,7 @@ export class ProductBuilder {
         isComplete: false,
         isEdited: false,
         isSoftDeleted: false,
-        confidence: faker.number.float({min: 0.7, max: 1.0, multipleOf: 0.01}),
+        confidence: faker.number.float({min: 0.7, max: 1, multipleOf: 0.01}),
       },
     };
   }

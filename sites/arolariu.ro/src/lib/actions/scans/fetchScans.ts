@@ -127,12 +127,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
         const scanId = metadata["scanId"] ?? metadata["scanid"];
 
         // Skip scans that have been used by invoices
-        if (metadata["usedByInvoice"] === "true") {
-          continue;
-        }
-
-        // Only process blobs with valid scan ID in metadata
-        if (scanId) {
+        if (metadata["usedByInvoice"] !== "true" && scanId) {
           // Parse status from metadata (case-insensitive)
           const statusString = metadata["status"] ?? ScanStatus.READY;
           const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
