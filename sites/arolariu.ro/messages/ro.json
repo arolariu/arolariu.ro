@@ -3233,6 +3233,15 @@
       "emailSending": "Se trimite e-mailul către {email}…",
       "emailSuccess": "E-mail trimis către {email}.",
       "emailError": "Nu s-a putut trimite e-mailul către {email}: {error}"
+    },
+    "useRecipeAdd": {
+      "error": "Nu s-a putut adăuga rețeta."
+    },
+    "useRecipeDelete": {
+      "error": "Nu s-a putut șterge rețeta."
+    },
+    "useRecipeUpdate": {
+      "error": "Nu s-a putut actualiza rețeta."
     }
   },
   "IMS--List": {

@@ -3,7 +3,6 @@
 // TODO: refactor.
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
@@ -42,7 +41,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
-import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
+import {useRecipeAdd} from "../../../../_hooks/useRecipeAdd";
 import styles from "./RecipeDialog.module.scss";
 
 /**
@@ -69,8 +68,8 @@ function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
 
 const CreateDialog = () => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
-  const {invoice} = useEditInvoiceContext();
   const router = useRouter();
+  const {performAdd, isAdding} = useRecipeAdd();
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
@@ -83,7 +82,6 @@ const CreateDialog = () => {
     instructions: "",
     referenceForMoreDetails: "",
   } satisfies Recipe);
-  const [isSaving, setIsSaving] = useState(false);
 
   /** Updates recipe fields as the user types in form inputs. */
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -96,14 +94,10 @@ const CreateDialog = () => {
   }, []);
 
   /**
-   * Creates a new recipe and adds it to the invoice's possible recipes list.
-   * Saves via patchInvoice server action and refreshes the page on success.
+   * Creates a new recipe, adds it to the invoice, and refreshes the page on success.
    */
   const handleCreate = useCallback(async () => {
-    setIsSaving(true);
-
     try {
-      // Build the new recipe with proper types
       const newRecipe: Recipe = {
         name: recipe.name,
         description: recipe.description,
@@ -116,28 +110,16 @@ const CreateDialog = () => {
         referenceForMoreDetails: recipe.referenceForMoreDetails,
       };
 
-      // Add the new recipe to the existing recipes array
-      const updatedRecipes = [...(invoice.possibleRecipes ?? []), newRecipe];
-
-      const result = await patchInvoice({
-        invoiceId: invoice.id,
-        payload: {possibleRecipes: updatedRecipes},
-      });
-
-      if (result.success) {
-        toast.success(t("create.success") ?? "Recipe created successfully");
-        close();
-        router.refresh();
-      } else {
-        toast.error(result.error ?? t("create.error") ?? "Failed to create recipe");
-      }
+      await performAdd(newRecipe);
+      toast.success(t("create.success") ?? "Recipe created successfully");
+      close();
+      router.refresh();
     } catch (error) {
       console.error("Failed to create recipe:", error);
-      toast.error(t("create.error") ?? "Failed to create recipe");
-    } finally {
-      setIsSaving(false);
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t("create.error") || "Failed to create recipe");
     }
-  }, [recipe, invoice, t, close, router]);
+  }, [recipe, t, close, router, performAdd]);
 
   /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
@@ -366,15 +348,15 @@ const CreateDialog = () => {
               type='button'
               variant='outline'
               onClick={close}
-              disabled={isSaving}>
+              disabled={isAdding}>
               {t("buttons.cancel")}
             </Button>
             <Button
               type='button'
               onClick={handleCreate}
-              disabled={isSaving}>
+              disabled={isAdding}>
               <TbDisc className={styles["saveIcon"]} />
-              {isSaving ? (t("buttons.saving") ?? "Saving...") : t("buttons.save")}
+              {isAdding ? (t("buttons.saving") ?? "Saving...") : t("buttons.save")}
             </Button>
           </div>
         </DialogFooter>

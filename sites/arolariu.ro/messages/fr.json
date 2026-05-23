@@ -3233,6 +3233,15 @@
       "emailSending": "Envoi de l'e-mail à {email}…",
       "emailSuccess": "E-mail envoyé à {email}.",
       "emailError": "Impossible d'envoyer l'e-mail à {email} : {error}"
+    },
+    "useRecipeAdd": {
+      "error": "Impossible d'ajouter la recette."
+    },
+    "useRecipeDelete": {
+      "error": "Impossible de supprimer la recette."
+    },
+    "useRecipeUpdate": {
+      "error": "Impossible de mettre à jour la recette."
     }
   },
   "IMS--List": {
