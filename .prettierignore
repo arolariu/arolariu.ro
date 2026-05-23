@@ -43,6 +43,7 @@ package-lock.json
 **/**/*.pdf
 **/**/*.yml
 **/**/*.tsbuildinfo
+**/**/*.csv
 
 
 # Don't format output dirs:

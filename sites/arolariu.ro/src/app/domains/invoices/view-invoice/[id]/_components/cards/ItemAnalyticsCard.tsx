@@ -193,6 +193,10 @@ export function ItemAnalyticsCard(): React.JSX.Element {
         case "quantity":
           comparison = a.quantity - b.quantity;
           break;
+        default: {
+          const _exhaustive: never = sortField;
+          throw new Error(`Unhandled sortField: ${String(_exhaustive)}`);
+        }
       }
 
       return sortDirection === "asc" ? comparison : -comparison;
@@ -209,13 +213,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
    * **Performance:** Memoized to recompute only when items change.
    */
   const totals = useMemo(() => {
-    return invoice.items.reduce(
-      (acc, item) => ({
-        quantity: acc.quantity + item.quantity,
-        price: acc.price + item.totalPrice,
-      }),
-      {quantity: 0, price: 0},
-    );
+    let quantity = 0;
+    let price = 0;
+    for (const item of invoice.items) {
+      quantity += item.quantity;
+      price += item.totalPrice;
+    }
+    return {quantity, price};
   }, [invoice.items]);
 
   /**
@@ -275,6 +279,23 @@ export function ItemAnalyticsCard(): React.JSX.Element {
     [sortField],
   );
 
+  /** Updates the search query as the user types in the search input. */
+  const handleSearchQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
+
+  /** Sorts items by the "name" column. */
+  const handleSortByName = useCallback(() => handleSort("name"), [handleSort]);
+
+  /** Sorts items by the "category" column. */
+  const handleSortByCategory = useCallback(() => handleSort("category"), [handleSort]);
+
+  /** Sorts items by the "price" column. */
+  const handleSortByPrice = useCallback(() => handleSort("price"), [handleSort]);
+
+  /** Sorts items by the "quantity" column. */
+  const handleSortByQuantity = useCallback(() => handleSort("quantity"), [handleSort]);
+
   /**
    * Retrieves the display name for a product category.
    *
@@ -332,7 +353,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                   type='text'
                   placeholder={t("searchPlaceholder")}
                   value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchQueryChange}
                   className={styles["searchInput"]}
                 />
               </div>
@@ -347,7 +368,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableHead>
                         <button
                           type='button'
-                          onClick={() => handleSort("name")}
+                          onClick={handleSortByName}
                           className={styles["sortButton"]}>
                           {t("columns.name")}
                           <TbArrowsSort className={styles["sortIcon"]} />
@@ -356,7 +377,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableHead>
                         <button
                           type='button'
-                          onClick={() => handleSort("category")}
+                          onClick={handleSortByCategory}
                           className={styles["sortButton"]}>
                           {t("columns.category")}
                           <TbArrowsSort className={styles["sortIcon"]} />
@@ -365,7 +386,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableHead>
                         <button
                           type='button'
-                          onClick={() => handleSort("price")}
+                          onClick={handleSortByPrice}
                           className={styles["sortButton"]}>
                           {t("columns.price")}
                           <TbArrowsSort className={styles["sortIcon"]} />
@@ -374,7 +395,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                       <TableHead>
                         <button
                           type='button'
-                          onClick={() => handleSort("quantity")}
+                          onClick={handleSortByQuantity}
                           className={styles["sortButton"]}>
                           {t("columns.quantity")}
                           <TbArrowsSort className={styles["sortIcon"]} />
@@ -384,8 +405,8 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedItems.map((item, index) => (
-                      <TableRow key={`${item.productCode}-${index}`}>
+                    {sortedItems.map((item) => (
+                      <TableRow key={item.productCode ?? item.name}>
                         <TableCell>
                           <div className={styles["itemCell"]}>
                             <div className={styles["itemNameRow"]}>

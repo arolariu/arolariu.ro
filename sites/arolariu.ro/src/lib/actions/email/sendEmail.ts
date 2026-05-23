@@ -15,8 +15,8 @@
 import {auth} from "@clerk/nextjs/server";
 import type {ReactElement} from "react";
 
-import {DEFAULT_LOCALE, type EmailLocale} from "@/../emails/_i18n";
 import {emailTemplates, type EmailTemplateKey, type EmailTemplatePropsMap} from "@/../emails/_registry";
+import {DEFAULT_EMAIL_LOCALE, type EmailLocale} from "@/types/emails";
 
 // `emailService` is imported lazily inside the action body — NOT at the top
 // level — so its transitive dependency chain (react-email → prettier) does
@@ -76,7 +76,7 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
     return {success: false, error: `Unknown template: ${String(input.templateKey)}`};
   }
 
-  const locale: EmailLocale = input.props.locale ?? DEFAULT_LOCALE;
+  const locale: EmailLocale = input.props.locale ?? DEFAULT_EMAIL_LOCALE;
 
   // Narrow `variantProps` once — the discriminated registry union has
   // `variantProps` only on variant entries, but reading it through a
@@ -128,8 +128,8 @@ export async function sendEmail<K extends EmailTemplateKey>(input: SendEmailInpu
     });
 
     return {success: true};
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
     return {success: false, error: msg};
   }
 }

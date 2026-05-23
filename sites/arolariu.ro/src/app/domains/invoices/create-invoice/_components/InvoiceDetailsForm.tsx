@@ -32,6 +32,7 @@ import {
   Textarea,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbCalendar, TbFileTypePdf} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
@@ -59,6 +60,7 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
               <span className={styles["pdfLabel"]}>PDF</span>
             </div>
           ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- scan thumbnails are dynamic Azure Blob URLs not configured in next.config remotePatterns; <Image unoptimized> adds no value
             <img
               src={scan.blobUrl}
               alt={scan.name}
@@ -81,8 +83,48 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   const {invoiceDetails, setName, setCategory, setPaymentType, setTransactionDate, setDescription, selectedScans} =
     useCreateInvoiceContext();
 
+  /** Updates the invoice name as the user types. */
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setName(e.target.value);
+    },
+    [setName],
+  );
+
+  /** Updates the invoice category selection. */
+  const handleCategoryChange = useCallback(
+    (value: string) => {
+      setCategory(Number.parseInt(value, 10) as InvoiceCategory);
+    },
+    [setCategory],
+  );
+
+  /** Updates the payment type selection. */
+  const handlePaymentTypeChange = useCallback(
+    (value: string) => {
+      setPaymentType(Number.parseInt(value, 10) as PaymentType);
+    },
+    [setPaymentType],
+  );
+
+  /** Updates the transaction date from the calendar picker. */
+  const handleTransactionDateChange = useCallback(
+    (date: Date | undefined) => {
+      if (date) setTransactionDate(date);
+    },
+    [setTransactionDate],
+  );
+
+  /** Updates the invoice description as the user types. */
+  const handleDescriptionChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setDescription(e.target.value);
+    },
+    [setDescription],
+  );
+
   // Get first selected scan for preview
-  const firstScan = selectedScans[0];
+  const [firstScan] = selectedScans;
 
   return (
     <div className={styles["container"]}>
@@ -93,11 +135,11 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
 
       <div className={styles["contentWrapper"]}>
         {/* Scan Thumbnail - shown on mobile top, desktop right */}
-        {firstScan && (
+        {firstScan ? (
           <div className={styles["thumbnailColumn"]}>
             <ScanThumbnail scan={firstScan} />
           </div>
-        )}
+        ) : null}
 
         {/* Form Column */}
         <Card className={styles["formCard"]}>
@@ -110,7 +152,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                 type='text'
                 placeholder={t("fields.name.placeholder")}
                 value={invoiceDetails.name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
                 required
               />
               <p className={styles["fieldHint"]}>{t("fields.name.hint")}</p>
@@ -121,7 +163,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='invoice-category'>{t("fields.category.label")}</Label>
               <Select
                 value={invoiceDetails.category.toString()}
-                onValueChange={(value) => setCategory(Number.parseInt(value) as InvoiceCategory)}>
+                onValueChange={handleCategoryChange}>
                 <SelectTrigger id='invoice-category'>
                   <SelectValue placeholder={t("fields.category.placeholder")} />
                 </SelectTrigger>
@@ -141,7 +183,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
               <Label htmlFor='payment-type'>{t("fields.paymentType.label")}</Label>
               <Select
                 value={invoiceDetails.paymentType.toString()}
-                onValueChange={(value) => setPaymentType(Number.parseInt(value) as PaymentType)}>
+                onValueChange={handlePaymentTypeChange}>
                 <SelectTrigger id='payment-type'>
                   <SelectValue placeholder={t("fields.paymentType.placeholder")} />
                 </SelectTrigger>
@@ -176,7 +218,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   <Calendar
                     mode='single'
                     selected={invoiceDetails.transactionDate}
-                    onSelect={(date) => date && setTransactionDate(date)}
+                    onSelect={handleTransactionDateChange}
                     initialFocus
                   />
                 </PopoverContent>
@@ -190,7 +232,7 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                 id='invoice-description'
                 placeholder={t("fields.description.placeholder")}
                 value={invoiceDetails.description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={handleDescriptionChange}
                 rows={4}
                 className={styles["descriptionTextarea"]}
               />

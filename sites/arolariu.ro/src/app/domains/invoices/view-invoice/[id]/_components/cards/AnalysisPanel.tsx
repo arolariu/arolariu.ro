@@ -195,6 +195,17 @@ export function AnalysisPanel(): React.JSX.Element {
     await handleAnalyze(InvoiceAnalysisOptions.CompleteAnalysis);
   }, [handleAnalyze]);
 
+  /**
+   * Factory: returns a stable click handler for triggering analysis with a specific option.
+   * Each option button gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createAnalyzeHandler = useCallback(
+    (optionId: InvoiceAnalysisOptions) => {
+      return () => handleAnalyze(optionId);
+    },
+    [handleAnalyze],
+  );
+
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["header"]}>
@@ -238,7 +249,7 @@ export function AnalysisPanel(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["idleState"]}>
               {/* Last Analyzed Info */}
-              {invoice.lastUpdatedAt && (
+              {invoice.lastUpdatedAt ? (
                 <div className={styles["lastAnalyzed"]}>
                   <div className={styles["infoRow"]}>
                     <TbClock className={styles["infoIcon"]} />
@@ -257,7 +268,7 @@ export function AnalysisPanel(): React.JSX.Element {
                     </div>
                   )}
                 </div>
-              )}
+              ) : null}
 
               {/* Quick Re-Analyze Button */}
               <div className={styles["quickAction"]}>
@@ -291,15 +302,14 @@ export function AnalysisPanel(): React.JSX.Element {
                           <TooltipTrigger
                             render={
                               <Button
-                                // eslint-disable-next-line react/jsx-no-bind -- simple handler
-                                onClick={() => handleAnalyze(option.id)}
+                                onClick={createAnalyzeHandler(option.id)}
                                 disabled={isAnalyzing}
                                 variant='outline'
                                 size='sm'
                                 className={styles["optionButton"]}>
                                 {option.icon}
                                 <span className={styles["optionLabel"]}>{option.label}</span>
-                                {selectedOption === option.id && isAnalyzing && <TbCheck className={styles["activeIcon"]} />}
+                                {selectedOption === option.id && isAnalyzing ? <TbCheck className={styles["activeIcon"]} /> : null}
                               </Button>
                             }
                           />

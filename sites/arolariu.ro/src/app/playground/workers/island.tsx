@@ -94,13 +94,13 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
     () =>
       createWorkerHost<PlaygroundWorkerApi>({
         name: "playground",
-        load: () => new Worker(new URL("./playground.worker.ts", import.meta.url), {type: "module"}),
+        load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
         idleTimeoutMs: 60_000,
       }),
     [],
   );
   const host = useWorker(factory);
-  const state = host.state;
+  const {state} = host;
 
   useWorkerEvent(host, (e) => {
     setLogs((prev) => {
@@ -115,77 +115,109 @@ export function WorkerPlaygroundIsland(): React.JSX.Element {
    * machine so the consumer receives loading/error/success branches without
    * boilerplate. Errors are classified for the aria-live region.
    */
-  const runCall = async <T,>(method: string, fn: () => Promise<T>): Promise<void> => {
+  const runCall = useCallback(async <T,>(method: string, fn: () => Promise<T>): Promise<void> => {
     setCallState({status: "pending", method});
     try {
       const result = await fn();
       setCallState({status: "success", method, result});
-    } catch (err) {
-      setCallState({status: "error", method, error: asError(err)});
+    } catch (error) {
+      setCallState({status: "error", method, error: asError(error)});
     }
-  };
+  }, []);
 
-  const onEcho = (): Promise<void> =>
-    runCall("echo", async () => {
-      const v = echoInputRef.current?.value ?? "";
-      return host.api.echo(v);
-    });
+  /** Calls the worker's echo handler with the current input value. */
+  const onEcho = useCallback(
+    (): Promise<void> =>
+      runCall("echo", async () => {
+        const v = echoInputRef.current?.value ?? "";
+        return host.api.echo(v);
+      }),
+    [host.api, runCall],
+  );
 
-  const onPing = (): Promise<void> => runCall("ping", () => host.api.ping());
+  /** Calls the worker's ping handler (instant round-trip). */
+  const onPing = useCallback((): Promise<void> => runCall("ping", () => host.api.ping()), [host.api, runCall]);
 
-  const onSleep10s = async (): Promise<void> => {
+  /**
+   * Starts a 10-second sleep operation in the worker.
+   * Creates a new AbortController so the operation can be cancelled via onAbortSleep.
+   */
+  const onSleep10s = useCallback(async (): Promise<void> => {
     sleepAcRef.current = new AbortController();
     await runCall("sleep", () => host.api.sleep(10_000, sleepAcRef.current!.signal));
-  };
+  }, [host.api, runCall]);
 
-  const onAbortSleep = (): void => {
+  /** Aborts the currently running sleep operation by signaling the AbortController. */
+  const onAbortSleep = useCallback((): void => {
     sleepAcRef.current?.abort(new Error("user aborted"));
-  };
+  }, []);
 
-  const onCrash = (): Promise<void> => runCall("crash", () => host.api.crash());
+  /** Calls the worker's crash handler (throws an unhandled error to terminate the worker). */
+  const onCrash = useCallback((): Promise<void> => runCall("crash", () => host.api.crash()), [host.api, runCall]);
 
-  const onRestart = (): Promise<void> => runCall("restart", () => host.restart());
+  /** Restarts the worker host (disposes and recreates the worker instance). */
+  const onRestart = useCallback((): Promise<void> => runCall("restart", () => host.restart()), [host, runCall]);
 
-  const onCapabilities = (): Promise<void> =>
-    runCall("reportCapabilities", async () => {
-      const c = await host.api.reportCapabilities();
-      setCaps(c);
-      return c;
-    });
+  /**
+   * Queries the worker's runtime capabilities (platform, SharedArrayBuffer support, etc.).
+   * Updates local state with the response for UI display.
+   */
+  const onCapabilities = useCallback(
+    (): Promise<void> =>
+      runCall("reportCapabilities", async () => {
+        const c = await host.api.reportCapabilities();
+        setCaps(c);
+        return c;
+      }),
+    [host.api, runCall],
+  );
 
-  const onEmitEvents = (): Promise<void> => runCall("emitEvents", () => host.api.emitEvents(5));
+  /** Calls the worker's emitEvents handler to generate 5 test events. */
+  const onEmitEvents = useCallback((): Promise<void> => runCall("emitEvents", () => host.api.emitEvents(5)), [host.api, runCall]);
 
-  const onThrowHandlerError = (): Promise<void> => runCall("throwError", () => host.api.throwError("playground-demo"));
+  /** Calls the worker's throwError handler (triggers a handler-level error for testing error paths). */
+  const onThrowHandlerError = useCallback(
+    (): Promise<void> => runCall("throwError", () => host.api.throwError("playground-demo")),
+    [host.api, runCall],
+  );
 
-  // Stress: dedicated host with a tiny per-call timeout that is guaranteed
-  // to fire against a 5s worker sleep.
-  const onTriggerTimeout = async (): Promise<void> => {
+  /**
+   * Stress test: creates a transient worker host with a 100ms per-call timeout,
+   * then tries to sleep for 5s to force a WorkerTimeoutError.
+   */
+  const onTriggerTimeout = useCallback(async (): Promise<void> => {
     setCallState({status: "pending", method: "timeoutSlow"});
     const transient = createWorkerHost<PlaygroundWorkerApi>({
       name: "playground-timeout",
-      load: () => new Worker(new URL("./playground.worker.ts", import.meta.url), {type: "module"}),
+      load: () => new Worker(new URL("playground.worker.ts", import.meta.url), {type: "module"}),
       defaultCallTimeoutMs: 100,
     });
     try {
       await transient.api.sleep(5_000);
       setCallState({status: "success", method: "timeoutSlow", result: "no timeout (unexpected)"});
-    } catch (err) {
-      setCallState({status: "error", method: "timeoutSlow", error: asError(err)});
+    } catch (error) {
+      setCallState({status: "error", method: "timeoutSlow", error: asError(error)});
     } finally {
       void transient.dispose();
     }
-  };
+  }, []);
 
-  // Stress: ask the worker realm for `typeof window`. Real Workers report
-  // "undefined"; MockWorker reports "object" because it shares the host realm.
-  const onProbeWindow = (): Promise<void> =>
-    runCall("whatIsWindow", async () => {
-      const result = await host.api.whatIsWindow();
-      setWindowProbe(result);
-      return result;
-    });
+  /**
+   * Stress test: asks the worker realm for `typeof window`.
+   * Real Workers return "undefined" (no window object); MockWorker returns "object".
+   */
+  const onProbeWindow = useCallback(
+    (): Promise<void> =>
+      runCall("whatIsWindow", async () => {
+        const result = await host.api.whatIsWindow();
+        setWindowProbe(result);
+        return result;
+      }),
+    [host.api, runCall],
+  );
 
-  const onClearLog = (): void => setLogs([]);
+  /** Clears the event log display. */
+  const onClearLog = useCallback((): void => setLogs([]), []);
 
   const isPending = callState.status === "pending";
   const errorCategory = callState.status === "error" ? classifyError(callState.error) : null;

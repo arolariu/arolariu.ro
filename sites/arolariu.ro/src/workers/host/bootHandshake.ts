@@ -144,6 +144,10 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
       reject(new WorkerCrashError([]));
     }, opts.bootstrapTimeoutMs);
 
+    // MessagePort: use `onmessage` (property assignment) rather than addEventListener
+    // so the bootstrap → steady-state handler swap is a single reassignment AND so the
+    // port auto-starts (assigning onmessage implicitly calls port.start()).
+    // eslint-disable-next-line unicorn/prefer-add-event-listener -- MessagePort.onmessage auto-starts the port; addEventListener does not
     event.parent.onmessage = (e: MessageEvent): void => {
       const ev = e.data as WorkerEvent;
       if (ev.kind === "ready") {
@@ -152,6 +156,7 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
           bootTimeoutId = null;
         }
         // Swap to steady-state mode for the rest of the worker's lifetime.
+        // eslint-disable-next-line unicorn/prefer-add-event-listener -- handler-swap relies on property replacement semantics
         event.parent.onmessage = (next: MessageEvent): void => {
           const nextEv = next.data as WorkerEvent;
           // Filter stray `ready` events that arrive after bootstrap.
@@ -224,14 +229,14 @@ export function createBootHandshake(opts: CreateBootHandshakeOptions): BootHands
 
   try {
     opts.worker.postMessage(bootstrap, [rpc.transferable, event.transferable]);
-  } catch (err) {
-    ejectBoot(err);
+  } catch (error) {
+    ejectBoot(error);
     if (bootTimeoutId !== null) {
       clearTimeout(bootTimeoutId);
       bootTimeoutId = null;
     }
     closePorts();
-    throw err;
+    throw error;
   }
 
   return {

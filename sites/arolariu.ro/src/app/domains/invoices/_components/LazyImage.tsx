@@ -76,7 +76,7 @@ export function LazyImage({src, alt, width = 800, height = 600, className = ""}:
       className={`${styles["container"]} ${className}`}
       style={{width, height}}>
       {!isLoaded && <Skeleton className={styles["skeleton"]} />}
-      {isInView && (
+      {isInView ? (
         <Image
           src={src}
           alt={alt}
@@ -86,7 +86,7 @@ export function LazyImage({src, alt, width = 800, height = 600, className = ""}:
           className={`${styles["image"]} ${isLoaded ? styles["imageLoaded"] : ""}`}
           loading='lazy'
         />
-      )}
+      ) : null}
     </div>
   );
 }

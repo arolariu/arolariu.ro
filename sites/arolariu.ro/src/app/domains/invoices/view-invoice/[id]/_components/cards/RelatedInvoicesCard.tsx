@@ -182,7 +182,7 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
     };
 
     return related
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         // First by priority
         const priorityDiff = priorityOrder[a.relationType] - priorityOrder[b.relationType];
         if (priorityDiff !== 0) return priorityDiff;

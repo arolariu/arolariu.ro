@@ -79,7 +79,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
     }
 
     // Sort by upload time
-    const sorted = [...readyScans].sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
+    const sorted = readyScans.toSorted((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
 
     // Find the largest group within 5 minutes
     const FIVE_MINUTES_MS = 5 * 60 * 1000;
@@ -154,6 +154,7 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
                   <TbFileTypePdf className={styles["pdfIcon"]} />
                 </div>
               ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- dynamic Azure Blob URL not configured in next.config remotePatterns
                 <img
                   src={scan.blobUrl}
                   alt={scan.name}

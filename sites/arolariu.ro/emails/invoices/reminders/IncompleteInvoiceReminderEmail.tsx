@@ -33,7 +33,7 @@ import {
   EmailParagraphStyles,
   KeyValueTable,
 } from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
@@ -111,14 +111,12 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       badge={t("badge")}
       heading={t("heading")}
       primaryCta={{href: editInvoiceUrl, label: t("primaryCta")}}
-      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : undefined}
-      showUnsubscribe
+      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : null}
+      showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
       <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
-
       <KeyValueTable
         title={t("invoiceDetailsTitle")}
         items={[
@@ -127,7 +125,6 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           {label: t("missingFieldsLabel"), value: String(missingFields.length)},
         ]}
       />
-
       <EmailCard title={t("whatsMissingTitle")}>
         {missingFields.map((field) => {
           const label = t(`missingFields.${field}.label`);
@@ -149,16 +146,14 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           );
         })}
       </EmailCard>
-
       <EmailCard title={t("tipsTitle")}>
         <BulletList items={[t("tips.0"), t("tips.1"), t("tips.2"), t("tips.3")]} />
       </EmailCard>
-
       <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
-
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
             <Link
               href={`mailto:${BRAND.supportEmail}`}
@@ -168,7 +163,6 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           ),
         })}
       </Text>
-
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
         {t("signOff.line1")}
         <br />

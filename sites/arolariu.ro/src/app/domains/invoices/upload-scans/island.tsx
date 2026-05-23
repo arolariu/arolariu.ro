@@ -10,7 +10,7 @@ import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {
   TbArrowLeft,
   TbArrowRight,
@@ -109,31 +109,25 @@ function UploadContent(): React.JSX.Element {
       }, 500);
       return () => clearTimeout(timer);
     }
-    return undefined;
+    return;
   }, [pendingUploads, sessionStats.totalCompleted]);
 
-  /**
-   * Navigate to create invoice page.
-   */
-  const handleCreateInvoice = (): void => {
+  /** Navigates to the create invoice page after dismissing the prompt. */
+  const handleCreateInvoice = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/create-invoice");
-  };
+  }, [router]);
 
-  /**
-   * Navigate to view scans page.
-   */
-  const handleViewScans = (): void => {
+  /** Navigates to the view scans page after dismissing the prompt. */
+  const handleViewScans = useCallback((): void => {
     setShowPrompt(false);
     router.push("/domains/invoices/view-scans");
-  };
+  }, [router]);
 
-  /**
-   * Dismiss the prompt and stay on page.
-   */
-  const handleDismiss = (): void => {
+  /** Dismisses the post-upload prompt and stays on the upload page. */
+  const handleDismiss = useCallback((): void => {
     setShowPrompt(false);
-  };
+  }, []);
 
   return (
     <section className={styles["contentSection"]}>

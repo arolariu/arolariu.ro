@@ -222,7 +222,7 @@ export default function ChangeHistory(): React.JSX.Element {
                 <p className={styles["changeTitle"]}>{item.title}</p>
                 {item.type === "pending" && <span className={styles["pendingIndicator"]}>{t("IMS--Edit.changeHistory.pending")}</span>}
               </div>
-              {item.description && <p className={styles["changeDescription"]}>{item.description}</p>}
+              {item.description ? <p className={styles["changeDescription"]}>{item.description}</p> : null}
               <p className={styles["changeTimestamp"]}>{formatRelativeTime(item.timestamp)}</p>
             </div>
           </div>

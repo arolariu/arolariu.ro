@@ -77,7 +77,7 @@ export default function ItemsDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__ITEMS");
 
   const invoice = payload;
-  const items = invoice.items;
+  const {items} = invoice;
 
   const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
@@ -121,50 +121,66 @@ export default function ItemsDialog(): React.JSX.Element {
     [setEditableItems],
   );
 
-  const handleValueChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-      const {name, value} = e.target;
+  /**
+   * Factory: returns a stable input change handler for a specific item by index.
+   * Supports editing name, quantity, quantityUnit, and price fields.
+   */
+  const handleValueChangeAtIndex = useCallback(
+    (index: number) => {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
 
-      setEditableItems((prev) => {
-        // Validate index is within bounds
-        if (index < 0 || index >= prev.length) {
-          return prev; // Early return if index is invalid
-        }
-
-        const currentItem = prev.at(index);
-
-        if (!currentItem) {
-          return prev;
-        }
-
-        // Use specific property assignments with functional approach
-        const getUpdatedItem = (): Product => {
-          switch (name) {
-            case "name":
-              return {...currentItem, name: value};
-            case "quantity":
-              return {...currentItem, quantity: Number.parseFloat(value)};
-            case "quantityUnit":
-              return {...currentItem, quantityUnit: value};
-            case "price":
-              return {...currentItem, price: Number.parseFloat(value)};
-            default:
-              return currentItem;
+        setEditableItems((prev) => {
+          // Validate index is within bounds
+          if (index < 0 || index >= prev.length) {
+            return prev; // Early return if index is invalid
           }
-        };
 
-        const updatedItem = getUpdatedItem();
+          const currentItem = prev.at(index);
 
-        if (updatedItem === currentItem) {
-          // No changes made
-          return prev;
-        }
+          if (!currentItem) {
+            return prev;
+          }
 
-        return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
-      });
+          // Use specific property assignments with functional approach
+          const getUpdatedItem = (): Product => {
+            switch (name) {
+              case "name":
+                return {...currentItem, name: value};
+              case "quantity":
+                return {...currentItem, quantity: Number.parseFloat(value)};
+              case "quantityUnit":
+                return {...currentItem, quantityUnit: value};
+              case "price":
+                return {...currentItem, price: Number.parseFloat(value)};
+              default:
+                return currentItem;
+            }
+          };
+
+          const updatedItem = getUpdatedItem();
+
+          if (updatedItem === currentItem) {
+            // No changes made
+            return prev;
+          }
+
+          return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
+        });
+      };
     },
     [setEditableItems],
   );
+
+  /** Navigates to the previous page of items. */
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(currentPage - 1);
+  }, [currentPage, setCurrentPage]);
+
+  /** Navigates to the next page of items. */
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(currentPage + 1);
+  }, [currentPage, setCurrentPage]);
 
   return (
     <Dialog
@@ -205,7 +221,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='name'
                           value={item.name}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["nameInput"]}
                         />
                       </TableCell>
@@ -215,7 +231,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='quantity'
                           value={item.quantity}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInput"]}
                         />
                       </TableCell>
@@ -225,7 +241,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='quantityUnit'
                           value={item.quantityUnit}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInput"]}
                         />
                       </TableCell>
@@ -235,7 +251,7 @@ export default function ItemsDialog(): React.JSX.Element {
                           name='price'
                           value={item.price}
                           // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                          onChange={(e) => handleValueChange(e, absoluteIndex)}
+                          onChange={handleValueChangeAtIndex(absoluteIndex)}
                           className={styles["smallInputRight"]}
                         />
                       </TableCell>
@@ -283,7 +299,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       size='sm'
                       aria-label={t("aria.previousPage", {page: String(currentPage - 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                      onClick={() => setCurrentPage(currentPage - 1)}
+                      onClick={handlePreviousPage}
                       disabled={currentPage === 1}>
                       {t("buttons.previous")}
                     </Button>
@@ -292,7 +308,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       size='sm'
                       aria-label={t("aria.nextPage", {page: String(currentPage + 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      onClick={handleNextPage}
                       disabled={currentPage === totalPages}>
                       {t("buttons.next")}
                     </Button>

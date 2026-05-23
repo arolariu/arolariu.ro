@@ -5,7 +5,7 @@ import {useInvoicesStore, useMerchantsStore} from "@/stores";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
 import {InvoiceGuestBanner} from "./_components/banners/InvoiceGuestBanner";
@@ -57,6 +57,11 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   // Calculate health score percentage for compact display
   const healthScorePercentage = useMemo(() => calculateHealthScorePercentage(invoice), [invoice]);
 
+  /** Opens the invoice health score detailed breakdown dialog. */
+  const handleShowHealthDialog = useCallback(() => {
+    setShowHealthDialog(true);
+  }, []);
+
   return (
     <InvoiceContextProvider
       invoice={invoice}
@@ -101,7 +106,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                   <Button
                     variant='ghost'
                     size='sm'
-                    onClick={() => setShowHealthDialog(true)}>
+                    onClick={handleShowHealthDialog}>
                     {t("healthScore.seeReport")}
                   </Button>
                 </div>

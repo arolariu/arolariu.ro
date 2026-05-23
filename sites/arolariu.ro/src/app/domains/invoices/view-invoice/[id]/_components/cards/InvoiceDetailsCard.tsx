@@ -136,7 +136,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             </div>
 
             {/* Receipt Type Badge - New DI v4.0 field */}
-            {invoice.receiptType && (
+            {invoice.receiptType ? (
               <div className={styles["infoItem"]}>
                 <p className={styles["infoLabelPlain"]}>{t("labels.receiptType")}</p>
                 <Badge variant='secondary'>
@@ -146,10 +146,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   </span>
                 </Badge>
               </div>
-            )}
+            ) : null}
 
             {/* Country/Region - New DI v4.0 field */}
-            {invoice.countryRegion && (
+            {invoice.countryRegion ? (
               <div className={styles["infoItem"]}>
                 <p className={styles["infoLabelPlain"]}>{t("labels.countryRegion")}</p>
                 <Badge variant='outline'>
@@ -157,7 +157,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   <span>{invoice.countryRegion}</span>
                 </Badge>
               </div>
-            )}
+            ) : null}
 
             {/* Subtotal Amount - New DI v4.0 field */}
             {invoice.paymentInformation.subtotalAmount > 0 && (
@@ -186,7 +186,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             )}
 
             {/* RON Equivalent for non-RON currencies - Enhancement for multi-currency */}
-            {ronEquivalent && (
+            {ronEquivalent ? (
               <div className={styles["infoItem"]}>
                 <p className={styles["infoLabelPlain"]}>{t("labels.ronEquivalent")}</p>
                 <TooltipProvider>
@@ -211,20 +211,20 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-            )}
+            ) : null}
           </div>
 
           <Separator />
 
           {/* Payment Methods - New DI v4.0 field */}
-          {invoice.payments && invoice.payments.length > 0 && (
+          {invoice.payments && invoice.payments.length > 0 ? (
             <>
               <div className={styles["paymentsSection"]}>
                 <h3 className={styles["sectionTitle"]}>{t("sections.paymentMethods")}</h3>
                 <div className={styles["paymentsList"]}>
-                  {invoice.payments.map((payment, index) => (
+                  {invoice.payments.map((payment) => (
                     <div
-                      key={`${payment.method}-${index}`}
+                      key={payment.method}
                       className={styles["paymentItem"]}>
                       <Badge variant='outline'>{payment.method}</Badge>
                       <span className={styles["paymentAmount"]}>
@@ -239,17 +239,17 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </div>
               <Separator />
             </>
-          )}
+          ) : null}
 
           {/* Tax Details - New DI v4.0 field */}
-          {invoice.taxDetails && invoice.taxDetails.length > 0 && (
+          {invoice.taxDetails && invoice.taxDetails.length > 0 ? (
             <>
               <div className={styles["taxSection"]}>
                 <h3 className={styles["sectionTitle"]}>{t("sections.taxBreakdown")}</h3>
                 <div className={styles["taxTable"]}>
-                  {invoice.taxDetails.map((taxDetail, index) => (
+                  {invoice.taxDetails.map((taxDetail) => (
                     <div
-                      key={`${taxDetail.description}-${index}`}
+                      key={taxDetail.description}
                       className={styles["taxRow"]}>
                       <div className={styles["taxInfo"]}>
                         <span className={styles["taxDescription"]}>{taxDetail.description}</span>
@@ -277,7 +277,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </div>
               <Separator />
             </>
-          )}
+          ) : null}
 
           {/* Items Table */}
           <div className={styles["itemsSection"]}>

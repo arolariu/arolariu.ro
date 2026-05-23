@@ -98,6 +98,20 @@ export function ReceiptScanCard(): React.JSX.Element {
     setDialogZoomLevel((prev) => (prev === 1 ? 2 : 1));
   }, []);
 
+  /**
+   * Handles keyboard interactions for the dialog image zoom functionality.
+   * Triggers zoom toggle on Enter or Space key, matching click behavior for accessibility.
+   */
+  const handleDialogImageKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleDialogImageClick();
+      }
+    },
+    [handleDialogImageClick],
+  );
+
   const handleDialogResetZoom = useCallback(() => {
     setDialogZoomLevel(1);
     setDialogTransformOrigin("center center");
@@ -111,9 +125,9 @@ export function ReceiptScanCard(): React.JSX.Element {
     const link = document.createElement("a");
     link.href = currentScanSrc;
     link.download = `receipt-scan-${currentScanIndex + 1}.jpg`;
-    document.body.appendChild(link);
+    document.body.append(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   }, [currentScanSrc, currentScanIndex]);
 
   // Mouse move handler for card view - updates transform origin based on cursor position
@@ -162,6 +176,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                       transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
                       transformOrigin,
                     }}
+                    role='presentation'
                     onMouseMove={handleMouseMove}>
                     {/* Plain <img> with direct HTTP GET — bypasses next/image optimization
                         so the request goes straight to the storage URL. */}
@@ -200,12 +215,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   role='button'
                   tabIndex={0}
                   aria-label={t("controls.toggleZoom")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleDialogImageClick();
-                    }
-                  }}>
+                  onKeyDown={handleDialogImageKeyDown}>
                   {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

@@ -20,6 +20,7 @@ import type {WorkerEvent} from "../host/workerEnvelope";
  */
 export function emitEvent(port: MessagePort, event: WorkerEvent): void {
   try {
+    // eslint-disable-next-line unicorn/require-post-message-target-origin -- MessagePort.postMessage has no targetOrigin parameter (only Window.postMessage does)
     port.postMessage(event);
   } catch {
     // Intentional swallow: telemetry must never crash the worker.

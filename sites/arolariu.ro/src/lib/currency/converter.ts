@@ -78,23 +78,21 @@ export function parseRatesCSV(csv: string): number {
   // Skip header row
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i]?.trim();
-    if (!line) continue;
-
-    const parts = line.split(",");
-    const yearStr = parts[0];
-    const currency = parts[1];
-    const rateStr = parts[2];
-    if (!yearStr || !currency || !rateStr) continue;
-
-    const year = Number(yearStr);
-    const rateToRon = Number(rateStr);
-    if (Number.isNaN(year) || Number.isNaN(rateToRon)) continue;
-
-    const rate: ExchangeRate = {year, currency, rateToRon};
-    rateMap.set(`${year}-${currency}`, rate);
-    availableYears.add(year);
-    availableCurrencies.add(currency);
-    count++;
+    if (line) {
+      const parts = line.split(",");
+      const [yearStr, currency, rateStr] = parts;
+      if (yearStr && currency && rateStr) {
+        const year = Number(yearStr);
+        const rateToRon = Number(rateStr);
+        if (!Number.isNaN(year) && !Number.isNaN(rateToRon)) {
+          const rate: ExchangeRate = {year, currency, rateToRon};
+          rateMap.set(`${year}-${currency}`, rate);
+          availableYears.add(year);
+          availableCurrencies.add(currency);
+          count++;
+        }
+      }
+    }
   }
   return count;
 }
@@ -222,7 +220,7 @@ export function getTransactionYear(transactionDate: Date | string | undefined | 
  * ```
  */
 export function getSupportedCurrencies(): ReadonlyArray<string> {
-  return [...availableCurrencies].sort();
+  return [...availableCurrencies].toSorted((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -231,7 +229,7 @@ export function getSupportedCurrencies(): ReadonlyArray<string> {
  * @returns Sorted array of years
  */
 export function getAvailableYears(): ReadonlyArray<number> {
-  return [...availableYears].sort((a, b) => a - b);
+  return [...availableYears].toSorted((a, b) => a - b);
 }
 
 /**

@@ -254,14 +254,14 @@ export default function UploadArea(): React.JSX.Element {
             <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.pasteHint")}</p>
             <span className={styles["chooseFilesButton"]}>{t("uploadArea.empty.chooseFiles")}</span>
           </motion.div>
-          {isDragActive && dragCount > 0 && (
+          {isDragActive && dragCount > 0 ? (
             <Badge
               variant='secondary'
               className={styles["dragCountBadge"]}>
               {dragCount} file(s)
             </Badge>
-          )}
-          {isDragActive && (
+          ) : null}
+          {isDragActive ? (
             <div className={styles["cornerMarkers"]}>
               <div
                 className={styles["corner"]}
@@ -280,7 +280,7 @@ export default function UploadArea(): React.JSX.Element {
                 data-position='bottom-right'
               />
             </div>
-          )}
+          ) : null}
         </button>
       </>
     );

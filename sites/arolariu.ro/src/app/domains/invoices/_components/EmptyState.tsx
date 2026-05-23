@@ -61,25 +61,25 @@ export default function EmptyState({icon, title, description, primaryAction, sec
       <h3 className={styles["title"]}>{title}</h3>
       <p className={styles["description"]}>{description}</p>
 
-      {(primaryAction || secondaryAction) && (
+      {primaryAction || secondaryAction ? (
         <div className={styles["actions"]}>
-          {primaryAction && (
+          {primaryAction ? (
             <Button
               asChild
               size='lg'>
               <Link href={primaryAction.href}>{primaryAction.label}</Link>
             </Button>
-          )}
-          {secondaryAction && (
+          ) : null}
+          {secondaryAction ? (
             <Button
               asChild
               variant='outline'
               size='lg'>
               <Link href={secondaryAction.href}>{secondaryAction.label}</Link>
             </Button>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </motion.div>
   );
 }

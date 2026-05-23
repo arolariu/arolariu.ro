@@ -177,8 +177,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
         const img = new globalThis.Image();
         await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Failed to load image"));
+          img.addEventListener("load", () => resolve(), {once: true});
+          img.addEventListener("error", () => reject(new Error("Failed to load image")), {once: true});
           img.src = objectUrl;
         });
 
@@ -212,11 +212,15 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         // 4. Convert to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]!);
-          };
-          reader.onerror = () => reject(new Error("Failed to read blob"));
+          reader.addEventListener(
+            "loadend",
+            () => {
+              const result = reader.result as string;
+              resolve(result.split(",")[1]!);
+            },
+            {once: true},
+          );
+          reader.addEventListener("error", () => reject(new Error("Failed to read blob")), {once: true});
           reader.readAsDataURL(blob);
         });
 
@@ -252,6 +256,32 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
+  /** Rotates the scan image 90 degrees clockwise. */
+  const handleRotate90 = useCallback(() => handleRotate(90), [handleRotate]);
+  /** Rotates the scan image 90 degrees counterclockwise. */
+  const handleRotateMinus90 = useCallback(() => handleRotate(-90), [handleRotate]);
+
+  /** Opens the preview dialog when Enter or Space is pressed. */
+  const handlePreviewKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleOpenPreview();
+      }
+    },
+    [handleOpenPreview],
+  );
+
+  /** Stops event propagation to prevent triggering parent click handlers. */
+  const handleStopPropagation = useCallback((e: React.SyntheticEvent): void => {
+    e.stopPropagation();
+  }, []);
+
+  /** Updates the scan name input field as the user types. */
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewName(e.target.value);
+  }, []);
+
   // Guard against incomplete scan data
   if (!scan.blobUrl && !scan.name) {
     return (
@@ -278,12 +308,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             onClick={handleOpenPreview}
             role='button'
             tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleOpenPreview();
-              }
-            }}>
+            onKeyDown={handlePreviewKeyDown}>
             {scan.mimeType === "application/pdf" ? (
               <div className={styles["pdfPlaceholder"]}>
                 <TbFileTypePdf className={styles["pdfIcon"]} />
@@ -315,7 +340,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Selection checkbox */}
             <div
               className={styles["checkboxPosition"]}
-              onClick={(e) => e.stopPropagation()}>
+              role='presentation'
+              onClick={handleStopPropagation}
+              onKeyDown={handleStopPropagation}>
               <Checkbox
                 checked={isSelected}
                 nativeButton
@@ -327,7 +354,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Actions menu */}
             <div
               className={styles["actionsPosition"]}
-              onClick={(e) => e.stopPropagation()}>
+              role='presentation'
+              onClick={handleStopPropagation}
+              onKeyDown={handleStopPropagation}>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
@@ -347,13 +376,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   {scan.mimeType !== "application/pdf" && (
                     <>
                       <DropdownMenuItem
-                        onClick={() => handleRotate(90)}
+                        onClick={handleRotate90}
                         disabled={isRotating}>
                         <TbRotateClockwise className={styles["trashIcon"]} />
                         {t("actions.rotateCW")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleRotate(-90)}
+                        onClick={handleRotateMinus90}
                         disabled={isRotating}>
                         <TbRotate className={styles["trashIcon"]} />
                         {t("actions.rotateCCW")}
@@ -399,7 +428,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 <Input
                   ref={inputRef}
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={handleNameChange}
                   onKeyDown={handleRenameKeyDown}
                   onBlur={handleCancelRename}
                   placeholder={t("renamePlaceholder")}
@@ -425,6 +454,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             ) : (
               <div
                 className={styles["fileNameContainer"]}
+                role='presentation'
                 onDoubleClick={handleStartRename}>
                 <motion.p
                   className={styles["fileName"]}
@@ -460,6 +490,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           </DialogHeader>
           {scan.mimeType === "application/pdf" ? (
             <div className={styles["pdfPreviewContainer"]}>
+              {/* eslint-disable-next-line react/iframe-missing-sandbox -- browser-native PDF viewers don't render reliably inside a sandboxed iframe; tradeoff documented per PR #789 review */}
               <iframe
                 src={scan.blobUrl}
                 className={styles["pdfPreview"]}

@@ -29,18 +29,18 @@ const WelcomeEmail = defineEmailTemplate<Props>({
         badge={t("badge")}
         heading={t("heading", {brand: BRAND.name})}
         primaryCta={{href: uploadUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: dashboardUrl, label: t("ctaSecondary")}}>
+        secondaryCta={{href: dashboardUrl, label: t("ctaSecondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
-
         <EmailCard title={t("howItWorksTitle")}>
           <BulletList items={[t("howItWorks.0"), t("howItWorks.1"), t("howItWorks.2")]} />
         </EmailCard>
-
         <EmailCard title={t("whatYouCanDoTitle")}>
           <BulletList items={[t("whatYouCanDo.0"), t("whatYouCanDo.1"), t("whatYouCanDo.2"), t("whatYouCanDo.3")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
@@ -53,7 +53,6 @@ const WelcomeEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

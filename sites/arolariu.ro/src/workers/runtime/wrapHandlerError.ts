@@ -34,12 +34,12 @@ export function wrapHandlerError<TArgs extends unknown[], TReturn>(
   return async (...args: TArgs) => {
     try {
       return await fn(...args);
-    } catch (cause) {
-      const err = cause as {name?: string; message?: string; stack?: string};
+    } catch (error) {
+      const err = error as {name?: string; message?: string; stack?: string};
       const envelope: WorkerErrorEnvelope = {
         __workerError: true,
         name: typeof err?.name === "string" ? err.name : "Error",
-        message: typeof err?.message === "string" ? err.message : String(cause),
+        message: typeof err?.message === "string" ? err.message : String(error),
         ...(typeof err?.stack === "string" ? {stack: err.stack} : {}),
       };
       // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentional plain-object envelope; see fileoverview

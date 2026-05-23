@@ -84,6 +84,12 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
     setActiveSection(value);
   }, []);
 
+  /**
+   * Adapter: wraps handleSectionChange to accept string and cast to SettingsSection.
+   * Used by the mobile Select component which provides string values.
+   */
+  const handleMobileNavChange = useCallback((v: string) => handleSectionChange(v as SettingsSection), [handleSectionChange]);
+
   const handleAppearanceChange = useCallback((newSettings: Partial<UserSettings["appearance"]>) => {
     setSettings((prev) => ({
       ...prev,
@@ -224,7 +230,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
           {/* Mobile nav — replaces fixed bottom nav */}
           <Select
             value={activeSection}
-            onValueChange={(v) => handleSectionChange(v as SettingsSection)}>
+            onValueChange={handleMobileNavChange}>
             <SelectTrigger className={styles["mobileNav"]}>
               <SelectValue />
             </SelectTrigger>

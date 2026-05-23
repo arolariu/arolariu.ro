@@ -73,11 +73,13 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
         preview={t("preview", {invoiceName})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
+        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
-
         <KeyValueTable
           title={t("detailsTitle")}
           items={[
@@ -89,7 +91,6 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             {label: t("details.access"), value: t("accessValue")},
           ]}
         />
-
         <Section
           style={{
             border: `1px solid ${EMAIL_COLORS.border}`,
@@ -114,11 +115,9 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
           />
           <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>{t("qrSubText")}</Text>
         </Section>
-
         <EmailCard title={t("howToShareTitle")}>
           <BulletList items={[t("howToShare.0"), t("howToShare.1"), t("howToShare.2")]} />
         </EmailCard>
-
         <Section
           style={{
             border: `1px solid ${EMAIL_COLORS.warningInk}`,
@@ -134,7 +133,6 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             {t("privacyNoticeBody")}
           </Text>
         </Section>
-
         <Text style={EmailParagraphStyles}>
           {t("directLinkLabel")}{" "}
           <Link
@@ -143,7 +141,6 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             {invoiceUrl}
           </Link>
         </Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -155,7 +152,6 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

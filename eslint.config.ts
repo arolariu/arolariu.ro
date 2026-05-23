@@ -159,6 +159,18 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/no-typeof-undefined": "off", // We allow typeof undefined comparison checks.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/no-abusive-eslint-disable": "warn", // Warn about abusive eslint-disable usage.
+
+    // Function declarations are hoisted in JavaScript, so referring to a function before its
+    // lexical position is safe at runtime. Keep the rule strict for variables/classes/let.
+    "no-use-before-define": ["error", {functions: false, classes: true, variables: true}],
+
+    // The base no-redeclare rule doesn't understand TypeScript value/type namespace separation,
+    // so it false-positives on the standard const-as-enum pattern:
+    //   export const X = { ... } as const;
+    //   export type X = (typeof X)[keyof typeof X];
+    // Disable the base rule and let the typescript-eslint variant (which is namespace-aware) handle it.
+    "no-redeclare": "off",
+    "@typescript-eslint/no-redeclare": "error",
   },
   settings: {
     react: {

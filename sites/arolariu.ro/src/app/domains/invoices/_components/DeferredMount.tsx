@@ -43,11 +43,7 @@ const ROOT_MARGIN = "200px";
  * @param props - {@link Props}
  * @returns A wrapper element rendering either the placeholder or the children.
  */
-export default function DeferredMount({
-  placeholder,
-  children,
-  className,
-}: Props): React.JSX.Element {
+export default function DeferredMount({placeholder, children, className}: Props): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   // When IntersectionObserver is unavailable (very old WebViews), activate
   // immediately via the initializer so the effect never has to setState

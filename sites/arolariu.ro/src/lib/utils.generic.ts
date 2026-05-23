@@ -251,6 +251,34 @@ export function formatCurrency(possibleAmount: number, options: FormatCurrencyOp
   return value;
 }
 
+// #region Date & Number Utilities (Phase 9 — centralized formatting)
+
+/**
+ * Safely converts any date-like value to a Date object.
+ *
+ * @remarks
+ * Handles ISO strings, Date objects, null, and undefined.
+ * Returns `new Date(0)` (epoch) for invalid/missing input rather than throwing.
+ *
+ * @param value - The date-like value to convert
+ * @returns A valid Date object
+ *
+ * @example
+ * ```typescript
+ * toSafeDate("2024-01-15T10:30:00Z"); // Date object
+ * toSafeDate(new Date());              // Same Date object
+ * toSafeDate(null);                    // Date(0) — epoch
+ * ```
+ */
+export function toSafeDate(value: Date | string | null | undefined): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "string" && value.length > 0) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  }
+  return new Date(0);
+}
+
 /**
  * Configuration options for date and time formatting.
  *
@@ -345,34 +373,6 @@ export function formatEnum<T extends Record<string, string | number>>(enumObj: T
     const key = Object.keys(enumObj).find((k) => enumObj[k] === val);
     return key ?? "";
   };
-}
-
-// #region Date & Number Utilities (Phase 9 — centralized formatting)
-
-/**
- * Safely converts any date-like value to a Date object.
- *
- * @remarks
- * Handles ISO strings, Date objects, null, and undefined.
- * Returns `new Date(0)` (epoch) for invalid/missing input rather than throwing.
- *
- * @param value - The date-like value to convert
- * @returns A valid Date object
- *
- * @example
- * ```typescript
- * toSafeDate("2024-01-15T10:30:00Z"); // Date object
- * toSafeDate(new Date());              // Same Date object
- * toSafeDate(null);                    // Date(0) — epoch
- * ```
- */
-export function toSafeDate(value: Date | string | null | undefined): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === "string" && value.length > 0) {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
-  }
-  return new Date(0);
 }
 
 /**

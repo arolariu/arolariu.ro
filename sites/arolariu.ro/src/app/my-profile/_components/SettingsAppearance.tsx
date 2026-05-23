@@ -183,7 +183,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
 
   const handleLocaleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      const locale = e.currentTarget.dataset["locale"];
+      const {locale} = e.currentTarget.dataset;
       if (locale) handleLocaleChange(locale);
     },
     [handleLocaleChange],
@@ -480,7 +480,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                       onClick={handleLocaleClick}>
                       <span className={styles["localeCode"]}>{option.code}</span>
                       <span className={styles["localeLabel"]}>{option.label}</span>
-                      {isSelected && <TbCheck className={styles["localeCheck"]} />}
+                      {isSelected ? <TbCheck className={styles["localeCheck"]} /> : null}
                     </button>
                   );
                 })}

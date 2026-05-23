@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
+import {useCallback} from "react";
 import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
 import styles from "./MerchantLeaderboard.module.scss";
@@ -45,7 +46,7 @@ type CustomTooltipProps = {
 /**
  * Custom tooltip for the merchant leaderboard.
  */
-function CustomTooltip({active, payload, currency, getMerchantName}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
   const t = useTranslations("IMS--Stats.merchantLeaderboard");
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
@@ -75,10 +76,30 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
-  const getMerchantName = (id: string): string => {
-    const merchant = getMerchantById(id);
-    return merchant?.name ?? t("unknownMerchant");
-  };
+  const getMerchantName = useCallback(
+    (id: string): string => {
+      const merchant = getMerchantById(id);
+      return merchant?.name ?? t("unknownMerchant");
+    },
+    [getMerchantById, t],
+  );
+
+  /**
+   * Render-prop adapter for Recharts' ChartTooltip. Recharts injects
+   * `active` and `payload` at hover time; we spread those in and add our
+   * own context (`currency`, `getMerchantName`).
+   */
+  const renderTooltip = useCallback(
+    (props: {active?: boolean; payload?: readonly unknown[]}) => (
+      <CustomTooltip
+        active={props.active}
+        payload={props.payload as TooltipPayloadItem[] | undefined}
+        currency={currency}
+        getMerchantName={getMerchantName}
+      />
+    ),
+    [currency, getMerchantName],
+  );
 
   const chartConfig = {
     totalSpent: {
@@ -143,14 +164,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <ChartTooltip
-                content={
-                  <CustomTooltip
-                    currency={currency}
-                    getMerchantName={getMerchantName}
-                  />
-                }
-              />
+              <ChartTooltip content={renderTooltip} />
               <Bar
                 dataKey='totalSpent'
                 fill='var(--ac-chart-2)'

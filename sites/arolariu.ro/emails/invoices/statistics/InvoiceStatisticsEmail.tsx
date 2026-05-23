@@ -130,16 +130,17 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
         heading={t("heading", {frequencyLabel: label})}
         primaryCta={{href: effectiveInvoicesUrl, label: t("ctaPrimary")}}
         secondaryCta={{href: effectiveCreateInvoiceUrl, label: t("ctaSecondary")}}
-        locale={locale}>
+        locale={locale}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
             start: () => <strong>{periodStart}</strong>,
             end: () => <strong>{periodEnd}</strong>,
           })}
         </Text>
-
         <MetricsGrid
           metrics={[
             {label: t("metrics.invoices"), value: String(totals.invoicesCount)},
@@ -148,30 +149,27 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             {label: t("metrics.averagePerInvoice"), value: safeFormatCurrency(totals.averageSpend, currency)},
           ]}
         />
-
         <EmailCard title={t("reportDetailsTitle")}>
           <KeyValueTable
+            title=''
             items={[
               {label: t("reportDetails.period"), value: `${periodStart} → ${periodEnd}`},
               {label: t("reportDetails.currency"), value: currency},
             ]}
           />
         </EmailCard>
-
         <EmailCard title={t("topMerchantsTitle")}>
           <BulletList items={rankedItems(topMerchants, currency, noDataFallback)} />
         </EmailCard>
-
         <EmailCard title={t("topCategoriesTitle")}>
           <BulletList items={rankedItems(topCategories, currency, noDataFallback)} />
         </EmailCard>
-
         {breakdownForChart.length > 0 ? (
           <EmailCard title={t("breakdownCardTitle")}>
             <DonutChart
               title={t("donutChartTitle")}
               data={breakdownForChart}
-              chartImageUrl={categorySpendChartUrl}
+              chartImageUrl={categorySpendChartUrl ?? ""}
               alt={t("donutChartAlt")}
             />
 
@@ -190,9 +188,7 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             )}
           </EmailCard>
         ) : null}
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -204,7 +200,6 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />
@@ -225,12 +220,12 @@ InvoiceStatisticsEmail.PreviewProps = {
   topMerchants: [
     {name: "Lidl", totalSpend: 412.5},
     {name: "Kaufland", totalSpend: 318.2},
-    {name: "Carrefour", totalSpend: 215.0},
+    {name: "Carrefour", totalSpend: 215},
   ],
   topCategories: [
-    {name: "Groceries", totalSpend: 720.0},
-    {name: "Dining", totalSpend: 280.0},
-    {name: "Transport", totalSpend: 150.0},
+    {name: "Groceries", totalSpend: 720},
+    {name: "Dining", totalSpend: 280},
+    {name: "Transport", totalSpend: 150},
   ],
   locale: "en",
 };

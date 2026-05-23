@@ -171,7 +171,7 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
           <AlertDescription className={styles["description"]}>{buildSummary()}</AlertDescription>
 
           <div className={styles["actions"]}>
-            {onReviewAll && (
+            {onReviewAll ? (
               <Button
                 variant='default'
                 size='sm'
@@ -180,7 +180,7 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
                 <TbChevronDown className={styles["reviewIcon"]} />
                 {t("actions.reviewAll")}
               </Button>
-            )}
+            ) : null}
 
             {/* Display issue counts as badges */}
             <div className={styles["badges"]}>

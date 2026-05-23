@@ -86,7 +86,7 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
         monthSet.add(month.monthKey);
       }
     }
-    return Array.from(monthSet).toSorted();
+    return Array.from(monthSet).toSorted((a, b) => a.localeCompare(b));
   }, [data]);
 
   // Show only last 6 months for readability

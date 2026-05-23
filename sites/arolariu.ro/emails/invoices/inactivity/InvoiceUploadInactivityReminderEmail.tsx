@@ -117,30 +117,29 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
         badge={t(`badge.${dayKey}`)}
         heading={t(`heading.${dayKey}`)}
         primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
-        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}>
+        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-
         <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
-
         <EmailCard title={t("whyWorthIt.title")}>
           <BulletList items={[t("whyWorthIt.bullet1"), t("whyWorthIt.bullet2"), t("whyWorthIt.bullet3")]} />
         </EmailCard>
-
         <EmailCard title={t("status.title")}>
           <KeyValueTable
+            title=''
             items={[
               {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
               {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},
             ]}
           />
         </EmailCard>
-
         {daysWithoutUpload >= 14 ? (
           <EmailCard title={t("tip.title")}>
             <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t("tip.message")}</Text>
           </EmailCard>
         ) : null}
-
         {daysWithoutUpload >= 30 ? (
           <EmailCard title={t("important.title")}>
             <Text
@@ -157,7 +156,6 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
             </Text>
           </EmailCard>
         ) : null}
-
         <Text style={EmailParagraphStyles}>
           {t.rich("helpPrompt", {
             supportEmail: BRAND.supportEmail,
@@ -170,7 +168,6 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

@@ -17,7 +17,7 @@ import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
 import {Badge, Button} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbChevronLeft, TbChevronRight, TbPhoto, TbX} from "react-icons/tb";
 import ScanCard from "../../_components/ScanCard";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
@@ -65,6 +65,27 @@ export default function ScanSelector(): React.JSX.Element {
     setPage(0);
   }, [readyScans.length]);
 
+  /**
+   * Factory: returns a stable toggle handler for a specific scan.
+   * Each scan gets its own callback to avoid re-rendering on unrelated state changes.
+   */
+  const createToggleScanHandler = useCallback(
+    (scan: (typeof readyScans)[0]) => {
+      return () => toggleScan(scan);
+    },
+    [toggleScan],
+  );
+
+  /** Navigates to the previous page of scans. */
+  const handlePreviousPage = useCallback(() => {
+    setPage((p) => Math.max(0, p - 1));
+  }, []);
+
+  /** Navigates to the next page of scans. */
+  const handleNextPage = useCallback(() => {
+    setPage((p) => Math.min(totalPages - 1, p + 1));
+  }, [totalPages]);
+
   return (
     <div className={styles["container"]}>
       {/* Header with actions */}
@@ -75,36 +96,34 @@ export default function ScanSelector(): React.JSX.Element {
         </div>
 
         <div className={styles["actions"]}>
-          {selectedScans.length > 0 && (
+          {selectedScans.length > 0 ? (
             <Badge
               variant='secondary'
               className={styles["selectedBadge"]}>
               {t("selectedCount", {count: String(selectedScans.length)})}
             </Badge>
-          )}
+          ) : null}
 
-          {hasScans && (
-            <>
-              {allSelected ? (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={clearSelection}>
-                  <TbX />
-                  {t("clearAll")}
-                </Button>
-              ) : (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={selectAllScans}
-                  disabled={readyScans.length > 5}>
-                  <TbCheck />
-                  {t("selectAll")}
-                </Button>
-              )}
-            </>
-          )}
+          {hasScans ? (
+            allSelected ? (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={clearSelection}>
+                <TbX />
+                {t("clearAll")}
+              </Button>
+            ) : (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={selectAllScans}
+                disabled={readyScans.length > 5}>
+                <TbCheck />
+                {t("selectAll")}
+              </Button>
+            )
+          ) : null}
         </div>
       </div>
 
@@ -117,7 +136,7 @@ export default function ScanSelector(): React.JSX.Element {
                 key={scan.id}
                 scan={scan}
                 isSelected={selectedScans.some((s) => s.id === scan.id)}
-                onToggleSelect={() => toggleScan(scan)}
+                onToggleSelect={createToggleScanHandler(scan)}
               />
             ))}
           </div>
@@ -128,7 +147,7 @@ export default function ScanSelector(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                onClick={handlePreviousPage}
                 disabled={page === 0}>
                 <TbChevronLeft />
                 {t("previous")}
@@ -139,7 +158,7 @@ export default function ScanSelector(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={handleNextPage}
                 disabled={page >= totalPages - 1}>
                 {t("next")}
                 <TbChevronRight />

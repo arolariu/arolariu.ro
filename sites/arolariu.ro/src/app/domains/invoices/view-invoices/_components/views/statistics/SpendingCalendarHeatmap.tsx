@@ -39,7 +39,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import type {DailySpending} from "../../../_utils/statistics";
 import styles from "./SpendingCalendarHeatmap.module.scss";
@@ -197,7 +197,7 @@ function generateCalendarGrid(data: DailySpending[], monthOffset: number): {week
 /**
  * Individual day cell component with tooltip.
  */
-function DayCell({day, currency, locale}: {day: DayCell; currency: string; locale: string}): React.JSX.Element {
+function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: string; locale: string}>): React.JSX.Element {
   const t = useTranslations("IMS--Stats.calendarHeatmap.tooltip");
 
   if (!day.date) {
@@ -263,13 +263,15 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
   const dayLabels = [t("days.sun"), t("days.mon"), t("days.tue"), t("days.wed"), t("days.thu"), t("days.fri"), t("days.sat")];
 
-  const handlePreviousMonth = (): void => {
+  /** Navigates to the previous month in the heatmap. */
+  const handlePreviousMonth = useCallback((): void => {
     setMonthOffset((prev) => prev + 1);
-  };
+  }, []);
 
-  const handleNextMonth = (): void => {
+  /** Navigates to the next month in the heatmap (bounded at current month). */
+  const handleNextMonth = useCallback((): void => {
     setMonthOffset((prev) => Math.max(0, prev - 1));
-  };
+  }, []);
 
   return (
     <Card className={styles["card"]}>
@@ -307,9 +309,9 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
           {/* Day of week labels */}
           <div className={styles["dayLabelsColumn"]}>
             <div className={styles["dayLabelEmpty"]} />
-            {dayLabels.map((label, idx) => (
+            {dayLabels.map((label) => (
               <div
-                key={`day-label-${idx}`}
+                key={label}
                 className={styles["dayLabel"]}>
                 {label}
               </div>
@@ -323,9 +325,9 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
                 key={`week-${weekIdx}`}
                 className={styles["weekRow"]}
                 role='row'>
-                {week.map((day, dayIdx) => (
+                {week.map((day) => (
                   <DayCell
-                    key={`day-${weekIdx}-${dayIdx}`}
+                    key={day.date ? day.date : `empty-${weekIdx}-${week.indexOf(day)}`}
                     day={day}
                     currency={currency}
                     locale={locale}

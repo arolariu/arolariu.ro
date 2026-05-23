@@ -49,16 +49,18 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
         preview={t("preview", {fromName: safeFrom})}
         badge={t("badge")}
         heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}>
+        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        secondaryCta={null}
+        showUnsubscribe={false}
+        unsubscribeUrl=''
+        managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {
             brand: BRAND.name,
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
-
         <KeyValueTable
           title={t("detailsTitle")}
           items={[
@@ -66,13 +68,10 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
             {label: t("details.invoiceId"), value: identifier},
           ]}
         />
-
         <EmailCard title={t("whatYouCanDoTitle")}>
           <BulletList items={[t("whatYouCanDo.0"), t("whatYouCanDo.1"), t("whatYouCanDo.2")]} />
         </EmailCard>
-
         <Text style={EmailParagraphStyles}>{t("body")}</Text>
-
         <Text style={EmailParagraphStyles}>
           {t.rich("feedbackPrompt", {
             email: () => (
@@ -84,7 +83,6 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
             ),
           })}
         </Text>
-
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
           {t("signOff.line1")}
           <br />

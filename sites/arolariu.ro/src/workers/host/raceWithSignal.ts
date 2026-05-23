@@ -27,8 +27,8 @@ export async function raceWithSignal<T>(body: Promise<T>, signal?: AbortSignal):
   });
 
   // Suppress unhandled-rejection noise on whichever side loses the race.
-  body.catch(() => {});
-  abortPromise.catch(() => {});
+  body.catch((): void => {});
+  abortPromise.catch((): void => {});
 
   try {
     return await Promise.race([body, abortPromise]);

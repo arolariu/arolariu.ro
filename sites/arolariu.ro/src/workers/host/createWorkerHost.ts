@@ -326,9 +326,9 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
     try {
       w = opts.load();
       worker = w;
-    } catch (err) {
+    } catch (error) {
       lifecycle.crash();
-      throw err;
+      throw error;
     }
 
     // Listen for unexpected `error` events on the worker. This is wired
@@ -392,7 +392,7 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
         onEvent: forwardEvent,
         bootstrapTimeoutMs: BOOTSTRAP_TIMEOUT_MS,
       });
-    } catch (err) {
+    } catch (error) {
       // Synchronous failure path (validation or postMessage throw). The
       // handshake has already closed its ports; we still must drop the
       // error listener, terminate the worker, and crash the lifecycle so
@@ -400,13 +400,13 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
       // sitting in `starting`.
       tearDownWorker("crash");
       lifecycle.crash();
-      throw err;
+      throw error;
     }
     currentBoot = handshake;
 
     try {
       await handshake.ready;
-    } catch (err) {
+    } catch (error) {
       // I3: If the host was disposed while the bootstrap timer was pending,
       // surface a `WorkerDeadError` rather than the helper's generic
       // `WorkerCrashError`. The helper intentionally does not see host-
@@ -424,10 +424,10 @@ export function createWorkerHost<TApi>(opts: CreateWorkerHostOptions): WorkerHos
       //   `restart()` swaps `lifecycle` to a fresh instance synchronously
       //   before the catch block's microtask runs, so the crashed lifecycle
       //   would be the NEW one rather than the abandoned one.
-      if (err instanceof WorkerCrashError) {
+      if (error instanceof WorkerCrashError) {
         handleCrash();
       }
-      throw err;
+      throw error;
     }
 
     proxy = wrap<TApi>(handshake.parentRpcPort);
