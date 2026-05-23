@@ -1,7 +1,5 @@
 "use client";
 
-import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
-import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
 import {type Invoice, InvoiceScanType} from "@/types/invoices";
 import {
   Button,
@@ -25,15 +23,16 @@ import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
 import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import {useScanAdd} from "../../../../_hooks/useScanAdd";
 import styles from "./AddScanDialog.module.scss";
 
 function getDropzoneClassName(
-  isUploading: boolean,
+  isAdding: boolean,
   isDragReject: boolean,
   isDragAccept: boolean,
   isDragActive: boolean,
 ): string | undefined {
-  if (isUploading) return styles["dropzoneDisabled"];
+  if (isAdding) return styles["dropzoneDisabled"];
   if (isDragReject) return styles["dropzoneDragReject"];
   if (isDragAccept) return styles["dropzoneDragAccept"];
   if (isDragActive) return styles["dropzoneDragActive"];
@@ -56,8 +55,7 @@ function getDropzoneClassName(
  *
  * @returns Dialog component for adding invoice scans
  *
- * @see {@link createInvoiceScan} - Uploads file to Azure Blob Storage
- * @see {@link attachInvoiceScan} - Attaches scan URL to invoice
+ * @see {@link useScanAdd} - Uploads and attaches scan files
  */
 export default function AddScanDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.addScanDialog");
@@ -73,7 +71,7 @@ export default function AddScanDialog(): React.JSX.Element {
 
   const [file, setFile] = useState<File | null>(null);
   const [scanType, setScanType] = useState<InvoiceScanType>(InvoiceScanType.JPEG);
-  const [isUploading, setIsUploading] = useState(false);
+  const {isAdding, performAdd} = useScanAdd(invoice?.id ?? "");
 
   const detectScanType = useCallback((fileName: string): InvoiceScanType => {
     const extension = fileName.split(".").pop()?.toLowerCase();
@@ -114,7 +112,7 @@ export default function AddScanDialog(): React.JSX.Element {
       "application/pdf": [".pdf"],
     },
     maxFiles: 1,
-    disabled: isUploading,
+    disabled: isAdding,
   });
 
   const removeFile = useCallback(() => {
@@ -124,66 +122,20 @@ export default function AddScanDialog(): React.JSX.Element {
   const handleUpload = useCallback(async () => {
     if (!file || !invoice) return;
 
-    setIsUploading(true);
     try {
-      // Step 1: Convert file to base64
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => resolve(reader.result as string));
-        reader.addEventListener("error", () => reject(reader.error));
-        reader.readAsDataURL(file);
+      await performAdd({
+        file,
+        fileName: file.name,
+        userIdentifier: invoice.userIdentifier,
+        type: scanType,
       });
-
-      // Step 2: Generate unique blob name
-      const extension = file.name.split(".").pop() || "jpg";
-      const blobName = `${invoice.userIdentifier}/${invoice.id}/${crypto.randomUUID()}.${extension}`;
-
-      // Step 3: Upload to Azure Blob Storage
-      const {status, blobUrl} = await createInvoiceScan({
-        base64Data,
-        blobName,
-        metadata: {
-          invoiceId: invoice.id,
-          uploadedAt: new Date().toISOString(),
-        },
-      });
-
-      if (status !== 201) {
-        throw new Error(t("errors.uploadStorageFailed"));
-      }
-
-      // Step 4: Attach scan to invoice
-      await attachInvoiceScan({
-        invoiceId: invoice.id,
-        payload: {
-          type: scanType,
-          location: blobUrl,
-          additionalMetadata: {
-            originalFileName: file.name,
-            uploadedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      toast.success(t("toasts.scanAddedTitle"), {
-        description: t("toasts.scanAddedDescription"),
-      });
-
-      // Reset state and close dialog
       setFile(null);
       close();
-
-      // Refresh the page to show new scan
       router.refresh();
-    } catch (error) {
-      console.error(t("console.uploadError"), error);
-      toast.error(t("toasts.scanFailedTitle"), {
-        description: error instanceof Error ? error.message : t("errors.unknown"),
-      });
-    } finally {
-      setIsUploading(false);
+    } catch {
+      // The hook owns upload failure feedback.
     }
-  }, [file, invoice, scanType, close, router, t]);
+  }, [file, invoice, scanType, performAdd, close, router]);
 
   const handleClose = useCallback(() => {
     setFile(null);
@@ -217,7 +169,7 @@ export default function AddScanDialog(): React.JSX.Element {
           {/* Dropzone - using react-dropzone library pattern with spread props */}
           <div
             {...getRootProps()}
-            className={getDropzoneClassName(isUploading, isDragReject, isDragAccept, isDragActive)}>
+            className={getDropzoneClassName(isAdding, isDragReject, isDragAccept, isDragActive)}>
             <input {...getInputProps()} />
             <TbCloudUpload className={styles["uploadIcon"]} />
             {isDragActive ? (
@@ -246,7 +198,7 @@ export default function AddScanDialog(): React.JSX.Element {
                 variant='ghost'
                 size='icon'
                 onClick={removeFile}
-                disabled={isUploading}
+                disabled={isAdding}
                 className={styles["removeFileButton"]}>
                 <TbX className={styles["icon4"]} />
               </Button>
@@ -260,7 +212,7 @@ export default function AddScanDialog(): React.JSX.Element {
               <Select
                 value={String(scanType)}
                 onValueChange={handleScanTypeChange}
-                disabled={isUploading}>
+                disabled={isAdding}>
                 <SelectTrigger id='scan-type'>
                   <SelectValue placeholder={t("scanType.placeholder")} />
                 </SelectTrigger>
@@ -281,14 +233,14 @@ export default function AddScanDialog(): React.JSX.Element {
             type='button'
             variant='outline'
             onClick={handleClose}
-            disabled={isUploading}>
+            disabled={isAdding}>
             {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
             onClick={handleUpload}
-            disabled={!file || isUploading}>
-            {isUploading ? (
+            disabled={!file || isAdding}>
+            {isAdding ? (
               <>
                 <TbLoader2 className={styles["spinnerIcon"]} />
                 {t("buttons.uploading")}

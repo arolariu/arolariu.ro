@@ -2155,19 +2155,12 @@
         "upload": "Téléverser le scan",
         "uploading": "Téléversement..."
       },
-      "console": {
-        "uploadError": "Erreur lors du téléversement du scan :"
-      },
       "description": "Téléversez une nouvelle image ou un nouveau document de reçu à joindre à cette facture.",
       "dropzone": {
         "dragAndDrop": "Glissez-déposez un fichier ici",
         "dropHere": "Déposez le fichier ici...",
         "formats": "JPEG, PNG, PDF (max 10 Mo)",
         "orClickBrowse": "ou cliquez pour parcourir"
-      },
-      "errors": {
-        "unknown": "Une erreur inconnue est survenue",
-        "uploadStorageFailed": "Échec du téléversement du scan dans le stockage"
       },
       "scanType": {
         "jpeg": "Image JPEG",
@@ -2180,10 +2173,7 @@
       "title": "Ajouter un nouveau scan",
       "toasts": {
         "fileTooLargeDescription": "La taille maximale du fichier est de 10 Mo",
-        "fileTooLargeTitle": "Fichier trop volumineux",
-        "scanAddedDescription": "Le scan a été joint à la facture",
-        "scanAddedTitle": "Scan ajouté avec succès",
-        "scanFailedTitle": "Échec de l’ajout du scan"
+        "fileTooLargeTitle": "Fichier trop volumineux"
       }
     },
     "allergenDialog": {
@@ -3236,6 +3226,11 @@
     },
     "useRecipeAdd": {
       "error": "Impossible d'ajouter la recette."
+    },
+    "useScanAdd": {
+      "addSuccess": "Scan ajouté",
+      "addError": "Échec de l’ajout du scan",
+      "uploadFailed": "Échec du téléversement (statut {status})"
     },
     "useRecipeDelete": {
       "error": "Impossible de supprimer la recette."
