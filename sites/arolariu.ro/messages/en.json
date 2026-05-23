@@ -3219,6 +3219,22 @@
       "title": "How It Works"
     }
   },
+  "IMS--Hooks": {
+    "useInvoiceDelete": {
+      "deleteSuccess": "Invoice deleted.",
+      "deleteError": "Could not delete invoice: {error}",
+      "bulkDeleteSuccess": "{count} invoices deleted.",
+      "bulkDeleteError": "Failed to delete {count} invoices.",
+      "bulkDeletePartial": "Deleted {successCount}; failed {failureCount}."
+    },
+    "useInvoiceShare": {
+      "toggleError": "Could not toggle invoice visibility.",
+      "revokeError": "Could not revoke access.",
+      "emailSending": "Sending email to {email}…",
+      "emailSuccess": "Email sent to {email}.",
+      "emailError": "Could not send email to {email}: {error}"
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {

@@ -28,13 +28,13 @@
 
 "use client";
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
+import {useInvoiceShare} from "../../../../_hooks/useInvoiceShare";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
 
@@ -84,6 +84,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("IMS--View.shareCollaborate");
   const {invoice, setInvoice} = useInvoiceContext();
+  const {togglePublic: makePublic, revokeUserAccess} = useInvoiceShare(invoice);
   const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
 
@@ -181,31 +182,22 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * - Uses optimistic UI updates with server action
    * - Shows toast feedback for success/failure
    */
-  const handleTogglePublic = useCallback(async (): Promise<void> => {
+  const handleTogglePublic = useCallback((): void => {
     const isCurrentlyPublic = sharingStatus === "public";
-    const newSharedWith = isCurrentlyPublic ? invoice.sharedWith.filter((guid) => guid !== LAST_GUID) : [...invoice.sharedWith, LAST_GUID];
 
     startTransition(() => {
-      // Execute async work inside the transition without async keyword
-      patchInvoice({
-        invoiceId: invoice.id,
-        payload: {sharedWith: newSharedWith},
-      })
-        .then((result) => {
-          if (result.success) {
-            setInvoice(result.invoice);
-            toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
-            return;
-          }
-          toast.error(t("toggleError"));
-          return;
-        })
-        .catch((error) => {
+      void (async () => {
+        try {
+          const updatedInvoice = isCurrentlyPublic ? await revokeUserAccess() : await makePublic();
+          setInvoice(updatedInvoice);
+          toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
+        } catch (error) {
           console.error("Failed to toggle public status:", error);
           toast.error(t("toggleError"));
-        });
+        }
+      })();
     });
-  }, [sharingStatus, invoice, setInvoice, t]);
+  }, [makePublic, revokeUserAccess, setInvoice, sharingStatus, startTransition, t]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.

@@ -3219,6 +3219,22 @@
       "title": "Comment Ça Marche"
     }
   },
+  "IMS--Hooks": {
+    "useInvoiceDelete": {
+      "deleteSuccess": "Facture supprimée.",
+      "deleteError": "Impossible de supprimer la facture : {error}",
+      "bulkDeleteSuccess": "{count} factures supprimées.",
+      "bulkDeleteError": "Échec de la suppression de {count} factures.",
+      "bulkDeletePartial": "Supprimées : {successCount} ; échouées : {failureCount}."
+    },
+    "useInvoiceShare": {
+      "toggleError": "Impossible de modifier la visibilité de la facture.",
+      "revokeError": "Impossible de révoquer l'accès.",
+      "emailSending": "Envoi de l'e-mail à {email}…",
+      "emailSuccess": "E-mail envoyé à {email}.",
+      "emailError": "Impossible d'envoyer l'e-mail à {email} : {error}"
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {

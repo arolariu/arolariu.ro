@@ -3219,6 +3219,22 @@
       "title": "Cum Funcționează"
     }
   },
+  "IMS--Hooks": {
+    "useInvoiceDelete": {
+      "deleteSuccess": "Factură ștearsă.",
+      "deleteError": "Nu s-a putut șterge factura: {error}",
+      "bulkDeleteSuccess": "{count} facturi șterse.",
+      "bulkDeleteError": "Ștergerea a eșuat pentru {count} facturi.",
+      "bulkDeletePartial": "Șterse {successCount}; eșuate {failureCount}."
+    },
+    "useInvoiceShare": {
+      "toggleError": "Nu s-a putut comuta vizibilitatea facturii.",
+      "revokeError": "Nu s-a putut revoca accesul.",
+      "emailSending": "Se trimite e-mailul către {email}…",
+      "emailSuccess": "E-mail trimis către {email}.",
+      "emailError": "Nu s-a putut trimite e-mailul către {email}: {error}"
+    }
+  },
   "IMS--List": {
     "bulkActions": {
       "categories": {

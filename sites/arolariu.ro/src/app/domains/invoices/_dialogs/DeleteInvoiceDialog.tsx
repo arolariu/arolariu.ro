@@ -1,7 +1,5 @@
 "use client";
 
-import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
-import {useInvoicesStore} from "@/stores";
 import {
   Alert,
   AlertDescription,
@@ -17,7 +15,6 @@ import {
   Input,
   Label,
   Separator,
-  toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -25,6 +22,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import {useInvoiceDelete} from "../_hooks/useInvoiceDelete";
 import styles from "./DeleteInvoiceDialog.module.scss";
 
 /**
@@ -46,7 +44,7 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  * - Shared access revoked for all users
  *
  * **State Management**:
- * - Updates Zustand store via `removeInvoice` after successful deletion
+ * - Delegates deletion and Zustand store synchronization to `useInvoiceDelete`
  * - This ensures the cached invoice list is immediately updated
  * - No need for `revalidatePath` since we use client-side state management
  *
@@ -55,7 +53,6 @@ import styles from "./DeleteInvoiceDialog.module.scss";
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const router = useRouter();
   const t = useTranslations("IMS--Dialogs.deleteInvoiceDialog");
-  const removeInvoice = useInvoicesStore((state) => state.removeEntity);
 
   const {
     isOpen,
@@ -67,7 +64,11 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
   const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const {performDelete, isDeleting} = useInvoiceDelete(() => {
+    close();
+    router.push("/domains/invoices/view-invoices");
+  });
 
   const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
   const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
@@ -83,36 +84,14 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   const handleClose = useCallback(() => {
     setConfirmText("");
     setUnderstoodCheckbox(false);
-    setIsDeleting(false);
     close();
   }, [close]);
 
   const handleDelete = useCallback(async () => {
     if (!isConfirmValid) return;
 
-    setIsDeleting(true);
-
-    try {
-      await deleteInvoice({invoiceId: invoice.id});
-
-      // Update Zustand store to remove the deleted invoice
-      // This ensures the cached invoice list is immediately updated
-      removeInvoice(invoice.id);
-
-      toast(t("toasts.deletedTitle"), {
-        description: t("toasts.deletedDescription"),
-      });
-      handleClose();
-      router.push("/domains/invoices/view-invoices");
-    } catch (error) {
-      console.error(t("console.deleteError"), error);
-      toast(t("toasts.deleteFailedTitle"), {
-        description: t("toasts.deleteFailedDescription"),
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [invoice, isConfirmValid, handleClose, router, removeInvoice, t]);
+    await performDelete(invoice);
+  }, [invoice, isConfirmValid, performDelete]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;
