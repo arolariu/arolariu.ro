@@ -1,18 +1,24 @@
+import {Loader2} from "lucide-react";
 import {getTranslations} from "next-intl/server";
-import styles from "./LoadingInvoices.module.scss";
+import EmptyState from "./EmptyState";
 
 /**
- * This component is used to display a message when the invoices are loading.
- * @returns The JSX for the loading invoices view.
+ * @fileoverview Loading state for the invoice list fetch operation.
+ * @module app/domains/invoices/_components/LoadingInvoices
+ */
+
+/**
+ * Server component that renders an animated loading state while the invoice list is being fetched.
+ *
+ * @returns The LoadingInvoices server component
  */
 export default async function LoadingInvoices(): Promise<React.JSX.Element> {
   const t = await getTranslations("IMS--Common.loadingInvoices");
   return (
-    <section className={styles["section"]}>
-      <article className={styles["article"]}>
-        <h1 className={styles["title"]}>{t("title")}</h1>
-        <p className={styles["description"]}>{t("description")}</p>
-      </article>
-    </section>
+    <EmptyState
+      icon={<Loader2 className='animate-spin' />}
+      title={t("title")}
+      description={t("description")}
+    />
   );
 }
