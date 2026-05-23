@@ -22,9 +22,9 @@
  * @see {@link InvoiceHasBeenAnalyzedEmail} - For successfully analyzed invoices
  */
 
-import {Text} from "react-email";
-import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderSupportLink} from "../../_lib/i18n";
+import {Link, Text} from "react-email";
+import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
  * Describes what's missing from an incomplete invoice.
@@ -106,7 +106,6 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      {" "}
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
       <KeyValueTable
@@ -145,7 +144,14 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          link: renderSupportLink,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+          link: (chunks) => (
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>

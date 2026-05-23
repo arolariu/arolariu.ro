@@ -20,9 +20,9 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {Text} from "react-email";
-import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailParagraphStyles, KeyValueTable} from "../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderStrong, renderSupportLink} from "../_lib/i18n";
+import {Link, Text} from "react-email";
+import {BRAND, BulletList, EMAIL_COLORS, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../_lib/i18n";
 
 /**
  * Properties for the account inactivity warning email component.
@@ -153,7 +153,8 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("intro", {
           inactiveDays,
-          count: renderStrong,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+          count: (chunks) => <strong>{chunks}</strong>,
         })}
       </Text>
 
@@ -174,7 +175,14 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>
         {t.rich("supportPrompt", {
           supportEmail: BRAND.supportEmail,
-          link: renderSupportLink,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+          link: (chunks) => (
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
         })}
       </Text>
 

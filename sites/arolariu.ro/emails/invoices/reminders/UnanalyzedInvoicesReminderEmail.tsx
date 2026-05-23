@@ -22,7 +22,7 @@
 
 import {Link, Text} from "react-email";
 import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderSupportLink} from "../../_lib/i18n";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.
@@ -94,15 +94,6 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
   const count = invoices.length;
   const displayInvoices = invoices.slice(0, 5);
 
-  // Component-level render function (closes over effectiveInvoicesUrl)
-  const renderDashboardLink = (): React.JSX.Element => (
-    <Link
-      href={effectiveInvoicesUrl}
-      style={EmailLinkStyles}>
-      dashboard
-    </Link>
-  );
-
   return (
     <EmailLayout
       locale={locale}
@@ -115,7 +106,6 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      {" "}
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro", {count})}</Text>
       <KeyValueTable
@@ -129,7 +119,14 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
         <Text style={{...EmailParagraphStyles, fontSize: "13px"}}>
           {t.rich("andMore", {
             remaining: count - 5,
-            dashboard: renderDashboardLink,
+            // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+            dashboard: () => (
+              <Link
+                href={effectiveInvoicesUrl}
+                style={EmailLinkStyles}>
+                dashboard
+              </Link>
+            ),
           })}
         </Text>
       ) : null}
@@ -148,7 +145,14 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          link: renderSupportLink,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+          link: (chunks) => (
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>

@@ -20,9 +20,9 @@
  * @see {@link EmailLayout} - Base layout component
  */
 
-import {Text} from "react-email";
-import {BRAND, BulletList, EmailCard, EmailLayout, EmailParagraphStyles, MetricsGrid} from "../../_components";
-import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages, renderSupportLink} from "../../_lib/i18n";
+import {Link, Text} from "react-email";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
+import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.
@@ -103,7 +103,6 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      {" "}
       <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
       <Text style={EmailParagraphStyles}>{t("intro")}</Text>
       <MetricsGrid
@@ -121,7 +120,14 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
       <Text style={EmailParagraphStyles}>
         {t.rich("feedback", {
           supportEmail: BRAND.supportEmail,
-          link: renderSupportLink,
+          // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
+          link: (chunks) => (
+            <Link
+              href={`mailto:${BRAND.supportEmail}`}
+              style={EmailLinkStyles}>
+              {chunks}
+            </Link>
+          ),
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
