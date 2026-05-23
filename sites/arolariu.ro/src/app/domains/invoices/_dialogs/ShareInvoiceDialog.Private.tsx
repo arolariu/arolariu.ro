@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Private sharing components for the ShareInvoiceDialog.
  * @module domains/invoices/_dialogs/ShareInvoiceDialog.Private
