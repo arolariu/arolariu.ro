@@ -73,8 +73,8 @@ type Props = {
   /** Breakdown of spending by category for the donut chart. */
   readonly categoryBreakdown: readonly SpendingCategory[];
 
-  /** Optional pre-rendered chart image URL. */
-  readonly chartImageUrl?: string;
+  /** Pre-rendered chart image URL. */
+  readonly chartImageUrl: string;
 
   /** Link to the spending dashboard. */
   readonly dashboardUrl?: string;
@@ -147,7 +147,6 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
         {isOverBudget ? (
@@ -184,7 +183,7 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
           <DonutChart
             title={t("chartTitle")}
             data={categoryBreakdown}
-            chartImageUrl={chartImageUrl ?? ""}
+            chartImageUrl={chartImageUrl}
             alt={t("chartAlt", {period})}
           />
         ) : null}
@@ -242,6 +241,7 @@ SpendingThresholdAlertEmail.PreviewProps = {
     {label: "Fast Food", value: 85},
     {label: "Household", value: 47.5},
   ],
+  chartImageUrl: "https://quickchart.io/chart?c=%7Btype:'doughnut'%7D",
   locale: "en",
 };
 

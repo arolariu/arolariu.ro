@@ -56,7 +56,6 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro")}</Text>
         <KeyValueTable

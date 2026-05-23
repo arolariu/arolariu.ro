@@ -44,7 +44,6 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

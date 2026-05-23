@@ -134,7 +134,6 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

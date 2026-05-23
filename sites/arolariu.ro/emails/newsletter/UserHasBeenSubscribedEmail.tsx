@@ -48,7 +48,6 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl=''>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>
           {t.rich("intro", {

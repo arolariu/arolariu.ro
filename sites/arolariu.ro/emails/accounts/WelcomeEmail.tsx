@@ -33,7 +33,6 @@ const WelcomeEmail = defineEmailTemplate<Props>({
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        {" "}
         <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
         <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
         <EmailCard title={t("howItWorksTitle")}>
