@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Shimmer placeholders for the ScanCard component.
- * @module sites/arolariu.ro/src/app/domains/invoices/_components/ScanCard.shimmers
+ * @module sites/arolariu.ro/src/app/domains/invoices/_cards/ScanCard.shimmers
  *
  * @remarks
  * Colocated with ScanCard.tsx so the shimmer styles + markup live together

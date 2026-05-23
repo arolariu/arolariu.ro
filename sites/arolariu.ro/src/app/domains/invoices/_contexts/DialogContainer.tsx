@@ -12,6 +12,7 @@ const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dia
 const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog"), {ssr: false});
 const CreateInvoiceDialog = dynamic(() => import("../view-scans/_components/dialogs/CreateInvoiceDialog"), {ssr: false});
 const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
+const DeleteScanDialog = dynamic(() => import("../_dialogs/DeleteScanDialog"), {ssr: false});
 const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/FeedbackDialog"), {ssr: false});
 const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ImageDialog"), {ssr: false});
 const InvoiceItemsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ItemsDialog"), {ssr: false});
@@ -23,6 +24,7 @@ const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_compon
 const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RecipeDialog"), {ssr: false});
 const InvoicesExportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ExportDialog"), {ssr: false});
 const InvoicesImportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ImportDialog"), {ssr: false});
+const PreviewScanDialog = dynamic(() => import("../_dialogs/PreviewScanDialog"), {ssr: false});
 const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog"), {ssr: false});
 const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog"), {ssr: false});
 const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
@@ -92,6 +94,10 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <DeleteInvoiceDialog />;
       case "SHARED__INVOICE_SHARE":
         return <ShareInvoiceDialog />;
+      case "SHARED__SCAN_DELETE":
+        return <DeleteScanDialog />;
+      case "SHARED__SCAN_PREVIEW":
+        return <PreviewScanDialog />;
       default:
         return null;
     }

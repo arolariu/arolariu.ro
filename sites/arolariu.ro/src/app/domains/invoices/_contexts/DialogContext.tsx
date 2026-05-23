@@ -28,6 +28,8 @@ export type DialogType = Readonly<
   | "VIEW_SCANS__CREATE_INVOICE"
   | "SHARED__INVOICE_DELETE"
   | "SHARED__INVOICE_SHARE"
+  | "SHARED__SCAN_DELETE"
+  | "SHARED__SCAN_PREVIEW"
 > | null;
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
@@ -62,6 +64,8 @@ export type DialogPayloads = {
   VIEW_SCANS__CREATE_INVOICE: {selectedScans: CachedScan[]};
   SHARED__INVOICE_DELETE: {invoice: Invoice};
   SHARED__INVOICE_SHARE: {invoice: Invoice};
+  SHARED__SCAN_DELETE: {scan: CachedScan};
+  SHARED__SCAN_PREVIEW: {scan: CachedScan};
 };
 
 type DialogCurrent = {
