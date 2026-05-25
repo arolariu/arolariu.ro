@@ -10,6 +10,7 @@ import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import { deleteInvoice as deleteInvoiceServerSide } from "../../_actions/invoices";
+import { useRouter } from "next/navigation";
 
 /**
  * Result of a bulk delete operation.
@@ -77,7 +78,6 @@ type HookOutputType = Readonly<{
  * - Single deletions: Catches errors, toasts message, does NOT call `onComplete`
  * - Bulk deletions: Per-item try/catch ensures partial success is possible
  *
- * @param onComplete - Optional callback invoked after any delete operation completes successfully or partially (not called on complete failure of single delete)
  * @returns Object containing deletion state and unified action callback
  *
  * @example
@@ -100,10 +100,11 @@ type HookOutputType = Readonly<{
  * @see {@link performMutation} - Internal helper for atomic server + client mutation
  * @see {@link processBulkRecursive} - Internal recursive bulk processor
  */
-export function useInvoiceDelete(onComplete?: () => void): Readonly<HookOutputType> {
+export function useInvoiceDelete(): Readonly<HookOutputType> {
   const deleteInvoiceClientSide = useInvoicesStore((state) => state.removeEntity);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const t = useTranslations("IMS--Hooks.useInvoiceDelete");
+  const router = useRouter();
 
   /**
    * Atomically deletes an invoice on the server and removes it from the client store.
@@ -230,7 +231,7 @@ export function useInvoiceDelete(onComplete?: () => void): Readonly<HookOutputTy
         if (typeof invoiceIdOrIds === "string") {
           await performMutation(invoiceIdOrIds);
           toast.success(t("deleteSuccess"));
-          onComplete?.();
+          router.push("/domains/invoices/view-invoices");
         } else {
           const result = await processBulkRecursive(invoiceIdOrIds, 0, {
             successCount: 0,

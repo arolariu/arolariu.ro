@@ -5,8 +5,6 @@
  * @module app/domains/invoices/_cards/ScanCard
  */
 
-import {useScanRename} from "../_hooks/useScanRename";
-import {useScanRotation} from "../_hooks/useScanRotation";
 import {useDialogs} from "../_contexts/DialogContext";
 import {formatDate} from "@/lib/utils.generic";
 import type {CachedScan} from "@/types/scans";
@@ -38,6 +36,7 @@ import {
   TbZoomIn,
 } from "react-icons/tb";
 import styles from "./ScanCard.module.scss";
+import { useScanRename, useScanRotation } from "../_hooks/scan";
 
 type ScanCardProps = {
   scan: CachedScan;
@@ -210,13 +209,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 {scan.mimeType !== "application/pdf" && (
                   <>
                     <DropdownMenuItem
-                      onClick={() => rotation.rotate("cw")}
+                      onClick={() => rotation.rotateScanCallback("cw")}
                       disabled={rotation.isRotating}>
                       <TbRotateClockwise className={styles["trashIcon"]} />
                       {t("actions.rotateCW")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => rotation.rotate("ccw")}
+                      onClick={() => rotation.rotateScanCallback("ccw")}
                       disabled={rotation.isRotating}>
                       <TbRotate className={styles["trashIcon"]} />
                       {t("actions.rotateCCW")}

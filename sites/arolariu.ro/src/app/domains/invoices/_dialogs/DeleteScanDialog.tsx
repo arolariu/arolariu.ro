@@ -19,7 +19,6 @@ import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbLoader2, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
-import {useScanDelete} from "../_hooks/useScanDelete";
 import styles from "./DeleteScanDialog.module.scss";
 
 /**

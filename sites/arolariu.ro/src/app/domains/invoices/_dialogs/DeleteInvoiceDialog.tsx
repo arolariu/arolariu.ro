@@ -18,12 +18,11 @@ import {
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
-import {useInvoiceDelete} from "../_hooks/useInvoiceDelete";
 import styles from "./DeleteInvoiceDialog.module.scss";
+import { useInvoiceDelete } from "../_hooks/invoice";
 
 /**
  * Dialog for confirming and executing invoice deletion.
@@ -52,7 +51,6 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.deleteInvoiceDialog");
-  const router = useRouter();
 
   const {
     isOpen,
@@ -65,10 +63,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
 
-  const {performDelete, isDeleting} = useInvoiceDelete(() => {
-    close();
-    router.push("/domains/invoices/view-invoices");
-  });
+  const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
 
   const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
   const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
@@ -88,10 +83,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   }, [close]);
 
   const handleDelete = useCallback(async () => {
-    if (!isConfirmValid) return;
-
-    await performDelete(invoice.id);
-  }, [invoice.id, isConfirmValid, performDelete]);
+    await deleteInvoiceCallback(invoice.id);
+  }, [invoice.id, deleteInvoiceCallback]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;
