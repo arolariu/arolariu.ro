@@ -60,11 +60,10 @@ type HookOutputType = Readonly<{
  * );
  * ```
  */
-export function useScanDelete(scan: CachedScan, onComplete?: () => void): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--ViewScans.scanCard");
+export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
   const removeScanClientSide = useScansStore((state) => state.removeScan);
-
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const t = useTranslations("IMS--ViewScans.scanCard");
 
   const deleteScanCallback = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
@@ -73,7 +72,6 @@ export function useScanDelete(scan: CachedScan, onComplete?: () => void): Readon
       if (result.success) {
         removeScanClientSide(scan.id);
         toast.success(t("deleteDialog.success"));
-        onComplete?.();
       } else {
         toast.error(result.error ?? t("deleteDialog.error"));
       }
@@ -83,7 +81,7 @@ export function useScanDelete(scan: CachedScan, onComplete?: () => void): Readon
     } finally {
       setIsDeleting(false);
     }
-  }, [scan.blobUrl, scan.id, removeScanClientSide, onComplete, t]);
+  }, [scan.blobUrl, scan.id, removeScanClientSide, t]);
 
   return {isDeleting, deleteScanCallback};
 }

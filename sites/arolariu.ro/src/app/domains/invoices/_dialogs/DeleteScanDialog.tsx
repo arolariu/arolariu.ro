@@ -20,6 +20,7 @@ import {useCallback} from "react";
 import {TbLoader2, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import styles from "./DeleteScanDialog.module.scss";
+import { useScanDelete } from "../_hooks/scan";
 
 /**
  * Dialog for confirming and executing scan deletion.
@@ -55,11 +56,11 @@ export default function DeleteScanDialog(): React.JSX.Element {
     },
   } = useDialog("SHARED__SCAN_DELETE", "delete");
 
-  const {isDeleting, performDelete} = useScanDelete(scan, close);
+  const {isDeleting, deleteScanCallback} = useScanDelete(scan);
 
   const handleDelete = useCallback(async () => {
-    await performDelete();
-  }, [performDelete]);
+    await deleteScanCallback();
+  }, [deleteScanCallback]);
 
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
