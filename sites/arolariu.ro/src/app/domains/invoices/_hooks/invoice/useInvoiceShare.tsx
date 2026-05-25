@@ -6,7 +6,6 @@
  */
 
 import {sendEmail} from "@/lib/actions/email";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import type {EmailLocale} from "@/types/emails";
@@ -38,7 +37,7 @@ type BulkShareResult = Readonly<{
  */
 type HookOutputType = Readonly<{
   isSharing: boolean;
-  performShare: {
+  shareInvoiceCallback: {
     (invoiceId: string, action: ShareAction): Promise<Invoice | null>;
     (invoiceIds: readonly string[], action: ShareAction): Promise<BulkShareResult>;
   };
@@ -52,8 +51,7 @@ type HookOutputType = Readonly<{
  */
 export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useInvoiceShare");
-  const upsertEntity = useInvoicesStore((state) => state.upsertEntity);
-  const getEntityById = useInvoicesStore((state) => state.getEntityById);
+  const shareInvoiceClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isSharing, setIsSharing] = useState<boolean>(false);
 
   /**
@@ -79,7 +77,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         if (!result.success) {
           throw new Error(result.error || t("toggleError"));
         }
-        upsertEntity(result.invoice);
+        shareInvoiceClientSide(result.invoice);
         return result.invoice;
       }
 
@@ -95,7 +93,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         if (!result.success) {
           throw new Error(result.error || t("revokeError"));
         }
-        upsertEntity(result.invoice);
+        shareInvoiceClientSide(result.invoice);
         return result.invoice;
       }
 
@@ -124,7 +122,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
 
       return null;
     },
-    [getEntityById, t, upsertEntity],
+    [getEntityById, t, shareInvoiceClientSide],
   );
 
   /**
@@ -160,7 +158,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
     [shareAndMutate],
   );
 
-  const performShare = useCallback(
+  const shareInvoiceCallback = useCallback(
     async (invoiceIdOrIds: string | readonly string[], action: ShareAction): Promise<any> => {
       setIsSharing(true);
       try {
@@ -203,6 +201,6 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
     [onComplete, processBulkRecursive, shareAndMutate, t],
   );
 
-  return {isSharing, performShare};
+  return {isSharing, shareInvoiceCallback};
 }
 

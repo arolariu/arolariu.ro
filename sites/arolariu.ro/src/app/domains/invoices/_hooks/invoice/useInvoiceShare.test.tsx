@@ -93,7 +93,7 @@ describe("useInvoiceShare", () => {
 
     let returned: Invoice | undefined;
     await act(async () => {
-      returned = await result.current.performShare(baseInvoice.id, {type: "togglePublic"});
+      returned = await result.current.shareInvoiceCallback(baseInvoice.id, {type: "togglePublic"});
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe("useInvoiceShare", () => {
     const {result: alreadyPublicResult} = renderHook(() => useInvoiceShare());
 
     await act(async () => {
-      returned = await alreadyPublicResult.current.performShare(alreadyPublicInvoice.id, {type: "togglePublic"});
+      returned = await alreadyPublicResult.current.shareInvoiceCallback(alreadyPublicInvoice.id, {type: "togglePublic"});
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -129,7 +129,7 @@ describe("useInvoiceShare", () => {
     const {result} = renderHook(() => useInvoiceShare());
 
     await act(async () => {
-      await result.current.performShare(baseInvoice.id, {type: "togglePublic"});
+      await result.current.shareInvoiceCallback(baseInvoice.id, {type: "togglePublic"});
     });
 
     expect(upsertEntity).not.toHaveBeenCalled();
@@ -138,7 +138,7 @@ describe("useInvoiceShare", () => {
     vi.mocked(patchInvoice).mockResolvedValueOnce({success: false, error: ""});
 
     await act(async () => {
-      await result.current.performShare(baseInvoice.id, {type: "togglePublic"});
+      await result.current.shareInvoiceCallback(baseInvoice.id, {type: "togglePublic"});
     });
 
     expect(upsertEntity).not.toHaveBeenCalled();
@@ -153,7 +153,7 @@ describe("useInvoiceShare", () => {
     const {result} = renderHook(() => useInvoiceShare());
 
     await act(async () => {
-      await result.current.performShare(sharedInvoice.id, {type: "revoke"});
+      await result.current.shareInvoiceCallback(sharedInvoice.id, {type: "revoke"});
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -174,7 +174,7 @@ describe("useInvoiceShare", () => {
     const {result} = renderHook(() => useInvoiceShare());
 
     await act(async () => {
-      await result.current.performShare(sharedInvoice.id, {type: "revoke", userIdToRemove: "user-2"});
+      await result.current.shareInvoiceCallback(sharedInvoice.id, {type: "revoke", userIdToRemove: "user-2"});
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -190,7 +190,7 @@ describe("useInvoiceShare", () => {
     const {result} = renderHook(() => useInvoiceShare());
 
     await act(async () => {
-      await result.current.performShare(baseInvoice.id, {type: "sendEmail", to: "x@y.z", locale});
+      await result.current.shareInvoiceCallback(baseInvoice.id, {type: "sendEmail", to: "x@y.z", locale});
     });
 
     expect(sendEmail).toHaveBeenCalledWith(
@@ -235,7 +235,7 @@ describe("useInvoiceShare", () => {
 
     let bulk: {successCount: number; failureCount: number; failedIds: readonly string[]; updatedInvoices: readonly Invoice[]} | undefined;
     await act(async () => {
-      bulk = await result.current.performShare(["bulk-1", "bulk-2"], {type: "togglePublic"});
+      bulk = await result.current.shareInvoiceCallback(["bulk-1", "bulk-2"], {type: "togglePublic"});
     });
 
     expect(bulk).toEqual({

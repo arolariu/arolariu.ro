@@ -42,7 +42,7 @@ describe("useInvoiceMetadataRemove", () => {
     const {result} = renderHook(() => useInvoiceMetadataRemove(mockInvoice));
 
     await act(async () => {
-      await result.current.performRemove("color");
+      await result.current.removeMetadataCallback("color");
     });
 
     expect(deleteInvoiceMetadata).toHaveBeenCalledWith({invoiceId: "inv-1", key: "color"});
@@ -57,7 +57,7 @@ describe("useInvoiceMetadataRemove", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performRemove("color");
+        await result.current.removeMetadataCallback("color");
       } catch (error) {
         caught = error;
       }
@@ -75,7 +75,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     let pendingRemove: Promise<void> | undefined;
     act(() => {
-      pendingRemove = result.current.performRemove("color");
+      pendingRemove = result.current.removeMetadataCallback("color");
     });
 
     expect(result.current.isRemoving).toBe(true);
@@ -93,7 +93,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     let bulkResult: any;
     await act(async () => {
-      bulkResult = await result.current.performRemove([]);
+      bulkResult = await result.current.removeMetadataCallback([]);
     });
 
     expect(bulkResult).toEqual({
@@ -113,7 +113,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     let bulkResult: any;
     await act(async () => {
-      bulkResult = await result.current.performRemove(["key1", "key2"]);
+      bulkResult = await result.current.removeMetadataCallback(["key1", "key2"]);
     });
 
     expect(bulkResult).toEqual({
@@ -135,7 +135,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     let bulkResult: any;
     await act(async () => {
-      bulkResult = await result.current.performRemove(["key1", "key2"]);
+      bulkResult = await result.current.removeMetadataCallback(["key1", "key2"]);
     });
 
     expect(bulkResult).toEqual({

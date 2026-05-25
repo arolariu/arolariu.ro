@@ -5,7 +5,6 @@
  * @module app/domains/invoices/_hooks/useRecipeUpdate
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice, Recipe} from "@/types/invoices";
 import {useTranslations} from "next-intl";
@@ -14,7 +13,7 @@ import {useCallback, useState} from "react";
 type HookOutputType = Readonly<{
   isUpdating: boolean;
   /** Replaces the recipe with the given name with `updated` via patchInvoice. Throws on failure. NO toast — caller decides. */
-  performUpdate: (recipeName: string, updated: Recipe) => Promise<Invoice>;
+  updateRecipeCallback: (recipeName: string, updated: Recipe) => Promise<Invoice>;
 }>;
 
 /**
@@ -28,31 +27,24 @@ type HookOutputType = Readonly<{
  */
 export function useRecipeUpdate(invoice: Invoice): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useRecipeUpdate");
-  const upsertEntity = useInvoicesStore((state) => state.upsertEntity);
+  const updateRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const performUpdate = useCallback(
+  const updateRecipeCallback = useCallback(
     async (recipeName: string, updated: Recipe): Promise<Invoice> => {
       setIsUpdating(true);
       try {
-        const updatedRecipes = invoice.possibleRecipes.map((recipe) => (recipe.name === recipeName ? updated : recipe));
-        const result = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {possibleRecipes: updatedRecipes},
-        });
-
-        if (!result.success) {
-          throw new Error(result.error || t("error"));
-        }
-
-        upsertEntity(result.invoice);
-        return result.invoice;
+        // TODO. add server side mutation
+        const updatedRecipes = invoice.possibleRecipes.map((r) => (r.name === recipeName ? updated : r));
+        const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
+        updateRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
+        return updatedInvoice;
       } finally {
         setIsUpdating(false);
       }
     },
-    [invoice.id, invoice.possibleRecipes, t, upsertEntity],
+    [invoice.id, invoice.possibleRecipes, t, updateRecipeClientSide],
   );
 
-  return {isUpdating, performUpdate};
+  return {isUpdating, updateRecipeCallback};
 }

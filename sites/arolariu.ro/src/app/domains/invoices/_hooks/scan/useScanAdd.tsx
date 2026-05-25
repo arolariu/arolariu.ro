@@ -20,7 +20,7 @@ type ScanAddArgs = Readonly<{
 
 type HookOutputType = Readonly<{
   isAdding: boolean;
-  performAdd: (args: ScanAddArgs) => Promise<void>;
+  addScanCallback: (args: ScanAddArgs) => Promise<void>;
 }>;
 
 function readBlobAsDataUrl(file: Blob): Promise<string> {
@@ -43,7 +43,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useScanAdd");
   const [isAdding, setIsAdding] = useState(false);
 
-  const performAdd = useCallback(
+  const addScanCallback = useCallback(
     async (args: ScanAddArgs): Promise<void> => {
       setIsAdding(true);
       try {
@@ -87,5 +87,5 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
     [invoiceId, t],
   );
 
-  return {isAdding, performAdd};
+  return {isAdding, addScanCallback};
 }

@@ -242,11 +242,11 @@ export function useInvoiceDelete(onComplete?: () => void): Readonly<HookOutputTy
           const hasSuccess = result.successCount > 0;
 
           if (!hasFailure) {
-            toast.success(t("bulkDeleteSuccess", {count: result.successCount}));
+            toast.success(t("bulkDeleteSuccess", {count: String(result.successCount)}));
           } else if (!hasSuccess) {
-            toast.error(t("bulkDeleteError", {count: result.failureCount}));
+            toast.error(t("bulkDeleteError", {count: String(result.failureCount)}));
           } else {
-            toast.info(t("bulkDeletePartial", {successCount: result.successCount, failureCount: result.failureCount}));
+            toast.info(t("bulkDeletePartial", {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
           }
 
           onComplete?.();

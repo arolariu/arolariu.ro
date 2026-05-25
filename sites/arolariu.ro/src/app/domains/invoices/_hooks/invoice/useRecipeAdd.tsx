@@ -5,7 +5,6 @@
  * @module app/domains/invoices/_hooks/useRecipeAdd
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice, Recipe} from "@/types/invoices";
 import {useTranslations} from "next-intl";
@@ -14,7 +13,7 @@ import {useCallback, useState} from "react";
 type HookOutputType = Readonly<{
   isAdding: boolean;
   /** Appends a recipe to invoice.possibleRecipes via patchInvoice; throws on failure. NO toast — caller decides. */
-  performAdd: (recipe: Recipe) => Promise<Invoice>;
+  addRecipeCallback: (recipe: Recipe) => Promise<Invoice>;
 }>;
 
 /**
@@ -26,31 +25,24 @@ type HookOutputType = Readonly<{
  */
 export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useRecipeAdd");
-  const upsertEntity = useInvoicesStore((state) => state.upsertEntity);
+  const addRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isAdding, setIsAdding] = useState(false);
 
-  const performAdd = useCallback(
+  const addRecipeCallback = useCallback(
     async (recipe: Recipe): Promise<Invoice> => {
       setIsAdding(true);
       try {
+        // TODO: add server side mudation
         const updatedRecipes = [...invoice.possibleRecipes, recipe];
-        const result = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {possibleRecipes: updatedRecipes},
-        });
-
-        if (!result.success) {
-          throw new Error(result.error || t("error"));
-        }
-
-        upsertEntity(result.invoice);
-        return result.invoice;
+        const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
+        addRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
+        return updatedInvoice;
       } finally {
         setIsAdding(false);
       }
     },
-    [invoice.id, invoice.possibleRecipes, t, upsertEntity],
+    [invoice.id, invoice.possibleRecipes, t, addRecipeClientSide],
   );
 
-  return {isAdding, performAdd};
+  return {isAdding, addRecipeCallback};
 }

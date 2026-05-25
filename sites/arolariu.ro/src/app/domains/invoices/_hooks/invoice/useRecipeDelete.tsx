@@ -5,7 +5,6 @@
  * @module app/domains/invoices/_hooks/useRecipeDelete
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useTranslations} from "next-intl";
@@ -14,7 +13,7 @@ import {useCallback, useState} from "react";
 type HookOutputType = Readonly<{
   isDeleting: boolean;
   /** Removes the recipe with the given name from invoice.possibleRecipes via patchInvoice. Throws on failure. NO toast — caller decides. */
-  performDelete: (recipeName: string) => Promise<Invoice>;
+  removeRecipeCallback: (recipeName: string) => Promise<Invoice>;
 }>;
 
 /**
@@ -28,31 +27,24 @@ type HookOutputType = Readonly<{
  */
 export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useRecipeDelete");
-  const upsertEntity = useInvoicesStore((state) => state.upsertEntity);
+  const removeRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const performDelete = useCallback(
+  const removeRecipeCallback = useCallback(
     async (recipeName: string): Promise<Invoice> => {
       setIsDeleting(true);
       try {
-        const updatedRecipes = invoice.possibleRecipes.filter((recipe) => recipe.name !== recipeName);
-        const result = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {possibleRecipes: updatedRecipes},
-        });
-
-        if (!result.success) {
-          throw new Error(result.error || t("error"));
-        }
-
-        upsertEntity(result.invoice);
-        return result.invoice;
+        // TODO: add server side mutation
+        const updatedRecipes = invoice.possibleRecipes.filter((r) => r.name !== recipeName);
+        const updatedInvoice = {...invoice, possibleRecipes: updatedRecipes};
+        removeRecipeClientSide(invoice.id, {possibleRecipes: updatedRecipes});
+        return updatedInvoice;
       } finally {
         setIsDeleting(false);
       }
     },
-    [invoice.id, invoice.possibleRecipes, t, upsertEntity],
+    [invoice.id, invoice.possibleRecipes, t, removeRecipeClientSide],
   );
 
-  return {isDeleting, performDelete};
+  return {isDeleting, removeRecipeCallback: removeRecipeCallback};
 }

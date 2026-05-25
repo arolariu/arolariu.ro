@@ -48,7 +48,7 @@ describe("useScanAdd", () => {
     const {result} = renderHook(() => useScanAdd("inv-1"));
 
     await act(async () => {
-      await result.current.performAdd(scanArgs);
+      await result.current.addScanCallback(scanArgs);
     });
 
     expect(createInvoiceScan).toHaveBeenCalledWith({
@@ -81,7 +81,7 @@ describe("useScanAdd", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performAdd(scanArgs);
+        await result.current.addScanCallback(scanArgs);
       } catch (error) {
         caught = error;
       }
@@ -102,7 +102,7 @@ describe("useScanAdd", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performAdd(scanArgs);
+        await result.current.addScanCallback(scanArgs);
       } catch (error) {
         caught = error;
       }
@@ -120,7 +120,7 @@ describe("useScanAdd", () => {
     const {result} = renderHook(() => useScanAdd("inv-1"));
 
     await act(async () => {
-      await result.current.performAdd({...scanArgs, fileName: ""});
+      await result.current.addScanCallback({...scanArgs, fileName: ""});
     });
 
     expect(createInvoiceScan).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe("useScanAdd", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performAdd(scanArgs);
+        await result.current.addScanCallback(scanArgs);
       } catch (error) {
         caught = error;
       }

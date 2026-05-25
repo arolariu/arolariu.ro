@@ -43,7 +43,7 @@ type HookOutputType = Readonly<{
  * @returns State and callback for adding invoice metadata.
  */
 export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType> {
-  const addInvoiceMedataClientSide = useInvoicesStore((state) => state.upsertEntity);
+  const addInvoiceMedataClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isAdding, setIsAdding] = useState(false);
 
   /**
@@ -52,8 +52,17 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
   const performMutation = useCallback(
     async (key: string, value: string): Promise<Invoice> => {
       await addInvoiceMetadataServerSide({invoiceId: invoice.id, entries: {[key]: value}});
-      addInvoiceMedataClientSide(result.invoice);
-      return result.invoice;
+      addInvoiceMedataClientSide(invoice.id, {
+        additionalMetadata: {
+          ...invoice.additionalMetadata,
+          [key]: value,
+        },
+      });
+
+      return {
+        ...invoice,
+        additionalMetadata: { ...invoice.additionalMetadata, [key]: value },
+      };
     },
     [invoice, addInvoiceMedataClientSide],
   );

@@ -7,7 +7,7 @@
 
 import type {Invoice, Product} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import { addInvoiceProduct as addInvoiceProductServerSide } from "../../_actions/invoices";
+import { addInvoiceProduct as addProductServerSide } from "../../_actions/invoices";
 import { useInvoicesStore } from "@/stores";
 
 type HookInputType = Readonly<{
@@ -16,7 +16,7 @@ type HookInputType = Readonly<{
 
 type HookOutputType = Readonly<{
   isAdding: boolean;
-  performAdd: (product: Product) => Promise<Product>;
+  addProductCallback: (product: Product) => Promise<Product>;
 }>;
 
 /**
@@ -28,14 +28,14 @@ type HookOutputType = Readonly<{
  */
 export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<HookOutputType> {
   const [isAdding, setIsAdding] = useState<boolean>(false);
-  const addInvoiceProductClientSide = useInvoicesStore((state) => state.updateEntity);
+  const addProductClientSide = useInvoicesStore((state) => state.updateEntity);
 
-  const performAdd = useCallback(
+  const addProductCallback = useCallback(
     async (product: Product): Promise<Product> => {
       setIsAdding(true);
       try {
-        await addInvoiceProductServerSide({invoiceId: invoice.id, product});
-        addInvoiceProductClientSide(invoice.id, {
+        await addProductServerSide({invoiceId: invoice.id, product});
+        addProductClientSide(invoice.id, {
           items: [...invoice.items, product],
         });
         return product;
@@ -43,8 +43,8 @@ export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<Ho
         setIsAdding(false);
       }
     },
-    [invoice.id, addInvoiceProductClientSide],
+    [invoice.id, addProductClientSide],
   );
 
-  return {isAdding, performAdd};
+  return {isAdding, addProductCallback};
 }

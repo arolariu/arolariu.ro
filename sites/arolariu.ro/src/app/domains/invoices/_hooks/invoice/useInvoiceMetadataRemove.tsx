@@ -5,10 +5,10 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove
  */
 
-import deleteInvoiceMetadataServerSide from "@/lib/actions/invoices/deleteInvoiceMetadata";
 import { useInvoicesStore } from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
+import { deleteInvoiceMetadata as deleteInvoiceMetadataServerSide } from "../../_actions/invoices";
 
 /**
  * Result of a bulk metadata removal operation.
@@ -30,7 +30,7 @@ export type BulkRemoveResult = Readonly<{
  */
 type HookOutputType = Readonly<{
   isRemoving: boolean;
-  performRemove: {
+  removeMetadataCallback: {
     (key: string): Promise<void>;
     (keys: readonly string[]): Promise<BulkRemoveResult>;
   };
@@ -49,7 +49,7 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
   /**
    * Internal worker function to delete metadata key for a single field on the server.
    */
-  const removeAndMutate = useCallback(
+  const performMutation = useCallback(
     async (key: string): Promise<void> => {
       await deleteInvoiceMetadataServerSide({invoiceId: invoice.id, key});
       deleteInvoiceMedataClientSide(invoice.id, {
@@ -79,7 +79,7 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
         return acc;
       }
       try {
-        await removeAndMutate(key);
+        await performMutation(key);
         return await processBulkRecursive(keys, index + 1, {
           ...acc,
           successCount: acc.successCount + 1,
@@ -93,15 +93,15 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
         });
       }
     },
-    [removeAndMutate],
+    [performMutation],
   );
 
-  const performRemove = useCallback(
+  const removeMetadataCallback = useCallback(
     async (keyOrKeys: string | readonly string[]): Promise<any> => {
       setIsRemoving(true);
       try {
         if (typeof keyOrKeys === "string") {
-          await removeAndMutate(keyOrKeys);
+          await performMutation(keyOrKeys);
         } else {
           return await processBulkRecursive(keyOrKeys, 0, {
             successCount: 0,
@@ -113,8 +113,8 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
         setIsRemoving(false);
       }
     },
-    [removeAndMutate, processBulkRecursive],
+    [performMutation, processBulkRecursive],
   );
 
-  return {isRemoving, performRemove};
+  return {isRemoving, removeMetadataCallback};
 }

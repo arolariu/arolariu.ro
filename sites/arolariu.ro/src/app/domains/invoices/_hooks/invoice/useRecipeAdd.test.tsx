@@ -66,7 +66,7 @@ describe("useRecipeAdd", () => {
 
     let returned: Invoice | undefined;
     await act(async () => {
-      returned = await result.current.performAdd(pastaRecipe);
+      returned = await result.current.addRecipeCallback(pastaRecipe);
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -89,7 +89,7 @@ describe("useRecipeAdd", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performAdd(pastaRecipe);
+        await result.current.addRecipeCallback(pastaRecipe);
       } catch (error) {
         caught = error;
       }
@@ -104,7 +104,7 @@ describe("useRecipeAdd", () => {
 
     await act(async () => {
       try {
-        await result.current.performAdd(pastaRecipe);
+        await result.current.addRecipeCallback(pastaRecipe);
       } catch (error) {
         caught = error;
       }
@@ -122,7 +122,7 @@ describe("useRecipeAdd", () => {
 
     await act(async () => {
       try {
-        await result.current.performAdd(pastaRecipe);
+        await result.current.addRecipeCallback(pastaRecipe);
       } catch {
         // Expected failure path under test.
       }

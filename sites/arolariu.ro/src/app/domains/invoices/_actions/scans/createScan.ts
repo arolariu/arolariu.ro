@@ -90,7 +90,6 @@ type ServerActionOutputType = ServerActionResult<
     /** The created Scan entity with blob URL and metadata */
     scan: Scan;
   }>>;
-};
 
 /**
  * Maps MIME type to ScanType enum for type classification.

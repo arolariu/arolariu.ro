@@ -1,166 +1,70 @@
 "use client";
 
 /**
- * @fileoverview React hook for client-side scan image rotation with canvas pipeline.
- * @module app/domains/invoices/_hooks/scan/useScanRotation
+ * @fileoverview Hook for managing scan rotation with canvas pipeline.
+ * @module app/domains/invoices/_hooks/useScanRotation
+ */
+
+import {useScansStore} from "@/stores";
+import type {CachedScan} from "@/types/scans";
+import {toast} from "@arolariu/components";
+import {useTranslations} from "next-intl";
+import {useCallback, useState} from "react";
+import { updateScan } from "../../_actions/scans";
+
+/**
+ * Hook output type.
+ */
+type HookOutputType = Readonly<{
+  /** Whether a rotation operation is in progress */
+  isRotating: boolean;
+  /** Rotates the scan in the specified direction */
+  rotateScanCallback: (direction: "cw" | "ccw") => Promise<void>;
+}>;
+
+/**
+ * Manages scan rotation state and canvas-based rotation pipeline.
  *
  * @remarks
- * Provides a React hook that manages the complete image rotation workflow:
- * client-side canvas manipulation → server-side blob update → store synchronization.
+ * **Behavior contract:**
+ * - `rotateScanCallback(direction)` executes the following pipeline:
+ *   1. Sets `isRotating→true`
+ *   2. Fetches scan blob from blobUrl
+ *   3. Loads image into Image element
+ *   4. Creates canvas and rotates by ±90° (cw=90, ccw=-90)
+ *   5. Converts canvas to Blob (JPEG, 0.92 quality)
+ *   6. Converts Blob to base64 via FileReader
+ *   7. Calls `updateScan` server action with rotated blob
+ *   8. Updates Zustand store via `updateScanBlobUrl` with cache-busted URL
+ *   9. Shows success toast
+ *   10. Sets `isRotating→false` in `finally` block
+ * - On error at any step: shows error toast, sets `isRotating→false`
+ * - PDF scans are rejected with error toast (rotation not supported)
  *
- * **Canvas Pipeline Architecture:**
- * This hook implements a multi-stage pipeline for rotating scan images:
- * 1. **Fetch**: Download blob from Azure Storage URL
- * 2. **Load**: Create Image element and wait for load event
- * 3. **Transform**: Create canvas, apply rotation matrix, draw rotated image
- * 4. **Encode**: Convert canvas to JPEG blob (0.92 quality for size optimization)
- * 5. **Serialize**: Convert blob to base64 string for server action
- * 6. **Upload**: Call `updateScan` server action with rotated content
- * 7. **Sync**: Update Zustand store with cache-busted URL
- * 8. **Cleanup**: Revoke object URLs to prevent memory leaks
+ * **Canvas Pipeline Details:**
+ * - Canvas dimensions are swapped for 90°/270° rotations
+ * - Image is drawn centered with rotation applied
+ * - Original blob URL is revoked after processing to prevent memory leaks
  *
- * **Why Canvas API?**
- * - Client-side transformation reduces server load
- * - Immediate visual feedback (optimistic update possible)
- * - No external dependencies (native browser APIs)
- * - Preserves original scan until confirmed successful
- * - Supports rotation by any angle (90°, 180°, 270° optimized)
- *
- * **Image Format Handling:**
- * - JPEG/PNG input: Supported (rotated, re-encoded as JPEG)
- * - PDF input: Not supported (rotation rejected with error toast)
- * - Output format: Always JPEG at 0.92 quality (balance size/quality)
- * - Canvas dimensions: Swapped for 90°/270° rotations (portrait ↔ landscape)
- *
- * **Memory Management:**
- * - Creates object URLs for blob handling
- * - Revokes URLs after processing to prevent memory leaks
- * - Canvas elements garbage collected after operation
- * - Image elements dereferenced after use
- *
- * **Error Handling:**
- * - Image load failures: Caught and shown as toast
- * - Canvas context creation failures: Caught and shown as toast
- * - Blob conversion failures: Caught and shown as toast
- * - Server action failures: Shown via ServerActionResult error message
- * - All errors logged to console for debugging
- *
- * **Internationalization:**
- * Uses `next-intl` for all user-facing messages from the
- * `IMS--ViewScans.scanCard.actions.*` namespace.
+ * @param scan - The scan to rotate
+ * @returns Object containing rotation state and action
  *
  * @example
  * ```tsx
- * // Basic rotation controls
- * "use client";
+ * const rotation = useScanRotation(scan);
  *
- * import { useScanRotation } from "@/app/domains/invoices/_hooks/scan";
- *
- * export function ScanRotationControls({ scan }: { scan: CachedScan }) {
- *   const { isRotating, rotate } = useScanRotation(scan);
- *
- *   return (
- *     <div>
- *       <button onClick={() => rotate("cw")} disabled={isRotating}>
- *         Rotate Right 90°
- *       </button>
- *       <button onClick={() => rotate("ccw")} disabled={isRotating}>
- *         Rotate Left 90°
- *       </button>
- *       {isRotating && <Spinner />}
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // 180° rotation shortcut (two 90° rotations)
- * "use client";
- *
- * import { useScanRotation } from "@/app/domains/invoices/_hooks/scan";
- *
- * export function QuickRotation({ scan }: { scan: CachedScan }) {
- *   const { isRotating, rotate } = useScanRotation(scan);
- *
- *   const rotate180 = async () => {
- *     await rotate("cw"); // First 90°
- *     await rotate("cw"); // Second 90° = 180° total
- *   };
- *
- *   return (
- *     <button onClick={rotate180} disabled={isRotating}>
- *       Rotate 180°
+ * return (
+ *   <>
+ *     <button onClick={() => rotation.rotateScanCallback("cw")} disabled={rotation.isRotating}>
+ *       Rotate Right
  *     </button>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Rotation with error recovery and retry
- * "use client";
- *
- * import { useScanRotation } from "@/app/domains/invoices/_hooks/scan";
- * import { useState } from "react";
- *
- * export function RobustRotation({ scan }: { scan: CachedScan }) {
- *   const { isRotating, rotate } = useScanRotation(scan);
- *   const [retryCount, setRetryCount] = useState(0);
- *
- *   const handleRotate = async (direction: "cw" | "ccw") => {
- *     try {
- *       await rotate(direction);
- *       setRetryCount(0); // Reset on success
- *     } catch (error) {
- *       if (retryCount < 3) {
- *         setRetryCount(prev => prev + 1);
- *         // Auto-retry after brief delay
- *         setTimeout(() => handleRotate(direction), 2000);
- *       }
- *     }
- *   };
- *
- *   return (
- *     <div>
- *       <button onClick={() => handleRotate("cw")} disabled={isRotating}>
- *         Rotate Right {retryCount > 0 && `(Retry ${retryCount}/3)`}
- *       </button>
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Conditional rotation based on scan orientation
- * "use client";
- *
- * import { useScanRotation } from "@/app/domains/invoices/_hooks/scan";
- *
- * export function AutoOrient({ scan }: { scan: CachedScan }) {
- *   const { isRotating, rotate } = useScanRotation(scan);
- *
- *   // Auto-rotate landscape scans to portrait
- *   useEffect(() => {
- *     if (scan.metadata?.orientation === "landscape") {
- *       rotate("cw");
- *     }
- *   }, [scan.metadata?.orientation]);
- *
- *   return (
- *     <button onClick={() => rotate("cw")} disabled={isRotating}>
- *       Manual Rotate
+ *     <button onClick={() => rotation.rotateScanCallback("ccw")} disabled={rotation.isRotating}>
+ *       Rotate Left
  *     </button>
- *   );
- * }
+ *     {rotation.isRotating && <Spinner />}
+ *   </>
+ * );
  * ```
- *
- * @see {@link updateScan} - Server action for updating scan blobs
- * @see {@link useScansStore} - Zustand store for scan state management
- * @see {@link useScanRename} - Hook for renaming scans
- * @see {@link useScanDelete} - Hook for deleting scans
- * @see {@link useScanAdd} - Hook for uploading new scans
  */
 export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
   const t = useTranslations("IMS--ViewScans.scanCard");
@@ -168,7 +72,7 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
 
   const [isRotating, setIsRotating] = useState(false);
 
-  const rotate = useCallback(
+  const rotateScanCallback = useCallback(
     async (direction: "cw" | "ccw"): Promise<void> => {
       if (!scan.blobUrl || scan.mimeType === "application/pdf") {
         toast.error(t("actions.rotateUnsupported"));
@@ -248,12 +152,13 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
         URL.revokeObjectURL(objectUrl);
 
         // 8. Update scan in store (append cache-buster to force browser to re-fetch rotated image)
-        if (result.success && result.data.blobUrl) {
-          const cacheBustedUrl = `${result.data.blobUrl}?t=${Date.now()}`;
+        if (result.success) {
+          const {blobUrl} = result.data;
+          const cacheBustedUrl = `${blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
           toast.success(t("actions.rotateSuccess"));
         } else {
-          toast.error(result.userMessage || t("actions.rotateError"));
+          toast.error(result.error || t("actions.rotateError"));
         }
       } catch (error) {
         toast.error(t("actions.rotateError"));
@@ -265,5 +170,5 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
     [scan.blobUrl, scan.id, scan.mimeType, t, updateScanBlobUrl],
   );
 
-  return {isRotating, rotate};
+  return {isRotating, rotateScanCallback};
 }

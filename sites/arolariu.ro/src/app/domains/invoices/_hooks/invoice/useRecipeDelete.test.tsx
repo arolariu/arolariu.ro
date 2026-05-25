@@ -66,7 +66,7 @@ describe("useRecipeDelete", () => {
 
     let returned: Invoice | undefined;
     await act(async () => {
-      returned = await result.current.performDelete("To Remove");
+      returned = await result.current.removeRecipeCallback("To Remove");
     });
 
     expect(patchInvoice).toHaveBeenCalledWith(
@@ -89,7 +89,7 @@ describe("useRecipeDelete", () => {
     let caught: unknown;
     await act(async () => {
       try {
-        await result.current.performDelete("To Remove");
+        await result.current.removeRecipeCallback("To Remove");
       } catch (error) {
         caught = error;
       }
@@ -104,7 +104,7 @@ describe("useRecipeDelete", () => {
 
     await act(async () => {
       try {
-        await result.current.performDelete("To Remove");
+        await result.current.removeRecipeCallback("To Remove");
       } catch (error) {
         caught = error;
       }
@@ -122,7 +122,7 @@ describe("useRecipeDelete", () => {
 
     await act(async () => {
       try {
-        await result.current.performDelete("To Remove");
+        await result.current.removeRecipeCallback("To Remove");
       } catch {
         // Expected failure path under test.
       }

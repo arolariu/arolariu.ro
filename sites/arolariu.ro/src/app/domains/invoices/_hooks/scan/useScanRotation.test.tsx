@@ -68,7 +68,7 @@ describe("useScanRotation", () => {
     const {result} = renderHook(() => useScanRotation(mockPDFScan));
 
     await act(async () => {
-      await result.current.rotate("cw");
+      await result.current.rotateScanCallback("cw");
     });
 
     expect(toast.error).toHaveBeenCalledWith("actions.rotateUnsupported");
@@ -79,7 +79,7 @@ describe("useScanRotation", () => {
     const {result} = renderHook(() => useScanRotation({...mockScan, blobUrl: ""}));
 
     await act(async () => {
-      await result.current.rotate("cw");
+      await result.current.rotateScanCallback("cw");
     });
 
     expect(toast.error).toHaveBeenCalledWith("actions.rotateUnsupported");

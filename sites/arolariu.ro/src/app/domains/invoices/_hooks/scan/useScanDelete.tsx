@@ -10,7 +10,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
-import { deleteScan as deleteScanServerSide } from "../../_actions/scans";
+import { deleteScan as removeScanServerSide } from "../../_actions/scans";
 
 /**
  * Hook output type.
@@ -19,7 +19,7 @@ type HookOutputType = Readonly<{
   /** Whether a deletion operation is in progress */
   isDeleting: boolean;
   /** Executes the scan deletion */
-  performDelete: () => Promise<void>;
+  deleteScanCallback: () => Promise<void>;
 }>;
 
 /**
@@ -27,7 +27,7 @@ type HookOutputType = Readonly<{
  *
  * @remarks
  * **Behavior contract:**
- * - `performDelete()` executes the following steps:
+ * - `deleteScanCallback()` executes the following steps:
  *   1. Sets `isDeleting→true`
  *   2. Calls `deleteScan` server action with scan blobUrl
  *   3. On success:
@@ -54,7 +54,7 @@ type HookOutputType = Readonly<{
  * });
  *
  * return (
- *   <button onClick={deletion.performDelete} disabled={deletion.isDeleting}>
+ *   <button onClick={deletion.deleteScanCallback} disabled={deletion.isDeleting}>
  *     {deletion.isDeleting ? "Deleting..." : "Delete Scan"}
  *   </button>
  * );
@@ -62,16 +62,16 @@ type HookOutputType = Readonly<{
  */
 export function useScanDelete(scan: CachedScan, onComplete?: () => void): Readonly<HookOutputType> {
   const t = useTranslations("IMS--ViewScans.scanCard");
-  const removeScan = useScansStore((state) => state.removeScan);
+  const removeScanClientSide = useScansStore((state) => state.removeScan);
 
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const performDelete = useCallback(async (): Promise<void> => {
+  const deleteScanCallback = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
     try {
-      const result = await deleteScanServerSide({blobUrl: scan.blobUrl});
+      const result = await removeScanServerSide({blobUrl: scan.blobUrl});
       if (result.success) {
-        removeScan(scan.id);
+        removeScanClientSide(scan.id);
         toast.success(t("deleteDialog.success"));
         onComplete?.();
       } else {
@@ -83,7 +83,7 @@ export function useScanDelete(scan: CachedScan, onComplete?: () => void): Readon
     } finally {
       setIsDeleting(false);
     }
-  }, [scan.blobUrl, scan.id, removeScan, onComplete, t]);
+  }, [scan.blobUrl, scan.id, removeScanClientSide, onComplete, t]);
 
-  return {isDeleting, performDelete};
+  return {isDeleting, deleteScanCallback};
 }
