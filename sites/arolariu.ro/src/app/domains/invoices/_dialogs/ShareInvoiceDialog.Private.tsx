@@ -11,22 +11,13 @@ import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
 import styles from "./ShareInvoiceDialog.Private.module.scss";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Props for the private mode component */
-export interface PrivateModeProps {
-  readonly onBack: () => void;
-  readonly email: string;
-  readonly onEmailChange: (email: string) => void;
-  readonly onSendEmail: (e: React.FormEvent<HTMLFormElement>) => void;
-  readonly isSending?: boolean;
-}
-
-// ============================================================================
-// Sub-Components
-// ============================================================================
+type Props = {
+  onBack: () => void;
+  email: string;
+  onEmailChange: (email: string) => void;
+  onSendEmail: (e: React.SubmitEvent<HTMLFormElement>) => void;
+  isSending?: boolean;
+};
 
 /**
  * Renders the private sharing mode with email form.
@@ -44,7 +35,7 @@ export interface PrivateModeProps {
  * @param props - Component props
  * @returns The private sharing mode UI
  */
-export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: PrivateModeProps): React.JSX.Element {
+export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPrivate");
   return (
     <div className={styles["body"]}>

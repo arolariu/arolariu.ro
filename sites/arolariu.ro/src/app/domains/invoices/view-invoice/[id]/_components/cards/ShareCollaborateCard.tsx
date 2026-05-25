@@ -84,7 +84,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("IMS--View.shareCollaborate");
   const {invoice, setInvoice} = useInvoiceContext();
-  const {togglePublic: makePublic, revokeUserAccess} = useInvoiceShare(invoice);
+  const {performShare} = useInvoiceShare();
   const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
 
@@ -188,8 +188,11 @@ export function ShareCollaborateCard(): React.JSX.Element {
     startTransition(() => {
       void (async () => {
         try {
-          const updatedInvoice = isCurrentlyPublic ? await revokeUserAccess() : await makePublic();
-          setInvoice(updatedInvoice);
+          const action = isCurrentlyPublic ? {type: "revoke" as const} : {type: "togglePublic" as const};
+          const updatedInvoice = await performShare(invoice.id, action);
+          if (updatedInvoice) {
+            setInvoice(updatedInvoice);
+          }
           toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
         } catch (error) {
           console.error("Failed to toggle public status:", error);
@@ -197,7 +200,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
         }
       })();
     });
-  }, [makePublic, revokeUserAccess, setInvoice, sharingStatus, startTransition, t]);
+  }, [invoice.id, performShare, setInvoice, sharingStatus, startTransition, t]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.

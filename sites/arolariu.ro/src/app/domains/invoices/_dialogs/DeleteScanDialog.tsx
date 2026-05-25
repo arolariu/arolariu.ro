@@ -5,8 +5,6 @@
  * @module app/domains/invoices/_dialogs/DeleteScanDialog
  */
 
-import {useScanDelete} from "../_hooks/useScanDelete";
-import {useDialog} from "../_contexts/DialogContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +18,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbLoader2, TbTrash} from "react-icons/tb";
+import {useDialog} from "../_contexts/DialogContext";
+import {useScanDelete} from "../_hooks/useScanDelete";
 import styles from "./DeleteScanDialog.module.scss";
 
 /**
@@ -51,10 +51,10 @@ export default function DeleteScanDialog(): React.JSX.Element {
   const {
     isOpen,
     close,
-    currentDialog: {payload},
+    currentDialog: {
+      payload: {scan},
+    },
   } = useDialog("SHARED__SCAN_DELETE", "delete");
-
-  const {scan} = payload;
 
   const {isDeleting, performDelete} = useScanDelete(scan, close);
 

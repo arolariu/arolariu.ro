@@ -5,11 +5,10 @@
  * @module app/domains/invoices/_dialogs/PreviewScanDialog
  */
 
-import {useDialog} from "../_contexts/DialogContext";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {TbFileTypePdf} from "react-icons/tb";
+import {useDialog} from "../_contexts/DialogContext";
 import styles from "./PreviewScanDialog.module.scss";
 
 /**
@@ -37,10 +36,10 @@ export default function PreviewScanDialog(): React.JSX.Element {
   const {
     isOpen,
     close,
-    currentDialog: {payload},
+    currentDialog: {
+      payload: {scan},
+    },
   } = useDialog("SHARED__SCAN_PREVIEW", "view");
-
-  const {scan} = payload;
 
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
@@ -57,7 +56,9 @@ export default function PreviewScanDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["previewDialog"]}>
         <DialogHeader>
-          <DialogTitle>{t("previewTitle")}: {scan.name}</DialogTitle>
+          <DialogTitle>
+            {t("previewTitle")}: {scan.name}
+          </DialogTitle>
         </DialogHeader>
         {scan.mimeType === "application/pdf" ? (
           <div className={styles["pdfPreviewContainer"]}>

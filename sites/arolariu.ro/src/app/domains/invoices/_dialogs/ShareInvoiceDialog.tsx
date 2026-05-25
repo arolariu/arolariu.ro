@@ -1,7 +1,6 @@
 "use client";
 
 import {LAST_GUID} from "@/lib/utils.generic";
-import type {EmailLocale} from "@/types/emails";
 import {
   Alert,
   AlertDescription,
@@ -20,7 +19,7 @@ import {
 import {useUser} from "@clerk/nextjs";
 import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
-import React, {useCallback, useMemo, useState, type ComponentProps} from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import {useInvoiceShare} from "../_hooks/useInvoiceShare";
@@ -35,8 +34,6 @@ import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
 /** Sharing mode determines the current view in the dialog */
 type SharingMode = "selection" | "public" | "private";
-
-type FormSubmitHandler = NonNullable<ComponentProps<"form">["onSubmit"]>;
 
 // ============================================================================
 // Sub-Components
@@ -147,25 +144,22 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.shareInvoiceDialog");
-  // Sender's UI locale — forwarded to the recipient so the email matches
-  // the language the sender is composing in. Cast is safe because the
-  // app's next-intl provider is configured for exactly en/ro/fr.
-  const locale = useLocale() as EmailLocale;
+  const router = useRouter();
+  const locale = useLocale();
   const {user} = useUser();
   const [sharingMode, setSharingMode] = useState<SharingMode>("selection");
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
 
-  const router = useRouter();
-
   const {
-    currentDialog: {payload},
+    currentDialog: {
+      payload: {invoice},
+    },
     isOpen,
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
-  const {invoice} = payload;
-  const {togglePublic, revokeUserAccess, sendShareEmail, isRevoking, isSendingEmail} = useInvoiceShare(invoice);
+  const {performShare, isSharing} = useInvoiceShare();
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 
   /** Check if the invoice is currently public */
@@ -195,7 +189,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
-        await togglePublic();
+        await performShare(invoice.id, {type: "togglePublic"});
       }
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -212,7 +206,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
       error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, router, sharingMode, shareUrl, t, togglePublic]);
+  }, [invoice.id, isInvoicePublic, performShare, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -223,7 +217,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
-        await togglePublic();
+        await performShare(invoice.id, {type: "togglePublic"});
       }
 
       const qrCodeElement = document.querySelector("#invoice-qr-code");
@@ -244,26 +238,26 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
       error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [isInvoicePublic, router, sharingMode, t, togglePublic]);
+  }, [invoice.id, isInvoicePublic, performShare, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately through the shared hook.
    */
-  const handleSendEmail = useCallback<FormSubmitHandler>(
-    async (e) => {
-      e.preventDefault();
+  const handleSendEmail = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
       if (!email) return;
 
-      await sendShareEmail({
+      await performShare(invoice.id, {
+        type: "sendEmail",
         to: email,
-        identifier: invoice.id,
         locale,
         fromUsername: user?.fullName ?? user?.username ?? undefined,
         ...(user?.emailAddresses[0]?.emailAddress ? {replyTo: user.emailAddresses[0].emailAddress} : {}),
       });
       setEmail("");
     },
-    [email, invoice.id, locale, sendShareEmail, user],
+    [email, invoice.id, locale, performShare, user],
   );
 
   /**
@@ -271,12 +265,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleRevokeAccess = useCallback(() => {
-    toast.promise(revokeUserAccess(), {
+    toast.promise(performShare(invoice.id, {type: "revoke"}), {
       loading: t("toasts.revoke.loading"),
       success: t("toasts.revoke.success"),
       error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [revokeUserAccess, t]);
+  }, [invoice.id, performShare, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {
@@ -336,7 +330,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
             onCopyLink={handleCopyLink}
             onCopyQRCode={handleCopyQRCode}
             onRevokeAccess={handleRevokeAccess}
-            isRevoking={isRevoking}
+            isRevoking={isSharing}
           />
         ) : (
           <>
@@ -362,7 +356,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
                 email={email}
                 onEmailChange={setEmail}
                 onSendEmail={handleSendEmail}
-                isSending={isSendingEmail}
+                isSending={isSharing}
               />
             )}
           </>

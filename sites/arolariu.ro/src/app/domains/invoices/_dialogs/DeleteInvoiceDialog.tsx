@@ -51,16 +51,16 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  * @returns The DeleteInvoiceDialog component, CSR'ed.
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
-  const router = useRouter();
   const t = useTranslations("IMS--Dialogs.deleteInvoiceDialog");
+  const router = useRouter();
 
   const {
     isOpen,
     close,
-    currentDialog: {payload},
+    currentDialog: {
+      payload: {invoice},
+    },
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
-
-  const {invoice} = payload;
 
   const [confirmText, setConfirmText] = useState<string>("");
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
@@ -90,8 +90,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   const handleDelete = useCallback(async () => {
     if (!isConfirmValid) return;
 
-    await performDelete(invoice);
-  }, [invoice, isConfirmValid, performDelete]);
+    await performDelete(invoice.id);
+  }, [invoice.id, isConfirmValid, performDelete]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;

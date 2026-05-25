@@ -96,7 +96,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
     })),
   );
 
-  const {performDeleteBulk, isBulkDeleting} = useInvoiceDelete();
+  const {performDelete, isDeleting} = useInvoiceDelete();
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
   /**
@@ -112,7 +112,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   const handleDelete = useCallback(async () => {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
 
-    const {failedIds} = await performDeleteBulk(invoiceIds);
+    const {failedIds} = await performDelete(invoiceIds);
 
     if (failedIds.length === 0) {
       clearSelectedInvoices();
@@ -121,7 +121,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
 
     const failedInvoices = selectedInvoices.filter((invoice) => failedIds.includes(invoice.id));
     setSelectedInvoices(failedInvoices);
-  }, [selectedInvoices, performDeleteBulk, clearSelectedInvoices, setSelectedInvoices]);
+  }, [selectedInvoices, performDelete, clearSelectedInvoices, setSelectedInvoices]);
 
   /**
    * Handles bulk category change for selected invoices.
@@ -226,7 +226,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                     variant='destructive'
                     size='sm'
                     className={styles["actionButton"]}
-                    disabled={isBulkDeleting}
+                    disabled={isDeleting}
                     aria-label={t("delete")}>
                     <TbTrash className={styles["icon"]} />
                     <span className={styles["hiddenMobile"]}>{t("delete")}</span>
