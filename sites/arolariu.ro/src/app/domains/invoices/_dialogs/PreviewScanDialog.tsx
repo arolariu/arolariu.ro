@@ -1,8 +1,19 @@
 "use client";
 
 /**
- * @fileoverview Dialog for previewing a scan in full size.
+ * @fileoverview Shared dialog for previewing standalone scan content.
  * @module app/domains/invoices/_dialogs/PreviewScanDialog
+ *
+ * @remarks
+ * This dialog is lazy-loaded by `DialogContainer` for the
+ * `SHARED__SCAN_PREVIEW` dialog type. It reads the selected scan from dialog
+ * context and chooses an image preview or browser-native PDF preview based on
+ * the scan MIME type.
+ *
+ * **Payload Contract**: `useDialog("SHARED__SCAN_PREVIEW", "view")` provides
+ * `{scan}` where `scan` includes the display name, blob URL, and MIME type.
+ *
+ * @see {@link useDialog} - Reads the active shared dialog payload.
  */
 
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
@@ -12,23 +23,36 @@ import {useDialog} from "../_contexts/DialogContext";
 import styles from "./PreviewScanDialog.module.scss";
 
 /**
- * Dialog for displaying a scan in full size.
+ * Renders the shared scan preview dialog.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
  *
- * **Display Features**:
- * - Shows image scans in full resolution
- * - Shows PDF scans in embedded iframe viewer
- * - Dialog title shows scan name
- * - ESC key or backdrop click closes dialog
+ * **Display Features:**
+ * - Uses an embedded `iframe` for `application/pdf` scans so the browser's PDF
+ *   viewer can handle pagination and zoom.
+ * - Uses a plain `<img>` for image scans to preserve the blob URL exactly and
+ *   avoid Next.js image optimization constraints for user-uploaded blobs.
+ * - Shows the scan name in the dialog title.
+ * - Closes when the shared dialog primitive emits `onOpenChange(false)`.
  *
- * **Accessibility**:
- * - Image has proper alt text with scan name
- * - PDF iframe has proper title attribute
- * - Dialog is properly labeled for screen readers
+ * **Accessibility:**
+ * - Image previews use the scan name as `alt` text.
+ * - PDF previews use the scan name as the iframe `title`.
+ * - The dialog title labels the preview for assistive technologies.
  *
- * @returns The PreviewScanDialog component, CSR'ed.
+ * **Security Trade-off:**
+ * The PDF iframe intentionally omits `sandbox` because browser-native PDF
+ * viewers do not render reliably inside sandboxed frames. The source is the
+ * scan blob URL already selected by the authenticated user flow.
+ *
+ * @returns The client-rendered scan preview dialog.
+ *
+ * @example
+ * ```tsx
+ * // Rendered indirectly by DialogContainer after opening this dialog type.
+ * openDialog("SHARED__SCAN_PREVIEW", "view", {scan});
+ * ```
  */
 export default function PreviewScanDialog(): React.JSX.Element {
   const t = useTranslations("IMS--ViewScans.scanCard");
@@ -41,6 +65,17 @@ export default function PreviewScanDialog(): React.JSX.Element {
     },
   } = useDialog("SHARED__SCAN_PREVIEW", "view");
 
+  /**
+   * Handles preview dialog open-state transitions.
+   *
+   * @remarks
+   * The preview dialog has no long-running mutation to protect, so any close
+   * request from the dialog primitive immediately clears the shared dialog
+   * state through `close`.
+   *
+   * @param shouldOpen - Next open state requested by the dialog primitive.
+   * @returns Nothing; closes the shared dialog when `shouldOpen` is false.
+   */
   const handleOpenChange = useCallback(
     (shouldOpen: boolean) => {
       if (!shouldOpen) {

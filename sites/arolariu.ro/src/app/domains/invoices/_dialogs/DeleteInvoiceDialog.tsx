@@ -1,5 +1,28 @@
 "use client";
 
+/**
+ * @fileoverview Shared confirmation dialog for destructive invoice deletion.
+ * @module app/domains/invoices/_dialogs/DeleteInvoiceDialog
+ *
+ * @remarks
+ * This dialog is lazy-loaded by `DialogContainer` for the
+ * `SHARED__INVOICE_DELETE` dialog type. It reads the selected invoice from the
+ * dialog payload, requires two explicit confirmation signals, and delegates the
+ * actual mutation to `useInvoiceDelete`.
+ *
+ * **Execution Context**: Client Component only. The component uses dialog
+ * context, local confirmation state, localized copy, animated UI states, and a
+ * client hook that wraps the invoice delete server action.
+ *
+ * **Payload Contract**: `useDialog("SHARED__INVOICE_DELETE", "delete")`
+ * provides `{invoice}`. The invoice is expected to include its identifier, name,
+ * line items, scans, and sharing information so the dialog can show deletion
+ * impact before the user confirms.
+ *
+ * @see {@link useDialog} - Reads the active shared dialog payload.
+ * @see {@link useInvoiceDelete} - Performs the delete mutation and store sync.
+ */
+
 import {
   Alert,
   AlertDescription,
@@ -25,29 +48,43 @@ import styles from "./DeleteInvoiceDialog.module.scss";
 import { useInvoiceDelete } from "../_hooks/invoice";
 
 /**
- * Dialog for confirming and executing invoice deletion.
+ * Renders the shared invoice deletion confirmation dialog.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
  *
- * **Safety Features**:
- * - Displays invoice summary before deletion
- * - Requires typing invoice name to confirm
- * - Checkbox for understanding data loss
- * - Visual warning with impact summary
+ * **Safety Features:**
+ * - Displays the invoice name, identifier, and optional description.
+ * - Requires typing the exact invoice display name before enabling deletion.
+ * - Requires checking an acknowledgement checkbox.
+ * - Shows impact counts for scans, line items, and shared access entries.
  *
- * **Deletion Impact**:
- * - Invoice data permanently removed
- * - Associated scans deleted from storage
- * - Line items and merchant associations cleared
- * - Shared access revoked for all users
+ * **Deletion Flow:**
+ * 1. The dialog opens from `DialogContainer` when the active type is
+ *    `SHARED__INVOICE_DELETE`.
+ * 2. Local confirmation state derives `isConfirmValid`.
+ * 3. The destructive button calls `deleteInvoiceCallback(invoice.id)`.
+ * 4. While deletion is in progress, the confirmation body is replaced by an
+ *    animated loading state and the footer buttons are disabled.
  *
- * **State Management**:
- * - Delegates deletion and Zustand store synchronization to `useInvoiceDelete`
- * - This ensures the cached invoice list is immediately updated
- * - No need for `revalidatePath` since we use client-side state management
+ * **State Management:**
+ * - Dialog visibility and payload come from `useDialog`.
+ * - Confirmation text and acknowledgement are local component state.
+ * - Invoice deletion, navigation, toast feedback, and Zustand synchronization
+ *   are delegated to `useInvoiceDelete`.
  *
- * @returns The DeleteInvoiceDialog component, CSR'ed.
+ * **Accessibility:**
+ * Uses the shared `Dialog` primitives for focus trapping and labelling. The
+ * confirmation input is associated with its label through `htmlFor`, and the
+ * destructive action remains disabled until both confirmation requirements pass.
+ *
+ * @returns The client-rendered invoice deletion dialog.
+ *
+ * @example
+ * ```tsx
+ * // Rendered indirectly by DialogContainer after opening this dialog type.
+ * openDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
+ * ```
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.deleteInvoiceDialog");
@@ -68,23 +105,85 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
   const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
 
+  /**
+   * Updates the typed confirmation value used to unlock deletion.
+   *
+   * @remarks
+   * This callback intentionally stores the raw input value without trimming.
+   * The dialog requires an exact match with `invoiceName`, so whitespace is a
+   * meaningful mismatch and keeps the destructive action disabled.
+   *
+   * @param e - Change event emitted by the confirmation text input.
+   * @returns Nothing; updates local confirmation state.
+   */
   const handleConfirmTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setConfirmText(e.target.value);
   }, []);
 
+  /**
+   * Records whether the user acknowledged the deletion impact.
+   *
+   * @remarks
+   * The shared checkbox can emit `true`, `false`, or `"indeterminate"`. Only a
+   * strict `true` value satisfies the safety gate; all other states keep the
+   * destructive action disabled.
+   *
+   * @param checked - Checkbox state emitted by the component library checkbox.
+   * @returns Nothing; updates local acknowledgement state.
+   */
   const handleCheckboxChange = useCallback((checked: boolean | "indeterminate") => {
     setUnderstoodCheckbox(checked === true);
   }, []);
 
+  /**
+   * Closes the dialog and resets transient confirmation state.
+   *
+   * @remarks
+   * Resetting before closing prevents a previously confirmed invoice name or
+   * acknowledgement checkbox from leaking into the next invoice deletion flow.
+   *
+   * @returns Nothing; clears local state and closes the shared dialog.
+   */
   const handleClose = useCallback(() => {
     setConfirmText("");
     setUnderstoodCheckbox(false);
     close();
   }, [close]);
 
+  /**
+   * Executes the confirmed invoice deletion workflow.
+   *
+   * @remarks
+   * The callback delegates to `useInvoiceDelete`, which owns the server action,
+   * local invoice store synchronization, success/error toast feedback, and
+   * post-delete navigation. The button invoking this callback is disabled until
+   * `isConfirmValid` is true.
+   *
+   * @returns A promise that resolves after the delete hook finishes its workflow.
+   */
   const handleDelete = useCallback(async () => {
     await deleteInvoiceCallback(invoice.id);
   }, [invoice.id, deleteInvoiceCallback]);
+
+  /**
+   * Responds to open-state changes emitted by the dialog primitive.
+   *
+   * @remarks
+   * The shared dialog component reports both open and close transitions. This
+   * handler only acts on close requests, routing them through `handleClose` so
+   * state cleanup remains centralized.
+   *
+   * @param shouldOpen - Next open state requested by the dialog primitive.
+   * @returns Nothing; closes and resets the dialog when `shouldOpen` is false.
+   */
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (!shouldOpen) {
+        handleClose();
+      }
+    },
+    [handleClose],
+  );
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;
@@ -94,10 +193,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog close handler
-      onOpenChange={(shouldOpen) => {
-        if (!shouldOpen) handleClose();
-      }}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContentMaxW"]}>
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>
