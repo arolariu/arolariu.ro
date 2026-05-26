@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {useMerchantsStore} from "@/stores/merchantsStore";

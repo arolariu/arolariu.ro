@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";

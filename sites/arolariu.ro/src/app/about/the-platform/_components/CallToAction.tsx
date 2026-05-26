@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";

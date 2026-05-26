@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";

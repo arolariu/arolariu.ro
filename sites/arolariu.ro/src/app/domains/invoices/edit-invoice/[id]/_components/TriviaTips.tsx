@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import type {MessageSelector} from "next-intl-selector";
 
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, InvoiceCategory, Merchant} from "@/types/invoices";
@@ -37,16 +38,13 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 /**
  * Represents a context-aware tip suggestion.
  */
-type ContextTipMessageKey = "contextTips.noItems" | "contextTips.noDescription" | "contextTips.noCategory" | "contextTips.noRecipes";
-type ContextTipActionKey = "contextActions.analyze" | "contextActions.addDescription" | "contextActions.setCategory";
-
 type ContextTip = {
   /** Unique identifier for the tip */
   readonly id: string;
-  /** i18n key for the tip message */
-  readonly messageKey: ContextTipMessageKey;
-  /** i18n key for the action button */
-  readonly actionKey: ContextTipActionKey;
+  /** Selector for the tip message */
+  readonly messageSelector: MessageSelector;
+  /** Selector for the action button */
+  readonly actionSelector: MessageSelector;
   /** Action handler function */
   readonly action: () => void;
   /** Icon component */
@@ -177,8 +175,8 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     if (invoice.items.length === 0 && !dismissedTips.includes("noItems")) {
       tips.push({
         id: "noItems",
-        messageKey: "contextTips.noItems",
-        actionKey: "contextActions.analyze",
+        messageSelector: (m) => m["IMS--Edit"].triviaTips.contextTips.noItems,
+        actionSelector: (m) => m["IMS--Edit"].triviaTips.contextActions.analyze,
         action: () => {
           // TODO: Open AnalyzeDialog when connected to island
           console.log("Open AnalyzeDialog");
@@ -191,8 +189,8 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     if (invoice.description.length === 0 && !dismissedTips.includes("noDescription")) {
       tips.push({
         id: "noDescription",
-        messageKey: "contextTips.noDescription",
-        actionKey: "contextActions.addDescription",
+        messageSelector: (m) => m["IMS--Edit"].triviaTips.contextTips.noDescription,
+        actionSelector: (m) => m["IMS--Edit"].triviaTips.contextActions.addDescription,
         action: () => {
           // Focus description field
           const descriptionInput = document.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
@@ -207,8 +205,8 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     if (invoice.category === InvoiceCategory.NOT_DEFINED && !dismissedTips.includes("noCategory")) {
       tips.push({
         id: "noCategory",
-        messageKey: "contextTips.noCategory",
-        actionKey: "contextActions.setCategory",
+        messageSelector: (m) => m["IMS--Edit"].triviaTips.contextTips.noCategory,
+        actionSelector: (m) => m["IMS--Edit"].triviaTips.contextActions.setCategory,
         action: () => {
           // Focus category select
           const categorySelect = document.querySelector<HTMLButtonElement>('button[role="combobox"]');
@@ -223,8 +221,8 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     if (invoice.possibleRecipes.length === 0 && invoice.items.length > 0 && !dismissedTips.includes("noRecipes")) {
       tips.push({
         id: "noRecipes",
-        messageKey: "contextTips.noRecipes",
-        actionKey: "contextActions.analyze",
+        messageSelector: (m) => m["IMS--Edit"].triviaTips.contextTips.noRecipes,
+        actionSelector: (m) => m["IMS--Edit"].triviaTips.contextActions.analyze,
         action: () => {
           // TODO: Open AnalyzeDialog when connected to island
           console.log("Open AnalyzeDialog");
@@ -330,13 +328,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                   transition={{delay: index * 0.1}}>
                   <div className={styles["contextTipIcon"]}>{tip.icon}</div>
                   <div className={styles["contextTipContent"]}>
-                    <p className={styles["contextTipMessage"]}>{t(selectorFromPath(`IMS--Edit.triviaTips.${tip.messageKey}`))}</p>
+                    <p className={styles["contextTipMessage"]}>{t(tip.messageSelector)}</p>
                     <Button
                       variant='ghost'
                       size='sm'
                       onClick={tip.action}
                       className={styles["contextTipAction"]}>
-                      {t(selectorFromPath(`IMS--Edit.triviaTips.${tip.actionKey}`))}
+                      {t(tip.actionSelector)}
                     </Button>
                   </div>
                   <Button

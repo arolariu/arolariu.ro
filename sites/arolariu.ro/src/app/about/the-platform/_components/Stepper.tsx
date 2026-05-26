@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Badge} from "@arolariu/components/badge";
 import {AnimatePresence, motion, useInView} from "motion/react";

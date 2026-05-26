@@ -65,7 +65,7 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
 function detectSpendingSpikes(
   categorySpending: Record<ProductCategory, number>,
   historicalAvg: Record<ProductCategory, {total: number; count: number}>,
-  t: SeasonalTranslateFn,
+  translate: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
   for (const [cat, amount] of Object.entries(categorySpending)) {
@@ -82,8 +82,8 @@ function detectSpendingSpikes(
         insights.push({
           id: `spike-${category}`,
           icon: <TbTrendingUp className={styles["iconSm"]} />,
-          title: t("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
-          description: t("insights.spike.description", {percent: percentChange.toFixed(0)}),
+          title: translate("insights.spike.title", {category: formatEnum(ProductCategory, category) as string}),
+          description: translate("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
         });
       }
@@ -95,13 +95,13 @@ function detectSpendingSpikes(
 /**
  * Get December-specific seasonal insights.
  */
-function getDecemberInsights(date: Date, t: SeasonalTranslateFn): Insight[] {
+function getDecemberInsights(date: Date, translate: SeasonalTranslateFn): Insight[] {
   const insights: Insight[] = [
     {
       id: "holiday-season",
       icon: <TbSparkles className={styles["iconSm"]} />,
-      title: t("insights.holidaySeason.title"),
-      description: t("insights.holidaySeason.description"),
+      title: translate("insights.holidaySeason.title"),
+      description: translate("insights.holidaySeason.description"),
       type: "info",
     },
   ];
@@ -111,8 +111,8 @@ function getDecemberInsights(date: Date, t: SeasonalTranslateFn): Insight[] {
     insights.push({
       id: "stock-up-tip",
       icon: <TbBulb className={styles["iconSm"]} />,
-      title: t("insights.stockUpTip.title"),
-      description: t("insights.stockUpTip.description"),
+      title: translate("insights.stockUpTip.title"),
+      description: translate("insights.stockUpTip.description"),
       type: "success",
     });
   }
@@ -122,12 +122,12 @@ function getDecemberInsights(date: Date, t: SeasonalTranslateFn): Insight[] {
 /**
  * Get the default insight when no specific patterns are detected.
  */
-function getDefaultInsight(t: SeasonalTranslateFn): Insight {
+function getDefaultInsight(translate: SeasonalTranslateFn): Insight {
   return {
     id: "normal-pattern",
     icon: <TbShoppingBag className={styles["iconSm"]} />,
-    title: t("insights.normalPattern.title"),
-    description: t("insights.normalPattern.description"),
+    title: translate("insights.normalPattern.title"),
+    description: translate("insights.normalPattern.description"),
     type: "success",
   };
 }
@@ -135,7 +135,7 @@ function getDefaultInsight(t: SeasonalTranslateFn): Insight {
 function detectSeasonalInsights(
   invoice: Invoice,
   allInvoices: ReadonlyArray<Invoice>,
-  t: SeasonalTranslateFn,
+  translate: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
@@ -143,17 +143,17 @@ function detectSeasonalInsights(
 
   const categorySpending = calculateCategorySpending(invoice);
   const historicalAvg = calculateHistoricalAverage(allInvoices);
-  const spendingSpikes = detectSpendingSpikes(categorySpending, historicalAvg, t);
+  const spendingSpikes = detectSpendingSpikes(categorySpending, historicalAvg, translate);
   insights.push(...spendingSpikes);
 
   const isDecember = month === 11;
   if (isDecember) {
-    const decemberInsights = getDecemberInsights(date, t);
+    const decemberInsights = getDecemberInsights(date, translate);
     insights.push(...decemberInsights);
   }
 
   if (insights.length === 0) {
-    insights.push(getDefaultInsight(t));
+    insights.push(getDefaultInsight(translate));
   }
 
   return insights.slice(0, 3);

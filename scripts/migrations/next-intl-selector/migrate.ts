@@ -214,7 +214,12 @@ function ensureSelectorFromPathImport(sourceFile: ts.SourceFile, state: FileMigr
     if (bindings.elements.some((element) => element.name.text === "selectorFromPath")) return;
   }
 
-  addEdit(state, 0, 0, `import {selectorFromPath} from ${JSON.stringify(selectorClientModule)};\n`);
+  const firstStatement = sourceFile.statements[0];
+  const insertPosition =
+    firstStatement && ts.isExpressionStatement(firstStatement) && ts.isStringLiteral(firstStatement.expression) && firstStatement.expression.text === "use client"
+      ? firstStatement.getEnd() + 1
+      : 0;
+  addEdit(state, insertPosition, insertPosition, `import {selectorFromPath} from ${JSON.stringify(selectorClientModule)};\n`);
 }
 
 function visit(sourceFile: ts.SourceFile, state: FileMigrationState, node: ts.Node): void {
