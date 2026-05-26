@@ -1,8 +1,10 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Calendar, Popover, PopoverContent, PopoverTrigger} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -31,7 +33,7 @@ function formatLocalDate(date: Date): string {
  * @returns The rendered date filter card.
  */
 export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const locale = useLocale();
   const isDateActive = filters.dateFrom !== null || filters.dateTo !== null;
   const activeDatePreset = useMemo(
@@ -41,9 +43,9 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
 
   const activeValue = useMemo((): string | null => {
     if (!isDateActive) return null;
-    if (activeDatePreset === "30d") return t("filters.datePresets.30d");
-    if (activeDatePreset === "90d") return t("filters.datePresets.90d");
-    if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
+    if (activeDatePreset === "30d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["30d"]);
+    if (activeDatePreset === "90d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["90d"]);
+    if (activeDatePreset === "ytd") return t((m) => m["IMS--List"].invoicesView.filters.datePresets.ytd);
     if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
     if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
     if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
@@ -76,12 +78,12 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
     <FilterCardFrame
       title={
         <>
-          <TbCalendar /> {t("filters.dateRange")}
+          <TbCalendar /> {t((m) => m["IMS--List"].invoicesView.filters.dateRange)}
         </>
       }
       active={isDateActive}
       activeValue={activeValue}
-      inactiveLabel={t("filters.anyValue")}>
+      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}>
       <div className={styles["presetRow"]}>
         {DATE_PRESETS.map((preset) => (
           <button
@@ -91,7 +93,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
             className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
             // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal from DATE_PRESETS
             onClick={() => handlePresetClick(preset)}>
-            {t(`filters.datePresets.${preset}`)}
+            {t(selectorFromPath(`IMS--List.invoicesView.filters.datePresets.${preset}`))}
           </button>
         ))}
       </div>
@@ -103,7 +105,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
                 variant='outline'
                 className={styles["dateButton"]}>
                 <TbCalendar className={styles["dateIcon"]} />
-                {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
+                {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateFrom)}
               </Button>
             }
           />
@@ -122,7 +124,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
                 variant='outline'
                 className={styles["dateButton"]}>
                 <TbCalendar className={styles["dateIcon"]} />
-                {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
+                {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateTo)}
               </Button>
             }
           />

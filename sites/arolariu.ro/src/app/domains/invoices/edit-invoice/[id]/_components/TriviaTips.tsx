@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
@@ -18,7 +19,7 @@ import {
   useLocalStorage,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbAlertCircle, TbArrowRight, TbBulb, TbCheck, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp, TbX} from "react-icons/tb";
 import styles from "./TriviaTips.module.scss";
@@ -112,7 +113,7 @@ type ContextTip = {
  * @see {@link InvoiceHealthScore} - Reference implementation for scoring logic
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
-  const t = useTranslations("IMS--Edit.triviaTips");
+  const t = useTranslations();
 
   // State for dismissed tips (persisted to localStorage)
   const [dismissedTips, setDismissedTips] = useLocalStorage<string[]>("invoice-dismissed-tips", []);
@@ -258,24 +259,24 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   const savingsTips = [
     {
       id: 1,
-      title: t("tips.loyaltyProgram.title"),
-      description: t("tips.loyaltyProgram.description", {merchantName: merchant?.name ?? ""}),
+      title: t((m) => m["IMS--Edit"].triviaTips.tips.loyaltyProgram.title),
+      description: t((m) => m["IMS--Edit"].triviaTips.tips.loyaltyProgram.description, {merchantName: merchant?.name ?? ""}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
       difficulty: "easy",
       icon: <TbPigMoney className={styles["tipIcon"]} />,
     },
     {
       id: 2,
-      title: t("tips.bulkPurchase.title"),
-      description: t("tips.bulkPurchase.description"),
+      title: t((m) => m["IMS--Edit"].triviaTips.tips.bulkPurchase.title),
+      description: t((m) => m["IMS--Edit"].triviaTips.tips.bulkPurchase.description),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.1,
       difficulty: "medium",
       icon: <TbPercentage className={styles["tipIcon"]} />,
     },
     {
       id: 3,
-      title: t("tips.digitalCoupons.title"),
-      description: t("tips.digitalCoupons.description", {merchantName: merchant?.name ?? ""}),
+      title: t((m) => m["IMS--Edit"].triviaTips.tips.digitalCoupons.title),
+      description: t((m) => m["IMS--Edit"].triviaTips.tips.digitalCoupons.description, {merchantName: merchant?.name ?? ""}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
       difficulty: "easy",
       icon: <TbBulb className={styles["tipIcon"]} />,
@@ -290,14 +291,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>
           <TbSparkles className={styles["sparklesIcon"]} />
-          <span>{t("title")}</span>
+          <span>{t((m) => m["IMS--Edit"].triviaTips.title)}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         {/* Completeness Progress Bar */}
         <div className={styles["completenessSection"]}>
           <div className={styles["completenessHeader"]}>
-            <p className={styles["completenessLabel"]}>{t("completeness", {percentage: String(percentage)})}</p>
+            <p className={styles["completenessLabel"]}>{t((m) => m["IMS--Edit"].triviaTips.completeness, {percentage: String(percentage)})}</p>
             <p className={styles["completenessScore"]}>
               {completenessScore} / {maxScore}
             </p>
@@ -309,7 +310,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           {percentage === 100 ? (
             <div className={styles["completeLabel"]}>
               <TbCheck className={styles["completeIcon"]} />
-              <span>{t("completeLabel")}</span>
+              <span>{t((m) => m["IMS--Edit"].triviaTips.completeLabel)}</span>
             </div>
           ) : null}
         </div>
@@ -329,13 +330,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                   transition={{delay: index * 0.1}}>
                   <div className={styles["contextTipIcon"]}>{tip.icon}</div>
                   <div className={styles["contextTipContent"]}>
-                    <p className={styles["contextTipMessage"]}>{t(tip.messageKey)}</p>
+                    <p className={styles["contextTipMessage"]}>{t(selectorFromPath(`IMS--Edit.triviaTips.${tip.messageKey}`))}</p>
                     <Button
                       variant='ghost'
                       size='sm'
                       onClick={tip.action}
                       className={styles["contextTipAction"]}>
-                      {t(tip.actionKey)}
+                      {t(selectorFromPath(`IMS--Edit.triviaTips.${tip.actionKey}`))}
                     </Button>
                   </div>
                   <Button
@@ -359,12 +360,12 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
           <div className={styles["savingsBannerInner"]}>
-            <p className={styles["savingsLabel"]}>{t("banner.potentialSavingsLabel")}</p>
+            <p className={styles["savingsLabel"]}>{t((m) => m["IMS--Edit"].triviaTips.banner.potentialSavingsLabel)}</p>
             <p className={styles["savingsAmount"]}>
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
           </div>
-          <p className={styles["savingsHint"]}>{t("banner.hint", {merchantName: merchant?.name ?? ""})}</p>
+          <p className={styles["savingsHint"]}>{t((m) => m["IMS--Edit"].triviaTips.banner.hint, {merchantName: merchant?.name ?? ""})}</p>
         </motion.div>
 
         <Separator />
@@ -388,7 +389,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       <Badge
                         variant={tip.difficulty === "easy" ? "default" : "secondary"}
                         className={styles["difficultyBadge"]}>
-                        {tip.difficulty === "easy" ? t("difficulty.easy") : t("difficulty.medium")}
+                        {tip.difficulty === "easy" ? t((m) => m["IMS--Edit"].triviaTips.difficulty.easy) : t((m) => m["IMS--Edit"].triviaTips.difficulty.medium)}
                       </Badge>
                     </div>
                     <TooltipProvider>
@@ -407,7 +408,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                           }
                         />
                         <TooltipContent>
-                          <p>{t("tooltips.estimatedSavings")}</p>
+                          <p>{t((m) => m["IMS--Edit"].triviaTips.tooltips.estimatedSavings)}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -423,14 +424,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           <Button
             variant='outline'
             className={styles["moreButton"]}>
-            <span>{t("buttons.viewMoreSavingsTips")}</span>
+            <span>{t((m) => m["IMS--Edit"].triviaTips.buttons.viewMoreSavingsTips)}</span>
             <TbArrowRight className={styles["arrowIcon"]} />
           </Button>
         </div>
 
         <div className={styles["disclaimer"]}>
           <TbAlertCircle className={styles["alertCircleIcon"]} />
-          <span>{t("disclaimer")}</span>
+          <span>{t((m) => m["IMS--Edit"].triviaTips.disclaimer)}</span>
         </div>
       </CardContent>
     </Card>

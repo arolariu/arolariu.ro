@@ -1,7 +1,8 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {Input} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCurrencyDollar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -29,7 +30,7 @@ const AMOUNT_PRESETS = [
  * @returns The rendered amount filter card.
  */
 export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const isAmountActive = filters.amountMin !== null || filters.amountMax !== null;
 
   const activeAmountPreset = useMemo<AmountPresetKey | null>(() => {
@@ -81,18 +82,18 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
     <FilterCardFrame
       title={
         <>
-          <TbCurrencyDollar /> {t("filters.amountRange")}
+          <TbCurrencyDollar /> {t((m) => m["IMS--List"].invoicesView.filters.amountRange)}
         </>
       }
       active={isAmountActive}
       activeValue={activeValue}
-      inactiveLabel={t("filters.anyValue")}>
+      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}>
       <div className={styles["amountRangeInputs"]}>
         <div className={styles["amountInputWrapper"]}>
           <TbCurrencyDollar className={styles["currencyIcon"]} />
           <Input
             type='number'
-            placeholder={t("filters.amountMin")}
+            placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMin)}
             value={filters.amountMin ?? ""}
             onChange={handleAmountMinChange}
             className={styles["amountInput"]}
@@ -102,7 +103,7 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
           <TbCurrencyDollar className={styles["currencyIcon"]} />
           <Input
             type='number'
-            placeholder={t("filters.amountMax")}
+            placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMax)}
             value={filters.amountMax ?? ""}
             onChange={handleAmountMaxChange}
             className={styles["amountInput"]}
@@ -118,7 +119,7 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
             className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
             // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal from AMOUNT_PRESETS
             onClick={() => handleAmountPresetClick(presetKey)}>
-            {t(`filters.amountPresets.${labelKey}`)}
+            {t(selectorFromPath(`IMS--List.invoicesView.filters.amountPresets.${labelKey}`))}
           </button>
         ))}
       </div>

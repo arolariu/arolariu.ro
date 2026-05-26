@@ -7,7 +7,8 @@
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useLocale, useTranslations, type TranslationValues} from "next-intl";
+import {useLocale, type TranslationValues} from "next-intl";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {TbInfoCircle} from "react-icons/tb";
 import {TimelineEvent, TimelineEventType} from "../../_types/timeline";
 import styles from "./TimelineItem.module.scss";
@@ -17,6 +18,11 @@ type TranslateFn = {
   (key: string): string;
   (key: string, values: TranslationValues): string;
 };
+
+function createTimelineTranslator(t: ReturnType<typeof useTranslations>): TranslateFn {
+  return ((key: string, values?: TranslationValues) =>
+    t(selectorFromPath(`IMS--View.timelineItem.${key}`), values)) as TranslateFn;
+}
 
 function getEventTitle(event: TimelineEvent, t: TranslateFn): string {
   switch (event.type) {
@@ -140,9 +146,9 @@ type Props = Readonly<{
  * ```
  */
 export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--View.timelineItem");
+  const t = useTranslations();
   const locale = useLocale();
-  const tf = t as unknown as TranslateFn;
+  const tf = createTimelineTranslator(t);
   const tooltipContent = getTooltipContent(event, tf);
   const eventTitle = getEventTitle(event, tf);
   const eventDescription = getEventDescription(event, tf);
@@ -172,7 +178,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                         variant='ghost'
                         size='icon'
                         className={styles["infoButton"]}
-                        aria-label={t("aria.moreInfo", {title: eventTitle})}>
+                        aria-label={t((m) => m["IMS--View"].timelineItem.aria.moreInfo, {title: eventTitle})}>
                         <TbInfoCircle className={styles["infoIcon"]} />
                       </Button>
                     }
@@ -183,7 +189,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (
-                      <p className={styles["confidenceText"]}>{t("confidence", {value: String(event.metadata!.confidence)})}</p>
+                      <p className={styles["confidenceText"]}>{t((m) => m["IMS--View"].timelineItem.confidence, {value: String(event.metadata!.confidence)})}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>

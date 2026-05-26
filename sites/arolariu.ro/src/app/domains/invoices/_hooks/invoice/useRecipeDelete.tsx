@@ -12,7 +12,7 @@
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 
 /**
@@ -47,7 +47,7 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useRecipeDelete(invoice: Invoice): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--Hooks.useRecipeDelete");
+  const t = useTranslations();
   const removeRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isDeleting, setIsDeleting] = useState(false);
 

@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback} from "react";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -24,7 +24,7 @@ function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
 }
 
 export default function DeleteRecipeDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.recipeDialog");
+  const t = useTranslations();
   const router = useRouter();
   const {
     currentDialog: {payload},
@@ -37,18 +37,18 @@ export default function DeleteRecipeDialog(): React.JSX.Element {
 
   const handleDelete = useCallback(async () => {
     if (!recipe) {
-      toast.error(t("delete.missingRecipe"));
+      toast.error(t((m) => m["IMS--Dialogs"].recipeDialog.delete.missingRecipe));
       return;
     }
 
     try {
       await removeRecipeCallback(recipe.name);
-      toast.success(t("delete.success"));
+      toast.success(t((m) => m["IMS--Dialogs"].recipeDialog.delete.success));
       close();
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t("delete.error"));
+      toast.error(message || t((m) => m["IMS--Dialogs"].recipeDialog.delete.error));
     }
   }, [recipe, removeRecipeCallback, close, router, t]);
 
@@ -65,18 +65,18 @@ export default function DeleteRecipeDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
+          <AlertDialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.delete.title)}</AlertDialogTitle>
           <AlertDialogDescription>
-            {recipe ? t.rich("delete.description", {name: recipe.name, strong: RichTextStrong}) : t("delete.missingRecipe")}
+            {recipe ? t.rich((m) => m["IMS--Dialogs"].recipeDialog.delete.description, {name: recipe.name, strong: RichTextStrong}) : t((m) => m["IMS--Dialogs"].recipeDialog.delete.missingRecipe)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("buttons.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel>{t((m) => m["IMS--Dialogs"].recipeDialog.buttons.cancel)}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting || !recipe}
             className={styles["deleteAction"]}>
-            {isDeleting ? t("buttons.deleting") : t("buttons.delete")}
+            {isDeleting ? t((m) => m["IMS--Dialogs"].recipeDialog.buttons.deleting) : t((m) => m["IMS--Dialogs"].recipeDialog.buttons.delete)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

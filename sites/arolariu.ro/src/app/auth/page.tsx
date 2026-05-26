@@ -2,7 +2,8 @@ import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {DotBackground} from "@arolariu/components";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {redirect} from "next/navigation";
 import RenderAuthScreen from "./island";
 import styles from "./page.module.scss";
@@ -40,12 +41,12 @@ import styles from "./page.module.scss";
  * @see RFC 1004 - Metadata & SEO System documentation
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Auth.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.Auth.metadata.title),
+    description: t((m) => m.Auth.metadata.description),
   });
 }
 

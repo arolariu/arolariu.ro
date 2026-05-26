@@ -12,7 +12,8 @@
 import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import Architecture from "./_components/Architecture";
 import CallToAction from "./_components/CallToAction";
 import Features from "./_components/Features";
@@ -41,12 +42,12 @@ import styles from "./page.module.scss";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.Platform.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.About.Platform.metadata.title),
+    description: t((m) => m.About.Platform.metadata.description),
   });
 }
 

@@ -4,7 +4,7 @@ import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";
 import {GradientText} from "@arolariu/components/gradient-text";
 import {motion, useScroll, useTransform} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrandGithub, TbCode, TbRocket, TbSparkles} from "react-icons/tb";
@@ -17,7 +17,7 @@ import styles from "./Hero.module.scss";
  * @returns The Hero component, CSR'ed.
  */
 export default function Hero(): React.JSX.Element {
-  const t = useTranslations("About.Platform.hero");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const {scrollYProgress} = useScroll({
     target: ref,
@@ -124,7 +124,7 @@ export default function Hero(): React.JSX.Element {
                 <span className={styles["statusDotPing"]} />
                 <span className={styles["statusDotInner"]} />
               </motion.span>
-              <span>{t("statusBadge")}</span>
+              <span>{t((m) => m.About.Platform.hero.statusBadge)}</span>
               <TbSparkles className={styles["statusIcon"]} />
             </motion.span>
           </motion.div>
@@ -142,7 +142,7 @@ export default function Hero(): React.JSX.Element {
                   color: ["hsl(var(--foreground))", "hsl(var(--primary))", "hsl(var(--foreground))"],
                 }}
                 transition={{duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
-                {t("title")}
+                {t((m) => m.About.Platform.hero.title)}
               </motion.span>
               <GradientText
                 text='arolariu.ro'
@@ -160,7 +160,7 @@ export default function Hero(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.6, delay: 0.3}}>
-            {t("description")}
+            {t((m) => m.About.Platform.hero.description)}
           </motion.p>
 
           {/* Feature Pills */}
@@ -170,9 +170,9 @@ export default function Hero(): React.JSX.Element {
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.6, delay: 0.4}}>
             {[
-              {icon: TbCode, label: t("trust.openSource")},
-              {icon: TbRocket, label: t("trust.privacyFirst")},
-              {icon: TbSparkles, label: t("trust.freeForever")},
+              {icon: TbCode, label: t((m) => m.About.Platform.hero.trust.openSource)},
+              {icon: TbRocket, label: t((m) => m.About.Platform.hero.trust.privacyFirst)},
+              {icon: TbSparkles, label: t((m) => m.About.Platform.hero.trust.freeForever)},
             ].map((pill, index) => (
               <motion.span
                 key={pill.label}
@@ -205,7 +205,7 @@ export default function Hero(): React.JSX.Element {
                 className={styles["ctaButton"]}>
                 <Link href='/domains'>
                   <TbRocket className={styles["ctaIcon"]} />
-                  <span>{t("cta.exploreFeatures")}</span>
+                  <span>{t((m) => m.About.Platform.hero.cta.exploreFeatures)}</span>
                   <TbArrowRight className={styles["ctaArrow"]} />
                   <motion.span
                     className={styles["ctaOverlay"]}
@@ -230,7 +230,7 @@ export default function Hero(): React.JSX.Element {
                   target='_blank'
                   rel='noopener noreferrer'>
                   <TbBrandGithub className={styles["ctaIcon"]} />
-                  <span>{t("cta.viewSource")}</span>
+                  <span>{t((m) => m.About.Platform.hero.cta.viewSource)}</span>
                   <motion.span
                     className={styles["ctaOverlay"]}
                     initial={{x: "-100%", opacity: 0}}

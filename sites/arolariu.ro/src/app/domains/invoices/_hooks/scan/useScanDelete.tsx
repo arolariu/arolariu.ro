@@ -12,7 +12,7 @@
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import { deleteScan as removeScanServerSide } from "../../_actions/scans";
 
@@ -66,7 +66,7 @@ type HookOutputType = Readonly<{
 export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
   const removeScanClientSide = useScansStore((state) => state.removeScan);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const t = useTranslations("IMS--ViewScans.scanCard");
+  const t = useTranslations();
 
   const deleteScanCallback = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
@@ -74,12 +74,12 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
       const result = await removeScanServerSide({blobUrl: scan.blobUrl});
       if (result.success) {
         removeScanClientSide(scan.id);
-        toast.success(t("deleteDialog.success"));
+        toast.success(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.success));
       } else {
-        toast.error(t("deleteDialog.error"));
+        toast.error(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
       }
     } catch (error) {
-      toast.error(t("deleteDialog.error"));
+      toast.error(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
       console.error("Error deleting scan:", error);
     } finally {
       setIsDeleting(false);

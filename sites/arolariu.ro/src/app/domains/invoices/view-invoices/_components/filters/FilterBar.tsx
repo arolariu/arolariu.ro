@@ -16,7 +16,7 @@ import {
   useDebounce,
   useWindowSize,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCards, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -62,7 +62,7 @@ export default function FilterBar({
   onViewModeChange,
   filteredCount,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const {isMobile} = useWindowSize();
   const invoices = useInvoicesStore((state) => state.entities);
   const [searchInput, setSearchInput] = useState<string>(filters.search);
@@ -104,15 +104,15 @@ export default function FilterBar({
     (category: InvoiceCategory): string => {
       switch (category) {
         case InvoiceCategory.GROCERY:
-          return t("categories.groceries");
+          return t((m) => m["IMS--List"].invoicesView.categories.groceries);
         case InvoiceCategory.FAST_FOOD:
-          return t("categories.dining");
+          return t((m) => m["IMS--List"].invoicesView.categories.dining);
         case InvoiceCategory.HOME_CLEANING:
-          return t("categories.utilities");
+          return t((m) => m["IMS--List"].invoicesView.categories.utilities);
         case InvoiceCategory.CAR_AUTO:
-          return t("categories.travel");
+          return t((m) => m["IMS--List"].invoicesView.categories.travel);
         default:
-          return t("categories.other");
+          return t((m) => m["IMS--List"].invoicesView.categories.other);
       }
     },
     [t],
@@ -122,17 +122,17 @@ export default function FilterBar({
     (paymentType: PaymentType): string => {
       switch (paymentType) {
         case PaymentType.Cash:
-          return t("filters.paymentTypeLabels.cash");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.cash);
         case PaymentType.Card:
-          return t("filters.paymentTypeLabels.card");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.card);
         case PaymentType.Transfer:
-          return t("filters.paymentTypeLabels.transfer");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.transfer);
         case PaymentType.MobilePayment:
-          return t("filters.paymentTypeLabels.mobile");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.mobile);
         case PaymentType.Voucher:
-          return t("filters.paymentTypeLabels.voucher");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.voucher);
         default:
-          return t("filters.paymentTypeLabels.other");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.other);
       }
     },
     [t],
@@ -180,7 +180,7 @@ export default function FilterBar({
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
-            placeholder={t("searchPlaceholder")}
+            placeholder={t((m) => m["IMS--List"].invoicesView.searchPlaceholder)}
             className={styles["searchInput"]}
             value={searchInput}
             onChange={handleSearchChange}
@@ -211,9 +211,9 @@ export default function FilterBar({
             <SheetContent className={styles["filterSheet"]}>
               <div className={styles["sheetHeader"]}>
                 <h3 className={styles["sheetTitle"]}>
-                  {t("filters.title")}
+                  {t((m) => m["IMS--List"].invoicesView.filters.title)}
                   {activeFilterCount > 0 && (
-                    <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
+                    <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
                   )}
                 </h3>
                 {activeFilterCount > 0 && (
@@ -223,7 +223,7 @@ export default function FilterBar({
                     onClick={handleClearFilters}
                     className={styles["clearButton"]}>
                     <TbX className={styles["clearIcon"]} />
-                    {t("filters.clear")}
+                    {t((m) => m["IMS--List"].invoicesView.filters.clear)}
                   </Button>
                 )}
               </div>
@@ -233,7 +233,7 @@ export default function FilterBar({
                   className={styles["mobileShowResultsButton"]}
                   // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                   onClick={() => setIsFilterOpen(false)}>
-                  {t("filters.showResults", {count: filteredCount})}
+                  {t((m) => m["IMS--List"].invoicesView.filters.showResults, {count: filteredCount})}
                 </Button>
               </div>
             </SheetContent>
@@ -248,7 +248,7 @@ export default function FilterBar({
             aria-expanded={isFilterOpen}
             aria-controls='inline-filter-panel'>
             <TbFilter className={styles["filterIcon"]} />
-            {t("filters.button")}
+            {t((m) => m["IMS--List"].invoicesView.filters.button)}
             {activeFilterCount > 0 && (
               <Badge
                 variant='default'
@@ -266,7 +266,7 @@ export default function FilterBar({
             onClick={handleClearFilters}
             className={styles["clearFiltersButton"]}>
             <TbX className={styles["clearIcon"]} />
-            {t("filters.clear")}
+            {t((m) => m["IMS--List"].invoicesView.filters.clear)}
           </Button>
         )}
 
@@ -286,7 +286,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t("viewModes.table")}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.table)}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -302,7 +302,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t("viewModes.grid")}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.grid)}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -314,9 +314,9 @@ export default function FilterBar({
           className={styles["inlineFilterPanel"]}>
           <div className={styles["inlineFilterHeader"]}>
             <h4 className={styles["inlineFilterTitle"]}>
-              {t("filters.title")}
+              {t((m) => m["IMS--List"].invoicesView.filters.title)}
               {activeFilterCount > 0 && (
-                <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
+                <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
               )}
             </h4>
             <div className={styles["inlineFilterActions"]}>
@@ -327,7 +327,7 @@ export default function FilterBar({
                   onClick={handleClearFilters}
                   className={styles["clearButton"]}>
                   <TbX className={styles["clearIcon"]} />
-                  {t("filters.clear")}
+                  {t((m) => m["IMS--List"].invoicesView.filters.clear)}
                 </Button>
               )}
               <Button
@@ -335,7 +335,7 @@ export default function FilterBar({
                 size='sm'
                 // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                 onClick={() => setIsFilterOpen(false)}
-                aria-label={t("filters.title")}
+                aria-label={t((m) => m["IMS--List"].invoicesView.filters.title)}
                 className={styles["clearButton"]}>
                 <TbX className={styles["clearIcon"]} />
               </Button>

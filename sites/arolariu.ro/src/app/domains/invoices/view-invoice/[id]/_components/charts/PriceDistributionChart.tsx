@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {PriceRange} from "../../_utils/analytics";
 import styles from "./PriceDistributionChart.module.scss";
 
@@ -33,7 +33,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--View.priceDistributionChart");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -42,16 +42,16 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
       <p className={styles["tooltipRange"]}>
         {data.range} {data.currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--View"].priceDistributionChart.tooltip.itemCount, {count: data.count})}</p>
     </div>
   );
 }
 
 export function PriceDistributionChart({data, currency}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--View.priceDistributionChart");
+  const t = useTranslations();
   const chartConfig = {
     count: {
-      label: t("labels.items"),
+      label: t((m) => m["IMS--View"].priceDistributionChart.labels.items),
       color: "var(--ac-chart-1)",
     },
   };
@@ -61,8 +61,8 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description", {currency})}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].priceDistributionChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].priceDistributionChart.description, {currency})}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

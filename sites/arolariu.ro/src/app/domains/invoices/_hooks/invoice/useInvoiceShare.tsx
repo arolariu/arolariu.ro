@@ -16,7 +16,7 @@ import {useInvoicesStore} from "@/stores";
 import type {EmailLocale} from "@/types/emails";
 import type {Invoice} from "@/types/invoices";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import { patchInvoice } from "../../_actions/invoices";
 
@@ -98,8 +98,9 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--Hooks.useInvoiceShare");
-  const shareInvoiceClientSide = useInvoicesStore((state) => state.updateEntity);
+  const t = useTranslations();
+  const shareInvoiceClientSide = useInvoicesStore((state) => state.upsertEntity);
+  const getEntityById = useInvoicesStore((state) => state.getEntityById);
   const [isSharing, setIsSharing] = useState<boolean>(false);
 
   /**
@@ -127,10 +128,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error || t("toggleError"));
+          throw new Error(result.error ? String(result.error) : t((m) => m["IMS--Hooks"].useInvoiceShare.toggleError));
         }
-        shareInvoiceClientSide(result.invoice);
-        return result.invoice;
+        shareInvoiceClientSide(result.data);
+        return result.data;
       }
 
       if (action.type === "revoke") {
@@ -143,10 +144,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error || t("revokeError"));
+          throw new Error(result.error ? String(result.error) : t((m) => m["IMS--Hooks"].useInvoiceShare.revokeError));
         }
-        shareInvoiceClientSide(result.invoice);
-        return result.invoice;
+        shareInvoiceClientSide(result.data);
+        return result.data;
       }
 
       if (action.type === "sendEmail") {
@@ -197,6 +198,9 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         return acc;
       }
       const id = ids[index];
+      if (!id) {
+        return acc;
+      }
       try {
         const updatedInvoice = await shareAndMutate(id, action);
         return await processBulkRecursive(ids, index + 1, action, {
@@ -224,10 +228,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
           if (action.type === "sendEmail") {
             const {to} = action;
             await toast.promise(shareAndMutate(invoiceIdOrIds, action), {
-              loading: t("emailSending", {email: to}),
-              success: t("emailSuccess", {email: to}),
+              loading: t((m) => m["IMS--Hooks"].useInvoiceShare.emailSending, {email: to}),
+              success: t((m) => m["IMS--Hooks"].useInvoiceShare.emailSuccess, {email: to}),
               error: (err: unknown) =>
-                t("emailError", {
+                t((m) => m["IMS--Hooks"].useInvoiceShare.emailError, {
                   email: to,
                   error: err instanceof Error ? err.message : String(err),
                 }),
@@ -250,7 +254,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t("error", {error: message}));
+        toast.error(`${t((m) => m["IMS--Hooks"].useInvoiceShare.revokeError)} ${message}`);
         console.error("Error executing share operation:", error);
       } finally {
         setIsSharing(false);

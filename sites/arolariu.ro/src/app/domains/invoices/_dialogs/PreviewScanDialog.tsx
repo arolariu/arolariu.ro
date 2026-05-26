@@ -17,7 +17,7 @@
  */
 
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {useDialog} from "../_contexts/DialogContext";
 import styles from "./PreviewScanDialog.module.scss";
@@ -55,7 +55,7 @@ import styles from "./PreviewScanDialog.module.scss";
  * ```
  */
 export default function PreviewScanDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans.scanCard");
+  const t = useTranslations();
 
   const {
     isOpen,
@@ -92,7 +92,7 @@ export default function PreviewScanDialog(): React.JSX.Element {
       <DialogContent className={styles["previewDialog"]}>
         <DialogHeader>
           <DialogTitle>
-            {t("previewTitle")}: {scan.name}
+            {t((m) => m["IMS--ViewScans"].scanCard.previewTitle)}: {scan.name}
           </DialogTitle>
         </DialogHeader>
         {scan.mimeType === "application/pdf" ? (

@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -71,7 +71,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Cards.sharingCard");
+  const t = useTranslations();
   const {open} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {userInformation} = useUserInformation();
   const router = useRouter();
@@ -88,8 +88,8 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
   const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
-    toast(t("toasts.removeAccessComingSoon.title"), {
-      description: t("toasts.removeAccessComingSoon.description"),
+    toast(t((m) => m["IMS--Cards"].sharingCard.toasts.removeAccessComingSoon.title), {
+      description: t((m) => m["IMS--Cards"].sharingCard.toasts.removeAccessComingSoon.description),
     });
   }, [t]);
 
@@ -120,9 +120,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
     toast.promise(
       markPrivateAction().finally(() => setIsMarkingPrivate(false)),
       {
-        loading: t("toasts.revoke.loading"),
-        success: t("toasts.revoke.success"),
-        error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
+        loading: t((m) => m["IMS--Cards"].sharingCard.toasts.revoke.loading),
+        success: t((m) => m["IMS--Cards"].sharingCard.toasts.revoke.success),
+        error: (error: unknown) => t((m) => m["IMS--Cards"].sharingCard.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice.id, invoice.sharedWith, router, t]);
@@ -130,7 +130,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
+        <CardTitle>{t((m) => m["IMS--Cards"].sharingCard.title)}</CardTitle>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div className={styles["ownerRow"]}>
@@ -138,7 +138,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation?.user?.imageUrl!}
-                alt={t("ownerAvatarAlt")}
+                alt={t((m) => m["IMS--Cards"].sharingCard.ownerAvatarAlt)}
                 width={40}
                 height={40}
                 className={styles["ownerImage"]}
@@ -149,7 +149,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             )}
           </div>
           <div>
-            <p className={styles["ownerName"]}>{t("owner")}</p>
+            <p className={styles["ownerName"]}>{t((m) => m["IMS--Cards"].sharingCard.owner)}</p>
             <p className={styles["ownerUsername"]}>{userInformation?.user?.username}</p>
           </div>
           <div className={styles["manageArea"]}>
@@ -162,12 +162,12 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                       className={styles["manageButton"]}
                       onClick={handleManageSharing}>
                       <TbLockCog className={styles["buttonIcon"]} />
-                      <span>{t("buttons.manageSharing")}</span>
+                      <span>{t((m) => m["IMS--Cards"].sharingCard.buttons.manageSharing)}</span>
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.manageSharing")}</p>
+                  <p>{t((m) => m["IMS--Cards"].sharingCard.tooltips.manageSharing)}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -181,13 +181,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             variant='destructive'
             className={styles["publicAlert"]}>
             <TbGlobe className={styles["globeIcon"]} />
-            <AlertTitle className={styles["publicAlertTitle"]}>{t("publicInvoice.title")}</AlertTitle>
-            <AlertDescription className={styles["publicAlertDescription"]}>{t("publicInvoice.description")}</AlertDescription>
+            <AlertTitle className={styles["publicAlertTitle"]}>{t((m) => m["IMS--Cards"].sharingCard.publicInvoice.title)}</AlertTitle>
+            <AlertDescription className={styles["publicAlertDescription"]}>{t((m) => m["IMS--Cards"].sharingCard.publicInvoice.description)}</AlertDescription>
           </Alert>
         )}
 
         <div>
-          <h3 className={styles["sharedTitle"]}>{t("sharedWith")}</h3>
+          <h3 className={styles["sharedTitle"]}>{t((m) => m["IMS--Cards"].sharingCard.sharedWith)}</h3>
           {sharedUsers.length > 0 ? (
             <div className={styles["sharedList"]}>
               {sharedUsers.map((userId, index) => (
@@ -201,7 +201,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   <div className={styles["sharedUserAvatar"]}>
                     <TbUser className={styles["sharedUserIcon"]} />
                   </div>
-                  <span className={styles["sharedUserName"]}>{t("userWithId", {id: userId})}</span>
+                  <span className={styles["sharedUserName"]}>{t((m) => m["IMS--Cards"].sharingCard.userWithId, {id: userId})}</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
@@ -215,7 +215,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                         }
                       />
                       <TooltipContent>
-                        <p>{t("tooltips.removeAccess")}</p>
+                        <p>{t((m) => m["IMS--Cards"].sharingCard.tooltips.removeAccess)}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -223,7 +223,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className={styles["emptyShared"]}>{isInvoicePublic ? t("emptyShared.public") : t("emptyShared.private")}</p>
+            <p className={styles["emptyShared"]}>{isInvoicePublic ? t((m) => m["IMS--Cards"].sharingCard.emptyShared.public) : t((m) => m["IMS--Cards"].sharingCard.emptyShared.private)}</p>
           )}
         </div>
       </CardContent>
@@ -237,13 +237,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   className={styles["fullWidthButton"]}
                   onClick={open}>
                   <TbShare2 className={styles["buttonIcon"]} />
-                  <span>{t("buttons.shareInvoice")}</span>
+                  <span>{t((m) => m["IMS--Cards"].sharingCard.buttons.shareInvoice)}</span>
                   <TbArrowRight className={styles["arrowIcon"]} />
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.shareInvoice")}</p>
+              <p>{t((m) => m["IMS--Cards"].sharingCard.tooltips.shareInvoice)}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -256,13 +256,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                     className={styles["fullWidthButton"]}
                     disabled={isMarkingPrivate}
                     onClick={handleMarkPrivate}>
-                    <span>{isMarkingPrivate ? t("buttons.revokingAccess") : t("buttons.markAsPrivate")}</span>
+                    <span>{isMarkingPrivate ? t((m) => m["IMS--Cards"].sharingCard.buttons.revokingAccess) : t((m) => m["IMS--Cards"].sharingCard.buttons.markAsPrivate)}</span>
                     <TbLock className={styles["arrowIcon"]} />
                   </Button>
                 }
               />
               <TooltipContent side='bottom'>
-                <p>{t("tooltips.markAsPrivate")}</p>
+                <p>{t((m) => m["IMS--Cards"].sharingCard.tooltips.markAsPrivate)}</p>
               </TooltipContent>
             </Tooltip>
           )}

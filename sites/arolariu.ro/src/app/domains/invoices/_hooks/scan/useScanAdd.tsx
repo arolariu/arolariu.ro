@@ -12,7 +12,7 @@
 
 import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import { attachInvoiceScan, createInvoiceScan } from "../../_actions/invoices";
 
@@ -80,7 +80,7 @@ function readBlobAsDataUrl(file: Blob): Promise<string> {
  * ```
  */
 export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--Hooks.useScanAdd");
+  const t = useTranslations();
   const [isAdding, setIsAdding] = useState(false);
 
   const addScanCallback = useCallback(
@@ -100,7 +100,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         });
 
         if (!success || !data) {
-          throw new Error(t("uploadFailed", {status: String(error?.status) || "unknown"}));
+          throw new Error(t((m) => m["IMS--Hooks"].useScanAdd.uploadFailed, {status: String(error?.status) || "unknown"}));
         }
 
         await attachInvoiceScan({
@@ -115,10 +115,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           },
         });
 
-        toast.success(t("addSuccess"));
+        toast.success(t((m) => m["IMS--Hooks"].useScanAdd.addSuccess));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t("addError"), {description: message});
+        toast.error(t((m) => m["IMS--Hooks"].useScanAdd.addError), {description: message});
         throw error;
       } finally {
         setIsAdding(false);

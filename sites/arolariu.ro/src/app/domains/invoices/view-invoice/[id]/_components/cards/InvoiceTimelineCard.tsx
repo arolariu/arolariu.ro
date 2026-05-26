@@ -3,7 +3,8 @@
 import {formatDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCalendar} from "react-icons/tb";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
 import styles from "./InvoiceTimelineCard.module.scss";
@@ -14,7 +15,7 @@ type Props = Readonly<{
 
 export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--View.invoiceTimeline");
+  const t = useTranslations();
   const events = generateTimelineFromInvoice(invoice);
   const groupedEvents = groupEventsByDate(events, locale);
 
@@ -24,7 +25,7 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbCalendar className={styles["titleIcon"]} />
-            {t("title")}
+            {t((m) => m["IMS--View"].invoiceTimeline.title)}
           </span>
         </CardTitle>
       </CardHeader>

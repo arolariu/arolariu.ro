@@ -21,7 +21,8 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback, useEffect} from "react";
 import {TbCalendar, TbEye, TbReceipt} from "react-icons/tb";
@@ -42,8 +43,8 @@ type Props = Readonly<{
 export const GridView = (props: Readonly<Props>): React.JSX.Element => {
   const {invoices, pageSize, currentPage, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const locale = useLocale();
-  const tTableView = useTranslations("IMS--List.tableView");
-  const t = useTranslations("IMS--List.gridView");
+  const tTableView = useTranslations();
+  const t = useTranslations();
   const selectedInvoices = useInvoicesStore((state) => state.selectedEntities);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedEntities);
 
@@ -74,10 +75,10 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
     return (
       <EmptyState
         icon={<TbReceipt className={styles["emptyIcon"]} />}
-        title={tTableView("empty.title")}
-        description={tTableView("empty.description")}
+        title={tTableView((m) => m["IMS--List"].tableView.empty.title)}
+        description={tTableView((m) => m["IMS--List"].tableView.empty.description)}
         primaryAction={{
-          label: tTableView("empty.uploadCta"),
+          label: tTableView((m) => m["IMS--List"].tableView.empty.uploadCta),
           href: "/domains/invoices/upload-scans",
         }}
       />
@@ -102,7 +103,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                 checked={selectedInvoices.includes(invoice)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                aria-label={tTableView("aria.selectInvoice", {name: invoice.name})}
+                aria-label={tTableView((m) => m["IMS--List"].tableView.aria.selectInvoice, {name: invoice.name})}
                 className={styles["frostedCheckbox"]}
               />
             </div>
@@ -133,14 +134,14 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                             render={
                               <Link
                                 href={`/domains/invoices/view-invoice/${invoice.id}`}
-                                aria-label={t("tooltips.viewDetails")}>
+                                aria-label={t((m) => m["IMS--List"].gridView.tooltips.viewDetails)}>
                                 <TbEye className={styles["viewIcon"]} />
                               </Link>
                             }
                           />
                         }
                       />
-                      <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>
+                      <TooltipContent>{t((m) => m["IMS--List"].gridView.tooltips.viewDetails)}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                   <TableViewActions invoice={invoice} />
@@ -170,7 +171,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                 </div>
               </CardContent>
               <CardFooter className={styles["cardFooter"]}>
-                <div className={styles["itemCount"]}>{t("itemCount", {count: invoice.items?.length ?? 0})}</div>
+                <div className={styles["itemCount"]}>{t((m) => m["IMS--List"].gridView.itemCount, {count: invoice.items?.length ?? 0})}</div>
               </CardFooter>
             </Card>
           </div>
@@ -180,14 +181,14 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
       {totalPages > 1 && (
         <div className={styles["paginationControls"]}>
           <div className={styles["pageSizeSelector"]}>
-            <span className={styles["pageSizeLabel"]}>{tTableView("rowsPerPage")}</span>
+            <span className={styles["pageSizeLabel"]}>{tTableView((m) => m["IMS--List"].tableView.rowsPerPage)}</span>
             <Select
               value={String(pageSize)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
               onValueChange={(value) => handlePageSizeChange(Number(value))}>
               <SelectTrigger
                 className={styles["pageSizeTrigger"]}
-                aria-label={tTableView("aria.rowsPerPage")}>
+                aria-label={tTableView((m) => m["IMS--List"].tableView.aria.rowsPerPage)}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -202,7 +203,7 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             </Select>
           </div>
           <div className={styles["pageIndicator"]}>
-            <span className={styles["pageLabel"]}>{tTableView("pageOf", {current: String(currentPage), total: String(totalPages)})}</span>
+            <span className={styles["pageLabel"]}>{tTableView((m) => m["IMS--List"].tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}</span>
           </div>
           <div className={styles["pageNavigation"]}>
             <Button
@@ -211,8 +212,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
               size='sm'
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              aria-label={tTableView("previousPage")}>
-              {tTableView("previousPage")}
+              aria-label={tTableView((m) => m["IMS--List"].tableView.previousPage)}>
+              {tTableView((m) => m["IMS--List"].tableView.previousPage)}
             </Button>
             <Button
               variant='outline'
@@ -220,8 +221,8 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
               size='sm'
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              aria-label={tTableView("nextPage")}>
-              {tTableView("nextPage")}
+              aria-label={tTableView((m) => m["IMS--List"].tableView.nextPage)}>
+              {tTableView((m) => m["IMS--List"].tableView.nextPage)}
             </Button>
           </div>
         </div>

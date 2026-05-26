@@ -1,8 +1,9 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbCalendar, TbCode, TbShieldCheck, TbStack2} from "react-icons/tb";
 import styles from "./Stats.module.scss";
@@ -26,7 +27,7 @@ const stats = [
  * Stats section displaying key metrics about the platform.
  */
 export default function Stats(): React.JSX.Element {
-  const t = useTranslations("About.Hub.stats");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -41,8 +42,8 @@ export default function Stats(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t((m) => m.About.Hub.stats.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.stats.subtitle)}</p>
         </motion.div>
 
         {/* Stats grid */}
@@ -73,14 +74,14 @@ export default function Stats(): React.JSX.Element {
                       initial={{opacity: 0}}
                       animate={isInView ? {opacity: 1} : {}}
                       transition={{delay: 0.4 + index * 0.1}}>
-                      {t(`items.${stat.key}.value`)}
+                      {t(selectorFromPath(`About.Hub.stats.items.${stat.key}.value`))}
                     </motion.div>
 
                     {/* Label */}
-                    <h3 className={styles["label"]}>{t(`items.${stat.key}.label`)}</h3>
+                    <h3 className={styles["label"]}>{t(selectorFromPath(`About.Hub.stats.items.${stat.key}.label`))}</h3>
 
                     {/* Description */}
-                    <p className={styles["description"]}>{t(`items.${stat.key}.description`)}</p>
+                    <p className={styles["description"]}>{t(selectorFromPath(`About.Hub.stats.items.${stat.key}.description`))}</p>
                   </CardContent>
                 </Card>
               </motion.div>

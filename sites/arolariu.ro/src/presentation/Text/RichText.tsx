@@ -1,7 +1,8 @@
+import {selectorFromPath} from "next-intl-selector";
 // We're turning off react/no-unstable-nested-components -- This is a false positive with the i18n lib.
 /* eslint react/no-unstable-nested-components: 0 */
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type React from "react";
 import styles from "./RichText.module.scss";
 
@@ -29,8 +30,7 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
   const fullKey = `${sectionKey}.${textKey}`;
 
   try {
-    // @ts-expect-error -- fullKey is a dynamic string; next-intl expects literal keys but this is intentional for dynamic usage
-    const text = t.rich(fullKey, {
+    const text = t.rich(selectorFromPath(fullKey), {
       strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
       em: (chunks: React.ReactNode) => <em>{chunks}</em>,
       br: (chunks: React.ReactNode) => (

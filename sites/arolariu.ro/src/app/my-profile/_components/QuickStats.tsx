@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {useInvoicesStore} from "@/stores/invoicesStore";
@@ -5,7 +6,7 @@ import {useMerchantsStore} from "@/stores/merchantsStore";
 import {useScansStore} from "@/stores/scansStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbBuilding, TbCloud, TbFileInvoice, TbScan} from "react-icons/tb";
 import {formatStorageSize} from "../_utils/helpers";
 import type {UserStatistics} from "../_utils/types";
@@ -22,7 +23,7 @@ const STAT_CARDS = [
 ] as const;
 
 export function QuickStats({statistics}: Props): React.JSX.Element {
-  const t = useTranslations("Profile.stats");
+  const t = useTranslations();
 
   const invoicesCount = useInvoicesStore((state) => state.entities.length);
   const merchantsCount = useMerchantsStore((state) => state.entities.length);
@@ -46,8 +47,8 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
   return (
     <section className={styles["section"]}>
       <div className={styles["header"]}>
-        <h2>{t("title")}</h2>
-        <p>{t("description")}</p>
+        <h2>{t((m) => m.Profile.stats.title)}</h2>
+        <p>{t((m) => m.Profile.stats.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -59,12 +60,12 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             transition={{duration: 0.3, delay: index * 0.05}}>
             <Card className={styles["statCard"]}>
               <CardHeader className={styles["cardHeaderFlex"]}>
-                <CardTitle className={styles["cardTitleSmall"]}>{t(`${card.key}.title`)}</CardTitle>
+                <CardTitle className={styles["cardTitleSmall"]}>{t(selectorFromPath(`Profile.stats.${card.key}.title`))}</CardTitle>
                 <card.icon className={styles["cardIcon"]} />
               </CardHeader>
               <CardContent>
                 <div className={styles["statValue"]}>{getStatValue(card.key)}</div>
-                <p className={styles["statDescription"]}>{t(`${card.key}.description`)}</p>
+                <p className={styles["statDescription"]}>{t(selectorFromPath(`Profile.stats.${card.key}.description`))}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -78,9 +79,9 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <div className={styles["storageInfo"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbCloud className={styles["iconSm"]} />
-                {t("storage.title")}
+                {t((m) => m.Profile.stats.storage.title)}
               </CardTitle>
-              <CardDescription>{t("storage.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.stats.storage.description)}</CardDescription>
             </div>
             <span className={styles["storageSize"]}>
               {formatStorageSize(statistics.storageUsed)} / {formatStorageSize(statistics.storageLimit)}
@@ -93,7 +94,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             className={styles["progressHeight"]}
           />
           <p className={styles["storageHint"]}>
-            {storagePercentage.toFixed(1)}% {t("storage.used")}
+            {storagePercentage.toFixed(1)}% {t((m) => m.Profile.stats.storage.used)}
           </p>
         </CardContent>
       </Card>

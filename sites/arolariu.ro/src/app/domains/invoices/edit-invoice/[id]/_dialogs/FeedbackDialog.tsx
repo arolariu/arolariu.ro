@@ -12,7 +12,7 @@ import {
   Textarea,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
 import styles from "./FeedbackDialog.module.scss";
@@ -59,7 +59,7 @@ import { useDialog } from "../../../_contexts/DialogContext";
  * @see {@link AnalyticsCard} - Parent component that opens this dialog
  */
 export default function FeedbackDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.feedbackDialog");
+  const t = useTranslations();
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
   const [hoveredRating, setHoveredRating] = useState<number>(0);
@@ -72,12 +72,12 @@ export default function FeedbackDialog(): React.JSX.Element {
 
   const {invoice, merchant} = payload;
   const features = [
-    t("features.spendingTrends"),
-    t("features.priceComparisons"),
-    t("features.savingsTips"),
-    t("features.merchantAnalysis"),
-    t("features.visualCharts"),
-    t("features.categoryBreakdown"),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.spendingTrends),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.priceComparisons),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.savingsTips),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.merchantAnalysis),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.visualCharts),
+    t((m) => m["IMS--Dialogs"].feedbackDialog.features.categoryBreakdown),
   ];
 
   // Stable handlers to avoid inline arrow functions in JSX
@@ -104,15 +104,15 @@ export default function FeedbackDialog(): React.JSX.Element {
       e.preventDefault();
 
       // Show loading toast
-      const loadingToast = toast(t("toasts.sending.title"), {
-        description: t("toasts.sending.description"),
+      const loadingToast = toast(t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.sending.title), {
+        description: t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.sending.description),
         className: "z-100",
       });
 
       if (rating === 0) {
         toast.dismiss(loadingToast);
-        toast(t("toasts.ratingRequired.title"), {
-          description: t("toasts.ratingRequired.description"),
+        toast(t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.ratingRequired.title), {
+          description: t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.ratingRequired.description),
         });
         return;
       }
@@ -137,8 +137,8 @@ export default function FeedbackDialog(): React.JSX.Element {
         }
 
         toast.dismiss(loadingToast);
-        toast(t("toasts.success.title"), {
-          description: t("toasts.success.description"),
+        toast(t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.success.title), {
+          description: t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.success.description),
           className: "z-100",
         });
         setRating(0);
@@ -148,8 +148,8 @@ export default function FeedbackDialog(): React.JSX.Element {
       } catch (error: unknown) {
         console.error(">>> Failed to send feedback:", error);
         toast.dismiss(loadingToast);
-        toast(t("toasts.error.title"), {
-          description: t("toasts.error.description"),
+        toast(t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.error.title), {
+          description: t((m) => m["IMS--Dialogs"].feedbackDialog.toasts.error.description),
         });
       } finally {
         close();
@@ -179,14 +179,14 @@ export default function FeedbackDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {merchant: merchant?.name ?? ""})}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].feedbackDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].feedbackDialog.description, {merchant: merchant?.name ?? ""})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
           {/* Star Rating */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>{t("sections.rating")}</h4>
+            <h4 className={styles["sectionHeading"]}>{t((m) => m["IMS--Dialogs"].feedbackDialog.sections.rating)}</h4>
             <div className={styles["starRow"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
@@ -205,7 +205,7 @@ export default function FeedbackDialog(): React.JSX.Element {
 
           {/* Feature Selection */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>{t("sections.features")}</h4>
+            <h4 className={styles["sectionHeading"]}>{t((m) => m["IMS--Dialogs"].feedbackDialog.sections.features)}</h4>
             <div className={styles["featuresWrap"]}>
               {features.map((feature) => (
                 <Badge
@@ -222,9 +222,9 @@ export default function FeedbackDialog(): React.JSX.Element {
 
           {/* Written Feedback */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>{t("sections.comments")}</h4>
+            <h4 className={styles["sectionHeading"]}>{t((m) => m["IMS--Dialogs"].feedbackDialog.sections.comments)}</h4>
             <Textarea
-              placeholder={t("commentsPlaceholder")}
+              placeholder={t((m) => m["IMS--Dialogs"].feedbackDialog.commentsPlaceholder)}
               value={feedback}
               onChange={handleFeedbackChange}
               rows={4}
@@ -239,9 +239,9 @@ export default function FeedbackDialog(): React.JSX.Element {
             <Button
               variant='outline'
               onClick={close}>
-              {t("buttons.cancel")}
+              {t((m) => m["IMS--Dialogs"].feedbackDialog.buttons.cancel)}
             </Button>
-            <Button type='submit'>{t("buttons.submit")}</Button>
+            <Button type='submit'>{t((m) => m["IMS--Dialogs"].feedbackDialog.buttons.submit)}</Button>
           </form>
         </DialogFooter>
       </DialogContent>

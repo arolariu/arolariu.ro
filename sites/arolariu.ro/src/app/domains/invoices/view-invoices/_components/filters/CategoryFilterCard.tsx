@@ -2,7 +2,7 @@
 
 import type {InvoiceCategory} from "@/types/invoices";
 import {Badge} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
@@ -27,7 +27,7 @@ export function CategoryFilterCard({
   getCategoryLabel,
   onFiltersChange,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const isCategoryActive = filters.categories.length > 0;
 
   const activeValue = useMemo((): string | null => {
@@ -49,11 +49,11 @@ export function CategoryFilterCard({
 
   return (
     <FilterCardFrame
-      title={<>📂 {t("filters.categories")}</>}
+      title={<>📂 {t((m) => m["IMS--List"].invoicesView.filters.categories)}</>}
       active={isCategoryActive}
       activeValue={activeValue}
-      inactiveLabel={t("filters.anyValue")}
-      dynamicHintLabel={t("filters.dynamicHint")}>
+      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}
+      dynamicHintLabel={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
         {availableCategories.map((category) => (
           <button

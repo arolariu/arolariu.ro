@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -64,7 +64,7 @@ type Props = {
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Edit.recipesTab");
+  const t = useTranslations();
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
@@ -83,8 +83,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(t("toasts.aiGenerationComingSoon.title"), {
-      description: t("toasts.aiGenerationComingSoon.description"),
+    toast(t((m) => m["IMS--Edit"].recipesTab.toasts.aiGenerationComingSoon.title), {
+      description: t((m) => m["IMS--Edit"].recipesTab.toasts.aiGenerationComingSoon.description),
     });
   }, [t]);
 
@@ -101,8 +101,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div>
-            <CardTitle>{t("header.title")}</CardTitle>
-            <CardDescription>{t("header.description")}</CardDescription>
+            <CardTitle>{t((m) => m["IMS--Edit"].recipesTab.header.title)}</CardTitle>
+            <CardDescription>{t((m) => m["IMS--Edit"].recipesTab.header.description)}</CardDescription>
           </div>
           <TooltipProvider>
             <div className={styles["headerActions"]}>
@@ -115,12 +115,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                       onClick={handleGenerateRecipe}
                       size='sm'>
                       <TbConfetti className={styles["buttonIcon"]} />
-                      {t("buttons.generate")}
+                      {t((m) => m["IMS--Edit"].recipesTab.buttons.generate)}
                     </Button>
                   }
                 />
                 <TooltipContent side='bottom'>
-                  <p>{t("tooltips.generateRecipeUsingAi")}</p>
+                  <p>{t((m) => m["IMS--Edit"].recipesTab.tooltips.generateRecipeUsingAi)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -131,12 +131,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                       onClick={openAddDialog}
                       size='sm'>
                       <TbPlus className={styles["buttonIcon"]} />
-                      {t("buttons.addRecipe")}
+                      {t((m) => m["IMS--Edit"].recipesTab.buttons.addRecipe)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.createRecipeWithIngredients")}</p>
+                  <p>{t((m) => m["IMS--Edit"].recipesTab.tooltips.createRecipeWithIngredients)}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -154,13 +154,13 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             </div>
           ) : (
             <div className={styles["emptyState"]}>
-              <p className={styles["emptyText"]}>{t("emptyState.noRecipesAvailable")}</p>
+              <p className={styles["emptyText"]}>{t((m) => m["IMS--Edit"].recipesTab.emptyState.noRecipesAvailable)}</p>
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
                 className={styles["createButton"]}>
                 <TbPlus className={styles["buttonIcon"]} />
-                {t("buttons.createFirstRecipe")}
+                {t((m) => m["IMS--Edit"].recipesTab.buttons.createFirstRecipe)}
               </Button>
             </div>
           )}
@@ -171,17 +171,17 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 size='sm'
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}>
-                {t("pagination.previous")}
+                {t((m) => m["IMS--Edit"].recipesTab.pagination.previous)}
               </Button>
               <div className={styles["pageInfo"]}>
-                {t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}
+                {t((m) => m["IMS--Edit"].recipesTab.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
               </div>
               <Button
                 variant='ghost'
                 size='sm'
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}>
-                {t("pagination.next")}
+                {t((m) => m["IMS--Edit"].recipesTab.pagination.next)}
               </Button>
             </div>
           )}

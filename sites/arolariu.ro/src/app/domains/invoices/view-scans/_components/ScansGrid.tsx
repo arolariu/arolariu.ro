@@ -8,7 +8,7 @@
 import type {CachedScan} from "@/types/scans";
 import {Button, useIsMobile} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import DeferredMount from "../../_components/DeferredMount";
@@ -54,7 +54,7 @@ function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCar
  * Grid display for scans with selection support.
  */
 export default function ScansGrid(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans");
+  const t = useTranslations();
   const {scans, selectedScans, hasHydrated, isSyncing, toggleSelection} = useScans();
   const [page, setPage] = useState(0);
 
@@ -109,14 +109,14 @@ export default function ScansGrid(): React.JSX.Element {
     return (
       <EmptyState
         icon={<TbCamera className={styles["emptyIcon"]} />}
-        title={t("emptyState.title")}
-        description={t("emptyState.description")}
+        title={t((m) => m["IMS--ViewScans"].emptyState.title)}
+        description={t((m) => m["IMS--ViewScans"].emptyState.description)}
         primaryAction={{
-          label: t("emptyState.uploadButton"),
+          label: t((m) => m["IMS--ViewScans"].emptyState.uploadButton),
           href: "/domains/invoices/upload-scans",
         }}
         secondaryAction={{
-          label: t("emptyState.learnMoreButton"),
+          label: t((m) => m["IMS--ViewScans"].emptyState.learnMoreButton),
           href: "/domains/invoices",
         }}
       />
@@ -154,17 +154,17 @@ export default function ScansGrid(): React.JSX.Element {
             onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
-            {t("pagination.previous")}
+            {t((m) => m["IMS--ViewScans"].pagination.previous)}
           </Button>
           <span className={styles["pageInfo"]}>
-            {t("pagination.pageInfo", {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
+            {t((m) => m["IMS--ViewScans"].pagination.pageInfo, {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
           </span>
           <Button
             variant='outline'
             size='sm'
             onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
-            {t("pagination.next")}
+            {t((m) => m["IMS--ViewScans"].pagination.next)}
             <TbChevronRight />
           </Button>
         </div>

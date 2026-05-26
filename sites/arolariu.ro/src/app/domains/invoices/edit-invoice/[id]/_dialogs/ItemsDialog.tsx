@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import styles from "./ItemsDialog.module.scss";
@@ -69,7 +69,7 @@ import { useDialog } from "../../../_contexts/DialogContext";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ItemsDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.itemsDialog");
+  const t = useTranslations();
   const {
     currentDialog: {payload},
     isOpen,
@@ -191,8 +191,8 @@ export default function ItemsDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].itemsDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].itemsDialog.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
@@ -200,12 +200,12 @@ export default function ItemsDialog(): React.JSX.Element {
             <Table className={styles["table"]}>
               <TableHeader>
                 <TableRow className={styles["headerRow"]}>
-                  <TableHead className={styles["tableHeader"]}>{t("table.item")}</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.quantity")}</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.unit")}</TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>{t("table.price")}</TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>{t("table.total")}</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.actions")}</TableHead>
+                  <TableHead className={styles["tableHeader"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.item)}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.quantity)}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.unit)}</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.price)}</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.total)}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m["IMS--Dialogs"].itemsDialog.table.actions)}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className={styles["tableBody"]}>
@@ -260,7 +260,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         <Button
                           variant='ghost'
                           size='icon'
-                          aria-label={t("aria.deleteItem", {name: item.name || t("aria.unnamedItem")})}
+                          aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.deleteItem, {name: item.name || t((m) => m["IMS--Dialogs"].itemsDialog.aria.unnamedItem)})}
                           onClick={handleDeleteItem(item)}>
                           <TbTrash className={styles["trashIcon"]} />
                         </Button>
@@ -278,7 +278,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       role='status'
                       aria-live='polite'
                       aria-atomic='true'>
-                      {t("footer.itemsFound", {total: String(editableItems.length), shown: String(paginatedItems.length)})}
+                      {t((m) => m["IMS--Dialogs"].itemsDialog.footer.itemsFound, {total: String(editableItems.length), shown: String(paginatedItems.length)})}
                     </span>
                   </TableHead>
                   <TableHead
@@ -288,7 +288,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       role='status'
                       aria-live='polite'
                       aria-atomic='true'>
-                      {t("footer.page", {current: String(currentPage), total: String(totalPages)})}
+                      {t((m) => m["IMS--Dialogs"].itemsDialog.footer.page, {current: String(currentPage), total: String(totalPages)})}
                     </span>
                   </TableHead>
                   <TableHead
@@ -297,20 +297,20 @@ export default function ItemsDialog(): React.JSX.Element {
                     <Button
                       variant='ghost'
                       size='sm'
-                      aria-label={t("aria.previousPage", {page: String(currentPage - 1)})}
+                      aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.previousPage, {page: String(currentPage - 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                       onClick={handlePreviousPage}
                       disabled={currentPage === 1}>
-                      {t("buttons.previous")}
+                      {t((m) => m["IMS--Dialogs"].itemsDialog.buttons.previous)}
                     </Button>
                     <Button
                       variant='ghost'
                       size='sm'
-                      aria-label={t("aria.nextPage", {page: String(currentPage + 1)})}
+                      aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.nextPage, {page: String(currentPage + 1)})}
                       // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}>
-                      {t("buttons.next")}
+                      {t((m) => m["IMS--Dialogs"].itemsDialog.buttons.next)}
                     </Button>
                   </TableHead>
                 </TableRow>
@@ -323,16 +323,16 @@ export default function ItemsDialog(): React.JSX.Element {
             <Button
               type='button'
               variant='outline'
-              aria-label={t("aria.addItem")}
+              aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.addItem)}
               onClick={handleAddNewItem}>
               <TbPlus className={styles["buttonIcon"]} />
-              {t("buttons.addItem")}
+              {t((m) => m["IMS--Dialogs"].itemsDialog.buttons.addItem)}
             </Button>
             <div
               className={styles["itemCount"]}
               role='status'
               aria-live='polite'>
-              {t("footer.itemsTotal", {count: items.length})}
+              {t((m) => m["IMS--Dialogs"].itemsDialog.footer.itemsTotal, {count: items.length})}
             </div>
           </div>
         </div>
@@ -340,15 +340,15 @@ export default function ItemsDialog(): React.JSX.Element {
         <DialogFooter>
           <Button
             variant='outline'
-            aria-label={t("aria.cancel")}
+            aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.cancel)}
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].itemsDialog.buttons.cancel)}
           </Button>
           <Button
-            aria-label={t("aria.save")}
+            aria-label={t((m) => m["IMS--Dialogs"].itemsDialog.aria.save)}
             onClick={handleSaveChanges}>
             <TbDisc className={styles["buttonIcon"]} />
-            {t("buttons.saveChanges")}
+            {t((m) => m["IMS--Dialogs"].itemsDialog.buttons.saveChanges)}
           </Button>
         </DialogFooter>
       </DialogContent>

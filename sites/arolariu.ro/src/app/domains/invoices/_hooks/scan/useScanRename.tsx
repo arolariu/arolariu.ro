@@ -13,7 +13,7 @@
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef, useState} from "react";
 
 /**
@@ -29,7 +29,7 @@ type HookOutputType = Readonly<{
   /** Flash flag to indicate successful rename (resets after 300ms) */
   justRenamed: boolean;
   /** Ref to the input element for focus management */
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   /** Enters rename mode */
   start: () => void;
   /** Exits rename mode and restores original name */
@@ -85,12 +85,12 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useScanRename(scan: CachedScan): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--ViewScans.scanCard");
+  const t = useTranslations();
   const updateScanName = useScansStore((state) => state.updateScanName);
 
   const [value, setValue] = useState(scan.name);
   const [isEditing, setIsEditing] = useState(false);
-  const [isCommitting, setIsCommitting] = useState(false);
+  const isCommitting = false;
   const [justRenamed, setJustRenamed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -119,7 +119,7 @@ export function useScanRename(scan: CachedScan): Readonly<HookOutputType> {
 
     // Update store locally (no server action needed for rename)
     updateScanName(scan.id, trimmedValue);
-    toast.success(t("rename"));
+    toast.success(t((m) => m["IMS--ViewScans"].scanCard.rename));
     setIsEditing(false);
     setJustRenamed(true);
     setTimeout(() => setJustRenamed(false), 300);

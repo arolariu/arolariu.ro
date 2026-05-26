@@ -13,7 +13,7 @@
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import { updateScan } from "../../_actions/scans";
 
@@ -72,7 +72,7 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--ViewScans.scanCard");
+  const t = useTranslations();
   const updateScanBlobUrl = useScansStore((state) => state.updateScanBlobUrl);
 
   const [isRotating, setIsRotating] = useState(false);
@@ -80,7 +80,7 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
   const rotateScanCallback = useCallback(
     async (direction: "cw" | "ccw"): Promise<void> => {
       if (!scan.blobUrl || scan.mimeType === "application/pdf") {
-        toast.error(t("actions.rotateUnsupported"));
+        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateUnsupported));
         return;
       }
 
@@ -161,12 +161,12 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
           const {blobUrl} = result.data;
           const cacheBustedUrl = `${blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
-          toast.success(t("actions.rotateSuccess"));
+          toast.success(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateSuccess));
         } else {
-          toast.error(t("actions.rotateError"));
+          toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
         }
       } catch (error) {
-        toast.error(t("actions.rotateError"));
+        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
         console.error("Error rotating scan:", error);
       } finally {
         setIsRotating(false);

@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {
   TbClock,
   TbEdit,
@@ -83,14 +83,14 @@ type Props = {
  * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
 export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Cards.recipeCard");
+  const t = useTranslations();
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 
   const complexityLabelMap: Readonly<Record<RecipeComplexity, string>> = {
-    [RecipeComplexity.Unknown]: t("complexity.unknown"),
-    [RecipeComplexity.Easy]: t("complexity.easy"),
-    [RecipeComplexity.Normal]: t("complexity.normal"),
-    [RecipeComplexity.Hard]: t("complexity.hard"),
+    [RecipeComplexity.Unknown]: t((m) => m["IMS--Cards"].recipeCard.complexity.unknown),
+    [RecipeComplexity.Easy]: t((m) => m["IMS--Cards"].recipeCard.complexity.easy),
+    [RecipeComplexity.Normal]: t((m) => m["IMS--Cards"].recipeCard.complexity.normal),
+    [RecipeComplexity.Hard]: t((m) => m["IMS--Cards"].recipeCard.complexity.hard),
   };
 
   const getBadgeVariant = () => {
@@ -136,30 +136,30 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 className={styles["menuItem"]}
                 onClick={openViewDialog}>
                 <TbEdit className={styles["menuIcon"]} />
-                {t("dropdown.view")}
+                {t((m) => m["IMS--Cards"].recipeCard.dropdown.view)}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className={styles["menuItem"]}
                 onClick={openEditDialog}>
                 <TbEdit className={styles["menuIcon"]} />
-                {t("dropdown.edit")}
+                {t((m) => m["IMS--Cards"].recipeCard.dropdown.edit)}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className={styles["menuItemDestructive"]}
                 onClick={openDeleteDialog}>
                 <TbTrash className={styles["menuIcon"]} />
-                {t("dropdown.delete")}
+                {t((m) => m["IMS--Cards"].recipeCard.dropdown.delete)}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className={styles["menuItemAccent"]}
                 onClick={openShareDialog}>
                 <TbShare className={styles["menuIcon"]} />
-                {t("dropdown.share")}
+                {t((m) => m["IMS--Cards"].recipeCard.dropdown.share)}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className={styles["menuItemMuted"]}>
                 <TbHeart className={styles["menuIcon"]} />
-                {t("dropdown.markAsFavorite")}
+                {t((m) => m["IMS--Cards"].recipeCard.dropdown.markAsFavorite)}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -169,7 +169,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <p className={styles["description"]}>{description}</p>
 
         <div className={styles["ingredientsSection"]}>
-          <h4 className={styles["ingredientsLabel"]}>{t("ingredients.label")}</h4>
+          <h4 className={styles["ingredientsLabel"]}>{t((m) => m["IMS--Cards"].recipeCard.ingredients.label)}</h4>
           <ul className={styles["ingredientsList"]}>
             {ingredients.slice(0, 3).map((ingredient) => (
               <li key={ingredient}>{ingredient}</li>
@@ -178,10 +178,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
-                    render={<li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>}
+                    render={<li className={styles["moreIngredients"]}>{t((m) => m["IMS--Cards"].recipeCard.ingredients.more, {count: String(ingredients.length - 3)})}</li>}
                   />
                   <TooltipContent className={styles["tooltipContent"]}>
-                    <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>
+                    <p className={styles["tooltipTitle"]}>{t((m) => m["IMS--Cards"].recipeCard.ingredients.additionalLabel)}</p>
                     <ul className={styles["tooltipIngredientsList"]}>
                       {ingredients.slice(3).map((ingredient, index) => (
                         <li key={`${ingredient}-${index + 3}`}>{ingredient}</li>
@@ -202,12 +202,12 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 render={
                   <div className={styles["timeItem"]}>
                     <TbClock className={styles["timeIcon"]} />
-                    {t("timing.prepLabel", {minutes: String(preparationTime)})}
+                    {t((m) => m["IMS--Cards"].recipeCard.timing.prepLabel, {minutes: String(preparationTime)})}
                   </div>
                 }
               />
               <TooltipContent side='bottom'>
-                <p>{t("timing.prepTooltip", {minutes: String(preparationTime)})}</p>
+                <p>{t((m) => m["IMS--Cards"].recipeCard.timing.prepTooltip, {minutes: String(preparationTime)})}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -215,12 +215,12 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 render={
                   <div className={styles["timeItem"]}>
                     <TbToolsKitchen className={styles["timeIcon"]} />
-                    {t("timing.cookLabel", {minutes: String(cookingTime)})}
+                    {t((m) => m["IMS--Cards"].recipeCard.timing.cookLabel, {minutes: String(cookingTime)})}
                   </div>
                 }
               />
               <TooltipContent side='bottom'>
-                <p>{t("timing.cookTooltip", {minutes: String(cookingTime)})}</p>
+                <p>{t((m) => m["IMS--Cards"].recipeCard.timing.cookTooltip, {minutes: String(cookingTime)})}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -231,14 +231,14 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <Button
           variant='ghost'
           size='sm'>
-          {t("buttons.visitReference")}
+          {t((m) => m["IMS--Cards"].recipeCard.buttons.visitReference)}
           <TbExternalLink className={styles["externalLinkIcon"]} />
         </Button>
         <Button
           variant='default'
           size='sm'
           onClick={openViewDialog}>
-          {t("buttons.viewRecipe")}
+          {t((m) => m["IMS--Cards"].recipeCard.buttons.viewRecipe)}
           <TbLayoutBottombarExpand />
         </Button>
       </CardFooter>

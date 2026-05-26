@@ -18,7 +18,7 @@ import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {RichText} from "@/presentation/Text";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import React, {memo} from "react";
@@ -97,7 +97,7 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
  * @see {@link https://next-intl.com/docs/usage/messages | next-intl useTranslations}
  */
 function Footer(): React.JSX.Element {
-  const t = useTranslations("Footer");
+  const t = useTranslations();
   const siteName = SITE_NAME.toUpperCase();
 
   return (
@@ -117,12 +117,12 @@ function Footer(): React.JSX.Element {
           <div className='footer__brand-section'>
             <Link
               href='/'
-              aria-label={t("accessibility.goHome")}
-              title={t("accessibility.brandTitle")}
+              aria-label={t((m) => m.Footer.accessibility.goHome)}
+              title={t((m) => m.Footer.accessibility.brandTitle)}
               className='footer__brand-link'>
               <Image
                 src={logo}
-                alt={t("accessibility.logoAlt")}
+                alt={t((m) => m.Footer.accessibility.logoAlt)}
                 className='footer__logo'
                 width={40}
                 height={40}
@@ -139,7 +139,7 @@ function Footer(): React.JSX.Element {
           </div>
           <div className='footer__nav-section'>
             <div>
-              <p className='footer__nav-title'>{t("navigation.subdomains")}</p>
+              <p className='footer__nav-title'>{t((m) => m.Footer.navigation.subdomains)}</p>
               <ul className='footer__nav-list'>
                 <li>
                   <Link
@@ -182,34 +182,34 @@ function Footer(): React.JSX.Element {
               </ul>
             </div>
             <div>
-              <p className='footer__nav-title'>{t("navigation.about")}</p>
+              <p className='footer__nav-title'>{t((m) => m.Footer.navigation.about)}</p>
               <ul className='footer__nav-list'>
                 <li>
                   <Link
                     href='/about'
                     className='footer__nav-link'>
-                    {t("navigation.what")}
+                    {t((m) => m.Footer.navigation.what)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/acknowledgements'
                     className='footer__nav-link'>
-                    {t("navigation.acknowledgements")}
+                    {t((m) => m.Footer.navigation.acknowledgements)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/terms-of-service'
                     className='footer__nav-link'>
-                    {t("navigation.termsOfService")}
+                    {t((m) => m.Footer.navigation.termsOfService)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/privacy-policy'
                     className='footer__nav-link'>
-                    {t("navigation.privacyPolicy")}
+                    {t((m) => m.Footer.navigation.privacyPolicy)}
                   </Link>
                 </li>
               </ul>
@@ -220,15 +220,15 @@ function Footer(): React.JSX.Element {
         {/* Footer metadata information */}
         <div className='footer__meta'>
           <p className='footer__copyright'>
-            &copy; {t("copyright")} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
+            &copy; {t((m) => m.Footer.copyright)} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='footer__source-prefix'>
-              {t("sourceCode")}
+              {t((m) => m.Footer.sourceCode)}
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
                 rel='noopener noreferrer'
                 className='footer__source-link'>
-                {t("sourceCodeAnchor")}
+                {t((m) => m.Footer.sourceCodeAnchor)}
               </Link>
             </span>
           </p>
@@ -238,7 +238,7 @@ function Footer(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'
               about='GitHub'
-              aria-label={t("socialLinks.github")}>
+              aria-label={t((m) => m.Footer.socialLinks.github)}>
               <TbBrandGithub className='footer__social-icon' />
             </Link>
             <Link
@@ -246,7 +246,7 @@ function Footer(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'
               about='LinkedIn'
-              aria-label={t("socialLinks.linkedin")}>
+              aria-label={t((m) => m.Footer.socialLinks.linkedin)}>
               <TbBrandLinkedin className='footer__social-icon' />
             </Link>
           </div>
@@ -254,7 +254,7 @@ function Footer(): React.JSX.Element {
         <div className='footer__build-info'>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={<span className='footer__build-tooltip'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>} />
+              <TooltipTrigger render={<span className='footer__build-tooltip'>{`${t((m) => m.Footer.builtOn)} ${TIMESTAMP.split("T")[0]}`}</span>} />
               <TooltipContent>
                 <code className='footer__build-tooltip'>{new Date(TIMESTAMP).toUTCString()}</code>
               </TooltipContent>
@@ -262,7 +262,7 @@ function Footer(): React.JSX.Element {
           </TooltipProvider>
           <br />
           <span>
-            {t("commitSha")}{" "}
+            {t((m) => m.Footer.commitSha)}{" "}
             <Link
               href={`https://github.com/arolariu/arolariu.ro/commit/${COMMIT_SHA}`}
               target='_blank'

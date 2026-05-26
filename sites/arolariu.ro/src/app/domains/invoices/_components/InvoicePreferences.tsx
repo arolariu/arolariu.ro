@@ -22,7 +22,7 @@ import {
   toast,
   useLocalStorage,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbSettings} from "react-icons/tb";
 import styles from "./InvoicePreferences.module.scss";
@@ -70,7 +70,7 @@ const DEFAULT_PREFERENCES: InvoicePreferencesType = {
  * @returns The InvoicePreferences component
  */
 export default function InvoicePreferences(): React.JSX.Element {
-  const t = useTranslations("IMS--Common.preferences");
+  const t = useTranslations();
 
   const [preferences, setPreferences] = useLocalStorage<InvoicePreferencesType>("invoice-preferences", DEFAULT_PREFERENCES);
 
@@ -79,7 +79,7 @@ export default function InvoicePreferences(): React.JSX.Element {
    */
   const handleSave = useCallback(() => {
     // Preferences are already saved via useLocalStorage setter
-    toast.success(t("saved"));
+    toast.success(t((m) => m["IMS--Common"].preferences.saved));
   }, [t]);
 
   /**
@@ -100,7 +100,7 @@ export default function InvoicePreferences(): React.JSX.Element {
             className={styles["icon"]}
             aria-hidden='true'
           />
-          {t("title")}
+          {t((m) => m["IMS--Common"].preferences.title)}
         </CardTitle>
       </CardHeader>
       <CardContent className={styles["content"]}>
@@ -108,7 +108,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           <Label
             htmlFor='defaultViewMode'
             className={styles["label"]}>
-            {t("defaultView")}
+            {t((m) => m["IMS--Common"].preferences.defaultView)}
           </Label>
           <Select
             value={preferences.defaultViewMode}
@@ -119,8 +119,8 @@ export default function InvoicePreferences(): React.JSX.Element {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='table'>{t("views.table")}</SelectItem>
-              <SelectItem value='grid'>{t("views.grid")}</SelectItem>
+              <SelectItem value='table'>{t((m) => m["IMS--Common"].preferences.views.table)}</SelectItem>
+              <SelectItem value='grid'>{t((m) => m["IMS--Common"].preferences.views.grid)}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -129,7 +129,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           <Label
             htmlFor='defaultSortBy'
             className={styles["label"]}>
-            {t("sortBy")}
+            {t((m) => m["IMS--Common"].preferences.sortBy)}
           </Label>
           <Select
             value={preferences.defaultSortBy}
@@ -140,11 +140,11 @@ export default function InvoicePreferences(): React.JSX.Element {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='dateDesc'>{t("sortOptions.dateDesc")}</SelectItem>
-              <SelectItem value='dateAsc'>{t("sortOptions.dateAsc")}</SelectItem>
-              <SelectItem value='amountDesc'>{t("sortOptions.amountDesc")}</SelectItem>
-              <SelectItem value='amountAsc'>{t("sortOptions.amountAsc")}</SelectItem>
-              <SelectItem value='nameAsc'>{t("sortOptions.nameAsc")}</SelectItem>
+              <SelectItem value='dateDesc'>{t((m) => m["IMS--Common"].preferences.sortOptions.dateDesc)}</SelectItem>
+              <SelectItem value='dateAsc'>{t((m) => m["IMS--Common"].preferences.sortOptions.dateAsc)}</SelectItem>
+              <SelectItem value='amountDesc'>{t((m) => m["IMS--Common"].preferences.sortOptions.amountDesc)}</SelectItem>
+              <SelectItem value='amountAsc'>{t((m) => m["IMS--Common"].preferences.sortOptions.amountAsc)}</SelectItem>
+              <SelectItem value='nameAsc'>{t((m) => m["IMS--Common"].preferences.sortOptions.nameAsc)}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -153,7 +153,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           <Label
             htmlFor='defaultPageSize'
             className={styles["label"]}>
-            {t("pageSize")}
+            {t((m) => m["IMS--Common"].preferences.pageSize)}
           </Label>
           <Select
             value={preferences.defaultPageSize.toString()}
@@ -176,7 +176,7 @@ export default function InvoicePreferences(): React.JSX.Element {
           <Label
             htmlFor='currency'
             className={styles["label"]}>
-            {t("currency")}
+            {t((m) => m["IMS--Common"].preferences.currency)}
           </Label>
           <Select
             value={preferences.currency}
@@ -205,7 +205,7 @@ export default function InvoicePreferences(): React.JSX.Element {
             <Label
               htmlFor='showStatisticsOnHome'
               className={styles["checkboxLabel"]}>
-              {t("showStats")}
+              {t((m) => m["IMS--Common"].preferences.showStats)}
             </Label>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function InvoicePreferences(): React.JSX.Element {
         <Button
           onClick={handleSave}
           className={styles["saveButton"]}>
-          {t("save")}
+          {t((m) => m["IMS--Common"].preferences.save)}
         </Button>
       </CardContent>
     </Card>

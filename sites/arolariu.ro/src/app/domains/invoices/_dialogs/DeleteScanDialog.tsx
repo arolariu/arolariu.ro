@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbLoader2, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
@@ -69,7 +69,7 @@ import { useScanDelete } from "../_hooks/scan";
  * ```
  */
 export default function DeleteScanDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans.deleteDialog");
+  const t = useTranslations();
 
   const {
     isOpen,
@@ -123,12 +123,12 @@ export default function DeleteScanDialog(): React.JSX.Element {
         <AlertDialogHeader>
           <AlertDialogTitle className={styles["dialogTitle"]}>
             <TbTrash className={styles["titleIcon"]} />
-            {t("title")}
+            {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.title)}
           </AlertDialogTitle>
-          <AlertDialogDescription>{t("description", {name: scan.name})}</AlertDialogDescription>
+          <AlertDialogDescription>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.description, {name: scan.name})}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t("cancel")}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.cancel)}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
@@ -136,12 +136,12 @@ export default function DeleteScanDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className={styles["spinnerIcon"]} />
-                {t("deleting")}
+                {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.deleting)}
               </>
             ) : (
               <>
                 <TbTrash className={styles["trashIcon"]} />
-                {t("delete")}
+                {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.delete)}
               </>
             )}
           </AlertDialogAction>

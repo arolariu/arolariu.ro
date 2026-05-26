@@ -36,7 +36,7 @@
 
 import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider} from "../_contexts/DialogContext";
 import BulkActionsToolbar from "./_components/BulkActionsToolbar";
@@ -141,7 +141,7 @@ import {useInvoices} from "../_hooks/invoice";
  */
 export default function RenderViewInvoicesScreen(): React.JSX.Element {
   const {invoices, isLoading} = useInvoices();
-  const t = useTranslations("IMS--List.viewInvoicesIsland");
+  const t = useTranslations();
 
   if (isLoading) {
     return (
@@ -173,17 +173,17 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
               <TabsTrigger
                 value='invoices'
                 className={styles["tabTrigger"]}>
-                {t("tabs.invoices")}
+                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.invoices)}
               </TabsTrigger>
               <TabsTrigger
                 value='statistics'
                 className={styles["tabTrigger"]}>
-                {t("tabs.statistics")}
+                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.statistics)}
               </TabsTrigger>
               <TabsTrigger
                 value='liveAnalysis'
                 className={styles["tabTrigger"]}>
-                {t("tabs.liveAnalysis")}
+                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.liveAnalysis)}
               </TabsTrigger>
             </TabsList>
             <TabsContent

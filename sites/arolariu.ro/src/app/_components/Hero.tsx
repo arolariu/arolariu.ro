@@ -3,7 +3,7 @@
 import {RichText} from "@/presentation/Text";
 import {Separator} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import TechSphere from "../_effects/TechSphere";
 import styles from "./Hero.module.scss";
@@ -16,7 +16,7 @@ import styles from "./Hero.module.scss";
  * @returns The hero section of the homepage, CSR'ed.
  */
 export default function HeroSection(): React.JSX.Element {
-  const t = useTranslations("Home");
+  const t = useTranslations();
   return (
     <section className={styles["section"]}>
       <article className={styles["article"]}>
@@ -27,7 +27,7 @@ export default function HeroSection(): React.JSX.Element {
           transition={{duration: 0.8, delay: 0.3}}
           className={styles["content"]}>
           <h1 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t("title")}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.Home.title)}</span>
           </h1>
           <p className={styles["subtitle"]}>
             <RichText
@@ -41,13 +41,13 @@ export default function HeroSection(): React.JSX.Element {
               href='/domains'
               title=''
               className={styles["ctaButton"]}>
-              {t("cta")}
+              {t((m) => m.Home.cta)}
             </Link>
           </div>
 
           <div className={styles["appreciation"]}>
             <Separator className={styles["appreciationSeparator"]} />
-            <span className={styles["appreciationText"]}>{t("appreciation")}</span>
+            <span className={styles["appreciationText"]}>{t((m) => m.Home.appreciation)}</span>
           </div>
         </motion.div>
         {/* Right side */}

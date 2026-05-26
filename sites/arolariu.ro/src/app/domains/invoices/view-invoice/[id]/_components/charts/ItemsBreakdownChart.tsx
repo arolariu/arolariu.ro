@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import type {QuantityData} from "../../_utils/analytics";
 import styles from "./ItemsBreakdownChart.module.scss";
@@ -53,10 +53,10 @@ function CustomTooltip({active, payload, currency, quantityLabel}: CustomTooltip
 }
 
 export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--View.itemsBreakdownChart");
+  const t = useTranslations();
   const chartConfig = {
     price: {
-      label: t("labels.price"),
+      label: t((m) => m["IMS--View"].itemsBreakdownChart.labels.price),
       color: "var(--ac-chart-2)",
     },
   };
@@ -71,8 +71,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].itemsBreakdownChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].itemsBreakdownChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -106,7 +106,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                     active={false}
                     payload={[]}
                     currency={currency}
-                    quantityLabel={t("labels.quantity")}
+                    quantityLabel={t((m) => m["IMS--View"].itemsBreakdownChart.labels.quantity)}
                   />
                 }
               />

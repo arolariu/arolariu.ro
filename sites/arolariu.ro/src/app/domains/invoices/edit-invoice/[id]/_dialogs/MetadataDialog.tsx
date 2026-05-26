@@ -11,7 +11,7 @@ import {
   Input,
   Label,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
 import styles from "./MetadataDialog.module.scss";
@@ -31,7 +31,7 @@ export const VALID_METADATA_KEYS = [
 ];
 
 const AddDialog = () => {
-  const t = useTranslations("IMS--Dialogs.metadataDialog");
+  const t = useTranslations();
   const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
@@ -61,30 +61,30 @@ const AddDialog = () => {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("add.title")}</DialogTitle>
-          <DialogDescription>{t("add.description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.add.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.add.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>{t("fields.keyLabel")}</Label>
+            <Label htmlFor='key'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.keyLabel)}</Label>
             <Input
               id='key'
               name='key'
               value={addedMetadata.key}
               onChange={handleChange}
-              placeholder={t("fields.keyPlaceholder")}
+              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.keyPlaceholder)}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>{t("fields.valueLabel")}</Label>
+            <Label htmlFor='value'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.valueLabel)}</Label>
             <Input
               id='value'
               name='value'
               value={addedMetadata.value}
               onChange={handleChange}
-              placeholder={t("fields.valuePlaceholder")}
+              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.valuePlaceholder)}
             />
           </div>
         </div>
@@ -94,13 +94,13 @@ const AddDialog = () => {
             type='button'
             variant='outline'
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className={styles["saveIcon"]} />
-            {t("buttons.save")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -109,7 +109,7 @@ const AddDialog = () => {
 };
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const t = useTranslations("IMS--Dialogs.metadataDialog");
+  const t = useTranslations();
   const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
@@ -132,13 +132,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("edit.title")}</DialogTitle>
-          <DialogDescription>{t("edit.description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>{t("edit.fieldLabel")}</Label>
+            <Label htmlFor='key'>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.fieldLabel)}</Label>
             <Input
               id='key'
               value={editedMetadata["key"]}
@@ -147,12 +147,12 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>{t("fields.valueLabel")}</Label>
+            <Label htmlFor='value'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.valueLabel)}</Label>
             <Input
               id='value'
               value={editedMetadata["value"]}
               onChange={handleChange}
-              placeholder={t("fields.valuePlaceholder")}
+              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.valuePlaceholder)}
             />
           </div>
         </div>
@@ -162,13 +162,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className={styles["saveIcon"]} />
-            {t("buttons.save")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -177,7 +177,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const t = useTranslations("IMS--Dialogs.metadataDialog");
+  const t = useTranslations();
   const {isOpen, close} = useDialog("EDIT_INVOICE__METADATA");
 
   const handleDelete = useCallback(() => {
@@ -195,8 +195,8 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("delete.title")}</DialogTitle>
-          <DialogDescription>{t("delete.description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.delete.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.delete.description)}</DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
@@ -204,13 +204,13 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleDelete}
             className={styles["deleteButton"]}>
-            {t("buttons.delete")}
+            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.delete)}
           </Button>
         </DialogFooter>
       </DialogContent>

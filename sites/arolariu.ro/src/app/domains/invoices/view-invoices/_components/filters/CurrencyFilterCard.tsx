@@ -1,7 +1,7 @@
 "use client";
 
 import {Badge} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
 import styles from "./DynamicChipFilterCard.module.scss";
@@ -20,7 +20,7 @@ type Props = {
  * @returns The rendered currency card, or an empty fragment when no options exist.
  */
 export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChange}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const isCurrencyActive = filters.currencies.length > 0;
 
   const activeValue = useMemo((): string | null => {
@@ -42,11 +42,11 @@ export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChang
 
   return (
     <FilterCardFrame
-      title={<>💵 {t("filters.currency")}</>}
+      title={<>💵 {t((m) => m["IMS--List"].invoicesView.filters.currency)}</>}
       active={isCurrencyActive}
       activeValue={activeValue}
-      inactiveLabel={t("filters.currencyAny")}
-      dynamicHintLabel={t("filters.dynamicHint")}>
+      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.currencyAny)}
+      dynamicHintLabel={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
         {availableCurrencies.map((code) => (
           <button

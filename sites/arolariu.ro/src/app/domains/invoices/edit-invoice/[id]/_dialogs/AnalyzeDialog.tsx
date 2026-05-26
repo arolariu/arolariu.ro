@@ -23,7 +23,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {
   TbBolt,
@@ -80,7 +80,7 @@ type AnalysisEnhancement = {
  * @returns The AnalyzeDialog component, CSR'ed.
  */
 export default function AnalyzeDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.analyzeDialog");
+  const t = useTranslations();
   const {
     isOpen,
     close,
@@ -98,55 +98,55 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const analysisOptions: AnalysisOptionConfig[] = [
     {
       id: InvoiceAnalysisOptions.CompleteAnalysis,
-      title: t("options.completeAnalysis.title"),
-      description: t("options.completeAnalysis.description"),
+      title: t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.title),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.description),
       icon: <TbBrain className={styles["optionIcon"]} />,
-      estimatedTime: t("options.completeAnalysis.estimatedTime"),
+      estimatedTime: t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.estimatedTime),
       features: [
-        t("options.completeAnalysis.features.ocrExtraction"),
-        t("options.completeAnalysis.features.itemCategorization"),
-        t("options.completeAnalysis.features.merchantIdentification"),
-        t("options.completeAnalysis.features.priceAnalysis"),
-        t("options.completeAnalysis.features.receiptValidation"),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.features.ocrExtraction),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.features.itemCategorization),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.features.merchantIdentification),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.features.priceAnalysis),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.completeAnalysis.features.receiptValidation),
       ],
       recommended: true,
     },
     {
       id: InvoiceAnalysisOptions.InvoiceOnly,
-      title: t("options.invoiceOnly.title"),
-      description: t("options.invoiceOnly.description"),
+      title: t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.title),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.description),
       icon: <TbReceipt className={styles["optionIcon"]} />,
-      estimatedTime: t("options.invoiceOnly.estimatedTime"),
+      estimatedTime: t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.estimatedTime),
       features: [
-        t("options.invoiceOnly.features.totalExtraction"),
-        t("options.invoiceOnly.features.dateParsing"),
-        t("options.invoiceOnly.features.paymentMethodDetection"),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.features.totalExtraction),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.features.dateParsing),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.invoiceOnly.features.paymentMethodDetection),
       ],
     },
     {
       id: InvoiceAnalysisOptions.InvoiceItemsOnly,
-      title: t("options.itemsOnly.title"),
-      description: t("options.itemsOnly.description"),
+      title: t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.title),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.description),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
-      estimatedTime: t("options.itemsOnly.estimatedTime"),
+      estimatedTime: t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.estimatedTime),
       features: [
-        t("options.itemsOnly.features.itemExtraction"),
-        t("options.itemsOnly.features.categoryAssignment"),
-        t("options.itemsOnly.features.pricePerItem"),
-        t("options.itemsOnly.features.quantityDetection"),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.features.itemExtraction),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.features.categoryAssignment),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.features.pricePerItem),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.itemsOnly.features.quantityDetection),
       ],
     },
     {
       id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
-      title: t("options.merchantOnly.title"),
-      description: t("options.merchantOnly.description"),
+      title: t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.title),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.description),
       icon: <TbBuildingStore className={styles["optionIcon"]} />,
-      estimatedTime: t("options.merchantOnly.estimatedTime"),
+      estimatedTime: t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.estimatedTime),
       features: [
-        t("options.merchantOnly.features.merchantIdentification"),
-        t("options.merchantOnly.features.locationExtraction"),
-        t("options.merchantOnly.features.businessCategory"),
-        t("options.merchantOnly.features.contactInfo"),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.features.merchantIdentification),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.features.locationExtraction),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.features.businessCategory),
+        t((m) => m["IMS--Dialogs"].analyzeDialog.options.merchantOnly.features.contactInfo),
       ],
     },
   ];
@@ -154,20 +154,20 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const analysisEnhancements: AnalysisEnhancement[] = [
     {
       id: "priceComparison",
-      label: t("enhancements.priceComparison.label"),
-      description: t("enhancements.priceComparison.description"),
+      label: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.priceComparison.label),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.priceComparison.description),
       icon: <TbChartBar className={styles["enhancementSmallIcon"]} />,
     },
     {
       id: "savingsTips",
-      label: t("enhancements.savingsTips.label"),
-      description: t("enhancements.savingsTips.description"),
+      label: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.savingsTips.label),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.savingsTips.description),
       icon: <TbSparkles className={styles["enhancementSmallIcon"]} />,
     },
     {
       id: "quickExtract",
-      label: t("enhancements.quickExtract.label"),
-      description: t("enhancements.quickExtract.description"),
+      label: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.quickExtract.label),
+      description: t((m) => m["IMS--Dialogs"].analyzeDialog.enhancements.quickExtract.description),
       icon: <TbBolt className={styles["enhancementSmallIcon"]} />,
     },
   ];
@@ -195,11 +195,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
       });
 
     const steps = [
-      t("analysisSteps.preparingDocument"),
-      t("analysisSteps.runningOcrExtraction"),
-      t("analysisSteps.analyzingWithAi"),
-      t("analysisSteps.categorizingItems"),
-      t("analysisSteps.finalizingResults"),
+      t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.preparingDocument),
+      t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.runningOcrExtraction),
+      t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.analyzingWithAi),
+      t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.categorizingItems),
+      t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.finalizingResults),
     ];
 
     try {
@@ -225,7 +225,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
           const settled = await Promise.race([analysisSettledPromise, delay(0).then(() => false)]);
           if (settled) return;
 
-          setCurrentStep(steps[i] ?? t("analysisSteps.processing"));
+          setCurrentStep(steps[i] ?? t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.processing));
           setProgress(((i + 1) / steps.length) * 95);
 
           // Wait briefly before advancing steps, but don't block completion.
@@ -246,18 +246,18 @@ export default function AnalyzeDialog(): React.JSX.Element {
         enhancements: selectedEnhancements,
       });
 
-      setCurrentStep(t("analysisSteps.finalizingResults"));
+      setCurrentStep(t((m) => m["IMS--Dialogs"].analyzeDialog.analysisSteps.finalizingResults));
       setProgress(100);
 
-      toast(t("toasts.analysisComplete.title"), {
-        description: t("toasts.analysisComplete.description"),
+      toast(t((m) => m["IMS--Dialogs"].analyzeDialog.toasts.analysisComplete.title), {
+        description: t((m) => m["IMS--Dialogs"].analyzeDialog.toasts.analysisComplete.description),
       });
 
       close();
     } catch (error) {
       console.error("Error analyzing invoice:", error);
-      toast(t("toasts.analysisFailed.title"), {
-        description: t("toasts.analysisFailed.description"),
+      toast(t((m) => m["IMS--Dialogs"].analyzeDialog.toasts.analysisFailed.title), {
+        description: t((m) => m["IMS--Dialogs"].analyzeDialog.toasts.analysisFailed.description),
       });
     } finally {
       setIsAnalyzing(false);
@@ -279,10 +279,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>
             <TbScanEye className={styles["scanIcon"]} />
-            {t("header.title")}
+            {t((m) => m["IMS--Dialogs"].analyzeDialog.header.title)}
           </DialogTitle>
           <DialogDescription>
-            {t("header.description")} <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
+            {t((m) => m["IMS--Dialogs"].analyzeDialog.header.description)} <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -301,7 +301,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   className={styles["spinnerIcon"]}>
                   <TbLoader2 className={styles["spinnerLargeIcon"]} />
                 </motion.div>
-                <h3 className={styles["analyzingTitle"]}>{t("analyzing.title")}</h3>
+                <h3 className={styles["analyzingTitle"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.analyzing.title)}</h3>
                 <p className={styles["analyzingStep"]}>{currentStep}</p>
               </div>
               <div className={styles["progressWrapper"]}>
@@ -309,7 +309,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   value={progress}
                   className={styles["progressBar"]}
                 />
-                <p className={styles["progressText"]}>{t("analyzing.progressComplete", {progress: String(Math.round(progress))})}</p>
+                <p className={styles["progressText"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.analyzing.progressComplete, {progress: String(Math.round(progress))})}</p>
               </div>
             </motion.div>
           ) : (
@@ -321,7 +321,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
               className={styles["optionsSection"]}>
               {/* Analysis Type Selection */}
               <div className={styles["sectionLabel"]}>
-                <Label className={styles["sectionLabelLarge"]}>{t("sections.analysisType")}</Label>
+                <Label className={styles["sectionLabelLarge"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.sections.analysisType)}</Label>
                 <div className={styles["optionsGrid"]}>
                   {analysisOptions.map((option) => (
                     <Card
@@ -339,7 +339,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                               <Badge
                                 variant='secondary'
                                 className={styles["recommendedBadge"]}>
-                                {t("badges.recommended")}
+                                {t((m) => m["IMS--Dialogs"].analyzeDialog.badges.recommended)}
                               </Badge>
                             ) : null}
                             {selectedOption === option.id && <TbCheck className={styles["checkIcon"]} />}
@@ -365,7 +365,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className={styles["featuresSection"]}>
-                  <Label className={styles["sectionLabelText"]}>{t("sections.includedFeatures")}</Label>
+                  <Label className={styles["sectionLabelText"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.sections.includedFeatures)}</Label>
                   <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
@@ -384,7 +384,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
               {/* Analysis Enhancements */}
               <div className={styles["enhancementsSection"]}>
-                <Label className={styles["sectionLabelLarge"]}>{t("sections.enhancementsOptional")}</Label>
+                <Label className={styles["sectionLabelLarge"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.sections.enhancementsOptional)}</Label>
                 <div className={styles["enhancementsSection"]}>
                   {analysisEnhancements.map((enhancement) => (
                     <div
@@ -422,13 +422,13 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
                         {selectedEnhancements.length > 0
-                          ? t("summary.enhancementsSelected", {count: String(selectedEnhancements.length)})
-                          : t("summary.noEnhancementsSelected")}
+                          ? t((m) => m["IMS--Dialogs"].analyzeDialog.summary.enhancementsSelected, {count: String(selectedEnhancements.length)})
+                          : t((m) => m["IMS--Dialogs"].analyzeDialog.summary.noEnhancementsSelected)}
                       </p>
                     </div>
                   </div>
                   <div className={styles["summaryRight"]}>
-                    <p className={styles["summaryTimeLabel"]}>{t("summary.estimatedTime")}</p>
+                    <p className={styles["summaryTimeLabel"]}>{t((m) => m["IMS--Dialogs"].analyzeDialog.summary.estimatedTime)}</p>
                     <p className={styles["summaryTimeValue"]}>{selectedConfig?.estimatedTime}</p>
                   </div>
                 </CardContent>
@@ -443,7 +443,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isAnalyzing}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].analyzeDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
@@ -453,12 +453,12 @@ export default function AnalyzeDialog(): React.JSX.Element {
             {isAnalyzing ? (
               <>
                 <TbLoader2 className={styles["buttonSpinner"]} />
-                {t("buttons.analyzing")}
+                {t((m) => m["IMS--Dialogs"].analyzeDialog.buttons.analyzing)}
               </>
             ) : (
               <>
                 <TbScanEye className={styles["buttonScanIcon"]} />
-                {t("buttons.startAnalysis")}
+                {t((m) => m["IMS--Dialogs"].analyzeDialog.buttons.startAnalysis)}
               </>
             )}
           </Button>

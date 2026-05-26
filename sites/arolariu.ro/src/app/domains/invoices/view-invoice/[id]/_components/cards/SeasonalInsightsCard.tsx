@@ -5,7 +5,8 @@ import {formatCurrency, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {ProductCategory, type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
-import {useLocale, useTranslations, type TranslationValues} from "next-intl";
+import {useLocale, type TranslationValues} from "next-intl";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbBulb, TbShoppingBag, TbSparkles, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -18,6 +19,8 @@ type Insight = {
   description: string;
   type: "info" | "warning" | "success";
 };
+
+type SeasonalTranslateFn = (key: string, values?: TranslationValues) => string;
 
 /**
  * Calculate category spending totals from invoice items.
@@ -62,7 +65,7 @@ function calculateHistoricalAverage(invoices: ReadonlyArray<Invoice>): Record<Pr
 function detectSpendingSpikes(
   categorySpending: Record<ProductCategory, number>,
   historicalAvg: Record<ProductCategory, {total: number; count: number}>,
-  t: (key: string, values?: TranslationValues) => string,
+  t: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
   for (const [cat, amount] of Object.entries(categorySpending)) {
@@ -92,7 +95,7 @@ function detectSpendingSpikes(
 /**
  * Get December-specific seasonal insights.
  */
-function getDecemberInsights(date: Date, t: (key: string, values?: TranslationValues) => string): Insight[] {
+function getDecemberInsights(date: Date, t: SeasonalTranslateFn): Insight[] {
   const insights: Insight[] = [
     {
       id: "holiday-season",
@@ -119,7 +122,7 @@ function getDecemberInsights(date: Date, t: (key: string, values?: TranslationVa
 /**
  * Get the default insight when no specific patterns are detected.
  */
-function getDefaultInsight(t: (key: string, values?: TranslationValues) => string): Insight {
+function getDefaultInsight(t: SeasonalTranslateFn): Insight {
   return {
     id: "normal-pattern",
     icon: <TbShoppingBag className={styles["iconSm"]} />,
@@ -132,7 +135,7 @@ function getDefaultInsight(t: (key: string, values?: TranslationValues) => strin
 function detectSeasonalInsights(
   invoice: Invoice,
   allInvoices: ReadonlyArray<Invoice>,
-  t: (key: string, values?: TranslationValues) => string,
+  t: SeasonalTranslateFn,
 ): Insight[] {
   const insights: Insight[] = [];
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
@@ -176,7 +179,11 @@ function getInsightIconClass(type: Insight["type"]): string {
 
 export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--Cards.seasonalInsightsCard");
+  const t = useTranslations();
+  const translate = useMemo<SeasonalTranslateFn>(
+    () => (key, values) => t(selectorFromPath(`IMS--Cards.seasonalInsightsCard.${key}`), values),
+    [t],
+  );
   const {invoice} = useInvoiceContext();
   const allInvoices = useInvoicesStore((state) => state.entities);
   const date = toSafeDate(invoice.paymentInformation.transactionDate);
@@ -222,7 +229,6 @@ export function SeasonalInsightsCard(): React.JSX.Element {
     };
   }, [invoice, allInvoices]);
 
-  const translate = t as (key: string, values?: TranslationValues) => string;
   const insights = useMemo(() => detectSeasonalInsights(invoice, allInvoices, translate), [invoice, allInvoices, translate]);
 
   // If we don't have enough historical data, show a placeholder
@@ -234,7 +240,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbSparkles className={styles["titleIcon"]} />
-            {t("title")}
+            {t((m) => m["IMS--Cards"].seasonalInsightsCard.title)}
           </span>
         </CardTitle>
       </CardHeader>
@@ -247,8 +253,8 @@ export function SeasonalInsightsCard(): React.JSX.Element {
                   <TbBulb className={styles["iconSm"]} />
                 </div>
                 <div className={styles["insightContent"]}>
-                  <p className={styles["insightTitle"]}>{t("insights.insufficientData.title")}</p>
-                  <p className={styles["insightDescription"]}>{t("insights.insufficientData.description")}</p>
+                  <p className={styles["insightTitle"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.insights.insufficientData.title)}</p>
+                  <p className={styles["insightDescription"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.insights.insufficientData.description)}</p>
                 </div>
               </div>
             </div>
@@ -258,7 +264,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
             {/* Month comparison */}
             <div className={styles["monthSection"]}>
               <div className={styles["monthRow"]}>
-                <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
+                <span className={styles["monthLabel"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.month.spendingSoFar, {month: monthName})}</span>
                 <span className={styles["monthValue"]}>
                   {formatCurrency(seasonalData.currentAmount, {currencyCode: currency.code, locale})}
                 </span>
@@ -266,7 +272,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
               <Progress value={seasonalData.percentOfAverage} />
               <div className={styles["monthMeta"]}>
                 <span>
-                  {t("month.vsAverage", {
+                  {t((m) => m["IMS--Cards"].seasonalInsightsCard.month.vsAverage, {
                     month: monthName,
                     amount: formatCurrency(seasonalData.monthAverage, {currencyCode: currency.code, locale}),
                   })}

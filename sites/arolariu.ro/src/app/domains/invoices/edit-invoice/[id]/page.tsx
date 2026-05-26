@@ -3,7 +3,8 @@ import {EMPTY_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
 import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {notFound} from "next/navigation";
 import React from "react";
 import RenderEditInvoiceScreen from "./island";
@@ -57,12 +58,12 @@ import { fetchMerchant } from "../../_actions/merchants";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("IMS--Edit.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m["IMS--Edit"].metadata.title),
+    description: t((m) => m["IMS--Edit"].metadata.description),
   });
 }
 

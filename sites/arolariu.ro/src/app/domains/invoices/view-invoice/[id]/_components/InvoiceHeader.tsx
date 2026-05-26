@@ -2,7 +2,7 @@
 
 import {useUserInformation} from "@/hooks";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import * as React from "react";
 import {TbDownload, TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
@@ -11,7 +11,7 @@ import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./InvoiceHeader.module.scss";
 
 export function InvoiceHeader(): React.JSX.Element {
-  const t = useTranslations("IMS--Common.invoiceHeader");
+  const t = useTranslations();
   const {invoice} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},
@@ -30,12 +30,12 @@ export function InvoiceHeader(): React.JSX.Element {
               <Tooltip>
                 <TooltipTrigger render={<TbHeart className={styles["heartIcon"]} />} />
                 <TooltipContent>
-                  <p>{t("tooltips.importantInvoice")}</p>
+                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.importantInvoice)}</p>
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
-          <p className={styles["invoiceId"]}>{t("id", {id: invoice.id})}</p>
+          <p className={styles["invoiceId"]}>{t((m) => m["IMS--Common"].invoiceHeader.id, {id: invoice.id})}</p>
         </div>
         <div className={styles["actions"]}>
           {Boolean(isOwner) && (
@@ -48,13 +48,13 @@ export function InvoiceHeader(): React.JSX.Element {
                       className={styles["editLink"]}>
                       <Button>
                         <TbPencil className={styles["buttonIcon"]} />
-                        {t("buttons.edit")}
+                        {t((m) => m["IMS--Common"].invoiceHeader.buttons.edit)}
                       </Button>
                     </Link>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.edit")}</p>
+                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.edit)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -64,12 +64,12 @@ export function InvoiceHeader(): React.JSX.Element {
                       variant='destructive'
                       onClick={openDeleteDialog}>
                       <TbTrash className={styles["buttonIcon"]} />
-                      {t("buttons.delete")}
+                      {t((m) => m["IMS--Common"].invoiceHeader.buttons.delete)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.delete")}</p>
+                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.delete)}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -79,12 +79,12 @@ export function InvoiceHeader(): React.JSX.Element {
               render={
                 <Button variant='outline'>
                   <TbPrinter className={styles["buttonIcon"]} />
-                  {t("buttons.print")}
+                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.print)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.print")}</p>
+              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.print)}</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -94,12 +94,12 @@ export function InvoiceHeader(): React.JSX.Element {
                   variant='outline'
                   onClick={openExportDialog}>
                   <TbDownload className={styles["buttonIcon"]} />
-                  {t("buttons.export")}
+                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.export)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.export")}</p>
+              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.export)}</p>
             </TooltipContent>
           </Tooltip>
         </div>

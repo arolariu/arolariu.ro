@@ -20,7 +20,7 @@ import {
   Input,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect} from "react";
 import {
   TbCheck,
@@ -57,7 +57,7 @@ function formatFileSize(bytes: number): string {
  * Individual scan card with selection checkbox, inline rename, and preview.
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans.scanCard");
+  const t = useTranslations();
   const {openDialog} = useDialogs();
 
   const rename = useScanRename(scan);
@@ -125,7 +125,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
           </div>
           <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t("loading")}</div>
+            <div className={styles["fileName"]}>{t((m) => m["IMS--ViewScans"].scanCard.loading)}</div>
           </div>
         </CardContent>
       </Card>
@@ -204,7 +204,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               <DropdownMenuContent align='end'>
                 <DropdownMenuItem onClick={rename.start}>
                   <TbPencil className={styles["trashIcon"]} />
-                  {t("actions.rename")}
+                  {t((m) => m["IMS--ViewScans"].scanCard.actions.rename)}
                 </DropdownMenuItem>
                 {scan.mimeType !== "application/pdf" && (
                   <>
@@ -212,13 +212,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                       onClick={() => rotation.rotateScanCallback("cw")}
                       disabled={rotation.isRotating}>
                       <TbRotateClockwise className={styles["trashIcon"]} />
-                      {t("actions.rotateCW")}
+                      {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCW)}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => rotation.rotateScanCallback("ccw")}
                       disabled={rotation.isRotating}>
                       <TbRotate className={styles["trashIcon"]} />
-                      {t("actions.rotateCCW")}
+                      {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCCW)}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -226,7 +226,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   className={styles["deleteMenuItem"]}
                   onClick={handleOpenDeleteDialog}>
                   <TbTrash className={styles["trashIcon"]} />
-                  {t("actions.delete")}
+                  {t((m) => m["IMS--ViewScans"].scanCard.actions.delete)}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -237,7 +237,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["linkedBadgePosition"]}>
               <div className={styles["linkedBadge"]}>
                 <TbLink className={styles["linkedIcon"]} />
-                {t("linked")}
+                {t((m) => m["IMS--ViewScans"].scanCard.linked)}
               </div>
             </div>
           ) : null}
@@ -246,7 +246,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           {rotation.isRotating ? (
             <div className={styles["rotatingOverlay"]}>
               <div className={styles["rotatingSpinner"]} />
-              <span className={styles["rotatingText"]}>{t("actions.rotating")}</span>
+              <span className={styles["rotatingText"]}>{t((m) => m["IMS--ViewScans"].scanCard.actions.rotating)}</span>
             </div>
           ) : null}
         </div>
@@ -264,7 +264,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 onChange={handleNameChange}
                 onKeyDown={handleRenameKeyDown}
                 onBlur={rename.cancel}
-                placeholder={t("renamePlaceholder")}
+                placeholder={t((m) => m["IMS--ViewScans"].scanCard.renamePlaceholder)}
                 className={styles["renameInput"]}
               />
               <div className={styles["renameActions"]}>

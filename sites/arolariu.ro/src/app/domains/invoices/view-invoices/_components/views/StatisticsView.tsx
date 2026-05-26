@@ -24,7 +24,7 @@
 
 import type {Invoice} from "@/types/invoices";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
@@ -67,7 +67,7 @@ type Props = {
  * Empty state component when no invoices exist.
  */
 function EmptyState(): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.empty");
+  const t = useTranslations();
 
   return (
     <motion.div
@@ -78,8 +78,8 @@ function EmptyState(): React.JSX.Element {
       <div className={styles["emptyIcon"]}>
         <TbChartBar size={64} />
       </div>
-      <h2 className={styles["emptyTitle"]}>{t("title")}</h2>
-      <p className={styles["emptySubtitle"]}>{t("subtitle")}</p>
+      <h2 className={styles["emptyTitle"]}>{t((m) => m["IMS--Stats"].empty.title)}</h2>
+      <p className={styles["emptySubtitle"]}>{t((m) => m["IMS--Stats"].empty.subtitle)}</p>
     </motion.div>
   );
 }
@@ -106,7 +106,7 @@ function EmptyState(): React.JSX.Element {
  * @returns Statistics dashboard JSX element or empty state
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Stats");
+  const t = useTranslations();
 
   // Compute all statistics data with memoization
   const kpiData = useMemo(() => computeKPIs(invoices), [invoices]);
@@ -139,8 +139,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
       <div className={styles["container"]}>
         <div className={styles["header"]}>
           <div className={styles["headerContent"]}>
-            <h1 className={styles["title"]}>{t("title")}</h1>
-            <p className={styles["subtitle"]}>{t("subtitle")}</p>
+            <h1 className={styles["title"]}>{t((m) => m["IMS--Stats"].title)}</h1>
+            <p className={styles["subtitle"]}>{t((m) => m["IMS--Stats"].subtitle)}</p>
           </div>
         </div>
         <EmptyState />
@@ -157,8 +157,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.5}}>
         <div className={styles["headerContent"]}>
-          <h1 className={styles["title"]}>{t("title")}</h1>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h1 className={styles["title"]}>{t((m) => m["IMS--Stats"].title)}</h1>
+          <p className={styles["subtitle"]}>{t((m) => m["IMS--Stats"].subtitle)}</p>
         </div>
       </motion.div>
 
@@ -297,8 +297,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5, delay: 0.75}}>
-          <h2 className={styles["sectionTitle"]}>{t("productAnalytics.title")}</h2>
-          <p className={styles["sectionSubtitle"]}>{t("productAnalytics.subtitle")}</p>
+          <h2 className={styles["sectionTitle"]}>{t((m) => m["IMS--Stats"].productAnalytics.title)}</h2>
+          <p className={styles["sectionSubtitle"]}>{t((m) => m["IMS--Stats"].productAnalytics.subtitle)}</p>
         </motion.div>
       </section>
 

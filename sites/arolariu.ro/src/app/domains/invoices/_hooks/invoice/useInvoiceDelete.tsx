@@ -13,7 +13,7 @@
 
 import {useInvoicesStore} from "@/stores";
 import {toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import { deleteInvoice as deleteInvoiceServerSide } from "../../_actions/invoices";
 import { useRouter } from "next/navigation";
@@ -113,7 +113,7 @@ type HookOutputType = Readonly<{
 export function useInvoiceDelete(): Readonly<HookOutputType> {
   const deleteInvoiceClientSide = useInvoicesStore((state) => state.removeEntity);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const t = useTranslations("IMS--Hooks.useInvoiceDelete");
+  const t = useTranslations();
   const router = useRouter();
 
   /**
@@ -239,7 +239,7 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
       try {
         if (typeof invoiceIdOrIds === "string") {
           await performMutation(invoiceIdOrIds);
-          toast.success(t("deleteSuccess"));
+          toast.success(t((m) => m["IMS--Hooks"].useInvoiceDelete.deleteSuccess));
           router.push("/domains/invoices/view-invoices");
         } else {
           const result = await processBulkRecursive(invoiceIdOrIds, 0, {
@@ -252,18 +252,18 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
           const hasSuccess = result.successCount > 0;
 
           if (!hasFailure) {
-            toast.success(t("bulkDeleteSuccess", {count: String(result.successCount)}));
+            toast.success(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
           } else if (!hasSuccess) {
-            toast.error(t("bulkDeleteError", {count: String(result.failureCount)}));
+            toast.error(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
           } else {
-            toast.info(t("bulkDeletePartial", {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
+            toast.info(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
           }
 
           return result;
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t("deleteError", {error: message}));
+        toast.error(t((m) => m["IMS--Hooks"].useInvoiceDelete.deleteError, {error: message}));
         console.error("Error deleting invoice:", error);
       } finally {
         setIsDeleting(false);

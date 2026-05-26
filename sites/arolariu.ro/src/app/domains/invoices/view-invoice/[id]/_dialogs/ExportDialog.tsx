@@ -32,7 +32,7 @@
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {pdf} from "@react-pdf/renderer";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbChevronRight, TbClipboard, TbCode, TbFileSpreadsheet, TbFileTypePdf} from "react-icons/tb";
 import styles from "./ExportDialog.module.scss";
@@ -84,7 +84,7 @@ import { InvoicePDF } from "../_components/export/InvoicePDF";
  * ```
  */
 export function ExportDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--View.export");
+  const t = useTranslations();
   const {invoice, merchant} = useInvoiceContext();
   const {isOpen, close} = useDialog("VIEW_INVOICE__EXPORT");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -135,11 +135,11 @@ export function ExportDialog(): React.JSX.Element {
       link.remove();
       URL.revokeObjectURL(url);
 
-      toast.success(t("csvSuccess"));
+      toast.success(t((m) => m["IMS--View"].export.csvSuccess));
       close();
     } catch (error) {
       console.error("Failed to export CSV:", error);
-      toast.error(t("csvError"));
+      toast.error(t((m) => m["IMS--View"].export.csvError));
     }
   }, [invoice, close, t]);
 
@@ -170,11 +170,11 @@ export function ExportDialog(): React.JSX.Element {
       link.remove();
       URL.revokeObjectURL(url);
 
-      toast.success(t("jsonSuccess"));
+      toast.success(t((m) => m["IMS--View"].export.jsonSuccess));
       close();
     } catch (error) {
       console.error("Failed to export JSON:", error);
-      toast.error(t("jsonError"));
+      toast.error(t((m) => m["IMS--View"].export.jsonError));
     }
   }, [invoice, close, t]);
 
@@ -206,11 +206,11 @@ Items: ${invoice.items.length}
       `.trim();
 
       await navigator.clipboard.writeText(summary);
-      toast.success(t("copySuccess"));
+      toast.success(t((m) => m["IMS--View"].export.copySuccess));
       close();
     } catch (error) {
       console.error("Failed to copy summary:", error);
-      toast.error(t("copyError"));
+      toast.error(t((m) => m["IMS--View"].export.copyError));
     }
   }, [invoice, merchant, close, t]);
 
@@ -238,7 +238,7 @@ Items: ${invoice.items.length}
    */
   const handleExportPDF = useCallback(async (): Promise<void> => {
     setIsGeneratingPDF(true);
-    const loadingToastId = toast.loading(t("pdfGenerating"));
+    const loadingToastId = toast.loading(t((m) => m["IMS--View"].export.pdfGenerating));
 
     try {
       // Generate PDF blob
@@ -265,12 +265,12 @@ Items: ${invoice.items.length}
       URL.revokeObjectURL(url);
 
       toast.dismiss(loadingToastId);
-      toast.success(t("pdfSuccess"));
+      toast.success(t((m) => m["IMS--View"].export.pdfSuccess));
       close();
     } catch (error) {
       console.error("Failed to generate PDF:", error);
       toast.dismiss(loadingToastId);
-      toast.error(t("pdfError"));
+      toast.error(t((m) => m["IMS--View"].export.pdfError));
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -282,8 +282,8 @@ Items: ${invoice.items.length}
       onOpenChange={close}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--View"].export.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--View"].export.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["exportOptions"]}>
@@ -297,8 +297,8 @@ Items: ${invoice.items.length}
               <TbFileTypePdf />
             </div>
             <div className={styles["exportCardContent"]}>
-              <h3>{t("pdf.title")}</h3>
-              <p>{t("pdf.description")}</p>
+              <h3>{t((m) => m["IMS--View"].export.pdf.title)}</h3>
+              <p>{t((m) => m["IMS--View"].export.pdf.description)}</p>
             </div>
             <TbChevronRight className={styles["exportCardArrow"]} />
           </button>
@@ -312,8 +312,8 @@ Items: ${invoice.items.length}
               <TbFileSpreadsheet />
             </div>
             <div className={styles["exportCardContent"]}>
-              <h3>{t("csv.title")}</h3>
-              <p>{t("csv.description")}</p>
+              <h3>{t((m) => m["IMS--View"].export.csv.title)}</h3>
+              <p>{t((m) => m["IMS--View"].export.csv.description)}</p>
             </div>
             <TbChevronRight className={styles["exportCardArrow"]} />
           </button>
@@ -327,8 +327,8 @@ Items: ${invoice.items.length}
               <TbCode />
             </div>
             <div className={styles["exportCardContent"]}>
-              <h3>{t("json.title")}</h3>
-              <p>{t("json.description")}</p>
+              <h3>{t((m) => m["IMS--View"].export.json.title)}</h3>
+              <p>{t((m) => m["IMS--View"].export.json.description)}</p>
             </div>
             <TbChevronRight className={styles["exportCardArrow"]} />
           </button>
@@ -342,8 +342,8 @@ Items: ${invoice.items.length}
               <TbClipboard />
             </div>
             <div className={styles["exportCardContent"]}>
-              <h3>{t("copySummary.title")}</h3>
-              <p>{t("copySummary.description")}</p>
+              <h3>{t((m) => m["IMS--View"].export.copySummary.title)}</h3>
+              <p>{t((m) => m["IMS--View"].export.copySummary.description)}</p>
             </div>
             <TbChevronRight className={styles["exportCardArrow"]} />
           </button>

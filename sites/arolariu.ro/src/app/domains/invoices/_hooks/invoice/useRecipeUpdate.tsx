@@ -12,7 +12,7 @@
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice, Recipe} from "@/types/invoices";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 
 /**
@@ -47,7 +47,7 @@ type HookOutputType = Readonly<{
  * ```
  */
 export function useRecipeUpdate(invoice: Invoice): Readonly<HookOutputType> {
-  const t = useTranslations("IMS--Hooks.useRecipeUpdate");
+  const t = useTranslations();
   const updateRecipeClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isUpdating, setIsUpdating] = useState(false);
 

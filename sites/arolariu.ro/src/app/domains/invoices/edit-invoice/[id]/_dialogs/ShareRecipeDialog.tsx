@@ -1,14 +1,14 @@
 "use client";
 
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbCopy, TbShare} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ShareRecipeDialog.module.scss";
 
 export default function ShareRecipeDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.recipeDialog");
+  const t = useTranslations();
   const {
     currentDialog: {payload},
     isOpen,
@@ -19,16 +19,16 @@ export default function ShareRecipeDialog(): React.JSX.Element {
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) {
-      toast.info(t("share.unavailable"));
+      toast.info(t((m) => m["IMS--Dialogs"].recipeDialog.share.unavailable));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(t("share.copied"));
+      toast.success(t((m) => m["IMS--Dialogs"].recipeDialog.share.copied));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t("share.copyFailed"));
+      toast.error(message || t((m) => m["IMS--Dialogs"].recipeDialog.share.copyFailed));
     }
   }, [shareUrl, t]);
 
@@ -45,8 +45,8 @@ export default function ShareRecipeDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("share.title")}</DialogTitle>
-          <DialogDescription>{recipe ? t("share.description") : t("share.missingRecipe")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.share.title)}</DialogTitle>
+          <DialogDescription>{recipe ? t((m) => m["IMS--Dialogs"].recipeDialog.share.description) : t((m) => m["IMS--Dialogs"].recipeDialog.share.missingRecipe)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
@@ -63,11 +63,11 @@ export default function ShareRecipeDialog(): React.JSX.Element {
                   />
                 </div>
               ) : (
-                <p className={styles["readText"]}>{t("share.unavailable")}</p>
+                <p className={styles["readText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.share.unavailable)}</p>
               )}
             </div>
           ) : (
-            <p className={styles["readText"]}>{t("share.missingRecipe")}</p>
+            <p className={styles["readText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.share.missingRecipe)}</p>
           )}
         </div>
 
@@ -77,14 +77,14 @@ export default function ShareRecipeDialog(): React.JSX.Element {
               type='button'
               variant='outline'
               onClick={close}>
-              {t("buttons.close")}
+              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.close)}
             </Button>
             <Button
               type='button'
               onClick={handleCopy}
               disabled={!shareUrl}>
               <TbCopy className={styles["saveIcon"]} />
-              {t("share.copy")}
+              {t((m) => m["IMS--Dialogs"].recipeDialog.share.copy)}
             </Button>
           </div>
         </DialogFooter>

@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
 import styles from "./ImageCard.module.scss";
@@ -54,7 +54,7 @@ type Props = {invoice: Invoice};
  * @see {@link RemoveScanDialog} - Dialog for removing scans
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Cards.imageCard");
+  const t = useTranslations();
   const [currentScanIndex, setCurrentScanIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
@@ -101,7 +101,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>
-            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
+            {totalScans > 1 ? t((m) => m["IMS--Cards"].imageCard.titleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)}) : t((m) => m["IMS--Cards"].imageCard.title)}
           </CardTitle>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
@@ -112,12 +112,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               variant='ghost'
               className={styles["imageButton"]}
               onClick={handleOpenZoom}
-              aria-label={t("aria.expandImage")}>
+              aria-label={t((m) => m["IMS--Cards"].imageCard.aria.expandImage)}>
               {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={currentScanSrc}
-                alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
+                alt={t((m) => m["IMS--Cards"].imageCard.scanAlt, {index: String(currentScanIndex + 1)})}
                 width={400}
                 height={600}
                 loading='lazy'
@@ -132,8 +132,8 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
-                    ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)})
-                    : t("dialogTitle")}
+                    ? t((m) => m["IMS--Cards"].imageCard.dialogTitleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    : t((m) => m["IMS--Cards"].imageCard.dialogTitle)}
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["zoomContainer"]}>
@@ -141,7 +141,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={currentScanSrc}
-                  alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
+                  alt={t((m) => m["IMS--Cards"].imageCard.scanAltFullSize, {index: String(currentScanIndex + 1)})}
                   width={800}
                   height={1200}
                   loading='lazy'
@@ -162,12 +162,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   className={styles["fullWidthButton"]}
                   onClick={handleOpenZoom}>
                   <TbZoomIn className={styles["buttonIcon"]} />
-                  {t("buttons.expand")}
+                  {t((m) => m["IMS--Cards"].imageCard.buttons.expand)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.expand")}</p>
+              <p>{t((m) => m["IMS--Cards"].imageCard.tooltips.expand)}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -183,12 +183,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                         className={styles["navButton"]}
                         onClick={handlePreviousScan}>
                         <TbChevronLeft className={styles["chevronIcon"]} />
-                        {t("buttons.previous")}
+                        {t((m) => m["IMS--Cards"].imageCard.buttons.previous)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t("tooltips.previous")}</p>
+                    <p>{t((m) => m["IMS--Cards"].imageCard.tooltips.previous)}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -200,13 +200,13 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                         variant='secondary'
                         className={styles["navButton"]}
                         onClick={handleNextScan}>
-                        {t("buttons.next")}
+                        {t((m) => m["IMS--Cards"].imageCard.buttons.next)}
                         <TbChevronRight className={styles["chevronIconRight"]} />
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t("tooltips.next")}</p>
+                    <p>{t((m) => m["IMS--Cards"].imageCard.tooltips.next)}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -223,12 +223,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                     className={styles["navButton"]}
                     onClick={openAddScan}>
                     <TbPlus className={styles["chevronIcon"]} />
-                    {t("buttons.addScan")}
+                    {t((m) => m["IMS--Cards"].imageCard.buttons.addScan)}
                   </Button>
                 }
               />
               <TooltipContent>
-                <p>{t("tooltips.addScan")}</p>
+                <p>{t((m) => m["IMS--Cards"].imageCard.tooltips.addScan)}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -240,12 +240,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                     onClick={openRemoveScan}
                     disabled={totalScans === 0}>
                     <TbTrash className={styles["chevronIcon"]} />
-                    {t("buttons.remove")}
+                    {t((m) => m["IMS--Cards"].imageCard.buttons.remove)}
                   </Button>
                 }
               />
               <TooltipContent>
-                <p>{t("tooltips.remove")}</p>
+                <p>{t((m) => m["IMS--Cards"].imageCard.tooltips.remove)}</p>
               </TooltipContent>
             </Tooltip>
           </div>

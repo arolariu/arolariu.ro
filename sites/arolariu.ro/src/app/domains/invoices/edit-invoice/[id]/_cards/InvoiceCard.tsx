@@ -29,7 +29,8 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
 import styles from "./InvoiceCard.module.scss";
@@ -74,7 +75,7 @@ import ItemsTable from "../_components/tables/ItemsTable";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--Cards.invoiceCard");
+  const t = useTranslations();
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
     useEditInvoiceContext();
   const {paymentInformation, category, isImportant, description} = invoice;
@@ -177,7 +178,7 @@ export default function InvoiceCard(): React.JSX.Element {
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div className={styles["headerRow"]}>
-            <CardTitle>{t("title")}</CardTitle>
+            <CardTitle>{t((m) => m["IMS--Cards"].invoiceCard.title)}</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
@@ -187,23 +188,23 @@ export default function InvoiceCard(): React.JSX.Element {
                       className={styles["importantBadge"]}
                       onClick={handleImportantToggle}>
                       <TbHeart className={currentIsImportant ? styles["heartIconFilled"] : styles["heartIcon"]} />
-                      {currentIsImportant ? t("importantBadge") : t("markImportant")}
+                      {currentIsImportant ? t((m) => m["IMS--Cards"].invoiceCard.importantBadge) : t((m) => m["IMS--Cards"].invoiceCard.markImportant)}
                     </Badge>
                   }
                 />
                 <TooltipContent>
-                  <span>{currentIsImportant ? t("tooltips.unmarkFavorite") : t("tooltips.markFavorite")}</span>
+                  <span>{currentIsImportant ? t((m) => m["IMS--Cards"].invoiceCard.tooltips.unmarkFavorite) : t((m) => m["IMS--Cards"].invoiceCard.tooltips.markFavorite)}</span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <CardDescription>
-            {t("fromMerchant", {merchant: merchant?.name ?? ""})}
+            {t((m) => m["IMS--Cards"].invoiceCard.fromMerchant, {merchant: merchant?.name ?? ""})}
             <Separator className={styles["separatorSmall"]} />
             <Textarea
               value={currentDescription}
               onChange={handleDescriptionChange}
-              placeholder={t("descriptionPlaceholder")}
+              placeholder={t((m) => m["IMS--Cards"].invoiceCard.descriptionPlaceholder)}
               className={styles["descriptionTextarea"]}
               rows={3}
             />
@@ -214,7 +215,7 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>{t("labels.dateUtc")}</h3>
+              <h3 className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].invoiceCard.labels.dateUtc)}</h3>
               <div className={styles["dateRow"]}>
                 <TbCalendar className={styles["mutedIcon"]} />
                 <Popover>
@@ -246,7 +247,7 @@ export default function InvoiceCard(): React.JSX.Element {
                         <Label
                           htmlFor='hours'
                           className={styles["timeLabel"]}>
-                          {t("labels.hours")}
+                          {t((m) => m["IMS--Cards"].invoiceCard.labels.hours)}
                         </Label>
                         <Input
                           id='hours'
@@ -263,7 +264,7 @@ export default function InvoiceCard(): React.JSX.Element {
                         <Label
                           htmlFor='minutes'
                           className={styles["timeLabel"]}>
-                          {t("labels.minutes")}
+                          {t((m) => m["IMS--Cards"].invoiceCard.labels.minutes)}
                         </Label>
                         <Input
                           id='minutes'
@@ -275,7 +276,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           className={styles["timeInput"]}
                         />
                       </div>
-                      <span className={styles["timeUtc"]}>{t("labels.utc")}</span>
+                      <span className={styles["timeUtc"]}>{t((m) => m["IMS--Cards"].invoiceCard.labels.utc)}</span>
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -284,14 +285,14 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>{t("labels.category")}</h3>
+              <h3 className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].invoiceCard.labels.category)}</h3>
               <div className={styles["categoryRow"]}>
                 <TbTag className={styles["mutedIcon"]} />
                 <Select
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
                   <SelectTrigger className={styles["categoryTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectCategory")}>{currentCategoryLabel}</SelectValue>
+                    <SelectValue placeholder={t((m) => m["IMS--Cards"].invoiceCard.placeholders.selectCategory)}>{currentCategoryLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -308,14 +309,14 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>{t("labels.paymentMethod")}</h3>
+              <h3 className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].invoiceCard.labels.paymentMethod)}</h3>
               <div className={styles["paymentRow"]}>
                 <TbCreditCard className={styles["mutedIcon"]} />
                 <Select
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger className={styles["paymentTrigger"]}>
-                    <SelectValue placeholder={t("placeholders.selectPaymentType")}>{currentPaymentTypeLabel}</SelectValue>
+                    <SelectValue placeholder={t((m) => m["IMS--Cards"].invoiceCard.placeholders.selectPaymentType)}>{currentPaymentTypeLabel}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTypeOptions.map((option) => (
@@ -332,7 +333,7 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>{t("labels.totalAmount")}</h3>
+              <h3 className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].invoiceCard.labels.totalAmount)}</h3>
               <p className={styles["totalAmount"]}>
                 {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
               </p>

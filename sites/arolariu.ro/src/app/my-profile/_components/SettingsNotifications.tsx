@@ -16,7 +16,7 @@ import {
   Switch,
 } from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef} from "react";
 import {TbBell, TbMail, TbReport, TbShield, TbSparkles, TbWallet} from "react-icons/tb";
 import {REPORT_FREQUENCIES} from "../_utils/constants";
@@ -29,7 +29,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsNotifications({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("Profile.settings.notifications");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 
@@ -68,8 +68,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t("title")}</h2>
-        <p>{t("description")}</p>
+        <h2>{t((m) => m.Profile.settings.notifications.title)}</h2>
+        <p>{t((m) => m.Profile.settings.notifications.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -83,15 +83,15 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbMail className={styles["iconSm"]} />
-                {t("email.title")}
+                {t((m) => m.Profile.settings.notifications.email.title)}
               </CardTitle>
-              <CardDescription>{t("email.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.settings.notifications.email.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("email.enabled")}</Label>
-                  <p>{t("email.enabledHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.email.enabled)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.email.enabledHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -112,9 +112,9 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbReport className={styles["iconSm"]} />
-                {t("reports.title")}
+                {t((m) => m.Profile.settings.notifications.reports.title)}
               </CardTitle>
-              <CardDescription>{t("reports.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.settings.notifications.reports.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <Select
@@ -137,8 +137,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("reports.weeklyDigest")}</Label>
-                  <p>{t("reports.weeklyDigestHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.reports.weeklyDigest)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.reports.weeklyDigestHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -150,8 +150,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("reports.monthlyReport")}</Label>
-                  <p>{t("reports.monthlyReportHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.reports.monthlyReport)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.reports.monthlyReportHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -173,15 +173,15 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbWallet className={styles["iconSm"]} />
-                {t("financial.title")}
+                {t((m) => m.Profile.settings.notifications.financial.title)}
               </CardTitle>
-              <CardDescription>{t("financial.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.settings.notifications.financial.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("financial.spendingAlerts")}</Label>
-                  <p>{t("financial.spendingAlertsHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.financial.spendingAlerts)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.financial.spendingAlertsHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -193,8 +193,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("financial.budgetAlerts")}</Label>
-                  <p>{t("financial.budgetAlertsHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.financial.budgetAlerts)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.financial.budgetAlertsHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -216,15 +216,15 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSparkles className={styles["iconSm"]} />
-                {t("updates.title")}
+                {t((m) => m.Profile.settings.notifications.updates.title)}
               </CardTitle>
-              <CardDescription>{t("updates.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.settings.notifications.updates.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("updates.newFeatures")}</Label>
-                  <p>{t("updates.newFeaturesHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.updates.newFeatures)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.updates.newFeaturesHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -236,8 +236,8 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("updates.marketing")}</Label>
-                  <p>{t("updates.marketingHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.updates.marketing)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.updates.marketingHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -259,15 +259,15 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbShield className={styles["iconSm"]} />
-                {t("security.title")}
+                {t((m) => m.Profile.settings.notifications.security.title)}
               </CardTitle>
-              <CardDescription>{t("security.description")}</CardDescription>
+              <CardDescription>{t((m) => m.Profile.settings.notifications.security.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("security.securityAlerts")}</Label>
-                  <p>{t("security.securityAlertsHint")}</p>
+                  <Label>{t((m) => m.Profile.settings.notifications.security.securityAlerts)}</Label>
+                  <p>{t((m) => m.Profile.settings.notifications.security.securityAlertsHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -278,7 +278,7 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               <div className={styles["alwaysOnNote"]}>
                 <p>
                   <TbBell />
-                  {t("security.alwaysOnNote")}
+                  {t((m) => m.Profile.settings.notifications.security.alwaysOnNote)}
                 </p>
               </div>
             </CardContent>

@@ -1,13 +1,13 @@
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 
 export default function InvoiceNotFound(): React.JSX.Element {
-  const t = useTranslations("Errors.notFound");
+  const t = useTranslations();
   return (
     <section data-scope='view-invoice'>
-      <h1>{t("title")}</h1>
-      <p>{t("subtitle")}</p>
-      <Link href='/domains/invoices/view-invoices'>{t("buttons.returnButton")}</Link>
+      <h1>{t((m) => m.Errors.notFound.title)}</h1>
+      <p>{t((m) => m.Errors.notFound.subtitle)}</p>
+      <Link href='/domains/invoices/view-invoices'>{t((m) => m.Errors.notFound.buttons.returnButton)}</Link>
     </section>
   );
 }
