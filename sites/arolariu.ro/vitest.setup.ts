@@ -61,7 +61,7 @@ vi.mock("@clerk/nextjs", () => ({
 // `useTranslations` and `useLocale` are React hooks that require a
 // `NextIntlClientProvider` context. Client-component tests that don't set
 // up that provider need stubs here. The stubs intentionally return key
-// paths verbatim (e.g., `t("foo.bar")` → `"namespace.foo.bar"`) so tests
+// paths verbatim (e.g., `t((m) => m.foo.bar)` → `"foo.bar"`) so tests
 // can assert on the raw key string without depending on real translation
 // content.
 //
@@ -91,6 +91,30 @@ vi.mock("next-intl", async (importOriginal) => {
       relativeTime: (date: Date | number) => String(date),
       list: (items: Iterable<string>) => Array.from(items).join(", "),
     }),
+  };
+});
+
+vi.mock("next-intl-selector", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl-selector")>();
+  const {mockSelectorTranslator} = await import("next-intl-selector/testing");
+  const makeTranslator = () => mockSelectorTranslator();
+
+  return {
+    ...actual,
+    useTranslations: () => makeTranslator(),
+    createTranslator: () => makeTranslator(),
+    selectorFromPath: actual.selectorFromPath,
+    pathFromSelector: actual.pathFromSelector,
+  };
+});
+
+vi.mock("next-intl-selector/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl-selector/server")>();
+  const {mockSelectorTranslator} = await import("next-intl-selector/testing");
+
+  return {
+    ...actual,
+    getTranslations: async () => mockSelectorTranslator(),
   };
 });
 
