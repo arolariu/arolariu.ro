@@ -54,6 +54,48 @@ function hasNamedImport(node: ts.ImportDeclaration, name: string): boolean {
   return ts.isNamedImports(bindings) && bindings.elements.some((element) => element.name.text === name);
 }
 
+function formatImportSpecifier(importDeclaration: ts.ImportDeclaration, specifier: ts.ImportSpecifier): string {
+  const isTypeOnly = importDeclaration.importClause?.isTypeOnly || specifier.isTypeOnly;
+  const propertyName = specifier.propertyName ? `${specifier.propertyName.text} as ` : "";
+  return `${isTypeOnly ? "type " : ""}${propertyName}${specifier.name.text}`;
+}
+
+function formatNamedImport(moduleName: string, specifiers: readonly string[], wasTypeOnlyImport: boolean): string {
+  const normalizedSpecifiers = specifiers.map((specifier) => (wasTypeOnlyImport && specifier.startsWith("type ") ? specifier.slice("type ".length) : specifier));
+  return `import ${wasTypeOnlyImport ? "type " : ""}{${normalizedSpecifiers.join(", ")}} from ${JSON.stringify(moduleName)};`;
+}
+
+function rewriteSplitImport(
+  sourceFile: ts.SourceFile,
+  state: FileMigrationState,
+  statement: ts.ImportDeclaration,
+  selectorNames: ReadonlySet<string>,
+  selectorModuleName: string,
+): boolean {
+  const bindings = statement.importClause?.namedBindings;
+  if (!ts.isNamedImports(bindings)) return false;
+
+  const selectorSpecifiers: string[] = [];
+  const legacySpecifiers: string[] = [];
+  for (const specifier of bindings.elements) {
+    const formattedSpecifier = formatImportSpecifier(statement, specifier);
+    if (selectorNames.has(specifier.name.text)) {
+      selectorSpecifiers.push(formattedSpecifier);
+    } else {
+      legacySpecifiers.push(formattedSpecifier);
+    }
+  }
+
+  if (selectorSpecifiers.length === 0) return false;
+
+  const replacementParts = [
+    legacySpecifiers.length > 0 ? formatNamedImport(getImportModule(statement)!, legacySpecifiers, statement.importClause?.isTypeOnly === true) : undefined,
+    formatNamedImport(selectorModuleName, selectorSpecifiers, statement.importClause?.isTypeOnly === true && legacySpecifiers.length === 0),
+  ].filter((part): part is string => part !== undefined);
+  addEdit(state, statement.getStart(sourceFile), statement.getEnd(), replacementParts.join("\n"));
+  return true;
+}
+
 function createState(sourceFile: ts.SourceFile): FileMigrationState {
   return {
     fileName: sourceFile.fileName,
@@ -74,11 +116,11 @@ function rewriteTranslatorImports(sourceFile: ts.SourceFile, state: FileMigratio
     if (!ts.isImportDeclaration(statement)) continue;
     const moduleName = getImportModule(statement);
     if (moduleName === legacyClientModule && (hasNamedImport(statement, "useTranslations") || hasNamedImport(statement, "createTranslator"))) {
-      addEdit(state, statement.moduleSpecifier.getStart(sourceFile), statement.moduleSpecifier.getEnd(), JSON.stringify(selectorClientModule));
+      rewriteSplitImport(sourceFile, state, statement, new Set(["useTranslations", "createTranslator"]), selectorClientModule);
     }
 
     if (moduleName === legacyServerModule && hasNamedImport(statement, "getTranslations")) {
-      addEdit(state, statement.moduleSpecifier.getStart(sourceFile), statement.moduleSpecifier.getEnd(), JSON.stringify(selectorServerModule));
+      rewriteSplitImport(sourceFile, state, statement, new Set(["getTranslations"]), selectorServerModule);
     }
   }
 }
