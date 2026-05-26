@@ -48,7 +48,7 @@ export function FilterCardFrame({
             </Tooltip>
           ) : null}
         </span>
-        {activeValue ? (
+        {activeValue !== null ? (
           <span className={styles["activeValuePill"]}>{activeValue}</span>
         ) : (
           <span className={styles["inactiveLabel"]}>{inactiveLabel}</span>
