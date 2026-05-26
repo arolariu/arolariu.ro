@@ -138,12 +138,12 @@ export function useScans(): UseScansOutput {
     [setIsSyncing, setScans, setLastSyncTimestamp],
   );
 
-  // Auto-sync on mount when hydrated
+  // Always background-sync after IndexedDB hydration. Cached scans still render immediately.
   useEffect(() => {
-    if (hasHydrated && !lastSyncTimestamp) {
+    if (hasHydrated) {
       syncScans();
     }
-  }, [hasHydrated, lastSyncTimestamp, syncScans]);
+  }, [hasHydrated, syncScans]);
 
   // Cleanup: mark component as unmounted
   useEffect(() => {
