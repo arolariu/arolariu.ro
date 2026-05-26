@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Spending threshold alert email when spending crosses a budget limit.
  * @module emails/invoices/alerts/SpendingThresholdAlertEmail
@@ -139,16 +140,16 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
       <EmailLayout
         locale={locale}
         title={`${BRAND.name} | Spending alert`}
-        preview={t("preview", {name, percent: thresholdPercent, category, period})}
-        badge={t("badge", {percent: thresholdPercent})}
-        heading={t("heading", {percent: thresholdPercent})}
-        primaryCta={{href: effectiveDashboardUrl, label: t("ctaPrimary")}}
+        preview={t(selectorFromPath("email.spendingAlert.preview"), {name, percent: thresholdPercent, category, period})}
+        badge={t(selectorFromPath("email.spendingAlert.badge"), {percent: thresholdPercent})}
+        heading={t(selectorFromPath("email.spendingAlert.heading"), {percent: thresholdPercent})}
+        primaryCta={{href: effectiveDashboardUrl, label: t(selectorFromPath("email.spendingAlert.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro", {state: budgetState, category, period, percent: thresholdPercent})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.spendingAlert.greeting"), {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.spendingAlert.intro"), {state: budgetState, category, period, percent: thresholdPercent})}</Text>
         {isOverBudget ? (
           <Text
             style={{
@@ -159,56 +160,56 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
               borderRadius: "10px",
               padding: "12px",
             }}>
-            {t("overBudgetWarning")}
+            {t(selectorFromPath("email.spendingAlert.overBudgetWarning"))}
           </Text>
         ) : null}
         <MetricsGrid
           metrics={[
-            {label: t("metricsLabels.budgetLimit"), value: budgetLimit},
-            {label: t("metricsLabels.currentSpending"), value: currentSpending},
-            {label: t("metricsLabels.remaining"), value: isOverBudget ? t("overBudgetValue") : remainingBudget},
-            {label: t("metricsLabels.threshold"), value: `${thresholdPercent}%`},
+            {label: t(selectorFromPath("email.spendingAlert.metricsLabels.budgetLimit")), value: budgetLimit},
+            {label: t(selectorFromPath("email.spendingAlert.metricsLabels.currentSpending")), value: currentSpending},
+            {label: t(selectorFromPath("email.spendingAlert.metricsLabels.remaining")), value: isOverBudget ? t(selectorFromPath("email.spendingAlert.overBudgetValue")) : remainingBudget},
+            {label: t(selectorFromPath("email.spendingAlert.metricsLabels.threshold")), value: `${thresholdPercent}%`},
           ]}
         />
         <KeyValueTable
-          title={t("detailsTitle")}
+          title={t(selectorFromPath("email.spendingAlert.detailsTitle"))}
           items={[
-            {label: t("detailsLabels.category"), value: category},
-            {label: t("detailsLabels.period"), value: period},
-            {label: t("detailsLabels.budget"), value: budgetLimit},
-            {label: t("detailsLabels.spent"), value: currentSpending},
+            {label: t(selectorFromPath("email.spendingAlert.detailsLabels.category")), value: category},
+            {label: t(selectorFromPath("email.spendingAlert.detailsLabels.period")), value: period},
+            {label: t(selectorFromPath("email.spendingAlert.detailsLabels.budget")), value: budgetLimit},
+            {label: t(selectorFromPath("email.spendingAlert.detailsLabels.spent")), value: currentSpending},
           ]}
         />
         {categoryBreakdown.length > 0 ? (
           <DonutChart
-            title={t("chartTitle")}
+            title={t(selectorFromPath("email.spendingAlert.chartTitle"))}
             data={categoryBreakdown}
             chartImageUrl={chartImageUrl}
-            alt={t("chartAlt", {period})}
+            alt={t(selectorFromPath("email.spendingAlert.chartAlt"), {period})}
           />
         ) : null}
-        <EmailCard title={t("tipsTitle", {state: budgetState})}>
+        <EmailCard title={t(selectorFromPath("email.spendingAlert.tipsTitle"), {state: budgetState})}>
           <BulletList
             items={
               isOverBudget
-                ? [t("tipsOverBudget.0"), t("tipsOverBudget.1"), t("tipsOverBudget.2")]
-                : [t("tipsOnTrack.0"), t("tipsOnTrack.1"), t("tipsOnTrack.2")]
+                ? [t(selectorFromPath("email.spendingAlert.tipsOverBudget.0")), t(selectorFromPath("email.spendingAlert.tipsOverBudget.1")), t(selectorFromPath("email.spendingAlert.tipsOverBudget.2"))]
+                : [t(selectorFromPath("email.spendingAlert.tipsOnTrack.0")), t(selectorFromPath("email.spendingAlert.tipsOnTrack.1")), t(selectorFromPath("email.spendingAlert.tipsOnTrack.2"))]
             }
           />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
-          {t.rich("notificationsParagraph", {
+          {t.rich(selectorFromPath("email.spendingAlert.notificationsParagraph"), {
             settings: () => (
               <Link
                 href={`${BRAND.url}/settings/notifications`}
                 style={EmailLinkStyles}>
-                {t("notificationsLink")}
+                {t(selectorFromPath("email.spendingAlert.notificationsLink"))}
               </Link>
             ),
           })}
         </Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("email.spendingAlert.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -219,9 +220,9 @@ const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.spendingAlert.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.spendingAlert.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

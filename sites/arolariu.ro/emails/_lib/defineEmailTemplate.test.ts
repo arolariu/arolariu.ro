@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 import {describe, expect, it, vi} from "vitest";
 
 import {defineEmailTemplate} from "./defineEmailTemplate";
@@ -73,7 +74,7 @@ describe("defineEmailTemplate", () => {
     const T = defineEmailTemplate<{readonly name: string}>({
       namespace: "email.welcome",
       render: ({t, props}) => {
-        seen.greeting = t("greeting", {name: props.name});
+        seen.greeting = t(selectorFromPath("email.welcome.greeting"), {name: props.name});
         return {type: "div", props: {}} as never;
       },
     });

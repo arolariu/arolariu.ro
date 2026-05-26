@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for confirming newsletter subscription.
  * @module emails/newsletter/Subscription
@@ -40,27 +41,27 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
       <EmailLayout
         locale={locale}
         title={`${BRAND.name} | Newsletter subscription`}
-        preview={t("preview", {name})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: BRAND.url, label: t("ctaPrimary")}}
+        preview={t(selectorFromPath("email.newsletterSubscribed.preview"), {name})}
+        badge={t(selectorFromPath("email.newsletterSubscribed.badge"))}
+        heading={t(selectorFromPath("email.newsletterSubscribed.heading"))}
+        primaryCta={{href: BRAND.url, label: t(selectorFromPath("email.newsletterSubscribed.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={true}
         unsubscribeUrl={`${BRAND.url}/unsubscribe`}
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.newsletterSubscribed.greeting"), {name})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("intro", {
+          {t.rich(selectorFromPath("email.newsletterSubscribed.intro"), {
             brandName: BRAND.name,
             brand: (chunks) => <strong>{chunks}</strong>,
           })}
         </Text>
-        <EmailCard title={t("whatToExpectTitle")}>
-          <BulletList items={[t("whatToExpect.0"), t("whatToExpect.1"), t("whatToExpect.2")]} />
+        <EmailCard title={t(selectorFromPath("email.newsletterSubscribed.whatToExpectTitle"))}>
+          <BulletList items={[t(selectorFromPath("email.newsletterSubscribed.whatToExpect.0")), t(selectorFromPath("email.newsletterSubscribed.whatToExpect.1")), t(selectorFromPath("email.newsletterSubscribed.whatToExpect.2"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.newsletterSubscribed.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("email.newsletterSubscribed.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -71,9 +72,9 @@ const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.newsletterSubscribed.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.newsletterSubscribed.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );
