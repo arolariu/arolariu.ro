@@ -1,0 +1,6 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.deleteAction {
+  background-color: color('destructive');
+  color: color('destructive-foreground');
+}

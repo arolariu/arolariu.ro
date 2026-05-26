@@ -1,0 +1,60 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.formBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+  padding-block: space(2);
+}
+
+.fieldGroup {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.timeRow {
+  display: flex;
+  align-items: center;
+}
+
+.footerActions {
+  display: flex;
+  gap: space(2);
+}
+
+.readText {
+  font-size: font-size('sm');
+}
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+  @include respond-to('md') {
+    max-width: 32rem;
+  }
+}
+
+.dialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @include respond-to('sm') {
+    justify-content: space-between;
+  }
+}
+
+.mutedIcon {
+  color: color('muted-foreground');
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.saveIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

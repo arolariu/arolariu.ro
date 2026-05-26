@@ -6,7 +6,7 @@ import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbClock, TbToolsKitchen3} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
-import styles from "./RecipeDialog.module.scss";
+import styles from "./PreviewRecipeDialog.module.scss";
 
 function getBadgeVariant(complexity: RecipeComplexity): "default" | "secondary" | "outline" {
   if (complexity === RecipeComplexity.Easy) return "default";

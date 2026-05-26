@@ -17,7 +17,7 @@ import {useCallback} from "react";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useRecipeDelete} from "../../../_hooks/invoice";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
-import styles from "./RecipeDialog.module.scss";
+import styles from "./DeleteRecipeDialog.module.scss";
 
 function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
   return <strong>{chunks}</strong>;

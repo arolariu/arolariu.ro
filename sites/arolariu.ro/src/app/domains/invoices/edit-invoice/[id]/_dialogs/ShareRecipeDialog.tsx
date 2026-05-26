@@ -5,7 +5,7 @@ import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbCopy, TbShare} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
-import styles from "./RecipeDialog.module.scss";
+import styles from "./ShareRecipeDialog.module.scss";
 
 export default function ShareRecipeDialog(): React.JSX.Element {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
