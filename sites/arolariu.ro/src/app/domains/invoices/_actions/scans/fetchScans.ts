@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for fetching user's scans from Azure Blob Storage.
- * @module lib/actions/scans/fetchScans
+ * @module app/domains/invoices/_actions/scans/fetchScans
  *
  * @remarks
  * Lists all standalone scans belonging to a user by querying Azure Blob Storage
@@ -12,7 +12,7 @@
  * Scans are stored with path `scans/{userIdentifier}/...`, so we list all blobs
  * with that prefix to retrieve the user's scans.
  *
- * @see {@link uploadScan} for uploading new scans
+ * @see {@link createScan} for uploading new scans
  * @see {@link deleteScan} for removing scans
  */
 
@@ -37,7 +37,15 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<ReadonlyArray<Scan>>;
 
 /**
- * Maps MIME type to ScanType enum.
+ * Maps MIME type strings to scan classification values.
+ *
+ * @remarks
+ * Handles the MIME types emitted by browser file inputs and Azure Blob Storage
+ * metadata. Unknown types remain listable as `ScanType.OTHER` so the UI can
+ * still show unsupported uploads instead of dropping them.
+ *
+ * @param mimeType - MIME type to normalize, such as `image/jpeg` or `application/pdf`.
+ * @returns The scan type used by invoice scan UI and downstream processing.
  */
 function mimeTypeToScanType(mimeType: string): ScanType {
   switch (mimeType.toLowerCase()) {
@@ -72,19 +80,20 @@ function mimeTypeToScanType(mimeType: string): ScanType {
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
- * @param input - Fetch parameters
- * @returns Array of Scan entities sorted by upload date (newest first)
- * @throws {Error} When authentication fails
- * @throws {Error} When Azure storage access fails
+ * @param input - Fetch parameters. Omit this object to fetch non-archived scans.
+ * @param input.includeArchived - Whether archived scans should be included in the returned collection.
+ * @returns A result object containing scans sorted by upload date descending, or an error result when authentication or storage access fails.
  *
  * @example
  * ```typescript
- * const scans = await fetchScans({
+ * const result = await fetchScans({
  *   includeArchived: false
  * });
  *
- * // Update store with fetched scans
- * scansStore.setScans(scans.map(s => ({...s, cachedAt: new Date()})));
+ * if (result.success) {
+ *   // Update store with fetched scans
+ *   scansStore.setScans(result.data.map(s => ({...s, cachedAt: new Date()})));
+ * }
  * ```
  */
 export async function fetchScans({ includeArchived = false }: ServerActionInputType = {}): ServerActionOutputType {

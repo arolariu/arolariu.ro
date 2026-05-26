@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for fetching all invoices for the authenticated user.
- * @module lib/actions/invoices/fetchInvoices
+ * @module app/domains/invoices/_actions/invoices/fetchInvoices
  *
  * @remarks
  * Retrieves all invoices the user has access to, including:
@@ -54,22 +54,24 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Invoice>>;
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
- * @param _void - Reserved parameter for future filter/pagination options
- * @returns ServerActionResult with Invoice array or error
+ * @param _void - Reserved parameter for future filter/pagination options.
+ * @returns A result object containing an invoice array on success, or an error result when the backend request fails.
  *
  * @example
  * ```typescript
  * import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
  *
- * const invoices = await fetchInvoices();
+ * const result = await fetchInvoices();
  *
- * // Display invoice count
- * console.log(`Found ${invoices.length} invoices`);
+ * if (result.success) {
+ *   // Display invoice count
+ *   console.log(`Found ${result.data.length} invoices`);
  *
- * // Filter important invoices
- * const important = invoices.filter(inv =>
- *   inv.additionalMetadata?.isImportant === "true"
- * );
+ *   // Filter important invoices
+ *   const important = result.data.filter(inv =>
+ *     inv.additionalMetadata?.isImportant === "true"
+ *   );
+ * }
  * ```
  *
  * @see {@link fetchInvoice} for fetching a specific invoice

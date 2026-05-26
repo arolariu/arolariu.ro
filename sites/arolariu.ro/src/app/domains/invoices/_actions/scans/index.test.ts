@@ -1,6 +1,10 @@
 /**
- * @fileoverview Tests for scans barrel export.
- * @module lib/actions/scans/index.test
+ * @fileoverview Tests for standalone scan server action barrel exports.
+ * @module app/domains/invoices/_actions/scans/index.test
+ *
+ * @remarks
+ * These tests verify that the barrel preserves the public import surface used by
+ * invoice scan pages and legacy `uploadScan` consumers.
  */
 
 import {describe, expect, it} from "vitest";

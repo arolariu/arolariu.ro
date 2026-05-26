@@ -10,7 +10,7 @@
  * **Exported Actions:**
  * - `createInvoiceScan` - Uploads invoice scans to Azure Blob Storage
  * - `attachInvoiceScan` - Adds scan references to existing invoices
- * - `deleteInvoiceScan` - Removes scan references from invoices (soft delete)
+ * - `deleteInvoiceScan` - Removes scan references from invoices and lets backend cleanup handle the blob lifecycle
  *
  * **Usage Pattern:**
  * Instead of importing from individual files:

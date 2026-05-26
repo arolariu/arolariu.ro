@@ -9,7 +9,7 @@
  *
  * **Exported Actions:**
  * - `addInvoiceProduct` - Adds new line items to invoices
- * - `deleteInvoiceProduct` - Removes line items from invoices (soft delete)
+ * - `deleteInvoiceProduct` - Hard-deletes matching line items from invoices
  * - `updateInvoiceProduct` - Modifies existing line items
  *
  * **Usage Pattern:**
@@ -36,8 +36,8 @@
  * **Common Operations:**
  * - **Create**: Add new products to invoice items collection
  * - **Read**: Not provided here (see invoice fetch actions)
- * - **Update**: Modify existing products with metadata tracking (isEdited flag)
- * - **Delete**: Soft delete products with metadata tracking (isSoftDeleted flag)
+ * - **Update**: Replace matching products through the backend delete-and-add flow
+ * - **Delete**: Remove matching products from the invoice items collection
  *
  * @see {@link addInvoiceProduct} - Add new line items to an invoice
  * @see {@link deleteInvoiceProduct} - Remove line items from an invoice

@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching all invoices for the current user.
- * @module hooks/useInvoices
+* @module app/domains/invoices/_hooks/invoice/useInvoices
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
@@ -71,8 +71,8 @@ type HookOutputType = Readonly<{
  * - No refetch on component remount (reads from store)
  * - setInvoices is stable (excluded from deps)
  *
- * @param _void - Unused parameter (for potential future expansion)
- * @returns Object containing invoices array, loading state, and error state
+ * @param _void - Reserved parameter for potential future filter or pagination options.
+ * @returns Hook state containing cached invoices, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx

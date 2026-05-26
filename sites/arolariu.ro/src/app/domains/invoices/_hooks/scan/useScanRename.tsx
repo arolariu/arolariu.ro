@@ -1,8 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Hook for managing scan rename behavior with server action integration.
- * @module app/domains/invoices/_hooks/useScanRename
+ * @fileoverview Hook for managing local scan rename behavior.
+* @module app/domains/invoices/_hooks/scan/useScanRename
+*
+* @remarks
+* Provides local rename state and updates the scans Zustand store. Despite the
+* historical file summary, this hook does not call a server action; scan rename
+* is local client state.
  */
 
 import {useScansStore} from "@/stores";
@@ -12,14 +17,14 @@ import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
 
 /**
- * Hook output type.
+ * Hook output type for scan rename UI state.
  */
 type HookOutputType = Readonly<{
   /** Current name value in the input field */
   value: string;
   /** Whether the rename mode is active */
   isEditing: boolean;
-  /** Whether a commit operation is in progress */
+  /** Reserved commit flag; currently remains false because rename is a synchronous store update. */
   isCommitting: boolean;
   /** Flash flag to indicate successful rename (resets after 300ms) */
   justRenamed: boolean;
@@ -36,7 +41,7 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Manages scan rename state and actions with server action integration.
+ * Manages scan rename state and local store updates.
  *
  * @remarks
  * **Behavior contract:**
@@ -44,16 +49,17 @@ type HookOutputType = Readonly<{
  * - `cancel()` restores original name and sets `isEditing→false`
  * - `change(newValue)` updates the current input value
  * - `commit()` when value differs and non-empty:
- *   1. Calls `updateScan` server action with `blobName` extracted from blobUrl
- *   2. On success: updates Zustand store via `updateScanName`, shows success toast, sets `isEditing→false`, flashes `justRenamed→true` for 300ms
- *   3. On failure: reverts value to original name, shows error toast
+ *   1. Updates Zustand store via `updateScanName`
+ *   2. Shows success toast
+ *   3. Sets `isEditing→false`
+ *   4. Flashes `justRenamed→true` for 300ms
  * - `commit()` when value is empty/unchanged: silently exits editing mode
  *
  * **Focus management:**
  * - `inputRef` can be used to focus the input field when entering rename mode
  *
- * @param scan - The scan to rename
- * @returns Object containing rename state and actions
+ * @param scan - The scan to rename locally.
+ * @returns Hook state and handlers for rename mode, editing, and commit actions.
  *
  * @example
  * ```tsx

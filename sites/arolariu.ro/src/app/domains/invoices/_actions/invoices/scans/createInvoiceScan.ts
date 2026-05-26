@@ -134,11 +134,11 @@ type ServerActionOutputType = ServerActionResult<
  * - Direct upload to Azure (no intermediate storage)
  * - Single network round-trip to Azure Storage
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.base64Data - Base64-encoded file content (with or without data URI prefix).
  * @param params.blobName - Unique blob name including extension (e.g., "123e4567-e89b-12d3-a456-426614174000.jpg").
  * @param params.metadata - Optional key-value metadata pairs to store with the blob.
- * @returns Promise resolving to ServerActionResult with status code and blob URL on success, or error details on failure.
+ * @returns A result object containing the Azure status code and blob URL on success, or an error result when upload fails.
  *
  * @example
  * ```typescript
@@ -178,10 +178,6 @@ type ServerActionOutputType = ServerActionResult<
  * }
  * ```
  *
- * @throws {Error} When Azure credential authentication fails
- * @throws {Error} When blob storage endpoint configuration is missing
- * @throws {Error} When base64 conversion fails
- * @throws {Error} When Azure Blob Storage upload operation fails
  * @see {@link createBlobClient} - Azure credential singleton initialization
  * @see {@link convertBase64ToBlob} - Base64 to Blob conversion utility
  * @see {@link ServerActionResult} - Result type wrapper

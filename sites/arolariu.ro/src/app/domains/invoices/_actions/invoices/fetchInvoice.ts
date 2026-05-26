@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for fetching a single invoice by ID.
- * @module lib/actions/invoices/fetchInvoice
+ * @module app/domains/invoices/_actions/invoices/fetchInvoice
  *
  * @remarks
  * Retrieves a complete invoice entity including all nested data:
@@ -58,24 +58,22 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
- * @param input - The fetch parameters
- * @param input.invoiceId - UUIDv4 of the invoice to retrieve
- * @returns Promise resolving to the complete Invoice entity
- * @throws {Error} When invoiceId is not a valid GUID
- * @throws {Error} When authentication fails
- * @throws {Error} When invoice not found (404)
- * @throws {Error} When user not authorized to view invoice (403)
+ * @param input - The fetch parameters.
+ * @param input.invoiceId - UUIDv4 of the invoice to retrieve.
+ * @returns A result object containing the complete invoice entity, or an error result when the invoice is missing or inaccessible.
  *
  * @example
  * ```typescript
  * import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
  *
- * const invoice = await fetchInvoice({
+ * const result = await fetchInvoice({
  *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
  * });
  *
- * console.log("Total amount:", invoice.estimatedSurface?.totalAmount);
- * console.log("Number of items:", invoice.items?.length);
+ * if (result.success) {
+ *   console.log("Total amount:", result.data.estimatedSurface?.totalAmount);
+ *   console.log("Number of items:", result.data.items?.length);
+ * }
  * ```
  *
  * @see {@link Invoice} for the complete data structure

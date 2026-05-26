@@ -88,7 +88,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * - `bff.request.add-invoice-product.error` - Error event
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - HTTP 5xx errors return user message about server issues
  * - HTTP 4xx errors return validation/input error message
  * - Network/unexpected errors are caught and wrapped in ServerActionResult
@@ -98,10 +98,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * - Revalidates Next.js cache for invoice pages
  * - Emits telemetry spans and logs
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice to add the product to. Must be a valid UUIDv4 string.
  * @param params.product - The product payload with required fields (name, category, quantity, price).
- * @returns Promise resolving to ServerActionResult with the created product (including server-generated fields) on success, or error details on failure.
+ * @returns A result object containing the created product on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -132,7 +132,6 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * }
  * ```
  *
- * @throws {Error} When invoiceId is not a valid GUID (validation failure)
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
  * @see {@link validateStringIsGuidType} - GUID validation utility
  * @see {@link ServerActionResult} - Result type wrapper

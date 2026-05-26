@@ -1,8 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Hook for invoice sharing operations: toggle public, revoke access, send share email.
- * @module app/domains/invoices/_hooks/useInvoiceShare
+* @fileoverview Hook for invoice sharing, revocation, and share-email flows.
+* @module app/domains/invoices/_hooks/invoice/useInvoiceShare
+*
+* @remarks
+* Provides a client-side facade over invoice sharing operations. The hook keeps
+* a local loading flag, updates the invoice store after sharing mutations, and
+* delegates invitation delivery to the email server action.
  */
 
 import {sendEmail} from "@/lib/actions/email";
@@ -16,7 +21,12 @@ import {useCallback, useState} from "react";
 import { patchInvoice } from "../../_actions/invoices";
 
 /**
- * Arguments representable as share actions.
+ * Discriminated union of supported invoice share actions.
+ *
+ * @remarks
+ * `togglePublic` adds the public sentinel identifier, `revoke` removes either a
+ * specific user or the public sentinel, and `sendEmail` sends an invitation
+ * email without mutating the invoice.
  */
 type ShareAction =
   | Readonly<{type: "togglePublic"}>
@@ -25,6 +35,11 @@ type ShareAction =
 
 /**
  * Result of a bulk share operation.
+ *
+ * @remarks
+ * Tracks per-invoice success counts and the invoices returned by share
+ * mutations. Email-only actions increment counts but do not add updated
+ * invoices because no invoice mutation occurs.
  */
 type BulkShareResult = Readonly<{
   successCount: number;
@@ -34,7 +49,7 @@ type BulkShareResult = Readonly<{
 }>;
 
 /**
- * Hook output type.
+ * Hook output type for share operations.
  */
 type HookOutputType = Readonly<{
   isSharing: boolean;
@@ -45,10 +60,42 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Manages invoice sharing mutations and email invitation side effects (supports single + bulk operations).
+ * Manages invoice sharing mutations and email invitation side effects.
  *
- * @param onComplete - Optional callback after sharing activity finishes
- * @returns Object containing sharing state and unified action callback
+ * @remarks
+ * **Execution Context**: Client Component hook.
+ *
+ * **Supported Operations:**
+ * - Toggle public access by adding the public sentinel identifier.
+ * - Revoke public or user-specific access by removing an identifier.
+ * - Send a localized invitation email without changing invoice state.
+ * - Process a list of invoice IDs sequentially for bulk sharing actions.
+ *
+ * **Error Handling**: Single-operation errors are surfaced through toast
+ * notifications and console logging. Bulk operations isolate per-invoice
+ * failures and return aggregate counts.
+ *
+ * @param onComplete - Optional callback invoked after non-email single mutations and after bulk processing.
+ * @returns Hook state containing sharing progress and the overloaded share callback.
+ *
+ * @example
+ * ```tsx
+ * const {isSharing, shareInvoiceCallback} = useInvoiceShare(() => closeDialog());
+ *
+ * await shareInvoiceCallback(invoice.id, {type: "togglePublic"});
+ * ```
+ *
+ * @example
+ * ```tsx
+ * const result = await shareInvoiceCallback(selectedInvoiceIds, {
+ *   type: "revoke",
+ *   userIdToRemove: sharedUserId,
+ * });
+ *
+ * if (result.failureCount > 0) {
+ *   console.warn("Failed sharing updates:", result.failedIds);
+ * }
+ * ```
  */
 export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useInvoiceShare");
@@ -56,7 +103,11 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
   const [isSharing, setIsSharing] = useState<boolean>(false);
 
   /**
-   * Internal worker function to compute and apply single-invoice mutations.
+   * Computes and applies one sharing operation for a single invoice.
+   *
+   * @param id - Invoice identifier to mutate or reference in an email.
+   * @param action - Sharing action to apply.
+   * @returns The updated invoice for mutations, or null for email-only actions.
    */
   const shareAndMutate = useCallback(
     async (id: string, action: ShareAction): Promise<Invoice | null> => {
@@ -127,7 +178,13 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
   );
 
   /**
-   * Recursive sequencer to scale sequential multi-invoice sharing with precision.
+   * Processes bulk share actions sequentially with per-invoice failure tracking.
+   *
+   * @param ids - Invoice identifiers to process.
+   * @param index - Current zero-based index in `ids`.
+   * @param action - Sharing action applied to each invoice.
+   * @param acc - Aggregated success, failure, failed ID, and updated invoice state.
+   * @returns Aggregate share result after all invoice IDs have been attempted.
    */
   const processBulkRecursive = useCallback(
     async (
@@ -204,4 +261,3 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
 
   return {isSharing, shareInvoiceCallback};
 }
-

@@ -135,7 +135,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * - `bff.request.update-invoice-product.error` - Error event
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - HTTP 5xx errors return user message about server issues
  * - HTTP 4xx errors return validation/input error message
  * - Network/unexpected errors are caught and wrapped in ServerActionResult
@@ -145,12 +145,12 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * - Revalidates Next.js cache for invoice pages
  * - Emits telemetry spans and logs
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice containing the product. Must be a valid UUIDv4 string.
  * @param params.payload - The update payload containing originalProductName and updatedProduct.
- * @param params.payload.originalProductName - The current name of the product (before update). Case-sensitive.
- * @param params.payload.updatedProduct - The complete updated product data with all required fields.
- * @returns Promise resolving to ServerActionResult with the updated product (including server-generated metadata) on success, or error details on failure.
+ * @param params.payload.originalProductName - The current product name used for the backend's case-insensitive substring match.
+ * @param params.payload.updatedProduct - The complete updated product data; omitted fields are reset by the backend's delete-and-add flow.
+ * @returns A result object containing the updated product on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -199,7 +199,6 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * });
  * ```
  *
- * @throws {Error} When invoiceId is not a valid GUID (validation failure)
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link deleteInvoiceProduct} - Sibling action for deleting products
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval

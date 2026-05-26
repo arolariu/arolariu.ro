@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching all merchants for the current user.
- * @module hooks/useMerchants
+* @module app/domains/invoices/_hooks/merchant/useMerchants
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
@@ -77,8 +77,8 @@ type HookOutputType = Readonly<{
  * - No refetch on component remount (reads from store)
  * - setMerchants is stable (excluded from deps)
  *
- * @param _void - Unused parameter (for potential future expansion)
- * @returns Object containing merchants array, loading state, and error state
+ * @param _void - Reserved parameter for potential future filter or pagination options.
+ * @returns Hook state containing cached merchants, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx

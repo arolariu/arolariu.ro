@@ -1,8 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Hook for adding products to the current edit-invoice context.
- * @module app/domains/invoices/_hooks/useProductAdd
+* @fileoverview Hook for adding products to an invoice.
+* @module app/domains/invoices/_hooks/product/useProductAdd
+*
+* @remarks
+* Wraps the add-product server action and mirrors successful additions in the
+* invoices Zustand store. The hook owns only loading state; callers decide how
+* to show success and failure feedback.
  */
 
 import type {Invoice, Product} from "@/types/invoices";
@@ -10,21 +15,37 @@ import {useCallback, useState} from "react";
 import { addInvoiceProduct as addProductServerSide } from "../../_actions/invoices";
 import { useInvoicesStore } from "@/stores";
 
+/**
+ * Input parameters for the product add hook.
+ */
 type HookInputType = Readonly<{
+  /** Invoice receiving the product. */
   readonly invoice: Invoice;
 }>;
 
+/**
+ * Hook output type for product addition.
+ */
 type HookOutputType = Readonly<{
+  /** Whether an add operation is in progress. */
   isAdding: boolean;
+  /** Adds a product through the server action and local invoice store. */
   addProductCallback: (product: Product) => Promise<Product>;
 }>;
 
 /**
- * Manages adding a product to the invoice currently loaded in edit context.
+ * Manages adding products to the provided invoice.
  *
  * @param invoice - The invoice to which the product will be added.
- * @returns State and callback for adding a product.
- * @throws {Error} When the add-product action reports failure.
+ * @returns Hook state with add progress and the product add callback.
+ *
+ * @example
+ * ```tsx
+ * const {isAdding, addProductCallback} = useProductAdd({invoice});
+ *
+ * const addedProduct = await addProductCallback(product);
+ * console.log("Added:", addedProduct.name);
+ * ```
  */
 export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<HookOutputType> {
   const [isAdding, setIsAdding] = useState<boolean>(false);

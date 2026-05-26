@@ -123,8 +123,8 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  * - Emits telemetry spans and logs
  * - Does NOT update local cache (read-only operation)
  *
- * @param _params - Reserved parameter for future filter/pagination options (currently unused).
- * @returns Promise resolving to ServerActionResult with array of Merchant entities on success, or error details on failure.
+ * @param _params - Reserved parameter for future filter/pagination options; currently ignored.
+ * @returns A result object containing merchant entities on success, including an empty array when no merchants are linked, or an error result when the backend request fails.
  *
  * @example
  * ```typescript

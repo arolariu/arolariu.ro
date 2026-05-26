@@ -43,7 +43,7 @@ import { revalidatePath } from "next/cache";
  *
  * @remarks
  * The invoiceId must be a valid UUIDv4 GUID.
- * The productName must match exactly (case-sensitive).
+ * The productName should be the full display name to avoid unintended substring matches.
  */
 type ServerActionInputType = Readonly<{
   /** The unique identifier of the invoice. Must be a valid UUIDv4 GUID. */
@@ -109,7 +109,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - `bff.request.delete-invoice-product.error` - Error event
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - HTTP 5xx errors return user message about server issues
  * - HTTP 4xx errors return validation/input error message
  * - Network/unexpected errors are caught and wrapped in ServerActionResult
@@ -120,11 +120,11 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - Revalidates Next.js cache for invoice pages
  * - Emits telemetry spans and logs
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice containing the product. Must be a valid UUIDv4 string.
  * @param params.productName - The product name used to locate the target item.
  *   Matched case-insensitively as a substring by the backend; pass the full name to be safe.
- * @returns Promise resolving to ServerActionResult with void data on success, or error details on failure.
+ * @returns A result object with void data on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -142,7 +142,6 @@ type ServerActionOutputType = ServerActionResult<void>;
  * }
  * ```
  *
- * @throws {Error} When invoiceId is not a valid GUID (validation failure)
  * @see {@link addInvoiceProduct} - Sibling action for adding products
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
  * @see {@link validateStringIsGuidType} - GUID validation utility

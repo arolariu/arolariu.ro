@@ -2,7 +2,12 @@
 
 /**
  * @fileoverview Hook for managing scan rotation with canvas pipeline.
- * @module app/domains/invoices/_hooks/useScanRotation
+* @module app/domains/invoices/_hooks/scan/useScanRotation
+*
+* @remarks
+* Rotates image scans in the browser using Canvas, persists the new binary
+* content through the standalone scan update server action, and cache-busts the
+* scan URL in the scans Zustand store after a successful upload.
  */
 
 import {useScansStore} from "@/stores";
@@ -13,7 +18,7 @@ import {useCallback, useState} from "react";
 import { updateScan } from "../../_actions/scans";
 
 /**
- * Hook output type.
+ * Hook output type for scan rotation.
  */
 type HookOutputType = Readonly<{
   /** Whether a rotation operation is in progress */
@@ -46,8 +51,8 @@ type HookOutputType = Readonly<{
  * - Image is drawn centered with rotation applied
  * - Original blob URL is revoked after processing to prevent memory leaks
  *
- * @param scan - The scan to rotate
- * @returns Object containing rotation state and action
+ * @param scan - The image scan to rotate. PDF scans are rejected as unsupported.
+ * @returns Hook state with rotation progress and the rotate callback.
  *
  * @example
  * ```tsx

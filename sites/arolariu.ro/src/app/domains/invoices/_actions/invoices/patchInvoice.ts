@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for partial invoice updates (HTTP PATCH).
- * @module lib/actions/invoices/patchInvoice
+ * @module app/domains/invoices/_actions/invoices/patchInvoice
  *
  * @remarks
  * Provides a generic PATCH endpoint wrapper for updating specific invoice fields
@@ -60,8 +60,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * Returns a result object with `success` flag instead of throwing,
  * making it easier to handle errors in UI components.
  *
- * @param input - The invoice ID and patch payload
- * @returns A result object containing the updated invoice or error message
+ * @param input - The invoice ID and patch payload.
+ * @param input.invoiceId - UUIDv4 of the invoice to patch.
+ * @param input.payload - Partial invoice fields to update; omitted fields are left unchanged.
+ * @returns A result object containing the updated invoice, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript

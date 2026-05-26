@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for triggering AI-powered invoice analysis.
- * @module lib/actions/invoices/analyzeInvoice
+ * @module app/domains/invoices/_actions/invoices/analyzeInvoice
  *
  * @remarks
  * This action submits an invoice to the backend AI analysis pipeline.
@@ -59,10 +59,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  * **Error Handling**: Returns result object with success/error fields.
  * Errors are logged with trace context for debugging.
  *
- * @param input - The invoice identifier and analysis configuration
- * @param input.invoiceIdentifier - UUIDv4 of the target invoice. Must exist and be owned by user.
- * @param input.analysisOptions - Analysis mode (Basic or Detailed)
- * @returns Promise that resolves to a result object indicating success or failure
+ * @param input - The invoice identifier and analysis configuration.
+ * @param input.invoiceIdentifier - UUIDv4 of the target invoice. Must exist and be accessible to the authenticated user.
+ * @param input.analysisOptions - Analysis mode and options forwarded to the backend analysis pipeline.
+ * @returns A result object with void data on success, or an error result when validation, authentication, or analysis fails.
  *
  * @example
  * ```typescript

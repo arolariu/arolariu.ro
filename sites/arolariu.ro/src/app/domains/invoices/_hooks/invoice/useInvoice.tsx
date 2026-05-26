@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching a single invoice by identifier.
- * @module hooks/useInvoice
+* @module app/domains/invoices/_hooks/invoice/useInvoice
  *
  * @remarks
  * Client-side data hook that integrates with the invoices Zustand store.
@@ -67,9 +67,9 @@ type HookOutputType = Readonly<{
  * - Stale-while-revalidate pattern: shows cached data while fetching fresh
  * - Consider using {@link useInvoices} with client-side filtering for better performance
  *
- * @param params - Hook configuration
- * @param params.invoiceIdentifier - UUID of invoice to fetch
- * @returns Object containing invoice data, loading state, and error state
+ * @param params - Hook configuration.
+ * @param params.invoiceIdentifier - UUID of the invoice to fetch and cache.
+ * @returns Hook state containing the cached invoice, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx

@@ -104,7 +104,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - `bff.request.delete-scan.error` - Error event
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - HTTP 400 returns "Cannot delete the scan. The request was invalid."
  *   (typically: last scan constraint or malformed request)
  * - HTTP 403 returns "You do not have permission to delete this scan."
@@ -120,10 +120,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - Revalidates Next.js cache for invoice pages
  * - Emits telemetry spans and logs
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice containing the scan. Must be a valid UUIDv4 string.
  * @param params.scanLocation - The full blob URL of the scan to delete. Will be URL-encoded for the API request.
- * @returns Promise resolving to ServerActionResult with void data on success, or error details on failure.
+ * @returns A result object with void data on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -166,7 +166,6 @@ type ServerActionOutputType = ServerActionResult<void>;
  * }
  * ```
  *
- * @throws {Error} When invoiceId is not a valid GUID (validation failure)
  * @see {@link attachInvoiceScan} - Sibling action for adding scans
  * @see {@link createInvoiceScan} - Action for uploading new scans
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval

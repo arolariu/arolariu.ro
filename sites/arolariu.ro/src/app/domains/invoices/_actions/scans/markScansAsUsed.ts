@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for marking scans as used by invoices.
- * @module lib/actions/scans/markScansAsUsed
+ * @module app/domains/invoices/_actions/scans/markScansAsUsed
  *
  * @remarks
  * This is a lightweight metadata-only update that sets `usedByInvoice` flag
@@ -11,6 +11,10 @@
  *
  * **Best-effort operation**: If marking fails, the scan will simply reappear
  * on the next sync—no critical failure.
+ *
+ * **Authorization Model**: This action does not fetch the current user. It is
+ * intended for auth-gated server flows that already derived blob names from the
+ * authenticated user's selected scans.
  *
  * @see {@link fetchScans} for the fetch logic that filters out used scans
  * @see {@link createInvoiceFromScans} for the creation flow that calls this
@@ -44,8 +48,9 @@ type MarkScansAsUsedInput = Readonly<{
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
- * @param input - Marking parameters
- * @returns Promise that resolves when all marks are attempted
+ * @param input - Marking parameters.
+ * @param input.blobNames - Blob names within the `invoices` container to mark as used.
+ * @returns A promise that resolves after all metadata updates have been attempted; failures are logged and swallowed.
  *
  * @example
  * ```typescript

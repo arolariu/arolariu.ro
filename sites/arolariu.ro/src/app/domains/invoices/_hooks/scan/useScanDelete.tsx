@@ -2,7 +2,11 @@
 
 /**
  * @fileoverview Hook for managing scan deletion with server action integration.
- * @module app/domains/invoices/_hooks/useScanDelete
+* @module app/domains/invoices/_hooks/scan/useScanDelete
+*
+* @remarks
+* Wraps standalone scan deletion with loading state, toast feedback, and
+* Zustand scans store cleanup after the server action succeeds.
  */
 
 import {useScansStore} from "@/stores";
@@ -13,7 +17,7 @@ import {useCallback, useState} from "react";
 import { deleteScan as removeScanServerSide } from "../../_actions/scans";
 
 /**
- * Hook output type.
+ * Hook output type for standalone scan deletion.
  */
 type HookOutputType = Readonly<{
   /** Whether a deletion operation is in progress */
@@ -43,9 +47,8 @@ type HookOutputType = Readonly<{
  * - Store is not updated on failure (optimistic update not used)
  * - Deletion failures do not trigger `onComplete` callback
  *
- * @param scan - The scan to delete
- * @param onComplete - Optional callback invoked after successful deletion
- * @returns Object containing deletion state and action
+ * @param scan - The standalone scan to delete.
+ * @returns Hook state with deletion progress and the delete callback.
  *
  * @example
  * ```tsx

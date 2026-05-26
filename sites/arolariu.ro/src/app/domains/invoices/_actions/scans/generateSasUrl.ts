@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for generating SAS URLs for direct client-to-Azure uploads.
- * @module lib/actions/scans/generateSasUrl
+ * @module app/domains/invoices/_actions/scans/generateSasUrl
  *
  * @remarks
  * This action generates short-lived Shared Access Signature (SAS) URLs that allow
@@ -47,6 +47,10 @@ type ServerActionInputType = Readonly<{
 
 /**
  * Response from the SAS URL generation operation.
+ *
+ * @remarks
+ * The returned `sasUrl` is the credentialed upload endpoint. The plain
+ * `blobUrl` is safe to store with the registered scan after upload succeeds.
  */
 type ServerActionOutputType = ServerActionResult<Readonly<{
   /** SAS URL for direct upload */
@@ -60,8 +64,13 @@ type ServerActionOutputType = ServerActionResult<Readonly<{
 }>>;
 
 /**
- * Generates a UUIDv7-like identifier using timestamp + random bytes.
- * This ensures chronological ordering while maintaining uniqueness.
+ * Generates a UUIDv7-like scan identifier.
+ *
+ * @remarks
+ * The timestamp prefix keeps scan blobs roughly chronological in Azure listings,
+ * while the random suffix prevents collisions for concurrent uploads.
+ *
+ * @returns A timestamp-prefixed identifier suitable for scan blob names.
  */
 function generateScanId(): string {
   const timestamp = Date.now().toString(16).padStart(12, "0");
@@ -94,10 +103,10 @@ function generateScanId(): string {
  * Uses User Delegation Key with Managed Identity for SAS token generation.
  * This is more secure than account key-based SAS.
  *
- * @param input - SAS URL generation parameters
- * @returns Object with SAS URL, blob name, and scan ID
- * @throws {Error} When authentication fails
- * @throws {Error} When SAS token generation fails
+ * @param input - SAS URL generation parameters.
+ * @param input.fileName - Original filename used to preserve the upload extension in the blob name.
+ * @param input.mimeType - MIME type recorded by callers during direct upload registration.
+ * @returns A result object containing the upload URL, blob name, plain blob URL, and scan ID, or an error result.
  *
  * @example
  * ```typescript
@@ -108,12 +117,12 @@ function generateScanId(): string {
  *
  * if (result.success) {
  *   // Upload file directly to Azure
- *   await fetch(result.sasUrl, {
+ *   await fetch(result.data.sasUrl, {
  *     method: 'PUT',
  *     body: file,
  *     headers: {
  *       'x-ms-blob-type': 'BlockBlob',
- *       'Content-Type': result.mimeType
+ *       'Content-Type': "image/jpeg"
  *     }
  *   });
  * }

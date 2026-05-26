@@ -82,6 +82,10 @@ type ServerActionInputType = Readonly<{
 
 /**
  * Response from the scan upload operation.
+ *
+ * @remarks
+ * The result wraps the Azure upload status together with the scan model that
+ * callers can persist in the client-side scans store.
  */
 type ServerActionOutputType = ServerActionResult<
   Readonly<{
@@ -184,21 +188,22 @@ function generateScanId(): string {
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
- * @param input - Upload parameters
- * @returns Object with HTTP status and created Scan entity
- * @throws {Error} When authentication fails
- * @throws {Error} When blob upload fails
+ * @param input - Upload parameters containing base64 content, original file name, and MIME type.
+ * @param input.base64Data - Base64-encoded file content, with or without a data URI prefix.
+ * @param input.fileName - Original upload filename used for blob extension and display metadata.
+ * @param input.mimeType - MIME type used for Azure content headers and scan classification.
+ * @returns A result object containing the Azure status and created scan entity on success, or an error result when upload fails.
  *
  * @example
  * ```typescript
- * const {status, scan} = await createScan({
+ * const result = await createScan({
  *   base64Data: base64EncodedFile,
  *   fileName: "receipt.jpg",
  *   mimeType: "image/jpeg"
  * });
  *
- * if (status === 201) {
- *   scansStore.addScan({...scan, cachedAt: new Date()});
+ * if (result.success && result.data.status === 201) {
+ *   scansStore.addScan({...result.data.scan, cachedAt: new Date()});
  * }
  * ```
  */

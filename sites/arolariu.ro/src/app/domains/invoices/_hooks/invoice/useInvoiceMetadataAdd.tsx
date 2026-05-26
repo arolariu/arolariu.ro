@@ -1,8 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Hook for adding metadata to an invoice via patchInvoice.
+* @fileoverview Hook for adding metadata entries to an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd
+*
+* @remarks
+* Wraps the invoice metadata server action and updates the local invoice store
+* after each successful call. The callback supports both a single key/value pair
+* and a record of metadata entries processed sequentially.
  */
 
 import {useInvoicesStore} from "@/stores";
@@ -26,7 +31,7 @@ type BulkAddResult = Readonly<{
 }>;
 
 /**
- * Hook output type.
+ * Hook output type for metadata addition.
  */
 type HookOutputType = Readonly<{
   isAdding: boolean;
@@ -37,17 +42,40 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Manages adding metadata to the passed invoice.
+ * Manages adding metadata entries to the passed invoice.
  *
- * @param invoice - The invoice to modify or add metadata to
- * @returns State and callback for adding invoice metadata.
+ * @param invoice - The invoice whose metadata should be extended.
+ * @returns Hook state with mutation progress and the overloaded metadata add callback.
+ *
+ * @example
+ * ```tsx
+ * const {isAdding, addMetadataCallback} = useInvoiceMetadataAdd(invoice);
+ *
+ * await addMetadataCallback("receipt.category", "groceries");
+ * ```
+ *
+ * @example
+ * ```tsx
+ * const result = await addMetadataCallback({
+ *   "receipt.category": "groceries",
+ *   "review.status": "approved",
+ * });
+ *
+ * if (result.failureCount > 0) {
+ *   console.warn("Metadata entries failed:", result.failedItems);
+ * }
+ * ```
  */
 export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType> {
   const addInvoiceMedataClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isAdding, setIsAdding] = useState(false);
 
   /**
-   * Internal helper to atomically update metadata field for single key.
+   * Adds one metadata field on the server and mirrors it in the invoice store.
+   *
+   * @param key - Metadata key to upsert.
+   * @param value - Metadata value stored as a string.
+   * @returns Updated invoice snapshot containing the merged metadata value.
    */
   const performMutation = useCallback(
     async (key: string, value: string): Promise<Invoice> => {
@@ -68,7 +96,12 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
   );
 
   /**
-   * Sequential tail-recursive bulk processing helper.
+   * Sequentially processes metadata entries and records per-entry failures.
+   *
+   * @param entries - Metadata entries to process.
+   * @param index - Current zero-based index in `entries`.
+   * @param acc - Aggregated success, failure, and failed entry state.
+   * @returns Aggregate metadata add result after all entries have been attempted.
    */
   const processBulkRecursive = useCallback(
     async (

@@ -3,6 +3,11 @@
 /**
  * @fileoverview Hook for removing metadata from an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove
+*
+* @remarks
+* Wraps the invoice metadata delete server action and mirrors removals in the
+* local invoice store. The callback supports a single key or an array of keys
+* processed sequentially.
  */
 
 import { useInvoicesStore } from "@/stores";
@@ -26,7 +31,7 @@ export type BulkRemoveResult = Readonly<{
 }>;
 
 /**
- * Hook output type.
+ * Hook output type for metadata removal.
  */
 type HookOutputType = Readonly<{
   isRemoving: boolean;
@@ -37,17 +42,36 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Manages removing metadata from the passed invoice.
+ * Manages removing metadata keys from the passed invoice.
  *
- * @param invoice - The target invoice to remove keys from
- * @returns State and callback for removing invoice metadata.
+ * @param invoice - The target invoice to remove metadata keys from.
+ * @returns Hook state with mutation progress and the overloaded metadata remove callback.
+ *
+ * @example
+ * ```tsx
+ * const {isRemoving, removeMetadataCallback} = useInvoiceMetadataRemove(invoice);
+ *
+ * await removeMetadataCallback("receipt.category");
+ * ```
+ *
+ * @example
+ * ```tsx
+ * const result = await removeMetadataCallback(["receipt.category", "review.status"]);
+ *
+ * if (result.failureCount > 0) {
+ *   console.warn("Metadata keys failed:", result.failedKeys);
+ * }
+ * ```
  */
 export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputType> {
   const deleteInvoiceMedataClientSide = useInvoicesStore((state) => state.updateEntity);
   const [isRemoving, setIsRemoving] = useState<boolean>(false);
 
   /**
-   * Internal worker function to delete metadata key for a single field on the server.
+   * Removes one metadata key on the server and mirrors it in the invoice store.
+   *
+   * @param key - Metadata key to remove.
+   * @returns A promise that resolves after the server action and store update complete.
    */
   const performMutation = useCallback(
     async (key: string): Promise<void> => {
@@ -63,7 +87,12 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
   );
 
   /**
-   * Sequential tail-recursive bulk processing helper.
+   * Sequentially processes metadata keys and records per-key failures.
+   *
+   * @param keys - Metadata keys to remove.
+   * @param index - Current zero-based index in `keys`.
+   * @param acc - Aggregated success, failure, and failed key state.
+   * @returns Aggregate metadata removal result after all keys have been attempted.
    */
   const processBulkRecursive = useCallback(
     async (

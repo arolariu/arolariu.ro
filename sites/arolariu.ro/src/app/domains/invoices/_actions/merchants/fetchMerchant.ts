@@ -105,7 +105,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * - `bff.request.fetch-merchant.error` - Error event
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - HTTP 404 returns "Merchant not found" (merchant doesn't exist or no access)
  * - Other HTTP errors return generic "Failed to fetch merchant. Please try again."
  * - Network/unexpected errors are caught and wrapped in ServerActionResult
@@ -115,9 +115,9 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * - Emits telemetry spans and logs
  * - Does NOT update local cache (read-only operation)
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.merchantId - The UUID of the merchant to retrieve. Must be a valid UUIDv4 string.
- * @returns Promise resolving to ServerActionResult with the complete Merchant entity on success, or error details on failure.
+ * @returns A result object containing the complete merchant entity on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -157,7 +157,6 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * }
  * ```
  *
- * @throws {Error} When merchantId is not a valid GUID (validation failure)
  * @see {@link fetchMerchants} - Fetch all merchants for current user
  * @see {@link fetchInvoice} - Fetch invoice containing merchant reference
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval

@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for creating new invoice entities.
- * @module lib/actions/invoices/createInvoice
+ * @module app/domains/invoices/_actions/invoices/createInvoice
  *
  * @remarks
  * This is the primary entry point for invoice creation in the system.
@@ -55,20 +55,18 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * - Backend validates all required fields
  * - Scan URL must be a valid Azure Blob URL
  *
- * @param payload - Partial invoice creation payload
- * @param payload.userIdentifier - Optional user GUID (auto-filled from auth if omitted)
- * @param payload.initialScan - Required first scan with type, location, and metadata
- * @param payload.metadata - Required metadata including `isImportant`, `requiresAnalysis`
- * @returns Promise resolving to the created Invoice with generated ID
- * @throws {Error} When authentication fails
- * @throws {Error} When API returns non-OK status (e.g., 400 for validation)
+ * @param payload - Partial invoice creation payload; `userIdentifier` is filled from the authenticated session when omitted.
+ * @param payload.userIdentifier - Optional user GUID. The authenticated user's identifier is used when this is not provided.
+ * @param payload.initialScan - Initial scan reference with type, location, and metadata for the new invoice.
+ * @param payload.metadata - Creation metadata, including flags such as `isImportant` and `requiresAnalysis`.
+ * @returns A result object containing the created invoice with its generated identifier, or an error result.
  *
  * @example
  * ```typescript
  * import {createInvoice} from "@/lib/actions/invoices/createInvoice";
  * import {InvoiceScanType} from "@/types/invoices";
  *
- * const invoice = await createInvoice({
+ * const result = await createInvoice({
  *   initialScan: {
  *     scanType: InvoiceScanType.Photo,
  *     location: "https://storage.blob.core.windows.net/invoices/scan.jpg",
@@ -80,7 +78,11 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *   }
  * });
  *
- * console.log("Created invoice:", invoice.id);
+ * if (result.success) {
+ *   console.log("Created invoice:", result.data.id);
+ * } else {
+ *   console.error("Failed to create invoice:", result.error);
+ * }
  * ```
  *
  * @see {@link Invoice} for the returned entity structure

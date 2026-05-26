@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for deleting invoice entities.
- * @module lib/actions/invoices/deleteInvoice
+ * @module app/domains/invoices/_actions/invoices/deleteInvoice
  *
  * @remarks
  * Provides soft-delete functionality for invoices. The backend marks invoices
@@ -58,27 +58,24 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - Updates invoice `isDeleted` flag in database
  * - Cascades to associated scan records
  *
- * **Error Handling**: Throws on validation, auth, or API failures.
+ * **Error Handling**: Returns a `ServerActionResult<void>` instead of throwing directly.
  *
- * @param input - The invoice deletion parameters
- * @param input.invoiceId - UUIDv4 of the invoice to delete
- * @returns Promise that resolves when deletion is complete
- * @throws {Error} When invoiceId is not a valid GUID
- * @throws {Error} When authentication fails
- * @throws {Error} When API returns 404 (invoice not found)
- * @throws {Error} When API returns 403 (not authorized to delete)
+ * @param input - The invoice deletion parameters.
+ * @param input.invoiceId - UUIDv4 of the invoice to delete.
+ * @returns A result object with void data on success, or an error result for validation, authorization, or API failures.
  *
  * @example
  * ```typescript
  * import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
  *
- * try {
- *   await deleteInvoice({
- *     invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
- *   });
+ * const result = await deleteInvoice({
+ *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+ * });
+ *
+ * if (result.success) {
  *   console.log("Invoice deleted successfully");
- * } catch (error) {
- *   console.error("Failed to delete invoice:", error);
+ * } else {
+ *   console.error("Failed to delete invoice:", result.error);
  * }
  * ```
  *

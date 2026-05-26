@@ -36,7 +36,7 @@
  * // Fetch all merchants for dropdown
  * import { fetchMerchants } from "@/app/domains/invoices/_actions/merchants";
  *
- * const result = await fetchMerchants({});
+ * const result = await fetchMerchants();
  * if (result.success) {
  *   const options = result.data.map((m) => ({
  *     value: m.id,
@@ -50,7 +50,7 @@
  * // Fetch specific merchant for detail view
  * import { fetchMerchant } from "@/app/domains/invoices/_actions/merchants";
  *
- * const result = await fetchMerchant({ id: merchantId });
+ * const result = await fetchMerchant({ merchantId });
  * if (result.success) {
  *   console.log(result.data.name, result.data.totalSpent);
  * }

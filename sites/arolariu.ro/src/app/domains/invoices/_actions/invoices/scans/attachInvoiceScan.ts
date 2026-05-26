@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for attaching additional scans to existing invoices.
- * @module lib/actions/invoices/attachInvoiceScan
+ * @module app/domains/invoices/_actions/invoices/scans/attachInvoiceScan
  *
  * @remarks
  * Allows users to add supplementary scans to an invoice after initial creation.
@@ -61,22 +61,19 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - Updates invoice aggregate with new scan reference
  * - May trigger re-analysis if configured
  *
- * **Error Handling**: Throws on validation, auth, or API failures.
+ * **Error Handling**: Returns a `ServerActionResult<void>` instead of throwing directly.
  *
- * @param input - The invoice ID and scan payload
- * @param input.invoiceId - UUIDv4 of the invoice to attach scan to
- * @param input.payload - Scan details: type, Azure Blob URL, optional metadata
- * @returns Promise that resolves when scan is successfully attached
- * @throws {Error} When invoiceId is not a valid GUID
- * @throws {Error} When authentication fails
- * @throws {Error} When API returns non-OK status (e.g., 400, 404)
+ * @param input - The invoice ID and scan payload.
+ * @param input.invoiceId - UUIDv4 of the invoice to attach the scan to.
+ * @param input.payload - Scan details, including type, Azure Blob URL, and optional metadata.
+ * @returns A result object with void data on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
  * import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
  * import {InvoiceScanType} from "@/types/invoices";
  *
- * await attachInvoiceScan({
+ * const result = await attachInvoiceScan({
  *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
  *   payload: {
  *     type: InvoiceScanType.Photo,
@@ -84,6 +81,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  *     additionalMetadata: { page: "2" }
  *   }
  * });
+ *
+ * if (!result.success) {
+ *   console.error("Failed to attach scan:", result.error);
+ * }
  * ```
  *
  * @see {@link createInvoiceScan} for uploading the scan file first

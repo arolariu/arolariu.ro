@@ -212,7 +212,11 @@ type ServerActionOutputType = ServerActionResult<Readonly<{
  * - Base64 conversion happens server-side (not in browser)
  *
  * @param input - Update parameters with base64 data, blob name, MIME type, and optional metadata
- * @returns ServerActionResult with updated blob URL on success
+ * @param input.base64Data - Base64-encoded replacement content, with or without a data URI prefix.
+ * @param input.blobName - Blob path within the `invoices` container to overwrite.
+ * @param input.mimeType - MIME type for the replacement content's Azure content type header.
+ * @param input.metadata - Optional metadata merged with the existing blob metadata.
+ * @returns A result object containing the stable blob URL on success, or an error result when authentication, decoding, or Azure upload fails.
  *
  * @example
  * ```typescript

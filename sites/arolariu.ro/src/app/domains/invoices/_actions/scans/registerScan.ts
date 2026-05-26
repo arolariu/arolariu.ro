@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for registering scans after direct client-to-Azure upload.
- * @module lib/actions/scans/registerScan
+ * @module app/domains/invoices/_actions/scans/registerScan
  *
  * @remarks
  * This lightweight action registers scan metadata after a direct upload to Azure.
@@ -46,6 +46,11 @@ type RegisterScanInput = Readonly<{
 
 /**
  * Response from the scan registration operation.
+ *
+ * @remarks
+ * This action intentionally returns a small registration result instead of
+ * `ServerActionResult<T>` because it is paired with direct-upload UI flows that
+ * need only the registered scan or a concise registration error.
  */
 type RegisterScanOutput = Readonly<{
   /** Whether the operation succeeded */
@@ -57,7 +62,14 @@ type RegisterScanOutput = Readonly<{
 }>;
 
 /**
- * Maps MIME type to ScanType enum.
+ * Maps MIME type strings to scan classification values.
+ *
+ * @remarks
+ * Mirrors the standalone scan upload classification so direct-upload and
+ * server-uploaded scans behave consistently in the UI.
+ *
+ * @param mimeType - MIME type reported by the uploaded file.
+ * @returns The scan type used by scan listing and invoice conversion flows.
  */
 function mimeTypeToScanType(mimeType: string): ScanType {
   switch (mimeType.toLowerCase()) {
@@ -90,10 +102,13 @@ function mimeTypeToScanType(mimeType: string): ScanType {
  * - Emits OpenTelemetry spans for tracing
  * - Does NOT create blob in Azure (blob already exists from direct upload)
  *
- * @param input - Registration parameters
- * @returns Object with success status and created Scan entity
- * @throws {Error} When authentication fails
- * @throws {Error} When blob URL validation fails
+ * @param input - Registration parameters for an already-uploaded blob.
+ * @param input.scanId - Scan identifier returned by the SAS URL generation action.
+ * @param input.blobUrl - Plain blob URL without a SAS token; must point to the authenticated user's scan path.
+ * @param input.fileName - Original filename shown in scan lists.
+ * @param input.mimeType - MIME type used for scan classification.
+ * @param input.sizeInBytes - Uploaded file size recorded on the scan entity.
+ * @returns A registration result containing the scan on success, or an error message when authentication, ownership validation, or metadata registration fails.
  *
  * @example
  * ```typescript

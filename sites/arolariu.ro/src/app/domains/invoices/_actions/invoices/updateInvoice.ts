@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Server action for full invoice updates (HTTP POST).
- * @module lib/actions/invoices/updateInvoice
+ * @module app/domains/invoices/_actions/invoices/updateInvoice
  *
  * @remarks
  * Provides a POST endpoint wrapper for replacing an entire invoice resource.
@@ -61,15 +61,20 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * Returns a result object with `success` flag instead of throwing,
  * making it easier to handle errors in UI components.
  *
- * @param input - The invoice ID and complete invoice object
- * @returns A result object containing the updated invoice or error message
- *
- * @throws Never throws directly; all errors returned via result object
+ * @param input - The invoice ID and complete invoice object.
+ * @param input.invoiceId - UUIDv4 of the invoice to replace.
+ * @param input.invoice - Complete invoice payload that replaces the existing resource.
+ * @returns A result object containing the updated invoice, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
  * // Fetch, modify, and update the entire invoice
- * const invoice = await fetchInvoice(invoiceId);
+ * const invoiceResult = await fetchInvoice({invoiceId});
+ * if (!invoiceResult.success) {
+ *   throw new Error(invoiceResult.error);
+ * }
+ *
+ * const invoice = invoiceResult.data;
  * const updatedInvoice = {
  *   ...invoice,
  *   name: "Updated Invoice Name",

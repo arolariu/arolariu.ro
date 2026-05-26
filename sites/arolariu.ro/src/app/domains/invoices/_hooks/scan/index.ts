@@ -8,10 +8,10 @@
  * between server actions and React component state.
  *
  * **Exported Hooks:**
- * - {@link useScanAdd} - Upload new scans to Azure Storage
- * - {@link useScanDelete} - Delete scans with confirmation and cleanup
- * - {@link useScanRename} - Rename scan files with validation
- * - {@link useScanRotation} - Rotate scan images (90°, 180°, 270°)
+ * - {@link useScanAdd} - Upload and attach scans to existing invoices
+ * - {@link useScanDelete} - Delete standalone scan blobs and clean local store state
+ * - {@link useScanRename} - Rename standalone scans in local store state
+ * - {@link useScanRotation} - Rotate standalone image scans clockwise or counterclockwise
  *
  * **Shared Characteristics:**
  * - **Execution Context**: Client-side only (React hooks with `"use client"`)
@@ -20,7 +20,7 @@
  * - **Store Integration**: Updates Zustand `scansStore` on successful operations
  * - **Toast Notifications**: Shows user feedback via toast messages
  * - **Error Handling**: Catches and surfaces user-friendly error messages
- * - **Optimistic Updates**: Some hooks update UI before server confirmation
+ * - **Local Updates**: Rename updates local state only; delete and rotate update local state after server success
  *
  * **React Hook Rules:**
  * All hooks follow React's Rules of Hooks:
@@ -39,57 +39,62 @@
  *
  * **Store Integration:**
  * All hooks interact with the `scansStore` Zustand store:
- * - Add operations: Insert new scan into store
+ * - Add operations: Upload and attach invoice scans without writing to the standalone scans store
  * - Delete operations: Remove scan from store
  * - Rename operations: Update scan name in store
- * - Rotate operations: Update scan blob URL in store
+ * - Rotate operations: Update scan blob URL in store after upload succeeds
  *
  * **Performance Considerations:**
  * - Hooks use `useCallback` to prevent unnecessary re-renders
  * - File operations are debounced where appropriate
- * - Optimistic updates minimize perceived latency
+ * - Local store updates minimize perceived latency after server confirmation
  * - Large file uploads show progress indicators
  *
  * @example
- * ```typescript
- * // Upload multiple scans with progress tracking
+ * ```tsx
+ * // Upload one scan and attach it to an invoice
  * "use client";
  *
  * import { useScanAdd } from "@/app/domains/invoices/_hooks/scan";
  *
- * export function ScanUploader() {
- *   const { addScan, isLoading, error } = useScanAdd();
+ * export function ScanUploader({invoiceId, userIdentifier}: Props) {
+ *   const {addScanCallback, isAdding} = useScanAdd(invoiceId);
  *
- *   const handleUpload = async (files: FileList) => {
- *     for (const file of Array.from(files)) {
- *       await addScan(file);
- *     }
+ *   const handleUpload = async (file: File) => {
+ *     await addScanCallback({
+ *       file,
+ *       fileName: file.name,
+ *       userIdentifier,
+ *       type: InvoiceScanType.Photo,
+ *     });
  *   };
  *
  *   return (
  *     <div>
- *       <input type="file" multiple onChange={e => handleUpload(e.target.files)} />
- *       {isLoading && <Spinner />}
- *       {error && <ErrorMessage>{error}</ErrorMessage>}
+ *       <input type="file" onChange={(event) => {
+ *         const file = event.target.files?.[0];
+ *         if (file) void handleUpload(file);
+ *       }} />
+ *       {isAdding && <Spinner />}
  *     </div>
  *   );
  * }
  * ```
  *
  * @example
- * ```typescript
+ * ```tsx
  * // Delete scan with confirmation
  * "use client";
  *
  * import { useScanDelete } from "@/app/domains/invoices/_hooks/scan";
  *
  * export function ScanCard({ scan }: { scan: Scan }) {
- *   const { deleteScan, isDeleting } = useScanDelete();
+ *   const {deleteScanCallback, isDeleting} = useScanDelete(scan);
  *
  *   const handleDelete = async () => {
  *     const confirmed = await confirmDialog("Delete this scan?");
  *     if (confirmed) {
- *       await deleteScan(scan.id);
+ *       await deleteScanCallback();
  *     }
  *   };
  *
@@ -105,25 +110,20 @@
  * ```
  *
  * @example
- * ```typescript
- * // Rotate scan with optimistic update
+ * ```tsx
+ * // Rotate scan clockwise
  * "use client";
  *
  * import { useScanRotation } from "@/app/domains/invoices/_hooks/scan";
  *
  * export function ScanViewer({ scan }: { scan: Scan }) {
- *   const { rotateScan, isRotating } = useScanRotation();
- *
- *   const handleRotate = (degrees: 90 | 180 | 270) => {
- *     rotateScan(scan.id, degrees);
- *     // UI updates optimistically before server confirms
- *   };
+ *   const {rotateScanCallback, isRotating} = useScanRotation(scan);
  *
  *   return (
  *     <div>
  *       <img src={scan.blobUrl} alt={scan.name} />
- *       <button onClick={() => handleRotate(90)} disabled={isRotating}>
- *         Rotate 90°
+ *       <button onClick={() => rotateScanCallback("cw")} disabled={isRotating}>
+ *         Rotate right
  *       </button>
  *     </div>
  *   );
@@ -134,9 +134,9 @@
  * @see {@link useScanDelete} - Delete scans
  * @see {@link useScanRename} - Rename scans
  * @see {@link useScanRotation} - Rotate scan images
- * @see {@link createScan} - Server action for uploading scans
- * @see {@link deleteScan} - Server action for deleting scans
- * @see {@link updateScan} - Server action for updating scans
+ * @see {@link createInvoiceScan} - Server action for uploading invoice-attached scans.
+ * @see {@link deleteScan} - Server action for deleting standalone scans.
+ * @see {@link updateScan} - Server action for updating standalone scan blobs.
  */
 
 export { useScanAdd } from "./useScanAdd";

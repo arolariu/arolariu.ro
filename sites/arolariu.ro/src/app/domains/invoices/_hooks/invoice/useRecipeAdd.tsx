@@ -1,8 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Hook for adding a recipe to an invoice's possibleRecipes array via patchInvoice.
- * @module app/domains/invoices/_hooks/useRecipeAdd
+* @fileoverview Hook for adding recipes to an invoice in local state.
+* @module app/domains/invoices/_hooks/invoice/useRecipeAdd
+*
+* @remarks
+* Updates the invoice's `possibleRecipes` collection through the invoices
+* Zustand store. This hook currently performs a client-side mutation only; it
+* does not call an invoice server action.
  */
 
 import {useInvoicesStore} from "@/stores";
@@ -10,18 +15,37 @@ import type {Invoice, Recipe} from "@/types/invoices";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 
+/**
+ * Hook output type for adding recipes.
+ */
 type HookOutputType = Readonly<{
+  /** Whether a recipe add operation is in progress. */
   isAdding: boolean;
-  /** Appends a recipe to invoice.possibleRecipes via patchInvoice; throws on failure. NO toast — caller decides. */
+  /** Appends a recipe to `invoice.possibleRecipes` in the local invoice store. */
   addRecipeCallback: (recipe: Recipe) => Promise<Invoice>;
 }>;
 
 /**
- * Manages adding a recipe to the current invoice read from EditInvoiceContext.
+ * Manages adding a recipe to the provided invoice.
+ *
+ * @remarks
+ * The hook derives an updated invoice snapshot by appending the supplied recipe
+ * to `invoice.possibleRecipes`, writes the array to the invoices store, and
+ * returns the updated snapshot. Callers own toast notifications and persistence
+ * decisions because no server-side recipe mutation is currently performed.
+ *
  * Callers should await the mutation and resulting refresh before triggering another recipe mutation.
  *
- * @returns State and callback for adding a recipe.
- * @throws {Error} When patchInvoice reports a failure.
+ * @param invoice - The invoice whose `possibleRecipes` array should receive the new recipe.
+ * @returns Hook state with add progress and the recipe add callback.
+ *
+ * @example
+ * ```tsx
+ * const {isAdding, addRecipeCallback} = useRecipeAdd(invoice);
+ *
+ * const updatedInvoice = await addRecipeCallback(recipe);
+ * console.log(updatedInvoice.possibleRecipes.length);
+ * ```
  */
 export function useRecipeAdd(invoice: Invoice): Readonly<HookOutputType> {
   const t = useTranslations("IMS--Hooks.useRecipeAdd");

@@ -1,8 +1,14 @@
 "use client";
 
 /**
- * @fileoverview Hook for managing invoice deletion (single + bulk) with server action integration.
- * @module app/domains/invoices/_hooks/useInvoiceDelete
+* @fileoverview Hook for deleting invoices individually or in sequential batches.
+* @module app/domains/invoices/_hooks/invoice/useInvoiceDelete
+*
+* @remarks
+* Wraps the invoice deletion server action with client-side loading state,
+* toast feedback, navigation after single deletes, and Zustand store updates.
+* Bulk deletion is intentionally sequential so a partial failure can be
+* reported without overwhelming the backend.
  */
 
 import {useInvoicesStore} from "@/stores";
@@ -31,7 +37,12 @@ type BulkDeleteResult = Readonly<{
 }>;
 
 /**
- * Hook output type.
+ * Hook output type for invoice deletion operations.
+ *
+ * @remarks
+ * `deleteInvoiceCallback` is overloaded: passing a single invoice ID resolves
+ * when the operation completes, while passing an array returns aggregate bulk
+ * deletion counts and failed IDs.
  */
 type HookOutputType = Readonly<{
   isDeleting: boolean;
@@ -42,15 +53,15 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Manages invoice deletion (single + bulk) with toast notifications and store sync.
+ * Manages invoice deletion with toast notifications and invoice store sync.
  *
  * @remarks
  * **Behavior contract:**
  * - `deleteInvoiceCallback(invoiceId: string)`:
  *   1. Sets `isDeleting→true`
  *   2. Calls server mutation and removes entity from Zustand store
- *   3. On success: toasts success message, calls `onComplete`
- *   4. On failure: toasts error with message; entity NOT removed; `onComplete` NOT called
+ *   3. On success: removes the entity locally, shows a success toast, and navigates to the invoice list
+ *   4. On failure: shows an error toast and keeps the entity in local state
  *   5. Resets `isDeleting→false` in `finally`
  *
  * - `deleteInvoiceCallback(invoiceIds: readonly string[])`:
@@ -58,15 +69,14 @@ type HookOutputType = Readonly<{
  *   2. Processes deletions recursively via tail-recursive `processBulkRecursive`
  *   3. Aggregates `successCount`/`failureCount` and failed invoice IDs
  *   4. Emits ONE summary toast based on outcome (all-success / all-fail / partial)
- *   5. Calls `onComplete` once at the end (regardless of outcome) for cleanup
- *   6. Returns the aggregated counts and failed invoice IDs
- *   7. Resets `isDeleting→false` in `finally`
+ *   5. Returns the aggregated counts and failed invoice IDs
+ *   6. Resets `isDeleting→false` in `finally`
  *
  * **Design Rationale:**
  * - Single `deleteInvoiceCallback` function uses method overloading for ergonomic API
  * - Recursive bulk processing ensures sequential execution without blocking
  * - Unified error handling reduces code duplication
- * - Client-side mutations maintain immediate UI feedback before server confirmation
+ * - Client-side mutations keep the store aligned after each awaited server action
  *
  * **Performance Characteristics:**
  * - Bulk deletions process sequentially (not parallel) to avoid overwhelming the backend
@@ -78,19 +88,19 @@ type HookOutputType = Readonly<{
  * - Single deletions: Catches errors, toasts message, does NOT call `onComplete`
  * - Bulk deletions: Per-item try/catch ensures partial success is possible
  *
- * @returns Object containing deletion state and unified action callback
+ * @returns Hook state with deletion progress and the unified delete callback.
  *
  * @example
- * Single deletion with navigation callback:
+ * Single deletion:
  * ```tsx
- * const {isDeleting, deleteInvoiceCallback} = useInvoiceDelete(() => router.push("/domains/invoices/view-invoices"));
+ * const {isDeleting, deleteInvoiceCallback} = useInvoiceDelete();
  * <button onClick={() => deleteInvoiceCallback("inv-123")} disabled={isDeleting}>Delete</button>
  * ```
  *
  * @example
  * Bulk deletion with result handling:
  * ```tsx
- * const {isDeleting, deleteInvoiceCallback} = useInvoiceDelete(() => setSelectedInvoices([]));
+ * const {isDeleting, deleteInvoiceCallback} = useInvoiceDelete();
  * const result = await deleteInvoiceCallback(["inv-1", "inv-2", "inv-3"]);
  * if (result.failureCount > 0) {
  *   console.log(`Failed to delete: ${result.failedIds.join(", ")}`);
@@ -107,19 +117,18 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
   const router = useRouter();
 
   /**
-   * Atomically deletes an invoice on the server and removes it from the client store.
+   * Deletes an invoice on the server and removes it from the client store.
    *
    * @remarks
    * **Atomicity:** This operation is NOT atomic. If server mutation succeeds but client
    * mutation fails, the invoice will be deleted on the server but remain in the UI until
    * page refresh. In practice, client mutations are synchronous and infallible.
    *
-   * **Error Propagation:** Throws exceptions from server mutation without catching them,
-   * allowing the caller to handle errors appropriately (single vs bulk deletion).
+   * **Error Propagation:** Exceptions thrown by the server action or store mutation
+   * propagate to the caller. Server action error results are not inspected here.
    *
    * @param id - Invoice UUID to delete. Must be a valid identifier in both server and client stores.
-   * @returns Promise that resolves when both server and client mutations complete
-   * @throws When server mutation fails (network error, 404, authorization failure, etc.)
+   * @returns A promise that resolves after the server action has completed and the local store has been updated.
    *
    * @see {@link deleteInvoiceServerSide} - Server action performing the deletion
    * @see {@link deleteInvoiceClientSide} - Zustand store mutation
@@ -151,10 +160,10 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    * **Performance**: Processes deletions sequentially to avoid overwhelming the backend.
    * For large batches (>100 items), consider chunking or progress indicators.
    *
-   * @param ids - Array of invoice UUIDs to delete sequentially
+   * @param ids - Array of invoice UUIDs to delete sequentially.
    * @param index - Current position in the array (0-based). Start with 0.
-   * @param acc - Accumulator object tracking success/failure counts and failed IDs
-   * @returns Promise resolving to final aggregated deletion result
+   * @param acc - Accumulator object tracking success/failure counts and failed IDs.
+   * @returns Aggregated deletion result after every invoice ID has been attempted.
    *
    * @example
    * Internal usage (not called directly by consumers):
@@ -219,8 +228,8 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    * **Loading State**: Sets `isDeleting` to true at start, false in finally block.
    * This prevents race conditions and ensures UI state consistency.
    *
-   * @param invoiceIdOrIds - Single invoice UUID or array of UUIDs to delete
-   * @returns Promise resolving to void (single) or BulkDeleteResult (bulk)
+   * @param invoiceIdOrIds - Single invoice UUID or array of UUIDs to delete.
+   * @returns A promise resolving to void for a single delete, or aggregate counts for a bulk delete.
    *
    * @see {@link BulkDeleteResult} - Return type for bulk operations
    */

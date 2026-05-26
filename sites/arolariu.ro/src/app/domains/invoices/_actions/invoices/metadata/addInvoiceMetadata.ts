@@ -80,7 +80,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - `bff.request.add-invoice-metadata.start/complete` - API request events
  *
  * **Error Handling:**
- * - GUID validation failures throw immediately
+ * - GUID validation failures are caught and returned as error results
  * - Empty `entries` payload returns a validation error result
  * - HTTP 5xx errors return user message about server issues
  * - HTTP 4xx errors return generic retry message
@@ -91,10 +91,10 @@ type ServerActionOutputType = ServerActionResult<void>;
  * - Emits telemetry spans and logs
  * - Does not update local cache (caller is responsible for refetch/sync)
  *
- * @param params - The input parameters object
+ * @param params - The input parameters object.
  * @param params.invoiceId - The UUID of the invoice to update. Must be a valid UUIDv4 string.
  * @param params.entries - Record of metadata key/value pairs to upsert. Must be non-empty.
- * @returns Promise resolving to ServerActionResult with void data on success, or error details on failure.
+ * @returns A result object with void data on success, or an error result when validation, authorization, or the backend request fails.
  *
  * @example
  * ```typescript
@@ -115,7 +115,6 @@ type ServerActionOutputType = ServerActionResult<void>;
  * });
  * ```
  *
- * @throws {Error} When invoiceId is not a valid GUID (validation failure)
  * @see {@link fetchBFFUserFromAuthService} - Authentication token retrieval
  * @see {@link validateStringIsGuidType} - GUID validation utility
  * @see {@link ServerActionResult} - Result type wrapper

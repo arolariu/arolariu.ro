@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching a single merchant by identifier.
- * @module hooks/useMerchant
+* @module app/domains/invoices/_hooks/merchant/useMerchant
  *
  * @remarks
  * Client-side data hook that integrates with the merchants Zustand store.
@@ -72,9 +72,9 @@ type HookOutputType = Readonly<{
  * - Stale-while-revalidate pattern: shows cached data while fetching fresh
  * - Consider using {@link useMerchants} with client-side filtering for list views
  *
- * @param params - Hook configuration
- * @param params.merchantIdentifier - UUID of merchant to fetch
- * @returns Object containing merchant data, loading state, and error state
+ * @param params - Hook configuration.
+ * @param params.merchantIdentifier - UUID of the merchant to fetch and cache.
+ * @returns Hook state containing the cached merchant, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx
