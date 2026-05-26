@@ -58,9 +58,9 @@ export type EmailTemplateConfig<P> = {
    * render: ({locale, t, props}) => (
    *   <EmailLayout
    *     locale={locale}
-   *     preview={t(selectorFromPath("email.welcome.preview"), {name: props.username})}
-   *     heading={t(selectorFromPath("email.welcome.heading"))}>
-   *     <Text>{t(selectorFromPath("email.welcome.greeting"), {name: props.username})}</Text>
+   *     preview={t(selectorFromPath("emails.welcome.preview"), {name: props.username})}
+   *     heading={t(selectorFromPath("emails.welcome.heading"))}>
+   *     <Text>{t(selectorFromPath("emails.welcome.greeting"), {name: props.username})}</Text>
    *   </EmailLayout>
    * )
    * ```
@@ -136,9 +136,9 @@ export type EmailTemplate<P> = ((props: P & {readonly locale?: EmailLocale}) => 
  *     return (
  *       <EmailLayout
  *         locale={locale}
- *         preview={t(selectorFromPath("email.welcome.preview"), {brand: BRAND.name, name})}
- *         heading={t(selectorFromPath("email.welcome.heading"), {brand: BRAND.name})}>
- *         <Text>{t(selectorFromPath("email.welcome.greeting"), {name})}</Text>
+ *         preview={t(selectorFromPath("emails.welcome.preview"), {brand: BRAND.name, name})}
+ *         heading={t(selectorFromPath("emails.welcome.heading"), {brand: BRAND.name})}>
+ *         <Text>{t(selectorFromPath("emails.welcome.greeting"), {name})}</Text>
  *       </EmailLayout>
  *     );
  *   },

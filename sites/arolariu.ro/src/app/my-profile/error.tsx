@@ -20,17 +20,17 @@ export default function ProfileError({error, reset}: ProfileErrorProps): React.J
       role='alert'
       aria-live='assertive'
       data-scope='my-profile'>
-      <h1>{t((m) => m.Errors.globalError.hero.title)}</h1>
-      <p>{t((m) => m.Errors.globalError.hero.subtitle)}</p>
+      <h1>{t((m) => m.app.errors.globalError.hero.title)}</h1>
+      <p>{t((m) => m.app.errors.globalError.hero.subtitle)}</p>
       {error.digest ? (
         <p>
-          <span>{t((m) => m.Errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
+          <span>{t((m) => m.app.errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
         </p>
       ) : null}
       <button
         type='button'
         onClick={reset}>
-        {t((m) => m.Errors.globalError.buttons.tryAgain)}
+        {t((m) => m.app.errors.globalError.buttons.tryAgain)}
       </button>
     </section>
   );

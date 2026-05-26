@@ -56,8 +56,8 @@ export default function ReviewStep(): React.JSX.Element {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>{t((m) => m["IMS--Create"].reviewStep.title)}</h2>
-        <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].reviewStep.subtitle)}</p>
+        <h2 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.subtitle)}</p>
       </div>
 
       {/* Selected Scans */}
@@ -65,7 +65,7 @@ export default function ReviewStep(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["sectionTitle"]}>
             <TbPhoto />
-            {t((m) => m["IMS--Create"].reviewStep.sections.scans.title)}
+            {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.scans.title)}
             <Badge variant='secondary'>{selectedScans.length}</Badge>
           </CardTitle>
         </CardHeader>
@@ -102,14 +102,14 @@ export default function ReviewStep(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["sectionTitle"]}>
             <TbFileInvoice />
-            {t((m) => m["IMS--Create"].reviewStep.sections.details.title)}
+            {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.title)}
           </CardTitle>
         </CardHeader>
         <CardContent className={styles["detailsContent"]}>
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbFileDescription />
-              {t((m) => m["IMS--Create"].reviewStep.sections.details.name)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.name)}
             </div>
             <div className={styles["detailValue"]}>{invoiceDetails.name}</div>
           </div>
@@ -117,27 +117,27 @@ export default function ReviewStep(): React.JSX.Element {
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCategory />
-              {t((m) => m["IMS--Create"].reviewStep.sections.details.category)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.category)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(selectorFromPath(`IMS--Create.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`))}</Badge>
+              <Badge variant='outline'>{t(selectorFromPath(`forms.invoices.createInvoice.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`))}</Badge>
             </div>
           </div>
 
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCreditCard />
-              {t((m) => m["IMS--Create"].reviewStep.sections.details.paymentType)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.paymentType)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(selectorFromPath(`IMS--Create.reviewStep.paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`))}</Badge>
+              <Badge variant='outline'>{t(selectorFromPath(`forms.invoices.createInvoice.reviewStep.paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`))}</Badge>
             </div>
           </div>
 
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCalendar />
-              {t((m) => m["IMS--Create"].reviewStep.sections.details.transactionDate)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.transactionDate)}
             </div>
             <div className={styles["detailValue"]}>{format.dateTime(invoiceDetails.transactionDate, {dateStyle: "long"})}</div>
           </div>
@@ -146,7 +146,7 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailRow"]}>
               <div className={styles["detailLabel"]}>
                 <TbFileDescription />
-                {t((m) => m["IMS--Create"].reviewStep.sections.details.description)}
+                {t((m) => m.forms.invoices.createInvoice.reviewStep.sections.details.description)}
               </div>
               <div className={styles["detailValue"]}>{invoiceDetails.description}</div>
             </div>
@@ -164,16 +164,16 @@ export default function ReviewStep(): React.JSX.Element {
           {isCreating ? (
             <>
               <Spinner className={styles["spinner"]} />
-              {t((m) => m["IMS--Create"].reviewStep.actions.creating)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.creating)}
             </>
           ) : (
             <>
               <TbSparkles />
-              {t((m) => m["IMS--Create"].reviewStep.actions.create)}
+              {t((m) => m.forms.invoices.createInvoice.reviewStep.actions.create)}
             </>
           )}
         </Button>
-        <p className={styles["createHint"]}>{t((m) => m["IMS--Create"].reviewStep.actions.hint)}</p>
+        <p className={styles["createHint"]}>{t((m) => m.forms.invoices.createInvoice.reviewStep.actions.hint)}</p>
       </div>
     </div>
   );

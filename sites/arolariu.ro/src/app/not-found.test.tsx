@@ -5,13 +5,13 @@ import NotFound from "./not-found";
 describe("app/not-found.tsx", () => {
   it("renders the 404 title and subtitle keys", () => {
     render(<NotFound />);
-    expect(screen.getByText("Errors.notFound.title")).toBeInTheDocument();
-    expect(screen.getByText("Errors.notFound.subtitle")).toBeInTheDocument();
+    expect(screen.getByText("app.errors.notFound.title")).toBeInTheDocument();
+    expect(screen.getByText("app.errors.notFound.subtitle")).toBeInTheDocument();
   });
 
   it("renders a link back to the home page", () => {
     render(<NotFound />);
-    const link = screen.getByRole("link", {name: "Errors.notFound.buttons.returnButton"});
+    const link = screen.getByRole("link", {name: "app.errors.notFound.buttons.returnButton"});
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/");
   });

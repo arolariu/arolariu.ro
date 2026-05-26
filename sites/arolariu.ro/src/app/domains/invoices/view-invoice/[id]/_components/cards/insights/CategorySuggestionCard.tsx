@@ -61,14 +61,14 @@ export function CategorySuggestionCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbHelpCircle className={styles["titleIcon"]} />
-            {t((m) => m["IMS--Cards"].categorySuggestionCard.title)}
+            {t((m) => m.cards.invoices.categorySuggestionCard.title)}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className={styles["contentSpaced"]}>
           {/* Explanation */}
-          <p className={styles["description"]}>{t((m) => m["IMS--Cards"].categorySuggestionCard.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.cards.invoices.categorySuggestionCard.description)}</p>
 
           {/* Main Categories Grid */}
           <div className={styles["mainGrid"]}>
@@ -85,7 +85,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
 
           {/* More Categories Grid */}
           <div className={styles["moreSection"]}>
-            <p className={styles["moreLabel"]}>{t((m) => m["IMS--Cards"].categorySuggestionCard.moreCategories)}</p>
+            <p className={styles["moreLabel"]}>{t((m) => m.cards.invoices.categorySuggestionCard.moreCategories)}</p>
             <div className={styles["moreGrid"]}>
               {extendedCategories.map((category) => (
                 <CategoryButton
@@ -103,7 +103,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
           <div className={styles["gamificationBox"]}>
             <div className={styles["gamificationHeader"]}>
               <TbGift className={styles["gamificationGiftIcon"]} />
-              <span className={styles["gamificationLabel"]}>{t((m) => m["IMS--Cards"].categorySuggestionCard.gamification, {goal: String(goal)})}</span>
+              <span className={styles["gamificationLabel"]}>{t((m) => m.cards.invoices.categorySuggestionCard.gamification, {goal: String(goal)})}</span>
             </div>
             <div className={styles["gamificationProgress"]}>
               <Progress value={(categorizedCount / goal) * 100} />

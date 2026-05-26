@@ -166,8 +166,8 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
           {remainingCount > 0 && <div className={styles["thumbnailMore"]}>+{remainingCount}</div>}
         </div>
         <div className={styles["text"]}>
-          <p className={styles["title"]}>{t((m) => m["IMS--ViewScans"].groupBanner.title, {count: String(scanGroup.length)})}</p>
-          <p className={styles["subtitle"]}>{t((m) => m["IMS--ViewScans"].groupBanner.subtitle)}</p>
+          <p className={styles["title"]}>{t((m) => m.pages.invoices.viewScans.groupBanner.title, {count: String(scanGroup.length)})}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewScans.groupBanner.subtitle)}</p>
         </div>
       </div>
       <div className={styles["actions"]}>
@@ -176,14 +176,14 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
           onClick={handleCombine}
           className={styles["createButton"]}>
           <TbCheck className={styles["checkIcon"]} />
-          {t((m) => m["IMS--ViewScans"].groupBanner.createInvoice)}
+          {t((m) => m.pages.invoices.viewScans.groupBanner.createInvoice)}
         </Button>
         <Button
           variant='ghost'
           size='sm'
           onClick={handleDismiss}
           className={styles["dismissButton"]}>
-          {t((m) => m["IMS--ViewScans"].groupBanner.dismiss)}
+          {t((m) => m.pages.invoices.viewScans.groupBanner.dismiss)}
         </Button>
       </div>
     </motion.div>

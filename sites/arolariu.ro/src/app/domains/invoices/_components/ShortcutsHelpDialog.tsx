@@ -111,9 +111,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
               className={styles["icon"]}
               aria-hidden='true'
             />
-            <DialogTitle className={styles["title"]}>{t((m) => m["IMS--Common"].shortcuts.title)}</DialogTitle>
+            <DialogTitle className={styles["title"]}>{t((m) => m.shared.invoices.shortcuts.title)}</DialogTitle>
           </div>
-          <DialogDescription className={styles["description"]}>{t((m) => m["IMS--Common"].shortcuts.description)}</DialogDescription>
+          <DialogDescription className={styles["description"]}>{t((m) => m.shared.invoices.shortcuts.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["shortcutsGrid"]}>
@@ -130,7 +130,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
                   </Kbd>
                 ))}
               </KbdGroup>
-              <span className={styles["shortcutDescription"]}>{t(selectorFromPath(`IMS--Common.shortcuts.${shortcut.descriptionKey}`))}</span>
+              <span className={styles["shortcutDescription"]}>{t(selectorFromPath(`shared.invoices.shortcuts.${shortcut.descriptionKey}`))}</span>
             </div>
           ))}
         </div>
@@ -140,7 +140,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
             onClick={onClose}
             variant='default'
             className={styles["closeButton"]}>
-            {t((m) => m["IMS--Common"].shortcuts.close)}
+            {t((m) => m.shared.invoices.shortcuts.close)}
           </Button>
         </DialogFooter>
       </DialogContent>

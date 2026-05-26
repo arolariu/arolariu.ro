@@ -50,7 +50,7 @@ function ScanThumbnail({scan}: Readonly<{scan: {name: string; blobUrl: string; s
     <Card className={styles["thumbnailCard"]}>
       <CardContent className={styles["thumbnailContent"]}>
         <div className={styles["thumbnailHeader"]}>
-          <h3 className={styles["thumbnailTitle"]}>{t((m) => m["IMS--Create"].detailsForm.scanPreview.title)}</h3>
+          <h3 className={styles["thumbnailTitle"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.scanPreview.title)}</h3>
           <span className={styles["scanName"]}>{scan.name}</span>
         </div>
         <div className={styles["thumbnailImageWrapper"]}>
@@ -129,8 +129,8 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>{t((m) => m["IMS--Create"].detailsForm.title)}</h2>
-        <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].detailsForm.subtitle)}</p>
+        <h2 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.subtitle)}</p>
       </div>
 
       <div className={styles["contentWrapper"]}>
@@ -146,62 +146,62 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
           <CardContent className={styles["formContent"]}>
             {/* Invoice Name */}
             <div className={styles["formField"]}>
-              <Label htmlFor='invoice-name'>{t((m) => m["IMS--Create"].detailsForm.fields.name.label)}</Label>
+              <Label htmlFor='invoice-name'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.name.label)}</Label>
               <Input
                 id='invoice-name'
                 type='text'
-                placeholder={t((m) => m["IMS--Create"].detailsForm.fields.name.placeholder)}
+                placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.name.placeholder)}
                 value={invoiceDetails.name}
                 onChange={handleNameChange}
                 required
               />
-              <p className={styles["fieldHint"]}>{t((m) => m["IMS--Create"].detailsForm.fields.name.hint)}</p>
+              <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.name.hint)}</p>
             </div>
 
             {/* Category */}
             <div className={styles["formField"]}>
-              <Label htmlFor='invoice-category'>{t((m) => m["IMS--Create"].detailsForm.fields.category.label)}</Label>
+              <Label htmlFor='invoice-category'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.label)}</Label>
               <Select
                 value={invoiceDetails.category.toString()}
                 onValueChange={handleCategoryChange}>
                 <SelectTrigger id='invoice-category'>
-                  <SelectValue placeholder={t((m) => m["IMS--Create"].detailsForm.fields.category.placeholder)} />
+                  <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.notDefined)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.grocery)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.fastFood)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.homeCleaning)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.carAuto)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.category.options.other)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.notDefined)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.grocery)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.fastFood)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.homeCleaning)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.carAuto)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.other)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Payment Type */}
             <div className={styles["formField"]}>
-              <Label htmlFor='payment-type'>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.label)}</Label>
+              <Label htmlFor='payment-type'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.label)}</Label>
               <Select
                 value={invoiceDetails.paymentType.toString()}
                 onValueChange={handlePaymentTypeChange}>
                 <SelectTrigger id='payment-type'>
-                  <SelectValue placeholder={t((m) => m["IMS--Create"].detailsForm.fields.paymentType.placeholder)} />
+                  <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={PaymentType.Unknown.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.unknown)}</SelectItem>
-                  <SelectItem value={PaymentType.Cash.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.cash)}</SelectItem>
-                  <SelectItem value={PaymentType.Card.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.card)}</SelectItem>
-                  <SelectItem value={PaymentType.Transfer.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.transfer)}</SelectItem>
-                  <SelectItem value={PaymentType.MobilePayment.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.mobilePayment)}</SelectItem>
-                  <SelectItem value={PaymentType.Voucher.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.voucher)}</SelectItem>
-                  <SelectItem value={PaymentType.Other.toString()}>{t((m) => m["IMS--Create"].detailsForm.fields.paymentType.options.other)}</SelectItem>
+                  <SelectItem value={PaymentType.Unknown.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.unknown)}</SelectItem>
+                  <SelectItem value={PaymentType.Cash.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.cash)}</SelectItem>
+                  <SelectItem value={PaymentType.Card.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.card)}</SelectItem>
+                  <SelectItem value={PaymentType.Transfer.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.transfer)}</SelectItem>
+                  <SelectItem value={PaymentType.MobilePayment.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.mobilePayment)}</SelectItem>
+                  <SelectItem value={PaymentType.Voucher.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.voucher)}</SelectItem>
+                  <SelectItem value={PaymentType.Other.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.other)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Transaction Date */}
             <div className={styles["formField"]}>
-              <Label htmlFor='transaction-date'>{t((m) => m["IMS--Create"].detailsForm.fields.transactionDate.label)}</Label>
+              <Label htmlFor='transaction-date'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.transactionDate.label)}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -227,16 +227,16 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
 
             {/* Description */}
             <div className={styles["formField"]}>
-              <Label htmlFor='invoice-description'>{t((m) => m["IMS--Create"].detailsForm.fields.description.label)}</Label>
+              <Label htmlFor='invoice-description'>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.description.label)}</Label>
               <Textarea
                 id='invoice-description'
-                placeholder={t((m) => m["IMS--Create"].detailsForm.fields.description.placeholder)}
+                placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.description.placeholder)}
                 value={invoiceDetails.description}
                 onChange={handleDescriptionChange}
                 rows={4}
                 className={styles["descriptionTextarea"]}
               />
-              <p className={styles["fieldHint"]}>{t((m) => m["IMS--Create"].detailsForm.fields.description.hint)}</p>
+              <p className={styles["fieldHint"]}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.description.hint)}</p>
             </div>
           </CardContent>
         </Card>

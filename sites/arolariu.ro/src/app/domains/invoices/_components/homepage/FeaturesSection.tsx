@@ -31,7 +31,7 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             transition={{duration: 0.6}}>
             <Image
               src='/images/domains/invoices/invoice-bottom.svg'
-              alt={t((m) => m["IMS--Landing"].features.imageAlt)}
+              alt={t((m) => m.pages.invoices.landing.features.imageAlt)}
               width={500}
               height={500}
               className={styles["featuresImage"]}
@@ -44,32 +44,32 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.6, delay: 0.2}}>
             <div className={styles["featuresHeader"]}>
-              <h2 className={styles["sectionTitle"]}>{t((m) => m["IMS--Landing"].features.title)}</h2>
-              <p className={styles["sectionDescription"]}>{t((m) => m["IMS--Landing"].features.description)}</p>
+              <h2 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.landing.features.title)}</h2>
+              <p className={styles["sectionDescription"]}>{t((m) => m.pages.invoices.landing.features.description)}</p>
             </div>
 
             <div className={styles["featuresList"]}>
               <FeatureItem
                 icon={TbPhoto}
-                title={t((m) => m["IMS--Landing"].features.ocr.title)}
-                description={t((m) => m["IMS--Landing"].features.ocr.description)}
+                title={t((m) => m.pages.invoices.landing.features.ocr.title)}
+                description={t((m) => m.pages.invoices.landing.features.ocr.description)}
               />
               <FeatureItem
                 icon={TbChartBar}
-                title={t((m) => m["IMS--Landing"].features.analytics.title)}
-                description={t((m) => m["IMS--Landing"].features.analytics.description)}
+                title={t((m) => m.pages.invoices.landing.features.analytics.title)}
+                description={t((m) => m.pages.invoices.landing.features.analytics.description)}
               />
               <FeatureItem
                 icon={TbFileInvoice}
-                title={t((m) => m["IMS--Landing"].features.batch.title)}
-                description={t((m) => m["IMS--Landing"].features.batch.description)}
+                title={t((m) => m.pages.invoices.landing.features.batch.title)}
+                description={t((m) => m.pages.invoices.landing.features.batch.description)}
               />
             </div>
 
             {!isAuthenticated && (
               <div className={styles["signInPrompt"]}>
                 <p className={styles["signInPromptText"]}>
-                  <strong>{t((m) => m["IMS--Landing"].features.signIn)}</strong> {t((m) => m["IMS--Landing"].features.signInPrompt)}
+                  <strong>{t((m) => m.pages.invoices.landing.features.signIn)}</strong> {t((m) => m.pages.invoices.landing.features.signInPrompt)}
                 </p>
               </div>
             )}

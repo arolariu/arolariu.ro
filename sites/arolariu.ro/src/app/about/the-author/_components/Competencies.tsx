@@ -35,34 +35,34 @@ export default function Competencies(): React.JSX.Element {
 
   const skills = [
     {
-      title: t((m) => m.About.Author.Competencies.competences.algorithmicSkills.title),
+      title: t((m) => m.sections.about.author.competencies.competences.algorithmicSkills.title),
       icon: <TbCalculator className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.algorithmicSkills.description),
+      description: t((m) => m.sections.about.author.competencies.competences.algorithmicSkills.description),
     },
     {
-      title: t((m) => m.About.Author.Competencies.competences.testDrivenDevelopment.title),
+      title: t((m) => m.sections.about.author.competencies.competences.testDrivenDevelopment.title),
       icon: <TbTestPipe className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.testDrivenDevelopment.description),
+      description: t((m) => m.sections.about.author.competencies.competences.testDrivenDevelopment.description),
     },
     {
-      title: t((m) => m.About.Author.Competencies.competences.domainDrivenDesign.title),
+      title: t((m) => m.sections.about.author.competencies.competences.domainDrivenDesign.title),
       icon: <TbBook2 className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.domainDrivenDesign.description),
+      description: t((m) => m.sections.about.author.competencies.competences.domainDrivenDesign.description),
     },
     {
-      title: t((m) => m.About.Author.Competencies.competences.agileMethodologies.title),
+      title: t((m) => m.sections.about.author.competencies.competences.agileMethodologies.title),
       icon: <TbUsers className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.agileMethodologies.description),
+      description: t((m) => m.sections.about.author.competencies.competences.agileMethodologies.description),
     },
     {
-      title: t((m) => m.About.Author.Competencies.competences.customerCentric.title),
+      title: t((m) => m.sections.about.author.competencies.competences.customerCentric.title),
       icon: <TbBrain className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.customerCentric.description),
+      description: t((m) => m.sections.about.author.competencies.competences.customerCentric.description),
     },
     {
-      title: t((m) => m.About.Author.Competencies.competences.engineeringExcellence.title),
+      title: t((m) => m.sections.about.author.competencies.competences.engineeringExcellence.title),
       icon: <TbCheck className={styles["icon"]} />,
-      description: t((m) => m.About.Author.Competencies.competences.engineeringExcellence.description),
+      description: t((m) => m.sections.about.author.competencies.competences.engineeringExcellence.description),
     },
   ];
 
@@ -73,8 +73,8 @@ export default function Competencies(): React.JSX.Element {
         animate={inView ? {opacity: 1, y: 0} : {opacity: 0, y: 20}}
         transition={{duration: 0.6}}
         className={styles["header"]}>
-        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Competencies.title)}</h2>
-        <p className={styles["subtitle"]}>{t((m) => m.About.Author.Competencies.subtitle)}</p>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.competencies.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m.sections.about.author.competencies.subtitle)}</p>
       </motion.div>
 
       <motion.div

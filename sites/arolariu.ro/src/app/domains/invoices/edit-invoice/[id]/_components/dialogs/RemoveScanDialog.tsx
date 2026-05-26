@@ -53,8 +53,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
     if (!invoice || !scan) return;
 
     if (isLastScan) {
-      toast.error(t((m) => m["IMS--Dialogs"].removeScanDialog.toasts.cannotDeleteLastTitle), {
-        description: t((m) => m["IMS--Dialogs"].removeScanDialog.toasts.cannotDeleteLastDescription),
+      toast.error(t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastTitle), {
+        description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastDescription),
       });
       return;
     }
@@ -66,8 +66,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
         scanLocation: scan.location,
       });
 
-      toast.success(t((m) => m["IMS--Dialogs"].removeScanDialog.toasts.removedTitle), {
-        description: t((m) => m["IMS--Dialogs"].removeScanDialog.toasts.removedDescription),
+      toast.success(t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedTitle), {
+        description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedDescription),
       });
 
       close();
@@ -75,9 +75,9 @@ export default function RemoveScanDialog(): React.JSX.Element {
       // Refresh the page to reflect the change
       router.refresh();
     } catch (error) {
-      console.error(t((m) => m["IMS--Dialogs"].removeScanDialog.console.deleteError), error);
-      toast.error(t((m) => m["IMS--Dialogs"].removeScanDialog.toasts.removeFailedTitle), {
-        description: error instanceof Error ? error.message : t((m) => m["IMS--Dialogs"].removeScanDialog.errors.unknown),
+      console.error(t((m) => m.dialogs.invoices.removeScanDialog.console.deleteError), error);
+      toast.error(t((m) => m.dialogs.invoices.removeScanDialog.toasts.removeFailedTitle), {
+        description: error instanceof Error ? error.message : t((m) => m.dialogs.invoices.removeScanDialog.errors.unknown),
       });
     } finally {
       setIsDeleting(false);
@@ -100,10 +100,10 @@ export default function RemoveScanDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className={styles["dialogTitle"]}>
             <TbAlertTriangle className={styles["alertIcon"]} />
-            {t((m) => m["IMS--Dialogs"].removeScanDialog.title)}
+            {t((m) => m.dialogs.invoices.removeScanDialog.title)}
           </DialogTitle>
           <DialogDescription>
-            {isLastScan ? t((m) => m["IMS--Dialogs"].removeScanDialog.descriptionLastScan) : t((m) => m["IMS--Dialogs"].removeScanDialog.description, {current: String(currentScanNumber), total: String(totalScans)})}
+            {isLastScan ? t((m) => m.dialogs.invoices.removeScanDialog.descriptionLastScan) : t((m) => m.dialogs.invoices.removeScanDialog.description, {current: String(currentScanNumber), total: String(totalScans)})}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,20 +112,20 @@ export default function RemoveScanDialog(): React.JSX.Element {
             <div className={styles["previewImage"]}>
               <Image
                 src={scan.location}
-                alt={t((m) => m["IMS--Dialogs"].removeScanDialog.scanAlt, {index: String(currentScanNumber)})}
+                alt={t((m) => m.dialogs.invoices.removeScanDialog.scanAlt, {index: String(currentScanNumber)})}
                 width={400}
                 height={300}
                 className={styles["scanPreviewImage"]}
               />
             </div>
-            <p className={styles["previewCaption"]}>{t((m) => m["IMS--Dialogs"].removeScanDialog.scanCaption, {index: String(currentScanNumber)})}</p>
+            <p className={styles["previewCaption"]}>{t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}</p>
           </div>
         ) : null}
 
         {isLastScan ? (
           <div className={styles["warningBox"]}>
-            <p className={styles["warningTitle"]}>{t((m) => m["IMS--Dialogs"].removeScanDialog.warning.title)}</p>
-            <p className={styles["warningText"]}>{t((m) => m["IMS--Dialogs"].removeScanDialog.warning.description)}</p>
+            <p className={styles["warningTitle"]}>{t((m) => m.dialogs.invoices.removeScanDialog.warning.title)}</p>
+            <p className={styles["warningText"]}>{t((m) => m.dialogs.invoices.removeScanDialog.warning.description)}</p>
           </div>
         ) : null}
 
@@ -135,7 +135,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isDeleting}>
-            {t((m) => m["IMS--Dialogs"].removeScanDialog.buttons.cancel)}
+            {t((m) => m.dialogs.invoices.removeScanDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
@@ -145,12 +145,12 @@ export default function RemoveScanDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className={styles["spinnerIcon"]} />
-                {t((m) => m["IMS--Dialogs"].removeScanDialog.buttons.removing)}
+                {t((m) => m.dialogs.invoices.removeScanDialog.buttons.removing)}
               </>
             ) : (
               <>
                 <TbTrash className={styles["trashIcon"]} />
-                {t((m) => m["IMS--Dialogs"].removeScanDialog.buttons.remove)}
+                {t((m) => m.dialogs.invoices.removeScanDialog.buttons.remove)}
               </>
             )}
           </Button>

@@ -45,10 +45,10 @@ export function VehicleCard(): React.JSX.Element {
 
   // Monthly fuel data
   const fuelData = [
-    {month: t((m) => m["IMS--Cards"].vehicleCard.months.sep), amount: 420},
-    {month: t((m) => m["IMS--Cards"].vehicleCard.months.oct), amount: 480},
-    {month: t((m) => m["IMS--Cards"].vehicleCard.months.nov), amount: 510},
-    {month: t((m) => m["IMS--Cards"].vehicleCard.months.dec), amount: 560},
+    {month: t((m) => m.cards.invoices.vehicleCard.months.sep), amount: 420},
+    {month: t((m) => m.cards.invoices.vehicleCard.months.oct), amount: 480},
+    {month: t((m) => m.cards.invoices.vehicleCard.months.nov), amount: 510},
+    {month: t((m) => m.cards.invoices.vehicleCard.months.dec), amount: 560},
   ];
 
   const monthlyTotal = 560;
@@ -58,8 +58,8 @@ export function VehicleCard(): React.JSX.Element {
 
   // Maintenance reminders
   const reminders = [
-    {id: "oil-change", task: t((m) => m["IMS--Cards"].vehicleCard.reminders.oilChange), urgent: false},
-    {id: "tire-rotation", task: t((m) => m["IMS--Cards"].vehicleCard.reminders.tireRotation), urgent: false},
+    {id: "oil-change", task: t((m) => m.cards.invoices.vehicleCard.reminders.oilChange), urgent: false},
+    {id: "tire-rotation", task: t((m) => m.cards.invoices.vehicleCard.reminders.tireRotation), urgent: false},
   ];
 
   // Cheapest nearby
@@ -72,7 +72,7 @@ export function VehicleCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbCar className={styles["titleIcon"]} />
-            {t((m) => m["IMS--Cards"].vehicleCard.title)}
+            {t((m) => m.cards.invoices.vehicleCard.title)}
           </span>
         </CardTitle>
       </CardHeader>
@@ -81,7 +81,7 @@ export function VehicleCard(): React.JSX.Element {
           {/* Expense Type Badge */}
           <div className={styles["expenseType"]}>
             <TbGasStation className={styles["iconAmber"]} />
-            <span className={styles["expenseTypeLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.expenseType)}</span>
+            <span className={styles["expenseTypeLabel"]}>{t((m) => m.cards.invoices.vehicleCard.expenseType)}</span>
           </div>
 
           {/* Fuel Details Grid */}
@@ -89,39 +89,39 @@ export function VehicleCard(): React.JSX.Element {
             <div className={styles["detailItem"]}>
               <TbGasStation className={styles["iconAmber"]} />
               <div>
-                <p className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.details.liters)}</p>
+                <p className={styles["detailLabel"]}>{t((m) => m.cards.invoices.vehicleCard.details.liters)}</p>
                 <p className={styles["detailValue"]}>~{liters}L</p>
               </div>
             </div>
             <div className={styles["detailItem"]}>
               <TbCurrencyDollar className={styles["iconGreen"]} />
               <div>
-                <p className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.details.pricePerLiter)}</p>
+                <p className={styles["detailLabel"]}>{t((m) => m.cards.invoices.vehicleCard.details.pricePerLiter)}</p>
                 <p className={styles["detailValue"]}>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
               </div>
             </div>
             <div className={styles["detailItem"]}>
               <TbMapPin className={styles["iconRed"]} />
               <div>
-                <p className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.details.station)}</p>
+                <p className={styles["detailLabel"]}>{t((m) => m.cards.invoices.vehicleCard.details.station)}</p>
                 <p className={styles["detailValue"]}>{station}</p>
               </div>
             </div>
             <div className={styles["detailItem"]}>
               <TbCar className={styles["iconBlue"]} />
               <div>
-                <p className={styles["detailLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.details.vehicle)}</p>
-                <p className={styles["detailValueMuted"]}>{t((m) => m["IMS--Cards"].vehicleCard.details.notSet)}</p>
+                <p className={styles["detailLabel"]}>{t((m) => m.cards.invoices.vehicleCard.details.vehicle)}</p>
+                <p className={styles["detailValueMuted"]}>{t((m) => m.cards.invoices.vehicleCard.details.notSet)}</p>
               </div>
             </div>
           </div>
 
           {/* Monthly Fuel Spending Chart */}
           <div className={styles["chartSection"]}>
-            <h4 className={styles["chartTitle"]}>{t((m) => m["IMS--Cards"].vehicleCard.chart.title)}</h4>
+            <h4 className={styles["chartTitle"]}>{t((m) => m.cards.invoices.vehicleCard.chart.title)}</h4>
             <ChartContainer
               config={{
-                amount: {label: t((m) => m["IMS--Cards"].vehicleCard.chart.amount), color: "var(--ac-chart-1)"},
+                amount: {label: t((m) => m.cards.invoices.vehicleCard.chart.amount), color: "var(--ac-chart-1)"},
               }}
               className={styles["chartWrapper"]}>
               <ResponsiveContainer
@@ -177,21 +177,21 @@ export function VehicleCard(): React.JSX.Element {
           <div className={styles["statsGrid"]}>
             <div className={styles["statCard"]}>
               <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.thisMonth)}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.vehicleCard.stats.thisMonth)}</p>
               <p className={styles["statValue"]}>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
-              <p className={styles["statSub"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.fillUps, {count: String(fillUps)})}</p>
+              <p className={styles["statSub"]}>{t((m) => m.cards.invoices.vehicleCard.stats.fillUps, {count: String(fillUps)})}</p>
             </div>
             <div className={styles["statCard"]}>
               <TbGauge className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.costPerKm)}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.vehicleCard.stats.costPerKm)}</p>
               <p className={styles["statValue"]}>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
-              <p className={styles["statSub"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.estimated)}</p>
+              <p className={styles["statSub"]}>{t((m) => m.cards.invoices.vehicleCard.stats.estimated)}</p>
             </div>
             <div className={styles["statCard"]}>
               <TbTrendingUp className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.fuelPrice)}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.vehicleCard.stats.fuelPrice)}</p>
               <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
-              <p className={styles["statSub"]}>{t((m) => m["IMS--Cards"].vehicleCard.stats.thisMonthSuffix)}</p>
+              <p className={styles["statSub"]}>{t((m) => m.cards.invoices.vehicleCard.stats.thisMonthSuffix)}</p>
             </div>
           </div>
 
@@ -199,7 +199,7 @@ export function VehicleCard(): React.JSX.Element {
           <div>
             <div className={styles["remindersHeader"]}>
               <TbBarrel className={styles["iconGray"]} />
-              <h4 className={styles["remindersTitle"]}>{t((m) => m["IMS--Cards"].vehicleCard.maintenance.title)}</h4>
+              <h4 className={styles["remindersTitle"]}>{t((m) => m.cards.invoices.vehicleCard.maintenance.title)}</h4>
             </div>
             <ul className={styles["remindersList"]}>
               {reminders.map((r) => (
@@ -217,9 +217,9 @@ export function VehicleCard(): React.JSX.Element {
           <div className={styles["tipBox"]}>
             <TbBulb className={styles["tipIcon"]} />
             <div>
-              <p className={styles["tipTitle"]}>{t((m) => m["IMS--Cards"].vehicleCard.tip.title)}</p>
+              <p className={styles["tipTitle"]}>{t((m) => m.cards.invoices.vehicleCard.tip.title)}</p>
               <p className={styles["tipDescription"]}>
-                {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/{t((m) => m["IMS--Cards"].vehicleCard.tip.perLiter)}
+                {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/{t((m) => m.cards.invoices.vehicleCard.tip.perLiter)}
               </p>
             </div>
           </div>
@@ -229,12 +229,12 @@ export function VehicleCard(): React.JSX.Element {
             <Button
               variant='outline'
               size='sm'>
-              {t((m) => m["IMS--Cards"].vehicleCard.buttons.addVehicle)}
+              {t((m) => m.cards.invoices.vehicleCard.buttons.addVehicle)}
             </Button>
             <Button
               variant='outline'
               size='sm'>
-              {t((m) => m["IMS--Cards"].vehicleCard.buttons.fullReport)}
+              {t((m) => m.cards.invoices.vehicleCard.buttons.fullReport)}
             </Button>
           </div>
         </div>

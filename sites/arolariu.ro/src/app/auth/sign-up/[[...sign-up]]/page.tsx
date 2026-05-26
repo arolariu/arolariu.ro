@@ -19,8 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return createMetadata({
     locale,
-    title: t((m) => m.Auth.SignUp.metadata.title),
-    description: t((m) => m.Auth.SignUp.metadata.description),
+    title: t((m) => m.pages.auth.signUp.metadata.title),
+    description: t((m) => m.pages.auth.signUp.metadata.description),
   });
 }
 

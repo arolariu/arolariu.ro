@@ -10,8 +10,8 @@ describe("app/error.tsx", () => {
         reset={vi.fn()}
       />,
     );
-    expect(screen.getByText("Errors.globalError.hero.title")).toBeInTheDocument();
-    expect(screen.getByText("Errors.globalError.hero.subtitle")).toBeInTheDocument();
+    expect(screen.getByText("app.errors.globalError.hero.title")).toBeInTheDocument();
+    expect(screen.getByText("app.errors.globalError.hero.subtitle")).toBeInTheDocument();
   });
 
   it("calls reset when the try-again button is clicked", () => {
@@ -22,7 +22,7 @@ describe("app/error.tsx", () => {
         reset={reset}
       />,
     );
-    fireEvent.click(screen.getByRole("button", {name: "Errors.globalError.buttons.tryAgain"}));
+    fireEvent.click(screen.getByRole("button", {name: "app.errors.globalError.buttons.tryAgain"}));
     expect(reset).toHaveBeenCalledOnce();
   });
 

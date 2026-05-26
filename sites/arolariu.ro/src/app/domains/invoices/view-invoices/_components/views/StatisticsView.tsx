@@ -78,8 +78,8 @@ function EmptyState(): React.JSX.Element {
       <div className={styles["emptyIcon"]}>
         <TbChartBar size={64} />
       </div>
-      <h2 className={styles["emptyTitle"]}>{t((m) => m["IMS--Stats"].empty.title)}</h2>
-      <p className={styles["emptySubtitle"]}>{t((m) => m["IMS--Stats"].empty.subtitle)}</p>
+      <h2 className={styles["emptyTitle"]}>{t((m) => m.cards.invoices.statistics.empty.title)}</h2>
+      <p className={styles["emptySubtitle"]}>{t((m) => m.cards.invoices.statistics.empty.subtitle)}</p>
     </motion.div>
   );
 }
@@ -139,8 +139,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
       <div className={styles["container"]}>
         <div className={styles["header"]}>
           <div className={styles["headerContent"]}>
-            <h1 className={styles["title"]}>{t((m) => m["IMS--Stats"].title)}</h1>
-            <p className={styles["subtitle"]}>{t((m) => m["IMS--Stats"].subtitle)}</p>
+            <h1 className={styles["title"]}>{t((m) => m.cards.invoices.statistics.title)}</h1>
+            <p className={styles["subtitle"]}>{t((m) => m.cards.invoices.statistics.subtitle)}</p>
           </div>
         </div>
         <EmptyState />
@@ -157,8 +157,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.5}}>
         <div className={styles["headerContent"]}>
-          <h1 className={styles["title"]}>{t((m) => m["IMS--Stats"].title)}</h1>
-          <p className={styles["subtitle"]}>{t((m) => m["IMS--Stats"].subtitle)}</p>
+          <h1 className={styles["title"]}>{t((m) => m.cards.invoices.statistics.title)}</h1>
+          <p className={styles["subtitle"]}>{t((m) => m.cards.invoices.statistics.subtitle)}</p>
         </div>
       </motion.div>
 
@@ -297,8 +297,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5, delay: 0.75}}>
-          <h2 className={styles["sectionTitle"]}>{t((m) => m["IMS--Stats"].productAnalytics.title)}</h2>
-          <p className={styles["sectionSubtitle"]}>{t((m) => m["IMS--Stats"].productAnalytics.subtitle)}</p>
+          <h2 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.statistics.productAnalytics.title)}</h2>
+          <p className={styles["sectionSubtitle"]}>{t((m) => m.cards.invoices.statistics.productAnalytics.subtitle)}</p>
         </motion.div>
       </section>
 

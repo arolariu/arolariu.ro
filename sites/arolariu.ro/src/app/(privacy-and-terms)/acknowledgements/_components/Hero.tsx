@@ -66,7 +66,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
             variant='secondary'
             className={styles["badge"]}>
             <TbHeart className={styles["badgeIcon"]} />
-            {t((m) => m.Acknowledgements.hero.badge)}
+            {t((m) => m.sections.legal.acknowledgements.hero.badge)}
           </Badge>
         </motion.div>
 
@@ -76,7 +76,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.6}}>
-          <span className={styles["titleGradient"]}>{t((m) => m.Acknowledgements.hero.title)}</span>
+          <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.hero.title)}</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -85,7 +85,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.4, duration: 0.6}}>
-          {t((m) => m.Acknowledgements.hero.subtitle)}
+          {t((m) => m.sections.legal.acknowledgements.hero.subtitle)}
         </motion.p>
 
         {/* Last updated */}
@@ -95,7 +95,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.6, duration: 0.5}}>
           <TbPackage className={styles["lastUpdatedIcon"]} />
-          <span>{t((m) => m.Acknowledgements.hero.lastUpdate, {date: lastUpdatedDate})}</span>
+          <span>{t((m) => m.sections.legal.acknowledgements.hero.lastUpdate, {date: lastUpdatedDate})}</span>
         </motion.div>
       </motion.div>
     </section>

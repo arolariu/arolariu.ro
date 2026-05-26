@@ -68,8 +68,8 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t((m) => m.Profile.settings.analytics.title)}</h2>
-        <p>{t((m) => m.Profile.settings.analytics.description)}</p>
+        <h2>{t((m) => m.pages.profile.settings.analytics.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.analytics.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -83,15 +83,15 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbChartBar className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.enabled.title)}
+                {t((m) => m.pages.profile.settings.analytics.enabled.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.analytics.enabled.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.analytics.enabled.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.enabled.label)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.enabled.hint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.enabled.label)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.enabled.hint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -112,9 +112,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbClock className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.granularity.title)}
+                {t((m) => m.pages.profile.settings.analytics.granularity.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.analytics.granularity.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.analytics.granularity.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <Select
@@ -147,9 +147,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbDownload className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.export.title)}
+                {t((m) => m.pages.profile.settings.analytics.export.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.analytics.export.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.analytics.export.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <Select
@@ -177,15 +177,15 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbChartPie className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.tracking.title)}
+                {t((m) => m.pages.profile.settings.analytics.tracking.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.analytics.tracking.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.analytics.tracking.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.tracking.spending)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.tracking.spendingHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.tracking.spending)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.tracking.spendingHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -197,8 +197,8 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.tracking.categories)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.tracking.categoriesHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.tracking.categories)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.tracking.categoriesHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -210,8 +210,8 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.tracking.merchants)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.tracking.merchantsHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.tracking.merchants)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.tracking.merchantsHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -233,15 +233,15 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbTrendingUp className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.advanced.title)}
+                {t((m) => m.pages.profile.settings.analytics.advanced.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.analytics.advanced.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.analytics.advanced.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.advanced.benchmarking)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.advanced.benchmarkingHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.advanced.benchmarking)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.advanced.benchmarkingHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -253,8 +253,8 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.analytics.advanced.predictive)}</Label>
-                  <p>{t((m) => m.Profile.settings.analytics.advanced.predictiveHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.analytics.advanced.predictive)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.analytics.advanced.predictiveHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -277,12 +277,12 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbDatabase className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.analytics.dataUsage.title)}
+                {t((m) => m.pages.profile.settings.analytics.dataUsage.title)}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className={styles["infoBox"]}>
-                <p className={styles["dataUsageInfo"]}>{t((m) => m.Profile.settings.analytics.dataUsage.info)}</p>
+                <p className={styles["dataUsageInfo"]}>{t((m) => m.pages.profile.settings.analytics.dataUsage.info)}</p>
               </div>
             </CardContent>
           </Card>

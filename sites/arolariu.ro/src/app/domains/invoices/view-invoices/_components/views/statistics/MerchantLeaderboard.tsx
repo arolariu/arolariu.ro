@@ -59,7 +59,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpend)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -79,7 +79,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   const getMerchantName = useCallback(
     (id: string): string => {
       const merchant = getMerchantById(id);
-      return merchant?.name ?? t((m) => m["IMS--Stats"].merchantLeaderboard.unknownMerchant);
+      return merchant?.name ?? t((m) => m.cards.invoices.statistics.merchantLeaderboard.unknownMerchant);
     },
     [getMerchantById, t],
   );
@@ -103,7 +103,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
 
   const chartConfig = {
     totalSpent: {
-      label: t((m) => m["IMS--Stats"].merchantLeaderboard.labels.totalSpent),
+      label: t((m) => m.cards.invoices.statistics.merchantLeaderboard.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
   };
@@ -113,12 +113,12 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.description)}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["emptyContent"]}>
           <TbChartBar className={styles["emptyIcon"]} />
-          <p className={styles["emptyText"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.empty)}</p>
+          <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.empty)}</p>
         </CardContent>
       </Card>
     );
@@ -136,8 +136,8 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.merchantLeaderboard.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

@@ -32,7 +32,7 @@ export function BudgetImpactCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbCreditCard className={styles["titleIcon"]} />
-            {t((m) => m["IMS--Cards"].budgetImpactCard.title, {month: monthName})}
+            {t((m) => m.cards.invoices.budgetImpactCard.title, {month: monthName})}
           </span>
         </CardTitle>
       </CardHeader>
@@ -41,36 +41,36 @@ export function BudgetImpactCard(): React.JSX.Element {
           {/* Budget progress */}
           <div className={styles["budgetSection"]}>
             <div className={styles["budgetRow"]}>
-              <span className={styles["budgetLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.monthlyBudget)}</span>
+              <span className={styles["budgetLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.monthlyBudget)}</span>
               <span className={styles["budgetValue"]}>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
             </div>
             <Progress value={Math.min(percentUsed, 100)} />
             <div className={styles["budgetMeta"]}>
-              <span>{t((m) => m["IMS--Cards"].budgetImpactCard.spent, {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
+              <span>{t((m) => m.cards.invoices.budgetImpactCard.spent, {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
               <span>{percentUsed.toFixed(0)}%</span>
             </div>
           </div>
 
           {/* This invoice impact */}
           <div className={styles["impactBox"]}>
-            <p className={styles["impactLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.invoiceUsed)}</p>
+            <p className={styles["impactLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.invoiceUsed)}</p>
             <p className={styles["impactPercent"]}>{thisInvoicePercent.toFixed(1)}%</p>
-            <p className={styles["impactDescription"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.ofMonthlyBudget)}</p>
+            <p className={styles["impactDescription"]}>{t((m) => m.cards.invoices.budgetImpactCard.ofMonthlyBudget)}</p>
           </div>
 
           {/* Remaining stats */}
           <div className={styles["statsGrid"]}>
             <div className={styles["statItem"]}>
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.remaining)}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.remaining)}</p>
               <p className={`${styles["statValue"]} ${isOverBudget ? styles["overBudgetText"] : ""}`}>
                 {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
               </p>
-              {isOverBudget ? <p className={styles["overBudgetLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.overBudget)}</p> : null}
+              {isOverBudget ? <p className={styles["overBudgetLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.overBudget)}</p> : null}
             </div>
             <div className={styles["statItem"]}>
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.daysLeft)}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.daysLeft)}</p>
               <p className={styles["statValue"]}>{daysRemaining}</p>
-              <p className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.inMonth, {month: monthName})}</p>
+              <p className={styles["statLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.inMonth, {month: monthName})}</p>
             </div>
           </div>
 
@@ -78,9 +78,9 @@ export function BudgetImpactCard(): React.JSX.Element {
           {!isOverBudget && (
             <div className={styles["dailyAllowanceBox"]}>
               <div className={styles["dailyAllowanceContent"]}>
-                <p className={styles["dailyAllowanceLabel"]}>{t((m) => m["IMS--Cards"].budgetImpactCard.dailyAllowance)}</p>
+                <p className={styles["dailyAllowanceLabel"]}>{t((m) => m.cards.invoices.budgetImpactCard.dailyAllowance)}</p>
                 <p className={styles["dailyAllowanceValue"]}>
-                  {t((m) => m["IMS--Cards"].budgetImpactCard.dailyAllowanceValue, {amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})})}
+                  {t((m) => m.cards.invoices.budgetImpactCard.dailyAllowanceValue, {amount: formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})})}
                 </p>
               </div>
               {getDailyAllowanceIcon()}

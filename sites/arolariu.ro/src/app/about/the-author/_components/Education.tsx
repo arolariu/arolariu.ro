@@ -63,40 +63,40 @@ export default function Education(): React.JSX.Element {
 
   const education = [
     {
-      degree: t((m) => m.About.Author.Education.university.malmoSweden.degree),
-      institution: t((m) => m.About.Author.Education.university.malmoSweden.institution),
-      location: t((m) => m.About.Author.Education.university.malmoSweden.location),
-      period: t((m) => m.About.Author.Education.university.malmoSweden.period),
-      description: t((m) => m.About.Author.Education.university.malmoSweden.description),
-      status: t((m) => m.About.Author.Education.university.malmoSweden.status),
-      coursesTitle: t((m) => m.About.Author.Education.university.malmoSweden.keyCourses_title),
-      courses: t((m) => m.About.Author.Education.university.malmoSweden.keyCourses)
+      degree: t((m) => m.sections.about.author.education.university.malmoSweden.degree),
+      institution: t((m) => m.sections.about.author.education.university.malmoSweden.institution),
+      location: t((m) => m.sections.about.author.education.university.malmoSweden.location),
+      period: t((m) => m.sections.about.author.education.university.malmoSweden.period),
+      description: t((m) => m.sections.about.author.education.university.malmoSweden.description),
+      status: t((m) => m.sections.about.author.education.university.malmoSweden.status),
+      coursesTitle: t((m) => m.sections.about.author.education.university.malmoSweden.keyCoursesTitle),
+      courses: t((m) => m.sections.about.author.education.university.malmoSweden.keyCourses)
         .split("#")
         .filter((course) => course.trim().length > 3),
-      aboutTheProgramCta: t((m) => m.About.Author.Education.university.malmoSweden.aboutTheProgram_cta),
-      aboutTheProgramTitle: t((m) => m.About.Author.Education.university.malmoSweden.aboutTheProgram_title),
-      aboutTheProgramDescription: t((m) => m.About.Author.Education.university.malmoSweden.aboutTheProgram_description),
-      aboutTheProgramLearningsTitle: t((m) => m.About.Author.Education.university.malmoSweden.aboutTheProgram_learnings_title),
-      aboutTheProgramLearnings: t((m) => m.About.Author.Education.university.malmoSweden.aboutTheProgram_learnings)
+      aboutTheProgramCta: t((m) => m.sections.about.author.education.university.malmoSweden.aboutTheProgramCta),
+      aboutTheProgramTitle: t((m) => m.sections.about.author.education.university.malmoSweden.aboutTheProgramTitle),
+      aboutTheProgramDescription: t((m) => m.sections.about.author.education.university.malmoSweden.aboutTheProgramDescription),
+      aboutTheProgramLearningsTitle: t((m) => m.sections.about.author.education.university.malmoSweden.aboutTheProgramLearningsTitle),
+      aboutTheProgramLearnings: t((m) => m.sections.about.author.education.university.malmoSweden.aboutTheProgramLearnings)
         .split("#")
         .filter((learning) => learning.trim().length > 3),
     },
     {
-      degree: t((m) => m.About.Author.Education.university.aseBucharest.degree),
-      institution: t((m) => m.About.Author.Education.university.aseBucharest.institution),
-      location: t((m) => m.About.Author.Education.university.aseBucharest.location),
-      period: t((m) => m.About.Author.Education.university.aseBucharest.period),
-      description: t((m) => m.About.Author.Education.university.aseBucharest.description),
-      status: t((m) => m.About.Author.Education.university.aseBucharest.status),
-      coursesTitle: t((m) => m.About.Author.Education.university.aseBucharest.keyCourses_title),
-      courses: t((m) => m.About.Author.Education.university.aseBucharest.keyCourses)
+      degree: t((m) => m.sections.about.author.education.university.aseBucharest.degree),
+      institution: t((m) => m.sections.about.author.education.university.aseBucharest.institution),
+      location: t((m) => m.sections.about.author.education.university.aseBucharest.location),
+      period: t((m) => m.sections.about.author.education.university.aseBucharest.period),
+      description: t((m) => m.sections.about.author.education.university.aseBucharest.description),
+      status: t((m) => m.sections.about.author.education.university.aseBucharest.status),
+      coursesTitle: t((m) => m.sections.about.author.education.university.aseBucharest.keyCoursesTitle),
+      courses: t((m) => m.sections.about.author.education.university.aseBucharest.keyCourses)
         .split("#")
         .filter((course) => course.trim().length > 3),
-      aboutTheProgramCta: t((m) => m.About.Author.Education.university.aseBucharest.aboutTheProgram_cta),
-      aboutTheProgramTitle: t((m) => m.About.Author.Education.university.aseBucharest.aboutTheProgram_title),
-      aboutTheProgramDescription: t((m) => m.About.Author.Education.university.aseBucharest.aboutTheProgram_description),
-      aboutTheProgramLearningsTitle: t((m) => m.About.Author.Education.university.aseBucharest.aboutTheProgram_learnings_title),
-      aboutTheProgramLearnings: t((m) => m.About.Author.Education.university.aseBucharest.aboutTheProgram_learnings)
+      aboutTheProgramCta: t((m) => m.sections.about.author.education.university.aseBucharest.aboutTheProgramCta),
+      aboutTheProgramTitle: t((m) => m.sections.about.author.education.university.aseBucharest.aboutTheProgramTitle),
+      aboutTheProgramDescription: t((m) => m.sections.about.author.education.university.aseBucharest.aboutTheProgramDescription),
+      aboutTheProgramLearningsTitle: t((m) => m.sections.about.author.education.university.aseBucharest.aboutTheProgramLearningsTitle),
+      aboutTheProgramLearnings: t((m) => m.sections.about.author.education.university.aseBucharest.aboutTheProgramLearnings)
         .split("#")
         .filter((learning) => learning.trim().length > 3),
     },
@@ -129,8 +129,8 @@ export default function Education(): React.JSX.Element {
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.6}}
         className={styles["header"]}>
-        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Education.title)}</h2>
-        <p className={styles["subtitle"]}>{t((m) => m.About.Author.Education.subtitle)}</p>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.education.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m.sections.about.author.education.subtitle)}</p>
       </motion.div>
 
       <motion.div

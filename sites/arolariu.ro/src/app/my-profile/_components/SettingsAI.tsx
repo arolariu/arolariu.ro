@@ -80,8 +80,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t((m) => m.Profile.settings.ai.title)}</h2>
-        <p>{t((m) => m.Profile.settings.ai.description)}</p>
+        <h2>{t((m) => m.pages.profile.settings.ai.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.ai.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -95,9 +95,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbRobot className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.model.title)}
+                {t((m) => m.pages.profile.settings.ai.model.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.model.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.model.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <Select
@@ -142,9 +142,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSparkles className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.behavior.title)}
+                {t((m) => m.pages.profile.settings.ai.behavior.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.behavior.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.behavior.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <Select
@@ -177,15 +177,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbTemperature className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.temperature.title)}
+                {t((m) => m.pages.profile.settings.ai.temperature.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.temperature.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.temperature.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
-                <span>{t((m) => m.Profile.settings.ai.temperature.precise)}</span>
+                <span>{t((m) => m.pages.profile.settings.ai.temperature.precise)}</span>
                 <span>{settings.temperature.toFixed(1)}</span>
-                <span>{t((m) => m.Profile.settings.ai.temperature.creative)}</span>
+                <span>{t((m) => m.pages.profile.settings.ai.temperature.creative)}</span>
               </div>
               <Slider
                 value={[settings.temperature]}
@@ -208,9 +208,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSettings className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.maxTokens.title)}
+                {t((m) => m.pages.profile.settings.ai.maxTokens.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.maxTokens.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.maxTokens.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
@@ -239,15 +239,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbBrain className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.features.title)}
+                {t((m) => m.pages.profile.settings.ai.features.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.features.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.features.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.ai.features.autoSuggest)}</Label>
-                  <p>{t((m) => m.Profile.settings.ai.features.autoSuggestHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.autoSuggest)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.autoSuggestHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -258,8 +258,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.ai.features.contextAwareness)}</Label>
-                  <p>{t((m) => m.Profile.settings.ai.features.contextAwarenessHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.contextAwareness)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.contextAwarenessHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -270,8 +270,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.ai.features.memory)}</Label>
-                  <p>{t((m) => m.Profile.settings.ai.features.memoryHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.memory)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.memoryHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -292,15 +292,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbMicrophone className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.ai.voice.title)}
+                {t((m) => m.pages.profile.settings.ai.voice.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.ai.voice.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.voice.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.ai.voice.enabled)}</Label>
-                  <p>{t((m) => m.Profile.settings.ai.voice.enabledHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.voice.enabled)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.voice.enabledHint)}</p>
                 </div>
                 <Switch
                   nativeButton

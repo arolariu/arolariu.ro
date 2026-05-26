@@ -71,11 +71,11 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
       <div className={styles["allergenStats"]}>
         <div className={styles["statItem"]}>
           <span className={styles["statValue"]}>{allergen.productCount}</span>
-          <span className={styles["statLabel"]}>{t((m) => m["IMS--Stats"].allergenSummary.stats.products)}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.products)}</span>
         </div>
         <div className={styles["statItem"]}>
           <span className={styles["statValue"]}>{formatAmount(allergen.percentage, "en-US", 1)}%</span>
-          <span className={styles["statLabel"]}>{t((m) => m["IMS--Stats"].allergenSummary.stats.ofTotal)}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.ofTotal)}</span>
         </div>
       </div>
     </div>
@@ -112,13 +112,13 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].allergenSummary.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].allergenSummary.description)}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
             <div className={styles["emptyIcon"]}>✓</div>
-            <p className={styles["emptyText"]}>{t((m) => m["IMS--Stats"].allergenSummary.empty)}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -128,14 +128,14 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].allergenSummary.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].allergenSummary.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div
           className={styles["allergenGrid"]}
           role='list'
-          aria-label={t((m) => m["IMS--Stats"].allergenSummary.ariaLabel)}>
+          aria-label={t((m) => m.cards.invoices.statistics.allergenSummary.ariaLabel)}>
           {data.map((allergen) => (
             <AllergenCard
               key={allergen.name}

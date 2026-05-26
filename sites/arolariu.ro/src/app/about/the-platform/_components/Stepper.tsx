@@ -55,12 +55,12 @@ export default function Stepper(): React.JSX.Element {
           <Badge
             variant='outline'
             className={styles["badge"]}>
-            {t((m) => m.About.Platform.timeline.badge)}
+            {t((m) => m.sections.about.platform.timeline.badge)}
           </Badge>
           <h2 className={styles["title"]}>
-            {t((m) => m.About.Platform.timeline.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.timeline.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.timeline.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.timeline.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t((m) => m.About.Platform.timeline.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.sections.about.platform.timeline.description)}</p>
         </motion.div>
 
         {/* Stepper list */}
@@ -126,7 +126,7 @@ export default function Stepper(): React.JSX.Element {
                         exit={{height: 0, opacity: 0}}
                         transition={{duration: 0.3}}
                         className={styles["expandable"]}>
-                        <h4 className={styles["detailsTitle"]}>{t((m) => m.About.Platform.timeline.keyAchievements)}</h4>
+                        <h4 className={styles["detailsTitle"]}>{t((m) => m.sections.about.platform.timeline.keyAchievements)}</h4>
                         <ul className={styles["detailsList"]}>
                           {t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.details`}`))
                             .split(",")
@@ -151,7 +151,7 @@ export default function Stepper(): React.JSX.Element {
                     data-event-id={event.id}
                     className={styles["expandHint"]}
                     onClick={handleStepClick}>
-                    {isExpanded ? t((m) => m.About.Platform.timeline.collapseHint) : t((m) => m.About.Platform.timeline.expandHint)}
+                    {isExpanded ? t((m) => m.sections.about.platform.timeline.collapseHint) : t((m) => m.sections.about.platform.timeline.expandHint)}
                   </button>
                 </div>
               </motion.div>
@@ -173,7 +173,7 @@ export default function Stepper(): React.JSX.Element {
             transition={{duration: 2, repeat: Number.POSITIVE_INFINITY}}>
             <TbRocket className={styles["futureIcon"]} />
           </motion.div>
-          <p className={styles["futureText"]}>{t((m) => m.About.Platform.timeline.futureIndicator)}</p>
+          <p className={styles["futureText"]}>{t((m) => m.sections.about.platform.timeline.futureIndicator)}</p>
         </motion.div>
       </div>
     </section>

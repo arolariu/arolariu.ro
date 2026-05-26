@@ -22,36 +22,36 @@ export default function WorkflowSection(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5}}>
-          <h2 className={styles["sectionTitle"]}>{t((m) => m["IMS--Landing"].workflow.title)}</h2>
-          <p className={styles["sectionDescription"]}>{t((m) => m["IMS--Landing"].workflow.description)}</p>
+          <h2 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.landing.workflow.title)}</h2>
+          <p className={styles["sectionDescription"]}>{t((m) => m.pages.invoices.landing.workflow.description)}</p>
         </motion.div>
 
         <div className={styles["workflowGrid"]}>
           <WorkflowCard
             step={1}
-            title={t((m) => m["IMS--Landing"].workflow.step1.title)}
-            description={t((m) => m["IMS--Landing"].workflow.step1.description)}
+            title={t((m) => m.pages.invoices.landing.workflow.step1.title)}
+            description={t((m) => m.pages.invoices.landing.workflow.step1.description)}
             icon={TbUpload}
             href='/domains/invoices/upload-scans'
-            buttonText={t((m) => m["IMS--Landing"].workflow.step1.button)}
+            buttonText={t((m) => m.pages.invoices.landing.workflow.step1.button)}
             delay={0.1}
           />
           <WorkflowCard
             step={2}
-            title={t((m) => m["IMS--Landing"].workflow.step2.title)}
-            description={t((m) => m["IMS--Landing"].workflow.step2.description)}
+            title={t((m) => m.pages.invoices.landing.workflow.step2.title)}
+            description={t((m) => m.pages.invoices.landing.workflow.step2.description)}
             icon={TbEye}
             href='/domains/invoices/view-scans'
-            buttonText={t((m) => m["IMS--Landing"].workflow.step2.button)}
+            buttonText={t((m) => m.pages.invoices.landing.workflow.step2.button)}
             delay={0.2}
           />
           <WorkflowCard
             step={3}
-            title={t((m) => m["IMS--Landing"].workflow.step3.title)}
-            description={t((m) => m["IMS--Landing"].workflow.step3.description)}
+            title={t((m) => m.pages.invoices.landing.workflow.step3.title)}
+            description={t((m) => m.pages.invoices.landing.workflow.step3.description)}
             icon={TbFileInvoice}
             href='/domains/invoices/view-invoices'
-            buttonText={t((m) => m["IMS--Landing"].workflow.step3.button)}
+            buttonText={t((m) => m.pages.invoices.landing.workflow.step3.button)}
             delay={0.3}
           />
         </div>

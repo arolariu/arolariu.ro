@@ -68,9 +68,9 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <section className={styles["packagesSection"]}>
         <div className={styles["packagesSectionHeader"]}>
           <h2 className={styles["packagesTitle"]}>
-            <span className={styles["packagesTitleGradient"]}>{t((m) => m.Acknowledgements.packages.title)}</span>
+            <span className={styles["packagesTitleGradient"]}>{t((m) => m.sections.legal.acknowledgements.packages.title)}</span>
           </h2>
-          <p className={styles["packagesSubtitle"]}>{t((m) => m.Acknowledgements.packages.subtitle)}</p>
+          <p className={styles["packagesSubtitle"]}>{t((m) => m.sections.legal.acknowledgements.packages.subtitle)}</p>
         </div>
         <PackagesScreen packages={packages} />
       </section>

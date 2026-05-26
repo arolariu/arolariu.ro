@@ -18,28 +18,28 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
   const t = useTranslations();
   const stats = [
     {
-      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.totalItems.label),
+      label: t((m) => m.cards.invoices.summaryStatsCard.stats.totalItems.label),
       value: summary.totalItems.toString(),
       icon: TbPackage,
-      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.totalItems.description),
+      description: t((m) => m.cards.invoices.summaryStatsCard.stats.totalItems.description),
     },
     {
-      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.categories.label),
+      label: t((m) => m.cards.invoices.summaryStatsCard.stats.categories.label),
       value: summary.uniqueCategories.toString(),
       icon: TbGrid3X3,
-      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.categories.description),
+      description: t((m) => m.cards.invoices.summaryStatsCard.stats.categories.description),
     },
     {
-      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.averagePrice.label),
+      label: t((m) => m.cards.invoices.summaryStatsCard.stats.averagePrice.label),
       value: `${formatAmount(summary.averageItemPrice)}`,
       icon: TbReceipt,
-      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.averagePrice.description, {currency}),
+      description: t((m) => m.cards.invoices.summaryStatsCard.stats.averagePrice.description, {currency}),
     },
     {
-      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.taxRate.label),
+      label: t((m) => m.cards.invoices.summaryStatsCard.stats.taxRate.label),
       value: `${formatAmount(summary.taxPercentage, locale, 1)}%`,
       icon: TbPercentage,
-      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.taxRate.description, {amount: formatAmount(summary.taxAmount), currency}),
+      description: t((m) => m.cards.invoices.summaryStatsCard.stats.taxRate.description, {amount: formatAmount(summary.taxAmount), currency}),
     },
   ];
 
@@ -47,8 +47,8 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
     <div className={styles["card"]}>
       <Card>
         <CardHeader>
-          <CardTitle>{t((m) => m["IMS--Cards"].summaryStatsCard.title)}</CardTitle>
-          <CardDescription>{t((m) => m["IMS--Cards"].summaryStatsCard.description)}</CardDescription>
+          <CardTitle>{t((m) => m.cards.invoices.summaryStatsCard.title)}</CardTitle>
+          <CardDescription>{t((m) => m.cards.invoices.summaryStatsCard.description)}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className={styles["statsGrid"]}>
@@ -70,7 +70,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
             <div className={styles["extremeRow"]}>
               <div className={styles["extremeLabel"]}>
                 <TbTrendingUp className={styles["iconEmerald"]} />
-                <span className={styles["extremeLabelText"]}>{t((m) => m["IMS--Cards"].summaryStatsCard.extremes.highest)}</span>
+                <span className={styles["extremeLabelText"]}>{t((m) => m.cards.invoices.summaryStatsCard.extremes.highest)}</span>
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>
@@ -83,7 +83,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
             <div className={styles["extremeRow"]}>
               <div className={styles["extremeLabel"]}>
                 <TbTrendingDown className={styles["iconBlue"]} />
-                <span className={styles["extremeLabelText"]}>{t((m) => m["IMS--Cards"].summaryStatsCard.extremes.lowest)}</span>
+                <span className={styles["extremeLabelText"]}>{t((m) => m.cards.invoices.summaryStatsCard.extremes.lowest)}</span>
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>

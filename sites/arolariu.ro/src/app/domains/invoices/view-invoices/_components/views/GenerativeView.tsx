@@ -48,7 +48,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: "welcome",
-      content: t((m) => m["IMS--List"].generativeView.welcomeMessage),
+      content: t((m) => m.pages.invoices.viewInvoices.generativeView.welcomeMessage),
       role: "assistant",
       timestamp: new Date().toISOString(),
     },
@@ -67,15 +67,15 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       className={styles["container"]}>
       <div className={styles["header"]}>
         <div>
-          <h2 className={styles["title"]}>{t((m) => m["IMS--List"].generativeView.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m["IMS--List"].generativeView.subtitle)}</p>
+          <h2 className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.subtitle)}</p>
         </div>
         <Button
           variant='outline'
           size='sm'
           className={styles["helpButton"]}>
           <TbHelpCircle className={styles["actionIcon"]} />
-          <span>{t((m) => m["IMS--List"].generativeView.help)}</span>
+          <span>{t((m) => m.pages.invoices.viewInvoices.generativeView.help)}</span>
         </Button>
       </div>
 
@@ -87,13 +87,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
             value='chat'
             className={styles["tabTrigger"]}>
             <TbMessage className={styles["actionIcon"]} />
-            <span>{t((m) => m["IMS--List"].generativeView.tabs.chat)}</span>
+            <span>{t((m) => m.pages.invoices.viewInvoices.generativeView.tabs.chat)}</span>
           </TabsTrigger>
           <TabsTrigger
             value='settings'
             className={styles["tabTrigger"]}>
             <TbSettings className={styles["actionIcon"]} />
-            <span>{t((m) => m["IMS--List"].generativeView.tabs.settings)}</span>
+            <span>{t((m) => m.pages.invoices.viewInvoices.generativeView.tabs.settings)}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -101,8 +101,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           className={styles["tabContent"]}>
           <Card className={styles["fullWidth"]}>
             <CardHeader>
-              <CardTitle>{t((m) => m["IMS--List"].generativeView.title)}</CardTitle>
-              <CardDescription>{t((m) => m["IMS--List"].generativeView.chatDescription)}</CardDescription>
+              <CardTitle>{t((m) => m.pages.invoices.viewInvoices.generativeView.title)}</CardTitle>
+              <CardDescription>{t((m) => m.pages.invoices.viewInvoices.generativeView.chatDescription)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["chatContainer"]}>
@@ -120,28 +120,28 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           className={styles["tabContent"]}>
           <Card className={styles["fullWidth"]}>
             <CardHeader>
-              <CardTitle>{t((m) => m["IMS--List"].generativeView.settings.title)}</CardTitle>
-              <CardDescription>{t((m) => m["IMS--List"].generativeView.settings.description)}</CardDescription>
+              <CardTitle>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.title)}</CardTitle>
+              <CardDescription>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["settingsContainer"]}>
                 <div className={styles["settingsField"]}>
-                  <Label htmlFor='history'>{t((m) => m["IMS--List"].generativeView.settings.historyLabel)}</Label>
+                  <Label htmlFor='history'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.historyLabel)}</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
-                      <SelectValue placeholder={t((m) => m["IMS--List"].generativeView.settings.retentionPlaceholder)} />
+                      <SelectValue placeholder={t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retentionPlaceholder)} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='30'>{t((m) => m["IMS--List"].generativeView.settings.retention["30"])}</SelectItem>
-                      <SelectItem value='60'>{t((m) => m["IMS--List"].generativeView.settings.retention["60"])}</SelectItem>
-                      <SelectItem value='90'>{t((m) => m["IMS--List"].generativeView.settings.retention["90"])}</SelectItem>
-                      <SelectItem value='0'>{t((m) => m["IMS--List"].generativeView.settings.retention.none)}</SelectItem>
+                      <SelectItem value='30'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item30)}</SelectItem>
+                      <SelectItem value='60'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item60)}</SelectItem>
+                      <SelectItem value='90'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.item90)}</SelectItem>
+                      <SelectItem value='0'>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.retention.none)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>{t((m) => m["IMS--List"].generativeView.settings.dataAccessTitle)}</span>
+                  <span className={styles["settingsLabel"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.dataAccessTitle)}</span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       nativeButton
@@ -151,7 +151,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='access-invoices'
                       className={styles["checkboxLabel"]}>
-                      {t((m) => m["IMS--List"].generativeView.settings.allowInvoiceData)}
+                      {t((m) => m.pages.invoices.viewInvoices.generativeView.settings.allowInvoiceData)}
                     </Label>
                   </div>
                   <div className={styles["checkboxRow"]}>
@@ -163,13 +163,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='access-merchants'
                       className={styles["checkboxLabel"]}>
-                      {t((m) => m["IMS--List"].generativeView.settings.allowMerchantData)}
+                      {t((m) => m.pages.invoices.viewInvoices.generativeView.settings.allowMerchantData)}
                     </Label>
                   </div>
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>{t((m) => m["IMS--List"].generativeView.settings.notificationPreferences)}</span>
+                  <span className={styles["settingsLabel"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.notificationPreferences)}</span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       nativeButton
@@ -179,12 +179,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='notify-insights'
                       className={styles["checkboxLabel"]}>
-                      {t((m) => m["IMS--List"].generativeView.settings.notifyInsights)}
+                      {t((m) => m.pages.invoices.viewInvoices.generativeView.settings.notifyInsights)}
                     </Label>
                   </div>
                 </div>
 
-                <Button className={styles["saveButton"]}>{t((m) => m["IMS--List"].generativeView.settings.save)}</Button>
+                <Button className={styles["saveButton"]}>{t((m) => m.pages.invoices.viewInvoices.generativeView.settings.save)}</Button>
               </div>
             </CardContent>
           </Card>

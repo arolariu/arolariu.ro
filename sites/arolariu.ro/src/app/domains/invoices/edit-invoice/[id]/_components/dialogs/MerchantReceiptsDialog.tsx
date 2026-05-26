@@ -142,8 +142,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.title, {merchant: merchant.name})}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.title, {merchant: merchant.name})}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
@@ -151,7 +151,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
             <div className={styles["searchWrapper"]}>
               <TbSearch className={styles["searchIcon"]} />
               <Input
-                placeholder={t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.searchPlaceholder)}
+                placeholder={t((m) => m.dialogs.invoices.merchantReceiptsDialog.searchPlaceholder)}
                 className={styles["searchInput"]}
                 value={searchQuery}
                 onChange={handleSearchQueryChange}
@@ -162,13 +162,13 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
                     <TbCalendar className={styles["filterIcon"]} />
-                    <SelectValue placeholder={t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.filters.date)} />
+                    <SelectValue placeholder={t((m) => m.dialogs.invoices.merchantReceiptsDialog.filters.date)} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.dateOptions.allTime)}</SelectItem>
-                    <SelectItem value='30days'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.dateOptions.last30Days)}</SelectItem>
-                    <SelectItem value='90days'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.dateOptions.last90Days)}</SelectItem>
-                    <SelectItem value='thisYear'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.dateOptions.thisYear)}</SelectItem>
+                    <SelectItem value='all'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.allTime)}</SelectItem>
+                    <SelectItem value='30days'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last30Days)}</SelectItem>
+                    <SelectItem value='90days'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.last90Days)}</SelectItem>
+                    <SelectItem value='thisYear'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.dateOptions.thisYear)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -176,11 +176,11 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
                     <TbArrowsUpDown className={styles["filterIcon"]} />
-                    <SelectValue placeholder={t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.filters.sort)} />
+                    <SelectValue placeholder={t((m) => m.dialogs.invoices.merchantReceiptsDialog.filters.sort)} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='date-desc'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.sortOptions.newest)}</SelectItem>
-                    <SelectItem value='date-asc'>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.sortOptions.oldest)}</SelectItem>
+                    <SelectItem value='date-desc'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.newest)}</SelectItem>
+                    <SelectItem value='date-asc'>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.sortOptions.oldest)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -192,10 +192,10 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
               <Table>
                 <TableHeader>
                   <TableRow className={styles["headerRow"]}>
-                    <TableHead className={styles["tableHeader"]}>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.table.receipt)}</TableHead>
-                    <TableHead className={styles["tableHeader"]}>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.table.date)}</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.table.itemsCount)}</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.table.actions)}</TableHead>
+                    <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.receipt)}</TableHead>
+                    <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.date)}</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.itemsCount)}</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.actions)}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className={styles["tableBody"]}>
@@ -213,7 +213,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                             variant='ghost'
                             size='sm'>
                             <TbDownload className={styles["downloadIcon"]} />
-                            {t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.table.view)}
+                            {t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.view)}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -223,12 +223,12 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <TableFooter>
                   <TableRow>
                     <TableHead className={styles["tableHeader"]}>
-                      {t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.footer.receiptsFound, {count: String(receipts.length), showing: String(paginatedItems.length)})}
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.receiptsFound, {count: String(receipts.length), showing: String(paginatedItems.length)})}
                     </TableHead>
                     <TableCell
                       className={styles["tableHeaderRight"]}
                       colSpan={2}>
-                      {t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.footer.page, {current: String(currentPage), total: String(totalPages)})}
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.page, {current: String(currentPage), total: String(totalPages)})}
                     </TableCell>
                     <TableCell
                       className={styles["tableHeaderRight"]}
@@ -238,14 +238,14 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                         size='sm'
                         onClick={handlePreviousPage}
                         disabled={currentPage === 1}>
-                        {t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.buttons.previous)}
+                        {t((m) => m.dialogs.invoices.merchantReceiptsDialog.buttons.previous)}
                       </Button>
                       <Button
                         variant='ghost'
                         size='sm'
                         onClick={handleNextPage}
                         disabled={currentPage === totalPages}>
-                        {t((m) => m["IMS--Dialogs"].merchantReceiptsDialog.buttons.next)}
+                        {t((m) => m.dialogs.invoices.merchantReceiptsDialog.buttons.next)}
                       </Button>
                     </TableCell>
                   </TableRow>

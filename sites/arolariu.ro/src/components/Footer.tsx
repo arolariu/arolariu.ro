@@ -117,12 +117,12 @@ function Footer(): React.JSX.Element {
           <div className='footer__brand-section'>
             <Link
               href='/'
-              aria-label={t((m) => m.Footer.accessibility.goHome)}
-              title={t((m) => m.Footer.accessibility.brandTitle)}
+              aria-label={t((m) => m.app.footer.accessibility.goHome)}
+              title={t((m) => m.app.footer.accessibility.brandTitle)}
               className='footer__brand-link'>
               <Image
                 src={logo}
-                alt={t((m) => m.Footer.accessibility.logoAlt)}
+                alt={t((m) => m.app.footer.accessibility.logoAlt)}
                 className='footer__logo'
                 width={40}
                 height={40}
@@ -139,7 +139,7 @@ function Footer(): React.JSX.Element {
           </div>
           <div className='footer__nav-section'>
             <div>
-              <p className='footer__nav-title'>{t((m) => m.Footer.navigation.subdomains)}</p>
+              <p className='footer__nav-title'>{t((m) => m.app.footer.navigation.subdomains)}</p>
               <ul className='footer__nav-list'>
                 <li>
                   <Link
@@ -182,34 +182,34 @@ function Footer(): React.JSX.Element {
               </ul>
             </div>
             <div>
-              <p className='footer__nav-title'>{t((m) => m.Footer.navigation.about)}</p>
+              <p className='footer__nav-title'>{t((m) => m.app.footer.navigation.about)}</p>
               <ul className='footer__nav-list'>
                 <li>
                   <Link
                     href='/about'
                     className='footer__nav-link'>
-                    {t((m) => m.Footer.navigation.what)}
+                    {t((m) => m.app.footer.navigation.what)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/acknowledgements'
                     className='footer__nav-link'>
-                    {t((m) => m.Footer.navigation.acknowledgements)}
+                    {t((m) => m.app.footer.navigation.acknowledgements)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/terms-of-service'
                     className='footer__nav-link'>
-                    {t((m) => m.Footer.navigation.termsOfService)}
+                    {t((m) => m.app.footer.navigation.termsOfService)}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/privacy-policy'
                     className='footer__nav-link'>
-                    {t((m) => m.Footer.navigation.privacyPolicy)}
+                    {t((m) => m.app.footer.navigation.privacyPolicy)}
                   </Link>
                 </li>
               </ul>
@@ -220,15 +220,15 @@ function Footer(): React.JSX.Element {
         {/* Footer metadata information */}
         <div className='footer__meta'>
           <p className='footer__copyright'>
-            &copy; {t((m) => m.Footer.copyright)} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
+            &copy; {t((m) => m.app.footer.copyright)} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='footer__source-prefix'>
-              {t((m) => m.Footer.sourceCode)}
+              {t((m) => m.app.footer.sourceCode)}
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
                 rel='noopener noreferrer'
                 className='footer__source-link'>
-                {t((m) => m.Footer.sourceCodeAnchor)}
+                {t((m) => m.app.footer.sourceCodeAnchor)}
               </Link>
             </span>
           </p>
@@ -238,7 +238,7 @@ function Footer(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'
               about='GitHub'
-              aria-label={t((m) => m.Footer.socialLinks.github)}>
+              aria-label={t((m) => m.app.footer.socialLinks.github)}>
               <TbBrandGithub className='footer__social-icon' />
             </Link>
             <Link
@@ -246,7 +246,7 @@ function Footer(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'
               about='LinkedIn'
-              aria-label={t((m) => m.Footer.socialLinks.linkedin)}>
+              aria-label={t((m) => m.app.footer.socialLinks.linkedin)}>
               <TbBrandLinkedin className='footer__social-icon' />
             </Link>
           </div>
@@ -254,7 +254,7 @@ function Footer(): React.JSX.Element {
         <div className='footer__build-info'>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={<span className='footer__build-tooltip'>{`${t((m) => m.Footer.builtOn)} ${TIMESTAMP.split("T")[0]}`}</span>} />
+              <TooltipTrigger render={<span className='footer__build-tooltip'>{`${t((m) => m.app.footer.builtOn)} ${TIMESTAMP.split("T")[0]}`}</span>} />
               <TooltipContent>
                 <code className='footer__build-tooltip'>{new Date(TIMESTAMP).toUTCString()}</code>
               </TooltipContent>
@@ -262,7 +262,7 @@ function Footer(): React.JSX.Element {
           </TooltipProvider>
           <br />
           <span>
-            {t((m) => m.Footer.commitSha)}{" "}
+            {t((m) => m.app.footer.commitSha)}{" "}
             <Link
               href={`https://github.com/arolariu/arolariu.ro/commit/${COMMIT_SHA}`}
               target='_blank'

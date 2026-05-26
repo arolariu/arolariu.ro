@@ -72,13 +72,13 @@ export default function Architecture(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t((m) => m.About.Platform.architecture.badge)}
+              {t((m) => m.sections.about.platform.architecture.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.About.Platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.architecture.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.architecture.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t((m) => m.About.Platform.architecture.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.sections.about.platform.architecture.description)}</p>
         </motion.div>
 
         {/* Architecture Diagram */}

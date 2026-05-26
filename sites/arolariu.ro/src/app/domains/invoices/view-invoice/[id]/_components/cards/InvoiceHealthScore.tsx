@@ -375,8 +375,8 @@ export function InvoiceHealthScore(): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].healthScore.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].healthScore.subtitle)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.subtitle)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         {/* Circular Progress */}
@@ -418,18 +418,18 @@ export function InvoiceHealthScore(): React.JSX.Element {
         </div>
 
         {/* Status label */}
-        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>{t(selectorFromPath(`IMS--View.healthScore.status.${status.key}`))}</div>
+        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>{t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.status.${status.key}`))}</div>
 
         {/* Score breakdown */}
         <div className={styles["scoreBreakdown"]}>
-          {score} / {maxScore} {t((m) => m["IMS--View"].healthScore.points)}
+          {score} / {maxScore} {t((m) => m.pages.invoices.viewInvoice.healthScore.points)}
         </div>
 
         {/* Improvement Suggestions */}
         {suggestions.length > 0 && showSuggestions ? (
           <div className={styles["suggestionsContainer"]}>
             <div className={styles["suggestionsHeader"]}>
-              <h4 className={styles["suggestionsTitle"]}>{t((m) => m["IMS--View"].healthScore.suggestions.title)}</h4>
+              <h4 className={styles["suggestionsTitle"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.title)}</h4>
               <Button
                 variant='ghost'
                 size='sm'
@@ -446,12 +446,12 @@ export function InvoiceHealthScore(): React.JSX.Element {
                   <suggestion.icon className={styles["suggestionIcon"]} />
                   <span className={styles["suggestionText"]}>
                     {suggestion.params
-                      ? t.rich(selectorFromPath(`IMS--View.healthScore.${`suggestions.${suggestion.key}` as "suggestions.incompleteProducts"}`), {
+                      ? t.rich(selectorFromPath(`pages.invoices.viewInvoice.healthScore.suggestions.${suggestion.key}`), {
                           count: String(suggestion.params["count"] ?? ""),
                           // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
                           strong: (chunks) => <strong>{chunks}</strong>,
                         })
-                      : t(selectorFromPath(`IMS--View.healthScore.${`suggestions.${suggestion.key}` as "suggestions.noProducts"}`))}
+                      : t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.suggestions.${suggestion.key}`))}
                   </span>
                   {suggestion.link ? (
                     <Button
@@ -461,7 +461,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                       className={styles["suggestionAction"]}>
                       <Link href={suggestion.link}>
                         <TbExternalLink className={styles["actionIcon"]} />
-                        {t((m) => m["IMS--View"].healthScore.suggestions.fix)}
+                        {t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.fix)}
                       </Link>
                     </Button>
                   ) : null}
@@ -481,7 +481,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                 variant='ghost'
                 className={styles["toggleButton"]}>
                 {isExpanded ? <TbChevronUp className={styles["chevronIcon"]} /> : <TbChevronDown className={styles["chevronIcon"]} />}
-                {isExpanded ? t((m) => m["IMS--View"].healthScore.hideDetails) : t((m) => m["IMS--View"].healthScore.showDetails)}
+                {isExpanded ? t((m) => m.pages.invoices.viewInvoice.healthScore.hideDetails) : t((m) => m.pages.invoices.viewInvoice.healthScore.showDetails)}
               </Button>
             }
           />
@@ -496,7 +496,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                   </div>
                   <div className={styles["factorContent"]}>
                     <span className={factor.achieved ? styles["achievedText"] : styles["missingText"]}>
-                      {t(selectorFromPath(`IMS--View.healthScore.factors.${factor.key}`))}
+                      {t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.factors.${factor.key}`))}
                       {factor.detail ? <span className={styles["factorDetail"]}> ({factor.detail})</span> : null}
                     </span>
                     <span className={styles["factorPoints"]}>
@@ -518,7 +518,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
               className={styles["ctaButton"]}>
               <Link href={`/domains/invoices/edit-invoice/${invoice.id}`}>
                 <TbSparkles className={styles["ctaIcon"]} />
-                {t((m) => m["IMS--View"].healthScore.cta.edit)}
+                {t((m) => m.pages.invoices.viewInvoice.healthScore.cta.edit)}
               </Link>
             </Button>
           </div>

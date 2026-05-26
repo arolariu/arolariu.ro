@@ -19,33 +19,33 @@ export default function FeaturesSection(): React.JSX.Element {
   const features = [
     {
       icon: <TbBrandNextjs className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.nextJs.title),
-      description: t((m) => m.Home.featuresTab.nextJs.description),
+      title: t((m) => m.pages.home.featuresTab.nextJs.title),
+      description: t((m) => m.pages.home.featuresTab.nextJs.description),
     },
     {
       icon: <TbBrandAzure className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.azure.title),
-      description: t((m) => m.Home.featuresTab.azure.description),
+      title: t((m) => m.pages.home.featuresTab.azure.title),
+      description: t((m) => m.pages.home.featuresTab.azure.description),
     },
     {
       icon: <TbBrandCSharp className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.csharp.title),
-      description: t((m) => m.Home.featuresTab.csharp.description),
+      title: t((m) => m.pages.home.featuresTab.csharp.title),
+      description: t((m) => m.pages.home.featuresTab.csharp.description),
     },
     {
       icon: <TbBrandSvelte className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.svelte.title),
-      description: t((m) => m.Home.featuresTab.svelte.description),
+      title: t((m) => m.pages.home.featuresTab.svelte.title),
+      description: t((m) => m.pages.home.featuresTab.svelte.description),
     },
     {
       icon: <TbBinoculars className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.otel.title),
-      description: t((m) => m.Home.featuresTab.otel.description),
+      title: t((m) => m.pages.home.featuresTab.otel.title),
+      description: t((m) => m.pages.home.featuresTab.otel.description),
     },
     {
       icon: <TbBrandGithub className={styles["cardIcon"]} />,
-      title: t((m) => m.Home.featuresTab.githubActions.title),
-      description: t((m) => m.Home.featuresTab.githubActions.description),
+      title: t((m) => m.pages.home.featuresTab.githubActions.title),
+      description: t((m) => m.pages.home.featuresTab.githubActions.description),
     },
   ] as const;
 
@@ -53,7 +53,7 @@ export default function FeaturesSection(): React.JSX.Element {
     <section className={styles["section"]}>
       <article className={styles["article"]}>
         <TypewriterTextSmooth
-          words={t((m) => m.Home.featuresTab.title)
+          words={t((m) => m.pages.home.featuresTab.title)
             .split(" ")
             .map((word) => ({
               text: word,
@@ -62,7 +62,7 @@ export default function FeaturesSection(): React.JSX.Element {
           className={styles["titleWrapper"]}
           cursorClassName={styles["cursorClass"]}
         />
-        <p className={styles["description"]}>{t((m) => m.Home.featuresTab.description)}</p>
+        <p className={styles["description"]}>{t((m) => m.pages.home.featuresTab.description)}</p>
 
         <div className={styles["grid"]}>
           {features.map((feature) => (
@@ -81,7 +81,7 @@ export default function FeaturesSection(): React.JSX.Element {
         <Link
           href='/about'
           className={styles["learnMoreLink"]}>
-          {t((m) => m.Home.featuresTab.learnMoreBtn)}
+          {t((m) => m.pages.home.featuresTab.learnMoreBtn)}
         </Link>
       </article>
     </section>

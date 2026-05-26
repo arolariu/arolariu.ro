@@ -320,15 +320,15 @@ export default function FilterBar({
     (cat: InvoiceCategory): string => {
       switch (cat) {
         case InvoiceCategory.GROCERY:
-          return t((m) => m["IMS--List"].invoicesView.categories.groceries);
+          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.groceries);
         case InvoiceCategory.FAST_FOOD:
-          return t((m) => m["IMS--List"].invoicesView.categories.dining);
+          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.dining);
         case InvoiceCategory.HOME_CLEANING:
-          return t((m) => m["IMS--List"].invoicesView.categories.utilities);
+          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.utilities);
         case InvoiceCategory.CAR_AUTO:
-          return t((m) => m["IMS--List"].invoicesView.categories.travel);
+          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.travel);
         default:
-          return t((m) => m["IMS--List"].invoicesView.categories.other);
+          return t((m) => m.pages.invoices.viewInvoices.invoicesView.categories.other);
       }
     },
     [t],
@@ -338,17 +338,17 @@ export default function FilterBar({
     (pt: PaymentType): string => {
       switch (pt) {
         case PaymentType.Cash:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.cash);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.cash);
         case PaymentType.Card:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.card);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.card);
         case PaymentType.Transfer:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.transfer);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.transfer);
         case PaymentType.MobilePayment:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.mobile);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.mobile);
         case PaymentType.Voucher:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.voucher);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.voucher);
         default:
-          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.other);
+          return t((m) => m.forms.invoices.filters.paymentTypeLabels.other);
       }
     },
     [t],
@@ -671,7 +671,7 @@ export default function FilterBar({
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
-            placeholder={t((m) => m["IMS--List"].invoicesView.searchPlaceholder)}
+            placeholder={t((m) => m.pages.invoices.viewInvoices.invoicesView.searchPlaceholder)}
             className={styles["searchInput"]}
             value={searchInput}
             onChange={handleSearchChange}
@@ -703,9 +703,9 @@ export default function FilterBar({
             <SheetContent className={styles["filterSheet"]}>
               <div className={styles["sheetHeader"]}>
                 <h3 className={styles["sheetTitle"]}>
-                  {t((m) => m["IMS--List"].invoicesView.filters.title)}
+                  {t((m) => m.forms.invoices.filters.title)}
                   {activeFilterCount > 0 && (
-                    <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
+                    <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}</span>
                   )}
                 </h3>
                 {activeFilterCount > 0 && (
@@ -715,7 +715,7 @@ export default function FilterBar({
                     onClick={handleClearFilters}
                     className={styles["clearButton"]}>
                     <TbX className={styles["clearIcon"]} />
-                    {t((m) => m["IMS--List"].invoicesView.filters.clear)}
+                    {t((m) => m.forms.invoices.filters.clear)}
                   </Button>
                 )}
               </div>
@@ -725,7 +725,7 @@ export default function FilterBar({
                   className={styles["mobileShowResultsButton"]}
                   // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                   onClick={() => setIsFilterOpen(false)}>
-                  {t((m) => m["IMS--List"].invoicesView.filters.showResults, {count: filteredCount})}
+                  {t((m) => m.forms.invoices.filters.showResults, {count: filteredCount})}
                 </Button>
               </div>
             </SheetContent>
@@ -740,7 +740,7 @@ export default function FilterBar({
             aria-expanded={isFilterOpen}
             aria-controls='inline-filter-panel'>
             <TbFilter className={styles["filterIcon"]} />
-            {t((m) => m["IMS--List"].invoicesView.filters.button)}
+            {t((m) => m.forms.invoices.filters.button)}
             {activeFilterCount > 0 && (
               <Badge
                 variant='default'
@@ -759,7 +759,7 @@ export default function FilterBar({
             onClick={handleClearFilters}
             className={styles["clearFiltersButton"]}>
             <TbX className={styles["clearIcon"]} />
-            {t((m) => m["IMS--List"].invoicesView.filters.clear)}
+            {t((m) => m.forms.invoices.filters.clear)}
           </Button>
         )}
 
@@ -780,7 +780,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.table)}</TooltipContent>
+              <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesView.viewModes.table)}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -796,7 +796,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.grid)}</TooltipContent>
+              <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesView.viewModes.grid)}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -809,9 +809,9 @@ export default function FilterBar({
           className={styles["inlineFilterPanel"]}>
           <div className={styles["inlineFilterHeader"]}>
             <h4 className={styles["inlineFilterTitle"]}>
-              {t((m) => m["IMS--List"].invoicesView.filters.title)}
+              {t((m) => m.forms.invoices.filters.title)}
               {activeFilterCount > 0 && (
-                <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
+                <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}</span>
               )}
             </h4>
             <div className={styles["inlineFilterActions"]}>
@@ -822,7 +822,7 @@ export default function FilterBar({
                   onClick={handleClearFilters}
                   className={styles["clearButton"]}>
                   <TbX className={styles["clearIcon"]} />
-                  {t((m) => m["IMS--List"].invoicesView.filters.clear)}
+                  {t((m) => m.forms.invoices.filters.clear)}
                 </Button>
               )}
               <Button
@@ -830,7 +830,7 @@ export default function FilterBar({
                 size='sm'
                 // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                 onClick={() => setIsFilterOpen(false)}
-                aria-label={t((m) => m["IMS--List"].invoicesView.filters.title)}
+                aria-label={t((m) => m.forms.invoices.filters.title)}
                 className={styles["clearButton"]}>
                 <TbX className={styles["clearIcon"]} />
               </Button>

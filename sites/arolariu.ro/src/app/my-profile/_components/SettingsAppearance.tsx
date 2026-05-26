@@ -222,8 +222,8 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t((m) => m.Profile.settings.appearance.title)}</h2>
-        <p>{t((m) => m.Profile.settings.appearance.description)}</p>
+        <h2>{t((m) => m.pages.profile.settings.appearance.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.appearance.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -236,9 +236,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbBrush className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.appearance.theme.title)}
+                {t((m) => m.pages.profile.settings.appearance.theme.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.appearance.theme.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.appearance.theme.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced3"]}>
               <div className={styles["themeButtons"]}>
@@ -248,7 +248,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   className={styles["flex1Cursor"]}
                   onClick={handleThemeLightClick}>
                   <TbSun className={styles["buttonIconSm"]} />
-                  {t((m) => m.Profile.settings.appearance.theme.light)}
+                  {t((m) => m.pages.profile.settings.appearance.theme.light)}
                 </Button>
                 <Button
                   variant={theme === "dark" ? "default" : "outline"}
@@ -256,7 +256,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   className={styles["flex1Cursor"]}
                   onClick={handleThemeDarkClick}>
                   <TbMoon className={styles["buttonIconSm"]} />
-                  {t((m) => m.Profile.settings.appearance.theme.dark)}
+                  {t((m) => m.pages.profile.settings.appearance.theme.dark)}
                 </Button>
                 <Button
                   variant={theme === "system" ? "default" : "outline"}
@@ -264,10 +264,10 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   className={styles["flex1Cursor"]}
                   onClick={handleThemeSystemClick}>
                   <TbSettings className={styles["buttonIconSm"]} />
-                  {t((m) => m.Profile.settings.appearance.theme.system)}
+                  {t((m) => m.pages.profile.settings.appearance.theme.system)}
                 </Button>
               </div>
-              <p className={styles["cardHint"]}>{t((m) => m.Profile.settings.appearance.theme.hint)}</p>
+              <p className={styles["cardHint"]}>{t((m) => m.pages.profile.settings.appearance.theme.hint)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -281,9 +281,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbTypography className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.appearance.font.title)}
+                {t((m) => m.pages.profile.settings.appearance.font.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.appearance.font.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.appearance.font.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced3"]}>
               <div className={styles["fontButtons"]}>
@@ -292,17 +292,17 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   size='sm'
                   className={styles["flex1Cursor"]}
                   onClick={handleFontNormalClick}>
-                  {t((m) => m.Profile.settings.appearance.font.normal)}
+                  {t((m) => m.pages.profile.settings.appearance.font.normal)}
                 </Button>
                 <Button
                   variant={fontType === "dyslexic" ? "default" : "outline"}
                   size='sm'
                   className={styles["flex1Cursor"]}
                   onClick={handleFontDyslexicClick}>
-                  {t((m) => m.Profile.settings.appearance.font.dyslexic)}
+                  {t((m) => m.pages.profile.settings.appearance.font.dyslexic)}
                 </Button>
               </div>
-              <p className={styles["cardHint"]}>{t((m) => m.Profile.settings.appearance.font.dyslexicHint)}</p>
+              <p className={styles["cardHint"]}>{t((m) => m.pages.profile.settings.appearance.font.dyslexicHint)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -317,9 +317,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbPalette className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.appearance.presets.title)}
+                {t((m) => m.pages.profile.settings.appearance.presets.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.appearance.presets.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.appearance.presets.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["presetGrid"]}>
@@ -350,8 +350,8 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   data-selected={themePreset === "custom"}
                   onClick={handleCustomPresetClick}>
                   <TbBrush className={styles["iconMd"]} />
-                  <span className={styles["presetName"]}>{t((m) => m.Profile.settings.appearance.presets.custom)}</span>
-                  <span className={styles["presetDescription"]}>{t((m) => m.Profile.settings.appearance.presets.customDescription)}</span>
+                  <span className={styles["presetName"]}>{t((m) => m.pages.profile.settings.appearance.presets.custom)}</span>
+                  <span className={styles["presetDescription"]}>{t((m) => m.pages.profile.settings.appearance.presets.customDescription)}</span>
                 </button>
               </div>
             </CardContent>
@@ -369,15 +369,15 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               <CardHeader className={styles["cardHeaderPb"]}>
                 <CardTitle className={styles["cardTitleBase"]}>
                   <TbPalette className={styles["iconSm"]} />
-                  {t((m) => m.Profile.settings.appearance.colors.title)}
+                  {t((m) => m.pages.profile.settings.appearance.colors.title)}
                 </CardTitle>
-                <CardDescription>{t((m) => m.Profile.settings.appearance.colors.description)}</CardDescription>
+                <CardDescription>{t((m) => m.pages.profile.settings.appearance.colors.description)}</CardDescription>
               </CardHeader>
               <CardContent className={styles["cardContentSpaced"]}>
                 <div className={styles["colorGrid"]}>
                   {/* Primary Color — full color picker */}
                   <div className={styles["customColorField"]}>
-                    <Label htmlFor='custom-primary-color'>{t((m) => m.Profile.settings.appearance.colors.primary)}</Label>
+                    <Label htmlFor='custom-primary-color'>{t((m) => m.pages.profile.settings.appearance.colors.primary)}</Label>
                     <label
                       className={styles["customColorSwatch"]}
                       style={{backgroundColor: settings.primaryColor}}
@@ -395,7 +395,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
 
                   {/* Intermediary Color — full color picker */}
                   <div className={styles["customColorField"]}>
-                    <Label htmlFor='custom-tertiary-color'>{t((m) => m.Profile.settings.appearance.colors.intermediary)}</Label>
+                    <Label htmlFor='custom-tertiary-color'>{t((m) => m.pages.profile.settings.appearance.colors.intermediary)}</Label>
                     <label
                       className={styles["customColorSwatch"]}
                       style={{backgroundColor: settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}}
@@ -413,7 +413,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
 
                   {/* Secondary Color — full color picker */}
                   <div className={styles["customColorField"]}>
-                    <Label htmlFor='custom-secondary-color'>{t((m) => m.Profile.settings.appearance.colors.secondary)}</Label>
+                    <Label htmlFor='custom-secondary-color'>{t((m) => m.pages.profile.settings.appearance.colors.secondary)}</Label>
                     <label
                       className={styles["customColorSwatch"]}
                       style={{backgroundColor: settings.secondaryColor}}
@@ -433,7 +433,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 {/* Gradient Preview — primary → intermediary → secondary */}
                 <Separator />
                 <div className={styles["gradientPreview"]}>
-                  <Label>{t((m) => m.Profile.settings.appearance.colors.preview)}</Label>
+                  <Label>{t((m) => m.pages.profile.settings.appearance.colors.preview)}</Label>
                   <div
                     className={styles["gradientBar"]}
                     style={{
@@ -445,7 +445,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                     style={{
                       backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.tertiaryColor || DEFAULT_INTERMEDIARY_COLOR}, ${settings.secondaryColor})`,
                     }}>
-                    {t((m) => m.Profile.settings.appearance.colors.previewText)}
+                    {t((m) => m.pages.profile.settings.appearance.colors.previewText)}
                   </p>
                 </div>
               </CardContent>
@@ -462,9 +462,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbGlobe className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.appearance.locale.title)}
+                {t((m) => m.pages.profile.settings.appearance.locale.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.appearance.locale.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.appearance.locale.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["localeList"]}>
@@ -498,15 +498,15 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSettings className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.appearance.advanced.title)}
+                {t((m) => m.pages.profile.settings.appearance.advanced.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.appearance.advanced.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.appearance.advanced.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.appearance.advanced.compactMode)}</Label>
-                  <p>{t((m) => m.Profile.settings.appearance.advanced.compactModeHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.appearance.advanced.compactMode)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.appearance.advanced.compactModeHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -517,8 +517,8 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.appearance.advanced.animations)}</Label>
-                  <p>{t((m) => m.Profile.settings.appearance.advanced.animationsHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.appearance.advanced.animations)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.appearance.advanced.animationsHint)}</p>
                 </div>
                 <Switch
                   nativeButton

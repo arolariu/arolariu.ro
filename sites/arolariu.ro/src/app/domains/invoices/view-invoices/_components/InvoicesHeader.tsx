@@ -30,8 +30,8 @@ export default function InvoicesHeader(): React.JSX.Element {
       transition={{duration: 0.3}}
       className={styles["header"]}>
       <div>
-        <h1 className={styles["title"]}>{t((m) => m["IMS--List"].invoicesHeader.title)}</h1>
-        <p className={styles["description"]}>{t((m) => m["IMS--List"].invoicesHeader.description)}</p>
+        <h1 className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.title)}</h1>
+        <p className={styles["description"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.description)}</p>
       </div>
       <div className={styles["actions"]}>
         <TooltipProvider>
@@ -44,11 +44,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={openImportDialog}>
                   <TbUpload className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t((m) => m["IMS--List"].invoicesHeader.actions.import)}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.import)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--List"].invoicesHeader.tooltips.import)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.import)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -62,11 +62,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={openExportDialog}>
                   <TbDownload className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t((m) => m["IMS--List"].invoicesHeader.actions.export)}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.export)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--List"].invoicesHeader.tooltips.export)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.export)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -80,11 +80,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={handlePrintAction}>
                   <TbPrinter className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t((m) => m["IMS--List"].invoicesHeader.actions.print)}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.print)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--List"].invoicesHeader.tooltips.print)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.print)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -97,12 +97,12 @@ export default function InvoicesHeader(): React.JSX.Element {
                     size='sm'
                     className={styles["actionButton"]}>
                     <TbPlus className={styles["actionIcon"]} />
-                    <span>{t((m) => m["IMS--List"].invoicesHeader.actions.newInvoice)}</span>
+                    <span>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.newInvoice)}</span>
                   </Button>
                 </Link>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--List"].invoicesHeader.tooltips.newInvoice)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.newInvoice)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

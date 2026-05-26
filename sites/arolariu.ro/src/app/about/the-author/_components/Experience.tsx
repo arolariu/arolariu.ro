@@ -47,86 +47,86 @@ export default function Experience(): React.JSX.Element {
 
   const experiences = [
     {
-      company: t((m) => m.About.Author.Experiences.microsoft3.company),
-      role: t((m) => m.About.Author.Experiences.microsoft3.title),
-      period: t((m) => m.About.Author.Experiences.microsoft3.period),
-      location: t((m) => m.About.Author.Experiences.microsoft3.location),
-      description: t((m) => m.About.Author.Experiences.microsoft3.description),
-      responsibilities: t((m) => m.About.Author.Experiences.microsoft3.responsibilites)
+      company: t((m) => m.sections.about.author.experiences.microsoft3.company),
+      role: t((m) => m.sections.about.author.experiences.microsoft3.title),
+      period: t((m) => m.sections.about.author.experiences.microsoft3.period),
+      location: t((m) => m.sections.about.author.experiences.microsoft3.location),
+      description: t((m) => m.sections.about.author.experiences.microsoft3.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.microsoft3.responsibilites)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      achievements: t((m) => m.About.Author.Experiences.microsoft3.achievements)
+      achievements: t((m) => m.sections.about.author.experiences.microsoft3.achievements)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      skills: t((m) => m.About.Author.Experiences.microsoft3.techAndSkills)
+      skills: t((m) => m.sections.about.author.experiences.microsoft3.techAndSkills)
         .split("#")
         .filter((item) => item.trim().length > 0),
       logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
-      company: t((m) => m.About.Author.Experiences.microsoft2.company),
-      role: t((m) => m.About.Author.Experiences.microsoft2.title),
-      period: t((m) => m.About.Author.Experiences.microsoft2.period),
-      location: t((m) => m.About.Author.Experiences.microsoft2.location),
-      description: t((m) => m.About.Author.Experiences.microsoft2.description),
-      responsibilities: t((m) => m.About.Author.Experiences.microsoft2.responsibilites)
+      company: t((m) => m.sections.about.author.experiences.microsoft2.company),
+      role: t((m) => m.sections.about.author.experiences.microsoft2.title),
+      period: t((m) => m.sections.about.author.experiences.microsoft2.period),
+      location: t((m) => m.sections.about.author.experiences.microsoft2.location),
+      description: t((m) => m.sections.about.author.experiences.microsoft2.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.microsoft2.responsibilites)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      achievements: t((m) => m.About.Author.Experiences.microsoft2.achievements)
+      achievements: t((m) => m.sections.about.author.experiences.microsoft2.achievements)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      skills: t((m) => m.About.Author.Experiences.microsoft2.techAndSkills)
+      skills: t((m) => m.sections.about.author.experiences.microsoft2.techAndSkills)
         .split("#")
         .filter((item) => item.trim().length > 0),
       logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
-      company: t((m) => m.About.Author.Experiences.microsoft1.company),
-      role: t((m) => m.About.Author.Experiences.microsoft1.title),
-      period: t((m) => m.About.Author.Experiences.microsoft1.period),
-      location: t((m) => m.About.Author.Experiences.microsoft1.location),
-      description: t((m) => m.About.Author.Experiences.microsoft1.description),
-      responsibilities: t((m) => m.About.Author.Experiences.microsoft1.responsibilites)
+      company: t((m) => m.sections.about.author.experiences.microsoft1.company),
+      role: t((m) => m.sections.about.author.experiences.microsoft1.title),
+      period: t((m) => m.sections.about.author.experiences.microsoft1.period),
+      location: t((m) => m.sections.about.author.experiences.microsoft1.location),
+      description: t((m) => m.sections.about.author.experiences.microsoft1.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.microsoft1.responsibilites)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      achievements: t((m) => m.About.Author.Experiences.microsoft1.achievements)
+      achievements: t((m) => m.sections.about.author.experiences.microsoft1.achievements)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      skills: t((m) => m.About.Author.Experiences.microsoft1.techAndSkills)
+      skills: t((m) => m.sections.about.author.experiences.microsoft1.techAndSkills)
         .split("#")
         .filter((item) => item.trim().length > 0),
       logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
-      company: t((m) => m.About.Author.Experiences.intel.company),
-      role: t((m) => m.About.Author.Experiences.intel.title),
-      period: t((m) => m.About.Author.Experiences.intel.period),
-      location: t((m) => m.About.Author.Experiences.intel.location),
-      description: t((m) => m.About.Author.Experiences.intel.description),
-      responsibilities: t((m) => m.About.Author.Experiences.intel.responsibilites)
+      company: t((m) => m.sections.about.author.experiences.intel.company),
+      role: t((m) => m.sections.about.author.experiences.intel.title),
+      period: t((m) => m.sections.about.author.experiences.intel.period),
+      location: t((m) => m.sections.about.author.experiences.intel.location),
+      description: t((m) => m.sections.about.author.experiences.intel.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.intel.responsibilites)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      achievements: t((m) => m.About.Author.Experiences.intel.achievements)
+      achievements: t((m) => m.sections.about.author.experiences.intel.achievements)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      skills: t((m) => m.About.Author.Experiences.intel.techAndSkills)
+      skills: t((m) => m.sections.about.author.experiences.intel.techAndSkills)
         .split("#")
         .filter((item) => item.trim().length > 0),
       logo: <SiIntel className={styles["logoIcon"]} />,
     },
     {
-      company: t((m) => m.About.Author.Experiences.ubisoft.company),
-      role: t((m) => m.About.Author.Experiences.ubisoft.title),
-      period: t((m) => m.About.Author.Experiences.ubisoft.period),
-      location: t((m) => m.About.Author.Experiences.ubisoft.location),
-      description: t((m) => m.About.Author.Experiences.ubisoft.description),
-      responsibilities: t((m) => m.About.Author.Experiences.ubisoft.responsibilites)
+      company: t((m) => m.sections.about.author.experiences.ubisoft.company),
+      role: t((m) => m.sections.about.author.experiences.ubisoft.title),
+      period: t((m) => m.sections.about.author.experiences.ubisoft.period),
+      location: t((m) => m.sections.about.author.experiences.ubisoft.location),
+      description: t((m) => m.sections.about.author.experiences.ubisoft.description),
+      responsibilities: t((m) => m.sections.about.author.experiences.ubisoft.responsibilites)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      achievements: t((m) => m.About.Author.Experiences.ubisoft.achievements)
+      achievements: t((m) => m.sections.about.author.experiences.ubisoft.achievements)
         .split("#")
         .filter((item) => item.trim().length > 3),
-      skills: t((m) => m.About.Author.Experiences.ubisoft.techAndSkills)
+      skills: t((m) => m.sections.about.author.experiences.ubisoft.techAndSkills)
         .split("#")
         .filter((item) => item.trim().length > 0),
       logo: <SiUbisoft className={styles["logoIcon"]} />,
@@ -141,8 +141,8 @@ export default function Experience(): React.JSX.Element {
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.6}}
           className={styles["header"]}>
-          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Experiences.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m.About.Author.Experiences.subtitle)}</p>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.experiences.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.sections.about.author.experiences.subtitle)}</p>
         </motion.div>
 
         <div className={styles["grid"]}>
@@ -226,7 +226,7 @@ export default function Experience(): React.JSX.Element {
 
                   {experience.responsibilities.length > 0 && (
                     <div className={styles["cardSection"]}>
-                      <h4 className={styles["cardSectionTitle"]}>{t((m) => m.About.Author.Experiences.responsibilitiesLabel)}</h4>
+                      <h4 className={styles["cardSectionTitle"]}>{t((m) => m.sections.about.author.experiences.responsibilitiesLabel)}</h4>
                       <ul className={styles["list"]}>
                         {experience.responsibilities.map((responsability, i) => (
                           <li
@@ -248,7 +248,7 @@ export default function Experience(): React.JSX.Element {
 
                   {experience.achievements.length > 0 && (
                     <div className={styles["cardSection"]}>
-                      <h4 className={styles["cardSectionTitle"]}>{t((m) => m.About.Author.Experiences.achievementsLabel)}</h4>
+                      <h4 className={styles["cardSectionTitle"]}>{t((m) => m.sections.about.author.experiences.achievementsLabel)}</h4>
                       <ul className={styles["list"]}>
                         {experience.achievements.map((achievement, i) => (
                           <li
@@ -269,7 +269,7 @@ export default function Experience(): React.JSX.Element {
                   )}
 
                   <div>
-                    <h4 className={styles["cardSectionTitle"]}>{t((m) => m.About.Author.Experiences.techSkillsLabel)}</h4>
+                    <h4 className={styles["cardSectionTitle"]}>{t((m) => m.sections.about.author.experiences.techSkillsLabel)}</h4>
                     <div className={styles["skills"]}>
                       {experience.skills.map((skill, i) => (
                         <motion.div

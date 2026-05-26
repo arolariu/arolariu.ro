@@ -21,23 +21,23 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
   return useMemo(() => {
     const items: NavigationItem[] = [
       {
-        label: t((m) => m.Navigation.domains),
+        label: t((m) => m.app.navigation.domains),
         href: "/domains",
         children: [
           {
-            label: t((m) => m.Navigation.invoices),
+            label: t((m) => m.app.navigation.invoices),
             href: "/domains/invoices",
             children: [
               {
-                label: t((m) => m.Navigation.uploadScans),
+                label: t((m) => m.app.navigation.uploadScans),
                 href: "/domains/invoices/upload-scans",
               },
               {
-                label: t((m) => m.Navigation.viewScans),
+                label: t((m) => m.app.navigation.viewScans),
                 href: "/domains/invoices/view-scans",
               },
               {
-                label: t((m) => m.Navigation.myInvoices),
+                label: t((m) => m.app.navigation.myInvoices),
                 href: "/domains/invoices/view-invoices",
               },
             ],
@@ -45,15 +45,15 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
         ],
       },
       {
-        label: t((m) => m.Navigation.about),
+        label: t((m) => m.app.navigation.about),
         href: "/about",
         children: [
           {
-            label: t((m) => m.Navigation.thePlatform),
+            label: t((m) => m.app.navigation.thePlatform),
             href: "/about/the-platform",
           },
           {
-            label: t((m) => m.Navigation.theAuthor),
+            label: t((m) => m.app.navigation.theAuthor),
             href: "/about/the-author",
           },
         ],
@@ -63,7 +63,7 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
     // Add My Profile when signed in
     if (isSignedIn) {
       items.push({
-        label: t((m) => m.Navigation.myProfile),
+        label: t((m) => m.app.navigation.myProfile),
         href: "/my-profile",
       });
     }
@@ -245,7 +245,7 @@ function MobileNavigationComponent(): React.JSX.Element {
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
         className='mobile-nav__toggle'>
-        <span className={styles["srOnly"]}>{t((m) => m.Navigation.mobile.openNavigation)}</span>
+        <span className={styles["srOnly"]}>{t((m) => m.app.navigation.mobile.openNavigation)}</span>
         <TbMenu className='mobile-nav__toggle-icon' />
       </Button>
 
@@ -254,21 +254,21 @@ function MobileNavigationComponent(): React.JSX.Element {
           <button
             type='button'
             className='mobile-nav__backdrop'
-            aria-label={t((m) => m.Navigation.mobile.closeNavigation)}
+            aria-label={t((m) => m.app.navigation.mobile.closeNavigation)}
             onClick={toggleMobile}
           />
           <aside
             id='mobile-navigation'
             role='dialog'
             aria-modal='true'
-            aria-label={t((m) => m.Navigation.mobile.title)}
+            aria-label={t((m) => m.app.navigation.mobile.title)}
             className='mobile-nav__panel'>
             <div className='mobile-nav__header'>
-              <h3 className='mobile-nav__title'>{t((m) => m.Navigation.mobile.title)}</h3>
+              <h3 className='mobile-nav__title'>{t((m) => m.app.navigation.mobile.title)}</h3>
               <Button
                 variant='ghost'
                 onClick={toggleMobile}
-                aria-label={t((m) => m.Navigation.mobile.closeNavigation)}
+                aria-label={t((m) => m.app.navigation.mobile.closeNavigation)}
                 className='mobile-nav__close'>
                 ✕
               </Button>

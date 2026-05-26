@@ -61,20 +61,20 @@ type AuthCard = Readonly<{
 export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations();
 
-  const trustBadges: Readonly<[string, string, string]> = [t((m) => m.Auth.Island.trust.oauth), t((m) => m.Auth.Island.trust.session), t((m) => m.Auth.Island.trust.privacy)];
+  const trustBadges: Readonly<[string, string, string]> = [t((m) => m.pages.auth.island.trust.oauth), t((m) => m.pages.auth.island.trust.session), t((m) => m.pages.auth.island.trust.privacy)];
 
   const cards: ReadonlyArray<AuthCard> = [
     {
       key: "signUp",
       href: "/auth/sign-up/",
       imageSrc: "/images/auth/sign-up.svg",
-      illustrationAlt: t((m) => m.Auth.Island.signUp.illustrationAlt),
-      title: t((m) => m.Auth.Island.signUp.title),
-      description: t((m) => m.Auth.Island.signUp.description),
-      bullets: [t((m) => m.Auth.Island.signUp.bullets.first), t((m) => m.Auth.Island.signUp.bullets.second), t((m) => m.Auth.Island.signUp.bullets.third)],
-      cta: t((m) => m.Auth.Island.signUp.cta),
-      secondaryPrompt: t((m) => m.Auth.Island.signUp.secondaryPrompt),
-      secondaryAction: t((m) => m.Auth.Island.signUp.secondaryAction),
+      illustrationAlt: t((m) => m.pages.auth.island.signUp.illustrationAlt),
+      title: t((m) => m.pages.auth.island.signUp.title),
+      description: t((m) => m.pages.auth.island.signUp.description),
+      bullets: [t((m) => m.pages.auth.island.signUp.bullets.first), t((m) => m.pages.auth.island.signUp.bullets.second), t((m) => m.pages.auth.island.signUp.bullets.third)],
+      cta: t((m) => m.pages.auth.island.signUp.cta),
+      secondaryPrompt: t((m) => m.pages.auth.island.signUp.secondaryPrompt),
+      secondaryAction: t((m) => m.pages.auth.island.signUp.secondaryAction),
       secondaryHref: "/auth/sign-in/",
       icon: TbUserPlus,
       gradientKey: "emerald",
@@ -83,13 +83,13 @@ export default function RenderAuthScreen(): React.JSX.Element {
       key: "signIn",
       href: "/auth/sign-in/",
       imageSrc: "/images/auth/sign-in.svg",
-      illustrationAlt: t((m) => m.Auth.Island.signIn.illustrationAlt),
-      title: t((m) => m.Auth.Island.signIn.title),
-      description: t((m) => m.Auth.Island.signIn.description),
-      bullets: [t((m) => m.Auth.Island.signIn.bullets.first), t((m) => m.Auth.Island.signIn.bullets.second), t((m) => m.Auth.Island.signIn.bullets.third)],
-      cta: t((m) => m.Auth.Island.signIn.cta),
-      secondaryPrompt: t((m) => m.Auth.Island.signIn.secondaryPrompt),
-      secondaryAction: t((m) => m.Auth.Island.signIn.secondaryAction),
+      illustrationAlt: t((m) => m.pages.auth.island.signIn.illustrationAlt),
+      title: t((m) => m.pages.auth.island.signIn.title),
+      description: t((m) => m.pages.auth.island.signIn.description),
+      bullets: [t((m) => m.pages.auth.island.signIn.bullets.first), t((m) => m.pages.auth.island.signIn.bullets.second), t((m) => m.pages.auth.island.signIn.bullets.third)],
+      cta: t((m) => m.pages.auth.island.signIn.cta),
+      secondaryPrompt: t((m) => m.pages.auth.island.signIn.secondaryPrompt),
+      secondaryAction: t((m) => m.pages.auth.island.signIn.secondaryAction),
       secondaryHref: "/auth/sign-up/",
       icon: TbLock,
       gradientKey: "violet",
@@ -108,9 +108,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
               OAuth 2.0
             </Badge>
 
-            <h1 className={styles["heroTitle"]}>{t((m) => m.Auth.Island.hero.title)}</h1>
+            <h1 className={styles["heroTitle"]}>{t((m) => m.pages.auth.island.hero.title)}</h1>
 
-            <p className={styles["heroSubtitle"]}>{t((m) => m.Auth.Island.hero.subtitle)}</p>
+            <p className={styles["heroSubtitle"]}>{t((m) => m.pages.auth.island.hero.subtitle)}</p>
           </div>
 
           <div className={styles["trustBadgesCenter"]}>
@@ -142,7 +142,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
                     <div className={styles["cardIconWrapper"]}>
                       <card.icon className={styles["cardIcon"]} />
                     </div>
-                    <div className={styles["cardStep"]}>{index === 0 ? t((m) => m.Auth.Island.step1) : t((m) => m.Auth.Island.step2)}</div>
+                    <div className={styles["cardStep"]}>{index === 0 ? t((m) => m.pages.auth.island.step1) : t((m) => m.pages.auth.island.step2)}</div>
                   </div>
 
                   {/* Illustration */}
@@ -209,7 +209,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
         </div>
 
         {/* Section footer note */}
-        <p className={styles["footerNote"]}>{t((m) => m.Auth.Island.footer)}</p>
+        <p className={styles["footerNote"]}>{t((m) => m.pages.auth.island.footer)}</p>
       </div>
     </section>
   );

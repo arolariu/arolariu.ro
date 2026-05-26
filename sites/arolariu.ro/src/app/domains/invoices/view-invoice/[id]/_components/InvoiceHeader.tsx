@@ -30,12 +30,12 @@ export function InvoiceHeader(): React.JSX.Element {
               <Tooltip>
                 <TooltipTrigger render={<TbHeart className={styles["heartIcon"]} />} />
                 <TooltipContent>
-                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.importantInvoice)}</p>
+                  <p>{t((m) => m.shared.invoices.invoiceHeader.tooltips.importantInvoice)}</p>
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
-          <p className={styles["invoiceId"]}>{t((m) => m["IMS--Common"].invoiceHeader.id, {id: invoice.id})}</p>
+          <p className={styles["invoiceId"]}>{t((m) => m.shared.invoices.invoiceHeader.id, {id: invoice.id})}</p>
         </div>
         <div className={styles["actions"]}>
           {Boolean(isOwner) && (
@@ -48,13 +48,13 @@ export function InvoiceHeader(): React.JSX.Element {
                       className={styles["editLink"]}>
                       <Button>
                         <TbPencil className={styles["buttonIcon"]} />
-                        {t((m) => m["IMS--Common"].invoiceHeader.buttons.edit)}
+                        {t((m) => m.shared.invoices.invoiceHeader.buttons.edit)}
                       </Button>
                     </Link>
                   }
                 />
                 <TooltipContent>
-                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.edit)}</p>
+                  <p>{t((m) => m.shared.invoices.invoiceHeader.tooltips.edit)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -64,12 +64,12 @@ export function InvoiceHeader(): React.JSX.Element {
                       variant='destructive'
                       onClick={openDeleteDialog}>
                       <TbTrash className={styles["buttonIcon"]} />
-                      {t((m) => m["IMS--Common"].invoiceHeader.buttons.delete)}
+                      {t((m) => m.shared.invoices.invoiceHeader.buttons.delete)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.delete)}</p>
+                  <p>{t((m) => m.shared.invoices.invoiceHeader.tooltips.delete)}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -79,12 +79,12 @@ export function InvoiceHeader(): React.JSX.Element {
               render={
                 <Button variant='outline'>
                   <TbPrinter className={styles["buttonIcon"]} />
-                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.print)}
+                  {t((m) => m.shared.invoices.invoiceHeader.buttons.print)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.print)}</p>
+              <p>{t((m) => m.shared.invoices.invoiceHeader.tooltips.print)}</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -94,12 +94,12 @@ export function InvoiceHeader(): React.JSX.Element {
                   variant='outline'
                   onClick={openExportDialog}>
                   <TbDownload className={styles["buttonIcon"]} />
-                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.export)}
+                  {t((m) => m.shared.invoices.invoiceHeader.buttons.export)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.export)}</p>
+              <p>{t((m) => m.shared.invoices.invoiceHeader.tooltips.export)}</p>
             </TooltipContent>
           </Tooltip>
         </div>

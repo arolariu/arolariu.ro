@@ -52,7 +52,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--View"].spendingByCategoryChart.tooltip.itemCount, {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.tooltip.itemCount, {count: data.count})}</p>
     </div>
   );
 }
@@ -98,8 +98,8 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].spendingByCategoryChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].spendingByCategoryChart.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -137,7 +137,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
           <p className={styles["totalAmount"]}>
             {total.toFixed(2)} {currency}
           </p>
-          <p className={styles["totalLabel"]}>{t((m) => m["IMS--View"].spendingByCategoryChart.totalLabel)}</p>
+          <p className={styles["totalLabel"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.totalLabel)}</p>
         </div>
       </CardContent>
     </Card>

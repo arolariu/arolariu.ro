@@ -101,12 +101,12 @@ export function TopProductsChart({data, currency}: Props): React.JSX.Element {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].topProducts.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].topProducts.description)}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.topProducts.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.topProducts.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyText"]}>{t((m) => m["IMS--Stats"].topProducts.empty)}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.topProducts.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -116,46 +116,46 @@ export function TopProductsChart({data, currency}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].topProducts.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].topProducts.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.topProducts.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.topProducts.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div className={styles["tableWrapper"]}>
           <table
             className={styles["table"]}
             role='table'
-            aria-label={t((m) => m["IMS--Stats"].topProducts.ariaLabel)}>
+            aria-label={t((m) => m.cards.invoices.statistics.topProducts.ariaLabel)}>
             <thead>
               <tr>
                 <th
                   className={styles["headerRank"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.rank)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.rank)}
                 </th>
                 <th
                   className={styles["headerProduct"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.product)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.product)}
                 </th>
                 <th
                   className={styles["headerQuantity"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.quantity)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.quantity)}
                 </th>
                 <th
                   className={styles["headerSpent"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.totalSpent)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.totalSpent)}
                 </th>
                 <th
                   className={styles["headerCount"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.purchases)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.purchases)}
                 </th>
                 <th
                   className={styles["headerAverage"]}
                   scope='col'>
-                  {t((m) => m["IMS--Stats"].topProducts.headers.avgPrice)}
+                  {t((m) => m.cards.invoices.statistics.topProducts.headers.avgPrice)}
                 </th>
               </tr>
             </thead>

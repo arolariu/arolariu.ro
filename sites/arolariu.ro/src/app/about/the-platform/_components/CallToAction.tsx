@@ -87,7 +87,7 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6}}>
             <h2 className={styles["title"]}>
-              {t((m) => m.About.Platform.callToAction.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.callToAction.titleHighlight)}?</span>
+              {t((m) => m.sections.about.platform.callToAction.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.callToAction.titleHighlight)}?</span>
             </h2>
           </motion.div>
 
@@ -97,7 +97,7 @@ export default function CallToAction(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6, delay: 0.1}}>
-            {t((m) => m.About.Platform.callToAction.description)}
+            {t((m) => m.sections.about.platform.callToAction.description)}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -116,7 +116,7 @@ export default function CallToAction(): React.JSX.Element {
                 className={styles["ctaButton"]}>
                 <Link href='/domains'>
                   <TbRocket className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.About.Platform.callToAction.cta.exploreApplications)}</span>
+                  <span>{t((m) => m.sections.about.platform.callToAction.cta.exploreApplications)}</span>
                   <TbArrowRight className={styles["ctaArrow"]} />
                   <motion.span
                     className={styles["ctaOverlay"]}
@@ -139,7 +139,7 @@ export default function CallToAction(): React.JSX.Element {
                 className={styles["ctaButton"]}>
                 <Link href='/auth/sign-up'>
                   <TbUser className={styles["ctaIcon"]} />
-                  <span>{t((m) => m.About.Platform.callToAction.cta.createAccount)}</span>
+                  <span>{t((m) => m.sections.about.platform.callToAction.cta.createAccount)}</span>
                   <motion.span
                     className={styles["ctaOverlay"]}
                     initial={{x: "-100%", opacity: 0}}
@@ -163,21 +163,21 @@ export default function CallToAction(): React.JSX.Element {
               rel='noopener noreferrer'
               className={styles["secondaryLink"]}>
               <TbBrandGithub className={styles["secondaryLinkIcon"]} />
-              <span>{t((m) => m.About.Platform.callToAction.links.viewSource)}</span>
+              <span>{t((m) => m.sections.about.platform.callToAction.links.viewSource)}</span>
             </Link>
             <span className={styles["linkDivider"]}>|</span>
             <Link
               href='/about/the-author'
               className={styles["secondaryLink"]}>
               <TbUser className={styles["secondaryLinkIcon"]} />
-              <span>{t((m) => m.About.Platform.callToAction.links.meetAuthor)}</span>
+              <span>{t((m) => m.sections.about.platform.callToAction.links.meetAuthor)}</span>
             </Link>
             <span className={styles["linkDivider"]}>|</span>
             <Link
               href='mailto:contact@arolariu.ro'
               className={styles["secondaryLink"]}>
               <TbMail className={styles["secondaryLinkIcon"]} />
-              <span>{t((m) => m.About.Platform.callToAction.links.getInTouch)}</span>
+              <span>{t((m) => m.sections.about.platform.callToAction.links.getInTouch)}</span>
             </Link>
           </motion.div>
 
@@ -209,13 +209,13 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1} : {}}
             transition={{duration: 0.6, delay: 0.8}}>
             <p className={styles["footerText"]}>
-              {t((m) => m.About.Platform.callToAction.footer)}{" "}
+              {t((m) => m.sections.about.platform.callToAction.footer)}{" "}
               <Link
                 href='/about/the-author'
                 className={styles["footerLink"]}>
                 Alexandru-Razvan Olariu
               </Link>
-              {t((m) => m.About.Platform.callToAction.footerRole)}
+              {t((m) => m.sections.about.platform.callToAction.footerRole)}
             </p>
           </motion.div>
         </div>

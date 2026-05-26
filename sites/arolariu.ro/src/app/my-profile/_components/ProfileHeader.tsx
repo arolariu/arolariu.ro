@@ -69,23 +69,23 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                 size='sm'
                 className={styles["editButton"]}>
                 <TbEdit className={styles["editIcon"]} />
-                {t((m) => m.Profile.header.editProfile)}
+                {t((m) => m.pages.profile.header.editProfile)}
               </Button>
             }
           />
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>{t((m) => m.Profile.header.editProfileTitle)}</SheetTitle>
-              <SheetDescription>{t((m) => m.Profile.header.editProfileDescription)}</SheetDescription>
+              <SheetTitle>{t((m) => m.pages.profile.header.editProfileTitle)}</SheetTitle>
+              <SheetDescription>{t((m) => m.pages.profile.header.editProfileDescription)}</SheetDescription>
             </SheetHeader>
             <div className={styles["sheetBody"]}>
               <Button
                 className={styles["manageButton"]}
                 onClick={handleManageOnClerk}>
                 <TbShieldCheck className={styles["iconSmSize"]} />
-                {t((m) => m.Profile.header.manageOnClerk)}
+                {t((m) => m.pages.profile.header.manageOnClerk)}
               </Button>
-              <p className={styles["sheetNote"]}>{t((m) => m.Profile.header.editProfileClerkNote)}</p>
+              <p className={styles["sheetNote"]}>{t((m) => m.pages.profile.header.editProfileClerkNote)}</p>
             </div>
           </SheetContent>
         </Sheet>
