@@ -1,21 +1,11 @@
 "use client";
 
-import {formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {
   Badge,
   Button,
-  Calendar,
   Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Sheet,
   SheetContent,
   SheetTrigger,
@@ -26,12 +16,17 @@ import {
   useDebounce,
   useWindowSize,
 } from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbInfoCircle, TbSearch, TbTable, TbX} from "react-icons/tb";
+import {TbCards, TbFilter, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
-import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../_utils/datePresets";
 import {computeAvailableCategories, computeAvailableCurrencies, computeAvailablePaymentTypes} from "../../_utils/filterOptions";
+import {AmountFilterCard} from "./AmountFilterCard";
+import {CategoryFilterCard} from "./CategoryFilterCard";
+import {CurrencyFilterCard} from "./CurrencyFilterCard";
+import {DateFilterCard} from "./DateFilterCard";
+import {PaymentTypeFilterCard} from "./PaymentTypeFilterCard";
+import {SortFilterCard} from "./SortFilterCard";
 import styles from "./FilterBar.module.scss";
 
 /**
@@ -53,49 +48,11 @@ type Props = {
 };
 
 /**
- * Quick-amount presets shown as chips beneath the Min/Max number inputs.
- * Each preset writes both bounds to filters when clicked (or clears them
- * when the preset is already active — tap-to-toggle).
- */
-type AmountPresetKey = "0-50" | "50-100" | "100-500" | "500+";
-
-const AMOUNT_PRESETS = [
-  {key: "0-50", labelKey: "0to50", min: 0, max: 50},
-  {key: "50-100", labelKey: "50to100", min: 50, max: 100},
-  {key: "100-500", labelKey: "100to500", min: 100, max: 500},
-  {key: "500+", labelKey: "500plus", min: 500, max: null},
-] as const satisfies ReadonlyArray<{key: AmountPresetKey; labelKey: string; min: number; max: number | null}>;
-
-/**
  * Advanced filter bar component for the invoice list, with URL-based state
- * management and a card-based panel UX (variant J, spec
- * `2026-05-21-view-invoices-filter-overhaul-design.md`).
+ * management and a card-based panel UX.
  *
- * @remarks
- * Outer shell (search input, view toggle, mobile Sheet wrapper, desktop
- * inline-panel container) matches the prior design. The panel internals are
- * a 2-column card grid (single column on mobile) with six cards: Date Range,
- * Amount Range, Currency, Categories, Payment Types, Sort By.
- *
- * **Active state**: each card highlights with a tinted background + colored
- * border + a small active-value pill in its header when its filter is set.
- *
- * **Dynamic option lists**: Currency, Categories, Payment Types are derived
- * from the FULL unfiltered invoice array (not the post-filter set) so that
- * filtering down doesn't dead-end the chip rails. Cards with empty derived
- * lists are hidden entirely.
- *
- * **Date presets**: 4 quick-buttons (30d / 90d / YTD / All time) control
- * the From/To Calendar popovers as a true controlled component via
- * `computePresetRange`. Active preset is derived from current From/To via
- * `deriveActivePreset` — no extra URL state.
- *
- * **Sort default**: defaults to "Date (newest first)"; the dropdown has no
- * "none" option.
- *
- * **Mobile**: sticky "Show N results" CTA at the bottom of the Sheet —
- * tactile thumb-reach affordance to close the sheet (filters still apply
- * reactively as the user edits).
+ * @param props - Filter state, filter update callbacks, view mode state, and filtered count.
+ * @returns The rendered invoice filter bar.
  */
 export default function FilterBar({
   filters,
@@ -106,48 +63,25 @@ export default function FilterBar({
   filteredCount,
 }: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--List.invoicesView");
-  const locale = useLocale();
   const {isMobile} = useWindowSize();
-  // Read full unfiltered invoice list straight from the store — matches the
-  // established pattern in this directory (BulkActionsToolbar, ExportDialog,
-  // GridView, TableView all read state.entities directly; useInvoices() is
-  // called once upstream in island.tsx and triggers the fetch).
   const invoices = useInvoicesStore((state) => state.entities);
   const [searchInput, setSearchInput] = useState<string>(filters.search);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
-  // Debounce search input (300ms)
   const debouncedSearch = useDebounce(searchInput, 300);
 
-  // Update filters when debounced search changes
   useEffect(() => {
     if (debouncedSearch !== filters.search) {
       onFiltersChange({search: debouncedSearch});
     }
   }, [debouncedSearch, filters.search, onFiltersChange]);
 
-  // ── Dynamic option lists, derived from the FULL invoice set ──
   const availableCurrencies = useMemo(() => computeAvailableCurrencies(invoices), [invoices]);
   const availableCategories = useMemo(() => computeAvailableCategories(invoices), [invoices]);
   const availablePaymentTypes = useMemo(() => computeAvailablePaymentTypes(invoices), [invoices]);
 
-  // ── Date-preset active state ──
-  const activeDatePreset = useMemo(
-    () => deriveActivePreset(filters.dateFrom, filters.dateTo, new Date()),
-    [filters.dateFrom, filters.dateTo],
-  );
-
-  // ── Per-card active predicates ──
-  const isDateActive = filters.dateFrom !== null || filters.dateTo !== null;
-  const isAmountActive = filters.amountMin !== null || filters.amountMax !== null;
-  const isCurrencyActive = filters.currencies.length > 0;
-  const isCategoryActive = filters.categories.length > 0;
-  const isPaymentActive = filters.paymentTypes.length > 0;
-  const isSortActive = !(filters.sortBy === "date" && filters.sortOrder === "desc");
-
-  // ── Handlers ──
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value);
   }, []);
 
   const handleClearFilters = useCallback(() => {
@@ -166,157 +100,9 @@ export default function FilterBar({
     });
   }, [onFiltersChange]);
 
-  // Format a local Date as YYYY-MM-DD using local (not UTC) components so a
-  // user in a positive timezone doesn't see their picked calendar day shifted
-  // back by one. Same shape datePresets.ts uses internally for its UTC-safe
-  // ranges; here we want the LOCAL calendar day the picker actually showed.
-  const formatLocalDate = useCallback((date: Date): string => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }, []);
-
-  const handleDateFromChange = useCallback(
-    (date: Date | undefined) => {
-      onFiltersChange({dateFrom: date ? formatLocalDate(date) : null});
-    },
-    [onFiltersChange, formatLocalDate],
-  );
-
-  const handleDateToChange = useCallback(
-    (date: Date | undefined) => {
-      onFiltersChange({dateTo: date ? formatLocalDate(date) : null});
-    },
-    [onFiltersChange, formatLocalDate],
-  );
-
-  const handleAmountMinChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value ? Number.parseFloat(e.target.value) : null;
-      onFiltersChange({amountMin: value});
-    },
-    [onFiltersChange],
-  );
-
-  const handleAmountMaxChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value ? Number.parseFloat(e.target.value) : null;
-      onFiltersChange({amountMax: value});
-    },
-    [onFiltersChange],
-  );
-
-  // ── Amount preset (chip) active-state derivation + click handler ──
-  const activeAmountPreset = useMemo<AmountPresetKey | null>(() => {
-    for (const preset of AMOUNT_PRESETS) {
-      if (filters.amountMin === preset.min && filters.amountMax === preset.max) return preset.key;
-    }
-    return null;
-  }, [filters.amountMin, filters.amountMax]);
-
-  const handleAmountPresetClick = useCallback(
-    (presetKey: AmountPresetKey) => {
-      // Tap-to-toggle: clicking the already-active preset clears the amount filter.
-      if (activeAmountPreset === presetKey) {
-        onFiltersChange({amountMin: null, amountMax: null});
-        return;
-      }
-      const preset = AMOUNT_PRESETS.find((p) => p.key === presetKey);
-      if (preset) onFiltersChange({amountMin: preset.min, amountMax: preset.max});
-    },
-    [activeAmountPreset, onFiltersChange],
-  );
-
-  const handleCategoryToggle = useCallback(
-    (category: number) => {
-      const newCategories = filters.categories.includes(category)
-        ? filters.categories.filter((c) => c !== category)
-        : [...filters.categories, category];
-      onFiltersChange({categories: newCategories});
-    },
-    [filters.categories, onFiltersChange],
-  );
-
-  const handlePaymentTypeToggle = useCallback(
-    (paymentType: number) => {
-      const newPaymentTypes = filters.paymentTypes.includes(paymentType)
-        ? filters.paymentTypes.filter((p) => p !== paymentType)
-        : [...filters.paymentTypes, paymentType];
-      onFiltersChange({paymentTypes: newPaymentTypes});
-    },
-    [filters.paymentTypes, onFiltersChange],
-  );
-
-  const handleCurrencyToggle = useCallback(
-    (code: string) => {
-      const next = filters.currencies.includes(code) ? filters.currencies.filter((c) => c !== code) : [...filters.currencies, code];
-      onFiltersChange({currencies: next});
-    },
-    [filters.currencies, onFiltersChange],
-  );
-
-  const handlePresetClick = useCallback(
-    (preset: DatePresetKey) => {
-      const range = computePresetRange(preset, new Date());
-      onFiltersChange({dateFrom: range.from, dateTo: range.to});
-    },
-    [onFiltersChange],
-  );
-
-  const handleSortChange = useCallback(
-    (value: string) => {
-      const parts = value.split("-");
-      const direction = parts.pop() as "asc" | "desc";
-      const field = parts.join("-") as Exclude<FilterState["sortBy"], null>;
-      onFiltersChange({sortBy: field, sortOrder: direction});
-    },
-    [onFiltersChange],
-  );
-
-  /**
-   * Factory: returns a stable click handler for date preset chips.
-   * Each preset button gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createPresetClickHandler = useCallback(
-    (preset: DatePresetKey) => {
-      return () => handlePresetClick(preset);
-    },
-    [handlePresetClick],
-  );
-
-  /**
-   * Factory: returns a stable click handler for amount preset chips.
-   * Each preset button gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createAmountPresetClickHandler = useCallback(
-    (presetKey: AmountPresetKey) => {
-      return () => handleAmountPresetClick(presetKey);
-    },
-    [handleAmountPresetClick],
-  );
-
-  /**
-   * Factory: returns a stable toggle handler for currency chips.
-   * Each currency chip gets its own callback to avoid re-rendering on unrelated state changes.
-   */
-  const createCurrencyToggleHandler = useCallback(
-    (code: string) => {
-      return () => handleCurrencyToggle(code);
-    },
-    [handleCurrencyToggle],
-  );
-
-  // ── Label helpers (kept inline so they pick up the right `t` namespace) ──
-  const formatCurrencyList = useCallback(
-    (codes: ReadonlyArray<string>): string =>
-      codes.length <= 2 ? codes.join(", ") : `${codes.slice(0, 2).join(", ")}, +${codes.length - 2}`,
-    [],
-  );
-
   const getCategoryLabel = useCallback(
-    (cat: InvoiceCategory): string => {
-      switch (cat) {
+    (category: InvoiceCategory): string => {
+      switch (category) {
         case InvoiceCategory.GROCERY:
           return t("categories.groceries");
         case InvoiceCategory.FAST_FOOD:
@@ -333,8 +119,8 @@ export default function FilterBar({
   );
 
   const getPaymentTypeLabel = useCallback(
-    (pt: PaymentType): string => {
-      switch (pt) {
+    (paymentType: PaymentType): string => {
+      switch (paymentType) {
         case PaymentType.Cash:
           return t("filters.paymentTypeLabels.cash");
         case PaymentType.Card:
@@ -352,320 +138,45 @@ export default function FilterBar({
     [t],
   );
 
-  const getSortLabel = useCallback(
-    (sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string => {
-      if (sortBy === "date" && sortOrder === "desc") return t("filters.sortOptions.dateNewest");
-      if (sortBy === "date" && sortOrder === "asc") return t("filters.sortOptions.dateOldest");
-      if (sortBy === "amount" && sortOrder === "desc") return t("filters.sortOptions.amountHighToLow");
-      if (sortBy === "amount" && sortOrder === "asc") return t("filters.sortOptions.amountLowToHigh");
-      if (sortBy === "name" && sortOrder === "asc") return t("filters.sortOptions.nameAZ");
-      if (sortBy === "name" && sortOrder === "desc") return t("filters.sortOptions.nameZA");
-      return "";
-    },
-    [t],
-  );
-
-  const dateActivePillText = useMemo(() => {
-    if (!isDateActive) return null;
-    if (activeDatePreset === "30d") return t("filters.datePresets.30d");
-    if (activeDatePreset === "90d") return t("filters.datePresets.90d");
-    if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
-    if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
-    if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
-    if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
-    return null;
-  }, [isDateActive, activeDatePreset, filters.dateFrom, filters.dateTo, locale, t]);
-
-  const amountActivePillText = useMemo(() => {
-    if (!isAmountActive) return null;
-    if (filters.amountMin !== null && filters.amountMax !== null) return `${filters.amountMin} – ${filters.amountMax}`;
-    if (filters.amountMin !== null) return `≥ ${filters.amountMin}`;
-    if (filters.amountMax !== null) return `≤ ${filters.amountMax}`;
-    return null;
-  }, [isAmountActive, filters.amountMin, filters.amountMax]);
-
-  // Small (i) tooltip rendered next to the title of every dynamically-populated
-  // filter card (Currency, Categories, Payment Types) — explains that the chip
-  // set reflects the user's own data rather than a fixed taxonomy.
-  const dynamicHint = (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <span
-            className={styles["dynamicHintIcon"]}
-            aria-label={t("filters.dynamicHint")}>
-            <TbInfoCircle aria-hidden='true' />
-          </span>
-        }
-      />
-      <TooltipContent>{t("filters.dynamicHint")}</TooltipContent>
-    </Tooltip>
-  );
-
-  // ────────────────────────────────────────────────────────────
-  // Panel body — card grid (single-column on mobile via SCSS)
-  // ────────────────────────────────────────────────────────────
-  // eslint-disable-next-line sonarjs/cognitive-complexity, complexity -- six conditionally-rendered card sections; extracting per-card sub-components would obscure the linear visual order without simplifying logic
   const renderFilterPanel = (): React.JSX.Element => (
     <TooltipProvider>
       <div className={styles["panelGrid"]}>
-        {/* ─────── Date Range ─────── */}
-        <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
-          <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>
-              <TbCalendar /> {t("filters.dateRange")}
-            </span>
-            {dateActivePillText ? (
-              <span className={styles["activeValuePill"]}>{dateActivePillText}</span>
-            ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-            )}
-          </div>
-          <div className={styles["presetRow"]}>
-            {(["30d", "90d", "ytd", "all"] as const).map((preset) => (
-              <button
-                key={preset}
-                type='button'
-                aria-pressed={activeDatePreset === preset}
-                className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
-                // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
-                onClick={createPresetClickHandler(preset)}>
-                {t(`filters.datePresets.${preset}`)}
-              </button>
-            ))}
-          </div>
-          <div className={styles["dateRangeInputs"]}>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant='outline'
-                    className={styles["dateButton"]}>
-                    <TbCalendar className={styles["dateIcon"]} />
-                    {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
-                  </Button>
-                }
-              />
-              <PopoverContent className={styles["calendarPopover"]}>
-                <Calendar
-                  mode='single'
-                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                  onSelect={handleDateFromChange}
-                />
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant='outline'
-                    className={styles["dateButton"]}>
-                    <TbCalendar className={styles["dateIcon"]} />
-                    {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
-                  </Button>
-                }
-              />
-              <PopoverContent className={styles["calendarPopover"]}>
-                <Calendar
-                  mode='single'
-                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                  onSelect={handleDateToChange}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* ─────── Amount Range ─────── */}
-        <div className={`${styles["cardSection"]} ${isAmountActive ? styles["cardSectionActive"] : ""}`}>
-          <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>
-              <TbCurrencyDollar /> {t("filters.amountRange")}
-            </span>
-            {amountActivePillText ? (
-              <span className={styles["activeValuePill"]}>{amountActivePillText}</span>
-            ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-            )}
-          </div>
-          <div className={styles["amountRangeInputs"]}>
-            <div className={styles["amountInputWrapper"]}>
-              <TbCurrencyDollar className={styles["currencyIcon"]} />
-              <Input
-                type='number'
-                placeholder={t("filters.amountMin")}
-                value={filters.amountMin ?? ""}
-                onChange={handleAmountMinChange}
-                className={styles["amountInput"]}
-              />
-            </div>
-            <div className={styles["amountInputWrapper"]}>
-              <TbCurrencyDollar className={styles["currencyIcon"]} />
-              <Input
-                type='number'
-                placeholder={t("filters.amountMax")}
-                value={filters.amountMax ?? ""}
-                onChange={handleAmountMaxChange}
-                className={styles["amountInput"]}
-              />
-            </div>
-          </div>
-          <div className={styles["amountPresetRow"]}>
-            {AMOUNT_PRESETS.map(({key: presetKey, labelKey}) => (
-              <button
-                key={presetKey}
-                type='button'
-                aria-pressed={activeAmountPreset === presetKey}
-                className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
-                // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
-                onClick={createAmountPresetClickHandler(presetKey)}>
-                {t(`filters.amountPresets.${labelKey}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ─────── Currency (dynamic) ─────── */}
-        {availableCurrencies.length > 0 && (
-          <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
-            <div className={styles["cardSectionHeader"]}>
-              <span className={styles["cardSectionTitle"]}>
-                💵 {t("filters.currency")}
-                {dynamicHint}
-              </span>
-              {isCurrencyActive ? (
-                <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
-              ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.currencyAny")}</span>
-              )}
-            </div>
-            <div className={styles["categoryChips"]}>
-              {availableCurrencies.map((code) => (
-                <button
-                  key={code}
-                  type='button'
-                  aria-pressed={filters.currencies.includes(code)}
-                  className={styles["chipButton"]}
-                  // eslint-disable-next-line react/jsx-no-bind -- code is a stable literal
-                  onClick={createCurrencyToggleHandler(code)}>
-                  <Badge
-                    variant={filters.currencies.includes(code) ? "default" : "outline"}
-                    className={styles["categoryChip"]}>
-                    {code}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ─────── Categories (dynamic) ─────── */}
-        {availableCategories.length > 0 && (
-          <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
-            <div className={styles["cardSectionHeader"]}>
-              <span className={styles["cardSectionTitle"]}>
-                📂 {t("filters.categories")}
-                {dynamicHint}
-              </span>
-              {isCategoryActive ? (
-                <span className={styles["activeValuePill"]}>
-                  {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
-                </span>
-              ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-              )}
-            </div>
-            <div className={styles["categoryChips"]}>
-              {availableCategories.map((cat) => (
-                <button
-                  key={cat}
-                  type='button'
-                  aria-pressed={filters.categories.includes(cat)}
-                  className={styles["chipButton"]}
-                  // eslint-disable-next-line react/jsx-no-bind -- cat is a stable enum value
-                  onClick={() => handleCategoryToggle(cat)}>
-                  <Badge
-                    variant={filters.categories.includes(cat) ? "default" : "outline"}
-                    className={styles["categoryChip"]}>
-                    {getCategoryLabel(cat)}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ─────── Payment Types (dynamic) ─────── */}
-        {availablePaymentTypes.length > 0 && (
-          <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
-            <div className={styles["cardSectionHeader"]}>
-              <span className={styles["cardSectionTitle"]}>
-                💳 {t("filters.paymentTypes")}
-                {dynamicHint}
-              </span>
-              {isPaymentActive ? (
-                <span className={styles["activeValuePill"]}>
-                  {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
-                </span>
-              ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
-              )}
-            </div>
-            <div className={styles["categoryChips"]}>
-              {availablePaymentTypes.map((pt) => (
-                <button
-                  key={pt}
-                  type='button'
-                  aria-pressed={filters.paymentTypes.includes(pt)}
-                  className={styles["chipButton"]}
-                  // eslint-disable-next-line react/jsx-no-bind -- pt is a stable enum value
-                  onClick={() => handlePaymentTypeToggle(pt)}>
-                  <Badge
-                    variant={filters.paymentTypes.includes(pt) ? "default" : "outline"}
-                    className={styles["categoryChip"]}>
-                    {getPaymentTypeLabel(pt)}
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ─────── Sort By ─────── */}
-        <div className={`${styles["cardSection"]} ${isSortActive ? styles["cardSectionActive"] : ""}`}>
-          <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>↕ {t("filters.sortBy")}</span>
-            {isSortActive ? (
-              <span className={styles["activeValuePill"]}>{getSortLabel(filters.sortBy, filters.sortOrder)}</span>
-            ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.defaultValue")}</span>
-            )}
-          </div>
-          <Select
-            value={`${filters.sortBy}-${filters.sortOrder}`}
-            onValueChange={handleSortChange}>
-            <SelectTrigger className={styles["sortSelect"]}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
-              <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
-              <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>
-              <SelectItem value='amount-asc'>{t("filters.sortOptions.amountLowToHigh")}</SelectItem>
-              <SelectItem value='name-asc'>{t("filters.sortOptions.nameAZ")}</SelectItem>
-              <SelectItem value='name-desc'>{t("filters.sortOptions.nameZA")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <DateFilterCard
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+        <AmountFilterCard
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
+        <CurrencyFilterCard
+          filters={filters}
+          availableCurrencies={availableCurrencies}
+          onFiltersChange={onFiltersChange}
+        />
+        <CategoryFilterCard
+          filters={filters}
+          availableCategories={availableCategories}
+          getCategoryLabel={getCategoryLabel}
+          onFiltersChange={onFiltersChange}
+        />
+        <PaymentTypeFilterCard
+          filters={filters}
+          availablePaymentTypes={availablePaymentTypes}
+          getPaymentTypeLabel={getPaymentTypeLabel}
+          onFiltersChange={onFiltersChange}
+        />
+        <SortFilterCard
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+        />
       </div>
     </TooltipProvider>
   );
 
   return (
     <div className={styles["container"]}>
-      {/* Always visible controls */}
       <div className={styles["topBar"]}>
-        {/* Search Input */}
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
@@ -676,7 +187,6 @@ export default function FilterBar({
           />
         </div>
 
-        {/* Filter Button — mobile opens Sheet, desktop toggles inline panel */}
         {isMobile ? (
           <Sheet
             open={isFilterOpen}
@@ -734,7 +244,7 @@ export default function FilterBar({
             size='sm'
             className={styles["filterButton"]}
             // eslint-disable-next-line react/jsx-no-bind -- inline toggle handler
-            onClick={() => setIsFilterOpen((prev) => !prev)}
+            onClick={() => setIsFilterOpen((previous) => !previous)}
             aria-expanded={isFilterOpen}
             aria-controls='inline-filter-panel'>
             <TbFilter className={styles["filterIcon"]} />
@@ -749,7 +259,6 @@ export default function FilterBar({
           </Button>
         )}
 
-        {/* Clear Filters Button (when filters active) */}
         {activeFilterCount > 0 && !isMobile && (
           <Button
             variant='ghost'
@@ -761,7 +270,6 @@ export default function FilterBar({
           </Button>
         )}
 
-        {/* View Toggle */}
         <div className={styles["viewToggle"]}>
           <TooltipProvider>
             <Tooltip>
@@ -800,7 +308,6 @@ export default function FilterBar({
         </div>
       </div>
 
-      {/* Inline filter panel (desktop only) — collapses below the search bar */}
       {!isMobile && isFilterOpen ? (
         <div
           id='inline-filter-panel'
