@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_contexts/DialogContainer
  *
  * @remarks
- * **Dialog Registry Pattern**: Centralized router for 23 dialog types across the
+ * **Dialog Registry Pattern**: Centralized router for 27 dialog types across the
  * invoices bounded context. Maps dialog type discriminators to lazily-loaded
  * dialog components, ensuring optimal code splitting and bundle sizes.
  *
@@ -13,8 +13,8 @@
  * - Leverage dialog open animations to mask import-fetch latency
  * - Improve Time to Interactive (TTI) by deferring non-critical code
  *
- * **Dialog Organization** (23 dialogs across 4 route domains):
- * - **edit-invoice/[id]**: 12 dialogs (items, metadata, merchant, analysis, etc.)
+ * **Dialog Organization** (27 dialogs across 4 route domains):
+ * - **edit-invoice/[id]**: 16 dialogs (items, metadata, merchant, analysis, recipes, etc.)
  * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
  * - **view-invoices**: 2 dialogs (import, export)
  * - **view-scans**: 1 dialog (create invoice from scans)
@@ -43,11 +43,13 @@ import {useDialogs} from "./DialogContext";
 // All dialogs are client-only and lazy-loaded.
 // The Dialog's own open animation masks the import-fetch latency on first open.
 const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddScanDialog"), {ssr: false});
+const AddRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddRecipeDialog"), {ssr: false});
 const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AllergenDialog"), {ssr: false});
 const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AnalyzeDialog"), {ssr: false});
 const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/BulkCategoryDialog"), {ssr: false});
 const CreateInvoiceDialog = dynamic(() => import("../view-scans/_dialogs/CreateInvoiceDialog"), {ssr: false});
 const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
+const DeleteRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/DeleteRecipeDialog"), {ssr: false});
 const DeleteScanDialog = dynamic(() => import("../_dialogs/DeleteScanDialog"), {ssr: false});
 const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/FeedbackDialog"), {ssr: false});
 const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ImageDialog"), {ssr: false});
@@ -57,13 +59,15 @@ const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]
   ssr: false,
 });
 const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/MetadataDialog"), {ssr: false});
-const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RecipeDialog"), {ssr: false});
 const InvoicesExportDialog = dynamic(() => import("../view-invoices/_dialogs/ExportDialog"), {ssr: false});
 const InvoicesImportDialog = dynamic(() => import("../view-invoices/_dialogs/ImportDialog"), {ssr: false});
+const PreviewRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/PreviewRecipeDialog"), {ssr: false});
 const PreviewScanDialog = dynamic(() => import("../_dialogs/PreviewScanDialog"), {ssr: false});
 const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RemoveScanDialog"), {ssr: false});
 const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog"), {ssr: false});
 const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
+const ShareRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ShareRecipeDialog"), {ssr: false});
+const UpdateRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/UpdateRecipeDialog"), {ssr: false});
 // view-invoice/[id]/_dialogs/ExportDialog uses a named export
 const ViewInvoiceExportDialog = dynamic(
   () => import("../view-invoice/[id]/_dialogs/ExportDialog").then((m) => ({default: m.ExportDialog})),
@@ -76,7 +80,7 @@ const ViewInvoiceExportDialog = dynamic(
  * @remarks
  * **Rendering Context**: Client Component (uses `useDialogs` hook from context).
  *
- * **Dialog Registry Pattern**: Maps 23 dialog type discriminators to their
+ * **Dialog Registry Pattern**: Maps 27 dialog type discriminators to their
  * corresponding lazy-loaded components. Switch expression evaluates `type` from
  * dialog context and returns the appropriate dialog or `null` when no dialog is active.
  *
@@ -95,7 +99,7 @@ const ViewInvoiceExportDialog = dynamic(
  *
  * **Dialog Type Organization**:
  *
- * **edit-invoice/[id] dialogs** (12):
+ * **edit-invoice/[id] dialogs** (16):
  * - `EDIT_INVOICE__ANALYSIS`: AI-powered invoice analysis with item categorization
  * - `EDIT_INVOICE__ITEMS`: Invoice line items editor with add/remove/edit
  * - `EDIT_INVOICE__ALLERGENS`: Allergen information for food items
@@ -107,7 +111,11 @@ const ViewInvoiceExportDialog = dynamic(
  * - `EDIT_INVOICE__IMAGE`: Full-screen invoice scan image viewer
  * - `EDIT_INVOICE__ADD_SCAN`: Add additional scans to existing invoice
  * - `EDIT_INVOICE__REMOVE_SCAN`: Remove scans from invoice
- * - `EDIT_INVOICE__RECIPE`: AI-generated recipes from invoice items
+ * - `EDIT_INVOICE__RECIPE_ADD`: Create a recipe from invoice items
+ * - `EDIT_INVOICE__RECIPE_UPDATE`: Update a recipe attached to the invoice
+ * - `EDIT_INVOICE__RECIPE_DELETE`: Delete a recipe from the invoice
+ * - `EDIT_INVOICE__RECIPE_PREVIEW`: Preview recipe details
+ * - `EDIT_INVOICE__RECIPE_SHARE`: Share a recipe reference
  *
  * **view-invoice/[id] dialogs** (2):
  * - `VIEW_INVOICE__SHARE_ANALYTICS`: Share invoice analytics charts/insights
@@ -216,8 +224,16 @@ function DialogContainerImpl(): React.JSX.Element | null {
         return <AddScanDialog />;
       case "EDIT_INVOICE__REMOVE_SCAN":
         return <RemoveScanDialog />;
-      case "EDIT_INVOICE__RECIPE":
-        return <InvoiceRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_ADD":
+        return <AddRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_UPDATE":
+        return <UpdateRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_DELETE":
+        return <DeleteRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_PREVIEW":
+        return <PreviewRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_SHARE":
+        return <ShareRecipeDialog />;
       // view-invoice/[id] Dialogs
       case "VIEW_INVOICE__SHARE_ANALYTICS":
         return <ShareAnalyticsDialog />;
