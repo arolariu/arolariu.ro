@@ -103,6 +103,8 @@ function createState(sourceFile: ts.SourceFile): FileMigrationState {
     edits: [],
     literalCallsChanged: 0,
     namespaceFactoriesChanged: 0,
+    dynamicCallsChanged: 0,
+    needsSelectorFromPath: false,
     dynamicCallsSkipped: [],
   };
 }
@@ -168,9 +170,14 @@ function rewriteTranslatorCall(sourceFile: ts.SourceFile, state: FileMigrationSt
 
   const key = getStringLiteral(firstArg);
   if (key === undefined) {
-    state.dynamicCallsSkipped.push(
-      `${path.relative(workspaceRoot, sourceFile.fileName)}:${sourceFile.getLineAndCharacterOfPosition(firstArg.getStart()).line + 1}`,
-    );
+    if (ts.isArrowFunction(firstArg) || isSelectorFromPathCall(firstArg)) {
+      return;
+    }
+
+    const namespace = state.namespacesByTranslator.get(called.baseName);
+    addEdit(state, firstArg.getStart(sourceFile), firstArg.getEnd(), toSelectorFromPathExpression(sourceFile, firstArg, namespace));
+    state.needsSelectorFromPath = true;
+    state.dynamicCallsChanged += 1;
     return;
   }
 
@@ -178,6 +185,36 @@ function rewriteTranslatorCall(sourceFile: ts.SourceFile, state: FileMigrationSt
   const fullPath = joinTranslationPath(namespace, key);
   addEdit(state, firstArg.getStart(sourceFile), firstArg.getEnd(), toSelectorExpression(fullPath));
   state.literalCallsChanged += 1;
+}
+
+function isSelectorFromPathCall(node: ts.Expression): boolean {
+  return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "selectorFromPath";
+}
+
+function toSelectorFromPathExpression(sourceFile: ts.SourceFile, expression: ts.Expression, namespace: string | undefined): string {
+  const expressionText = expression.getText(sourceFile);
+  if (!namespace) {
+    return `selectorFromPath(${expressionText})`;
+  }
+
+  if (ts.isTemplateExpression(expression)) {
+    return `selectorFromPath(\`${namespace}.${expressionText.slice(1, -1)}\`)`;
+  }
+
+  return `selectorFromPath(\`${namespace}.\${${expressionText}}\`)`;
+}
+
+function ensureSelectorFromPathImport(sourceFile: ts.SourceFile, state: FileMigrationState): void {
+  if (!state.needsSelectorFromPath) return;
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || getImportModule(statement) !== selectorClientModule) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (!ts.isNamedImports(bindings)) continue;
+    if (bindings.elements.some((element) => element.name.text === "selectorFromPath")) return;
+  }
+
+  addEdit(state, 0, 0, `import {selectorFromPath} from ${JSON.stringify(selectorClientModule)};\n`);
 }
 
 function visit(sourceFile: ts.SourceFile, state: FileMigrationState, node: ts.Node): void {
@@ -198,6 +235,7 @@ function migrateFile(fileName: string): FileMigrationState {
   const state = createState(sourceFile);
   rewriteTranslatorImports(sourceFile, state);
   visit(sourceFile, state, sourceFile);
+  ensureSelectorFromPathImport(sourceFile, state);
 
   if (isWriteMode && state.edits.length > 0) {
     fs.writeFileSync(fileName, applyEdits(source, state.edits));
@@ -212,6 +250,7 @@ const report: MigrationReport = {
   filesChanged: states.filter((state) => state.edits.length > 0).length,
   literalCallsChanged: states.reduce((total, state) => total + state.literalCallsChanged, 0),
   namespaceFactoriesChanged: states.reduce((total, state) => total + state.namespaceFactoriesChanged, 0),
+  dynamicCallsChanged: states.reduce((total, state) => total + state.dynamicCallsChanged, 0),
   dynamicCallsSkipped: states.flatMap((state) => state.dynamicCallsSkipped),
 };
 

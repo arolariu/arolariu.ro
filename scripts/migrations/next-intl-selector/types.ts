@@ -23,6 +23,7 @@ export type MigrationReport = {
   readonly filesChanged: number;
   readonly literalCallsChanged: number;
   readonly namespaceFactoriesChanged: number;
+  readonly dynamicCallsChanged: number;
   readonly dynamicCallsSkipped: readonly string[];
 };
 
@@ -38,5 +39,7 @@ export type FileMigrationState = {
   readonly edits: TextEdit[];
   literalCallsChanged: number;
   namespaceFactoriesChanged: number;
+  dynamicCallsChanged: number;
+  needsSelectorFromPath: boolean;
   readonly dynamicCallsSkipped: string[];
 };
