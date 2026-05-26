@@ -1,3 +1,41 @@
+/**
+ * @fileoverview Type-safe dialog context system with split state/actions pattern.
+ * @module app/domains/invoices/_contexts/DialogContext
+ *
+ * @remarks
+ * **Architecture Pattern**: Split-context design separating state (re-renders consumers)
+ * from actions (stable for provider lifetime) to enable selective subscription in the future.
+ *
+ * **Type-Safe Payload Narrowing**: Compile-time registry (`DialogPayloads`) maps each
+ * dialog type to its expected payload shape. The `useDialog<T>` hook leverages TypeScript's
+ * type narrowing to provide fully-typed access to `currentDialog.payload` when reading
+ * under `isOpen === true`.
+ *
+ * **Soundness Contract**: Runtime payload is `unknown`. Narrowing is sound only when
+ * the active dialog reads its own payload — enforced by DialogContainer mounting only
+ * the active dialog. Callers must guard trigger buttons to prevent dispatching dialogs
+ * without required payloads.
+ *
+ * **23 Dialog Types** across 4 route domains:
+ * - **edit-invoice/[id]**: 12 dialogs (analysis, items, merchant, metadata, etc.)
+ * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
+ * - **view-invoices**: 2 dialogs (import, export)
+ * - **view-scans**: 1 dialog (create invoice from scans)
+ * - **shared**: 4 dialogs (delete/share invoice, delete/preview scan)
+ *
+ * **Performance**: Actions context value is stable (empty deps array), preventing
+ * unnecessary re-renders for components that only need dispatch capabilities.
+ * State context re-renders all subscribers on every open/close.
+ *
+ * **No-Op Guard**: Opening a dialog while another is already open is a no-op,
+ * enforced in the functional setState updater.
+ *
+ * @see {@link DialogContainer} - Dialog registry and lazy-loading orchestrator
+ * @see {@link useDialogs} - Hook for dynamic dialog dispatching
+ * @see {@link useDialog} - Hook bound to a single dialog type
+ * @see RFC 1005 - State management patterns (context architecture)
+ */
+
 "use client";
 
 import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
@@ -5,9 +43,23 @@ import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";
 
 /**
- * DialogType is a union type representing the different types of dialogs that can be opened.
- * Each string literal corresponds to a specific dialog type.
- * The null value indicates that no dialog is currently open.
+ * Union type representing all 23 dialog types across the invoices domain.
+ *
+ * @remarks
+ * **Discriminator Union**: Each string literal corresponds to a specific dialog type.
+ * The `null` value indicates no dialog is currently open.
+ *
+ * **Type Organization**:
+ * - Prefixed by route domain (`EDIT_INVOICE`, `VIEW_INVOICE`, `VIEW_INVOICES`, `VIEW_SCANS`)
+ * - `SHARED` prefix for cross-route dialogs (delete, share, preview)
+ *
+ * **Type-to-Component Mapping**: Consumed by `DialogContainer` switch expression
+ * to map discriminator to lazy-loaded dialog component.
+ *
+ * **Type-to-Payload Mapping**: Drives compile-time payload narrowing via `DialogPayloads`.
+ *
+ * @see {@link DialogPayloads} - Compile-time payload registry
+ * @see {@link DialogContainer} - Switch expression mapping types to components
  */
 export type DialogType = Readonly<
   | "EDIT_INVOICE__ANALYSIS"
@@ -33,18 +85,61 @@ export type DialogType = Readonly<
   | "SHARED__SCAN_PREVIEW"
 > | null;
 
+/**
+ * Dialog mode indicating the intended user action within a dialog.
+ *
+ * @remarks
+ * **Purpose**: Provides semantic context for dialogs that support multiple modes
+ * (e.g., "view" vs "edit" merchant details, "add" vs "edit" invoice items).
+ *
+ * **Modes**:
+ * - `"view"`: Read-only display of data
+ * - `"add"`: Creating new entities
+ * - `"edit"`: Modifying existing entities
+ * - `"delete"`: Confirming deletion with potential undo
+ * - `"share"`: Sharing via link, email, or social media
+ * - `null`: No dialog open or mode not applicable
+ *
+ * **Usage**: Passed to `openDialog<T>(type, mode, payload)` and accessible via
+ * `currentDialog.mode`. Dialogs can adapt UI based on mode (e.g., disable
+ * form fields in "view" mode, show undo button in "delete" mode).
+ *
+ * **Default**: The `useDialog` hook defaults to `"view"` mode when not specified.
+ */
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
 /**
  * Compile-time registry mapping each DialogType to its expected payload shape.
  *
  * @remarks
- * Drives type narrowing in `useDialog<T>(...)` and `useDialogs().openDialog<T>(...)`.
+ * **Type Narrowing**: Drives type narrowing in `useDialog<T>(...)` and
+ * `useDialogs().openDialog<T>(...)`. When a dialog reads `currentDialog.payload`
+ * under `isOpen === true`, TypeScript narrows `payload` to `DialogPayloads[T]`.
  *
- * **Soundness contract:** The runtime payload is `unknown`. The narrowing
- * exposed by `useDialog` is sound only while the dialog reads its payload
- * under `isOpen === true` — which is the existing DialogContainer contract
- * (only the active dialog is mounted).
+ * **Soundness Contract**: The runtime payload is `unknown`. Narrowing is sound
+ * only when the active dialog reads its own payload — enforced by DialogContainer
+ * mounting only the active dialog. Callers must guard trigger buttons to prevent
+ * dispatching dialogs without required payloads.
+ *
+ * **Payload Types**:
+ * - **Complex objects**: `{invoice: Invoice}`, `{merchant: Merchant}`, etc.
+ * - **Primitives**: `string` for image URLs
+ * - **undefined**: Dialogs with no required data (import/export)
+ *
+ * **Type Safety**: Compile-time enforcement prevents calling
+ * `openDialog("EDIT_INVOICE__ITEMS", "edit")` without an `Invoice` payload.
+ *
+ * **Example**:
+ * ```typescript
+ * // ✅ Type-safe - payload matches DialogPayloads["EDIT_INVOICE__ITEMS"]
+ * openDialog("EDIT_INVOICE__ITEMS", "edit", {invoice});
+ *
+ * // ❌ Compile error - missing required payload
+ * openDialog("EDIT_INVOICE__ITEMS", "edit");
+ *
+ * // ❌ Compile error - wrong payload shape
+ * openDialog("EDIT_INVOICE__ITEMS", "edit", {merchant});
+ * ```
  */
 export type DialogPayloads = {
   EDIT_INVOICE__ANALYSIS: {invoice: Invoice};
