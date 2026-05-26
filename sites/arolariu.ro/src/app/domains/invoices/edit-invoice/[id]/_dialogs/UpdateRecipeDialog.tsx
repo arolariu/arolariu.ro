@@ -31,7 +31,7 @@ import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbWand, TbX} from "
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useRecipeUpdate} from "../../../_hooks/invoice";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
-import styles from "./RecipeDialog.module.scss";
+import styles from "./UpdateRecipeDialog.module.scss";
 
 function mapDifficultyToComplexity(difficulty: string): RecipeComplexity {
   switch (difficulty) {

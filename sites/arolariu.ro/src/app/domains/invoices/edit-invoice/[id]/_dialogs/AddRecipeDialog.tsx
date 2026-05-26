@@ -31,7 +31,7 @@ import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, Tb
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useRecipeAdd} from "../../../_hooks/invoice";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
-import styles from "./RecipeDialog.module.scss";
+import styles from "./AddRecipeDialog.module.scss";
 
 function createEmptyRecipe(): Recipe {
   return {
