@@ -1,0 +1,140 @@
+"use client";
+
+import {formatDate} from "@/lib/utils.generic";
+import {Button, Calendar, Popover, PopoverContent, PopoverTrigger} from "@arolariu/components";
+import {useLocale, useTranslations} from "next-intl";
+import {useCallback, useMemo} from "react";
+import {TbCalendar} from "react-icons/tb";
+import type {FilterState} from "../../_hooks/useInvoiceFilters";
+import {computePresetRange, deriveActivePreset, type DatePresetKey} from "../../_utils/datePresets";
+import {FilterCardFrame} from "./FilterCardFrame";
+import styles from "./DateFilterCard.module.scss";
+
+type Props = {
+  readonly filters: FilterState;
+  readonly onFiltersChange: (filters: Partial<FilterState>) => void;
+};
+
+const DATE_PRESETS = ["30d", "90d", "ytd", "all"] as const satisfies ReadonlyArray<DatePresetKey>;
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Date-range card for invoice filters.
+ *
+ * @param props - Current filter state and URL-backed filter updater.
+ * @returns The rendered date filter card.
+ */
+export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("IMS--List.invoicesView");
+  const locale = useLocale();
+  const isDateActive = filters.dateFrom !== null || filters.dateTo !== null;
+  const activeDatePreset = useMemo(
+    () => deriveActivePreset(filters.dateFrom, filters.dateTo, new Date()),
+    [filters.dateFrom, filters.dateTo],
+  );
+
+  const activeValue = useMemo((): string | null => {
+    if (!isDateActive) return null;
+    if (activeDatePreset === "30d") return t("filters.datePresets.30d");
+    if (activeDatePreset === "90d") return t("filters.datePresets.90d");
+    if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
+    if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
+    if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
+    if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
+    return null;
+  }, [activeDatePreset, filters.dateFrom, filters.dateTo, isDateActive, locale, t]);
+
+  const handleDateFromChange = useCallback(
+    (date: Date | undefined) => {
+      onFiltersChange({dateFrom: date ? formatLocalDate(date) : null});
+    },
+    [onFiltersChange],
+  );
+
+  const handleDateToChange = useCallback(
+    (date: Date | undefined) => {
+      onFiltersChange({dateTo: date ? formatLocalDate(date) : null});
+    },
+    [onFiltersChange],
+  );
+
+  const handlePresetClick = useCallback(
+    (preset: DatePresetKey) => {
+      const range = computePresetRange(preset, new Date());
+      onFiltersChange({dateFrom: range.from, dateTo: range.to});
+    },
+    [onFiltersChange],
+  );
+
+  return (
+    <FilterCardFrame
+      title={
+        <>
+          <TbCalendar /> {t("filters.dateRange")}
+        </>
+      }
+      active={isDateActive}
+      activeValue={activeValue}
+      inactiveLabel={t("filters.anyValue")}>
+      <div className={styles["presetRow"]}>
+        {DATE_PRESETS.map((preset) => (
+          <button
+            key={preset}
+            type='button'
+            aria-pressed={activeDatePreset === preset}
+            className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
+            // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal from DATE_PRESETS
+            onClick={() => handlePresetClick(preset)}>
+            {t(`filters.datePresets.${preset}`)}
+          </button>
+        ))}
+      </div>
+      <div className={styles["dateRangeInputs"]}>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant='outline'
+                className={styles["dateButton"]}>
+                <TbCalendar className={styles["dateIcon"]} />
+                {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
+              </Button>
+            }
+          />
+          <PopoverContent className={styles["calendarPopover"]}>
+            <Calendar
+              mode='single'
+              selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+              onSelect={handleDateFromChange}
+            />
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant='outline'
+                className={styles["dateButton"]}>
+                <TbCalendar className={styles["dateIcon"]} />
+                {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
+              </Button>
+            }
+          />
+          <PopoverContent className={styles["calendarPopover"]}>
+            <Calendar
+              mode='single'
+              selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
+              onSelect={handleDateToChange}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </FilterCardFrame>
+  );
+}

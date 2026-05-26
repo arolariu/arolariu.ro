@@ -1,0 +1,67 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.presetRow {
+  display: flex;
+  gap: space(1.5);
+  flex-wrap: wrap;
+  margin-bottom: space(2);
+}
+
+.presetButton {
+  background-color: color('background');
+  border: 1px solid color('border');
+  border-radius: radius('md');
+  padding: space(1) space(2.5);
+  font-size: font-size('xs');
+  color: color('foreground');
+  cursor: pointer;
+  @include transition((background-color, border-color));
+
+  @include respond-below('md') {
+    min-height: space(11);
+    flex: 1;
+  }
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.presetButtonActive {
+  background-color: color('primary');
+  color: color('primary-foreground');
+  border-color: color('primary');
+
+  &:hover {
+    background-color: color('primary');
+    opacity: 0.9;
+  }
+}
+
+.dateRangeInputs {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.dateButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  justify-content: flex-start;
+  width: 100%;
+  cursor: pointer;
+}
+
+.dateIcon {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.calendarPopover {
+  width: auto;
+}
