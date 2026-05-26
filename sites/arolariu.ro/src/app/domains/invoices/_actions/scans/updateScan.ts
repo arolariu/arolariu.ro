@@ -327,7 +327,8 @@ export async function updateScan({ base64Data, blobName, mimeType, metadata = {}
       const mergedMetadata = {
         ...existingMetadata,
         ...metadata,
-        lastModified: new Date().toISOString(),
+        lastModifiedAt: new Date().toISOString(),
+        lastModifiedBy: userIdentifier,
       };
 
       const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {

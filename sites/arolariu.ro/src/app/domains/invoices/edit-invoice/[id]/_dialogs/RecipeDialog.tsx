@@ -4,7 +4,7 @@
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import {formatEnum} from "@/lib/utils.generic";
-import {RecipeComplexity, type Recipe} from "@/types/invoices";
+import {Invoice, RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,9 +40,10 @@ import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
-import {useRecipeAdd} from "../../../../_hooks/useRecipeAdd";
 import styles from "./RecipeDialog.module.scss";
+import { useRecipeAdd } from "../../../_hooks/invoice";
+import { useDialog } from "../../../_contexts/DialogContext";
+import { mockInvoice } from "@/data/mocks";
 
 /**
  * Maps difficulty string values to RecipeComplexity enum values.
@@ -66,10 +67,10 @@ function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
   return <strong>{chunks}</strong>;
 }
 
-const CreateDialog = () => {
+const CreateDialog = (invoice: Invoice) => {
   const t = useTranslations("IMS--Dialogs.recipeDialog");
   const router = useRouter();
-  const {performAdd, isAdding} = useRecipeAdd();
+  const { addRecipeCallback, isAdding } = useRecipeAdd(invoice);
   const {isOpen, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
@@ -110,7 +111,7 @@ const CreateDialog = () => {
         referenceForMoreDetails: recipe.referenceForMoreDetails,
       };
 
-      await performAdd(newRecipe);
+      await addRecipeCallback(newRecipe);
       toast.success(t("create.success") ?? "Recipe created successfully");
       close();
       router.refresh();
@@ -119,7 +120,7 @@ const CreateDialog = () => {
       const message = error instanceof Error ? error.message : String(error);
       toast.error(message || t("create.error") || "Failed to create recipe");
     }
-  }, [recipe, t, close, router, performAdd]);
+  }, [recipe, t, close, router, addRecipeCallback]);
 
   /** Closes the dialog when the user clicks outside or presses Escape. */
   const handleOpenChange = useCallback(
@@ -786,10 +787,11 @@ export default function RecipeDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__RECIPE");
 
   const recipe: Recipe | null = payload;
+  const invoice = mockInvoice // Placeholder - replace with actual invoice data from context or props
 
   switch (mode) {
     case "add":
-      return <CreateDialog />;
+      return <CreateDialog invoice={invoice} />;
     case "delete":
       return recipe ? <DeleteDialog recipe={recipe} /> : <></>;
     case "edit":

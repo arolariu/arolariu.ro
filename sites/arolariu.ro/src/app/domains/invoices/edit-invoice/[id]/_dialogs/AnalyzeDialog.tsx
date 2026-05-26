@@ -1,7 +1,6 @@
 "use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
@@ -41,6 +40,7 @@ import {
   TbSparkles,
 } from "react-icons/tb";
 import styles from "./AnalyzeDialog.module.scss";
+import { analyzeInvoice } from "../../../_actions/invoices";
 
 /** Configuration for each analysis option. */
 type AnalysisOptionConfig = {

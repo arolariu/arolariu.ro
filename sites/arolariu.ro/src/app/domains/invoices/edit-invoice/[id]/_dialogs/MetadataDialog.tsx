@@ -14,11 +14,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
-import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
-import {useInvoiceMetadataAdd} from "../../../../_hooks/invoice/useInvoiceMetadataAdd";
-import {useInvoiceMetadataRemove} from "../../../../_hooks/invoice/useInvoiceMetadataRemove";
 import styles from "./MetadataDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 // Define valid metadata keys and which ones are readonly
 export const VALID_METADATA_KEYS = [

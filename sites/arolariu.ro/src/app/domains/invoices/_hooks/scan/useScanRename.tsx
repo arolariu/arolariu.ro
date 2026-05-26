@@ -5,7 +5,6 @@
  * @module app/domains/invoices/_hooks/useScanRename
  */
 
-import {updateScan} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";

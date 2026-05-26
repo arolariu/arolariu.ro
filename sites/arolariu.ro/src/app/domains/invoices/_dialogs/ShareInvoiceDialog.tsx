@@ -22,11 +22,11 @@ import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
-import {useInvoiceShare} from "../_hooks/useInvoiceShare";
 import {copySvgToClipboard} from "../_utils";
 import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
+import { useInvoiceShare } from "../_hooks/invoice";
 
 // ============================================================================
 // Types
@@ -159,7 +159,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
-  const {performShare, isSharing} = useInvoiceShare();
+  const {shareInvoiceCallback, isSharing} = useInvoiceShare();
   const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 
   /** Check if the invoice is currently public */
@@ -189,7 +189,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
-        await performShare(invoice.id, {type: "togglePublic"});
+        await shareInvoiceCallback(invoice.id, {type: "togglePublic"});
       }
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -206,7 +206,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
       error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [invoice.id, isInvoicePublic, performShare, router, sharingMode, shareUrl, t]);
+  }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -217,7 +217,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
-        await performShare(invoice.id, {type: "togglePublic"});
+        await shareInvoiceCallback(invoice.id, {type: "togglePublic"});
       }
 
       const qrCodeElement = document.querySelector("#invoice-qr-code");
@@ -238,7 +238,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
       error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [invoice.id, isInvoicePublic, performShare, router, sharingMode, t]);
+  }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately through the shared hook.
@@ -248,7 +248,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       event.preventDefault();
       if (!email) return;
 
-      await performShare(invoice.id, {
+      await shareInvoiceCallback(invoice.id, {
         type: "sendEmail",
         to: email,
         locale,
@@ -257,7 +257,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       });
       setEmail("");
     },
-    [email, invoice.id, locale, performShare, user],
+    [email, invoice.id, locale, shareInvoiceCallback, user],
   );
 
   /**
@@ -265,12 +265,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleRevokeAccess = useCallback(() => {
-    toast.promise(performShare(invoice.id, {type: "revoke"}), {
+    toast.promise(shareInvoiceCallback(invoice.id, {type: "revoke"}), {
       loading: t("toasts.revoke.loading"),
       success: t("toasts.revoke.success"),
       error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
     });
-  }, [invoice.id, performShare, t]);
+  }, [invoice.id, shareInvoiceCallback, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {

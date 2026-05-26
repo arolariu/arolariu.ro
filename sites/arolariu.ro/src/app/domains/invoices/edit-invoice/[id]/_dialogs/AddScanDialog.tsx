@@ -22,9 +22,9 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
 import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
-import {useScanAdd} from "../../../../_hooks/useScanAdd";
 import styles from "./AddScanDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
+import { useScanAdd } from "../../../_hooks/scan";
 
 function getDropzoneClassName(
   isAdding: boolean,
@@ -71,7 +71,7 @@ export default function AddScanDialog(): React.JSX.Element {
 
   const [file, setFile] = useState<File | null>(null);
   const [scanType, setScanType] = useState<InvoiceScanType>(InvoiceScanType.JPEG);
-  const {isAdding, performAdd} = useScanAdd(invoice?.id ?? "");
+  const {isAdding, addScanCallback} = useScanAdd(invoice?.id ?? "");
 
   const detectScanType = useCallback((fileName: string): InvoiceScanType => {
     const extension = fileName.split(".").pop()?.toLowerCase();
@@ -123,7 +123,7 @@ export default function AddScanDialog(): React.JSX.Element {
     if (!file || !invoice) return;
 
     try {
-      await performAdd({
+      await addScanCallback({
         file,
         fileName: file.name,
         userIdentifier: invoice.userIdentifier,
@@ -135,7 +135,7 @@ export default function AddScanDialog(): React.JSX.Element {
     } catch {
       // The hook owns upload failure feedback.
     }
-  }, [file, invoice, scanType, performAdd, close, router]);
+  }, [file, invoice, scanType, addScanCallback, close, router]);
 
   const handleClose = useCallback(() => {
     setFile(null);

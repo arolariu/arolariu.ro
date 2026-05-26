@@ -6,31 +6,31 @@ import {useDialogs} from "./DialogContext";
 
 // All dialogs are client-only and lazy-loaded.
 // The Dialog's own open animation masks the import-fetch latency on first open.
-const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AddScanDialog"), {ssr: false});
-const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AllergenDialog"), {ssr: false});
-const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/AnalyzeDialog"), {ssr: false});
-const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/BulkCategoryDialog"), {ssr: false});
-const CreateInvoiceDialog = dynamic(() => import("../view-scans/_components/dialogs/CreateInvoiceDialog"), {ssr: false});
+const AddScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddScanDialog"), {ssr: false});
+const AllergenDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AllergenDialog"), {ssr: false});
+const AnalyzeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AnalyzeDialog"), {ssr: false});
+const BulkCategoryDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/BulkCategoryDialog"), {ssr: false});
+const CreateInvoiceDialog = dynamic(() => import("../view-scans/_dialogs/CreateInvoiceDialog"), {ssr: false});
 const DeleteInvoiceDialog = dynamic(() => import("../_dialogs/DeleteInvoiceDialog"), {ssr: false});
 const DeleteScanDialog = dynamic(() => import("../_dialogs/DeleteScanDialog"), {ssr: false});
-const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/FeedbackDialog"), {ssr: false});
-const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ImageDialog"), {ssr: false});
-const InvoiceItemsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/ItemsDialog"), {ssr: false});
-const InvoiceMerchantDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantDialog"), {ssr: false});
-const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog"), {
+const InvoiceFeedbackDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/FeedbackDialog"), {ssr: false});
+const InvoiceImageDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ImageDialog"), {ssr: false});
+const InvoiceItemsDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ItemsDialog"), {ssr: false});
+const InvoiceMerchantDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/MerchantDialog"), {ssr: false});
+const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/MerchantReceiptsDialog"), {
   ssr: false,
 });
-const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MetadataDialog"), {ssr: false});
-const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RecipeDialog"), {ssr: false});
-const InvoicesExportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ExportDialog"), {ssr: false});
-const InvoicesImportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ImportDialog"), {ssr: false});
+const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/MetadataDialog"), {ssr: false});
+const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RecipeDialog"), {ssr: false});
+const InvoicesExportDialog = dynamic(() => import("../view-invoices/_dialogs/ExportDialog"), {ssr: false});
+const InvoicesImportDialog = dynamic(() => import("../view-invoices/_dialogs/ImportDialog"), {ssr: false});
 const PreviewScanDialog = dynamic(() => import("../_dialogs/PreviewScanDialog"), {ssr: false});
-const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog"), {ssr: false});
-const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog"), {ssr: false});
+const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/RemoveScanDialog"), {ssr: false});
+const ShareAnalyticsDialog = dynamic(() => import("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog"), {ssr: false});
 const ShareInvoiceDialog = dynamic(() => import("../_dialogs/ShareInvoiceDialog"), {ssr: false});
-// view-invoice/[id]/_components/dialogs/ExportDialog uses a named export
+// view-invoice/[id]/_dialogs/ExportDialog uses a named export
 const ViewInvoiceExportDialog = dynamic(
-  () => import("../view-invoice/[id]/_components/dialogs/ExportDialog").then((m) => ({default: m.ExportDialog})),
+  () => import("../view-invoice/[id]/_dialogs/ExportDialog").then((m) => ({default: m.ExportDialog})),
   {ssr: false},
 );
 

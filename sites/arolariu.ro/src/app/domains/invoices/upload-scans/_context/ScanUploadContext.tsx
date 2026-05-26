@@ -9,13 +9,13 @@
  * scans to Azure Blob Storage. Does not create invoices.
  */
 
-import {generateUploadSasUrl, registerScan, uploadScan} from "@/lib/actions/scans";
 import {withConcurrencyLimit} from "@/lib/concurrency.client";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
 import {v4 as uuidv4} from "uuid";
+import { generateUploadSasUrl, registerScan, uploadScan } from "../../_actions/scans";
 
 /**
  * Status of a pending upload
@@ -311,9 +311,10 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
         batchedUpdateProgress(upload.id, "uploading", 30);
 
-        if (sasResult.success && sasResult.sasUrl && sasResult.scanId && sasResult.blobUrl) {
+        if (sasResult.success) {
+          const {sasUrl, scanId, blobUrl} = sasResult.data;
           // Step 2: Upload file directly to Azure using SAS URL (30% → 70%)
-          const uploadResponse = await fetch(sasResult.sasUrl, {
+          const uploadResponse = await fetch(sasUrl, {
             method: "PUT",
             body: upload.file,
             headers: {
@@ -327,8 +328,8 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           if (uploadResponse.ok) {
             // Step 3: Register scan metadata with server (70% → 90%)
             const registerResult = await registerScan({
-              scanId: sasResult.scanId,
-              blobUrl: sasResult.blobUrl,
+              scanId: scanId,
+              blobUrl: blobUrl,
               fileName: upload.name,
               mimeType: upload.mimeType,
               sizeInBytes: upload.size,
@@ -374,13 +375,13 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
         batchedUpdateProgress(upload.id, "uploading", 90);
 
-        if (result.status === 201) {
+        if (result.success) {
           const cachedScan: CachedScan = {
-            ...result.scan,
+            ...result.data.scan,
             cachedAt: new Date(),
           };
           addScan(cachedScan);
-          updateUploadStatus(upload.id, "completed", 100, undefined, result.scan.blobUrl);
+          updateUploadStatus(upload.id, "completed", 100, undefined, result.data.scan.blobUrl);
 
           // FIX 1: Immediately revoke the object URL to free memory
           if (upload.preview) {
@@ -394,7 +395,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           scheduleUploadRemoval(upload.id, 1000);
           return {success: true, uploadId: upload.id};
         } else {
-          throw new Error(`Upload failed with status ${result.status}`);
+          throw new Error(`Upload failed with status ${result.error.message}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";

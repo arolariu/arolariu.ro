@@ -8,7 +8,6 @@
  * Provides UI for changing the category of multiple products at once.
  */
 
-import updateProduct from "@/lib/actions/invoices/updateProduct";
 import type {ProductCategory} from "@/types/invoices";
 import {
   Button,
@@ -30,8 +29,9 @@ import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useMemo, useState} from "react";
 import {TbTag} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./BulkCategoryDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
+import { updateInvoiceProduct } from "../../../_actions/invoices";
 
 /**
  * Dialog for bulk category reassignment of products.
@@ -163,17 +163,21 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           setUpdateProgress({current: i + 1, total: selectedProducts.length});
 
           try {
-            const result = await updateProduct({
+            const result = await updateInvoiceProduct({
               invoiceId: invoice.id,
               payload: {
                 originalProductName: product.name,
-                name: product.name,
+                updatedProduct: {
+                  name: product.name,
                 category: selectedCategory,
                 quantity: product.quantity,
                 quantityUnit: product.quantityUnit,
                 productCode: product.productCode,
-                price: product.price,
+                  price: product.price,
+                  totalPrice: product.price * product.quantity,
+                  metadata: product.metadata,
                 detectedAllergens: product.detectedAllergens,
+                }
               },
             });
 

@@ -12,8 +12,6 @@
  * - Invoice creation orchestration
  */
 
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
@@ -21,6 +19,7 @@ import {ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
 import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
+import { analyzeInvoice, createInvoice } from "../../_actions/invoices";
 
 /**
  * Wizard step type definition.
@@ -213,7 +212,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)
       // are included in metadata. Backend should extract these to populate top-level Invoice fields.
-      const invoice = await createInvoice({
+      const {success, data : invoice, error} = await createInvoice({
         initialScan: {
           scanType,
           location: firstScan.blobUrl,
@@ -230,17 +229,23 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
         },
       });
 
+      if (!success || !invoice) {
+        // TODO -- shoudl NEVER happen.
+        console.error("Invoice creation failed with error message:", error);
+      }
+
+
       // Mark scans as used
       const scanIds = selectedScans.map((s) => s.id);
-      markScansAsUsedByInvoice(scanIds, invoice.id);
+      markScansAsUsedByInvoice(scanIds, invoice!.id);
 
       toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
 
       // Navigate to view invoice page — user can trigger analysis from there
-      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
+      router.push(`/domains/invoices/view-invoice/${invoice!.id}`);
 
       // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      analyzeInvoice({invoiceIdentifier: invoice!.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
         console.error("Background invoice analysis failed:", error);
       });
     } catch (error) {

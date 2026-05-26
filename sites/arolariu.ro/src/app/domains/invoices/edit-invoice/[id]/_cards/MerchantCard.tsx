@@ -13,8 +13,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
-import {useDialogs} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
+import { useDialogs } from "../../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant | null;

@@ -32,9 +32,9 @@ import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
-import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
-import ItemsTable from "../tables/ItemsTable";
 import styles from "./InvoiceCard.module.scss";
+import { useEditInvoiceContext } from "../_context/EditInvoiceContext";
+import ItemsTable from "../_components/tables/ItemsTable";
 
 /**
  * Displays comprehensive invoice details with inline editing capabilities.

@@ -10,11 +10,11 @@
  * background when the identifier changes.
  */
 
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
+import { fetchMerchant } from "../../_actions/merchants";
 
 /**
  * Input parameters for the useMerchant hook.
@@ -120,7 +120,7 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
           setIsError(true);
         }
       } catch (error: unknown) {
-        console.error(">>> Error fetching merchant in useMerchant hook:", error as Error);
+        console.error(">>> Error fetching merchant in useMerchant hook:", error);
         setIsError(true);
       }
     };

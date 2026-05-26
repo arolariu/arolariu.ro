@@ -1,31 +1,31 @@
 "use client";
 
 /**
- * @fileoverview Custom React hook for fetching all merchants for the current user.
- * @module hooks/useMerchants
+ * @fileoverview Custom React hook for fetching all invoices for the current user.
+ * @module hooks/useInvoices
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
- * fetches fresh merchant data via a server action.
+ * fetches fresh invoices via a server action.
  */
 
-import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
-import {useMerchantsStore} from "@/stores";
-import type {Merchant} from "@/types/invoices";
+import {useInvoicesStore} from "@/stores";
+import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
+import { fetchInvoices } from "../../_actions/invoices";
 
 /**
- * Input parameters for the useMerchants hook (currently unused).
+ * Input parameters for the useInvoices hook (currently unused).
  */
 type HookInputType = Readonly<{}>;
 
 /**
- * Return value from the useMerchants hook.
+ * Return value from the useInvoices hook.
  */
 type HookOutputType = Readonly<{
-  /** Array of all merchants associated with the user's invoices. Empty array if none exist or on error. */
-  readonly merchants: ReadonlyArray<Merchant>;
+  /** Array of all invoices for the current user. Empty array if none exist or on error. */
+  readonly invoices: ReadonlyArray<Invoice>;
   /** True while the initial fetch operation is in progress. */
   readonly isLoading: boolean;
   /** True if the fetch operation failed with an error. */
@@ -33,7 +33,7 @@ type HookOutputType = Readonly<{
 }>;
 
 /**
- * Fetches all merchants for the authenticated user with Zustand store integration.
+ * Fetches all invoices for the authenticated user with Zustand store integration.
  *
  * @remarks
  * **Rendering Context**: Client Component hook (requires "use client" directive).
@@ -41,7 +41,7 @@ type HookOutputType = Readonly<{
  * **Data Fetching Strategy:**
  * - Waits for IndexedDB hydration before rendering content
  * - Fetches fresh data on initial mount (empty dependency array)
- * - Calls server action {@link fetchMerchants} via authenticated API
+ * - Calls server action {@link fetchInvoices} via authenticated API
  * - Stores results in Zustand store for cross-component access
  *
  * **Hydration Behavior:**
@@ -51,7 +51,7 @@ type HookOutputType = Readonly<{
  * - Eliminates flash of empty content on initial render
  *
  * **Caching Behavior:**
- * - Integrates with {@link useMerchantsStore} Zustand store
+ * - Integrates with {@link useInvoicesStore} Zustand store
  * - Subsequent components mounting will see cached data
  * - No automatic revalidation (manual refetch required)
  * - Store persists to IndexedDB for offline support
@@ -59,43 +59,35 @@ type HookOutputType = Readonly<{
  * **State Management:**
  * - `isLoading`: True only until hydration completes (stale data shown while fetching)
  * - `isError`: True if fetch fails (network error, auth failure, etc.)
- * - `merchants`: Cached data shown immediately after hydration, updated when fetch completes
+ * - `invoices`: Cached data shown immediately after hydration, updated when fetch completes
  *
  * **Error Handling:**
  * - Logs errors to console
  * - Sets `isError` flag but does not throw
  * - Returns empty array on error
  *
- * **Use Cases:**
- * - Merchant dropdown/select components
- * - Merchant list pages
- * - Invoice filtering by merchant
- * - Analytics dashboards
- *
  * **Performance:**
  * - Single fetch per session (in dev) or across sessions (in prod)
  * - No refetch on component remount (reads from store)
- * - setMerchants is stable (excluded from deps)
+ * - setInvoices is stable (excluded from deps)
  *
  * @param _void - Unused parameter (for potential future expansion)
- * @returns Object containing merchants array, loading state, and error state
+ * @returns Object containing invoices array, loading state, and error state
  *
  * @example
  * ```tsx
- * function MerchantFilter() {
- *   const {merchants, isLoading, isError} = useMerchants();
+ * function InvoiceList() {
+ *   const {invoices, isLoading, isError} = useInvoices();
  *
  *   if (isLoading) return <Skeleton />;
  *   if (isError) return <ErrorMessage />;
  *
  *   return (
- *     <Select>
- *       {merchants.map((m) => (
- *         <SelectItem key={m.id} value={m.id}>
- *           {m.name}
- *         </SelectItem>
+ *     <ul>
+ *       {invoices.map((invoice) => (
+ *         <InvoiceCard key={invoice.id} invoice={invoice} />
  *       ))}
- *     </Select>
+ *     </ul>
  *   );
  * }
  * ```
@@ -103,54 +95,54 @@ type HookOutputType = Readonly<{
  * @example
  * ```tsx
  * // Multiple components can access the same cached data
- * function MerchantCount() {
- *   const {merchants} = useMerchants(); // Reads from store, no refetch
- *   return <Badge>{merchants.length} merchants</Badge>;
+ * function InvoiceCount() {
+ *   const {invoices} = useInvoices(); // Reads from store, no refetch
+ *   return <Badge>{invoices.length}</Badge>;
  * }
  * ```
  *
- * @see {@link fetchMerchants} - Server action that performs the API call
- * @see {@link useMerchantsStore} - Zustand store for merchant caching
- * @see {@link useMerchant} - Hook for fetching a single merchant
+ * @see {@link fetchInvoices} - Server action that performs the API call
+ * @see {@link useInvoicesStore} - Zustand store for invoice caching
+ * @see {@link useInvoice} - Hook for fetching a single invoice
  */
-export function useMerchants(_void?: HookInputType): HookOutputType {
+export function useInvoices(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
 
   // Read cached data and hydration state from Zustand store (single subscription)
   const {
-    merchants: cachedMerchants,
-    setMerchants,
+    entities: cachedInvoices,
+    setEntities: setInvoices,
     hasHydrated,
-  } = useMerchantsStore(
+  } = useInvoicesStore(
     useShallow((state) => ({
-      merchants: state.entities,
-      setMerchants: state.setEntities,
+      entities: state.entities,
+      setEntities: state.setEntities,
       hasHydrated: state.hasHydrated,
     })),
   );
 
   useEffect(() => {
-    const fetchMerchantsForUser = async () => {
+    const fetchInvoicesForUser = async () => {
       try {
-        const result = await fetchMerchants();
+        const result = await fetchInvoices();
         if (result.success) {
-          setMerchants([...result.data]);
+          setInvoices([...result.data]);
         } else {
-          console.error(">>> Error fetching merchants:", result.error.code, result.error.message);
+          console.error(">>> Error fetching invoices:", result.error.code, result.error.message);
           setIsError(true);
         }
       } catch (error: unknown) {
-        console.error(">>> Error fetching merchants in useMerchants hook:", error as Error);
+        console.error(">>> Error fetching invoices in useInvoices hook:", error);
         setIsError(true);
       }
     };
 
-    fetchMerchantsForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setMerchants is a stable function
+    fetchInvoicesForUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setInvoices is a stable function
   }, []);
 
   // Loading is true only until hydration completes (shows stale data while fetching fresh)
   const isLoading = !hasHydrated;
 
-  return {merchants: cachedMerchants, isLoading, isError} as const;
+  return {invoices: cachedInvoices, isLoading, isError} as const;
 }

@@ -32,8 +32,8 @@ import {
   TbToolsKitchen,
   TbTrash,
 } from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 type Props = {
   recipe: Recipe;

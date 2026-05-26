@@ -9,7 +9,6 @@
  * Includes quick-add buttons for common allergens to streamline data entry.
  */
 
-import updateProduct from "@/lib/actions/invoices/updateProduct";
 import type {Allergen} from "@/types/invoices";
 import {
   Badge,
@@ -27,8 +26,9 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
+import { updateInvoiceProduct } from "../../../_actions/invoices";
 
 /**
  * Common allergens for quick-add functionality.
@@ -215,7 +215,7 @@ export default function AllergenDialog(): React.JSX.Element {
   );
 
   /**
-   * Saves allergen changes via updateProduct.
+   * Saves allergen changes via updateInvoiceProduct.
    */
   const handleSave = useCallback(async () => {
     if (!invoice || !product || productIndex === undefined) {
@@ -226,18 +226,22 @@ export default function AllergenDialog(): React.JSX.Element {
     setIsSaving(true);
 
     try {
-      // Call updateProduct with the updated allergens
-      const result = await updateProduct({
+      // Call updateInvoiceProduct with the updated allergens
+      const result = await updateInvoiceProduct({
         invoiceId: invoice.id,
         payload: {
           originalProductName: product.name,
-          name: product.name,
+          updatedProduct: {
+             name: product.name,
           category: product.category,
           quantity: product.quantity,
           quantityUnit: product.quantityUnit,
           productCode: product.productCode,
-          price: product.price,
+            price: product.price,
+            totalPrice: product.price * product.quantity,
+          metadata: product.metadata,
           detectedAllergens: allergens,
+          }
         },
       });
 
@@ -247,7 +251,8 @@ export default function AllergenDialog(): React.JSX.Element {
         // Trigger page refresh to show updated data
         globalThis.window.location.reload();
       } else {
-        toast.error(result.error);
+        console.error("Failed to save allergens:", result.error);
+        toast.error(t("errors.saveFailed"));
       }
     } catch (error) {
       console.error("Failed to save allergens:", error);

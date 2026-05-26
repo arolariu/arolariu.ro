@@ -20,8 +20,8 @@ import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
-import RecipeCard from "../cards/RecipeCard";
 import styles from "./RecipesTab.module.scss";
+import RecipeCard from "../../_cards/RecipeCard";
 
 type Props = {
   recipes: Recipe[];

@@ -10,11 +10,11 @@
  * data after hydration while re-fetching in the background.
  */
 
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
+import { fetchInvoice } from "../../_actions/invoices";
 
 /**
  * Input parameters for the useInvoice hook.
@@ -110,7 +110,7 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
           setIsError(true);
         }
       } catch (error: unknown) {
-        console.error(">>> Error fetching invoice in useInvoice hook:", error as Error);
+        console.error(">>> Error fetching invoice in useInvoice hook:", error);
         setIsError(true);
       }
     };

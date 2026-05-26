@@ -250,7 +250,6 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
             toast.info(t("bulkDeletePartial", {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
           }
 
-          onComplete?.();
           return result;
         }
       } catch (error) {
@@ -261,7 +260,7 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
         setIsDeleting(false);
       }
     },
-    [performMutation, onComplete, processBulkRecursive, t],
+    [performMutation, processBulkRecursive, t],
   );
 
   return {isDeleting, deleteInvoiceCallback};

@@ -1,6 +1,5 @@
 "use client";
 
-import {deleteInvoiceScan} from "@/lib/actions/invoices/deleteInvoiceScan";
 import type {Invoice, InvoiceScan} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
@@ -8,8 +7,9 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbLoader2, TbTrash} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RemoveScanDialog.module.scss";
+import { deleteInvoiceScan } from "../../../_actions/invoices";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for confirming removal of a scan from an invoice.

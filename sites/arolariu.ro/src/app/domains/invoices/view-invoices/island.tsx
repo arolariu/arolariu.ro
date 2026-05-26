@@ -1,6 +1,5 @@
 "use client";
 
-import {useInvoices} from "@/hooks";
 import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -12,6 +11,7 @@ import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
 import styles from "./island.module.scss";
+import { useInvoices } from "../_hooks/invoice";
 
 /**
  * This function renders the view invoices page.

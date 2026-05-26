@@ -158,7 +158,7 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
           updateScanBlobUrl(scan.id, cacheBustedUrl);
           toast.success(t("actions.rotateSuccess"));
         } else {
-          toast.error(result.error || t("actions.rotateError"));
+          toast.error(t("actions.rotateError"));
         }
       } catch (error) {
         toast.error(t("actions.rotateError"));

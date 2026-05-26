@@ -34,9 +34,9 @@ import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
-import {useInvoiceShare} from "../../../../_hooks/useInvoiceShare";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
+import { useInvoiceShare } from "@/app/domains/invoices/_hooks/invoice";
 
 /**
  * Type for sharing status computed from invoice.sharedWith array.
@@ -84,7 +84,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations("IMS--View.shareCollaborate");
   const {invoice, setInvoice} = useInvoiceContext();
-  const {performShare} = useInvoiceShare();
+  const {shareInvoiceCallback} = useInvoiceShare();
   const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
 
@@ -189,7 +189,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       void (async () => {
         try {
           const action = isCurrentlyPublic ? {type: "revoke" as const} : {type: "togglePublic" as const};
-          const updatedInvoice = await performShare(invoice.id, action);
+          const updatedInvoice = await shareInvoiceCallback(invoice.id, action);
           if (updatedInvoice) {
             setInvoice(updatedInvoice);
           }
@@ -200,7 +200,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
         }
       })();
     });
-  }, [invoice.id, performShare, setInvoice, sharingStatus, startTransition, t]);
+  }, [invoice.id, shareInvoiceCallback, setInvoice, sharingStatus, startTransition, t]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.

@@ -49,16 +49,14 @@ type ServerActionInputType = Readonly<{
  * Response from the SAS URL generation operation.
  */
 type ServerActionOutputType = ServerActionResult<Readonly<{
-  /** SAS URL for direct upload (if success) */
-  sasUrl?: string;
-  /** Blob name in Azure Storage (if success) */
-  blobName?: string;
-  /** Blob URL without SAS token (if success) */
-  blobUrl?: string;
-  /** Scan ID for registration (if success) */
-  scanId?: string;
-  /** Error message (if failure) */
-  error?: string;
+  /** SAS URL for direct upload */
+  sasUrl: string;
+  /** Blob name in Azure Storage */
+  blobName: string;
+  /** Blob URL without SAS token */
+  blobUrl: string;
+  /** Scan ID for registration */
+  scanId: string;
 }>>;
 
 /**

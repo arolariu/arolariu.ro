@@ -20,8 +20,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ImageCard.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 type Props = {invoice: Invoice};
 

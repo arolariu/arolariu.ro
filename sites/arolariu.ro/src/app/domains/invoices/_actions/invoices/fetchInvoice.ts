@@ -23,7 +23,7 @@
 import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
 import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
 import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult } from "@/lib/utils.server";
+import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
 import type { Invoice } from "@/types/invoices";
 
 /**

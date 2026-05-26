@@ -15,8 +15,8 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog displaying detailed merchant information for the current invoice.

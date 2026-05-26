@@ -1,5 +1,3 @@
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {EMPTY_GUID, LAST_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
@@ -9,6 +7,8 @@ import {getLocale, getTranslations} from "next-intl/server";
 import {notFound} from "next/navigation";
 import RenderViewInvoiceScreen from "./island";
 import styles from "./page.module.scss";
+import { fetchInvoice } from "../../_actions/invoices";
+import { fetchMerchant } from "../../_actions/merchants";
 
 /**
  * Generates SEO metadata for the invoice viewing page with localized content.

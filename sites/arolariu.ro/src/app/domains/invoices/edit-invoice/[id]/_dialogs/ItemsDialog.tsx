@@ -22,8 +22,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ItemsDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for bulk editing invoice line items with add, modify, and delete operations.

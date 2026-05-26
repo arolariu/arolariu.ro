@@ -1,5 +1,4 @@
 import {useUserInformation} from "@/hooks";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {
@@ -25,8 +24,9 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./SharingCard.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
+import { patchInvoice } from "../../../_actions/invoices";
 
 type Props = {
   invoice: Invoice;
@@ -110,7 +110,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       });
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error("Failed to update invoice sharing settings");
       }
 
       // Refresh the page data to reflect the new private state

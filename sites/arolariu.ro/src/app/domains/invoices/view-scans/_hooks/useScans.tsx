@@ -5,12 +5,12 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans
  */
 
-import {fetchScans} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
+import { fetchScans } from "../../_actions/scans";
 
 /**
  * Hook output type
@@ -103,22 +103,25 @@ export function useScans(): UseScansOutput {
       setIsSyncing(true);
 
       try {
-        const fetchedScans = await fetchScans({
+        const result = await fetchScans({
           includeArchived: false,
         });
 
-        // Convert to cached scans with cache timestamp
-        const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
-          ...scan,
-          cachedAt: new Date(),
-        }));
+        if (result.success && result.data) {
+          const fetchedScans = result.data;
+          // Convert to cached scans with cache timestamp
+          const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+            ...scan,
+            cachedAt: new Date(),
+          }));
 
-        setScans(cachedScans);
-        setLastSyncTimestamp(new Date());
+          setScans(cachedScans);
+          setLastSyncTimestamp(new Date());
 
-        // Only show success toast for manual sync
-        if (manual && isMountedRef.current) {
-          toast.success("Scans synced successfully");
+          // Only show success toast for manual sync
+          if (manual && isMountedRef.current) {
+            toast.success("Scans synced successfully");
+          }
         }
       } catch (error) {
         console.error("Failed to sync scans:", error);

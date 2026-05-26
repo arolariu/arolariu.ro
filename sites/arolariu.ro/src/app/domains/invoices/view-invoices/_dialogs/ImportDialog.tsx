@@ -17,8 +17,8 @@ import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
 import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
-import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ImportDialog.module.scss";
+import { useDialog } from "../../_contexts/DialogContext";
 
 /** Supported file format types for invoice import. */
 type ImportFileFormat = "csv" | "pdf" | "xlsx";

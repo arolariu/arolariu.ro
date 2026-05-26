@@ -1,6 +1,5 @@
 "use client";
 
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {formatDate} from "@/lib/utils.generic";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
@@ -26,6 +25,7 @@ import {useCallback, useState} from "react";
 import {TbBolt, TbBrain, TbCheck, TbClock, TbInfoCircle, TbRefresh, TbRefreshAlert, TbShoppingCart, TbSparkles} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./AnalysisPanel.module.scss";
+import { analyzeInvoice } from "@/app/domains/invoices/_actions/invoices";
 
 /**
  * Analysis option configuration for button display.
@@ -157,8 +157,8 @@ export function AnalysisPanel(): React.JSX.Element {
         const result = await analysisPromise;
 
         // Check if the analysis failed
-        if (result && !result.success) {
-          throw new Error(result.error ?? "Analysis failed");
+        if (!result.success) {
+          throw new Error("Analysis failed");
         }
 
         setCurrentStep(t("steps.complete"));

@@ -5,7 +5,6 @@
  * @module app/domains/invoices/view-scans/_components/ScanSelectionToolbar
  */
 
-import {deleteScan} from "@/lib/actions/scans";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +29,7 @@ import {useCallback, useState} from "react";
 import {TbFileInvoice, TbTrash, TbX} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScanSelectionToolbar.module.scss";
+import { deleteScan } from "../../_actions/scans";
 
 type ScanSelectionToolbarProps = {
   onCreateInvoice: () => void;

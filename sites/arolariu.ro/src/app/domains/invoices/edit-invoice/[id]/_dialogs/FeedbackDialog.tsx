@@ -15,8 +15,8 @@ import {
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./FeedbackDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for collecting user feedback on invoice analytics features.

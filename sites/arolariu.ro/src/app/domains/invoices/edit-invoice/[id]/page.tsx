@@ -1,5 +1,3 @@
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {EMPTY_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
@@ -10,6 +8,8 @@ import {notFound} from "next/navigation";
 import React from "react";
 import RenderEditInvoiceScreen from "./island";
 import styles from "./page.module.scss";
+import { fetchInvoice } from "../../_actions/invoices";
+import { fetchMerchant } from "../../_actions/merchants";
 
 /**
  * Generates SEO metadata for the invoice editing page with localized content.

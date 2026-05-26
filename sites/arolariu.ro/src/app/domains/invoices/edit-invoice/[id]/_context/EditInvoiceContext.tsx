@@ -18,11 +18,11 @@
  * @see patchInvoice server action for persistence
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {createContext, use, useCallback, useMemo, useState} from "react";
+import { patchInvoice } from "../../../_actions/invoices";
 
 /**
  * Tracks which fields have been modified and their new values.
@@ -207,7 +207,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         globalThis.window.location.reload();
         return true;
       } else {
-        toast.error(result.error);
+        toast.error(t("toasts.saveFailed"));
         return false;
       }
     } catch (error) {

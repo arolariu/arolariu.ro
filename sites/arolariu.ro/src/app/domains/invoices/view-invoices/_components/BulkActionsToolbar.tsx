@@ -25,7 +25,6 @@
  * ```
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory} from "@/types/invoices";
 import {
@@ -52,8 +51,9 @@ import {useCallback, useState} from "react";
 import {TbCategory, TbDownload, TbTrash, TbX} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
 import {useDialog} from "../../_contexts/DialogContext";
-import {useInvoiceDelete} from "../../_hooks/useInvoiceDelete";
 import styles from "./BulkActionsToolbar.module.scss";
+import { useInvoiceDelete } from "../../_hooks/invoice";
+import { patchInvoice } from "../../_actions/invoices";
 
 /**
  * Toolbar that appears when invoices are selected in the view-invoices list.
@@ -96,7 +96,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
     })),
   );
 
-  const {performDelete, isDeleting} = useInvoiceDelete();
+  const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
   /**
@@ -112,7 +112,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   const handleDelete = useCallback(async () => {
     const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
 
-    const {failedIds} = await performDelete(invoiceIds);
+    const {failedIds} = await deleteInvoiceCallback(invoiceIds);
 
     if (failedIds.length === 0) {
       clearSelectedInvoices();
@@ -121,7 +121,7 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
 
     const failedInvoices = selectedInvoices.filter((invoice) => failedIds.includes(invoice.id));
     setSelectedInvoices(failedInvoices);
-  }, [selectedInvoices, performDelete, clearSelectedInvoices, setSelectedInvoices]);
+  }, [selectedInvoices, deleteInvoiceCallback, clearSelectedInvoices, setSelectedInvoices]);
 
   /**
    * Handles bulk category change for selected invoices.

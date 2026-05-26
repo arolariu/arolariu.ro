@@ -11,3 +11,6 @@ export { useRecipeDelete } from "./useRecipeDelete";
 
 export { useInvoiceDelete } from "./useInvoiceDelete";
 export { useInvoiceShare } from "./useInvoiceShare";
+
+export {useInvoice} from "./useInvoice";
+export {useInvoices} from "./useInvoices";

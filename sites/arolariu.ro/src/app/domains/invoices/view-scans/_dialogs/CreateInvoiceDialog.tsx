@@ -39,9 +39,9 @@ import {
   TbStack2,
   TbX,
 } from "react-icons/tb";
-import {useDialog} from "../../../_contexts/DialogContext";
-import {createInvoiceFromScans} from "../../_actions/createInvoiceFromScans";
 import styles from "./CreateInvoiceDialog.module.scss";
+import { useDialog } from "../../_contexts/DialogContext";
+import { createInvoiceFromScans } from "../_actions/createInvoiceFromScans";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";

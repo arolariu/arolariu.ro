@@ -73,7 +73,7 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
         removeScanClientSide(scan.id);
         toast.success(t("deleteDialog.success"));
       } else {
-        toast.error(result.error ?? t("deleteDialog.error"));
+        toast.error(t("deleteDialog.error"));
       }
     } catch (error) {
       toast.error(t("deleteDialog.error"));

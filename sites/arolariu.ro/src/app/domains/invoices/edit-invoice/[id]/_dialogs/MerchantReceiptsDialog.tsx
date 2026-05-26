@@ -30,8 +30,8 @@ import {
 import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantReceiptsDialog.module.scss";
+import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog displaying all receipts/invoices from a specific merchant with filtering.
