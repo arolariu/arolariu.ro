@@ -29,6 +29,7 @@ import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
 import {ScanUploadProvider, useScanUpload} from "./_context/ScanUploadContext";
+import {POST_UPLOAD_PROMPT_DELAY_MS} from "./_utils/uploadTypes";
 import styles from "./island.module.scss";
 
 /**
@@ -72,45 +73,34 @@ function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.E
 function UploadContent(): React.JSX.Element {
   const t = useTranslations("IMS--UploadScans");
   const router = useRouter();
-  const {pendingUploads, sessionStats} = useScanUpload();
+  const {pendingUploads, sessionStats, completedBatch, clearCompletedBatch} = useScanUpload();
   const [showPrompt, setShowPrompt] = useState(false);
   const [completedScans, setCompletedScans] = useState<Array<{id: string; preview: string; name: string}>>([]);
-  const completedScansRef = useRef<Array<{id: string; preview: string; name: string}>>([]);
   const hasPromptedRef = useRef(false);
 
-  /**
-   * Effect to collect completed scans before they're removed from the queue.
-   * Use blobUrl (from Azure) if available, otherwise fallback to preview (blob URL).
-   */
   useEffect(() => {
-    const completed = pendingUploads
-      .filter((u) => u.status === "completed")
-      .map((u) => ({id: u.id, preview: u.blobUrl || u.preview, name: u.name}));
-    if (completed.length > 0) {
-      completedScansRef.current = completed;
-    }
-    // Reset the prompted flag when a new upload batch starts
     if (pendingUploads.length > 0) {
       hasPromptedRef.current = false;
     }
-  }, [pendingUploads]);
+  }, [pendingUploads.length]);
 
   /**
    * Effect to detect when all uploads complete and show the prompt once per batch.
    */
   useEffect(() => {
-    const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0;
+    const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0 && completedBatch.length > 0;
 
     if (allDone && !hasPromptedRef.current) {
       hasPromptedRef.current = true;
-      setCompletedScans(completedScansRef.current);
+      setCompletedScans(completedBatch);
       const timer = setTimeout(() => {
         setShowPrompt(true);
-      }, 500);
+        clearCompletedBatch();
+      }, POST_UPLOAD_PROMPT_DELAY_MS);
       return () => clearTimeout(timer);
     }
     return;
-  }, [pendingUploads, sessionStats.totalCompleted]);
+  }, [clearCompletedBatch, completedBatch, pendingUploads.length, sessionStats.totalCompleted]);
 
   /** Navigates to the create invoice page after dismissing the prompt. */
   const handleCreateInvoice = useCallback((): void => {

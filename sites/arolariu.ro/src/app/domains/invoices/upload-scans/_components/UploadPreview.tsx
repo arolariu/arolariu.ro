@@ -15,6 +15,7 @@ import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
 import {StaggerContainer, StaggerItem} from "../../_components/StaggerContainer";
 import {useScanUpload} from "../_context/ScanUploadContext";
+import type {PendingUploadStatus} from "../_utils/uploadTypes";
 import styles from "./UploadPreview.module.scss";
 
 /**
@@ -25,11 +26,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-/**
- * Status of a pending upload
- */
-type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";
 
 /**
  * Represents a file pending upload for the card component
