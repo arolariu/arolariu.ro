@@ -9,6 +9,7 @@ import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from
 import type {EmailLocale} from "../_lib/i18n";
 
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
+import {selectorFromPath} from "next-intl-selector";
 import {getLayoutTranslator} from "./layoutTranslator";
 
 type Cta = {
@@ -137,7 +138,7 @@ export default async function EmailLayout({
               alt={BRAND.name}
               style={styles.logo}
             />
-            <Text style={styles.headerTagline}>{tLayout("tagline")}</Text>
+            <Text style={styles.headerTagline}>{tLayout(selectorFromPath("email.layout.tagline"))}</Text>
           </Section>
 
           <Section style={styles.content}>
@@ -153,7 +154,7 @@ export default async function EmailLayout({
                   {primaryCta.label}
                 </Link>
                 <Text style={styles.fallbackLinkText}>
-                  {tLayout("buttonFallback")}{" "}
+                  {tLayout(selectorFromPath("email.layout.buttonFallback"))}{" "}
                   <Link
                     href={primaryCta.href}
                     style={styles.link}>
@@ -165,7 +166,7 @@ export default async function EmailLayout({
 
             {secondaryCta ? (
               <Text style={styles.fallbackLinkText}>
-                {tLayout("secondaryFallback")}{" "}
+                {tLayout(selectorFromPath("email.layout.secondaryFallback"))}{" "}
                 <Link
                   href={secondaryCta.href}
                   style={styles.link}>
@@ -199,7 +200,7 @@ export default async function EmailLayout({
                 <Link
                   href={managePreferencesUrl}
                   style={styles.link}>
-                  {tLayout("managePreferences")}
+                  {tLayout(selectorFromPath("email.layout.managePreferences"))}
                 </Link>
               </Text>
             ) : null}
@@ -209,12 +210,12 @@ export default async function EmailLayout({
                 <Link
                   href={unsubscribeUrl}
                   style={styles.link}>
-                  {tLayout("unsubscribe")}
+                  {tLayout(selectorFromPath("email.layout.unsubscribe"))}
                 </Link>
               </Text>
             ) : null}
 
-            <Text style={styles.footerFinePrint}>{tLayout("allRightsReserved", {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
+            <Text style={styles.footerFinePrint}>{tLayout(selectorFromPath("email.layout.allRightsReserved"), {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
           </Section>
         </Container>
       </Body>

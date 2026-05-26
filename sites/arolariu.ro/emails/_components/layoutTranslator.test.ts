@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import * as i18n from "../_lib/i18n";
@@ -46,8 +47,8 @@ describe("getLayoutTranslator", () => {
   it("returns translators that resolve namespace 'email.layout' keys", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValue(FIXTURE);
     const t = await getLayoutTranslator("en");
-    expect(t("tagline")).toBe("Tag");
-    expect(t("buttonFallback")).toBe("BF");
+    expect(t(selectorFromPath("email.layout.tagline"))).toBe("Tag");
+    expect(t(selectorFromPath("email.layout.buttonFallback"))).toBe("BF");
   });
 
   it("__resetLayoutTranslatorCache clears the cache", async () => {

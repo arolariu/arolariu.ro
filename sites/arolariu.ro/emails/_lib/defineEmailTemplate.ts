@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 import type {ReactElement} from "react";
 
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "./i18n";
@@ -57,9 +58,9 @@ export type EmailTemplateConfig<P> = {
    * render: ({locale, t, props}) => (
    *   <EmailLayout
    *     locale={locale}
-   *     preview={t("preview", {name: props.username})}
-   *     heading={t("heading")}>
-   *     <Text>{t("greeting", {name: props.username})}</Text>
+   *     preview={t(selectorFromPath("email.welcome.preview"), {name: props.username})}
+   *     heading={t(selectorFromPath("email.welcome.heading"))}>
+   *     <Text>{t(selectorFromPath("email.welcome.greeting"), {name: props.username})}</Text>
    *   </EmailLayout>
    * )
    * ```
@@ -135,9 +136,9 @@ export type EmailTemplate<P> = ((props: P & {readonly locale?: EmailLocale}) => 
  *     return (
  *       <EmailLayout
  *         locale={locale}
- *         preview={t("preview", {brand: BRAND.name, name})}
- *         heading={t("heading", {brand: BRAND.name})}>
- *         <Text>{t("greeting", {name})}</Text>
+ *         preview={t(selectorFromPath("email.welcome.preview"), {brand: BRAND.name, name})}
+ *         heading={t(selectorFromPath("email.welcome.heading"), {brand: BRAND.name})}>
+ *         <Text>{t(selectorFromPath("email.welcome.greeting"), {name})}</Text>
  *       </EmailLayout>
  *     );
  *   },
@@ -174,7 +175,7 @@ export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTem
   ): Promise<string> => {
     const messages = await loadMessages(locale);
     const t = createEmailTranslator({locale, messages, namespace: config.namespace});
-    return t("subject", vars);
+    return t(selectorFromPath(`${config.namespace}.subject`), vars);
   };
 
   return Object.assign(component, {
