@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Type-safe dialog context system with split state/actions pattern.
  * @module app/domains/invoices/_contexts/DialogContext
@@ -36,7 +38,6 @@
  * @see RFC 1005 - State management patterns (context architecture)
  */
 
-"use client";
 
 import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";

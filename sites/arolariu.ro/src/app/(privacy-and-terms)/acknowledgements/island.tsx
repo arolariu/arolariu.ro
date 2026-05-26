@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Client island for third-party acknowledgements.
  * @module app/(privacy-and-terms)/acknowledgements/island
@@ -7,7 +9,6 @@
  * statistics, contributors, and an interactive package browser.
  */
 
-"use client";
 
 import type {NodePackagesJSON} from "@/types";
 import {useTranslations} from "next-intl-selector";

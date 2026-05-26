@@ -1,3 +1,5 @@
+"use client";
+
 import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";

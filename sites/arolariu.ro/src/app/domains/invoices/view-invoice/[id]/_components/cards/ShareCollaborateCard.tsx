@@ -1,3 +1,5 @@
+"use client";
+
 import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Share & Collaborate card for the invoice view page.
@@ -27,7 +29,6 @@ import {selectorFromPath} from "next-intl-selector";
  * - Computed status values are memoized with `useMemo`
  */
 
-"use client";
 
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";

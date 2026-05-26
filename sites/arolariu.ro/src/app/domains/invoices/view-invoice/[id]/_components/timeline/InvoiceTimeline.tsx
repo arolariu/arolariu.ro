@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview Main invoice timeline component for the left pane.
  * @module components/invoice/timeline/invoice-timeline
  */
 
-"use client";
 
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";

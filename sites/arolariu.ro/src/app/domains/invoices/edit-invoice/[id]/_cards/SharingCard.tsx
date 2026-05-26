@@ -1,3 +1,5 @@
+"use client";
+
 import {useUserInformation} from "@/hooks";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";

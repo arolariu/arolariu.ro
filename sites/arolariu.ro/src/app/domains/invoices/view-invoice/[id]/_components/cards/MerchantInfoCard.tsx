@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Merchant information card with deep-dive analytics for the invoice view page.
  * @module domains/invoices/view-invoice/[id]/components/cards/MerchantInfoCard
@@ -22,7 +24,6 @@
  * - Chart data computation only runs when invoices change
  */
 
-"use client";
 
 import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";

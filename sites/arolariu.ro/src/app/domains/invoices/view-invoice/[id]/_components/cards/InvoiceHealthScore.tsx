@@ -1,3 +1,5 @@
+"use client";
+
 import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Invoice Health Score component for view-invoice domain.
@@ -37,7 +39,6 @@ import {selectorFromPath} from "next-intl-selector";
  * @see {@link ProductMetadata} for completeness flags
  */
 
-"use client";
 
 import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {

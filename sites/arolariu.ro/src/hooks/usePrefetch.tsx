@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview Hook for prefetching invoice data on hover.
  * @module @/hooks/usePrefetch
  */
 
-"use client";
 
 import {useRouter} from "next/navigation";
 import {useCallback} from "react";

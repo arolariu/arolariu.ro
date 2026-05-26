@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Client island for the Domains overview page.
  * @module app/domains/island
@@ -7,7 +9,6 @@
  * copy and service cards with client-side navigation.
  */
 
-"use client";
 
 import {RichText} from "@/presentation/Text";
 import {useTranslations} from "next-intl-selector";

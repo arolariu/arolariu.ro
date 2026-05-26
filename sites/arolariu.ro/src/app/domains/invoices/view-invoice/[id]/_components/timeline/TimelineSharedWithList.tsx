@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview Displays list of users the invoice is shared with.
  * @module components/invoice/timeline/shared-with-list
  */
 
-"use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import {useUserInformation} from "@/hooks";

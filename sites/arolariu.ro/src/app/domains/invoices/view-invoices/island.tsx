@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Client island for view-invoices page with tab-based navigation.
  * @module app/domains/invoices/view-invoices/island
@@ -32,7 +34,6 @@
  * @see {@link DialogProvider} - Context for modal/sheet state
  */
 
-"use client";
 
 import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";

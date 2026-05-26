@@ -1,3 +1,5 @@
+"use client";
+
 import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Related Invoices card displaying similar invoices in a horizontal carousel.
@@ -25,7 +27,6 @@ import {selectorFromPath} from "next-intl-selector";
  * - Hidden completely if user has only one invoice
  */
 
-"use client";
 
 import {formatAmount, formatDate, formatEnum} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";

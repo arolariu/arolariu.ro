@@ -1,3 +1,5 @@
+"use client";
+
 import {selectorFromPath} from "next-intl-selector";
 // We're turning off react/no-unstable-nested-components -- This is a false positive with the i18n lib.
 /* eslint react/no-unstable-nested-components: 0 */

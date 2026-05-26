@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Dialog registry and lazy-loading orchestrator for invoices domain.
  * @module app/domains/invoices/_contexts/DialogContainer
@@ -34,7 +36,6 @@
  * @see RFC 1005 - State management patterns (context usage)
  */
 
-"use client";
 
 import dynamic from "next/dynamic";
 import {memo, useMemo} from "react";
