@@ -49,11 +49,11 @@ export function CategoryFilterCard({
 
   return (
     <FilterCardFrame
-      title={<>📂 {t((m) => m["IMS--List"].invoicesView.filters.categories)}</>}
+      title={<>📂 {t((m) => m.forms.invoices.filters.categories)}</>}
       active={isCategoryActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}
-      dynamicHintLabel={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.anyValue)}
+      dynamicHintLabel={t((m) => m.forms.invoices.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
         {availableCategories.map((category) => (
           <button

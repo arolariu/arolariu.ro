@@ -74,12 +74,12 @@ export function useScanDelete(scan: CachedScan): Readonly<HookOutputType> {
       const result = await removeScanServerSide({blobUrl: scan.blobUrl});
       if (result.success) {
         removeScanClientSide(scan.id);
-        toast.success(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.success));
+        toast.success(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.success));
       } else {
-        toast.error(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
+        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       }
     } catch (error) {
-      toast.error(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
+      toast.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       console.error("Error deleting scan:", error);
     } finally {
       setIsDeleting(false);

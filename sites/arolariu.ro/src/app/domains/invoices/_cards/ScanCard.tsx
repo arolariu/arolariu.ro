@@ -125,7 +125,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
           </div>
           <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t((m) => m["IMS--ViewScans"].scanCard.loading)}</div>
+            <div className={styles["fileName"]}>{t((m) => m.pages.invoices.viewScans.scanCard.loading)}</div>
           </div>
         </CardContent>
       </Card>
@@ -204,7 +204,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               <DropdownMenuContent align='end'>
                 <DropdownMenuItem onClick={rename.start}>
                   <TbPencil className={styles["trashIcon"]} />
-                  {t((m) => m["IMS--ViewScans"].scanCard.actions.rename)}
+                  {t((m) => m.pages.invoices.viewScans.scanCard.actions.rename)}
                 </DropdownMenuItem>
                 {scan.mimeType !== "application/pdf" && (
                   <>
@@ -212,13 +212,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                       onClick={() => rotation.rotateScanCallback("cw")}
                       disabled={rotation.isRotating}>
                       <TbRotateClockwise className={styles["trashIcon"]} />
-                      {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCW)}
+                      {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW)}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => rotation.rotateScanCallback("ccw")}
                       disabled={rotation.isRotating}>
                       <TbRotate className={styles["trashIcon"]} />
-                      {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCCW)}
+                      {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW)}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -226,7 +226,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   className={styles["deleteMenuItem"]}
                   onClick={handleOpenDeleteDialog}>
                   <TbTrash className={styles["trashIcon"]} />
-                  {t((m) => m["IMS--ViewScans"].scanCard.actions.delete)}
+                  {t((m) => m.pages.invoices.viewScans.scanCard.actions.delete)}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -237,7 +237,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["linkedBadgePosition"]}>
               <div className={styles["linkedBadge"]}>
                 <TbLink className={styles["linkedIcon"]} />
-                {t((m) => m["IMS--ViewScans"].scanCard.linked)}
+                {t((m) => m.pages.invoices.viewScans.scanCard.linked)}
               </div>
             </div>
           ) : null}
@@ -246,7 +246,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           {rotation.isRotating ? (
             <div className={styles["rotatingOverlay"]}>
               <div className={styles["rotatingSpinner"]} />
-              <span className={styles["rotatingText"]}>{t((m) => m["IMS--ViewScans"].scanCard.actions.rotating)}</span>
+              <span className={styles["rotatingText"]}>{t((m) => m.pages.invoices.viewScans.scanCard.actions.rotating)}</span>
             </div>
           ) : null}
         </div>
@@ -264,7 +264,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 onChange={handleNameChange}
                 onKeyDown={handleRenameKeyDown}
                 onBlur={rename.cancel}
-                placeholder={t((m) => m["IMS--ViewScans"].scanCard.renamePlaceholder)}
+                placeholder={t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder)}
                 className={styles["renameInput"]}
               />
               <div className={styles["renameActions"]}>

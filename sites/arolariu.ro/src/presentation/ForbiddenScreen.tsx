@@ -51,15 +51,15 @@ export default function RenderForbiddenScreen(): React.JSX.Element {
         height={500}
       />
       <article className={styles["content"]}>
-        <h1 className={styles["title"]}>{t((m) => m.Common.states.forbidden.title)}</h1>
+        <h1 className={styles["title"]}>{t((m) => m.shared.legacy.common.states.forbidden.title)}</h1>
         <span className={styles["emoji"]}>😭</span>
-        <p className={styles["description"]}>{t((m) => m.Common.states.forbidden.description)}</p>
+        <p className={styles["description"]}>{t((m) => m.shared.legacy.common.states.forbidden.description)}</p>
       </article>
       <article className={styles["ctaWrapper"]}>
         <Link
           href='/auth'
           className={styles["ctaLink"]}>
-          {t((m) => m.Common.states.forbidden.callToAction)}
+          {t((m) => m.shared.legacy.common.states.forbidden.callToAction)}
         </Link>
       </article>
     </section>

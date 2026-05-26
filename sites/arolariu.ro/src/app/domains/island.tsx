@@ -43,7 +43,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
           <div className={styles["progressFill"]} />
         </div>
         <div className={styles["titleRow"]}>
-          <h1 className={styles["title"]}>{t((m) => m.Domains.title)}</h1>
+          <h1 className={styles["title"]}>{t((m) => m.pages.domains.title)}</h1>
           <article className={styles["subtitleArticle"]}>
             <RichText
               sectionKey='Domains'
@@ -58,7 +58,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
         <section className={styles["serviceCard"]}>
           <article className={styles["imageContainer"]}>
             <Image
-              alt={t((m) => m.Domains.services.invoices.card.imageAlt)}
+              alt={t((m) => m.pages.domains.services.invoices.card.imageAlt)}
               className={styles["cardImage"]}
               src='/images/domains/invoice-management-system.png'
               width='600'
@@ -66,12 +66,12 @@ export default function RenderDomainsScreen(): React.JSX.Element {
             />
           </article>
           <article>
-            <h2 className={styles["cardTitle"]}>{t((m) => m.Domains.services.invoices.card.title)}</h2>
-            <p className={styles["cardDescription"]}>{t((m) => m.Domains.services.invoices.card.description)}</p>
+            <h2 className={styles["cardTitle"]}>{t((m) => m.pages.domains.services.invoices.card.title)}</h2>
+            <p className={styles["cardDescription"]}>{t((m) => m.pages.domains.services.invoices.card.description)}</p>
             <Link
               href='/domains/invoices'
               className={styles["ctaLink"]}>
-              {t((m) => m.Domains.services.callToAction)}
+              {t((m) => m.pages.domains.services.callToAction)}
               <svg
                 fill='none'
                 stroke='currentColor'

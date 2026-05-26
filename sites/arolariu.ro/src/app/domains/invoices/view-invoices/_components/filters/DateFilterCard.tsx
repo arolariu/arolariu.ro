@@ -20,6 +20,10 @@ type Props = {
 
 const DATE_PRESETS = ["30d", "90d", "ytd", "all"] as const satisfies ReadonlyArray<DatePresetKey>;
 
+function getDatePresetLabelKey(preset: DatePresetKey): string {
+  return preset === "30d" || preset === "90d" ? `value${preset}` : preset;
+}
+
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -44,9 +48,9 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
 
   const activeValue = useMemo((): string | null => {
     if (!isDateActive) return null;
-    if (activeDatePreset === "30d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["30d"]);
-    if (activeDatePreset === "90d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["90d"]);
-    if (activeDatePreset === "ytd") return t((m) => m["IMS--List"].invoicesView.filters.datePresets.ytd);
+    if (activeDatePreset === "30d") return t((m) => m.forms.invoices.filters.datePresets.value30d);
+    if (activeDatePreset === "90d") return t((m) => m.forms.invoices.filters.datePresets.value90d);
+    if (activeDatePreset === "ytd") return t((m) => m.forms.invoices.filters.datePresets.ytd);
     if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
     if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
     if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
@@ -79,12 +83,12 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
     <FilterCardFrame
       title={
         <>
-          <TbCalendar /> {t((m) => m["IMS--List"].invoicesView.filters.dateRange)}
+          <TbCalendar /> {t((m) => m.forms.invoices.filters.dateRange)}
         </>
       }
       active={isDateActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.anyValue)}>
       <div className={styles["presetRow"]}>
         {DATE_PRESETS.map((preset) => (
           <button
@@ -94,7 +98,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
             className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
             // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal from DATE_PRESETS
             onClick={() => handlePresetClick(preset)}>
-            {t(selectorFromPath(`IMS--List.invoicesView.filters.datePresets.${preset}`))}
+            {t(selectorFromPath(`forms.invoices.filters.datePresets.${getDatePresetLabelKey(preset)}`))}
           </button>
         ))}
       </div>
@@ -106,7 +110,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
                 variant='outline'
                 className={styles["dateButton"]}>
                 <TbCalendar className={styles["dateIcon"]} />
-                {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateFrom)}
+                {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t((m) => m.forms.invoices.filters.dateFrom)}
               </Button>
             }
           />
@@ -125,7 +129,7 @@ export function DateFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
                 variant='outline'
                 className={styles["dateButton"]}>
                 <TbCalendar className={styles["dateIcon"]} />
-                {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateTo)}
+                {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t((m) => m.forms.invoices.filters.dateTo)}
               </Button>
             }
           />

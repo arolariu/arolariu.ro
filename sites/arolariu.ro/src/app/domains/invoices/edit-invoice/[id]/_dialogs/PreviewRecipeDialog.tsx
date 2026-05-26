@@ -36,23 +36,23 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{recipe?.name ?? t((m) => m["IMS--Dialogs"].recipeDialog.read.missingRecipe)}</DialogTitle>
-          <DialogDescription>{recipe ? t((m) => m["IMS--Dialogs"].recipeDialog.read.description) : t((m) => m["IMS--Dialogs"].recipeDialog.read.missingRecipe)}</DialogDescription>
+          <DialogTitle>{recipe?.name ?? t((m) => m.dialogs.invoices.recipeDialog.read.missingRecipe)}</DialogTitle>
+          <DialogDescription>{recipe ? t((m) => m.dialogs.invoices.recipeDialog.read.description) : t((m) => m.dialogs.invoices.recipeDialog.read.missingRecipe)}</DialogDescription>
         </DialogHeader>
 
         {recipe ? (
           <div className={styles["formBody"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-preview-description'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.description)}</Label>
+              <Label htmlFor='recipe-preview-description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
               <p
                 id='recipe-preview-description'
                 className={styles["readText"]}>
-                {recipe.description || t((m) => m["IMS--Dialogs"].recipeDialog.read.noDescription)}
+                {recipe.description || t((m) => m.dialogs.invoices.recipeDialog.read.noDescription)}
               </p>
             </div>
 
             <div className={styles["fieldGroup"]}>
-              <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.ingredients)}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
               <ul className={styles["ingredientReadList"]}>
                 {recipe.ingredients.map((ingredient, index) => (
                   <li
@@ -65,20 +65,20 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
             </div>
 
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-preview-complexity'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.complexity)}</Label>
+              <Label htmlFor='recipe-preview-complexity'>{t((m) => m.dialogs.invoices.recipeDialog.fields.complexity)}</Label>
               <Badge
                 id='recipe-preview-complexity'
                 variant={getBadgeVariant(recipe.complexity)}>
-                {recipe.complexity || t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.medium).toUpperCase()}
+                {recipe.complexity || t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium).toUpperCase()}
               </Badge>
             </div>
 
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-preview-instructions'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.instructions)}</Label>
+              <Label htmlFor='recipe-preview-instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
               <p
                 id='recipe-preview-instructions'
                 className={styles["readText"]}>
-                {recipe.instructions || t((m) => m["IMS--Dialogs"].recipeDialog.read.notSpecified)}
+                {recipe.instructions || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
               </p>
             </div>
 
@@ -86,13 +86,13 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <span>
-                  {t((m) => m["IMS--Dialogs"].recipeDialog.fields.prepTime)}: {recipe.preparationTime || t((m) => m["IMS--Dialogs"].recipeDialog.read.notSpecified)}
+                  {t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}: {recipe.preparationTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
                 </span>
               </div>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen3 className={styles["mutedIcon"]} />
                 <span>
-                  {t((m) => m["IMS--Dialogs"].recipeDialog.fields.cookTime)}: {recipe.cookingTime || t((m) => m["IMS--Dialogs"].recipeDialog.read.notSpecified)}
+                  {t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}: {recipe.cookingTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
                 </span>
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
           <Button
             type='button'
             onClick={close}>
-            {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.close)}
+            {t((m) => m.dialogs.invoices.recipeDialog.buttons.close)}
           </Button>
         </DialogFooter>
       </DialogContent>

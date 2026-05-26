@@ -78,20 +78,20 @@ function SingleCurrencyMessage({currency}: {readonly currency: CurrencyDistribut
         <TbCurrencyDollar size={48} />
       </div>
       <p className={styles["singleCurrencyText"]}>
-        {t((m) => m["IMS--Stats"].currencyDistribution.singleCurrency, {
+        {t((m) => m.cards.invoices.statistics.currencyDistribution.singleCurrency, {
           currency: currency.currencyCode,
           symbol: currency.currencySymbol,
         })}
       </p>
       <div className={styles["singleCurrencyStats"]}>
         <div className={styles["statItem"]}>
-          <span className={styles["statLabel"]}>{t((m) => m["IMS--Stats"].currencyDistribution.totalAmount)}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.totalAmount)}</span>
           <span className={styles["statValue"]}>
             {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
           </span>
         </div>
         <div className={styles["statItem"]}>
-          <span className={styles["statLabel"]}>{t((m) => m["IMS--Stats"].currencyDistribution.invoiceCount)}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.invoiceCount)}</span>
           <span className={styles["statValue"]}>{currency.invoiceCount}</span>
         </div>
       </div>
@@ -138,8 +138,8 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].currencyDistribution.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].currencyDistribution.description)}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <SingleCurrencyMessage currency={currency} />
@@ -158,17 +158,17 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
       <CardHeader className={styles["cardHeader"]}>
         <div className={styles["headerTop"]}>
           <div>
-            <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].currencyDistribution.title)}</CardTitle>
-            <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].currencyDistribution.description)}</CardDescription>
+            <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.title)}</CardTitle>
+            <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.description)}</CardDescription>
           </div>
           <button
             type='button'
             onClick={handleToggleRON}
             className={styles["toggleButton"]}
-            aria-label={t((m) => m["IMS--Stats"].currencyDistribution.toggleLabel)}
-            title={t((m) => m["IMS--Stats"].currencyDistribution.toggleLabel)}>
+            aria-label={t((m) => m.cards.invoices.statistics.currencyDistribution.toggleLabel)}
+            title={t((m) => m.cards.invoices.statistics.currencyDistribution.toggleLabel)}>
             <TbSwitchHorizontal size={20} />
-            <span className={styles["toggleText"]}>{showRON ? t((m) => m["IMS--Stats"].currencyDistribution.showOriginal) : t((m) => m["IMS--Stats"].currencyDistribution.showRON)}</span>
+            <span className={styles["toggleText"]}>{showRON ? t((m) => m.cards.invoices.statistics.currencyDistribution.showOriginal) : t((m) => m.cards.invoices.statistics.currencyDistribution.showRON)}</span>
           </button>
         </div>
       </CardHeader>
@@ -198,7 +198,7 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                     <Badge
                       variant='secondary'
                       className={styles["invoiceBadge"]}>
-                      {t((m) => m["IMS--Stats"].currencyDistribution.invoiceCount)}
+                      {t((m) => m.cards.invoices.statistics.currencyDistribution.invoiceCount)}
                     </Badge>
                   </div>
                   <div className={styles["currencyAmount"]}>
@@ -225,11 +225,11 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                   <div className={styles["secondaryAmount"]}>
                     {showRON ? (
                       <span>
-                        {t((m) => m["IMS--Stats"].currencyDistribution.originalAmount)}: {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
+                        {t((m) => m.cards.invoices.statistics.currencyDistribution.originalAmount)}: {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
                       </span>
                     ) : (
                       <span>
-                        {t((m) => m["IMS--Stats"].currencyDistribution.ronEquivalent)}: {formatAmount(currency.totalInRON)} lei
+                        {t((m) => m.cards.invoices.statistics.currencyDistribution.ronEquivalent)}: {formatAmount(currency.totalInRON)} lei
                       </span>
                     )}
                   </div>
@@ -242,11 +242,11 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
         {/* Summary Section */}
         <div className={styles["summarySection"]}>
           <div className={styles["summaryItem"]}>
-            <span className={styles["summaryLabel"]}>{t((m) => m["IMS--Stats"].currencyDistribution.totalCurrencies)}</span>
+            <span className={styles["summaryLabel"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.totalCurrencies)}</span>
             <span className={styles["summaryValue"]}>{data.length}</span>
           </div>
           <div className={styles["summaryItem"]}>
-            <span className={styles["summaryLabel"]}>{t((m) => m["IMS--Stats"].currencyDistribution.totalSpending)}</span>
+            <span className={styles["summaryLabel"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.totalSpending)}</span>
             <span className={styles["summaryValue"]}>{formatAmount(data.reduce((sum, curr) => sum + curr.totalInRON, 0))} lei</span>
           </div>
         </div>

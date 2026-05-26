@@ -119,7 +119,7 @@ export function useScanRename(scan: CachedScan): Readonly<HookOutputType> {
 
     // Update store locally (no server action needed for rename)
     updateScanName(scan.id, trimmedValue);
-    toast.success(t((m) => m["IMS--ViewScans"].scanCard.rename));
+    toast.success(t((m) => m.pages.invoices.viewScans.scanCard.rename));
     setIsEditing(false);
     setJustRenamed(true);
     setTimeout(() => setJustRenamed(false), 300);

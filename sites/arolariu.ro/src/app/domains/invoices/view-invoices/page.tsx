@@ -102,8 +102,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m["IMS--List"].metadata.title),
-    description: t((m) => m["IMS--List"].metadata.description),
+    title: t((m) => m.pages.invoices.viewInvoices.metadata.title),
+    description: t((m) => m.pages.invoices.viewInvoices.metadata.description),
   });
 }
 
@@ -197,15 +197,15 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
   const t = await getTranslations();
   const tCommon = await getTranslations();
   const {user} = await fetchAaaSUserFromAuthService();
-  const username = user?.fullName ?? tCommon((m) => m["IMS--List"].viewInvoicesPage.guestName);
+  const username = user?.fullName ?? tCommon((m) => m.pages.invoices.viewInvoices.viewInvoicesPage.guestName);
 
   return (
     <div className={pageStyles["pageMain"]}>
       <section className={pageStyles["headerSection"]}>
-        <h1 className={pageStyles["title"]}>{t((m) => m["IMS--List"].title, {name: username})}</h1>
+        <h1 className={pageStyles["title"]}>{t((m) => m.pages.invoices.viewInvoices.title, {name: username})}</h1>
         <article className={pageStyles["subtitleArticle"]}>
           <RichText
-            sectionKey='IMS--List'
+            sectionKey='pages.invoices.viewInvoices'
             textKey='subtitle'
           />
         </article>

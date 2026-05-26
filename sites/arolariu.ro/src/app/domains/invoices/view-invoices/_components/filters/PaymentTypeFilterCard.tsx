@@ -49,11 +49,11 @@ export function PaymentTypeFilterCard({
 
   return (
     <FilterCardFrame
-      title={<>💳 {t((m) => m["IMS--List"].invoicesView.filters.paymentTypes)}</>}
+      title={<>💳 {t((m) => m.forms.invoices.filters.paymentTypes)}</>}
       active={isPaymentActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}
-      dynamicHintLabel={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.anyValue)}
+      dynamicHintLabel={t((m) => m.forms.invoices.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
         {availablePaymentTypes.map((paymentType) => (
           <button

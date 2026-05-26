@@ -63,8 +63,8 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t((m) => m.Profile.settings.data.title)}</h2>
-        <p>{t((m) => m.Profile.settings.data.description)}</p>
+        <h2>{t((m) => m.pages.profile.settings.data.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.data.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -77,9 +77,9 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbDatabase className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.data.retention.title)}
+                {t((m) => m.pages.profile.settings.data.retention.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.data.retention.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.data.retention.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <Select
@@ -98,7 +98,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   ))}
                 </SelectContent>
               </Select>
-              <p className={styles["retentionHint"]}>{t((m) => m.Profile.settings.data.retention.hint)}</p>
+              <p className={styles["retentionHint"]}>{t((m) => m.pages.profile.settings.data.retention.hint)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -112,15 +112,15 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbCloud className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.data.backup.title)}
+                {t((m) => m.pages.profile.settings.data.backup.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.data.backup.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.data.backup.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.data.backup.autoBackup)}</Label>
-                  <p>{t((m) => m.Profile.settings.data.backup.autoBackupHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.data.backup.autoBackup)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.data.backup.autoBackupHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -130,7 +130,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
               </div>
               <Separator />
               <div>
-                <Label>{t((m) => m.Profile.settings.data.backup.frequency)}</Label>
+                <Label>{t((m) => m.pages.profile.settings.data.backup.frequency)}</Label>
                 <Select
                   value={settings.backupFrequency}
                   onValueChange={handleBackupFrequencyChange}
@@ -162,15 +162,15 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbShieldCheck className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.data.privacy.title)}
+                {t((m) => m.pages.profile.settings.data.privacy.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.data.privacy.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.data.privacy.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t((m) => m.Profile.settings.data.privacy.shareAnonymous)}</Label>
-                  <p>{t((m) => m.Profile.settings.data.privacy.shareAnonymousHint)}</p>
+                  <Label>{t((m) => m.pages.profile.settings.data.privacy.shareAnonymous)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.data.privacy.shareAnonymousHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -191,18 +191,18 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbDownload className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.data.export.title)}
+                {t((m) => m.pages.profile.settings.data.export.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.data.export.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.data.export.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced3"]}>
               <Button
                 variant='outline'
                 className={styles["buttonFullCursor"]}>
                 <TbDownload className={styles["buttonIcon"]} />
-                {t((m) => m.Profile.settings.data.export.downloadAll)}
+                {t((m) => m.pages.profile.settings.data.export.downloadAll)}
               </Button>
-              <p className={styles["exportHint"]}>{t((m) => m.Profile.settings.data.export.hint)}</p>
+              <p className={styles["exportHint"]}>{t((m) => m.pages.profile.settings.data.export.hint)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -217,27 +217,27 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["dangerTitle"]}>
                 <TbAlertTriangle className={styles["iconSm"]} />
-                {t((m) => m.Profile.settings.data.danger.title)}
+                {t((m) => m.pages.profile.settings.data.danger.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.settings.data.danger.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.data.danger.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["dangerRow"]}>
                 <div className={styles["dangerRowText"]}>
-                  <p>{t((m) => m.Profile.settings.data.danger.deleteData)}</p>
-                  <p>{t((m) => m.Profile.settings.data.danger.deleteDataHint)}</p>
+                  <p>{t((m) => m.pages.profile.settings.data.danger.deleteData)}</p>
+                  <p>{t((m) => m.pages.profile.settings.data.danger.deleteDataHint)}</p>
                 </div>
                 <Button
                   variant='destructive'
                   className={styles["selectCursor"]}>
                   <TbTrash className={styles["buttonIcon"]} />
-                  {t((m) => m.Profile.settings.data.danger.deleteButton)}
+                  {t((m) => m.pages.profile.settings.data.danger.deleteButton)}
                 </Button>
               </div>
               <div className={styles["dangerRow"]}>
                 <div className={styles["dangerRowText"]}>
-                  <p>{t((m) => m.Profile.settings.data.danger.deleteAccount)}</p>
-                  <p>{t((m) => m.Profile.settings.data.danger.deleteAccountHint)}</p>
+                  <p>{t((m) => m.pages.profile.settings.data.danger.deleteAccount)}</p>
+                  <p>{t((m) => m.pages.profile.settings.data.danger.deleteAccountHint)}</p>
                 </div>
                 <Button
                   variant='outline'
@@ -247,7 +247,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                     href='https://accounts.arolariu.ro/user'
                     target='_blank'
                     rel='noopener noreferrer'>
-                    {t((m) => m.Profile.settings.data.danger.manageAccount)}
+                    {t((m) => m.pages.profile.settings.data.danger.manageAccount)}
                   </a>
                 </Button>
               </div>

@@ -92,7 +92,7 @@ export default function PreviewScanDialog(): React.JSX.Element {
       <DialogContent className={styles["previewDialog"]}>
         <DialogHeader>
           <DialogTitle>
-            {t((m) => m["IMS--ViewScans"].scanCard.previewTitle)}: {scan.name}
+            {t((m) => m.pages.invoices.viewScans.scanCard.previewTitle)}: {scan.name}
           </DialogTitle>
         </DialogHeader>
         {scan.mimeType === "application/pdf" ? (

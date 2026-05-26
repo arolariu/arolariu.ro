@@ -30,10 +30,10 @@ type FoodGroup = {
 
 /** Get the label for a balance score */
 function getScoreLabel(score: number, t: ReturnType<typeof useTranslations>): string {
-  if (score >= 80) return t(selectorFromPath("IMS--Cards.nutritionCard.score.excellent"));
-  if (score >= 60) return t(selectorFromPath("IMS--Cards.nutritionCard.score.good"));
-  if (score >= 40) return t(selectorFromPath("IMS--Cards.nutritionCard.score.fair"));
-  return t(selectorFromPath("IMS--Cards.nutritionCard.score.needsWork"));
+  if (score >= 80) return t(selectorFromPath("cards.invoices.nutritionCard.score.excellent"));
+  if (score >= 60) return t(selectorFromPath("cards.invoices.nutritionCard.score.good"));
+  if (score >= 40) return t(selectorFromPath("cards.invoices.nutritionCard.score.fair"));
+  return t(selectorFromPath("cards.invoices.nutritionCard.score.needsWork"));
 }
 
 /** Get the color class for a balance score */
@@ -57,18 +57,18 @@ function calculateBalanceScore(hasVeggies: boolean, hasFruits: boolean, hasProte
 /** Generate a nutrition suggestion based on basket composition */
 function generateSuggestion(hasVeggies: boolean, hasFruits: boolean, processedPct: number, t: ReturnType<typeof useTranslations>): string {
   if (!hasVeggies && !hasFruits) {
-    return t(selectorFromPath("IMS--Cards.nutritionCard.suggestions.addFruitsAndVegetables"));
+    return t(selectorFromPath("cards.invoices.nutritionCard.suggestions.addFruitsAndVegetables"));
   }
   if (!hasVeggies) {
-    return t(selectorFromPath("IMS--Cards.nutritionCard.suggestions.addVegetables"));
+    return t(selectorFromPath("cards.invoices.nutritionCard.suggestions.addVegetables"));
   }
   if (!hasFruits) {
-    return t(selectorFromPath("IMS--Cards.nutritionCard.suggestions.addFruits"));
+    return t(selectorFromPath("cards.invoices.nutritionCard.suggestions.addFruits"));
   }
   if (processedPct > 40) {
-    return t(selectorFromPath("IMS--Cards.nutritionCard.suggestions.swapProcessed"));
+    return t(selectorFromPath("cards.invoices.nutritionCard.suggestions.swapProcessed"));
   }
-  return t(selectorFromPath("IMS--Cards.nutritionCard.suggestions.greatBalance"));
+  return t(selectorFromPath("cards.invoices.nutritionCard.suggestions.greatBalance"));
 }
 
 export function NutritionCard(): React.JSX.Element {
@@ -81,28 +81,28 @@ export function NutritionCard(): React.JSX.Element {
   // Define food groups
   const foodGroups: FoodGroup[] = [
     {
-      name: t((m) => m["IMS--Cards"].nutritionCard.foodGroups.fruits),
+      name: t((m) => m.cards.invoices.nutritionCard.foodGroups.fruits),
       icon: <TbApple className={styles["iconRed"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.FRUITS],
     },
     {
-      name: t((m) => m["IMS--Cards"].nutritionCard.foodGroups.vegetables),
+      name: t((m) => m.cards.invoices.nutritionCard.foodGroups.vegetables),
       icon: <TbLeaf className={styles["iconGreen"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.VEGETABLES],
     },
     {
-      name: t((m) => m["IMS--Cards"].nutritionCard.foodGroups.protein),
+      name: t((m) => m.cards.invoices.nutritionCard.foodGroups.protein),
       icon: <TbMeat className={styles["iconAmber"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.MEAT, ProductCategory.FISH, ProductCategory.DAIRY],
     },
     {
-      name: t((m) => m["IMS--Cards"].nutritionCard.foodGroups.grains),
+      name: t((m) => m.cards.invoices.nutritionCard.foodGroups.grains),
       icon: <TbWheat className={styles["iconWheat"]} />,
       items: 0,
       amount: 0,
@@ -139,9 +139,9 @@ export function NutritionCard(): React.JSX.Element {
   const dairySnackPct = totalFoodItems > 0 ? 100 - wholeFoodPct - processedPct : 0;
 
   // Food balance score (simple heuristic)
-  const hasVeggies = foodGroups.find((g) => g.name === t((m) => m["IMS--Cards"].nutritionCard.foodGroups.vegetables))!.items > 0;
-  const hasFruits = foodGroups.find((g) => g.name === t((m) => m["IMS--Cards"].nutritionCard.foodGroups.fruits))!.items > 0;
-  const hasProtein = foodGroups.find((g) => g.name === t((m) => m["IMS--Cards"].nutritionCard.foodGroups.protein))!.items > 0;
+  const hasVeggies = foodGroups.find((g) => g.name === t((m) => m.cards.invoices.nutritionCard.foodGroups.vegetables))!.items > 0;
+  const hasFruits = foodGroups.find((g) => g.name === t((m) => m.cards.invoices.nutritionCard.foodGroups.fruits))!.items > 0;
+  const hasProtein = foodGroups.find((g) => g.name === t((m) => m.cards.invoices.nutritionCard.foodGroups.protein))!.items > 0;
   const balanceScore = calculateBalanceScore(hasVeggies, hasFruits, hasProtein, wholeFoodPct);
   const scoreLabel = getScoreLabel(balanceScore, t);
   const scoreColor = getScoreColorClass(balanceScore, styles);
@@ -163,14 +163,14 @@ export function NutritionCard(): React.JSX.Element {
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["titleRow"]}>
           <TbLeaf className={styles["titleIcon"]} />
-          {t((m) => m["IMS--Cards"].nutritionCard.title)}
+          {t((m) => m.cards.invoices.nutritionCard.title)}
         </CardTitle>
       </CardHeader>
       <CardContent className={styles["contentSpaced"]}>
         {/* Food Balance Score */}
         <div className={styles["scoreSection"]}>
           <div className={styles["scoreRow"]}>
-            <span className={styles["scoreLabel"]}>{t((m) => m["IMS--Cards"].nutritionCard.score.title)}</span>
+            <span className={styles["scoreLabel"]}>{t((m) => m.cards.invoices.nutritionCard.score.title)}</span>
             <span className={`${styles["scoreLabel"]} ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
@@ -183,11 +183,11 @@ export function NutritionCard(): React.JSX.Element {
 
         {/* Basket Composition */}
         <div className={styles["compositionSection"]}>
-          <h4 className={styles["compositionTitle"]}>{t((m) => m["IMS--Cards"].nutritionCard.composition.title)}</h4>
+          <h4 className={styles["compositionTitle"]}>{t((m) => m.cards.invoices.nutritionCard.composition.title)}</h4>
           <div className={styles["compositionList"]}>
             <div className={styles["compositionRow"]}>
               <TbLeaf className={styles["iconCompositionGreen"]} />
-              <span className={styles["compositionLabel"]}>{t((m) => m["IMS--Cards"].nutritionCard.composition.wholeFoods)}</span>
+              <span className={styles["compositionLabel"]}>{t((m) => m.cards.invoices.nutritionCard.composition.wholeFoods)}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
@@ -198,7 +198,7 @@ export function NutritionCard(): React.JSX.Element {
             </div>
             <div className={styles["compositionRow"]}>
               <TbWheat className={styles["iconCompositionAmber"]} />
-              <span className={styles["compositionLabel"]}>{t((m) => m["IMS--Cards"].nutritionCard.composition.processed)}</span>
+              <span className={styles["compositionLabel"]}>{t((m) => m.cards.invoices.nutritionCard.composition.processed)}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
@@ -209,7 +209,7 @@ export function NutritionCard(): React.JSX.Element {
             </div>
             <div className={styles["compositionRow"]}>
               <TbMilk className={styles["iconCompositionBlue"]} />
-              <span className={styles["compositionLabel"]}>{t((m) => m["IMS--Cards"].nutritionCard.composition.dairyOther)}</span>
+              <span className={styles["compositionLabel"]}>{t((m) => m.cards.invoices.nutritionCard.composition.dairyOther)}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
@@ -229,7 +229,7 @@ export function NutritionCard(): React.JSX.Element {
               className={styles["foodGroupCard"]}>
               <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
               <p className={styles["foodGroupName"]}>{group.name}</p>
-              <p className={styles["foodGroupCount"]}>{t((m) => m["IMS--Cards"].nutritionCard.foodGroups.itemsCount, {count: String(group.items)})}</p>
+              <p className={styles["foodGroupCount"]}>{t((m) => m.cards.invoices.nutritionCard.foodGroups.itemsCount, {count: String(group.items)})}</p>
               <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
           ))}
@@ -240,7 +240,7 @@ export function NutritionCard(): React.JSX.Element {
           <div className={styles["allergensSection"]}>
             <div className={styles["allergensHeader"]}>
               <TbAlertTriangle className={styles["iconAllergenAmber"]} />
-              <h4 className={styles["allergensTitle"]}>{t((m) => m["IMS--Cards"].nutritionCard.allergens.title)}</h4>
+              <h4 className={styles["allergensTitle"]}>{t((m) => m.cards.invoices.nutritionCard.allergens.title)}</h4>
             </div>
             <div className={styles["allergensList"]}>
               <TooltipProvider>
@@ -258,7 +258,7 @@ export function NutritionCard(): React.JSX.Element {
                       }
                     />
                     <TooltipContent>
-                      <p>{t((m) => m["IMS--Cards"].nutritionCard.allergens.foundInItems, {count: String(count)})}</p>
+                      <p>{t((m) => m.cards.invoices.nutritionCard.allergens.foundInItems, {count: String(count)})}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}

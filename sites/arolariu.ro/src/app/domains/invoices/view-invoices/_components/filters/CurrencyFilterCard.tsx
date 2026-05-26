@@ -42,11 +42,11 @@ export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChang
 
   return (
     <FilterCardFrame
-      title={<>💵 {t((m) => m["IMS--List"].invoicesView.filters.currency)}</>}
+      title={<>💵 {t((m) => m.forms.invoices.filters.currency)}</>}
       active={isCurrencyActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.currencyAny)}
-      dynamicHintLabel={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.currencyAny)}
+      dynamicHintLabel={t((m) => m.forms.invoices.filters.dynamicHint)}>
       <div className={styles["categoryChips"]}>
         {availableCurrencies.map((code) => (
           <button

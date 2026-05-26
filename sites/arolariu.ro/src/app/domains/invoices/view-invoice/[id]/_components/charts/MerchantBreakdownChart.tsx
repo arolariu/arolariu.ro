@@ -81,12 +81,12 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
   // Resolve merchant names from Zustand store
   const getMerchantName = (merchantId: string): string => {
     const merchant = merchants.find((m) => m.id === merchantId);
-    return merchant?.name ?? t((m) => m["IMS--View"].merchantBreakdownChart.unknownMerchant);
+    return merchant?.name ?? t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.unknownMerchant);
   };
 
   const chartConfig = {
     total: {
-      label: t((m) => m["IMS--View"].merchantBreakdownChart.labels.totalSpent),
+      label: t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
   };
@@ -102,8 +102,8 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].merchantBreakdownChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].merchantBreakdownChart.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -137,9 +137,9 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                     active={false}
                     payload={[]}
                     currency={currency}
-                    totalLabel={t((m) => m["IMS--View"].merchantBreakdownChart.labels.total)}
-                    visitsLabel={t((m) => m["IMS--View"].merchantBreakdownChart.labels.visits)}
-                    averagePerVisitLabel={t((m) => m["IMS--View"].merchantBreakdownChart.labels.averagePerVisit)}
+                    totalLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.total)}
+                    visitsLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.visits)}
+                    averagePerVisitLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.averagePerVisit)}
                   />
                 }
               />

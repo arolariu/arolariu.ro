@@ -209,8 +209,8 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         <CardHeader>
           <div className={styles["header"]}>
             <div>
-              <CardTitle>{t((m) => m["IMS--View"].relatedInvoices.title)}</CardTitle>
-              <p className={styles["subtitle"]}>{t((m) => m["IMS--View"].relatedInvoices.subtitle)}</p>
+              <CardTitle>{t((m) => m.pages.invoices.viewInvoice.relatedInvoices.title)}</CardTitle>
+              <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewInvoice.relatedInvoices.subtitle)}</p>
             </div>
             <TbReceipt className={styles["headerIcon"]} />
           </div>
@@ -275,7 +275,7 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
 
   const amount = `${invoice.paymentInformation.currency.symbol}${formatAmount(invoice.paymentInformation.totalCostAmount)}`;
 
-  const relationTypeBadge = t(selectorFromPath(`IMS--View.relatedInvoices.${relationType}`));
+  const relationTypeBadge = t(selectorFromPath(`pages.invoices.viewInvoice.relatedInvoices.${relationType}`));
 
   return (
     <Link
@@ -311,7 +311,7 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
 
         {/* View Arrow */}
         <div className={styles["viewAction"]}>
-          <span className={styles["viewText"]}>{t((m) => m["IMS--View"].relatedInvoices.viewInvoice)}</span>
+          <span className={styles["viewText"]}>{t((m) => m.pages.invoices.viewInvoice.relatedInvoices.viewInvoice)}</span>
           <TbArrowRight className={styles["arrowIcon"]} />
         </div>
       </div>

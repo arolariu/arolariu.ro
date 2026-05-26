@@ -83,7 +83,7 @@ function WizardNavigation(): React.JSX.Element {
           onClick={goBack}
           disabled={isCreating}>
           <TbArrowLeft />
-          {t((m) => m["IMS--Create"].navigation.back)}
+          {t((m) => m.forms.invoices.createInvoice.navigation.back)}
         </Button>
       ) : null}
 
@@ -92,7 +92,7 @@ function WizardNavigation(): React.JSX.Element {
           onClick={goNext}
           disabled={!canGoNext || isCreating}
           className={styles["nextButton"]}>
-          {t((m) => m["IMS--Create"].navigation.next)}
+          {t((m) => m.forms.invoices.createInvoice.navigation.next)}
         </Button>
       ) : null}
     </div>
@@ -109,14 +109,14 @@ function EmptyState(): React.JSX.Element {
     <Card className={styles["emptyState"]}>
       <CardContent className={styles["emptyStateContent"]}>
         <div className={styles["emptyStateIcon"]}>📄</div>
-        <h2 className={styles["emptyStateTitle"]}>{t((m) => m["IMS--Create"].emptyState.title)}</h2>
-        <p className={styles["emptyStateDescription"]}>{t((m) => m["IMS--Create"].emptyState.description)}</p>
+        <h2 className={styles["emptyStateTitle"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.title)}</h2>
+        <p className={styles["emptyStateDescription"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.description)}</p>
         <div className={styles["emptyStateActions"]}>
           <Link href='/domains/invoices/upload-scans'>
-            <Button>{t((m) => m["IMS--Create"].emptyState.uploadButton)}</Button>
+            <Button>{t((m) => m.forms.invoices.createInvoice.emptyState.uploadButton)}</Button>
           </Link>
           <Link href='/domains/invoices/view-scans'>
-            <Button variant='outline'>{t((m) => m["IMS--Create"].emptyState.viewScansButton)}</Button>
+            <Button variant='outline'>{t((m) => m.forms.invoices.createInvoice.emptyState.viewScansButton)}</Button>
           </Link>
         </div>
       </CardContent>
@@ -143,10 +143,10 @@ function CreateInvoiceWizard(): React.JSX.Element {
           href='/domains/invoices'
           className={styles["backLink"]}>
           <TbArrowLeft />
-          {t((m) => m["IMS--Create"].header.backToInvoices)}
+          {t((m) => m.forms.invoices.createInvoice.header.backToInvoices)}
         </Link>
-        <h1 className={styles["title"]}>{t((m) => m["IMS--Create"].header.title)}</h1>
-        <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].header.subtitle)}</p>
+        <h1 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.header.title)}</h1>
+        <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.header.subtitle)}</p>
       </div>
 
       {/* Step Indicator */}

@@ -58,8 +58,8 @@ function StepItem({
   return (
     <div className={styles["stepItem"]}>
       <div className={circleClassName}>{isCompleted ? <TbCheck className={styles["stepCheckIcon"]} /> : step.icon}</div>
-      <span className={labelClassName}>{t(selectorFromPath(`IMS--Create.steps.${step.labelKey}`))}</span>
-      <span className={styles["stepDescription"]}>{t(selectorFromPath(`IMS--Create.steps.${step.descriptionKey}`))}</span>
+      <span className={labelClassName}>{t(selectorFromPath(`forms.invoices.createInvoice.steps.${step.labelKey}`))}</span>
+      <span className={styles["stepDescription"]}>{t(selectorFromPath(`forms.invoices.createInvoice.steps.${step.descriptionKey}`))}</span>
     </div>
   );
 }

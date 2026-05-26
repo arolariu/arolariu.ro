@@ -49,8 +49,8 @@ export default function Navigation(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t((m) => m.About.Hub.navigation.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.navigation.subtitle)}</p>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.navigation.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.about.hub.navigation.subtitle)}</p>
         </motion.div>
 
         {/* Navigation cards */}

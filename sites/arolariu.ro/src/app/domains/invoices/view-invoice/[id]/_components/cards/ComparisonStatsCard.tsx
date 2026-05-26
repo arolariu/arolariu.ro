@@ -31,8 +31,8 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
     <div className={styles["card"]}>
       <Card>
         <CardHeader>
-          <CardTitle>{t((m) => m["IMS--Cards"].comparisonStatsCard.title)}</CardTitle>
-          <CardDescription>{t((m) => m["IMS--Cards"].comparisonStatsCard.subtitle, {count: String(stats.totalInvoices)})}</CardDescription>
+          <CardTitle>{t((m) => m.cards.invoices.comparisonStatsCard.title)}</CardTitle>
+          <CardDescription>{t((m) => m.cards.invoices.comparisonStatsCard.subtitle, {count: String(stats.totalInvoices)})}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className={styles["contentSpaced"]}>
@@ -41,7 +41,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
               <div className={styles["row"]}>
                 <div className={styles["rowWithIcon"]}>
                   <TbTarget className={styles["iconMuted"]} />
-                  <span className={styles["label"]}>{t((m) => m["IMS--Cards"].comparisonStatsCard.vsAverage)}</span>
+                  <span className={styles["label"]}>{t((m) => m.cards.invoices.comparisonStatsCard.vsAverage)}</span>
                 </div>
                 <div className={styles["trendRow"]}>
                   {getTrendIcon(stats.percentageDiff)}
@@ -52,26 +52,26 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
                 </div>
               </div>
               <div className={styles["mutedRow"]}>
-                <span>{t((m) => m["IMS--Cards"].comparisonStatsCard.avgValue, {amount: stats.averageAmount.toFixed(2), currency})}</span>
-                <span>{t((m) => m["IMS--Cards"].comparisonStatsCard.thisValue, {amount: stats.currentAmount.toFixed(2), currency})}</span>
+                <span>{t((m) => m.cards.invoices.comparisonStatsCard.avgValue, {amount: stats.averageAmount.toFixed(2), currency})}</span>
+                <span>{t((m) => m.cards.invoices.comparisonStatsCard.thisValue, {amount: stats.currentAmount.toFixed(2), currency})}</span>
               </div>
             </div>
 
             {/* Spending Range Progress */}
             <div className={styles["section"]}>
               <div className={styles["mutedRow"]}>
-                <span>{t((m) => m["IMS--Cards"].comparisonStatsCard.minValue, {amount: stats.minAmount.toFixed(0)})}</span>
-                <span>{t((m) => m["IMS--Cards"].comparisonStatsCard.maxValue, {amount: stats.maxAmount.toFixed(0)})}</span>
+                <span>{t((m) => m.cards.invoices.comparisonStatsCard.minValue, {amount: stats.minAmount.toFixed(0)})}</span>
+                <span>{t((m) => m.cards.invoices.comparisonStatsCard.maxValue, {amount: stats.maxAmount.toFixed(0)})}</span>
               </div>
               <Progress value={percentageProgress} />
-              <p className={styles["positionLabel"]}>{t((m) => m["IMS--Cards"].comparisonStatsCard.positionInRange)}</p>
+              <p className={styles["positionLabel"]}>{t((m) => m.cards.invoices.comparisonStatsCard.positionInRange)}</p>
             </div>
 
             {/* Item Count Comparison */}
             <div className={styles["borderTopRow"]}>
               <div className={styles["rowWithIcon"]}>
                 <TbShoppingBag className={styles["iconMuted"]} />
-                <span className={styles["label"]}>{t((m) => m["IMS--Cards"].comparisonStatsCard.itemCount)}</span>
+                <span className={styles["label"]}>{t((m) => m.cards.invoices.comparisonStatsCard.itemCount)}</span>
               </div>
               <div className={styles["rightAlign"]}>
                 <div className={styles["trendRow"]}>
@@ -82,7 +82,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
                   </span>
                 </div>
                 <span className={styles["subLabel"]}>
-                  {t((m) => m["IMS--Cards"].comparisonStatsCard.itemCountComparison, {current: String(stats.currentItemCount), average: String(stats.averageItemCount)})}
+                  {t((m) => m.cards.invoices.comparisonStatsCard.itemCountComparison, {current: String(stats.currentItemCount), average: String(stats.averageItemCount)})}
                 </span>
               </div>
             </div>
@@ -91,7 +91,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
             <div className={styles["borderTopRow"]}>
               <div className={styles["rowWithIcon"]}>
                 <TbBuildingStore className={styles["iconMuted"]} />
-                <span className={styles["label"]}>{t((m) => m["IMS--Cards"].comparisonStatsCard.sameStore)}</span>
+                <span className={styles["label"]}>{t((m) => m.cards.invoices.comparisonStatsCard.sameStore)}</span>
               </div>
               <div className={styles["rightAlign"]}>
                 <div className={styles["trendRow"]}>
@@ -102,7 +102,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
                   </span>
                 </div>
                 <span className={styles["subLabel"]}>
-                  {t((m) => m["IMS--Cards"].comparisonStatsCard.sameStoreComparison, {average: stats.sameMerchantAvg.toFixed(0), currency})}
+                  {t((m) => m.cards.invoices.comparisonStatsCard.sameStoreComparison, {average: stats.sameMerchantAvg.toFixed(0), currency})}
                 </span>
               </div>
             </div>

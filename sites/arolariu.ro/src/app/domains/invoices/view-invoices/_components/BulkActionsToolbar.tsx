@@ -159,17 +159,17 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
 
         // Show appropriate toast based on results
         if (failureCount === 0) {
-          toast.success(t((m) => m["IMS--List"].bulkActions.categoryChanged, {count: successCount}));
+          toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChanged, {count: successCount}));
         } else if (successCount === 0) {
-          toast.error(t((m) => m["IMS--List"].bulkActions.categoryChangeError));
+          toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChangeError));
         } else {
-          toast.success(t((m) => m["IMS--List"].bulkActions.categoryPartialSuccess, {success: String(successCount), failed: String(failureCount)}));
+          toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryPartialSuccess, {success: String(successCount), failed: String(failureCount)}));
         }
 
         clearSelectedInvoices();
       } catch (error) {
         console.error("Bulk category change error:", error);
-        toast.error(t((m) => m["IMS--List"].bulkActions.categoryChangeError));
+        toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChangeError));
       } finally {
         setIsCategoryChanging(false);
       }
@@ -193,15 +193,15 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
         <div className={styles["toolbarContent"]}>
           {/* Left side: Selection count and clear button */}
           <div className={styles["toolbarLeft"]}>
-            <span className={styles["selectedCount"]}>{t((m) => m["IMS--List"].bulkActions.selected, {count: selectedInvoices.length})}</span>
+            <span className={styles["selectedCount"]}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.selected, {count: selectedInvoices.length})}</span>
             <Button
               variant='ghost'
               size='sm'
               onClick={clearSelectedInvoices}
               className={styles["clearButton"]}
-              aria-label={t((m) => m["IMS--List"].bulkActions.clearSelection)}>
+              aria-label={t((m) => m.pages.invoices.viewInvoices.bulkActions.clearSelection)}>
               <TbX className={styles["icon"]} />
-              <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--List"].bulkActions.clearSelection)}</span>
+              <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.clearSelection)}</span>
             </Button>
           </div>
 
@@ -213,9 +213,9 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
               size='sm'
               onClick={handleExport}
               className={styles["actionButton"]}
-              aria-label={t((m) => m["IMS--List"].bulkActions.export)}>
+              aria-label={t((m) => m.pages.invoices.viewInvoices.bulkActions.export)}>
               <TbDownload className={styles["icon"]} />
-              <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--List"].bulkActions.export)}</span>
+              <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.export)}</span>
             </Button>
 
             {/* Delete button with confirmation dialog */}
@@ -227,20 +227,20 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                     size='sm'
                     className={styles["actionButton"]}
                     disabled={isDeleting}
-                    aria-label={t((m) => m["IMS--List"].bulkActions.delete)}>
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.bulkActions.delete)}>
                     <TbTrash className={styles["icon"]} />
-                    <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--List"].bulkActions.delete)}</span>
+                    <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.delete)}</span>
                   </Button>
                 }
               />
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{t((m) => m["IMS--List"].bulkActions.deleteConfirm.title)}</AlertDialogTitle>
-                  <AlertDialogDescription>{t((m) => m["IMS--List"].bulkActions.deleteConfirm.description, {count: selectedInvoices.length})}</AlertDialogDescription>
+                  <AlertDialogTitle>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.title)}</AlertDialogTitle>
+                  <AlertDialogDescription>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.description, {count: selectedInvoices.length})}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>{t((m) => m["IMS--List"].bulkActions.deleteConfirm.cancel)}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>{t((m) => m["IMS--List"].bulkActions.deleteConfirm.confirm)}</AlertDialogAction>
+                  <AlertDialogCancel>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.cancel)}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.confirm)}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -253,16 +253,16 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                 disabled={isCategoryChanging}>
                 <SelectTrigger
                   className={styles["selectTrigger"]}
-                  aria-label={t((m) => m["IMS--List"].bulkActions.changeCategory)}>
-                  <SelectValue placeholder={t((m) => m["IMS--List"].bulkActions.changeCategory)} />
+                  aria-label={t((m) => m.pages.invoices.viewInvoices.bulkActions.changeCategory)}>
+                  <SelectValue placeholder={t((m) => m.pages.invoices.viewInvoices.bulkActions.changeCategory)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.notDefined)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.grocery)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.fastFood)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.homeCleaning)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.carAuto)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m["IMS--List"].bulkActions.categories.other)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.notDefined)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.grocery)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.fastFood)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.homeCleaning)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.carAuto)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.other)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

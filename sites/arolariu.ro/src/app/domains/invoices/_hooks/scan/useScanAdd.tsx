@@ -100,7 +100,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         });
 
         if (!success || !data) {
-          throw new Error(t((m) => m["IMS--Hooks"].useScanAdd.uploadFailed, {status: String(error?.status) || "unknown"}));
+          throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status: String(error?.status) || "unknown"}));
         }
 
         await attachInvoiceScan({
@@ -115,10 +115,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
           },
         });
 
-        toast.success(t((m) => m["IMS--Hooks"].useScanAdd.addSuccess));
+        toast.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m["IMS--Hooks"].useScanAdd.addError), {description: message});
+        toast.error(t((m) => m.toasts.invoices.useScanAdd.addError), {description: message});
         throw error;
       } finally {
         setIsAdding(false);

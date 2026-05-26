@@ -140,12 +140,12 @@ export default function BulkCategoryDialog(): React.JSX.Element {
    */
   const handleSave = useCallback(async () => {
     if (!invoice || !selectedProducts || !selectedIndices || selectedCategory === null) {
-      toast.error(t((m) => m["IMS--Dialogs"].bulkCategoryDialog.errors.missingData));
+      toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.missingData));
       return;
     }
 
     if (selectedProducts.length === 0) {
-      toast.error(t((m) => m["IMS--Dialogs"].bulkCategoryDialog.errors.noProducts));
+      toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.noProducts));
       return;
     }
 
@@ -195,24 +195,24 @@ export default function BulkCategoryDialog(): React.JSX.Element {
 
       // Show summary toast
       if (errors.length === 0) {
-        toast.success(t((m) => m["IMS--Dialogs"].bulkCategoryDialog.success.saved, {count: successCount}));
+        toast.success(t((m) => m.dialogs.invoices.bulkCategoryDialog.success.saved, {count: successCount}));
         close();
         router.refresh();
       } else if (successCount > 0) {
         toast.warning(
-          t((m) => m["IMS--Dialogs"].bulkCategoryDialog.success.partialSuccess, {
+          t((m) => m.dialogs.invoices.bulkCategoryDialog.success.partialSuccess, {
             success: String(successCount),
             failed: String(errors.length),
           }),
         );
         console.error("Some products failed to update:", errors);
       } else {
-        toast.error(t((m) => m["IMS--Dialogs"].bulkCategoryDialog.errors.allFailed));
+        toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.allFailed));
         console.error("All products failed to update:", errors);
       }
     } catch (error) {
       console.error("Failed to update categories:", error);
-      toast.error(t((m) => m["IMS--Dialogs"].bulkCategoryDialog.errors.saveFailed));
+      toast.error(t((m) => m.dialogs.invoices.bulkCategoryDialog.errors.saveFailed));
     } finally {
       setIsSaving(false);
       setUpdateProgress(null);
@@ -229,14 +229,14 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       onOpenChange={close}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].bulkCategoryDialog.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].bulkCategoryDialog.description, {count: selectedProducts.length})}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.bulkCategoryDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.bulkCategoryDialog.description, {count: selectedProducts.length})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["content"]}>
           {/* Selected Products Preview */}
           <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t((m) => m["IMS--Dialogs"].bulkCategoryDialog.labels.selectedProducts)}</Label>
+            <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.selectedProducts)}</Label>
             <div className={styles["productList"]}>
               {selectedProducts.slice(0, 5).map((product) => (
                 <div
@@ -246,7 +246,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 </div>
               ))}
               {selectedProducts.length > 5 && (
-                <div className={styles["moreText"]}>{t((m) => m["IMS--Dialogs"].bulkCategoryDialog.labels.andMore, {count: String(selectedProducts.length - 5)})}</div>
+                <div className={styles["moreText"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.andMore, {count: String(selectedProducts.length - 5)})}</div>
               )}
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               htmlFor='category-select'
               className={styles["sectionLabel"]}>
               <TbTag className={styles["labelIcon"]} />
-              {t((m) => m["IMS--Dialogs"].bulkCategoryDialog.labels.newCategory)}
+              {t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.newCategory)}
             </Label>
             <Select
               value={selectedCategory === null ? undefined : String(selectedCategory)}
@@ -265,7 +265,7 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               <SelectTrigger
                 id='category-select'
                 className={styles["categoryTrigger"]}>
-                <SelectValue placeholder={t((m) => m["IMS--Dialogs"].bulkCategoryDialog.placeholders.selectCategory)} />
+                <SelectValue placeholder={t((m) => m.dialogs.invoices.bulkCategoryDialog.placeholders.selectCategory)} />
               </SelectTrigger>
               <SelectContent>
                 {categoryOptions.map((option) => (
@@ -282,9 +282,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           {/* Progress Indicator */}
           {updateProgress ? (
             <div className={styles["section"]}>
-              <Label className={styles["sectionLabel"]}>{t((m) => m["IMS--Dialogs"].bulkCategoryDialog.labels.progress)}</Label>
+              <Label className={styles["sectionLabel"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.progress)}</Label>
               <p className={styles["progressText"]}>
-                {t((m) => m["IMS--Dialogs"].bulkCategoryDialog.progress.updating, {
+                {t((m) => m.dialogs.invoices.bulkCategoryDialog.progress.updating, {
                   current: String(updateProgress.current),
                   total: String(updateProgress.total),
                 })}
@@ -298,12 +298,12 @@ export default function BulkCategoryDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isSaving}>
-            {t((m) => m["IMS--Dialogs"].bulkCategoryDialog.buttons.cancel)}
+            {t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.cancel)}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving || selectedCategory === null}>
-            {isSaving ? t((m) => m["IMS--Dialogs"].bulkCategoryDialog.buttons.saving) : t((m) => m["IMS--Dialogs"].bulkCategoryDialog.buttons.save)}
+            {isSaving ? t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.saving) : t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>

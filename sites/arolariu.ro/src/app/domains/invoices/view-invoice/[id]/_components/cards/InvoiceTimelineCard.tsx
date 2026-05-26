@@ -25,7 +25,7 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbCalendar className={styles["titleIcon"]} />
-            {t((m) => m["IMS--View"].invoiceTimeline.title)}
+            {t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.title)}
           </span>
         </CardTitle>
       </CardHeader>

@@ -108,11 +108,11 @@ export function MerchantInfoCard(): React.JSX.Element {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t((m) => m["IMS--Cards"].merchantInfoCard.title)}</CardTitle>
+          <CardTitle>{t((m) => m.cards.invoices.merchantInfoCard.title)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyStateText"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.noMerchantLinked)}</p>
+            <p className={styles["emptyStateText"]}>{t((m) => m.cards.invoices.merchantInfoCard.noMerchantLinked)}</p>
           </div>
         </CardContent>
       </Card>
@@ -252,7 +252,7 @@ export function MerchantInfoCard(): React.JSX.Element {
             <div className={styles["section"]}>
               <div className={styles["sectionHeader"]}>
                 <TbChartBar className={styles["iconMuted"]} />
-                <span className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.spendingHistory)}</span>
+                <span className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.merchantInfoCard.spendingHistory)}</span>
               </div>
               <div className={styles["sparklineContainer"]}>
                 <ResponsiveContainer
@@ -299,17 +299,17 @@ export function MerchantInfoCard(): React.JSX.Element {
               <div className={styles["statBadge"]}>
                 <TbShoppingBag className={styles["statIcon"]} />
                 <span className={styles["statValue"]}>{visitStats.count}</span>
-                <span className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.stats.visits)}</span>
+                <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.merchantInfoCard.stats.visits)}</span>
               </div>
               <div className={styles["statBadge"]}>
                 <TbReceipt className={styles["statIcon"]} />
                 <span className={styles["statValue"]}>{formatAmount(visitStats.avgSpend)}</span>
-                <span className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.stats.avgSpend)}</span>
+                <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.merchantInfoCard.stats.avgSpend)}</span>
               </div>
               <div className={styles["statBadge"]}>
                 <TbCalendar className={styles["statIcon"]} />
                 <span className={styles["statValue"]}>{visitStats.daysAgo}</span>
-                <span className={styles["statLabel"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.stats.daysAgo)}</span>
+                <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.merchantInfoCard.stats.daysAgo)}</span>
               </div>
             </div>
           )}
@@ -318,7 +318,7 @@ export function MerchantInfoCard(): React.JSX.Element {
           {categoryDistribution.length > 1 && (
             <div className={styles["section"]}>
               <div className={styles["sectionHeader"]}>
-                <span className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].merchantInfoCard.categoryDistribution)}</span>
+                <span className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.merchantInfoCard.categoryDistribution)}</span>
               </div>
               <div className={styles["categoryBar"]}>
                 {categoryDistribution.map((cat) => (
@@ -356,7 +356,7 @@ export function MerchantInfoCard(): React.JSX.Element {
                 target='_blank'
                 rel='noopener noreferrer'>
                 <TbMapPin className={styles["buttonIcon"]} />
-                {t((m) => m["IMS--Cards"].merchantInfoCard.viewOnMap)}
+                {t((m) => m.cards.invoices.merchantInfoCard.viewOnMap)}
               </a>
             </Button>
           ) : null}
@@ -367,7 +367,7 @@ export function MerchantInfoCard(): React.JSX.Element {
           variant='outline'
           asChild
           className={styles["fullWidth"]}>
-          <Link href={viewAllInvoicesUrl}>{t((m) => m["IMS--Cards"].merchantInfoCard.viewAllInvoices)}</Link>
+          <Link href={viewAllInvoicesUrl}>{t((m) => m.cards.invoices.merchantInfoCard.viewAllInvoices)}</Link>
         </Button>
       </CardFooter>
     </Card>

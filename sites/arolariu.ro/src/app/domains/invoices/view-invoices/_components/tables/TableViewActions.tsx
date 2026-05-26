@@ -50,7 +50,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
               />
             }
           />
-          <TooltipContent side='left'>{t((m) => m["IMS--List"].tableViewActions.tooltips.moreActions)}</TooltipContent>
+          <TooltipContent side='left'>{t((m) => m.pages.invoices.viewInvoices.tableViewActions.tooltips.moreActions)}</TooltipContent>
         </Tooltip>
         <DropdownMenuContent
           align='end'
@@ -65,13 +65,13 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                       href={`/domains/invoices/edit-invoice/${invoice.id}`}
                       className={styles["editLink"]}>
                       <TbEdit className={styles["menuItemIcon"]} />
-                      {t((m) => m["IMS--List"].tableViewActions.actions.edit)}
+                      {t((m) => m.pages.invoices.viewInvoices.tableViewActions.actions.edit)}
                     </Link>
                   }
                 />
               }
             />
-            <TooltipContent side='left'>{t((m) => m["IMS--List"].tableViewActions.tooltips.edit)}</TooltipContent>
+            <TooltipContent side='left'>{t((m) => m.pages.invoices.viewInvoices.tableViewActions.tooltips.edit)}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger
@@ -80,11 +80,11 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                   onClick={openShareDialog}
                   className={styles["menuItem"]}>
                   <TbShare className={styles["menuItemIcon"]} />
-                  {t((m) => m["IMS--List"].tableViewActions.actions.share)}
+                  {t((m) => m.pages.invoices.viewInvoices.tableViewActions.actions.share)}
                 </DropdownMenuItem>
               }
             />
-            <TooltipContent side='left'>{t((m) => m["IMS--List"].tableViewActions.tooltips.share)}</TooltipContent>
+            <TooltipContent side='left'>{t((m) => m.pages.invoices.viewInvoices.tableViewActions.tooltips.share)}</TooltipContent>
           </Tooltip>
           <DropdownMenuSeparator />
           <Tooltip>
@@ -94,11 +94,11 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                   className={styles["menuItemDestructive"]}
                   onClick={openDeleteDialog}>
                   <TbTrash className={styles["menuItemIcon"]} />
-                  {t((m) => m["IMS--List"].tableViewActions.actions.delete)}
+                  {t((m) => m.pages.invoices.viewInvoices.tableViewActions.actions.delete)}
                 </DropdownMenuItem>
               }
             />
-            <TooltipContent side='left'>{t((m) => m["IMS--List"].tableViewActions.tooltips.delete)}</TooltipContent>
+            <TooltipContent side='left'>{t((m) => m.pages.invoices.viewInvoices.tableViewActions.tooltips.delete)}</TooltipContent>
           </Tooltip>
         </DropdownMenuContent>
       </DropdownMenu>

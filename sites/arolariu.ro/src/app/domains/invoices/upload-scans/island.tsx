@@ -127,7 +127,7 @@ function UploadContent(): React.JSX.Element {
           href='/domains/invoices'
           className={styles["breadcrumbLink"]}>
           <TbArrowLeft className={styles["breadcrumbIcon"]} />
-          {t((m) => m["IMS--UploadScans"].breadcrumb)}
+          {t((m) => m.pages.invoices.uploadScans.breadcrumb)}
         </Link>
       </div>
 
@@ -140,7 +140,7 @@ function UploadContent(): React.JSX.Element {
           <div className={styles["headerLeft"]}>
             <div>
               <div className={styles["titleRow"]}>
-                <h1 className={styles["headerTitle"]}>{t((m) => m["IMS--UploadScans"].header.title)}</h1>
+                <h1 className={styles["headerTitle"]}>{t((m) => m.pages.invoices.uploadScans.header.title)}</h1>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -156,12 +156,12 @@ function UploadContent(): React.JSX.Element {
                     <TooltipContent
                       side='right'
                       className={styles["tooltipContent"]}>
-                      <p>{t((m) => m["IMS--UploadScans"].header.tooltip)}</p>
+                      <p>{t((m) => m.pages.invoices.uploadScans.header.tooltip)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className={styles["headerDescription"]}>{t((m) => m["IMS--UploadScans"].header.description)}</p>
+              <p className={styles["headerDescription"]}>{t((m) => m.pages.invoices.uploadScans.header.description)}</p>
             </div>
           </div>
 
@@ -176,14 +176,14 @@ function UploadContent(): React.JSX.Element {
                       render={
                         <Link href='/domains/invoices/view-scans'>
                           <TbEye className={styles["actionIcon"]} />
-                          <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--UploadScans"].buttons.viewScans)}</span>
-                          <span className={styles["visibleMobile"]}>{t((m) => m["IMS--UploadScans"].buttons.viewScans).split(" ")[0]}</span>
+                          <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.viewScans)}</span>
+                          <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.viewScans).split(" ")[0]}</span>
                         </Link>
                       }
                     />
                   }
                 />
-                <TooltipContent>{t((m) => m["IMS--UploadScans"].buttons.viewScans)}</TooltipContent>
+                <TooltipContent>{t((m) => m.pages.invoices.uploadScans.buttons.viewScans)}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
@@ -197,14 +197,14 @@ function UploadContent(): React.JSX.Element {
                       render={
                         <Link href='/domains/invoices/view-invoices'>
                           <TbFileInvoice className={styles["actionIcon"]} />
-                          <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--UploadScans"].buttons.myInvoices)}</span>
-                          <span className={styles["visibleMobile"]}>{t((m) => m["IMS--UploadScans"].buttons.myInvoices).split(" ")[0]}</span>
+                          <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.myInvoices)}</span>
+                          <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.myInvoices).split(" ")[0]}</span>
                         </Link>
                       }
                     />
                   }
                 />
-                <TooltipContent>{t((m) => m["IMS--UploadScans"].buttons.myInvoices)}</TooltipContent>
+                <TooltipContent>{t((m) => m.pages.invoices.uploadScans.buttons.myInvoices)}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -224,33 +224,33 @@ function UploadContent(): React.JSX.Element {
           {/* Supported Formats */}
           <Card>
             <CardContent className={styles["sidebarCardContent"]}>
-              <h3 className={styles["sidebarTitle"]}>{t((m) => m["IMS--UploadScans"].sidebar.formats.title)}</h3>
+              <h3 className={styles["sidebarTitle"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.formats.title)}</h3>
               <div className={styles["formatsList"]}>
                 <FileTypeCard
                   icon={<TbPhoto className={styles["fileTypeIconAccent"]} />}
-                  label={t((m) => m["IMS--UploadScans"].sidebar.formats.images)}
-                  extensions={t((m) => m["IMS--UploadScans"].sidebar.formats.imageExtensions)}
+                  label={t((m) => m.pages.invoices.uploadScans.sidebar.formats.images)}
+                  extensions={t((m) => m.pages.invoices.uploadScans.sidebar.formats.imageExtensions)}
                 />
                 <FileTypeCard
                   icon={<TbFileTypePdf className={styles["fileTypeIconRed"]} />}
-                  label={t((m) => m["IMS--UploadScans"].sidebar.formats.documents)}
-                  extensions={t((m) => m["IMS--UploadScans"].sidebar.formats.documentExtensions)}
+                  label={t((m) => m.pages.invoices.uploadScans.sidebar.formats.documents)}
+                  extensions={t((m) => m.pages.invoices.uploadScans.sidebar.formats.documentExtensions)}
                 />
               </div>
-              <p className={styles["maxSizeNote"]}>{t((m) => m["IMS--UploadScans"].sidebar.formats.maxSize)}</p>
+              <p className={styles["maxSizeNote"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.formats.maxSize)}</p>
             </CardContent>
           </Card>
 
           {/* Tips */}
           <Card>
             <CardContent className={styles["sidebarCardContent"]}>
-              <h3 className={styles["sidebarTitle"]}>{t((m) => m["IMS--UploadScans"].sidebar.tips.title)}</h3>
+              <h3 className={styles["sidebarTitle"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.title)}</h3>
               <ul className={styles["tipsList"]}>
-                <TipItem>{t((m) => m["IMS--UploadScans"].sidebar.tips.tip1)}</TipItem>
-                <TipItem>{t((m) => m["IMS--UploadScans"].sidebar.tips.tip2)}</TipItem>
-                <TipItem>{t((m) => m["IMS--UploadScans"].sidebar.tips.tip3)}</TipItem>
-                <TipItem>{t((m) => m["IMS--UploadScans"].sidebar.tips.tip4)}</TipItem>
-                <TipItem>{t((m) => m["IMS--UploadScans"].sidebar.tips.tip5)}</TipItem>
+                <TipItem>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.tip1)}</TipItem>
+                <TipItem>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.tip2)}</TipItem>
+                <TipItem>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.tip3)}</TipItem>
+                <TipItem>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.tip4)}</TipItem>
+                <TipItem>{t((m) => m.pages.invoices.uploadScans.sidebar.tips.tip5)}</TipItem>
               </ul>
             </CardContent>
           </Card>
@@ -261,8 +261,8 @@ function UploadContent(): React.JSX.Element {
               <div className={styles["securityContent"]}>
                 <TbShieldCheck className={styles["securityIcon"]} />
                 <div>
-                  <h3 className={styles["securityTitle"]}>{t((m) => m["IMS--UploadScans"].sidebar.security.title)}</h3>
-                  <p className={styles["securityDescription"]}>{t((m) => m["IMS--UploadScans"].sidebar.security.description)}</p>
+                  <h3 className={styles["securityTitle"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.security.title)}</h3>
+                  <p className={styles["securityDescription"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.security.description)}</p>
                 </div>
               </div>
             </CardContent>
@@ -276,14 +276,14 @@ function UploadContent(): React.JSX.Element {
               transition={{delay: 0.3}}>
               <Card className={styles["nextStepsCard"]}>
                 <CardContent className={styles["sidebarCardContent"]}>
-                  <h3 className={styles["nextStepsTitle"]}>{t((m) => m["IMS--UploadScans"].sidebar.nextSteps.title)}</h3>
-                  <p className={styles["nextStepsDescription"]}>{t((m) => m["IMS--UploadScans"].sidebar.nextSteps.description)}</p>
+                  <h3 className={styles["nextStepsTitle"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.title)}</h3>
+                  <p className={styles["nextStepsDescription"]}>{t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.description)}</p>
                   <Button
                     size='sm'
                     className={styles["nextStepsButton"]}
                     render={
                       <Link href='/domains/invoices/view-scans'>
-                        {t((m) => m["IMS--UploadScans"].sidebar.nextSteps.button)}
+                        {t((m) => m.pages.invoices.uploadScans.sidebar.nextSteps.button)}
                         <TbArrowRight className={styles["arrowIcon"]} />
                       </Link>
                     }

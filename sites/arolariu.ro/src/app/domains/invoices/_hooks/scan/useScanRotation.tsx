@@ -80,7 +80,7 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
   const rotateScanCallback = useCallback(
     async (direction: "cw" | "ccw"): Promise<void> => {
       if (!scan.blobUrl || scan.mimeType === "application/pdf") {
-        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateUnsupported));
+        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateUnsupported));
         return;
       }
 
@@ -161,12 +161,12 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
           const {blobUrl} = result.data;
           const cacheBustedUrl = `${blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
-          toast.success(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateSuccess));
+          toast.success(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateSuccess));
         } else {
-          toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
+          toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
         }
       } catch (error) {
-        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
+        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
         console.error("Error rotating scan:", error);
       } finally {
         setIsRotating(false);

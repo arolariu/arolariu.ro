@@ -86,16 +86,16 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
   }, []);
 
   const handleGenerateName = useCallback(() => {
-    toast.info(t((m) => m["IMS--Dialogs"].recipeDialog.actions.unavailable));
+    toast.info(t((m) => m.dialogs.invoices.recipeDialog.actions.unavailable));
   }, [t]);
 
   const handleEnhanceInstructions = useCallback(() => {
-    toast.info(t((m) => m["IMS--Dialogs"].recipeDialog.actions.unavailable));
+    toast.info(t((m) => m.dialogs.invoices.recipeDialog.actions.unavailable));
   }, [t]);
 
   const handleSave = useCallback(async () => {
     if (!recipe || !recipeDetails) {
-      toast.error(t((m) => m["IMS--Dialogs"].recipeDialog.update.missingRecipe));
+      toast.error(t((m) => m.dialogs.invoices.recipeDialog.update.missingRecipe));
       return;
     }
 
@@ -108,12 +108,12 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
         cookingTime,
         approximateTotalDuration: preparationTime + cookingTime,
       });
-      toast.success(t((m) => m["IMS--Dialogs"].recipeDialog.update.success));
+      toast.success(t((m) => m.dialogs.invoices.recipeDialog.update.success));
       close();
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t((m) => m["IMS--Dialogs"].recipeDialog.update.error));
+      toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.update.error));
     }
   }, [recipe, recipeDetails, updateRecipeCallback, close, router, t]);
 
@@ -131,11 +131,11 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
         onOpenChange={handleOpenChange}>
         <DialogContent className={styles["dialogContent"]}>
           <DialogHeader>
-            <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.update.title)}</DialogTitle>
-            <DialogDescription>{t((m) => m["IMS--Dialogs"].recipeDialog.update.missingRecipe)}</DialogDescription>
+            <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.update.title)}</DialogTitle>
+            <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.update.missingRecipe)}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={close}>{t((m) => m["IMS--Dialogs"].recipeDialog.buttons.close)}</Button>
+            <Button onClick={close}>{t((m) => m.dialogs.invoices.recipeDialog.buttons.close)}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -148,14 +148,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.update.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].recipeDialog.update.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.update.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.update.description)}</DialogDescription>
         </DialogHeader>
 
         <form className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='recipe-update-name'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.recipeName)}</Label>
+              <Label htmlFor='recipe-update-name'>{t((m) => m.dialogs.invoices.recipeDialog.fields.recipeName)}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
@@ -167,12 +167,12 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                         onClick={handleGenerateName}
                         className={styles["generateButton"]}>
                         <TbSparkles className={styles["sparklesIcon"]} />
-                        {t((m) => m["IMS--Dialogs"].recipeDialog.actions.generateName)}
+                        {t((m) => m.dialogs.invoices.recipeDialog.actions.generateName)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p className={styles["tooltipText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.generateName)}</p>
+                    <p className={styles["tooltipText"]}>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.generateName)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -182,31 +182,31 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               name='name'
               value={recipeDetails.name}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.recipeName)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='recipe-update-description'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.description)}</Label>
+            <Label htmlFor='recipe-update-description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
             <Textarea
               id='recipe-update-description'
               name='description'
               value={recipeDetails.description}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.description)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.ingredients)}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'>
                 <TbPlus className={styles["addIcon"]} />
-                {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.add)}
+                {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
 
@@ -237,24 +237,24 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='recipe-update-difficulty'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.difficulty)}</Label>
+            <Label htmlFor='recipe-update-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
             <Select
               value={formatEnum(RecipeComplexity, recipeDetails.complexity) || "Unknown"}
               onValueChange={handleDifficultyChange}>
               <SelectTrigger id='recipe-update-difficulty'>
-                <SelectValue placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.selectDifficulty)} />
+                <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='Easy'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.easy)}</SelectItem>
-                <SelectItem value='Normal'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.medium)}</SelectItem>
-                <SelectItem value='Hard'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.hard)}</SelectItem>
+                <SelectItem value='Easy'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
+                <SelectItem value='Normal'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
+                <SelectItem value='Hard'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='recipe-update-instructions'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.instructions)}</Label>
+              <Label htmlFor='recipe-update-instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
@@ -265,12 +265,12 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                         size='sm'
                         onClick={handleEnhanceInstructions}>
                         <TbWand className={styles["addIcon"]} />
-                        {t((m) => m["IMS--Dialogs"].recipeDialog.actions.enhanceInstructions)}
+                        {t((m) => m.dialogs.invoices.recipeDialog.actions.enhanceInstructions)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.enhanceInstructions)}</p>
+                    <p>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.enhanceInstructions)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -280,14 +280,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               name='instructions'
               value={recipeDetails.instructions}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.instructions)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.instructions)}
               rows={4}
             />
           </div>
 
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-update-preparation-time'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.prepTime)}</Label>
+              <Label htmlFor='recipe-update-preparation-time'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <Input
@@ -296,13 +296,13 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   type='number'
                   value={recipeDetails.preparationTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.prepTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.prepTime)}
                 />
               </div>
             </div>
 
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='recipe-update-cooking-time'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.cookTime)}</Label>
+              <Label htmlFor='recipe-update-cooking-time'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
@@ -311,7 +311,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   type='number'
                   value={recipeDetails.cookingTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.cookTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.cookTime)}
                 />
               </div>
             </div>
@@ -325,14 +325,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               variant='outline'
               onClick={close}
               disabled={isUpdating}>
-              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.cancel)}
+              {t((m) => m.dialogs.invoices.recipeDialog.buttons.cancel)}
             </Button>
             <Button
               type='button'
               onClick={handleSave}
               disabled={isUpdating}>
               <TbDisc className={styles["saveIcon"]} />
-              {isUpdating ? t((m) => m["IMS--Dialogs"].recipeDialog.buttons.saving) : t((m) => m["IMS--Dialogs"].recipeDialog.buttons.save)}
+              {isUpdating ? t((m) => m.dialogs.invoices.recipeDialog.buttons.saving) : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
             </Button>
           </div>
         </DialogFooter>

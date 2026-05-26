@@ -181,7 +181,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
   const t = useTranslations();
   const translate = useMemo<SeasonalTranslateFn>(
-    () => (key, values) => t(selectorFromPath(`IMS--Cards.seasonalInsightsCard.${key}`), values),
+    () => (key, values) => t(selectorFromPath(`cards.invoices.seasonalInsightsCard.${key}`), values),
     [t],
   );
   const {invoice} = useInvoiceContext();
@@ -240,7 +240,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbSparkles className={styles["titleIcon"]} />
-            {t((m) => m["IMS--Cards"].seasonalInsightsCard.title)}
+            {t((m) => m.cards.invoices.seasonalInsightsCard.title)}
           </span>
         </CardTitle>
       </CardHeader>
@@ -253,8 +253,8 @@ export function SeasonalInsightsCard(): React.JSX.Element {
                   <TbBulb className={styles["iconSm"]} />
                 </div>
                 <div className={styles["insightContent"]}>
-                  <p className={styles["insightTitle"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.insights.insufficientData.title)}</p>
-                  <p className={styles["insightDescription"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.insights.insufficientData.description)}</p>
+                  <p className={styles["insightTitle"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.title)}</p>
+                  <p className={styles["insightDescription"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.insights.insufficientData.description)}</p>
                 </div>
               </div>
             </div>
@@ -264,7 +264,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
             {/* Month comparison */}
             <div className={styles["monthSection"]}>
               <div className={styles["monthRow"]}>
-                <span className={styles["monthLabel"]}>{t((m) => m["IMS--Cards"].seasonalInsightsCard.month.spendingSoFar, {month: monthName})}</span>
+                <span className={styles["monthLabel"]}>{t((m) => m.cards.invoices.seasonalInsightsCard.month.spendingSoFar, {month: monthName})}</span>
                 <span className={styles["monthValue"]}>
                   {formatCurrency(seasonalData.currentAmount, {currencyCode: currency.code, locale})}
                 </span>
@@ -272,7 +272,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
               <Progress value={seasonalData.percentOfAverage} />
               <div className={styles["monthMeta"]}>
                 <span>
-                  {t((m) => m["IMS--Cards"].seasonalInsightsCard.month.vsAverage, {
+                  {t((m) => m.cards.invoices.seasonalInsightsCard.month.vsAverage, {
                     month: monthName,
                     amount: formatCurrency(seasonalData.monthAverage, {currencyCode: currency.code, locale}),
                   })}

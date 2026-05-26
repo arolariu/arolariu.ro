@@ -64,9 +64,9 @@ export default function Stats({packages}: Readonly<Props>): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t((m) => m.Acknowledgements.stats.title)}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.stats.title)}</span>
           </h2>
-          <p className={styles["subtitle"]}>{t((m) => m.Acknowledgements.stats.subtitle)}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.sections.legal.acknowledgements.stats.subtitle)}</p>
         </motion.div>
 
         {/* Stats grid */}

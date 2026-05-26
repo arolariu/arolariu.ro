@@ -120,20 +120,20 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               <TbShield className={styles["shieldIconSvg"]} />
             </motion.div>
             <CardTitle>
-              <h1 className={styles["title"]}>{t((m) => m.EULA.title)}</h1>
+              <h1 className={styles["title"]}>{t((m) => m.pages.legal.eula.title)}</h1>
             </CardTitle>
-            <CardDescription className={styles["subtitle"]}>{t((m) => m.EULA.subtitle)}</CardDescription>
+            <CardDescription className={styles["subtitle"]}>{t((m) => m.pages.legal.eula.subtitle)}</CardDescription>
 
             <div className={styles["localePicker"]}>
               <Label
                 htmlFor='locale-select'
                 className={styles["localeLabel"]}>
                 <TbGlobe className={styles["globeIcon"]} />
-                {t((m) => m.EULA.language)}
+                {t((m) => m.pages.legal.eula.language)}
               </Label>
               <div className={styles["selectWrapper"]}>
                 <select
-                  title={t((m) => m.EULA.language)}
+                  title={t((m) => m.pages.legal.eula.language)}
                   id='locale-select'
                   defaultValue={locale}
                   onChange={handleLocaleChange}
@@ -157,7 +157,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               animate={{opacity: 1}}
               transition={{delay: 0.2}}
               className={styles["contentText"]}>
-              <span>{t((m) => m.EULA.content)}</span>
+              <span>{t((m) => m.pages.legal.eula.content)}</span>
             </motion.div>
 
             <div className={styles["policyGrid"]}>
@@ -168,25 +168,25 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   <CardHeader className={styles["policyCardHeader"]}>
                     <CardTitle className={styles["policyCardTitle"]}>
                       <TbLock className={styles["policyIcon"]} />
-                      {t((m) => m.EULA.termsOfService.title)}
+                      {t((m) => m.pages.legal.eula.termsOfService.title)}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className={styles["policyCardContent"]}>{t((m) => m.EULA.termsOfService.subtitle)}</CardContent>
+                  <CardContent className={styles["policyCardContent"]}>{t((m) => m.pages.legal.eula.termsOfService.subtitle)}</CardContent>
                   <CardFooter>
                     <Dialog>
                       <DialogTrigger
                         render={
                           <Button
                             variant='outline'
-                            title={t((m) => m.EULA.termsOfService.cta)}
+                            title={t((m) => m.pages.legal.eula.termsOfService.cta)}
                             className={styles["policyButton"]}>
-                            {t((m) => m.EULA.termsOfService.cta)}
+                            {t((m) => m.pages.legal.eula.termsOfService.cta)}
                           </Button>
                         }
                       />
                       <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
-                          <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.EULA.termsOfService.cta)}</DialogTitle>
+                          <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.termsOfService.cta)}</DialogTitle>
                           <RenderTermsOfServiceScreen />
                         </DialogHeader>
                       </DialogContent>
@@ -202,25 +202,25 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   <CardHeader className={styles["policyCardHeader"]}>
                     <CardTitle className={styles["policyCardTitle"]}>
                       <TbShield className={styles["policyIcon"]} />
-                      {t((m) => m.EULA.privacyPolicy.title)}
+                      {t((m) => m.pages.legal.eula.privacyPolicy.title)}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className={styles["policyCardContent"]}>{t((m) => m.EULA.privacyPolicy.subtitle)}</CardContent>
+                  <CardContent className={styles["policyCardContent"]}>{t((m) => m.pages.legal.eula.privacyPolicy.subtitle)}</CardContent>
                   <CardFooter>
                     <Dialog>
                       <DialogTrigger
                         render={
                           <Button
                             variant='outline'
-                            title={t((m) => m.EULA.privacyPolicy.cta)}
+                            title={t((m) => m.pages.legal.eula.privacyPolicy.cta)}
                             className={styles["policyButton"]}>
-                            {t((m) => m.EULA.privacyPolicy.cta)}
+                            {t((m) => m.pages.legal.eula.privacyPolicy.cta)}
                           </Button>
                         }
                       />
                       <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
-                          <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.EULA.privacyPolicy.cta)}</DialogTitle>
+                          <DialogTitle className={styles["dialogTitle"]}>{t((m) => m.pages.legal.eula.privacyPolicy.cta)}</DialogTitle>
                           <RenderPrivacyPolicyScreen />
                         </DialogHeader>
                       </DialogContent>
@@ -240,11 +240,11 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <div className={styles["cookiesHeader"]}>
                   <h3 className={styles["cookiesTitle"]}>
                     <TbCookie className={styles["cookieIcon"]} />
-                    {t((m) => m.EULA.cookiesPolicy.title)}
+                    {t((m) => m.pages.legal.eula.cookiesPolicy.title)}
                   </h3>
                 </div>
 
-                <span className={styles["cookiesSubtitle"]}>{t((m) => m.EULA.cookiesPolicy.subtitle)}</span>
+                <span className={styles["cookiesSubtitle"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.subtitle)}</span>
 
                 <Accordion
                   type='single'
@@ -255,13 +255,13 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                     <AccordionTrigger className={styles["accordionTrigger"]}>
                       <div className={styles["accordionTriggerContent"]}>
                         <TbLock className={styles["accordionIcon"]} />
-                        <span>{t((m) => m.EULA.cookiesPolicy.cookies.essential.title)}</span>
+                        <span>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.essential.title)}</span>
                         <Badge className={styles["badgeRequired"]}>Required</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className={styles["accordionBody"]}>
-                        <p className={styles["accordionDescription"]}>{t((m) => m.EULA.cookiesPolicy.cookies.essential.description)}</p>
+                        <p className={styles["accordionDescription"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.essential.description)}</p>
                         <div className={styles["switchRow"]}>
                           <Switch
                             nativeButton
@@ -272,7 +272,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           <Label
                             htmlFor='essential'
                             className={styles["switchLabel"]}>
-                            {t((m) => m.EULA.cookiesPolicy.cookies.essential.checkbox)}
+                            {t((m) => m.pages.legal.eula.cookiesPolicy.cookies.essential.checkbox)}
                           </Label>
                         </div>
                       </div>
@@ -283,7 +283,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                     <AccordionTrigger className={styles["accordionTrigger"]}>
                       <div className={styles["accordionTriggerContent"]}>
                         <TbInfoCircleFilled className={styles["accordionIcon"]} />
-                        <span>{t((m) => m.EULA.cookiesPolicy.cookies.analytics.title)}</span>
+                        <span>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.analytics.title)}</span>
                         <Badge
                           className={styles["badgeOptional"]}
                           variant='outline'>
@@ -293,7 +293,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className={styles["accordionBody"]}>
-                        <p className={styles["accordionDescription"]}>{t((m) => m.EULA.cookiesPolicy.cookies.analytics.description)}</p>
+                        <p className={styles["accordionDescription"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.analytics.description)}</p>
                         <div className={styles["switchRow"]}>
                           <Switch
                             nativeButton
@@ -304,7 +304,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           <Label
                             htmlFor='analytics'
                             className={styles["switchLabel"]}>
-                            {t((m) => m.EULA.cookiesPolicy.cookies.analytics.checkbox)}
+                            {t((m) => m.pages.legal.eula.cookiesPolicy.cookies.analytics.checkbox)}
                           </Label>
                         </div>
                       </div>
@@ -324,10 +324,10 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 onClick={handleAccept}
                 className={styles["acceptButton"]}
                 size='lg'>
-                <TbCheck className={styles["acceptIcon"]} /> {t((m) => m.EULA.accept)}
+                <TbCheck className={styles["acceptIcon"]} /> {t((m) => m.pages.legal.eula.accept)}
               </Button>
             </motion.div>
-            <p className={styles["footerNote"]}>{t((m) => m.EULA.content).split(".")[0]}.</p>
+            <p className={styles["footerNote"]}>{t((m) => m.pages.legal.eula.content).split(".")[0]}.</p>
           </CardFooter>
         </Card>
       </motion.div>

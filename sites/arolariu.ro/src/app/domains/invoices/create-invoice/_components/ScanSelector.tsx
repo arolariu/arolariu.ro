@@ -91,8 +91,8 @@ export default function ScanSelector(): React.JSX.Element {
       {/* Header with actions */}
       <div className={styles["header"]}>
         <div className={styles["headerInfo"]}>
-          <h2 className={styles["title"]}>{t((m) => m["IMS--Create"].scanSelector.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].scanSelector.subtitle)}</p>
+          <h2 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.scanSelector.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.scanSelector.subtitle)}</p>
         </div>
 
         <div className={styles["actions"]}>
@@ -100,7 +100,7 @@ export default function ScanSelector(): React.JSX.Element {
             <Badge
               variant='secondary'
               className={styles["selectedBadge"]}>
-              {t((m) => m["IMS--Create"].scanSelector.selectedCount, {count: String(selectedScans.length)})}
+              {t((m) => m.forms.invoices.createInvoice.scanSelector.selectedCount, {count: String(selectedScans.length)})}
             </Badge>
           ) : null}
 
@@ -111,7 +111,7 @@ export default function ScanSelector(): React.JSX.Element {
                 size='sm'
                 onClick={clearSelection}>
                 <TbX />
-                {t((m) => m["IMS--Create"].scanSelector.clearAll)}
+                {t((m) => m.forms.invoices.createInvoice.scanSelector.clearAll)}
               </Button>
             ) : (
               <Button
@@ -120,7 +120,7 @@ export default function ScanSelector(): React.JSX.Element {
                 onClick={selectAllScans}
                 disabled={readyScans.length > 5}>
                 <TbCheck />
-                {t((m) => m["IMS--Create"].scanSelector.selectAll)}
+                {t((m) => m.forms.invoices.createInvoice.scanSelector.selectAll)}
               </Button>
             )
           ) : null}
@@ -150,17 +150,17 @@ export default function ScanSelector(): React.JSX.Element {
                 onClick={handlePreviousPage}
                 disabled={page === 0}>
                 <TbChevronLeft />
-                {t((m) => m["IMS--Create"].scanSelector.previous)}
+                {t((m) => m.forms.invoices.createInvoice.scanSelector.previous)}
               </Button>
               <span className={styles["pageInfo"]}>
-                {page + 1} / {totalPages} ({readyScans.length} {t((m) => m["IMS--Create"].scanSelector.scansCount)})
+                {page + 1} / {totalPages} ({readyScans.length} {t((m) => m.forms.invoices.createInvoice.scanSelector.scansCount)})
               </span>
               <Button
                 variant='outline'
                 size='sm'
                 onClick={handleNextPage}
                 disabled={page >= totalPages - 1}>
-                {t((m) => m["IMS--Create"].scanSelector.next)}
+                {t((m) => m.forms.invoices.createInvoice.scanSelector.next)}
                 <TbChevronRight />
               </Button>
             </div>
@@ -169,7 +169,7 @@ export default function ScanSelector(): React.JSX.Element {
       ) : (
         <div className={styles["emptyState"]}>
           <TbPhoto className={styles["emptyIcon"]} />
-          <p className={styles["emptyText"]}>{t((m) => m["IMS--Create"].scanSelector.noScans)}</p>
+          <p className={styles["emptyText"]}>{t((m) => m.forms.invoices.createInvoice.scanSelector.noScans)}</p>
         </div>
       )}
     </div>

@@ -47,8 +47,8 @@ describe("getLayoutTranslator", () => {
   it("returns translators that resolve namespace 'email.layout' keys", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValue(FIXTURE);
     const t = await getLayoutTranslator("en");
-    expect(t(selectorFromPath("email.layout.tagline"))).toBe("Tag");
-    expect(t(selectorFromPath("email.layout.buttonFallback"))).toBe("BF");
+    expect(t(selectorFromPath("emails.layout.tagline"))).toBe("Tag");
+    expect(t(selectorFromPath("emails.layout.buttonFallback"))).toBe("BF");
   });
 
   it("__resetLayoutTranslatorCache clears the cache", async () => {

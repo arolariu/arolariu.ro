@@ -128,7 +128,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m["IMS--Hooks"].useInvoiceShare.toggleError));
+          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.toggleError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;
@@ -144,7 +144,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         });
 
         if (!result.success) {
-          throw new Error(result.error ? String(result.error) : t((m) => m["IMS--Hooks"].useInvoiceShare.revokeError));
+          throw new Error(result.error ? String(result.error) : t((m) => m.toasts.invoices.useInvoiceShare.revokeError));
         }
         shareInvoiceClientSide(result.data);
         return result.data;
@@ -228,10 +228,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
           if (action.type === "sendEmail") {
             const {to} = action;
             await toast.promise(shareAndMutate(invoiceIdOrIds, action), {
-              loading: t((m) => m["IMS--Hooks"].useInvoiceShare.emailSending, {email: to}),
-              success: t((m) => m["IMS--Hooks"].useInvoiceShare.emailSuccess, {email: to}),
+              loading: t((m) => m.toasts.invoices.useInvoiceShare.emailSending, {email: to}),
+              success: t((m) => m.toasts.invoices.useInvoiceShare.emailSuccess, {email: to}),
               error: (err: unknown) =>
-                t((m) => m["IMS--Hooks"].useInvoiceShare.emailError, {
+                t((m) => m.toasts.invoices.useInvoiceShare.emailError, {
                   email: to,
                   error: err instanceof Error ? err.message : String(err),
                 }),
@@ -254,7 +254,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(`${t((m) => m["IMS--Hooks"].useInvoiceShare.revokeError)} ${message}`);
+        toast.error(`${t((m) => m.toasts.invoices.useInvoiceShare.revokeError)} ${message}`);
         console.error("Error executing share operation:", error);
       } finally {
         setIsSharing(false);

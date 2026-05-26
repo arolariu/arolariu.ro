@@ -56,18 +56,18 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
   const steps: Step[] = [
     {
       icon: <TbCamera className={styles["stepIcon"]} />,
-      title: t((m) => m["IMS--Common"].onboarding.steps.upload.title),
-      description: t((m) => m["IMS--Common"].onboarding.steps.upload.description),
+      title: t((m) => m.shared.invoices.onboarding.steps.upload.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.upload.description),
     },
     {
       icon: <TbSparkles className={styles["stepIcon"]} />,
-      title: t((m) => m["IMS--Common"].onboarding.steps.analyze.title),
-      description: t((m) => m["IMS--Common"].onboarding.steps.analyze.description),
+      title: t((m) => m.shared.invoices.onboarding.steps.analyze.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.analyze.description),
     },
     {
       icon: <TbChartBar className={styles["stepIcon"]} />,
-      title: t((m) => m["IMS--Common"].onboarding.steps.track.title),
-      description: t((m) => m["IMS--Common"].onboarding.steps.track.description),
+      title: t((m) => m.shared.invoices.onboarding.steps.track.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.track.description),
     },
   ];
 
@@ -142,14 +142,14 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
             variant='ghost'
             size='sm'
             onClick={handleClose}
-            aria-label={t((m) => m["IMS--Common"].onboarding.skip)}>
-            {t((m) => m["IMS--Common"].onboarding.skip)}
+            aria-label={t((m) => m.shared.invoices.onboarding.skip)}>
+            {t((m) => m.shared.invoices.onboarding.skip)}
           </Button>
           <Button
             variant='ghost'
             size='icon'
             onClick={handleClose}
-            aria-label={t((m) => m["IMS--Common"].onboarding.skip)}>
+            aria-label={t((m) => m.shared.invoices.onboarding.skip)}>
             <TbX />
           </Button>
         </div>
@@ -174,7 +174,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
               <div className={styles["iconWrapper"]}>{steps.at(currentStep)?.icon}</div>
 
               <p className={styles["stepIndicator"]}>
-                {t((m) => m["IMS--Common"].onboarding.stepOf, {
+                {t((m) => m.shared.invoices.onboarding.stepOf, {
                   current: String(currentStep + 1),
                   total: String(steps.length),
                 })}
@@ -195,7 +195,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 key={step.title}
                 className={`${styles["dot"]} ${index === currentStep ? styles["dotActive"] : ""}`}
                 onClick={createStepClickHandler(index)}
-                aria-label={`${t((m) => m["IMS--Common"].onboarding.stepOf, {
+                aria-label={`${t((m) => m.shared.invoices.onboarding.stepOf, {
                   current: String(index + 1),
                   total: String(steps.length),
                 })}`}
@@ -213,7 +213,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 checked={dontShowAgain}
                 onChange={handleDontShowAgainChange}
               />
-              <span className={styles["checkboxText"]}>{t((m) => m["IMS--Common"].onboarding.dontShowAgain)}</span>
+              <span className={styles["checkboxText"]}>{t((m) => m.shared.invoices.onboarding.dontShowAgain)}</span>
             </label>
           </div>
 
@@ -223,18 +223,18 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 variant='outline'
                 onClick={handleBack}>
                 <TbArrowLeft />
-                {t((m) => m["IMS--Common"].onboarding.back)}
+                {t((m) => m.shared.invoices.onboarding.back)}
               </Button>
             )}
 
             <Button onClick={handleNext}>
               {currentStep < steps.length - 1 ? (
                 <>
-                  {t((m) => m["IMS--Common"].onboarding.next)}
+                  {t((m) => m.shared.invoices.onboarding.next)}
                   <TbArrowRight />
                 </>
               ) : (
-                t((m) => m["IMS--Common"].onboarding.getStarted)
+                t((m) => m.shared.invoices.onboarding.getStarted)
               )}
             </Button>
           </div>

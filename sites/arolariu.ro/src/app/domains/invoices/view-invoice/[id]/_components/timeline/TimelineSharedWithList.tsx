@@ -69,12 +69,12 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
     <div className={styles["container"]}>
       <div className={styles["header"]}>
         <TbUsers className={styles["iconMuted"]} />
-        <p className={styles["headerLabel"]}>{t((m) => m["IMS--View"].timelineSharedWithList.header.title)}</p>
+        <p className={styles["headerLabel"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.header.title)}</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
             className={styles["badgeSmall"]}>
-            {isPublic ? t((m) => m["IMS--View"].timelineSharedWithList.header.publicBadge) : sharedUsers.length}
+            {isPublic ? t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.header.publicBadge) : sharedUsers.length}
           </Badge>
         )}
       </div>
@@ -85,8 +85,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
           variant='default'
           className={styles["alertWarning"]}>
           <TbGlobe className={styles["iconWarning"]} />
-          <AlertTitle className={styles["alertTitleWarning"]}>{t((m) => m["IMS--View"].timelineSharedWithList.publicAccess.title)}</AlertTitle>
-          <AlertDescription className={styles["alertDescMuted"]}>{t((m) => m["IMS--View"].timelineSharedWithList.publicAccess.description)}</AlertDescription>
+          <AlertTitle className={styles["alertTitleWarning"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.title)}</AlertTitle>
+          <AlertDescription className={styles["alertDescMuted"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.description)}</AlertDescription>
         </Alert>
       )}
 
@@ -114,7 +114,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                         variant='ghost'
                         size='icon'
                         className={styles["iconButton"]}
-                        aria-label={t((m) => m["IMS--View"].timelineSharedWithList.aria.sendEmail, {user})}>
+                        aria-label={t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.aria.sendEmail, {user})}>
                         <TbMail className={styles["iconXs"]} />
                       </Button>
                     }
@@ -122,7 +122,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                   <TooltipContent
                     side='left'
                     className={styles["tooltipXs"]}>
-                    {t((m) => m["IMS--View"].timelineSharedWithList.actions.sendEmail)}
+                    {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.actions.sendEmail)}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -137,7 +137,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
         onClick={openShareDialog}
         className={styles["manageButton"]}>
         <TbExternalLink className={styles["iconXs"]} />
-        {t((m) => m["IMS--View"].timelineSharedWithList.actions.manageSharing)}
+        {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.actions.manageSharing)}
       </Button>
     </div>
   );

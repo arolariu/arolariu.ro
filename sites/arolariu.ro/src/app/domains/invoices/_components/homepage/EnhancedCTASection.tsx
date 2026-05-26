@@ -26,14 +26,14 @@ export default function EnhancedCTASection(): React.JSX.Element {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-50px"});
   const translations: CtaTranslations = {
-    title: t((m) => m["IMS--Landing"].cta.title),
-    description: t((m) => m["IMS--Landing"].cta.description),
-    uploadButton: t((m) => m["IMS--Landing"].cta.uploadButton),
-    learnMore: t((m) => m["IMS--Landing"].cta.learnMore),
+    title: t((m) => m.pages.invoices.landing.cta.title),
+    description: t((m) => m.pages.invoices.landing.cta.description),
+    uploadButton: t((m) => m.pages.invoices.landing.cta.uploadButton),
+    learnMore: t((m) => m.pages.invoices.landing.cta.learnMore),
     badges: {
-      secure: t((m) => m["IMS--Landing"].cta.badges.secure),
-      cloud: t((m) => m["IMS--Landing"].cta.badges.cloud),
-      ai: t((m) => m["IMS--Landing"].cta.badges.ai),
+      secure: t((m) => m.pages.invoices.landing.cta.badges.secure),
+      cloud: t((m) => m.pages.invoices.landing.cta.badges.cloud),
+      ai: t((m) => m.pages.invoices.landing.cta.badges.ai),
     },
   };
 

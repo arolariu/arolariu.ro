@@ -123,12 +123,12 @@ export default function DeleteScanDialog(): React.JSX.Element {
         <AlertDialogHeader>
           <AlertDialogTitle className={styles["dialogTitle"]}>
             <TbTrash className={styles["titleIcon"]} />
-            {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.title)}
+            {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.title)}
           </AlertDialogTitle>
-          <AlertDialogDescription>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.description, {name: scan.name})}</AlertDialogDescription>
+          <AlertDialogDescription>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.description, {name: scan.name})}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.cancel)}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.cancel)}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
@@ -136,12 +136,12 @@ export default function DeleteScanDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className={styles["spinnerIcon"]} />
-                {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.deleting)}
+                {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.deleting)}
               </>
             ) : (
               <>
                 <TbTrash className={styles["trashIcon"]} />
-                {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.delete)}
+                {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.delete)}
               </>
             )}
           </AlertDialogAction>

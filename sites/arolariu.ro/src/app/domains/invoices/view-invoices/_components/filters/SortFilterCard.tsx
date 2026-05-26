@@ -15,12 +15,12 @@ type Props = {
 type TranslationFunction = ReturnType<typeof useTranslations>;
 
 function getSortLabel(t: TranslationFunction, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string {
-  if (sortBy === "date" && sortOrder === "desc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.dateNewest"));
-  if (sortBy === "date" && sortOrder === "asc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.dateOldest"));
-  if (sortBy === "amount" && sortOrder === "desc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.amountHighToLow"));
-  if (sortBy === "amount" && sortOrder === "asc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.amountLowToHigh"));
-  if (sortBy === "name" && sortOrder === "asc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.nameAZ"));
-  if (sortBy === "name" && sortOrder === "desc") return t(selectorFromPath("IMS--List.invoicesView.filters.sortOptions.nameZA"));
+  if (sortBy === "date" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.dateNewest"));
+  if (sortBy === "date" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.dateOldest"));
+  if (sortBy === "amount" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.amountHighToLow"));
+  if (sortBy === "amount" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.amountLowToHigh"));
+  if (sortBy === "name" && sortOrder === "asc") return t(selectorFromPath("forms.invoices.filters.sortOptions.nameAZ"));
+  if (sortBy === "name" && sortOrder === "desc") return t(selectorFromPath("forms.invoices.filters.sortOptions.nameZA"));
   return "";
 }
 
@@ -50,10 +50,10 @@ export function SortFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
 
   return (
     <FilterCardFrame
-      title={<>↕ {t((m) => m["IMS--List"].invoicesView.filters.sortBy)}</>}
+      title={<>↕ {t((m) => m.forms.invoices.filters.sortBy)}</>}
       active={isSortActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.defaultValue)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.defaultValue)}>
       <Select
         value={`${filters.sortBy}-${filters.sortOrder}`}
         onValueChange={handleSortChange}>
@@ -61,12 +61,12 @@ export function SortFilterCard({filters, onFiltersChange}: Readonly<Props>): Rea
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value='date-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateNewest)}</SelectItem>
-          <SelectItem value='date-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateOldest)}</SelectItem>
-          <SelectItem value='amount-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountHighToLow)}</SelectItem>
-          <SelectItem value='amount-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountLowToHigh)}</SelectItem>
-          <SelectItem value='name-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameAZ)}</SelectItem>
-          <SelectItem value='name-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameZA)}</SelectItem>
+          <SelectItem value='date-desc'>{t((m) => m.forms.invoices.filters.sortOptions.dateNewest)}</SelectItem>
+          <SelectItem value='date-asc'>{t((m) => m.forms.invoices.filters.sortOptions.dateOldest)}</SelectItem>
+          <SelectItem value='amount-desc'>{t((m) => m.forms.invoices.filters.sortOptions.amountHighToLow)}</SelectItem>
+          <SelectItem value='amount-asc'>{t((m) => m.forms.invoices.filters.sortOptions.amountLowToHigh)}</SelectItem>
+          <SelectItem value='name-asc'>{t((m) => m.forms.invoices.filters.sortOptions.nameAZ)}</SelectItem>
+          <SelectItem value='name-desc'>{t((m) => m.forms.invoices.filters.sortOptions.nameZA)}</SelectItem>
         </SelectContent>
       </Select>
     </FilterCardFrame>

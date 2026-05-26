@@ -49,7 +49,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--Stats"].timeOfDay.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -81,7 +81,7 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
   // IMPORTANT: This key must match the field name in TimeOfDaySegment
   const chartConfig = {
     invoiceCount: {
-      label: t((m) => m["IMS--Stats"].timeOfDay.labels.invoiceCount),
+      label: t((m) => m.cards.invoices.statistics.timeOfDay.labels.invoiceCount),
       color: "var(--ac-chart-4)",
     },
   };
@@ -89,8 +89,8 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].timeOfDay.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].timeOfDay.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

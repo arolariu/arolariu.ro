@@ -18,10 +18,10 @@ type Props = {
 type AmountPresetKey = "0-50" | "50-100" | "100-500" | "500+";
 
 const AMOUNT_PRESETS = [
-  {key: "0-50", labelKey: "0to50", min: 0, max: 50},
-  {key: "50-100", labelKey: "50to100", min: 50, max: 100},
-  {key: "100-500", labelKey: "100to500", min: 100, max: 500},
-  {key: "500+", labelKey: "500plus", min: 500, max: null},
+  {key: "0-50", labelKey: "value0to50", min: 0, max: 50},
+  {key: "50-100", labelKey: "value50to100", min: 50, max: 100},
+  {key: "100-500", labelKey: "value100to500", min: 100, max: 500},
+  {key: "500+", labelKey: "value500plus", min: 500, max: null},
 ] as const satisfies ReadonlyArray<{key: AmountPresetKey; labelKey: string; min: number; max: number | null}>;
 
 /**
@@ -83,18 +83,18 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
     <FilterCardFrame
       title={
         <>
-          <TbCurrencyDollar /> {t((m) => m["IMS--List"].invoicesView.filters.amountRange)}
+          <TbCurrencyDollar /> {t((m) => m.forms.invoices.filters.amountRange)}
         </>
       }
       active={isAmountActive}
       activeValue={activeValue}
-      inactiveLabel={t((m) => m["IMS--List"].invoicesView.filters.anyValue)}>
+      inactiveLabel={t((m) => m.forms.invoices.filters.anyValue)}>
       <div className={styles["amountRangeInputs"]}>
         <div className={styles["amountInputWrapper"]}>
           <TbCurrencyDollar className={styles["currencyIcon"]} />
           <Input
             type='number'
-            placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMin)}
+            placeholder={t((m) => m.forms.invoices.filters.amountMin)}
             value={filters.amountMin ?? ""}
             onChange={handleAmountMinChange}
             className={styles["amountInput"]}
@@ -104,7 +104,7 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
           <TbCurrencyDollar className={styles["currencyIcon"]} />
           <Input
             type='number'
-            placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMax)}
+            placeholder={t((m) => m.forms.invoices.filters.amountMax)}
             value={filters.amountMax ?? ""}
             onChange={handleAmountMaxChange}
             className={styles["amountInput"]}
@@ -120,7 +120,7 @@ export function AmountFilterCard({filters, onFiltersChange}: Readonly<Props>): R
             className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
             // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal from AMOUNT_PRESETS
             onClick={() => handleAmountPresetClick(presetKey)}>
-            {t(selectorFromPath(`IMS--List.invoicesView.filters.amountPresets.${labelKey}`))}
+            {t(selectorFromPath(`forms.invoices.filters.amountPresets.${labelKey}`))}
           </button>
         ))}
       </div>

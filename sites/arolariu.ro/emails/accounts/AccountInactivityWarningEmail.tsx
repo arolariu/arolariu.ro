@@ -149,41 +149,41 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
   return (
     <EmailLayout
       locale={locale}
-      title={`${BRAND.name} | ${t(selectorFromPath("email.accountInactivity.heading"))}`}
-      preview={t(selectorFromPath("email.accountInactivity.preview"), {name, inactiveDays})}
-      badge={t(selectorFromPath("email.accountInactivity.badge"))}
-      heading={t(selectorFromPath("email.accountInactivity.heading"))}
-      primaryCta={{href: effectiveSignInUrl, label: t(selectorFromPath("email.accountInactivity.cta.primary"))}}
-      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t(selectorFromPath("email.accountInactivity.cta.secondary"))}}
+      title={`${BRAND.name} | ${t(selectorFromPath("emails.accountInactivity.heading"))}`}
+      preview={t(selectorFromPath("emails.accountInactivity.preview"), {name, inactiveDays})}
+      badge={t(selectorFromPath("emails.accountInactivity.badge"))}
+      heading={t(selectorFromPath("emails.accountInactivity.heading"))}
+      primaryCta={{href: effectiveSignInUrl, label: t(selectorFromPath("emails.accountInactivity.cta.primary"))}}
+      secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t(selectorFromPath("emails.accountInactivity.cta.secondary"))}}
       showUnsubscribe={false}
       unsubscribeUrl=''
       managePreferencesUrl=''>
-      <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.accountInactivity.greeting"), {name})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.accountInactivity.greeting"), {name})}</Text>
 
       <Text style={EmailParagraphStyles}>
-        {t.rich(selectorFromPath("email.accountInactivity.intro"), {
+        {t.rich(selectorFromPath("emails.accountInactivity.intro"), {
           inactiveDays,
           // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           count: (chunks) => <strong>{chunks}</strong>,
         })}
       </Text>
 
-      <EmailCard title={t(selectorFromPath("email.accountInactivity.whatThisMeans.title"))}>
-        <BulletList items={[t(selectorFromPath("email.accountInactivity.whatThisMeans.bullet1")), t(selectorFromPath("email.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}), t(selectorFromPath("email.accountInactivity.whatThisMeans.bullet3"))]} />
+      <EmailCard title={t(selectorFromPath("emails.accountInactivity.whatThisMeans.title"))}>
+        <BulletList items={[t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet1")), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet3"))]} />
       </EmailCard>
 
-      <EmailCard title={t(selectorFromPath("email.accountInactivity.timeline.title"))}>
+      <EmailCard title={t(selectorFromPath("emails.accountInactivity.timeline.title"))}>
         <KeyValueTable
           title=''
           items={[
-            {label: t(selectorFromPath("email.accountInactivity.timeline.inactiveFor")), value: t(selectorFromPath("email.accountInactivity.timeline.daysValue"), {days: inactiveDays})},
-            {label: t(selectorFromPath("email.accountInactivity.timeline.timeRemaining")), value: t(selectorFromPath("email.accountInactivity.timeline.daysValue"), {days: daysUntilClosure})},
+            {label: t(selectorFromPath("emails.accountInactivity.timeline.inactiveFor")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: inactiveDays})},
+            {label: t(selectorFromPath("emails.accountInactivity.timeline.timeRemaining")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: daysUntilClosure})},
           ]}
         />
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        {t.rich(selectorFromPath("email.accountInactivity.supportPrompt"), {
+        {t.rich(selectorFromPath("emails.accountInactivity.supportPrompt"), {
           supportEmail: BRAND.supportEmail,
           // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
@@ -197,9 +197,9 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t(selectorFromPath("email.accountInactivity.signOff.line1"))}
+        {t(selectorFromPath("emails.accountInactivity.signOff.line1"))}
         <br />
-        {t(selectorFromPath("email.accountInactivity.signOff.line2"), {brand: BRAND.name})}
+        {t(selectorFromPath("emails.accountInactivity.signOff.line2"), {brand: BRAND.name})}
       </Text>
 
       <Text
@@ -210,7 +210,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
           lineHeight: "18px",
           color: EMAIL_COLORS.muted,
         }}>
-        {t(selectorFromPath("email.accountInactivity.footnote"))}
+        {t(selectorFromPath("emails.accountInactivity.footnote"))}
       </Text>
     </EmailLayout>
   );

@@ -58,8 +58,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m.Legal.PrivacyPolicy.metadata.title),
-    description: t((m) => m.Legal.PrivacyPolicy.metadata.description),
+    title: t((m) => m.pages.legal.privacyPolicy.metadata.title),
+    description: t((m) => m.pages.legal.privacyPolicy.metadata.description),
   });
 }
 
@@ -133,11 +133,11 @@ export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"
   return (
     <div className={styles["privacyPolicyMain"]}>
       <section className={styles["headerSection"]}>
-        <h1 className={styles["pageTitle"]}>{t((m) => m.Legal.PrivacyPolicy.title)}</h1>
-        <span>{t((m) => m.Legal.PrivacyPolicy.last_updated)}</span>
+        <h1 className={styles["pageTitle"]}>{t((m) => m.sections.legal.privacyPolicy.title)}</h1>
+        <span>{t((m) => m.sections.legal.privacyPolicy.lastUpdated)}</span>
       </section>
       <RenderPrivacyPolicyScreen />
-      <section className={styles["footerSection"]}>{t((m) => m.Legal.PrivacyPolicy.contactInformation.content)}</section>
+      <section className={styles["footerSection"]}>{t((m) => m.sections.legal.privacyPolicy.contactInformation.content)}</section>
     </div>
   );
 }

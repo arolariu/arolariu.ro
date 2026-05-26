@@ -55,26 +55,26 @@ export default async function NotFound(): Promise<React.JSX.Element> {
           <Header />
           <div className={styles["pageContainer"]}>
             <section className={styles["heroContent"]}>
-              <h1 className={styles["title"]}>{t((m) => m.Errors.notFound.title)}</h1>
-              <span className={styles["subtitle"]}>{t((m) => m.Errors.notFound.subtitle)}</span>
+              <h1 className={styles["title"]}>{t((m) => m.app.errors.notFound.title)}</h1>
+              <span className={styles["subtitle"]}>{t((m) => m.app.errors.notFound.subtitle)}</span>
             </section>
             <section className={styles["qrSection"]}>
-              <h2 className={styles["qrTitle"]}>{t((m) => m.Errors.notFound.additionalInfo)}</h2>
+              <h2 className={styles["qrTitle"]}>{t((m) => m.app.errors.notFound.additionalInfo)}</h2>
               <QRCode value={qrCodeData} />
             </section>
             <section className={styles["bottomSection"]}>
-              <span className={styles["falsePositive"]}>{t((m) => m.Errors.notFound.falsePositive)}</span>
+              <span className={styles["falsePositive"]}>{t((m) => m.app.errors.notFound.falsePositive)}</span>
               <div className={styles["buttonRow"]}>
                 <Button
                   asChild
                   variant='outline'
                   className={styles["actionButtonOutline"]}>
-                  <Link href='/'>{t((m) => m.Errors.notFound.buttons.submitErrorButton)}</Link>
+                  <Link href='/'>{t((m) => m.app.errors.notFound.buttons.submitErrorButton)}</Link>
                 </Button>
                 <Button
                   asChild
                   className={styles["actionButtonDefault"]}>
-                  <Link href='https://arolariu.ro/'>{t((m) => m.Errors.notFound.buttons.returnButton)}</Link>
+                  <Link href='https://arolariu.ro/'>{t((m) => m.app.errors.notFound.buttons.returnButton)}</Link>
                 </Button>
               </div>
             </section>

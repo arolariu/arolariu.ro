@@ -121,10 +121,10 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
     return (
       <EmptyState
         icon={<TbReceipt className={styles["emptyIcon"]} />}
-        title={t((m) => m["IMS--List"].tableView.empty.title)}
-        description={t((m) => m["IMS--List"].tableView.empty.description)}
+        title={t((m) => m.pages.invoices.viewInvoices.tableView.empty.title)}
+        description={t((m) => m.pages.invoices.viewInvoices.tableView.empty.description)}
         primaryAction={{
-          label: t((m) => m["IMS--List"].tableView.empty.uploadCta),
+          label: t((m) => m.pages.invoices.viewInvoices.tableView.empty.uploadCta),
           href: "/domains/invoices/upload-scans",
         }}
       />
@@ -145,7 +145,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               className={styles["frostedCheckbox"]}
               checked={isAllSelected || (isIndeterminate && "indeterminate")}
               onCheckedChange={handleSelectAllInvoices}
-              aria-label={t((m) => m["IMS--List"].tableView.aria.selectAllInvoices)}
+              aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectAllInvoices)}
             />
           </TableHead>
           <TableHead
@@ -156,14 +156,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             tabIndex={0}
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "name")}>
-            {t((m) => m["IMS--List"].tableView.columns.invoice)}
+            {t((m) => m.pages.invoices.viewInvoices.tableView.columns.invoice)}
             <span
               className={`${styles["sortArrow"]} ${sortBy === "name" && sortDirection ? "" : styles["sortArrowInactive"]}`}
               aria-hidden='true'>
               {sortBy === "name" && sortDirection === "desc" ? "\u25BC" : "\u25B2"}
             </span>
           </TableHead>
-          <TableHead>{t((m) => m["IMS--List"].tableView.columns.category)}</TableHead>
+          <TableHead>{t((m) => m.pages.invoices.viewInvoices.tableView.columns.category)}</TableHead>
           <TableHead
             className={`${styles["tableHeaderCell"]} ${styles["sortableHeader"]}`}
             onClick={handleSortByDate}
@@ -172,7 +172,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             tabIndex={0}
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "date")}>
-            {t((m) => m["IMS--List"].tableView.columns.date)}
+            {t((m) => m.pages.invoices.viewInvoices.tableView.columns.date)}
             <span
               className={`${styles["sortArrow"]} ${sortBy === "date" && sortDirection ? "" : styles["sortArrowInactive"]}`}
               aria-hidden='true'>
@@ -187,14 +187,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             tabIndex={0}
             // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
             onKeyDown={(e) => handleSortKeyDown(e, "amount")}>
-            {t((m) => m["IMS--List"].tableView.columns.amount)}
+            {t((m) => m.pages.invoices.viewInvoices.tableView.columns.amount)}
             <span
               className={`${styles["sortArrow"]} ${sortBy === "amount" && sortDirection ? "" : styles["sortArrowInactive"]}`}
               aria-hidden='true'>
               {sortBy === "amount" && sortDirection === "desc" ? "\u25BC" : "\u25B2"}
             </span>
           </TableHead>
-          <TableHead className={styles["actionsHeader"]}>{t((m) => m["IMS--List"].tableView.columns.actions)}</TableHead>
+          <TableHead className={styles["actionsHeader"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.columns.actions)}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -206,7 +206,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 checked={selectedInvoices.some((s) => s.id === invoice.id)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                aria-label={t((m) => m["IMS--List"].tableView.aria.selectInvoice, {name: invoice.name || invoice.id})}
+                aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.selectInvoice, {name: invoice.name || invoice.id})}
               />
             </TableCell>
             <TableCell>
@@ -237,7 +237,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   <Tooltip>
                     <TooltipTrigger render={<Badge variant='outline'>N/A</Badge>} />
                     <TooltipContent>
-                      <p>{t((m) => m["IMS--List"].tableView.tooltips.notAnalyzed)}</p>
+                      <p>{t((m) => m.pages.invoices.viewInvoices.tableView.tooltips.notAnalyzed)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -263,7 +263,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                         </Link>
                       }
                     />
-                    <TooltipContent>{t((m) => m["IMS--List"].tableView.viewInvoice)}</TooltipContent>
+                    <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.tableView.viewInvoice)}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <TableViewActions invoice={invoice} />
@@ -277,14 +277,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableRow>
             <TableCell colSpan={4}>
               <div className={styles["footerContent"]}>
-                <span className={styles["footerLabel"]}>{t((m) => m["IMS--List"].tableView.rowsPerPage)}</span>
+                <span className={styles["footerLabel"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.rowsPerPage)}</span>
                 <Select
                   value={String(pageSize)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onValueChange={(value) => handlePageSizeChange(Number(value))}>
                   <SelectTrigger
                     className={styles["pageSizeTrigger"]}
-                    aria-label={t((m) => m["IMS--List"].tableView.aria.rowsPerPage)}>
+                    aria-label={t((m) => m.pages.invoices.viewInvoices.tableView.aria.rowsPerPage)}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,7 +297,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className={styles["footerLabel"]}>{t((m) => m["IMS--List"].tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}</span>
+                <span className={styles["footerLabel"]}>{t((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}</span>
               </div>
             </TableCell>
             <TableCell
@@ -309,7 +309,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 size='sm'
                 onClick={handlePrevPage}
                 disabled={invoices.length === 0}>
-                {t((m) => m["IMS--List"].tableView.previousPage)}
+                {t((m) => m.pages.invoices.viewInvoices.tableView.previousPage)}
               </Button>
             </TableCell>
             <TableCell>
@@ -319,7 +319,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 size='sm'
                 onClick={handleNextPage}
                 disabled={invoices.length === 0}>
-                {t((m) => m["IMS--List"].tableView.nextPage)}
+                {t((m) => m.pages.invoices.viewInvoices.tableView.nextPage)}
               </Button>
             </TableCell>
           </TableRow>

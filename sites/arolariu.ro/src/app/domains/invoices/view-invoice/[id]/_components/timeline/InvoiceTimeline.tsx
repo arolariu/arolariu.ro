@@ -42,15 +42,15 @@ export function InvoiceTimeline(): React.JSX.Element {
         <div className={styles["headerRow"]}>
           <CardTitle className={styles["cardTitle"]}>
             <TbCalendar className={styles["calendarIcon"]} />
-            {t((m) => m["IMS--View"].invoiceTimeline.title)}
+            {t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.title)}
           </CardTitle>
           <Badge
             variant='secondary'
             className={styles["badge"]}>
-            {t((m) => m["IMS--View"].invoiceTimeline.eventCount, {count: totalEvents})}
+            {t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.eventCount, {count: totalEvents})}
           </Badge>
         </div>
-        <p className={styles["subtitle"]}>{t((m) => m["IMS--View"].invoiceTimeline.subtitle)}</p>
+        <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.subtitle)}</p>
       </CardHeader>
 
       <CardContent className={styles["cardContent"]}>

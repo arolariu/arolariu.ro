@@ -239,7 +239,7 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
       try {
         if (typeof invoiceIdOrIds === "string") {
           await performMutation(invoiceIdOrIds);
-          toast.success(t((m) => m["IMS--Hooks"].useInvoiceDelete.deleteSuccess));
+          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
           router.push("/domains/invoices/view-invoices");
         } else {
           const result = await processBulkRecursive(invoiceIdOrIds, 0, {
@@ -252,18 +252,18 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
           const hasSuccess = result.successCount > 0;
 
           if (!hasFailure) {
-            toast.success(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
+            toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
           } else if (!hasSuccess) {
-            toast.error(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
+            toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
           } else {
-            toast.info(t((m) => m["IMS--Hooks"].useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
+            toast.info(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
           }
 
           return result;
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m["IMS--Hooks"].useInvoiceDelete.deleteError, {error: message}));
+        toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
         console.error("Error deleting invoice:", error);
       } finally {
         setIsDeleting(false);

@@ -109,14 +109,14 @@ export default function ScansGrid(): React.JSX.Element {
     return (
       <EmptyState
         icon={<TbCamera className={styles["emptyIcon"]} />}
-        title={t((m) => m["IMS--ViewScans"].emptyState.title)}
-        description={t((m) => m["IMS--ViewScans"].emptyState.description)}
+        title={t((m) => m.pages.invoices.viewScans.emptyState.title)}
+        description={t((m) => m.pages.invoices.viewScans.emptyState.description)}
         primaryAction={{
-          label: t((m) => m["IMS--ViewScans"].emptyState.uploadButton),
+          label: t((m) => m.pages.invoices.viewScans.emptyState.uploadButton),
           href: "/domains/invoices/upload-scans",
         }}
         secondaryAction={{
-          label: t((m) => m["IMS--ViewScans"].emptyState.learnMoreButton),
+          label: t((m) => m.pages.invoices.viewScans.emptyState.learnMoreButton),
           href: "/domains/invoices",
         }}
       />
@@ -154,17 +154,17 @@ export default function ScansGrid(): React.JSX.Element {
             onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
-            {t((m) => m["IMS--ViewScans"].pagination.previous)}
+            {t((m) => m.pages.invoices.viewScans.pagination.previous)}
           </Button>
           <span className={styles["pageInfo"]}>
-            {t((m) => m["IMS--ViewScans"].pagination.pageInfo, {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
+            {t((m) => m.pages.invoices.viewScans.pagination.pageInfo, {current: String(page + 1), total: String(totalPages), count: String(validScans.length)})}
           </span>
           <Button
             variant='outline'
             size='sm'
             onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
-            {t((m) => m["IMS--ViewScans"].pagination.next)}
+            {t((m) => m.pages.invoices.viewScans.pagination.next)}
             <TbChevronRight />
           </Button>
         </div>

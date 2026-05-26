@@ -110,7 +110,7 @@ export default function ThemeButton(): React.JSX.Element {
     <motion.button
       className={styles["themeButton"]}
       onClick={handleSetTheme}
-      aria-label={t((m) => m.Common.accessibility.toggleTheme)}
+      aria-label={t((m) => m.shared.accessibility.toggleTheme)}
       whileTap={{scale: 0.95}}>
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </motion.button>

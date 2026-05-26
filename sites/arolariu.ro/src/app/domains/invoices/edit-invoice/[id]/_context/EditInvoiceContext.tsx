@@ -158,7 +158,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!hasChanges) {
-      toast.info(t((m) => m["IMS--Edit"].editInvoiceContext.toasts.noChanges));
+      toast.info(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.noChanges));
       return true;
     }
 
@@ -201,18 +201,18 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       });
 
       if (result.success) {
-        toast.success(t((m) => m["IMS--Edit"].editInvoiceContext.toasts.updated));
+        toast.success(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.updated));
         setPendingChanges({});
         // Trigger a page refresh to get the updated data
         globalThis.window.location.reload();
         return true;
       } else {
-        toast.error(t((m) => m["IMS--Edit"].editInvoiceContext.toasts.saveFailed));
+        toast.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
         return false;
       }
     } catch (error) {
-      console.error(t((m) => m["IMS--Edit"].editInvoiceContext.console.saveFailed), error);
-      toast.error(t((m) => m["IMS--Edit"].editInvoiceContext.toasts.saveFailed));
+      console.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.console.saveFailed), error);
+      toast.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
       return false;
     } finally {
       setIsSaving(false);

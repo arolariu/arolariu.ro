@@ -41,15 +41,15 @@ export default function Mission(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t((m) => m.About.Hub.mission.title)}</h2>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.mission.title)}</h2>
           <motion.p
             className={styles["statement"]}
             initial={{opacity: 0, scale: 0.95}}
             animate={isInView ? {opacity: 1, scale: 1} : {}}
             transition={{delay: 0.2, duration: 0.5}}>
-            {t((m) => m.About.Hub.mission.statement)}
+            {t((m) => m.pages.about.hub.mission.statement)}
           </motion.p>
-          <p className={styles["description"]}>{t((m) => m.About.Hub.mission.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.pages.about.hub.mission.description)}</p>
         </motion.div>
 
         {/* Pillars grid */}

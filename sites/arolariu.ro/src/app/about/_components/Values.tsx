@@ -47,8 +47,8 @@ export default function Values(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t((m) => m.About.Hub.values.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.values.subtitle)}</p>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.values.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.about.hub.values.subtitle)}</p>
         </motion.div>
 
         {/* Values grid */}

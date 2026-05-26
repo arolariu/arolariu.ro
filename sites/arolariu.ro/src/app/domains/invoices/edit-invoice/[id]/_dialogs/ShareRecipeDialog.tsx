@@ -19,16 +19,16 @@ export default function ShareRecipeDialog(): React.JSX.Element {
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) {
-      toast.info(t((m) => m["IMS--Dialogs"].recipeDialog.share.unavailable));
+      toast.info(t((m) => m.dialogs.invoices.recipeDialog.share.unavailable));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(t((m) => m["IMS--Dialogs"].recipeDialog.share.copied));
+      toast.success(t((m) => m.dialogs.invoices.recipeDialog.share.copied));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t((m) => m["IMS--Dialogs"].recipeDialog.share.copyFailed));
+      toast.error(message || t((m) => m.dialogs.invoices.recipeDialog.share.copyFailed));
     }
   }, [shareUrl, t]);
 
@@ -45,8 +45,8 @@ export default function ShareRecipeDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.share.title)}</DialogTitle>
-          <DialogDescription>{recipe ? t((m) => m["IMS--Dialogs"].recipeDialog.share.description) : t((m) => m["IMS--Dialogs"].recipeDialog.share.missingRecipe)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.share.title)}</DialogTitle>
+          <DialogDescription>{recipe ? t((m) => m.dialogs.invoices.recipeDialog.share.description) : t((m) => m.dialogs.invoices.recipeDialog.share.missingRecipe)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
@@ -63,11 +63,11 @@ export default function ShareRecipeDialog(): React.JSX.Element {
                   />
                 </div>
               ) : (
-                <p className={styles["readText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.share.unavailable)}</p>
+                <p className={styles["readText"]}>{t((m) => m.dialogs.invoices.recipeDialog.share.unavailable)}</p>
               )}
             </div>
           ) : (
-            <p className={styles["readText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.share.missingRecipe)}</p>
+            <p className={styles["readText"]}>{t((m) => m.dialogs.invoices.recipeDialog.share.missingRecipe)}</p>
           )}
         </div>
 
@@ -77,14 +77,14 @@ export default function ShareRecipeDialog(): React.JSX.Element {
               type='button'
               variant='outline'
               onClick={close}>
-              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.close)}
+              {t((m) => m.dialogs.invoices.recipeDialog.buttons.close)}
             </Button>
             <Button
               type='button'
               onClick={handleCopy}
               disabled={!shareUrl}>
               <TbCopy className={styles["saveIcon"]} />
-              {t((m) => m["IMS--Dialogs"].recipeDialog.share.copy)}
+              {t((m) => m.dialogs.invoices.recipeDialog.share.copy)}
             </Button>
           </div>
         </DialogFooter>

@@ -97,11 +97,11 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
     return (
       <Card className={styles["card"]}>
         <CardHeader>
-          <CardTitle>{t((m) => m["IMS--Stats"].merchantTrends.title)}</CardTitle>
-          <CardDescription>{t((m) => m["IMS--Stats"].merchantTrends.description)}</CardDescription>
+          <CardTitle>{t((m) => m.cards.invoices.statistics.merchantTrends.title)}</CardTitle>
+          <CardDescription>{t((m) => m.cards.invoices.statistics.merchantTrends.description)}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className={styles["emptyState"]}>{t((m) => m["IMS--Stats"].merchantTrends.empty)}</p>
+          <p className={styles["emptyState"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.empty)}</p>
         </CardContent>
       </Card>
     );
@@ -110,17 +110,17 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle>{t((m) => m["IMS--Stats"].merchantTrends.title)}</CardTitle>
-        <CardDescription>{t((m) => m["IMS--Stats"].merchantTrends.description)}</CardDescription>
+        <CardTitle>{t((m) => m.cards.invoices.statistics.merchantTrends.title)}</CardTitle>
+        <CardDescription>{t((m) => m.cards.invoices.statistics.merchantTrends.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["content"]}>
         <div className={styles["tableWrapper"]}>
           <table className={styles["table"]}>
             <thead>
               <tr>
-                <th className={styles["headerMerchant"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.merchant)}</th>
-                <th className={styles["headerTotal"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.totalSpend)}</th>
-                <th className={styles["headerTrend"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.trend)}</th>
+                <th className={styles["headerMerchant"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.merchant)}</th>
+                <th className={styles["headerTotal"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.totalSpend)}</th>
+                <th className={styles["headerTrend"]}>{t((m) => m.cards.invoices.statistics.merchantTrends.labels.trend)}</th>
               </tr>
             </thead>
             <tbody>
@@ -147,7 +147,7 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                     <td className={styles["cellTrend"]}>
                       <div
                         className={styles["sparkline"]}
-                        aria-label={t((m) => m["IMS--Stats"].merchantTrends.aria.sparkline, {merchant: merchantName})}>
+                        aria-label={t((m) => m.cards.invoices.statistics.merchantTrends.aria.sparkline, {merchant: merchantName})}>
                         {displayMonths.map((monthKey) => {
                           const amount = monthlyMap.get(monthKey) ?? 0;
                           const heightPercent = maxMonthlyAmount > 0 ? (amount / maxMonthlyAmount) * 100 : 0;
