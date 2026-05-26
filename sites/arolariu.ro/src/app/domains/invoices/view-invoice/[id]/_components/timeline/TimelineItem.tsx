@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview Individual timeline item component with tooltip support.
  * @module components/invoice/timeline/timeline-item
  */
 
-"use client";
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";

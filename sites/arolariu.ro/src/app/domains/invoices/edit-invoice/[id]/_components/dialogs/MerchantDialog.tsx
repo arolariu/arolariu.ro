@@ -1,3 +1,5 @@
+"use client";
+
 import {formatEnum} from "@/lib/utils.generic";
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {

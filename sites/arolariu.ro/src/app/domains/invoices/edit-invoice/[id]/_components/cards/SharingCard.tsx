@@ -1,3 +1,5 @@
+"use client";
+
 import {useUserInformation} from "@/hooks";
 import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";

@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview LazyImage component with intersection observer and blur placeholder.
  * @module @/app/domains/invoices/_components/LazyImage
  */
 
-"use client";
 
 import {Skeleton} from "@arolariu/components";
 import Image from "next/image";

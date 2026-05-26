@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Export Dialog component for exporting invoice data in various formats.
  * @module domains/invoices/view-invoice/[id]/components/dialogs/ExportDialog
@@ -27,7 +29,6 @@
  * - Blob generation happens on-demand, not during render
  */
 
-"use client";
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, toast} from "@arolariu/components";

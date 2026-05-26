@@ -1,3 +1,5 @@
+"use client";
+
 import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Mobile bottom navigation bar for the invoices domain.
@@ -11,7 +13,6 @@ import {selectorFromPath} from "next-intl-selector";
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/use-pathname}
  */
 
-"use client";
 
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Share & Collaborate card for the invoice view page.
  * @module domains/invoices/view-invoice/[id]/components/cards/ShareCollaborateCard
@@ -26,7 +28,6 @@
  * - Computed status values are memoized with `useMemo`
  */
 
-"use client";
 
 import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";

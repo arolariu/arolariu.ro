@@ -1,3 +1,5 @@
+"use client";
+
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Image from "next/image";

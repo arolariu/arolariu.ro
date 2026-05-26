@@ -1,3 +1,5 @@
+"use client";
+
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 

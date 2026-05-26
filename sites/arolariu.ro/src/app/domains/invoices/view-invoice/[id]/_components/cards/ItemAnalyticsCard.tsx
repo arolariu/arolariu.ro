@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Item-level analytics card with search, sort, and detailed product display.
  * @module domains/invoices/view-invoice/[id]/components/cards/ItemAnalyticsCard
@@ -40,7 +42,6 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-"use client";
 
 import {formatEnum} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";

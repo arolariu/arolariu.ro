@@ -1,5 +1,6 @@
-/** Client island that aggregates all interactive About hub sections. */
 "use client";
+
+/** Client island that aggregates all interactive About hub sections. */
 
 import CallToAction from "./_components/CallToAction";
 import Faq from "./_components/Faq";
