@@ -119,6 +119,24 @@ describe("DeferredMount", () => {
     expect(instance.disconnect).toHaveBeenCalled();
   });
 
+  it("keeps placeholder mounted when observed entries do not intersect", () => {
+    const {queryByText} = render(
+      <DeferredMount placeholder={<span>shimmer</span>}>
+        <span>real card</span>
+      </DeferredMount>,
+    );
+
+    const instance = observerInstances[0]!;
+
+    act(() => {
+      instance.callback([{isIntersecting: false}]);
+    });
+
+    expect(queryByText("shimmer")).not.toBeNull();
+    expect(queryByText("real card")).toBeNull();
+    expect(instance.disconnect).not.toHaveBeenCalled();
+  });
+
   it("renders children immediately when IntersectionObserver is unavailable", () => {
     uninstallIntersectionObserverMock();
     // @ts-expect-error -- intentional delete to simulate ancient runtime

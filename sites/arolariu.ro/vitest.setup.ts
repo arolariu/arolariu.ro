@@ -102,7 +102,6 @@ vi.mock("next-intl-selector", async (importOriginal) => {
   return {
     ...actual,
     useTranslations: () => makeTranslator(),
-    createTranslator: () => makeTranslator(),
     selectorFromPath: actual.selectorFromPath,
     pathFromSelector: actual.pathFromSelector,
   };

@@ -27,15 +27,15 @@ describe("createPortPair", () => {
   it("returns a fresh channel on each call (ports are not shared across calls)", async () => {
     const a = createPortPair();
     const b = createPortPair();
-    let aReceived = "";
-    let bReceived = "";
-    a.parent.onmessage = (e) => (aReceived = String(e.data));
-    b.parent.onmessage = (e) => (bReceived = String(e.data));
+    const aReceived = new Promise<unknown>((resolve) => {
+      a.parent.onmessage = (e) => resolve(e.data);
+    });
+    const bReceived = new Promise<unknown>((resolve) => {
+      b.parent.onmessage = (e) => resolve(e.data);
+    });
     a.transferable.postMessage("from-a");
     b.transferable.postMessage("from-b");
-    // Yield once so the messages dispatch.
-    await new Promise<void>((res) => setTimeout(res, 0));
-    expect(aReceived).toBe("from-a");
-    expect(bReceived).toBe("from-b");
+    expect(await aReceived).toBe("from-a");
+    expect(await bReceived).toBe("from-b");
   });
 });
