@@ -74,8 +74,32 @@ const dialogTypes = [
   },
   {
     icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
-    type: "EDIT_INVOICE__RECIPE",
-    label: "Recipe",
+    type: "EDIT_INVOICE__RECIPE_ADD",
+    label: "Add Recipe",
+    color: "#f43f5e",
+  },
+  {
+    icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
+    type: "EDIT_INVOICE__RECIPE_UPDATE",
+    label: "Update Recipe",
+    color: "#f43f5e",
+  },
+  {
+    icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
+    type: "EDIT_INVOICE__RECIPE_DELETE",
+    label: "Delete Recipe",
+    color: "#f43f5e",
+  },
+  {
+    icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
+    type: "EDIT_INVOICE__RECIPE_PREVIEW",
+    label: "Preview Recipe",
+    color: "#f43f5e",
+  },
+  {
+    icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
+    type: "EDIT_INVOICE__RECIPE_SHARE",
+    label: "Share Recipe",
     color: "#f43f5e",
   },
   {

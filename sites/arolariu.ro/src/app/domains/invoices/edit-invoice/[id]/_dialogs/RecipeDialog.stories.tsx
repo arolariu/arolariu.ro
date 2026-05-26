@@ -2,17 +2,14 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbWand, TbX} from "react-icons/tb";
 
 /**
- * Static visual preview of the RecipeDialog component.
+ * Static visual preview of the recipe action dialogs.
  *
- * @remarks Static preview — the real component uses `useDialog` context,
- * `useTranslations`, and complex recipe state management. It renders nothing
- * when the dialog is closed. This story renders a faithful HTML replica of
- * the recipe creation / editing form with sample data.
- *
- * @see {@link RecipeDialog} for the real component implementation
+ * @remarks Static preview — the real components use `useDialog` context,
+ * `useTranslations`, and recipe state management. This story renders a
+ * faithful HTML replica of the recipe creation / editing form with sample data.
  */
 const meta = {
-  title: "Invoices/EditInvoice/Dialogs/RecipeDialog",
+  title: "Invoices/EditInvoice/Dialogs/RecipeActionDialogs",
   parameters: {
     layout: "centered",
   },
