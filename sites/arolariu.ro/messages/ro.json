@@ -2669,13 +2669,15 @@
     "recipeDialog": {
       "actions": {
         "enhanceInstructions": "Îmbunătățește instrucțiunile",
-        "generateName": "Generează nume"
+        "generateName": "Generează nume",
+        "unavailable": "Această acțiune asistată pentru rețete nu este disponibilă încă"
       },
       "buttons": {
         "add": "Adaugă",
         "cancel": "Anulează",
         "close": "Închide",
         "delete": "Șterge",
+        "deleting": "Se șterge...",
         "save": "Salvează",
         "saving": "Se salvează..."
       },
@@ -2687,6 +2689,9 @@
       },
       "delete": {
         "description": "Această acțiune nu poate fi anulată. Va șterge definitiv rețeta <strong>{name}</strong> și toate datele asociate.",
+        "error": "Nu s-a putut șterge rețeta",
+        "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
+        "success": "Rețeta a fost ștearsă cu succes",
         "title": "Ești sigur?"
       },
       "difficulty": {
@@ -2716,8 +2721,18 @@
       },
       "read": {
         "description": "Detalii despre rețetă și instrucțiuni de preparare",
+        "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
         "noDescription": "Nu a fost furnizată nicio descriere.",
         "notSpecified": "Nespecificat"
+      },
+      "share": {
+        "copied": "Linkul rețetei a fost copiat",
+        "copy": "Copiază linkul",
+        "copyFailed": "Nu s-a putut copia linkul rețetei",
+        "description": "Partajează linkul de referință al rețetei când este disponibil.",
+        "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
+        "title": "Partajează rețeta",
+        "unavailable": "Partajarea rețetei nu este disponibilă încă pentru această rețetă."
       },
       "tooltips": {
         "enhanceInstructions": "Folosește AI pentru a-ți îmbunătăți instrucțiunile cu mai multe detalii",
@@ -2725,6 +2740,9 @@
       },
       "update": {
         "description": "Actualizează detaliile rețetei.",
+        "error": "Nu s-a putut actualiza rețeta",
+        "missingRecipe": "Detaliile rețetei nu sunt disponibile.",
+        "success": "Rețeta a fost actualizată cu succes",
         "title": "Actualizează rețeta"
       }
     },

@@ -2669,13 +2669,15 @@
     "recipeDialog": {
       "actions": {
         "enhanceInstructions": "Améliorer les instructions",
-        "generateName": "Générer un nom"
+        "generateName": "Générer un nom",
+        "unavailable": "Cette action d’assistance pour les recettes n’est pas encore disponible"
       },
       "buttons": {
         "add": "Ajouter",
         "cancel": "Annuler",
         "close": "Fermer",
         "delete": "Supprimer",
+        "deleting": "Suppression...",
         "save": "Enregistrer",
         "saving": "Enregistrement..."
       },
@@ -2687,6 +2689,9 @@
       },
       "delete": {
         "description": "Cette action est irréversible. Cela supprimera définitivement la recette <strong>{name}</strong> et toutes ses données associées.",
+        "error": "Échec de la suppression de la recette",
+        "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
+        "success": "Recette supprimée avec succès",
         "title": "Êtes-vous sûr ?"
       },
       "difficulty": {
@@ -2715,8 +2720,18 @@
       },
       "read": {
         "description": "Détails de la recette et instructions de préparation",
+        "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
         "noDescription": "Aucune description fournie.",
         "notSpecified": "Non spécifié"
+      },
+      "share": {
+        "copied": "Lien de recette copié",
+        "copy": "Copier le lien",
+        "copyFailed": "Échec de la copie du lien de recette",
+        "description": "Partagez le lien de référence de la recette lorsqu’il est disponible.",
+        "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
+        "title": "Partager la recette",
+        "unavailable": "Le partage de recette n’est pas encore disponible pour cette recette."
       },
       "tooltips": {
         "enhanceInstructions": "Utiliser l’AI pour enrichir vos instructions avec davantage de détails",
@@ -2724,6 +2739,9 @@
       },
       "update": {
         "description": "Mettre à jour les détails de la recette.",
+        "error": "Échec de la mise à jour de la recette",
+        "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
+        "success": "Recette mise à jour avec succès",
         "title": "Mettre à jour la recette"
       },
       "minutes": "minutes"

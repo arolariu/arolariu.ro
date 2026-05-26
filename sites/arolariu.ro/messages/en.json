@@ -2669,13 +2669,15 @@
     "recipeDialog": {
       "actions": {
         "enhanceInstructions": "Enhance instructions",
-        "generateName": "Generate name"
+        "generateName": "Generate name",
+        "unavailable": "This recipe assistant action is not available yet"
       },
       "buttons": {
         "add": "Add",
         "cancel": "Cancel",
         "close": "Close",
         "delete": "Delete",
+        "deleting": "Deleting...",
         "save": "Save",
         "saving": "Saving..."
       },
@@ -2687,6 +2689,9 @@
       },
       "delete": {
         "description": "This action cannot be undone. This will permanently delete the recipe <strong>{name}</strong> and all its associated data.",
+        "error": "Failed to delete recipe",
+        "missingRecipe": "Recipe details are unavailable.",
+        "success": "Recipe deleted successfully",
         "title": "Are you sure?"
       },
       "difficulty": {
@@ -2716,8 +2721,18 @@
       },
       "read": {
         "description": "Recipe details and cooking instructions",
+        "missingRecipe": "Recipe details are unavailable.",
         "noDescription": "No description provided.",
         "notSpecified": "Not specified"
+      },
+      "share": {
+        "copied": "Recipe link copied",
+        "copy": "Copy link",
+        "copyFailed": "Failed to copy recipe link",
+        "description": "Share the recipe reference link when one is available.",
+        "missingRecipe": "Recipe details are unavailable.",
+        "title": "Share recipe",
+        "unavailable": "Recipe sharing is not available for this recipe yet."
       },
       "tooltips": {
         "enhanceInstructions": "Use AI to enhance your instructions with more details",
@@ -2725,6 +2740,9 @@
       },
       "update": {
         "description": "Update recipe details.",
+        "error": "Failed to update recipe",
+        "missingRecipe": "Recipe details are unavailable.",
+        "success": "Recipe updated successfully",
         "title": "Update recipe"
       }
     },
