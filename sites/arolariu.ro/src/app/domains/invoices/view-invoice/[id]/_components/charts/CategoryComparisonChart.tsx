@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {CategoryTrendData} from "../../_utils/analytics";
 import styles from "./CategoryComparisonChart.module.scss";
 
@@ -62,14 +62,14 @@ function CustomTooltip({active, payload, currency, currentLabel, averageLabel}: 
 }
 
 export function CategoryComparisonChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--View.categoryComparisonChart");
+  const t = useTranslations();
   const chartConfig = {
     current: {
-      label: t("labels.current"),
+      label: t((m) => m["IMS--View"].categoryComparisonChart.labels.current),
       color: "var(--ac-chart-1)",
     },
     average: {
-      label: t("labels.average"),
+      label: t((m) => m["IMS--View"].categoryComparisonChart.labels.average),
       color: "var(--ac-chart-3)",
     },
   };
@@ -77,8 +77,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].categoryComparisonChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].categoryComparisonChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -111,8 +111,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                     active={false}
                     payload={[]}
                     currency={currency}
-                    currentLabel={t("labels.current")}
-                    averageLabel={t("labels.average")}
+                    currentLabel={t((m) => m["IMS--View"].categoryComparisonChart.labels.current)}
+                    averageLabel={t((m) => m["IMS--View"].categoryComparisonChart.labels.average)}
                   />
                 }
               />
@@ -125,14 +125,14 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 fill='var(--ac-chart-1)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name={t("labels.current")}
+                name={t((m) => m["IMS--View"].categoryComparisonChart.labels.current)}
               />
               <Bar
                 dataKey='average'
                 fill='var(--ac-chart-3)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name={t("labels.average")}
+                name={t((m) => m["IMS--View"].categoryComparisonChart.labels.average)}
               />
             </BarChart>
           </ResponsiveContainer>

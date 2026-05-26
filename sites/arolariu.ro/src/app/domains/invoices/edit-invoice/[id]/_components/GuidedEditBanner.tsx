@@ -3,7 +3,7 @@
 import {Product, ProductCategory} from "@/types/invoices";
 import {Alert, AlertDescription, AlertTitle, Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbAlertCircle, TbChevronDown, TbX} from "react-icons/tb";
 import styles from "./GuidedEditBanner.module.scss";
@@ -62,7 +62,7 @@ type Props = Readonly<{
  * @see {@link ProductCategory} - Product category enum
  */
 export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX.Element | null {
-  const t = useTranslations("IMS--Edit.guidedEditBanner");
+  const t = useTranslations();
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Check localStorage on mount for dismissal state
@@ -130,15 +130,15 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
     const parts: string[] = [];
 
     if (analysis.uncategorized.length > 0) {
-      parts.push(t("summary.uncategorized", {count: analysis.uncategorized.length}));
+      parts.push(t((m) => m["IMS--Edit"].guidedEditBanner.summary.uncategorized, {count: analysis.uncategorized.length}));
     }
 
     if (analysis.lowConfidence.length > 0) {
-      parts.push(t("summary.lowConfidence", {count: analysis.lowConfidence.length}));
+      parts.push(t((m) => m["IMS--Edit"].guidedEditBanner.summary.lowConfidence, {count: analysis.lowConfidence.length}));
     }
 
     if (analysis.missingName.length > 0) {
-      parts.push(t("summary.missingName", {count: analysis.missingName.length}));
+      parts.push(t((m) => m["IMS--Edit"].guidedEditBanner.summary.missingName, {count: analysis.missingName.length}));
     }
 
     return parts.join(", ");
@@ -157,13 +157,13 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
         <TbAlertCircle className={styles["alertIcon"]} />
         <div className={styles["content"]}>
           <div className={styles["header"]}>
-            <AlertTitle className={styles["title"]}>{t("title", {count: analysis.totalIssues})}</AlertTitle>
+            <AlertTitle className={styles["title"]}>{t((m) => m["IMS--Edit"].guidedEditBanner.title, {count: analysis.totalIssues})}</AlertTitle>
             <Button
               variant='ghost'
               size='sm'
               onClick={handleDismiss}
               className={styles["dismissButton"]}
-              aria-label={t("actions.dismiss")}>
+              aria-label={t((m) => m["IMS--Edit"].guidedEditBanner.actions.dismiss)}>
               <TbX className={styles["dismissIcon"]} />
             </Button>
           </div>
@@ -178,7 +178,7 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
                 onClick={onReviewAll}
                 className={styles["reviewButton"]}>
                 <TbChevronDown className={styles["reviewIcon"]} />
-                {t("actions.reviewAll")}
+                {t((m) => m["IMS--Edit"].guidedEditBanner.actions.reviewAll)}
               </Button>
             ) : null}
 
@@ -188,21 +188,21 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
                 <Badge
                   variant='secondary'
                   className={styles["badge"]}>
-                  {t("badges.uncategorized", {count: analysis.uncategorized.length})}
+                  {t((m) => m["IMS--Edit"].guidedEditBanner.badges.uncategorized, {count: analysis.uncategorized.length})}
                 </Badge>
               )}
               {analysis.lowConfidence.length > 0 && (
                 <Badge
                   variant='secondary'
                   className={styles["badge"]}>
-                  {t("badges.lowConfidence", {count: analysis.lowConfidence.length})}
+                  {t((m) => m["IMS--Edit"].guidedEditBanner.badges.lowConfidence, {count: analysis.lowConfidence.length})}
                 </Badge>
               )}
               {analysis.missingName.length > 0 && (
                 <Badge
                   variant='secondary'
                   className={styles["badge"]}>
-                  {t("badges.missingName", {count: analysis.missingName.length})}
+                  {t((m) => m["IMS--Edit"].guidedEditBanner.badges.missingName, {count: analysis.missingName.length})}
                 </Badge>
               )}
             </div>

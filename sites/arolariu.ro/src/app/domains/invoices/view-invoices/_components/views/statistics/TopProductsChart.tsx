@@ -26,7 +26,7 @@
 
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbMedal, TbTrophy} from "react-icons/tb";
 import type {TopProduct} from "../../../_utils/statistics";
 import styles from "./TopProductsChart.module.scss";
@@ -94,19 +94,19 @@ function RankBadge({rank}: {readonly rank: number}): React.JSX.Element {
  * @returns Table component with product leaderboard
  */
 export function TopProductsChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.topProducts");
+  const t = useTranslations();
 
   // Empty state
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].topProducts.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].topProducts.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyText"]}>{t("empty")}</p>
+            <p className={styles["emptyText"]}>{t((m) => m["IMS--Stats"].topProducts.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -116,46 +116,46 @@ export function TopProductsChart({data, currency}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].topProducts.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].topProducts.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div className={styles["tableWrapper"]}>
           <table
             className={styles["table"]}
             role='table'
-            aria-label={t("ariaLabel")}>
+            aria-label={t((m) => m["IMS--Stats"].topProducts.ariaLabel)}>
             <thead>
               <tr>
                 <th
                   className={styles["headerRank"]}
                   scope='col'>
-                  {t("headers.rank")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.rank)}
                 </th>
                 <th
                   className={styles["headerProduct"]}
                   scope='col'>
-                  {t("headers.product")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.product)}
                 </th>
                 <th
                   className={styles["headerQuantity"]}
                   scope='col'>
-                  {t("headers.quantity")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.quantity)}
                 </th>
                 <th
                   className={styles["headerSpent"]}
                   scope='col'>
-                  {t("headers.totalSpent")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.totalSpent)}
                 </th>
                 <th
                   className={styles["headerCount"]}
                   scope='col'>
-                  {t("headers.purchases")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.purchases)}
                 </th>
                 <th
                   className={styles["headerAverage"]}
                   scope='col'>
-                  {t("headers.avgPrice")}
+                  {t((m) => m["IMS--Stats"].topProducts.headers.avgPrice)}
                 </th>
               </tr>
             </thead>

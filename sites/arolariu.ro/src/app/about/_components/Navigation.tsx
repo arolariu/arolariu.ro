@@ -1,8 +1,9 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import {useRef} from "react";
@@ -32,7 +33,7 @@ const navigationItems: Array<{
  * Enhanced navigation section with preview cards linking to sub-pages.
  */
 export default function Navigation(): React.JSX.Element {
-  const t = useTranslations("About.Hub.navigation");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -47,8 +48,8 @@ export default function Navigation(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t((m) => m.About.Hub.navigation.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.navigation.subtitle)}</p>
         </motion.div>
 
         {/* Navigation cards */}
@@ -65,7 +66,7 @@ export default function Navigation(): React.JSX.Element {
                   <div className={styles["imageWrapper"]}>
                     <Image
                       src={item.image}
-                      alt={t(`${item.key}.title`)}
+                      alt={t(selectorFromPath(`About.Hub.navigation.${item.key}.title`))}
                       width={120}
                       height={120}
                       className={styles["image"]}
@@ -76,8 +77,8 @@ export default function Navigation(): React.JSX.Element {
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["cardContentInner"]}>
                     <div className={styles["cardTextCenter"]}>
-                      <h3 className={styles["cardTitle"]}>{t(`${item.key}.title` as "platform.title")}</h3>
-                      <p className={styles["cardSubtitle"]}>{t(`${item.key}.subtitle` as "platform.subtitle")}</p>
+                      <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.title` as "platform.title"}`))}</h3>
+                      <p className={styles["cardSubtitle"]}>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.subtitle` as "platform.subtitle"}`))}</p>
                     </div>
 
                     {/* Feature list */}
@@ -91,7 +92,7 @@ export default function Navigation(): React.JSX.Element {
                             className={styles["featureBadge"]}>
                             <TbCheck className={styles["featureIcon"]} />
                           </Badge>
-                          <span>{t(`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`)}</span>
+                          <span>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`}`))}</span>
                         </li>
                       ))}
                     </ul>
@@ -104,7 +105,7 @@ export default function Navigation(): React.JSX.Element {
                     className={styles["ctaButton"]}
                     size='lg'>
                     <Link href={item.href}>
-                      {t(`${item.key}.cta`)}
+                      {t(selectorFromPath(`About.Hub.navigation.${item.key}.cta`))}
                       <TbArrowRight className={styles["ctaIcon"]} />
                     </Link>
                   </Button>

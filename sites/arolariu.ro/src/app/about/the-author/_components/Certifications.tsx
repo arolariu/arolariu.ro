@@ -2,7 +2,7 @@
 
 import {Badge} from "@arolariu/components/badge";
 import {motion, useInView, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbAward, TbCheck, TbExternalLink} from "react-icons/tb";
 import styles from "./Certifications.module.scss";
@@ -37,106 +37,106 @@ const itemVariants: Variants = {
  * @returns A section containing certification cards with interactive elements
  */
 export default function Certifications(): React.JSX.Element {
-  const t = useTranslations("About.Author.Certifications");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
   const certifications = [
     {
-      name: t("certificates.ab730.name"),
-      code: t("certificates.ab730.code"),
-      issuer: t("certificates.ab730.issuer"),
-      issueDate: t("certificates.ab730.issuerDate"),
-      description: t("certificates.ab730.description"),
-      coreSkills: t("certificates.ab730.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.ab730.name),
+      code: t((m) => m.About.Author.Certifications.certificates.ab730.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.ab730.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.ab730.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.ab730.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.ab730.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/ai-business-professional/",
     },
     {
-      name: t("certificates.ab731.name"),
-      code: t("certificates.ab731.code"),
-      issuer: t("certificates.ab731.issuer"),
-      issueDate: t("certificates.ab731.issuerDate"),
-      description: t("certificates.ab731.description"),
-      coreSkills: t("certificates.ab731.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.ab731.name),
+      code: t((m) => m.About.Author.Certifications.certificates.ab731.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.ab731.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.ab731.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.ab731.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.ab731.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/ai-transformation-leader/",
     },
     {
-      name: t("certificates.az900.name"),
-      code: t("certificates.az900.code"),
-      issuer: t("certificates.az900.issuer"),
-      issueDate: t("certificates.az900.issuerDate"),
-      description: t("certificates.az900.description"),
-      coreSkills: t("certificates.az900.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.az900.name),
+      code: t((m) => m.About.Author.Certifications.certificates.az900.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.az900.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.az900.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.az900.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.az900.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
     },
     {
-      name: t("certificates.ai900.name"),
-      code: t("certificates.ai900.code"),
-      issuer: t("certificates.ai900.issuer"),
-      issueDate: t("certificates.ai900.issuerDate"),
-      description: t("certificates.ai900.description"),
-      coreSkills: t("certificates.ai900.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.ai900.name),
+      code: t((m) => m.About.Author.Certifications.certificates.ai900.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.ai900.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.ai900.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.ai900.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.ai900.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
     },
     {
-      name: t("certificates.sc900.name"),
-      code: t("certificates.sc900.code"),
-      issuer: t("certificates.sc900.issuer"),
-      issueDate: t("certificates.sc900.issuerDate"),
-      description: t("certificates.sc900.description"),
-      coreSkills: t("certificates.sc900.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.sc900.name),
+      code: t((m) => m.About.Author.Certifications.certificates.sc900.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.sc900.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.sc900.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.sc900.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.sc900.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/security-compliance-and-identity-fundamentals/",
     },
     {
-      name: t("certificates.gh900.name"),
-      code: t("certificates.gh900.code"),
-      issuer: t("certificates.gh900.issuer"),
-      issueDate: t("certificates.gh900.issuerDate"),
-      description: t("certificates.gh900.description"),
-      coreSkills: t("certificates.gh900.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.gh900.name),
+      code: t((m) => m.About.Author.Certifications.certificates.gh900.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.gh900.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.gh900.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.gh900.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.gh900.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/github-foundations/",
     },
     {
-      name: t("certificates.gh100.name"),
-      code: t("certificates.gh100.code"),
-      issuer: t("certificates.gh100.issuer"),
-      issueDate: t("certificates.gh100.issuerDate"),
-      description: t("certificates.gh100.description"),
-      coreSkills: t("certificates.gh100.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.gh100.name),
+      code: t((m) => m.About.Author.Certifications.certificates.gh100.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.gh100.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.gh100.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.gh100.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.gh100.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/github-administration/",
     },
     {
-      name: t("certificates.gh200.name"),
-      code: t("certificates.gh200.code"),
-      issuer: t("certificates.gh200.issuer"),
-      issueDate: t("certificates.gh200.issuerDate"),
-      description: t("certificates.gh200.description"),
-      coreSkills: t("certificates.gh200.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.gh200.name),
+      code: t((m) => m.About.Author.Certifications.certificates.gh200.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.gh200.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.gh200.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.gh200.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.gh200.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/github-actions/",
     },
     {
-      name: t("certificates.gh300.name"),
-      code: t("certificates.gh300.code"),
-      issuer: t("certificates.gh300.issuer"),
-      issueDate: t("certificates.gh300.issuerDate"),
-      description: t("certificates.gh300.description"),
-      coreSkills: t("certificates.gh300.coreSkills")
+      name: t((m) => m.About.Author.Certifications.certificates.gh300.name),
+      code: t((m) => m.About.Author.Certifications.certificates.gh300.code),
+      issuer: t((m) => m.About.Author.Certifications.certificates.gh300.issuer),
+      issueDate: t((m) => m.About.Author.Certifications.certificates.gh300.issuerDate),
+      description: t((m) => m.About.Author.Certifications.certificates.gh300.description),
+      coreSkills: t((m) => m.About.Author.Certifications.certificates.gh300.coreSkills)
         .split("#")
         .filter((skill) => skill.trim().length > 3),
       link: "https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/",
@@ -153,8 +153,8 @@ export default function Certifications(): React.JSX.Element {
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.6}}
           className={styles["header"]}>
-          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Certifications.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.About.Author.Certifications.subtitle)}</p>
         </motion.div>
 
         <motion.div
@@ -195,7 +195,7 @@ export default function Certifications(): React.JSX.Element {
                   <p className={styles["description"]}>{cert.description}</p>
 
                   <div className={styles["skillsSection"]}>
-                    <h4 className={styles["skillsTitle"]}>{t("coreSkillsLabel")}</h4>
+                    <h4 className={styles["skillsTitle"]}>{t((m) => m.About.Author.Certifications.coreSkillsLabel)}</h4>
                     <div className={styles["skillsList"]}>
                       {cert.coreSkills.map((skill, i) => (
                         <motion.div
@@ -219,7 +219,7 @@ export default function Certifications(): React.JSX.Element {
                     rel='noopener noreferrer'
                     className={styles["viewLink"]}
                     whileHover={{x: 5}}>
-                    {t("viewCertification")}
+                    {t((m) => m.About.Author.Certifications.viewCertification)}
                     <TbExternalLink className={styles["viewLinkIcon"]} />
                   </motion.a>
                 </div>

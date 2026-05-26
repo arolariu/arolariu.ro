@@ -10,7 +10,7 @@
 "use client";
 
 import {RichText} from "@/presentation/Text";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./island.module.scss";
@@ -33,7 +33,7 @@ import styles from "./island.module.scss";
  * ```
  */
 export default function RenderDomainsScreen(): React.JSX.Element {
-  const t = useTranslations("Domains");
+  const t = useTranslations();
 
   return (
     <section className={styles["domainsMain"]}>
@@ -42,7 +42,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
           <div className={styles["progressFill"]} />
         </div>
         <div className={styles["titleRow"]}>
-          <h1 className={styles["title"]}>{t("title")}</h1>
+          <h1 className={styles["title"]}>{t((m) => m.Domains.title)}</h1>
           <article className={styles["subtitleArticle"]}>
             <RichText
               sectionKey='Domains'
@@ -57,7 +57,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
         <section className={styles["serviceCard"]}>
           <article className={styles["imageContainer"]}>
             <Image
-              alt={t("services.invoices.card.imageAlt")}
+              alt={t((m) => m.Domains.services.invoices.card.imageAlt)}
               className={styles["cardImage"]}
               src='/images/domains/invoice-management-system.png'
               width='600'
@@ -65,12 +65,12 @@ export default function RenderDomainsScreen(): React.JSX.Element {
             />
           </article>
           <article>
-            <h2 className={styles["cardTitle"]}>{t("services.invoices.card.title")}</h2>
-            <p className={styles["cardDescription"]}>{t("services.invoices.card.description")}</p>
+            <h2 className={styles["cardTitle"]}>{t((m) => m.Domains.services.invoices.card.title)}</h2>
+            <p className={styles["cardDescription"]}>{t((m) => m.Domains.services.invoices.card.description)}</p>
             <Link
               href='/domains/invoices'
               className={styles["ctaLink"]}>
-              {t("services.callToAction")}
+              {t((m) => m.Domains.services.callToAction)}
               <svg
                 fill='none'
                 stroke='currentColor'

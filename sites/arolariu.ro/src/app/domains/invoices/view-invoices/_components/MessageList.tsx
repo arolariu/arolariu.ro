@@ -3,7 +3,8 @@
 import {formatDateTime} from "@/lib/utils.generic";
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbRobot, TbUser} from "react-icons/tb";
 import styles from "./MessageList.module.scss";
 
@@ -23,7 +24,7 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--List.messageList");
+  const t = useTranslations();
 
   return (
     <div className={styles["messageList"]}>
@@ -53,7 +54,7 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           </Avatar>
           <div className={styles["messageBody"]}>
             <div className={styles["messageHeader"]}>
-              <p className={styles["messageSender"]}>{message.role === "assistant" ? t("aiAssistant") : t("you")}</p>
+              <p className={styles["messageSender"]}>{message.role === "assistant" ? t((m) => m["IMS--List"].messageList.aiAssistant) : t((m) => m["IMS--List"].messageList.you)}</p>
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>

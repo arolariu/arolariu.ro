@@ -10,7 +10,7 @@
 "use client";
 
 import type {NodePackagesJSON} from "@/types";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Contributors from "./_components/Contributors";
 import Hero from "./_components/Hero";
 import LicenseBreakdown from "./_components/LicenseBreakdown";
@@ -47,7 +47,7 @@ type Props = Readonly<{
  * ```
  */
 export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements");
+  const t = useTranslations();
 
   return (
     <section className={styles["acknowledgementsMain"]}>
@@ -67,9 +67,9 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <section className={styles["packagesSection"]}>
         <div className={styles["packagesSectionHeader"]}>
           <h2 className={styles["packagesTitle"]}>
-            <span className={styles["packagesTitleGradient"]}>{t("packages.title")}</span>
+            <span className={styles["packagesTitleGradient"]}>{t((m) => m.Acknowledgements.packages.title)}</span>
           </h2>
-          <p className={styles["packagesSubtitle"]}>{t("packages.subtitle")}</p>
+          <p className={styles["packagesSubtitle"]}>{t((m) => m.Acknowledgements.packages.subtitle)}</p>
         </div>
         <PackagesScreen packages={packages} />
       </section>

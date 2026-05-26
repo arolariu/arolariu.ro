@@ -2,7 +2,7 @@
 
 import {Button} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbBrandGithub, TbMail} from "react-icons/tb";
@@ -12,7 +12,7 @@ import styles from "./CallToAction.module.scss";
  * Call-to-action section at the bottom of the About hub page.
  */
 export default function CallToAction(): React.JSX.Element {
-  const t = useTranslations("About.Hub.cta");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -61,9 +61,9 @@ export default function CallToAction(): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t("title")}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.About.Hub.cta.title)}</span>
           </h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.cta.subtitle)}</p>
         </motion.div>
 
         {/* CTA buttons */}
@@ -81,7 +81,7 @@ export default function CallToAction(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'>
               <TbBrandGithub className={styles["ctaIcon"]} />
-              {t("primary")}
+              {t((m) => m.About.Hub.cta.primary)}
             </a>
           </Button>
           <Button
@@ -91,7 +91,7 @@ export default function CallToAction(): React.JSX.Element {
             className={styles["ctaButton"]}>
             <Link href='/about/the-author#contact'>
               <TbMail className={styles["ctaIcon"]} />
-              {t("secondary")}
+              {t((m) => m.About.Hub.cta.secondary)}
             </Link>
           </Button>
         </motion.div>
@@ -102,7 +102,7 @@ export default function CallToAction(): React.JSX.Element {
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.4, duration: 0.5}}>
-          {t("footer")}
+          {t((m) => m.About.Hub.cta.footer)}
         </motion.p>
       </div>
     </section>

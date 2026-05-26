@@ -2,7 +2,7 @@
 
 import {TypewriterTextSmooth} from "@arolariu/components";
 import {motion, useScroll, useTransform} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {useRef} from "react";
 import styles from "./Hero.module.scss";
@@ -15,7 +15,7 @@ import styles from "./Hero.module.scss";
  * @returns A section containing the author's image, animated title, and subtitle
  */
 export default function Hero(): React.JSX.Element {
-  const t = useTranslations("About.Author");
+  const t = useTranslations();
   const ref = useRef(null);
   const {scrollYProgress} = useScroll({
     target: ref,
@@ -25,7 +25,7 @@ export default function Hero(): React.JSX.Element {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  const words = t("title")
+  const words = t((m) => m.About.Author.title)
     .split(" ")
     .map((word) => ({
       text: word,
@@ -68,7 +68,7 @@ export default function Hero(): React.JSX.Element {
             animate={{opacity: 1, y: 0}}
             transition={{delay: 1.5, duration: 0.8}}
             className='blue-underline'>
-            <span className={styles["subtitle"]}>{t("subtitle")}</span>
+            <span className={styles["subtitle"]}>{t((m) => m.About.Author.subtitle)}</span>
           </motion.div>
         </div>
       </motion.div>

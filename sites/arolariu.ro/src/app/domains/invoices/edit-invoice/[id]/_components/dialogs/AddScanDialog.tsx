@@ -19,7 +19,7 @@ import {
   SelectValue,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
@@ -60,7 +60,7 @@ function getDropzoneClassName(
  * @see {@link attachInvoiceScan} - Attaches scan URL to invoice
  */
 export default function AddScanDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.addScanDialog");
+  const t = useTranslations();
   const router = useRouter();
   const {
     currentDialog: {payload},
@@ -94,8 +94,8 @@ export default function AddScanDialog(): React.JSX.Element {
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
-        toast.error(t("toasts.fileTooLargeTitle"), {
-          description: t("toasts.fileTooLargeDescription"),
+        toast.error(t((m) => m["IMS--Dialogs"].addScanDialog.toasts.fileTooLargeTitle), {
+          description: t((m) => m["IMS--Dialogs"].addScanDialog.toasts.fileTooLargeDescription),
         });
         return;
       }
@@ -214,8 +214,8 @@ export default function AddScanDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].addScanDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].addScanDialog.description)}</DialogDescription>
         </DialogHeader>
 
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
@@ -227,14 +227,14 @@ export default function AddScanDialog(): React.JSX.Element {
             <input {...getInputProps()} />
             <TbCloudUpload className={styles["uploadIcon"]} />
             {isDragActive ? (
-              <p className={styles["dropText"]}>{t("dropzone.dropHere")}</p>
+              <p className={styles["dropText"]}>{t((m) => m["IMS--Dialogs"].addScanDialog.dropzone.dropHere)}</p>
             ) : (
               <>
-                <p className={styles["dropText"]}>{t("dropzone.dragAndDrop")}</p>
-                <p className={styles["dropSubtext"]}>{t("dropzone.orClickBrowse")}</p>
+                <p className={styles["dropText"]}>{t((m) => m["IMS--Dialogs"].addScanDialog.dropzone.dragAndDrop)}</p>
+                <p className={styles["dropSubtext"]}>{t((m) => m["IMS--Dialogs"].addScanDialog.dropzone.orClickBrowse)}</p>
               </>
             )}
-            <p className={styles["dropFormats"]}>{t("dropzone.formats")}</p>
+            <p className={styles["dropFormats"]}>{t((m) => m["IMS--Dialogs"].addScanDialog.dropzone.formats)}</p>
           </div>
 
           {/* Selected file preview */}
@@ -262,19 +262,19 @@ export default function AddScanDialog(): React.JSX.Element {
           {/* Scan type selector */}
           {file ? (
             <div className={styles["scanTypeGrid"]}>
-              <Label htmlFor='scan-type'>{t("scanType.label")}</Label>
+              <Label htmlFor='scan-type'>{t((m) => m["IMS--Dialogs"].addScanDialog.scanType.label)}</Label>
               <Select
                 value={String(scanType)}
                 onValueChange={handleScanTypeChange}
                 disabled={isUploading}>
                 <SelectTrigger id='scan-type'>
-                  <SelectValue placeholder={t("scanType.placeholder")} />
+                  <SelectValue placeholder={t((m) => m["IMS--Dialogs"].addScanDialog.scanType.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={String(InvoiceScanType.JPEG)}>{t("scanType.jpeg")}</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.PNG)}>{t("scanType.png")}</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.PDF)}>{t("scanType.pdf")}</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.OTHER)}>{t("scanType.other")}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.JPEG)}>{t((m) => m["IMS--Dialogs"].addScanDialog.scanType.jpeg)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.PNG)}>{t((m) => m["IMS--Dialogs"].addScanDialog.scanType.png)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.PDF)}>{t((m) => m["IMS--Dialogs"].addScanDialog.scanType.pdf)}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.OTHER)}>{t((m) => m["IMS--Dialogs"].addScanDialog.scanType.other)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -288,7 +288,7 @@ export default function AddScanDialog(): React.JSX.Element {
             variant='outline'
             onClick={handleClose}
             disabled={isUploading}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].addScanDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
@@ -297,12 +297,12 @@ export default function AddScanDialog(): React.JSX.Element {
             {isUploading ? (
               <>
                 <TbLoader2 className={styles["spinnerIcon"]} />
-                {t("buttons.uploading")}
+                {t((m) => m["IMS--Dialogs"].addScanDialog.buttons.uploading)}
               </>
             ) : (
               <>
                 <TbUpload className={styles["uploadButtonIcon"]} />
-                {t("buttons.upload")}
+                {t((m) => m["IMS--Dialogs"].addScanDialog.buttons.upload)}
               </>
             )}
           </Button>

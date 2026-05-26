@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 /**
@@ -12,7 +13,7 @@
  * - Connecting lines between steps
  */
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCheck, TbFileInvoice, TbPhoto, TbReceipt} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./StepIndicator.module.scss";
@@ -45,7 +46,7 @@ function StepItem({
   isActive: boolean;
   isCompleted: boolean;
 }>): React.JSX.Element {
-  const t = useTranslations("IMS--Create.steps");
+  const t = useTranslations();
 
   const circleClassName = [styles["stepCircle"], isActive && styles["stepCircleActive"], isCompleted && styles["stepCircleCompleted"]]
     .filter(Boolean)
@@ -56,8 +57,8 @@ function StepItem({
   return (
     <div className={styles["stepItem"]}>
       <div className={circleClassName}>{isCompleted ? <TbCheck className={styles["stepCheckIcon"]} /> : step.icon}</div>
-      <span className={labelClassName}>{t(step.labelKey)}</span>
-      <span className={styles["stepDescription"]}>{t(step.descriptionKey)}</span>
+      <span className={labelClassName}>{t(selectorFromPath(`IMS--Create.steps.${step.labelKey}`))}</span>
+      <span className={styles["stepDescription"]}>{t(selectorFromPath(`IMS--Create.steps.${step.descriptionKey}`))}</span>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./ForbiddenScreen.module.scss";
@@ -38,7 +38,7 @@ import styles from "./ForbiddenScreen.module.scss";
  * ```
  */
 export default function RenderForbiddenScreen(): React.JSX.Element {
-  const t = useTranslations("Common.states.forbidden");
+  const t = useTranslations();
 
   return (
     <section className={styles["container"]}>
@@ -51,15 +51,15 @@ export default function RenderForbiddenScreen(): React.JSX.Element {
         height={500}
       />
       <article className={styles["content"]}>
-        <h1 className={styles["title"]}>{t("title")}</h1>
+        <h1 className={styles["title"]}>{t((m) => m.Common.states.forbidden.title)}</h1>
         <span className={styles["emoji"]}>😭</span>
-        <p className={styles["description"]}>{t("description")}</p>
+        <p className={styles["description"]}>{t((m) => m.Common.states.forbidden.description)}</p>
       </article>
       <article className={styles["ctaWrapper"]}>
         <Link
           href='/auth'
           className={styles["ctaLink"]}>
-          {t("callToAction")}
+          {t((m) => m.Common.states.forbidden.callToAction)}
         </Link>
       </article>
     </section>

@@ -21,7 +21,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbChartBar} from "react-icons/tb";
 import type {MerchantAggregate} from "../../../_utils/statistics";
@@ -47,7 +47,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the merchant leaderboard.
  */
 function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.merchantLeaderboard");
+  const t = useTranslations();
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
   if (!firstItem) return null;
@@ -59,7 +59,7 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.totalSpend)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -72,14 +72,14 @@ function CustomTooltip({active, payload, currency, getMerchantName}: Readonly<Cu
  * @returns Horizontal bar chart component
  */
 export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.merchantLeaderboard");
+  const t = useTranslations();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
   // Create a function to get merchant name or fallback to ID
   const getMerchantName = useCallback(
     (id: string): string => {
       const merchant = getMerchantById(id);
-      return merchant?.name ?? t("unknownMerchant");
+      return merchant?.name ?? t((m) => m["IMS--Stats"].merchantLeaderboard.unknownMerchant);
     },
     [getMerchantById, t],
   );
@@ -103,7 +103,7 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
 
   const chartConfig = {
     totalSpent: {
-      label: t("labels.totalSpent"),
+      label: t((m) => m["IMS--Stats"].merchantLeaderboard.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
   };
@@ -113,12 +113,12 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["emptyContent"]}>
           <TbChartBar className={styles["emptyIcon"]} />
-          <p className={styles["emptyText"]}>{t("empty")}</p>
+          <p className={styles["emptyText"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.empty)}</p>
         </CardContent>
       </Card>
     );
@@ -136,8 +136,8 @@ export function MerchantLeaderboard({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].merchantLeaderboard.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

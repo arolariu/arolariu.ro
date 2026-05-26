@@ -1,9 +1,10 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import type {NodePackagesJSON} from "@/types";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbBox, TbCode, TbLicense, TbTools} from "react-icons/tb";
 import styles from "./Stats.module.scss";
@@ -23,7 +24,7 @@ const stats = [
  * Statistics dashboard showing package breakdown.
  */
 export default function Stats({packages}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.stats");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -62,9 +63,9 @@ export default function Stats({packages}: Readonly<Props>): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t("title")}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.Acknowledgements.stats.title)}</span>
           </h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.Acknowledgements.stats.subtitle)}</p>
         </motion.div>
 
         {/* Stats grid */}
@@ -88,14 +89,14 @@ export default function Stats({packages}: Readonly<Props>): React.JSX.Element {
                     initial={{opacity: 0, scale: 0.5}}
                     animate={isInView ? {opacity: 1, scale: 1} : {}}
                     transition={{delay: 0.4 + index * 0.1, duration: 0.5, type: "spring"}}>
-                    {t(`${stat.key}.value`, {count: String(getStatValue(stat.key))})}
+                    {t(selectorFromPath(`Acknowledgements.stats.${stat.key}.value`), {count: String(getStatValue(stat.key))})}
                   </motion.span>
 
                   {/* Label */}
-                  <span className={styles["statLabel"]}>{t(`${stat.key}.label`)}</span>
+                  <span className={styles["statLabel"]}>{t(selectorFromPath(`Acknowledgements.stats.${stat.key}.label`))}</span>
 
                   {/* Description */}
-                  <span className={styles["statDescription"]}>{t(`${stat.key}.description`)}</span>
+                  <span className={styles["statDescription"]}>{t(selectorFromPath(`Acknowledgements.stats.${stat.key}.description`))}</span>
                 </CardContent>
               </Card>
             </motion.div>

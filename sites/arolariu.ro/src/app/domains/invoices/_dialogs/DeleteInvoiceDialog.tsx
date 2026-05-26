@@ -20,7 +20,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
@@ -54,7 +54,7 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const router = useRouter();
-  const t = useTranslations("IMS--Dialogs.deleteInvoiceDialog");
+  const t = useTranslations();
   const removeInvoice = useInvoicesStore((state) => state.removeEntity);
 
   const {
@@ -99,15 +99,15 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       // This ensures the cached invoice list is immediately updated
       removeInvoice(invoice.id);
 
-      toast(t("toasts.deletedTitle"), {
-        description: t("toasts.deletedDescription"),
+      toast(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deletedTitle), {
+        description: t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deletedDescription),
       });
       handleClose();
       router.push("/domains/invoices/view-invoices");
     } catch (error) {
-      console.error(t("console.deleteError"), error);
-      toast(t("toasts.deleteFailedTitle"), {
-        description: t("toasts.deleteFailedDescription"),
+      console.error(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.console.deleteError), error);
+      toast(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deleteFailedTitle), {
+        description: t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deleteFailedDescription),
       });
     } finally {
       setIsDeleting(false);
@@ -130,9 +130,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className={styles["dialogTitleRed"]}>
             <TbTrash className={styles["titleIcon"]} />
-            {t("title")}
+            {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.title)}
           </DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.description)}</DialogDescription>
         </DialogHeader>
 
         <AnimatePresence mode='wait'>
@@ -149,8 +149,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 className={styles["spinnerWrapper"]}>
                 <TbLoader2 className={styles["spinnerIcon"]} />
               </motion.div>
-              <p className={styles["deletingTitle"]}>{t("deleting.title")}</p>
-              <p className={styles["deletingDescription"]}>{t("deleting.description")}</p>
+              <p className={styles["deletingTitle"]}>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.deleting.title)}</p>
+              <p className={styles["deletingDescription"]}>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.deleting.description)}</p>
             </motion.div>
           ) : (
             <motion.div
@@ -178,30 +178,30 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 variant='destructive'
                 className={styles["alertRed"]}>
                 <TbAlertTriangle className={styles["impactIcon"]} />
-                <AlertTitle>{t("impact.title")}</AlertTitle>
+                <AlertTitle>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.title)}</AlertTitle>
                 <AlertDescription>
-                  <p className={styles["impactIntro"]}>{t("impact.intro")}</p>
+                  <p className={styles["impactIntro"]}>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.intro)}</p>
                   <ul className={styles["impactList"]}>
                     <li className={styles["impactItem"]}>
                       <TbFileX className={styles["impactIcon"]} />
-                      {t("impact.invoiceRecord")}
+                      {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.invoiceRecord)}
                     </li>
                     {scanCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbPhoto className={styles["impactIcon"]} />
-                        {t("impact.uploadedScans", {count: String(scanCount)})}
+                        {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.uploadedScans, {count: String(scanCount)})}
                       </li>
                     )}
                     {itemCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbShoppingCart className={styles["impactIcon"]} />
-                        {t("impact.lineItems", {count: String(itemCount)})}
+                        {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.lineItems, {count: String(itemCount)})}
                       </li>
                     )}
                     {sharedCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbX className={styles["impactIcon"]} />
-                        {t("impact.sharedAccess", {count: String(sharedCount)})}
+                        {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.impact.sharedAccess, {count: String(sharedCount)})}
                       </li>
                     )}
                   </ul>
@@ -214,7 +214,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <div className={styles["confirmSection"]}>
                 <div className={styles["confirmField"]}>
                   <Label htmlFor='confirm-name'>
-                    {t.rich("confirmation.typeToConfirm", {
+                    {t.rich((m) => m["IMS--Dialogs"].deleteInvoiceDialog.confirmation.typeToConfirm, {
                       name: invoiceName,
                       // eslint-disable-next-line react/no-unstable-nested-components -- single-call site; hoisting is more boilerplate than benefit
                       highlight: (chunks) => <span className={styles["confirmHighlight"]}>{chunks}</span>,
@@ -242,9 +242,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     <Label
                       htmlFor='understand-deletion'
                       className={styles["labelCursorSm"]}>
-                      {t("confirmation.understoodLabel")}
+                      {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.confirmation.understoodLabel)}
                     </Label>
-                    <p className={styles["checkboxDescription"]}>{t("confirmation.understoodDescription")}</p>
+                    <p className={styles["checkboxDescription"]}>{t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.confirmation.understoodDescription)}</p>
                   </div>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             variant='outline'
             onClick={handleClose}
             disabled={isDeleting}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
@@ -268,12 +268,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className={styles["buttonSpinnerIcon"]} />
-                {t("buttons.deleting")}
+                {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.buttons.deleting)}
               </>
             ) : (
               <>
                 <TbTrash className={styles["buttonIcon"]} />
-                {t("buttons.deletePermanently")}
+                {t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.buttons.deletePermanently)}
               </>
             )}
           </Button>

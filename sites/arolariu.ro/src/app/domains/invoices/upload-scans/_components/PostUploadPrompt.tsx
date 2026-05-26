@@ -12,7 +12,7 @@
 
 import {Button, Card, CardContent} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbArrowRight, TbCheck, TbEye, TbX} from "react-icons/tb";
 import styles from "./PostUploadPrompt.module.scss";
@@ -81,7 +81,7 @@ export default function PostUploadPrompt({
   onDismiss,
   isVisible,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--UploadScans.postUpload");
+  const t = useTranslations();
 
   /** Prevents click events from bubbling to the overlay's dismiss handler. */
   const handleStopPropagation = useCallback((e: React.MouseEvent) => {
@@ -112,7 +112,7 @@ export default function PostUploadPrompt({
                   type='button'
                   onClick={onDismiss}
                   className={styles["dismissButton"]}
-                  aria-label={t("dismiss")}>
+                  aria-label={t((m) => m["IMS--UploadScans"].postUpload.dismiss)}>
                   <TbX className={styles["dismissIcon"]} />
                 </button>
 
@@ -125,7 +125,7 @@ export default function PostUploadPrompt({
                     transition={{delay: 0.1, type: "spring", stiffness: 200, damping: 15}}>
                     <TbCheck className={styles["checkmarkIcon"]} />
                   </motion.div>
-                  <h2 className={styles["title"]}>{t("title")}</h2>
+                  <h2 className={styles["title"]}>{t((m) => m["IMS--UploadScans"].postUpload.title)}</h2>
                 </div>
 
                 {/* Thumbnail preview row */}
@@ -164,7 +164,7 @@ export default function PostUploadPrompt({
                   initial={{opacity: 0}}
                   animate={{opacity: 1}}
                   transition={{delay: 0.4}}>
-                  {t("subtitle", {count: completedScans.length})}
+                  {t((m) => m["IMS--UploadScans"].postUpload.subtitle, {count: completedScans.length})}
                 </motion.p>
 
                 {/* Action buttons */}
@@ -177,7 +177,7 @@ export default function PostUploadPrompt({
                     onClick={onCreateInvoice}
                     className={styles["primaryButton"]}
                     size='lg'>
-                    {t("createInvoice")}
+                    {t((m) => m["IMS--UploadScans"].postUpload.createInvoice)}
                     <TbArrowRight className={styles["buttonIcon"]} />
                   </Button>
                   <Button
@@ -186,7 +186,7 @@ export default function PostUploadPrompt({
                     className={styles["secondaryButton"]}
                     size='lg'>
                     <TbEye className={styles["buttonIcon"]} />
-                    {t("viewScans")}
+                    {t((m) => m["IMS--UploadScans"].postUpload.viewScans)}
                   </Button>
                 </motion.div>
               </CardContent>

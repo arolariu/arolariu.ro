@@ -38,7 +38,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import type {DailySpending} from "../../../_utils/statistics";
@@ -198,7 +199,7 @@ function generateCalendarGrid(data: DailySpending[], monthOffset: number): {week
  * Individual day cell component with tooltip.
  */
 function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: string; locale: string}>): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.calendarHeatmap.tooltip");
+  const t = useTranslations();
 
   if (!day.date) {
     return <div className={`${styles["dayCell"]} ${styles["dayCellEmpty"]}`} />;
@@ -219,12 +220,12 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
           {day.amount > 0 ? (
             <>
               <div className={styles["tooltipAmount"]}>
-                {t("amount")}: {formatAmount(day.amount)} {currency}
+                {t((m) => m["IMS--Stats"].calendarHeatmap.tooltip.amount)}: {formatAmount(day.amount)} {currency}
               </div>
-              <div className={styles["tooltipInvoices"]}>{t("invoices", {count: String(day.invoiceCount)})}</div>
+              <div className={styles["tooltipInvoices"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.tooltip.invoices, {count: String(day.invoiceCount)})}</div>
             </>
           ) : (
-            <div className={styles["tooltipNoSpending"]}>{t("noSpending")}</div>
+            <div className={styles["tooltipNoSpending"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.tooltip.noSpending)}</div>
           )}
         </TooltipContent>
       </Tooltip>
@@ -255,13 +256,13 @@ function DayCell({day, currency, locale}: Readonly<{day: DayCell; currency: stri
  * @returns Calendar heatmap JSX element
  */
 export default function SpendingCalendarHeatmap({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.calendarHeatmap");
+  const t = useTranslations();
   const locale = useLocale();
   const [monthOffset, setMonthOffset] = useState(0);
 
   const {weeks, monthLabel} = useMemo(() => generateCalendarGrid(data, monthOffset), [data, monthOffset]);
 
-  const dayLabels = [t("days.sun"), t("days.mon"), t("days.tue"), t("days.wed"), t("days.thu"), t("days.fri"), t("days.sat")];
+  const dayLabels = [t((m) => m["IMS--Stats"].calendarHeatmap.days.sun), t((m) => m["IMS--Stats"].calendarHeatmap.days.mon), t((m) => m["IMS--Stats"].calendarHeatmap.days.tue), t((m) => m["IMS--Stats"].calendarHeatmap.days.wed), t((m) => m["IMS--Stats"].calendarHeatmap.days.thu), t((m) => m["IMS--Stats"].calendarHeatmap.days.fri), t((m) => m["IMS--Stats"].calendarHeatmap.days.sat)];
 
   /** Navigates to the previous month in the heatmap. */
   const handlePreviousMonth = useCallback((): void => {
@@ -278,14 +279,14 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
       <CardHeader className={styles["cardHeader"]}>
         <div className={styles["headerRow"]}>
           <div>
-            <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-            <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+            <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.title)}</CardTitle>
+            <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.description)}</CardDescription>
           </div>
           <div className={styles["navigationButtons"]}>
             <button
               onClick={handlePreviousMonth}
               className={styles["navButton"]}
-              aria-label={t("navigation.previous")}
+              aria-label={t((m) => m["IMS--Stats"].calendarHeatmap.navigation.previous)}
               type='button'>
               <TbChevronLeft size={20} />
             </button>
@@ -294,7 +295,7 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
               onClick={handleNextMonth}
               className={styles["navButton"]}
               disabled={monthOffset === 0}
-              aria-label={t("navigation.next")}
+              aria-label={t((m) => m["IMS--Stats"].calendarHeatmap.navigation.next)}
               type='button'>
               <TbChevronRight size={20} />
             </button>
@@ -305,7 +306,7 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
         <div
           className={styles["calendarContainer"]}
           role='grid'
-          aria-label={t("aria.calendarGrid")}>
+          aria-label={t((m) => m["IMS--Stats"].calendarHeatmap.aria.calendarGrid)}>
           {/* Day of week labels */}
           <div className={styles["dayLabelsColumn"]}>
             <div className={styles["dayLabelEmpty"]} />
@@ -340,7 +341,7 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
 
         {/* Legend */}
         <div className={styles["legend"]}>
-          <span className={styles["legendLabel"]}>{t("legend.less")}</span>
+          <span className={styles["legendLabel"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.legend.less)}</span>
           <div className={styles["legendColors"]}>
             {[0, 1, 2, 3, 4].map((level) => (
               <div
@@ -350,7 +351,7 @@ export default function SpendingCalendarHeatmap({data, currency}: Props): React.
               />
             ))}
           </div>
-          <span className={styles["legendLabel"]}>{t("legend.more")}</span>
+          <span className={styles["legendLabel"]}>{t((m) => m["IMS--Stats"].calendarHeatmap.legend.more)}</span>
         </div>
       </CardContent>
     </Card>

@@ -2,7 +2,7 @@
 
 import {TypewriterTextSmooth} from "@arolariu/components";
 import {Card, CardContent, CardHeader} from "@arolariu/components/card";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 
 import {TbBinoculars, TbBrandAzure, TbBrandCSharp, TbBrandGithub, TbBrandNextjs, TbBrandSvelte} from "react-icons/tb";
@@ -15,37 +15,37 @@ import styles from "./Features.module.scss";
  * @returns The features section of the homepage, CSR'ed.
  */
 export default function FeaturesSection(): React.JSX.Element {
-  const t = useTranslations("Home.featuresTab");
+  const t = useTranslations();
   const features = [
     {
       icon: <TbBrandNextjs className={styles["cardIcon"]} />,
-      title: t("nextJs.title"),
-      description: t("nextJs.description"),
+      title: t((m) => m.Home.featuresTab.nextJs.title),
+      description: t((m) => m.Home.featuresTab.nextJs.description),
     },
     {
       icon: <TbBrandAzure className={styles["cardIcon"]} />,
-      title: t("azure.title"),
-      description: t("azure.description"),
+      title: t((m) => m.Home.featuresTab.azure.title),
+      description: t((m) => m.Home.featuresTab.azure.description),
     },
     {
       icon: <TbBrandCSharp className={styles["cardIcon"]} />,
-      title: t("csharp.title"),
-      description: t("csharp.description"),
+      title: t((m) => m.Home.featuresTab.csharp.title),
+      description: t((m) => m.Home.featuresTab.csharp.description),
     },
     {
       icon: <TbBrandSvelte className={styles["cardIcon"]} />,
-      title: t("svelte.title"),
-      description: t("svelte.description"),
+      title: t((m) => m.Home.featuresTab.svelte.title),
+      description: t((m) => m.Home.featuresTab.svelte.description),
     },
     {
       icon: <TbBinoculars className={styles["cardIcon"]} />,
-      title: t("otel.title"),
-      description: t("otel.description"),
+      title: t((m) => m.Home.featuresTab.otel.title),
+      description: t((m) => m.Home.featuresTab.otel.description),
     },
     {
       icon: <TbBrandGithub className={styles["cardIcon"]} />,
-      title: t("githubActions.title"),
-      description: t("githubActions.description"),
+      title: t((m) => m.Home.featuresTab.githubActions.title),
+      description: t((m) => m.Home.featuresTab.githubActions.description),
     },
   ] as const;
 
@@ -53,7 +53,7 @@ export default function FeaturesSection(): React.JSX.Element {
     <section className={styles["section"]}>
       <article className={styles["article"]}>
         <TypewriterTextSmooth
-          words={t("title")
+          words={t((m) => m.Home.featuresTab.title)
             .split(" ")
             .map((word) => ({
               text: word,
@@ -62,7 +62,7 @@ export default function FeaturesSection(): React.JSX.Element {
           className={styles["titleWrapper"]}
           cursorClassName={styles["cursorClass"]}
         />
-        <p className={styles["description"]}>{t("description")}</p>
+        <p className={styles["description"]}>{t((m) => m.Home.featuresTab.description)}</p>
 
         <div className={styles["grid"]}>
           {features.map((feature) => (
@@ -81,7 +81,7 @@ export default function FeaturesSection(): React.JSX.Element {
         <Link
           href='/about'
           className={styles["learnMoreLink"]}>
-          {t("learnMoreBtn")}
+          {t((m) => m.Home.featuresTab.learnMoreBtn)}
         </Link>
       </article>
     </section>

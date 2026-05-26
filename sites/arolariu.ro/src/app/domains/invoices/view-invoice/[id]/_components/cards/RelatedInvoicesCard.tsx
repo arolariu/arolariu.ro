@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Related Invoices card displaying similar invoices in a horizontal carousel.
  * @module domains/invoices/view-invoice/[id]/components/cards/RelatedInvoicesCard
@@ -31,7 +32,7 @@ import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useMemo} from "react";
 import {TbArrowRight, TbCalendar, TbReceipt, TbTag} from "react-icons/tb";
@@ -124,7 +125,7 @@ function isSimilarAmount(amount1: number, amount2: number): boolean {
  * ```
  */
 export function RelatedInvoicesCard(): React.JSX.Element | null {
-  const t = useTranslations("IMS--View.relatedInvoices");
+  const t = useTranslations();
   const {invoice: currentInvoice} = useInvoiceContext();
   const invoices = useInvoicesStore(useShallow((state) => state.entities));
 
@@ -207,8 +208,8 @@ export function RelatedInvoicesCard(): React.JSX.Element | null {
         <CardHeader>
           <div className={styles["header"]}>
             <div>
-              <CardTitle>{t("title")}</CardTitle>
-              <p className={styles["subtitle"]}>{t("subtitle")}</p>
+              <CardTitle>{t((m) => m["IMS--View"].relatedInvoices.title)}</CardTitle>
+              <p className={styles["subtitle"]}>{t((m) => m["IMS--View"].relatedInvoices.subtitle)}</p>
             </div>
             <TbReceipt className={styles["headerIcon"]} />
           </div>
@@ -262,7 +263,7 @@ interface RelatedInvoiceMiniCardProps {
  * @returns Mini invoice card component
  */
 function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoiceMiniCardProps>): React.JSX.Element {
-  const t = useTranslations("IMS--View.relatedInvoices");
+  const t = useTranslations();
 
   const formattedDate = formatDate(invoice.createdAt, {
     locale: "en-US",
@@ -273,7 +274,7 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
 
   const amount = `${invoice.paymentInformation.currency.symbol}${formatAmount(invoice.paymentInformation.totalCostAmount)}`;
 
-  const relationTypeBadge = t(relationType);
+  const relationTypeBadge = t(selectorFromPath(`IMS--View.relatedInvoices.${relationType}`));
 
   return (
     <Link
@@ -309,7 +310,7 @@ function RelatedInvoiceMiniCard({invoice, relationType}: Readonly<RelatedInvoice
 
         {/* View Arrow */}
         <div className={styles["viewAction"]}>
-          <span className={styles["viewText"]}>{t("viewInvoice")}</span>
+          <span className={styles["viewText"]}>{t((m) => m["IMS--View"].relatedInvoices.viewInvoice)}</span>
           <TbArrowRight className={styles["arrowIcon"]} />
         </div>
       </div>

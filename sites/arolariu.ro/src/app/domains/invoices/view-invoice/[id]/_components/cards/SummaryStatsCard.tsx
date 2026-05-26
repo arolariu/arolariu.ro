@@ -2,7 +2,8 @@
 
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbGrid3X3, TbPackage, TbPercentage, TbReceipt, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {InvoiceSummary} from "../../_utils/analytics";
 import styles from "./SummaryStatsCard.module.scss";
@@ -14,31 +15,31 @@ type Props = {
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--Cards.summaryStatsCard");
+  const t = useTranslations();
   const stats = [
     {
-      label: t("stats.totalItems.label"),
+      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.totalItems.label),
       value: summary.totalItems.toString(),
       icon: TbPackage,
-      description: t("stats.totalItems.description"),
+      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.totalItems.description),
     },
     {
-      label: t("stats.categories.label"),
+      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.categories.label),
       value: summary.uniqueCategories.toString(),
       icon: TbGrid3X3,
-      description: t("stats.categories.description"),
+      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.categories.description),
     },
     {
-      label: t("stats.averagePrice.label"),
+      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.averagePrice.label),
       value: `${formatAmount(summary.averageItemPrice)}`,
       icon: TbReceipt,
-      description: t("stats.averagePrice.description", {currency}),
+      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.averagePrice.description, {currency}),
     },
     {
-      label: t("stats.taxRate.label"),
+      label: t((m) => m["IMS--Cards"].summaryStatsCard.stats.taxRate.label),
       value: `${formatAmount(summary.taxPercentage, locale, 1)}%`,
       icon: TbPercentage,
-      description: t("stats.taxRate.description", {amount: formatAmount(summary.taxAmount), currency}),
+      description: t((m) => m["IMS--Cards"].summaryStatsCard.stats.taxRate.description, {amount: formatAmount(summary.taxAmount), currency}),
     },
   ];
 
@@ -46,8 +47,8 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
     <div className={styles["card"]}>
       <Card>
         <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
+          <CardTitle>{t((m) => m["IMS--Cards"].summaryStatsCard.title)}</CardTitle>
+          <CardDescription>{t((m) => m["IMS--Cards"].summaryStatsCard.description)}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className={styles["statsGrid"]}>
@@ -69,7 +70,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
             <div className={styles["extremeRow"]}>
               <div className={styles["extremeLabel"]}>
                 <TbTrendingUp className={styles["iconEmerald"]} />
-                <span className={styles["extremeLabelText"]}>{t("extremes.highest")}</span>
+                <span className={styles["extremeLabelText"]}>{t((m) => m["IMS--Cards"].summaryStatsCard.extremes.highest)}</span>
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>
@@ -82,7 +83,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
             <div className={styles["extremeRow"]}>
               <div className={styles["extremeLabel"]}>
                 <TbTrendingDown className={styles["iconBlue"]} />
-                <span className={styles["extremeLabelText"]}>{t("extremes.lowest")}</span>
+                <span className={styles["extremeLabelText"]}>{t((m) => m["IMS--Cards"].summaryStatsCard.extremes.lowest)}</span>
               </div>
               <div className={styles["extremeRight"]}>
                 <p className={styles["extremePrice"]}>

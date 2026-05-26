@@ -7,7 +7,7 @@
 
 import {Button, Card, CardContent, Sheet, SheetContent, SheetTrigger, useIsMobile} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback} from "react";
 import {TbArrowLeft, TbBulb, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
@@ -55,7 +55,7 @@ function StatsCard({value, label, colorClass}: Readonly<{value: number; label: s
  * Scan statistics component.
  */
 function ScanStats(): React.JSX.Element | null {
-  const t = useTranslations("IMS--ViewScans");
+  const t = useTranslations();
   const {scans, selectedScans} = useScans();
   const readyScans = scans.filter((s) => s.status === "ready").length;
 
@@ -70,25 +70,25 @@ function ScanStats(): React.JSX.Element | null {
         <div className={styles["scanStatsGroup"]}>
           <StatsCard
             value={scans.length}
-            label={t("stats.totalScans")}
+            label={t((m) => m["IMS--ViewScans"].stats.totalScans)}
             colorClass='statsCardValueDefault'
           />
           <StatsCard
             value={readyScans}
-            label={t("stats.ready")}
+            label={t((m) => m["IMS--ViewScans"].stats.ready)}
             colorClass='statsCardValueGreen'
           />
           <StatsCard
             value={selectedScans.length}
-            label={t("stats.selected")}
+            label={t((m) => m["IMS--ViewScans"].stats.selected)}
             colorClass='statsCardValuePurple'
           />
         </div>
 
         {selectedScans.length === 0 && scans.length > 0 && (
           <p className={styles["selectHint"]}>
-            <span className={styles["hiddenMobile"]}>{t("stats.selectHint")}</span>
-            <span className={styles["visibleMobile"]}>{t("stats.tapHint")}</span>
+            <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].stats.selectHint)}</span>
+            <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].stats.tapHint)}</span>
           </p>
         )}
       </div>
@@ -100,7 +100,7 @@ function ScanStats(): React.JSX.Element | null {
  * Sidebar content component (reused in both desktop sidebar and mobile Sheet).
  */
 function SidebarContent(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans");
+  const t = useTranslations();
   const {selectedScans} = useScans();
 
   return (
@@ -108,22 +108,22 @@ function SidebarContent(): React.JSX.Element {
       {/* How to Use */}
       <Card>
         <CardContent className={styles["sidebarCardContent"]}>
-          <h3 className={styles["sidebarTitle"]}>{t("sidebar.howTo.title")}</h3>
+          <h3 className={styles["sidebarTitle"]}>{t((m) => m["IMS--ViewScans"].sidebar.howTo.title)}</h3>
           <div className={styles["howToList"]}>
             <QuickTip
               icon={<TbClick className={styles["tipIcon"]} />}
-              title={t("sidebar.howTo.step1Title")}
-              description={t("sidebar.howTo.step1Description")}
+              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step1Title)}
+              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step1Description)}
             />
             <QuickTip
               icon={<TbStack2 className={styles["tipIcon"]} />}
-              title={t("sidebar.howTo.step2Title")}
-              description={t("sidebar.howTo.step2Description")}
+              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step2Title)}
+              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step2Description)}
             />
             <QuickTip
               icon={<TbFileInvoice className={styles["tipIcon"]} />}
-              title={t("sidebar.howTo.step3Title")}
-              description={t("sidebar.howTo.step3Description")}
+              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step3Title)}
+              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step3Description)}
             />
           </div>
         </CardContent>
@@ -143,10 +143,10 @@ function SidebarContent(): React.JSX.Element {
                 <div>
                   <p className={styles["selectionTitle"]}>
                     {selectedScans.length}{" "}
-                    {selectedScans.length > 1 ? t("sidebar.selectionStatus.plural") : t("sidebar.selectionStatus.singular")}
+                    {selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.plural) : t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.singular)}
                   </p>
                   <p className={styles["selectionDescription"]}>
-                    {selectedScans.length > 1 ? t("sidebar.selectionStatus.readyPlural") : t("sidebar.selectionStatus.readySingular")}
+                    {selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.readyPlural) : t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.readySingular)}
                   </p>
                 </div>
               </div>
@@ -163,14 +163,14 @@ function SidebarContent(): React.JSX.Element {
               <TbPhoto className={styles["quickUploadIcon"]} />
             </div>
             <div className={styles["quickUploadTextBlock"]}>
-              <p className={styles["quickUploadTitle"]}>{t("sidebar.quickUpload.title")}</p>
-              <p className={styles["quickUploadDescription"]}>{t("sidebar.quickUpload.description")}</p>
+              <p className={styles["quickUploadTitle"]}>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.title)}</p>
+              <p className={styles["quickUploadDescription"]}>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.description)}</p>
             </div>
             <Button
               asChild
               size='sm'
               variant='outline'>
-              <Link href='/domains/invoices/upload-scans'>{t("sidebar.quickUpload.button")}</Link>
+              <Link href='/domains/invoices/upload-scans'>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.button)}</Link>
             </Button>
           </div>
         </CardContent>
@@ -233,7 +233,7 @@ function MobileTipsButton(): React.JSX.Element | null {
  * Inner content component that uses the dialog context.
  */
 function ViewScansContent(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans");
+  const t = useTranslations();
   const {scans, selectedScans} = useScans();
   const {openDialog} = useDialogs();
 
@@ -249,7 +249,7 @@ function ViewScansContent(): React.JSX.Element {
           href='/domains/invoices'
           className={styles["breadcrumbLink"]}>
           <TbArrowLeft className={styles["breadcrumbIcon"]} />
-          {t("breadcrumb")}
+          {t((m) => m["IMS--ViewScans"].breadcrumb)}
         </Link>
       </div>
 

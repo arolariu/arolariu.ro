@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 /**
@@ -20,7 +21,7 @@ import {
   Kbd,
   KbdGroup,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbKeyboard} from "react-icons/tb";
 import styles from "./ShortcutsHelpDialog.module.scss";
 
@@ -82,7 +83,7 @@ type ShortcutItem = {
  * ```
  */
 export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsHelpDialogProps>): React.JSX.Element {
-  const t = useTranslations("IMS--Common.shortcuts");
+  const t = useTranslations();
 
   // Detect if user is on macOS for Cmd vs Ctrl display
   const isMac = typeof navigator !== "undefined" && navigator.platform.toUpperCase().includes("MAC");
@@ -109,9 +110,9 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
               className={styles["icon"]}
               aria-hidden='true'
             />
-            <DialogTitle className={styles["title"]}>{t("title")}</DialogTitle>
+            <DialogTitle className={styles["title"]}>{t((m) => m["IMS--Common"].shortcuts.title)}</DialogTitle>
           </div>
-          <DialogDescription className={styles["description"]}>{t("description")}</DialogDescription>
+          <DialogDescription className={styles["description"]}>{t((m) => m["IMS--Common"].shortcuts.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["shortcutsGrid"]}>
@@ -128,7 +129,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
                   </Kbd>
                 ))}
               </KbdGroup>
-              <span className={styles["shortcutDescription"]}>{t(shortcut.descriptionKey)}</span>
+              <span className={styles["shortcutDescription"]}>{t(selectorFromPath(`IMS--Common.shortcuts.${shortcut.descriptionKey}`))}</span>
             </div>
           ))}
         </div>
@@ -138,7 +139,7 @@ export default function ShortcutsHelpDialog({open, onClose}: Readonly<ShortcutsH
             onClick={onClose}
             variant='default'
             className={styles["closeButton"]}>
-            {t("close")}
+            {t((m) => m["IMS--Common"].shortcuts.close)}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -2,7 +2,8 @@
 
 import {formatCurrency} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
-import {useFormatter, useLocale, useTranslations} from "next-intl";
+import {useFormatter, useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import styles from "./PrintHeader.module.scss";
 
 /**
@@ -22,7 +23,7 @@ interface PrintHeaderProps {
  */
 export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Element {
   const {invoice, merchant} = props;
-  const t = useTranslations("IMS--View.print");
+  const t = useTranslations();
   const formatter = useFormatter();
   const locale = useLocale();
 
@@ -54,28 +55,28 @@ export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Elemen
         {/* Invoice Details Grid */}
         <div className={styles["detailsGrid"]}>
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t("labels.date")}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.date)}:</span>
             <span className={styles["detailValue"]}>{invoiceDate}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t("labels.merchant")}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.merchant)}:</span>
             <span className={styles["detailValue"]}>{merchant?.name ?? ""}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t("labels.total")}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.total)}:</span>
             <span className={styles["detailValue"]}>{formattedTotal}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t("labels.items")}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.items)}:</span>
             <span className={styles["detailValue"]}>{invoice.items.length}</span>
           </div>
         </div>
 
         {/* Generated Timestamp */}
-        <div className={styles["generatedOn"]}>{t("generatedOn", {date: printDate})}</div>
+        <div className={styles["generatedOn"]}>{t((m) => m["IMS--View"].print.generatedOn, {date: printDate})}</div>
       </div>
 
       {/* Bottom Border */}

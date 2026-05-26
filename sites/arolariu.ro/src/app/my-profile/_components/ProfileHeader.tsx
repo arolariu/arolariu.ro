@@ -14,7 +14,7 @@ import {
 } from "@arolariu/components";
 import type {User} from "@clerk/nextjs/server";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbEdit, TbShieldCheck} from "react-icons/tb";
 import {getInitials} from "../_utils/helpers";
@@ -26,7 +26,7 @@ type Props = Readonly<{
 }>;
 
 export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element {
-  const t = useTranslations("Profile");
+  const t = useTranslations();
 
   /**
    * Opens the Clerk account management dashboard in a new tab.
@@ -69,23 +69,23 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                 size='sm'
                 className={styles["editButton"]}>
                 <TbEdit className={styles["editIcon"]} />
-                {t("header.editProfile")}
+                {t((m) => m.Profile.header.editProfile)}
               </Button>
             }
           />
           <SheetContent>
             <SheetHeader>
-              <SheetTitle>{t("header.editProfileTitle")}</SheetTitle>
-              <SheetDescription>{t("header.editProfileDescription")}</SheetDescription>
+              <SheetTitle>{t((m) => m.Profile.header.editProfileTitle)}</SheetTitle>
+              <SheetDescription>{t((m) => m.Profile.header.editProfileDescription)}</SheetDescription>
             </SheetHeader>
             <div className={styles["sheetBody"]}>
               <Button
                 className={styles["manageButton"]}
                 onClick={handleManageOnClerk}>
                 <TbShieldCheck className={styles["iconSmSize"]} />
-                {t("header.manageOnClerk")}
+                {t((m) => m.Profile.header.manageOnClerk)}
               </Button>
-              <p className={styles["sheetNote"]}>{t("header.editProfileClerkNote")}</p>
+              <p className={styles["sheetNote"]}>{t((m) => m.Profile.header.editProfileClerkNote)}</p>
             </div>
           </SheetContent>
         </Sheet>

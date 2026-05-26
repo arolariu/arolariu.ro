@@ -1,9 +1,10 @@
+import {selectorFromPath} from "next-intl-selector";
 "use client";
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef, useState} from "react";
 import {TbApi, TbBrandAzure, TbCloudComputing, TbDatabase, TbDeviceDesktop, TbLock, TbServer, TbWorldWww} from "react-icons/tb";
 import styles from "./Architecture.module.scss";
@@ -42,7 +43,7 @@ const layerConfigs: LayerConfig[] = [
  * @returns The Architecture component, CSR'ed.
  */
 export default function Architecture(): React.JSX.Element {
-  const t = useTranslations("About.Platform.architecture");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [hoveredLayer, setHoveredLayer] = useState<string | null>(null);
@@ -70,13 +71,13 @@ export default function Architecture(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t("badge")}
+              {t((m) => m.About.Platform.architecture.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
+            {t((m) => m.About.Platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.architecture.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t("description")}</p>
+          <p className={styles["description"]}>{t((m) => m.About.Platform.architecture.description)}</p>
         </motion.div>
 
         {/* Architecture Diagram */}
@@ -114,14 +115,14 @@ export default function Architecture(): React.JSX.Element {
                         <layer.icon className={styles["layerIcon"]} />
                       </motion.div>
                       <div>
-                        <h3 className={styles["layerName"]}>{t(`layers.${layer.id}.name` as Parameters<typeof t>[0])}</h3>
-                        <p className={styles["layerDescription"]}>{t(`layers.${layer.id}.description` as Parameters<typeof t>[0])}</p>
+                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
+                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.description`}`))}</p>
                       </div>
                     </div>
 
                     {/* Technologies */}
                     <div className={styles["technologies"]}>
-                      {t(`layers.${layer.id}.technologies` as Parameters<typeof t>[0])
+                      {t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.technologies`}`))
                         .split(",")
                         .map((tech, techIndex) => (
                           <motion.div

@@ -33,7 +33,7 @@ import {
 } from "@arolariu/components";
 
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 
 import {useCallback} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
@@ -51,7 +51,7 @@ type PackageType = Readonly<"all" | "production" | "development">;
  * @returns A dialog with the dependencies of a package.
  */
 function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.packagesScreen");
+  const t = useTranslations();
 
   return (
     <Dialog>
@@ -60,24 +60,24 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
           <Button
             variant='outline'
             size='sm'>
-            {t("card.viewDependencies")}
+            {t((m) => m.Acknowledgements.packagesScreen.card.viewDependencies)}
           </Button>
         }
       />
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("dialog.dependencies", {name: pkg.name})}</DialogTitle>
+          <DialogTitle>{t((m) => m.Acknowledgements.packagesScreen.dialog.dependencies, {name: pkg.name})}</DialogTitle>
           <DialogDescription>
             {pkg.description} <br /> <br />
-            {t("dialog.dependenciesCount", {count: String(pkg.dependents?.length ?? 0)})}
+            {t((m) => m.Acknowledgements.packagesScreen.dialog.dependenciesCount, {count: String(pkg.dependents?.length ?? 0)})}
           </DialogDescription>
         </DialogHeader>
         <div className={styles["dialogScrollArea"]}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("table.package")}</TableHead>
-                <TableHead>{t("table.version")}</TableHead>
+                <TableHead>{t((m) => m.Acknowledgements.packagesScreen.table.package)}</TableHead>
+                <TableHead>{t((m) => m.Acknowledgements.packagesScreen.table.version)}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,7 +101,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
  * @returns A table displaying package statistics by dependency type
  */
 export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.packagesScreen");
+  const t = useTranslations();
   const {
     extractPackageType,
     filteredAndSortedPackages,
@@ -153,7 +153,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         <div className={styles["searchContainer"]}>
           <Input
             type='text'
-            placeholder={t("search.placeholder")}
+            placeholder={t((m) => m.Acknowledgements.packagesScreen.search.placeholder)}
             value={searchQuery}
             onChange={handleSearch}
             className={styles["searchInput"]}
@@ -165,12 +165,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={packageType}
               onValueChange={handlePackageType}>
               <SelectTrigger>
-                <SelectValue placeholder={t("filters.filterByType")} />
+                <SelectValue placeholder={t((m) => m.Acknowledgements.packagesScreen.filters.filterByType)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>{t("filters.allPackages")}</SelectItem>
-                <SelectItem value='production'>{t("filters.productionOnly")}</SelectItem>
-                <SelectItem value='development'>{t("filters.developmentOnly")}</SelectItem>
+                <SelectItem value='all'>{t((m) => m.Acknowledgements.packagesScreen.filters.allPackages)}</SelectItem>
+                <SelectItem value='production'>{t((m) => m.Acknowledgements.packagesScreen.filters.productionOnly)}</SelectItem>
+                <SelectItem value='development'>{t((m) => m.Acknowledgements.packagesScreen.filters.developmentOnly)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -180,12 +180,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={sortField}
               onValueChange={handleSortField}>
               <SelectTrigger>
-                <SelectValue placeholder={t("filters.sortBy")} />
+                <SelectValue placeholder={t((m) => m.Acknowledgements.packagesScreen.filters.sortBy)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='name'>{t("filters.name")}</SelectItem>
-                <SelectItem value='dependencies'>{t("filters.dependenciesCount")}</SelectItem>
-                <SelectItem value='type'>{t("filters.packageType")}</SelectItem>
+                <SelectItem value='name'>{t((m) => m.Acknowledgements.packagesScreen.filters.name)}</SelectItem>
+                <SelectItem value='dependencies'>{t((m) => m.Acknowledgements.packagesScreen.filters.dependenciesCount)}</SelectItem>
+                <SelectItem value='type'>{t((m) => m.Acknowledgements.packagesScreen.filters.packageType)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -195,11 +195,11 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={sortDirection}
               onValueChange={handleSortDirection}>
               <SelectTrigger>
-                <SelectValue placeholder={t("filters.sortDirection")} />
+                <SelectValue placeholder={t((m) => m.Acknowledgements.packagesScreen.filters.sortDirection)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='asc'>{t("filters.ascending")}</SelectItem>
-                <SelectItem value='desc'>{t("filters.descending")}</SelectItem>
+                <SelectItem value='asc'>{t((m) => m.Acknowledgements.packagesScreen.filters.ascending)}</SelectItem>
+                <SelectItem value='desc'>{t((m) => m.Acknowledgements.packagesScreen.filters.descending)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -210,8 +210,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         defaultValue='grid'
         className={styles["tabsContainer"]}>
         <TabsList className={styles["tabsList"]}>
-          <TabsTrigger value='grid'>{t("views.gridView")}</TabsTrigger>
-          <TabsTrigger value='table'>{t("views.tableView")}</TabsTrigger>
+          <TabsTrigger value='grid'>{t((m) => m.Acknowledgements.packagesScreen.views.gridView)}</TabsTrigger>
+          <TabsTrigger value='table'>{t((m) => m.Acknowledgements.packagesScreen.views.tableView)}</TabsTrigger>
         </TabsList>
 
         <div className={styles["tabsContentWrapper"]}>
@@ -228,7 +228,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                     transition={{duration: 0.3, delay: index * 0.1}}>
                     <Card className={styles["packageCard"]}>
                       <div className={extractPackageType(pkg) === "production" ? styles["productionBanner"] : styles["developmentBanner"]}>
-                        {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
+                        {extractPackageType(pkg) === "production" ? t((m) => m.Acknowledgements.packagesScreen.badge.production) : t((m) => m.Acknowledgements.packagesScreen.badge.development)}
                       </div>
                       <CardHeader>
                         <div className={styles["cardHeaderRow"]}>
@@ -241,11 +241,11 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         <div className={styles["cardDetails"]}>
                           <div className={styles["detailsContent"]}>
                             <div className={styles["detailRow"]}>
-                              <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
+                              <span className={styles["detailLabel"]}>{t((m) => m.Acknowledgements.packagesScreen.card.license)}</span> {pkg.license}
                             </div>
                             <div className={styles["detailRow"]}>
                               <span className={styles["detailLabel"]}>
-                                {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
+                                {t((m) => m.Acknowledgements.packagesScreen.card.dependencies)} {pkg.dependents?.length ?? "N/A"}
                               </span>
                             </div>
                           </div>
@@ -256,7 +256,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                               rel='noopener noreferrer'
                               className={styles["websiteLink"]}>
                               <TbExternalLink className={styles["linkIcon"]} />
-                              <span>{t("card.website")}</span>
+                              <span>{t((m) => m.Acknowledgements.packagesScreen.card.website)}</span>
                             </a>
                             <DependenciesDialog pkg={pkg} />
                           </div>
@@ -269,8 +269,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             ) : (
               <div className={styles["emptyState"]}>
                 <TbPackage className={styles["emptyIcon"]} />
-                <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
-                <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
+                <p className={styles["emptyText"]}>{t((m) => m.Acknowledgements.packagesScreen.emptyState.title)}</p>
+                <p className={styles["emptyText"]}>{t((m) => m.Acknowledgements.packagesScreen.emptyState.subtitle)}</p>
               </div>
             )}
           </TabsContent>
@@ -285,13 +285,13 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("table.package")}</TableHead>
-                      <TableHead className={styles["hiddenMd"]}>{t("table.version")}</TableHead>
-                      <TableHead className={styles["hiddenMd"]}>{t("table.type")}</TableHead>
-                      <TableHead className={styles["hiddenLg"]}>{t("table.description")}</TableHead>
-                      <TableHead className={styles["hiddenXl"]}>{t("table.license")}</TableHead>
-                      <TableHead className={styles["hiddenSm"]}>{t("table.dependencies")}</TableHead>
-                      <TableHead>{t("table.website")}</TableHead>
+                      <TableHead>{t((m) => m.Acknowledgements.packagesScreen.table.package)}</TableHead>
+                      <TableHead className={styles["hiddenMd"]}>{t((m) => m.Acknowledgements.packagesScreen.table.version)}</TableHead>
+                      <TableHead className={styles["hiddenMd"]}>{t((m) => m.Acknowledgements.packagesScreen.table.type)}</TableHead>
+                      <TableHead className={styles["hiddenLg"]}>{t((m) => m.Acknowledgements.packagesScreen.table.description)}</TableHead>
+                      <TableHead className={styles["hiddenXl"]}>{t((m) => m.Acknowledgements.packagesScreen.table.license)}</TableHead>
+                      <TableHead className={styles["hiddenSm"]}>{t((m) => m.Acknowledgements.packagesScreen.table.dependencies)}</TableHead>
+                      <TableHead>{t((m) => m.Acknowledgements.packagesScreen.table.website)}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -300,7 +300,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         <TableCell className={styles["packageName"]}>{pkg.name}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>{pkg.version}</TableCell>
                         <TableCell className={styles["hiddenMd"]}>
-                          {extractPackageType(pkg) === "production" ? t("badge.production") : t("badge.development")}
+                          {extractPackageType(pkg) === "production" ? t((m) => m.Acknowledgements.packagesScreen.badge.production) : t((m) => m.Acknowledgements.packagesScreen.badge.development)}
                         </TableCell>
                         <TableCell className={styles["hiddenLg"]}>
                           <p className={styles["descriptionText"]}>{pkg.description}</p>
@@ -315,9 +315,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             target='_blank'
                             rel='noopener noreferrer'
                             className={styles["tableLink"]}
-                            title={t("table.website")}>
+                            title={t((m) => m.Acknowledgements.packagesScreen.table.website)}>
                             <TbExternalLink className={styles["tableLinkIcon"]} />
-                            <span className={styles["srOnly"]}>{t("table.website")}</span>
+                            <span className={styles["srOnly"]}>{t((m) => m.Acknowledgements.packagesScreen.table.website)}</span>
                           </a>
                         </TableCell>
                       </TableRow>
@@ -328,8 +328,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             ) : (
               <div className={styles["emptyState"]}>
                 <TbPackage className={styles["emptyIcon"]} />
-                <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
-                <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
+                <p className={styles["emptyText"]}>{t((m) => m.Acknowledgements.packagesScreen.emptyState.title)}</p>
+                <p className={styles["emptyText"]}>{t((m) => m.Acknowledgements.packagesScreen.emptyState.subtitle)}</p>
               </div>
             )}
           </TabsContent>
@@ -343,9 +343,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         className={styles["footer"]}>
         <div className={styles["footerHeader"]}>
           <TbPackage className={styles["footerIcon"]} />
-          <h2 className={styles["footerTitle"]}>{t("openSource.title")}</h2>
+          <h2 className={styles["footerTitle"]}>{t((m) => m.Acknowledgements.packagesScreen.openSource.title)}</h2>
         </div>
-        <p className={styles["footerDescription"]}>{t("openSource.description")}</p>
+        <p className={styles["footerDescription"]}>{t((m) => m.Acknowledgements.packagesScreen.openSource.description)}</p>
       </motion.div>
     </div>
   );

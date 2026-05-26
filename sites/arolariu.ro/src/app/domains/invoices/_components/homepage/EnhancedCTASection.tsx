@@ -2,7 +2,7 @@
 
 import {Button} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrain, TbCloud, TbLock, TbSparkles, TbUpload} from "react-icons/tb";
@@ -22,18 +22,18 @@ type CtaTranslations = Readonly<{
  * @returns The CTA section.
  */
 export default function EnhancedCTASection(): React.JSX.Element {
-  const t = useTranslations("IMS--Landing");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-50px"});
   const translations: CtaTranslations = {
-    title: t("cta.title"),
-    description: t("cta.description"),
-    uploadButton: t("cta.uploadButton"),
-    learnMore: t("cta.learnMore"),
+    title: t((m) => m["IMS--Landing"].cta.title),
+    description: t((m) => m["IMS--Landing"].cta.description),
+    uploadButton: t((m) => m["IMS--Landing"].cta.uploadButton),
+    learnMore: t((m) => m["IMS--Landing"].cta.learnMore),
     badges: {
-      secure: t("cta.badges.secure"),
-      cloud: t("cta.badges.cloud"),
-      ai: t("cta.badges.ai"),
+      secure: t((m) => m["IMS--Landing"].cta.badges.secure),
+      cloud: t((m) => m["IMS--Landing"].cta.badges.cloud),
+      ai: t((m) => m["IMS--Landing"].cta.badges.ai),
     },
   };
 

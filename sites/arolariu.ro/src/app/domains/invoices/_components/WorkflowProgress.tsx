@@ -14,7 +14,7 @@
  * Responsive: horizontal on desktop, compact on mobile.
  */
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCheck, TbEye, TbFileInvoice, TbUpload} from "react-icons/tb";
 import styles from "./WorkflowProgress.module.scss";
 
@@ -96,7 +96,7 @@ function Connector({isCompleted}: Readonly<{isCompleted: boolean}>): React.JSX.E
  * ```
  */
 export default function WorkflowProgress({currentStep}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Common.workflowProgress");
+  const t = useTranslations();
 
   const currentOrder = STEP_ORDER[currentStep];
 
@@ -108,21 +108,21 @@ export default function WorkflowProgress({currentStep}: Readonly<Props>): React.
         step='upload'
         isActive={currentStep === "upload"}
         isCompleted={currentOrder > STEP_ORDER["upload"]}
-        label={t("upload")}
+        label={t((m) => m["IMS--Common"].workflowProgress.upload)}
       />
       <Connector isCompleted={currentOrder > STEP_ORDER["upload"]} />
       <Step
         step='review'
         isActive={currentStep === "review"}
         isCompleted={currentOrder > STEP_ORDER["review"]}
-        label={t("review")}
+        label={t((m) => m["IMS--Common"].workflowProgress.review)}
       />
       <Connector isCompleted={currentOrder > STEP_ORDER["review"]} />
       <Step
         step='create'
         isActive={currentStep === "create"}
         isCompleted={currentOrder > STEP_ORDER["create"]}
-        label={t("create")}
+        label={t((m) => m["IMS--Common"].workflowProgress.create)}
       />
     </nav>
   );

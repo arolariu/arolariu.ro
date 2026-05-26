@@ -33,7 +33,8 @@
  * `../../messages/*.json` (two levels up from `_lib/`).
  */
 
-import {createTranslator, type AbstractIntlMessages} from "next-intl";
+import {type AbstractIntlMessages} from "next-intl";
+import {createTranslator} from "next-intl-selector";
 import type {ReactNode} from "react";
 
 // ============================================================================
@@ -121,9 +122,8 @@ export function createEmailTranslator(opts: {
   readonly messages: EmailMessages;
   readonly namespace: string;
 }): EmailTranslator {
-  return createTranslator<AbstractIntlMessages, string>({
+  return createTranslator({
     locale: opts.locale,
     messages: opts.messages as AbstractIntlMessages,
-    namespace: opts.namespace,
   }) as unknown as EmailTranslator;
 }
