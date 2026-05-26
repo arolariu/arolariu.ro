@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Input} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";

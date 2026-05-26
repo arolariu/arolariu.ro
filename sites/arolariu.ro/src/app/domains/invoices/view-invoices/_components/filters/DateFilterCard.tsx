@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Calendar, Popover, PopoverContent, PopoverTrigger} from "@arolariu/components";

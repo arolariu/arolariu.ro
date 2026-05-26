@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
 import {motion, useInView} from "motion/react";

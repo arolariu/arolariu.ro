@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Avatar, AvatarFallback} from "@arolariu/components/avatar";
 import {Card, CardContent} from "@arolariu/components/card";

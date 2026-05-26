@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import type {NodePackagesJSON} from "@/types";
 import {Card, CardContent} from "@arolariu/components/card";

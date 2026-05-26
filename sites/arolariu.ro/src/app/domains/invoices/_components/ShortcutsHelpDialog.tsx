@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 /**
  * @fileoverview Dialog displaying available keyboard shortcuts for the invoice management system.

@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@arolariu/components/accordion";
 import {motion, useInView} from "motion/react";

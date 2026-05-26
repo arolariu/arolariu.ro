@@ -1,5 +1,6 @@
-import {selectorFromPath} from "next-intl-selector";
 "use client";
+
+import {selectorFromPath} from "next-intl-selector";
 
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import type {User} from "@clerk/nextjs/server";
