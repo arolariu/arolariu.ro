@@ -100,7 +100,7 @@ export async function loadMessages(locale: EmailLocale = DEFAULT_LOCALE): Promis
  * @example
  * ```ts
  * const messages = await loadMessages("ro");
- * const t = createEmailTranslator({locale: "ro", messages, namespace: "email.welcome"});
+ * const t = createEmailTranslator({locale: "ro", messages, namespace: "emails.welcome"});
  * t(selectorFromPath("emails.welcome.greeting"), {name: "Alex"}); // → "Salut, Alex"
  * ```
  */

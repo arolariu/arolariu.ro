@@ -6,7 +6,7 @@ import Architecture from "./Architecture";
  * Features an interactive layered diagram with eight architecture layers
  * (Client, CDN, API, Services, Auth, Data, AI, Infra), each showing
  * technologies as badges.
- * Uses the `About.Platform.architecture` i18n namespace.
+ * Uses the `sections.about.platform.architecture` i18n namespace.
  */
 const meta = {
   title: "Pages/About/ThePlatform/Architecture",

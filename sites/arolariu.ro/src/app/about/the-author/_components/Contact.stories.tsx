@@ -6,7 +6,7 @@ import Contact from "./Contact";
  * collaboration interests. Features two cards: one with social links
  * (email, LinkedIn, GitHub, website) with copy/open actions, and another
  * with collaboration discipline cards.
- * Uses the `About.Author.Contact` i18n namespace.
+ * Uses the `sections.about.author.Contact` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Contact",

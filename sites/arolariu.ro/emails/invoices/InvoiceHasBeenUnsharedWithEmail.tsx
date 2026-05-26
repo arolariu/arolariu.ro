@@ -24,7 +24,7 @@ type Props = {
 };
 
 const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceUnshared",
+  namespace: "emails.invoiceUnshared",
   render: ({locale, t, props}) => {
     const {fromUsername, toUsername, identifier, revokedAt} = props;
 

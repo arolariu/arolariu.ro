@@ -82,7 +82,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Spending Threshold Alert" email.
+ * React component that renders the "Spending Threshold Alert" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -116,7 +116,7 @@ type Props = {
  * ```
  */
 const SpendingThresholdAlertEmail = defineEmailTemplate<Props>({
-  namespace: "email.spendingAlert",
+  namespace: "emails.spendingAlert",
   render: ({locale, t, props}) => {
     const {
       username,

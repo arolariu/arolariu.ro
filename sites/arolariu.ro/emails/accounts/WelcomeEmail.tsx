@@ -16,7 +16,7 @@ type Props = {
 };
 
 const WelcomeEmail = defineEmailTemplate<Props>({
-  namespace: "email.welcome",
+  namespace: "emails.welcome",
   render: ({locale, t, props}) => {
     const name = props.username?.trim() || "there";
     const uploadUrl = props.uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;

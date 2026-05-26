@@ -35,7 +35,7 @@ type Props = {
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceShared",
+  namespace: "emails.invoiceShared",
   render: ({locale, t, props}) => {
     const {fromUsername, toUsername, identifier} = props;
 

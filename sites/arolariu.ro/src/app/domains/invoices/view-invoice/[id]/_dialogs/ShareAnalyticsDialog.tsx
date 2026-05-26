@@ -24,7 +24,7 @@ import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import styles from "./ShareAnalyticsDialog.module.scss";
 
 /**
- * Dialog for sharing spending analytics via image download, clipboard, or email.
+ * Dialog for sharing spending analytics via image download, clipboard, or emails.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).

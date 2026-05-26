@@ -155,15 +155,15 @@ export default function Features(): React.JSX.Element {
                       <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
+                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.description`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.description`}`))}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["tags"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.tags`}`))
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.tags`}`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -212,16 +212,16 @@ export default function Features(): React.JSX.Element {
                   <h3
                     id={`feature-modal-title-${selectedFeature.id}`}
                     className={styles["modalTitle"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.title`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.title`}`))}
                   </h3>
-                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
+                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
                 </div>
               </div>
 
-              <p className={styles["modalDescription"]}>{t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
+              <p className={styles["modalDescription"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
 
               <div className={styles["modalTags"]}>
-                {t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.tags`}`))
+                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.tags`}`))
                   .split(",")
                   .map((tag) => (
                     <Badge

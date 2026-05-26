@@ -26,7 +26,7 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
- * Represents a single unanalyzed invoice for display in the email.
+ * Represents a single unanalyzed invoice for display in the emails.
  */
 type UnanalyzedInvoice = {
   /** Invoice name or fallback identifier. */
@@ -57,7 +57,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Unanalyzed Invoices Reminder" email.
+ * React component that renders the "Unanalyzed Invoices Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -88,7 +88,7 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.unanalyzedInvoices"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.unanalyzedInvoices"});
 
   const name = username?.trim() ? username : "there";
   const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;

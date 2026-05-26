@@ -95,7 +95,7 @@ export const Default: Story = {
             <h4 style={{fontSize: "0.875rem", fontWeight: "600"}}>Privacy Notice</h4>
           </div>
           <p style={{marginTop: "0.25rem", fontSize: "0.75rem", color: "#4b5563"}}>
-            Public links allow anyone with the URL to view this invoice. Private sharing sends a secure invitation via email.
+            Public links allow anyone with the URL to view this invoice. Private sharing sends a secure invitation via emails.
           </p>
         </div>
       </div>

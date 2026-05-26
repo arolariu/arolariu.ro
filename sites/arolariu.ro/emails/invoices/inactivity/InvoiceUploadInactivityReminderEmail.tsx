@@ -48,7 +48,7 @@ import {
 import {defineEmailTemplate} from "../../_lib/defineEmailTemplate";
 
 /**
- * Properties for the invoice upload inactivity reminder email.
+ * Properties for the invoice upload inactivity reminder emails.
  *
  * @remarks
  * **Type Safety**: `daysWithoutUpload` uses literal union type (3 | 7 | 14 | 30)
@@ -101,7 +101,7 @@ export type Props = {
 };
 
 const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceInactivity",
+  namespace: "emails.invoiceInactivity",
   render: ({locale, t, props}) => {
     const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
 
@@ -113,17 +113,17 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t(selectorFromPath(`email.invoiceInactivity.heading.${dayKey}`))}`}
+        title={`${BRAND.name} | ${t(selectorFromPath(`emails.invoiceInactivity.heading.${dayKey}`))}`}
         preview={t(selectorFromPath("emails.invoiceInactivity.preview"), {name, days: daysWithoutUpload})}
-        badge={t(selectorFromPath(`email.invoiceInactivity.badge.${dayKey}`))}
-        heading={t(selectorFromPath(`email.invoiceInactivity.heading.${dayKey}`))}
+        badge={t(selectorFromPath(`emails.invoiceInactivity.badge.${dayKey}`))}
+        heading={t(selectorFromPath(`emails.invoiceInactivity.heading.${dayKey}`))}
         primaryCta={{href: effectiveCreateInvoiceUrl, label: t(selectorFromPath("emails.invoiceInactivity.cta.primary"))}}
         secondaryCta={{href: effectiveInvoicesUrl, label: t(selectorFromPath("emails.invoiceInactivity.cta.secondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceInactivity.greeting"), {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath(`email.invoiceInactivity.intro.${dayKey}`))}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath(`emails.invoiceInactivity.intro.${dayKey}`))}</Text>
         <EmailCard title={t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.title"))}>
           <BulletList items={[t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet1")), t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet2")), t(selectorFromPath("emails.invoiceInactivity.whyWorthIt.bullet3"))]} />
         </EmailCard>

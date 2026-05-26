@@ -21,7 +21,7 @@ type Props = {
 };
 
 const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
-  namespace: "email.newsletterUnsubscribed",
+  namespace: "emails.newsletterUnsubscribed",
   render: ({locale, t, props}) => {
     const {username, managePreferencesUrl, resubscribeUrl} = props;
 

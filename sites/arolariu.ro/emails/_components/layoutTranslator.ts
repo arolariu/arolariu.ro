@@ -1,12 +1,12 @@
 import {createEmailTranslator, type EmailLocale, type EmailTranslator, loadMessages} from "../_lib/i18n";
 
 /**
- * @fileoverview Memoised `email.layout`-scoped translator per locale.
+ * @fileoverview Memoised `emails.layout`-scoped translator per locale.
  * @module emails/_components/layoutTranslator
  *
  * @remarks
  * The layout's strings (tagline, footer, fallbacks) live in the
- * `email.layout` next-intl namespace. Resolving them on every render
+ * `emails.layout` next-intl namespace. Resolving them on every render
  * would mean a redundant `loadMessages` + `createEmailTranslator` pair
  * per email — the template has already done that work for its own
  * namespace.
@@ -29,7 +29,7 @@ import {createEmailTranslator, type EmailLocale, type EmailTranslator, loadMessa
 const _layoutTranslatorByLocale = new Map<EmailLocale, EmailTranslator>();
 
 /**
- * Get the memoised `email.layout`-scoped translator for a locale.
+ * Get the memoised `emails.layout`-scoped translator for a locale.
  *
  * @param locale - Resolved locale to translate for.
  * @returns The cached or newly-constructed translator.
@@ -45,7 +45,7 @@ export async function getLayoutTranslator(locale: EmailLocale): Promise<EmailTra
   const cached = _layoutTranslatorByLocale.get(locale);
   if (cached) return cached;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.layout"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.layout"});
   _layoutTranslatorByLocale.set(locale, t);
   return t;
 }

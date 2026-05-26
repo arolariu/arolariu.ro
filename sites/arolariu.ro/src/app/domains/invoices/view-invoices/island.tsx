@@ -90,7 +90,7 @@ import {useInvoices} from "../_hooks/invoice";
  * - Motion animations use GPU-accelerated transforms
  *
  * **Internationalization**: Uses `next-intl` for tab labels and UI strings.
- * Translation keys from `IMS--List.viewInvoicesIsland` namespace.
+ * Translation keys from `pages.invoices.viewInvoices.viewInvoicesIsland` namespace.
  *
  * @returns Interactive JSX with tab navigation, invoice views, and dialog system.
  * During loading, returns skeleton UI with header, tabs, and card placeholders.

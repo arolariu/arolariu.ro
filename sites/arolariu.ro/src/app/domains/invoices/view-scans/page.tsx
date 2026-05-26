@@ -38,7 +38,7 @@ import styles from "./page.module.scss";
  * **Rendering Context**: Server-side metadata generation (Next.js App Router).
  *
  * **Localization**: Uses `next-intl` to fetch translations from the
- * `IMS--ViewScans.metadata` namespace for the current locale.
+ * `pages.invoices.viewScans.metadata` namespace for the current locale.
  *
  * **SEO Strategy**: Delegates to `createMetadata` utility for consistent
  * Open Graph, Twitter Card, and robots directive defaults across the application.

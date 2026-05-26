@@ -106,7 +106,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
   /**
    * Computes and applies one sharing operation for a single invoice.
    *
-   * @param id - Invoice identifier to mutate or reference in an email.
+   * @param id - Invoice identifier to mutate or reference in an emails.
    * @param action - Sharing action to apply.
    * @returns The updated invoice for mutations, or null for email-only actions.
    */

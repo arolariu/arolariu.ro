@@ -5,7 +5,7 @@ import Certifications from "./Certifications";
  * Certifications section showcasing professional certifications.
  * Displays interactive cards with certification details, core skills,
  * and external links. Currently shows AZ-900 and AI-900 certifications.
- * Uses the `About.Author.Certifications` i18n namespace.
+ * Uses the `sections.about.author.Certifications` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Certifications",

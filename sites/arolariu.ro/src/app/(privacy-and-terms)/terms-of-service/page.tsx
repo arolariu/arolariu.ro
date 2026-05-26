@@ -21,7 +21,7 @@ import styles from "./page.module.scss";
  * - Proper SEO ensures users can find and reference terms when needed
  *
  * **Async Operations**:
- * - Fetches translations from `Legal.TermsOfService.metadata` namespace
+ * - Fetches translations from `sections.legal.termsOfService.metadata` namespace
  * - Retrieves current locale for language-specific legal content
  *
  * **Metadata Generation**:

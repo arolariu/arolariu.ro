@@ -90,7 +90,7 @@ export default function Stepper(): React.JSX.Element {
                     variant='outline'
                     className={styles["dateBadge"]}>
                     <TbCalendar className={styles["dateIcon"]} />
-                    {t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.date`}`))}
+                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.date`}`))}
                   </Badge>
 
                   <button
@@ -98,14 +98,14 @@ export default function Stepper(): React.JSX.Element {
                     data-event-id={event.id}
                     className={styles["stepButton"]}
                     onClick={handleStepClick}>
-                    <h3 className={styles["stepTitle"]}>{t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.title`}`))}</h3>
+                    <h3 className={styles["stepTitle"]}>{t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.title`}`))}</h3>
                   </button>
 
-                  <p className={styles["stepDescription"]}>{t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.description`}`))}</p>
+                  <p className={styles["stepDescription"]}>{t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.description`}`))}</p>
 
                   {/* Tags */}
                   <div className={styles["tags"]}>
-                    {t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.tags`}`))
+                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.tags`}`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -128,7 +128,7 @@ export default function Stepper(): React.JSX.Element {
                         className={styles["expandable"]}>
                         <h4 className={styles["detailsTitle"]}>{t((m) => m.sections.about.platform.timeline.keyAchievements)}</h4>
                         <ul className={styles["detailsList"]}>
-                          {t(selectorFromPath(`About.Platform.timeline.${`events.${event.id}.details`}`))
+                          {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.details`}`))
                             .split(",")
                             .map((detail) => (
                               <motion.li

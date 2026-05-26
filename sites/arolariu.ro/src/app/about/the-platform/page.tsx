@@ -28,7 +28,7 @@ import styles from "./page.module.scss";
  * @remarks
  * **Rendering Context**: Server Component metadata generator.
  *
- * **i18n**: Uses `next-intl` translations from About.Platform.
+ * **i18n**: Uses `next-intl` translations from sections.about.platform.
  *
  * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *

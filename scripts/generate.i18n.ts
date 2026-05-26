@@ -77,7 +77,7 @@ function loadTranslationFile(filePath: string, verbose: boolean = false): Messag
  * @param keyNamespace The translation key to lookup.
  *
  * @example
- * extractMessageValue(messages, "Domains.services.title")
+ * extractMessageValue(messages, "pages.domains.services.title")
  * // > The above invocation will try to return the value of the key "title" from the "services" object, which is a child of the "Domains" object.
  *
  * @remarks The function will treat non-existent values as an empty string.
@@ -242,7 +242,7 @@ function areMessageValuesEqual(baseTranslationMessage: Message, currentTranslati
  * The keys are extracted recursively, so if the value of a key is another MessageFormat object, the function will extract the keys from that object as well.
  *
  * Whenever a key is a string, the function will add it to the keys array.
- * Whenever a key is a MessageFormat object, the function will recursively call itself with the value of the key, and append a dot (.) to the key - e.g. "Domains.services."
+ * Whenever a key is a MessageFormat object, the function will recursively call itself with the value of the key, and append a dot (.) to the key - e.g. "pages.domains.services."
  * @param messages
  * @returns
  */

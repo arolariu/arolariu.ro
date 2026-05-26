@@ -59,7 +59,7 @@ import pageStyles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from the
- * translation key `IMS--List.metadata`.
+ * translation key `pages.invoices.viewInvoices.metadata`.
  * This ensures consistent terminology for invoice listing and viewing across all locales.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility following RFC 1004

@@ -5,7 +5,7 @@ import Education from "./Education";
  * Education section displaying the author's educational background.
  * Features interactive flip cards for each university with front/back
  * views, course lists, and program details.
- * Uses the `About.Author.Education` i18n namespace.
+ * Uses the `sections.about.author.Education` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Education",

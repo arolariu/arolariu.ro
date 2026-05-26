@@ -141,7 +141,7 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.accountInactivity"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.accountInactivity"});
 
   const name = username?.trim() ? username : "there";
   const effectiveSignInUrl = signInUrl ?? `${BRAND.url}/auth/sign-in`;

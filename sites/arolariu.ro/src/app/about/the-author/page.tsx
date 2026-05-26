@@ -30,7 +30,7 @@ import styles from "./page.module.scss";
  * @remarks
  * **Rendering Context**: Server Component metadata generator.
  *
- * **i18n**: Uses `next-intl` translations from the About.Author namespace.
+ * **i18n**: Uses `next-intl` translations from the sections.about.author namespace.
  *
  * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *
