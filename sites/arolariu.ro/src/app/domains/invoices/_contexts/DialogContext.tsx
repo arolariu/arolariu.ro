@@ -16,8 +16,8 @@
  * the active dialog. Callers must guard trigger buttons to prevent dispatching dialogs
  * without required payloads.
  *
- * **23 Dialog Types** across 4 route domains:
- * - **edit-invoice/[id]**: 12 dialogs (analysis, items, merchant, metadata, etc.)
+ * **27 Dialog Types** across 4 route domains:
+ * - **edit-invoice/[id]**: 16 dialogs (analysis, items, merchant, metadata, recipes, etc.)
  * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
  * - **view-invoices**: 2 dialogs (import, export)
  * - **view-scans**: 1 dialog (create invoice from scans)
@@ -43,7 +43,7 @@ import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";
 
 /**
- * Union type representing all 23 dialog types across the invoices domain.
+ * Union type representing all 27 dialog types across the invoices domain.
  *
  * @remarks
  * **Discriminator Union**: Each string literal corresponds to a specific dialog type.
@@ -68,7 +68,11 @@ export type DialogType = Readonly<
   | "EDIT_INVOICE__REMOVE_SCAN"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
-  | "EDIT_INVOICE__RECIPE"
+  | "EDIT_INVOICE__RECIPE_ADD"
+  | "EDIT_INVOICE__RECIPE_UPDATE"
+  | "EDIT_INVOICE__RECIPE_DELETE"
+  | "EDIT_INVOICE__RECIPE_PREVIEW"
+  | "EDIT_INVOICE__RECIPE_SHARE"
   | "EDIT_INVOICE__METADATA"
   | "EDIT_INVOICE__ITEMS"
   | "EDIT_INVOICE__ALLERGENS"
@@ -148,7 +152,11 @@ export type DialogPayloads = {
   EDIT_INVOICE__REMOVE_SCAN: {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
   EDIT_INVOICE__MERCHANT: Merchant;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
-  EDIT_INVOICE__RECIPE: Recipe;
+  EDIT_INVOICE__RECIPE_ADD: undefined;
+  EDIT_INVOICE__RECIPE_UPDATE: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_DELETE: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_PREVIEW: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_SHARE: {recipe: Recipe};
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;
   EDIT_INVOICE__ALLERGENS: {invoice: Invoice; product: Product; productIndex: number};
