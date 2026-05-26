@@ -1,0 +1,504 @@
+{
+  "generatedAt": "2026-05-26T20:22:29.393Z",
+  "messagesDirectory": "sites\\arolariu.ro\\messages",
+  "locales": [
+    {
+      "locale": "en",
+      "topLevelCount": 26,
+      "leafCount": 3326,
+      "maxDepth": 6,
+      "allowedBucketLeaves": 0,
+      "retiredPrefixLeaves": 1787,
+      "buckets": [
+        {
+          "bucket": "About",
+          "leaves": 570,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Dialogs",
+          "leaves": 450,
+          "maxDepth": 6,
+          "childCount": 20
+        },
+        {
+          "bucket": "email",
+          "leaves": 382,
+          "maxDepth": 5,
+          "childCount": 17
+        },
+        {
+          "bucket": "IMS--Cards",
+          "leaves": 319,
+          "maxDepth": 5,
+          "childCount": 19
+        },
+        {
+          "bucket": "IMS--View",
+          "leaves": 224,
+          "maxDepth": 5,
+          "childCount": 20
+        },
+        {
+          "bucket": "Profile",
+          "leaves": 208,
+          "maxDepth": 5,
+          "childCount": 6
+        },
+        {
+          "bucket": "IMS--List",
+          "leaves": 146,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Edit",
+          "leaves": 132,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Stats",
+          "leaves": 112,
+          "maxDepth": 4,
+          "childCount": 18
+        },
+        {
+          "bucket": "Legal",
+          "leaves": 100,
+          "maxDepth": 5,
+          "childCount": 2
+        },
+        {
+          "bucket": "IMS--ViewScans",
+          "leaves": 95,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Common",
+          "leaves": 91,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "Acknowledgements",
+          "leaves": 82,
+          "maxDepth": 5,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Create",
+          "leaves": 78,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--UploadScans",
+          "leaves": 71,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "Auth",
+          "leaves": 58,
+          "maxDepth": 5,
+          "childCount": 5
+        },
+        {
+          "bucket": "IMS--Landing",
+          "leaves": 53,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Errors",
+          "leaves": 30,
+          "maxDepth": 4,
+          "childCount": 2
+        },
+        {
+          "bucket": "Home",
+          "leaves": 26,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Commander",
+          "leaves": 21,
+          "maxDepth": 3,
+          "childCount": 4
+        },
+        {
+          "bucket": "EULA",
+          "leaves": 20,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "Footer",
+          "leaves": 17,
+          "maxDepth": 3,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Hooks",
+          "leaves": 16,
+          "maxDepth": 3,
+          "childCount": 6
+        },
+        {
+          "bucket": "Navigation",
+          "leaves": 12,
+          "maxDepth": 3,
+          "childCount": 10
+        },
+        {
+          "bucket": "Domains",
+          "leaves": 8,
+          "maxDepth": 5,
+          "childCount": 4
+        },
+        {
+          "bucket": "Common",
+          "leaves": 5,
+          "maxDepth": 4,
+          "childCount": 2
+        }
+      ]
+    },
+    {
+      "locale": "ro",
+      "topLevelCount": 26,
+      "leafCount": 3326,
+      "maxDepth": 6,
+      "allowedBucketLeaves": 0,
+      "retiredPrefixLeaves": 1787,
+      "buckets": [
+        {
+          "bucket": "About",
+          "leaves": 570,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Dialogs",
+          "leaves": 450,
+          "maxDepth": 6,
+          "childCount": 20
+        },
+        {
+          "bucket": "email",
+          "leaves": 382,
+          "maxDepth": 5,
+          "childCount": 17
+        },
+        {
+          "bucket": "IMS--Cards",
+          "leaves": 319,
+          "maxDepth": 5,
+          "childCount": 19
+        },
+        {
+          "bucket": "IMS--View",
+          "leaves": 224,
+          "maxDepth": 5,
+          "childCount": 20
+        },
+        {
+          "bucket": "Profile",
+          "leaves": 208,
+          "maxDepth": 5,
+          "childCount": 6
+        },
+        {
+          "bucket": "IMS--List",
+          "leaves": 146,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Edit",
+          "leaves": 132,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Stats",
+          "leaves": 112,
+          "maxDepth": 4,
+          "childCount": 18
+        },
+        {
+          "bucket": "Legal",
+          "leaves": 100,
+          "maxDepth": 5,
+          "childCount": 2
+        },
+        {
+          "bucket": "IMS--ViewScans",
+          "leaves": 95,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Common",
+          "leaves": 91,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "Acknowledgements",
+          "leaves": 82,
+          "maxDepth": 5,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Create",
+          "leaves": 78,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--UploadScans",
+          "leaves": 71,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "Auth",
+          "leaves": 58,
+          "maxDepth": 5,
+          "childCount": 5
+        },
+        {
+          "bucket": "IMS--Landing",
+          "leaves": 53,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Errors",
+          "leaves": 30,
+          "maxDepth": 4,
+          "childCount": 2
+        },
+        {
+          "bucket": "Home",
+          "leaves": 26,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Commander",
+          "leaves": 21,
+          "maxDepth": 3,
+          "childCount": 4
+        },
+        {
+          "bucket": "EULA",
+          "leaves": 20,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "Footer",
+          "leaves": 17,
+          "maxDepth": 3,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Hooks",
+          "leaves": 16,
+          "maxDepth": 3,
+          "childCount": 6
+        },
+        {
+          "bucket": "Navigation",
+          "leaves": 12,
+          "maxDepth": 3,
+          "childCount": 10
+        },
+        {
+          "bucket": "Domains",
+          "leaves": 8,
+          "maxDepth": 5,
+          "childCount": 4
+        },
+        {
+          "bucket": "Common",
+          "leaves": 5,
+          "maxDepth": 4,
+          "childCount": 2
+        }
+      ]
+    },
+    {
+      "locale": "fr",
+      "topLevelCount": 26,
+      "leafCount": 3326,
+      "maxDepth": 6,
+      "allowedBucketLeaves": 0,
+      "retiredPrefixLeaves": 1787,
+      "buckets": [
+        {
+          "bucket": "About",
+          "leaves": 570,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Dialogs",
+          "leaves": 450,
+          "maxDepth": 6,
+          "childCount": 20
+        },
+        {
+          "bucket": "email",
+          "leaves": 382,
+          "maxDepth": 5,
+          "childCount": 17
+        },
+        {
+          "bucket": "IMS--Cards",
+          "leaves": 319,
+          "maxDepth": 5,
+          "childCount": 19
+        },
+        {
+          "bucket": "IMS--View",
+          "leaves": 224,
+          "maxDepth": 5,
+          "childCount": 20
+        },
+        {
+          "bucket": "Profile",
+          "leaves": 208,
+          "maxDepth": 5,
+          "childCount": 6
+        },
+        {
+          "bucket": "IMS--List",
+          "leaves": 146,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Edit",
+          "leaves": 132,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--Stats",
+          "leaves": 112,
+          "maxDepth": 4,
+          "childCount": 18
+        },
+        {
+          "bucket": "Legal",
+          "leaves": 100,
+          "maxDepth": 5,
+          "childCount": 2
+        },
+        {
+          "bucket": "IMS--ViewScans",
+          "leaves": 95,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "IMS--Common",
+          "leaves": 91,
+          "maxDepth": 5,
+          "childCount": 13
+        },
+        {
+          "bucket": "Acknowledgements",
+          "leaves": 82,
+          "maxDepth": 5,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Create",
+          "leaves": 78,
+          "maxDepth": 6,
+          "childCount": 8
+        },
+        {
+          "bucket": "IMS--UploadScans",
+          "leaves": 71,
+          "maxDepth": 4,
+          "childCount": 13
+        },
+        {
+          "bucket": "Auth",
+          "leaves": 58,
+          "maxDepth": 5,
+          "childCount": 5
+        },
+        {
+          "bucket": "IMS--Landing",
+          "leaves": 53,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Errors",
+          "leaves": 30,
+          "maxDepth": 4,
+          "childCount": 2
+        },
+        {
+          "bucket": "Home",
+          "leaves": 26,
+          "maxDepth": 4,
+          "childCount": 6
+        },
+        {
+          "bucket": "Commander",
+          "leaves": 21,
+          "maxDepth": 3,
+          "childCount": 4
+        },
+        {
+          "bucket": "EULA",
+          "leaves": 20,
+          "maxDepth": 5,
+          "childCount": 8
+        },
+        {
+          "bucket": "Footer",
+          "leaves": 17,
+          "maxDepth": 3,
+          "childCount": 9
+        },
+        {
+          "bucket": "IMS--Hooks",
+          "leaves": 16,
+          "maxDepth": 3,
+          "childCount": 6
+        },
+        {
+          "bucket": "Navigation",
+          "leaves": 12,
+          "maxDepth": 3,
+          "childCount": 10
+        },
+        {
+          "bucket": "Domains",
+          "leaves": 8,
+          "maxDepth": 5,
+          "childCount": 4
+        },
+        {
+          "bucket": "Common",
+          "leaves": 5,
+          "maxDepth": 4,
+          "childCount": 2
+        }
+      ]
+    }
+  ]
+}
