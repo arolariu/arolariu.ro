@@ -39,7 +39,7 @@ type Props = {
  * - Empty state prompts user to create first recipe
  *
  * **Recipe Actions**:
- * - **Add Recipe**: Opens `RecipeDialog` in add mode for manual recipe creation
+ * - **Add Recipe**: Opens `AddRecipeDialog` for manual recipe creation
  * - **Generate**: Placeholder for AI-based recipe generation from invoice items
  * - Individual recipe CRUD via `RecipeCard` dropdown menus
  *
@@ -59,13 +59,13 @@ type Props = {
  * // Displays: Recipe grid with add/generate buttons and pagination
  * ```
  *
- * @see {@link RecipeCard} - Individual recipe display component
- * @see {@link RecipeDialog} - Dialog for recipe CRUD operations
+ * @see {@link AddRecipeDialog} - Dialog for creating recipes
+ * @see {@link RecipeCard} - Opens focused recipe action dialogs for existing recipes
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("IMS--Edit.recipesTab");
-  const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE", "add");
+  const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 

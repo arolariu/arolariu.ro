@@ -52,10 +52,10 @@ type Props = {
  * - **Timing**: Preparation and cooking time with clock icons
  *
  * **CRUD Operations** (via dropdown menu):
- * - **Edit**: Opens `RecipeDialog` in edit mode for modifying recipe details
- * - **Delete**: Opens `RecipeDialog` in delete mode for confirmation
- * - **Share**: Opens `RecipeDialog` in share mode for sharing options
- * - **View**: Opens `RecipeDialog` in view mode via "View Recipe" button
+ * - **Edit**: Opens `UpdateRecipeDialog` for modifying recipe details
+ * - **Delete**: Opens `DeleteRecipeDialog` for confirmation
+ * - **Share**: Opens `ShareRecipeDialog` for sharing options
+ * - **View**: Opens `PreviewRecipeDialog` via "View Recipe" button
  * - **Mark as Favorite**: Placeholder for future implementation
  *
  * **Visual Design**:
@@ -75,7 +75,10 @@ type Props = {
  * // Displays: Recipe name, complexity, ingredients, timing, action menu
  * ```
  *
- * @see {@link RecipeDialog} - Multi-mode dialog for recipe CRUD operations
+ * @see {@link UpdateRecipeDialog} - Dialog for recipe updates
+ * @see {@link DeleteRecipeDialog} - Dialog for recipe deletion
+ * @see {@link PreviewRecipeDialog} - Dialog for recipe details
+ * @see {@link ShareRecipeDialog} - Dialog for recipe sharing
  * @see {@link Recipe} - Recipe type definition
  * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
@@ -101,10 +104,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
     }
   };
 
-  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE", "edit", recipe);
-  const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE", "view", recipe);
-  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE", "delete", recipe);
-  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE", "share", recipe);
+  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit", {recipe});
+  const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE_PREVIEW", "view", {recipe});
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE_DELETE", "delete", {recipe});
+  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE_SHARE", "share", {recipe});
 
   return (
     <Card className={styles["card"]}>
