@@ -25,3 +25,18 @@ export type MigrationReport = {
   readonly namespaceFactoriesChanged: number;
   readonly dynamicCallsSkipped: readonly string[];
 };
+
+export type TextEdit = {
+  readonly start: number;
+  readonly end: number;
+  readonly replacement: string;
+};
+
+export type FileMigrationState = {
+  readonly fileName: string;
+  readonly namespacesByTranslator: Map<string, string | undefined>;
+  readonly edits: TextEdit[];
+  literalCallsChanged: number;
+  namespaceFactoriesChanged: number;
+  readonly dynamicCallsSkipped: string[];
+};
