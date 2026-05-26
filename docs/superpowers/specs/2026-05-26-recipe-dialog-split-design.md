@@ -26,6 +26,8 @@ The approved refactor splits this source into focused recipe dialogs and replace
 - Do not change recipe persistence beyond the behavior provided by the existing `useRecipeAdd`, `useRecipeUpdate`, and `useRecipeDelete` hooks.
 - Do not redesign the recipe UI beyond the structure required to split responsibilities.
 - Do not add new dependencies.
+- Do not create Vitest unit tests as part of this migration.
+- Do not run test commands during implementation.
 
 ## Selected approach
 
@@ -108,17 +110,13 @@ Required-recipe dialogs must explicitly handle missing payloads with a visible f
 
 Mutation dialogs should surface operation failures through the existing toast pattern and keep errors typed with `error instanceof Error ? error.message : String(error)`. They should not swallow failures or rely on console output as the only signal.
 
-## Testing and verification plan
+## Verification plan
 
-Update `DialogContainer.test.tsx` so the registry test covers all five new recipe dialog types and removes the old `EDIT_INVOICE__RECIPE` expectation.
+Do not create or update Vitest unit tests for this migration.
 
-Update Storybook coverage where practical by replacing the monolithic `RecipeDialog` story with focused stories for the split dialogs or static previews that match the new components.
+Do not run test commands. Validation for this migration should rely on source-level checks such as confirming the old dialog type and `RecipeDialog.tsx` references are removed, verifying the new dialog types are registered, and checking that call sites open the new action-specific dialog types.
 
-After implementation, run the smallest existing validation that covers the changed frontend behavior, escalating if needed:
-
-- targeted dialog/container tests if available
-- `npm run test:website`
-- `npm run build:website`
+If non-test validation is needed, use only commands that are not test commands and that are explicitly allowed at implementation time.
 
 ## Acceptance criteria
 
@@ -128,4 +126,4 @@ After implementation, run the smallest existing validation that covers the chang
 - No source call site opens `EDIT_INVOICE__RECIPE`.
 - Add, update, and delete dialogs use the existing recipe hooks with the invoice from `EditInvoiceContext`.
 - The existing Share menu action opens `ShareRecipeDialog`.
-- Registry tests reflect the new dialog type coverage.
+- Source-level checks confirm the old monolithic recipe dialog type and component references are gone.
