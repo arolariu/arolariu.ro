@@ -5,7 +5,7 @@ import {defineEmailTemplate} from "./defineEmailTemplate";
 import * as i18n from "./i18n";
 
 const FIXTURE_MESSAGES = {
-  email: {
+  emails: {
     welcome: {
       subject: "Welcome, {name}!",
       greeting: "Hi {name}",

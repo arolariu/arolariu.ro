@@ -4,7 +4,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import * as i18n from "../_lib/i18n";
 import {__resetLayoutTranslatorCache, getLayoutTranslator} from "./layoutTranslator";
 
-const FIXTURE = {email: {layout: {tagline: "Tag", buttonFallback: "BF"}}};
+const FIXTURE = {emails: {layout: {tagline: "Tag", buttonFallback: "BF"}}};
 
 describe("getLayoutTranslator", () => {
   beforeEach(() => {
