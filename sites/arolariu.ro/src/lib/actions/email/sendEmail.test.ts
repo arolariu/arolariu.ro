@@ -18,11 +18,11 @@ const {mockWelcomeTemplate, mockWelcomeSubject, mockInactivityTemplate, mockInac
 
 vi.mock("@/../emails/_registry", () => {
   const welcome = Object.assign(mockWelcomeTemplate, {
-    namespace: "email.welcome",
+    namespace: "emails.welcome",
     getSubject: mockWelcomeSubject,
   });
   const inactivity = Object.assign(mockInactivityTemplate, {
-    namespace: "email.invoiceInactivity",
+    namespace: "emails.invoiceInactivity",
     getSubject: mockInactivitySubject,
   });
   return {

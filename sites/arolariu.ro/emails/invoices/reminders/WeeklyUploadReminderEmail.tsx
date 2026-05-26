@@ -55,7 +55,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Weekly Upload Reminder" email.
+ * React component that renders the "Weekly Upload Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -86,7 +86,7 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.weeklyUploadReminder"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.weeklyUploadReminder"});
 
   const name = username?.trim() ? username : "there";
   const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;

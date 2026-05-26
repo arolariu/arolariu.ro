@@ -32,5 +32,5 @@ import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
  * ```
  */
 export default function RenderTermsOfServiceScreen(): React.JSX.Element {
-  return <EnhancedLegalArticles pageType='Legal.TermsOfService' />;
+  return <EnhancedLegalArticles pageType='sections.legal.termsOfService' />;
 }

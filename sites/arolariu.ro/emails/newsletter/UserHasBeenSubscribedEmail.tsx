@@ -31,7 +31,7 @@ type Props = Readonly<{
  * @returns A rendered React Email template.
  */
 const UserHasBeenSubscribedEmail = defineEmailTemplate<Props>({
-  namespace: "email.newsletterSubscribed",
+  namespace: "emails.newsletterSubscribed",
   render: ({locale, t, props}) => {
     const {username} = props;
 

@@ -6,7 +6,7 @@ import Experience from "./Experience";
  * Features an interactive timeline navigation on the left with detailed
  * experience cards on the right showing responsibilities, achievements,
  * and skills for each role.
- * Uses the `About.Author.Experiences` i18n namespace.
+ * Uses the `sections.about.author.Experiences` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Experience",

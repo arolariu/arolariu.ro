@@ -7,9 +7,7 @@ import {redirect} from "next/navigation";
 import RenderViewScansScreen from "./island";
 import styles from "./page.module.scss";
 
-/**
- * Generates SEO metadata for the view scans page.
- */
+/** Generates SEO metadata for the view scans page. */
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
   const locale = await getLocale();

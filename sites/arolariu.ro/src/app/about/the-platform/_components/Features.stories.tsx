@@ -5,7 +5,7 @@ import Features from "./Features";
  * Features section displaying the platform's main capabilities.
  * Renders nine interactive feature cards with hover effects, tag badges,
  * and a detail modal for expanded descriptions.
- * Uses the `About.Platform.features` i18n namespace.
+ * Uses the `sections.about.platform.features` i18n namespace.
  */
 const meta = {
   title: "Pages/About/ThePlatform/Features",

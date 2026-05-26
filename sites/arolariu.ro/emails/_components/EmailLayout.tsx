@@ -81,7 +81,7 @@ const styles = {
  * The shared chrome wrapping every email body.
  *
  * @remarks
- * **Self-contained i18n.** Resolves its own `email.layout`-scoped strings
+ * **Self-contained i18n.** Resolves its own `emails.layout`-scoped strings
  * via {@link getLayoutTranslator} (memoised per locale in
  * `./layoutTranslator.ts`). Templates pass only data — they do **not**
  * thread a translator function down. This keeps the layout's prop

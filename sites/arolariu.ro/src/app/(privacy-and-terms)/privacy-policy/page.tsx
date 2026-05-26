@@ -20,7 +20,7 @@ import styles from "./page.module.scss";
  * - SEO metadata ensures search engines index this critical legal document
  *
  * **Async Operations**:
- * - Fetches translations from `Legal.PrivacyPolicy.metadata` namespace
+ * - Fetches translations from `sections.legal.privacyPolicy.metadata` namespace
  * - Retrieves current locale for language-specific legal content
  *
  * **Metadata Generation**:

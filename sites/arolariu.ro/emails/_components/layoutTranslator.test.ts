@@ -44,7 +44,7 @@ describe("getLayoutTranslator", () => {
     expect(createSpy).toHaveBeenCalledTimes(3); // one per locale
   });
 
-  it("returns translators that resolve namespace 'email.layout' keys", async () => {
+  it("returns translators that resolve namespace 'emails.layout' keys", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValue(FIXTURE);
     const t = await getLayoutTranslator("en");
     expect(t(selectorFromPath("emails.layout.tagline"))).toBe("Tag");

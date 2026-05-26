@@ -31,5 +31,5 @@ import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
  * ```
  */
 export default function RenderPrivacyPolicyScreen(): React.JSX.Element {
-  return <EnhancedLegalArticles pageType='Legal.PrivacyPolicy' />;
+  return <EnhancedLegalArticles pageType='sections.legal.privacyPolicy' />;
 }

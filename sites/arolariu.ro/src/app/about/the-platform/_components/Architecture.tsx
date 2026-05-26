@@ -116,14 +116,14 @@ export default function Architecture(): React.JSX.Element {
                         <layer.icon className={styles["layerIcon"]} />
                       </motion.div>
                       <div>
-                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
-                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.description`}`))}</p>
+                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
+                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.description`}`))}</p>
                       </div>
                     </div>
 
                     {/* Technologies */}
                     <div className={styles["technologies"]}>
-                      {t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.technologies`}`))
+                      {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.technologies`}`))
                         .split(",")
                         .map((tech, techIndex) => (
                           <motion.div

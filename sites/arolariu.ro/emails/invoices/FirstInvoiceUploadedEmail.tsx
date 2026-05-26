@@ -45,7 +45,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "First Invoice Uploaded" celebration email.
+ * React component that renders the "First Invoice Uploaded" celebration emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -70,7 +70,7 @@ type Props = {
  * ```
  */
 const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
-  namespace: "email.firstInvoiceUploaded",
+  namespace: "emails.firstInvoiceUploaded",
   render: ({locale, t, props}) => {
     const {username, invoiceName, uploadDate, invoiceUrl, uploadUrl} = props;
 

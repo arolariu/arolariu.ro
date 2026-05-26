@@ -5,7 +5,7 @@ import Hero from "./Hero";
  * Dynamic hero section for the author's page.
  * Displays the author's profile image with a parallax scrolling effect,
  * a typewriter-animated gradient title, and a subtitle.
- * Uses the `About.Author` i18n namespace.
+ * Uses the `sections.about.author` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Hero",

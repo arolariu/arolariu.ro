@@ -5,7 +5,7 @@ import Biography from "./Biography";
  * Biography section with animated content blocks describing the author.
  * Features five bio points, each with a colored icon, animated gradient
  * background orbs, and staggered entrance animations.
- * Uses the `About.Author.Biography` i18n namespace.
+ * Uses the `sections.about.author.Biography` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Biography",

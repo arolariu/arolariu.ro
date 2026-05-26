@@ -28,7 +28,7 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
  * Properties for the InvoiceHasBeenMadePublicEmail component.
  *
  * @remarks
- * All fields are required to provide a complete summary of the invoice in the email.
+ * All fields are required to provide a complete summary of the invoice in the emails.
  */
 type Props = {
   /** The username of the recipient */
@@ -55,11 +55,11 @@ type Props = {
  *
  * **Design**: Uses shared email primitives and includes a QR code for quick access.
  *
- * @param props - The invoice details to be displayed in the email.
+ * @param props - The invoice details to be displayed in the emails.
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceMadePublic",
+  namespace: "emails.invoiceMadePublic",
   render: ({locale, t, props}) => {
     const {username, invoiceId, invoiceName, merchantName, totalAmount, currency, dateCreated} = props;
 

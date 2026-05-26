@@ -92,7 +92,7 @@ function rankedItems(items: readonly RankedItem[], currency: string, fallback: s
 }
 
 const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>({
-  namespace: "email.invoiceStats",
+  namespace: "emails.invoiceStats",
   render: ({locale, t, props}) => {
     const {
       username,

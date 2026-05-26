@@ -68,7 +68,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Incomplete Invoice Reminder" email.
+ * React component that renders the "Incomplete Invoice Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -100,7 +100,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.incompleteInvoice"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.incompleteInvoice"});
 
   const name = username?.trim() ? username : "there";
 
@@ -128,8 +128,8 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
       />
       <EmailCard title={t(selectorFromPath("emails.incompleteInvoice.whatsMissingTitle"))}>
         {missingFields.map((field) => {
-          const label = t(selectorFromPath(`email.incompleteInvoice.missingFields.${field}.label`));
-          const suggestion = t(selectorFromPath(`email.incompleteInvoice.missingFields.${field}.suggestion`));
+          const label = t(selectorFromPath(`emails.incompleteInvoice.missingFields.${field}.label`));
+          const suggestion = t(selectorFromPath(`emails.incompleteInvoice.missingFields.${field}.suggestion`));
           return (
             <Text
               key={field}

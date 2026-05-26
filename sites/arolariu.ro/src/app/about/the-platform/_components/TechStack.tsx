@@ -218,7 +218,7 @@ export default function TechStack(): React.JSX.Element {
                   value={category.id}
                   className={activeTab === category.id ? styles["tabTriggerActive"] : styles["tabTrigger"]}>
                   <category.icon className={styles["tabIcon"]} />
-                  <span className={styles["tabLabel"]}>{t(selectorFromPath(`About.Platform.techStack.${`categories.${category.id}.name`}`))}</span>
+                  <span className={styles["tabLabel"]}>{t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.name`}`))}</span>
                   {activeTab === category.id && (
                     <motion.span
                       className={`${styles["tabIndicator"]} ${styles[gradientClassMap[category.colorKey]]}`}
@@ -244,7 +244,7 @@ export default function TechStack(): React.JSX.Element {
                   transition={{duration: 0.3}}>
                   {/* Category Description */}
                   <div className={styles["categoryDescription"]}>
-                    <p>{t(selectorFromPath(`About.Platform.techStack.${`categories.${category.id}.description`}`))}</p>
+                    <p>{t(selectorFromPath(`sections.about.platform.techStack.${`categories.${category.id}.description`}`))}</p>
                   </div>
 
                   {/* Technologies Grid */}
@@ -281,7 +281,7 @@ export default function TechStack(): React.JSX.Element {
                             {/* Content */}
                             <div className={styles["techInfo"]}>
                               <div className={styles["techName"]}>
-                                <h3>{t(selectorFromPath(`About.Platform.techStack.${`technologies.${tech.id}.name`}`))}</h3>
+                                <h3>{t(selectorFromPath(`sections.about.platform.techStack.${`technologies.${tech.id}.name`}`))}</h3>
                                 {tech.version !== undefined && (
                                   <Badge
                                     variant='secondary'
@@ -291,7 +291,7 @@ export default function TechStack(): React.JSX.Element {
                                 )}
                               </div>
                               <p className={styles["techDescription"]}>
-                                {t(selectorFromPath(`About.Platform.techStack.${`technologies.${tech.id}.description`}`))}
+                                {t(selectorFromPath(`sections.about.platform.techStack.${`technologies.${tech.id}.description`}`))}
                               </p>
                             </div>
                           </CardContent>
@@ -364,15 +364,15 @@ export default function TechStack(): React.JSX.Element {
                   {/* Animated Number */}
                   <div className={styles["statValue"]}>
                     <CountingNumber
-                      number={Number(tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.value`)))}
+                      number={Number(tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.value`)))}
                       inView
                     />
-                    {tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.suffix`))}
+                    {tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.suffix`))}
                   </div>
 
                   {/* Label */}
-                  <h3 className={styles["statLabel"]}>{tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.label`))}</h3>
-                  <p className={styles["statDescription"]}>{tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.description`))}</p>
+                  <h3 className={styles["statLabel"]}>{tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.label`))}</h3>
+                  <p className={styles["statDescription"]}>{tStats(selectorFromPath(`sections.about.platform.statistics.items.${stat.id}.description`))}</p>
                 </CardContent>
 
                 {/* Animated border */}

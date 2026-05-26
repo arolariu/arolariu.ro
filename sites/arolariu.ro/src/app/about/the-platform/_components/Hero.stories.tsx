@@ -6,7 +6,7 @@ import Hero from "./Hero";
  * Features a full-height hero with animated background beams, gradient text
  * (GradientText component), floating elements, scroll-based parallax effects,
  * feature pills, and CTA buttons.
- * Uses the `About.Platform.hero` i18n namespace.
+ * Uses the `sections.about.platform.hero` i18n namespace.
  */
 const meta = {
   title: "Pages/About/ThePlatform/Hero",
