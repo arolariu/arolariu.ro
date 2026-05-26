@@ -1,11 +1,22 @@
+/**
+ * @fileoverview Pure reducer for the route-scoped scan upload state machine.
+ * @module app/domains/invoices/upload-scans/_utils/uploadReducer
+ *
+ * @remarks
+ * The reducer has no side effects. Object URL cleanup, timers, toasts, and
+ * network operations remain in the context/provider layer.
+ */
+
 import type {PendingUpload, SessionStats, UploadAction, UploadState} from "./uploadTypes";
 
+/** Initial upload statistics for a route session. */
 const initialSessionStats: SessionStats = {
   totalAdded: 0,
   totalCompleted: 0,
   totalFailed: 0,
 };
 
+/** Initial route-scoped upload state. */
 export const initialUploadState: UploadState = {
   pendingUploads: [],
   isUploading: false,
@@ -13,18 +24,45 @@ export const initialUploadState: UploadState = {
   completedBatch: [],
 };
 
+/**
+ * Determines whether an upload may be removed by user actions.
+ *
+ * @param upload - Upload queue item to inspect.
+ * @returns `true` when the upload is idle or failed.
+ */
 function isRemovable(upload: PendingUpload): boolean {
   return upload.status === "idle" || upload.status === "failed";
 }
 
+/**
+ * Updates one upload item while preserving queue order.
+ *
+ * @param uploads - Current upload queue.
+ * @param uploadId - Identifier of the upload to update.
+ * @param update - Mapping function for the matching upload.
+ * @returns Updated upload queue.
+ */
 function updateUpload(uploads: PendingUpload[], uploadId: string, update: (upload: PendingUpload) => PendingUpload): PendingUpload[] {
   return uploads.map((upload) => (upload.id === uploadId ? update(upload) : upload));
 }
 
+/**
+ * Selects uploads that can be started by the next batch.
+ *
+ * @param state - Current upload state.
+ * @returns Idle and failed uploads, preserving queue order.
+ */
 export function selectUploadableItems(state: UploadState): PendingUpload[] {
   return state.pendingUploads.filter((upload) => upload.status === "idle" || upload.status === "failed");
 }
 
+/**
+ * Applies one upload state-machine action.
+ *
+ * @param state - Current upload state.
+ * @param action - State transition action.
+ * @returns Next upload state.
+ */
 export function uploadReducer(state: UploadState, action: UploadAction): UploadState {
   switch (action.type) {
     case "uploads-added":

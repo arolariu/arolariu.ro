@@ -1,7 +1,18 @@
+/**
+ * @fileoverview Unit tests for the scan upload reducer state machine.
+ * @module app/domains/invoices/upload-scans/_utils/uploadReducer.test
+ */
+
 import {describe, expect, it} from "vitest";
 import type {PendingUpload} from "./uploadTypes";
 import {initialUploadState, selectUploadableItems, uploadReducer} from "./uploadReducer";
 
+/**
+ * Creates a pending upload test fixture.
+ *
+ * @param overrides - Properties to override on the default upload.
+ * @returns Pending upload fixture.
+ */
 function createUpload(overrides: Partial<PendingUpload> = {}): PendingUpload {
   const file = new File([new Uint8Array(4)], "receipt.jpg", {type: "image/jpeg"});
   return {

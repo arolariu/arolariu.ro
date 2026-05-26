@@ -1,8 +1,19 @@
+/**
+ * @fileoverview Unit tests for the scan upload runner.
+ * @module app/domains/invoices/upload-scans/_utils/uploadRunner.test
+ */
+
 import {describe, expect, it, vi} from "vitest";
 import type {Scan} from "../../../../../types/scans";
 import type {PendingUpload, UploadProgressEvent, UploadRunnerDependencies} from "./uploadTypes";
 import {readFileAsBase64, uploadPendingScan} from "./uploadRunner";
 
+/**
+ * Creates a scan returned by mocked upload dependencies.
+ *
+ * @param overrides - Properties to override on the default scan.
+ * @returns Scan fixture.
+ */
 function createScan(overrides: Partial<Scan> = {}): Scan {
   return {
     id: "scan-1",
@@ -19,6 +30,12 @@ function createScan(overrides: Partial<Scan> = {}): Scan {
   };
 }
 
+/**
+ * Creates a pending upload test fixture.
+ *
+ * @param overrides - Properties to override on the default upload.
+ * @returns Pending upload fixture.
+ */
 function createUpload(overrides: Partial<PendingUpload> = {}): PendingUpload {
   const file = new File([new Uint8Array(4)], "receipt.jpg", {type: "image/jpeg"});
   return {
@@ -35,6 +52,12 @@ function createUpload(overrides: Partial<PendingUpload> = {}): PendingUpload {
   };
 }
 
+/**
+ * Creates upload runner dependencies backed by test doubles.
+ *
+ * @param overrides - Dependency implementations to override.
+ * @returns Complete dependency fixture for the upload runner.
+ */
 function createDependencies(overrides: Partial<UploadRunnerDependencies> = {}): UploadRunnerDependencies {
   const scan = createScan();
   return {

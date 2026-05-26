@@ -1,7 +1,20 @@
+/**
+ * @fileoverview Unit tests for scan upload validation helpers.
+ * @module app/domains/invoices/upload-scans/_utils/uploadValidation.test
+ */
+
 import {describe, expect, it} from "vitest";
 import {MAX_UPLOAD_FILE_SIZE_BYTES} from "./uploadTypes";
 import {extractFilesFromDataTransferItems, validateUploadFile, validateUploadFiles} from "./uploadValidation";
 
+/**
+ * Creates a browser `File` for validation tests.
+ *
+ * @param name - File name to expose to validation.
+ * @param type - MIME type to expose to validation.
+ * @param size - File size in bytes.
+ * @returns Test file with deterministic byte content.
+ */
 function createFile(name: string, type: string, size = 4): File {
   return new File([new Uint8Array(size)], name, {type});
 }

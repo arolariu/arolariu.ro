@@ -27,6 +27,8 @@ import {
 } from "../_utils/uploadTypes";
 import {validateUploadFiles} from "../_utils/uploadValidation";
 
+type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
+
 interface ScanUploadContextType {
   /** Files currently tracked by the upload route. */
   readonly pendingUploads: PendingUpload[];
@@ -63,7 +65,7 @@ const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undef
  */
 export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
-  const removalTimersRef = useRef<Set<number>>(new Set());
+  const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());
   const progressFrameRef = useRef<number | null>(null);
   const pendingProgressEventsRef = useRef<Map<string, UploadProgressEvent>>(new Map());
   const revokedPreviewUrlsRef = useRef<Set<string>>(new Set());
