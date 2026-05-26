@@ -1,0 +1,44 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.categoryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+
+  @include respond-below('md') {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-block: space(2);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+.categoryChip {
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.chipButton {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  border-radius: radius('full');
+
+  &:focus-visible {
+    outline: 2px solid color('primary');
+    outline-offset: 2px;
+  }
+}
