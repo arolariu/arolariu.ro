@@ -54,11 +54,19 @@ const explicitPrefixRules: ReadonlyArray<readonly [oldPrefix: string, newPrefix:
 ];
 
 function lowerCamel(segment: string): string {
+  if (/^\d+$/u.test(segment)) {
+    return `item${segment}`;
+  }
+
   const cleaned = segment
     .replace(/^IMS--/u, "")
     .replace(/[_\s-]+(.)?/gu, (_match, next: string | undefined) => (next ? next.toUpperCase() : ""))
     .replace(/[^A-Za-z0-9]/gu, "");
   if (!cleaned) return "unknown";
+  if (/^\d/u.test(cleaned)) {
+    return `value${cleaned[0]!.toUpperCase()}${cleaned.slice(1)}`;
+  }
+
   return `${cleaned[0]!.toLowerCase()}${cleaned.slice(1)}`;
 }
 

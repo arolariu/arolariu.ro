@@ -1306,17 +1306,17 @@
   },
   {
     "oldPath": "About.Hub.navigation.author.features.0",
-    "newPath": "pages.about.hub.navigation.author.features.0",
+    "newPath": "pages.about.hub.navigation.author.features.item0",
     "reason": "about hub page"
   },
   {
     "oldPath": "About.Hub.navigation.author.features.1",
-    "newPath": "pages.about.hub.navigation.author.features.1",
+    "newPath": "pages.about.hub.navigation.author.features.item1",
     "reason": "about hub page"
   },
   {
     "oldPath": "About.Hub.navigation.author.features.2",
-    "newPath": "pages.about.hub.navigation.author.features.2",
+    "newPath": "pages.about.hub.navigation.author.features.item2",
     "reason": "about hub page"
   },
   {
@@ -1336,17 +1336,17 @@
   },
   {
     "oldPath": "About.Hub.navigation.platform.features.0",
-    "newPath": "pages.about.hub.navigation.platform.features.0",
+    "newPath": "pages.about.hub.navigation.platform.features.item0",
     "reason": "about hub page"
   },
   {
     "oldPath": "About.Hub.navigation.platform.features.1",
-    "newPath": "pages.about.hub.navigation.platform.features.1",
+    "newPath": "pages.about.hub.navigation.platform.features.item1",
     "reason": "about hub page"
   },
   {
     "oldPath": "About.Hub.navigation.platform.features.2",
-    "newPath": "pages.about.hub.navigation.platform.features.2",
+    "newPath": "pages.about.hub.navigation.platform.features.item2",
     "reason": "about hub page"
   },
   {
@@ -3841,22 +3841,22 @@
   },
   {
     "oldPath": "email.firstInvoiceUploaded.featuresToExplore.0",
-    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.0",
+    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.firstInvoiceUploaded.featuresToExplore.1",
-    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.1",
+    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.firstInvoiceUploaded.featuresToExplore.2",
-    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.2",
+    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.firstInvoiceUploaded.featuresToExplore.3",
-    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.3",
+    "newPath": "emails.firstInvoiceUploaded.featuresToExplore.item3",
     "reason": "email templates"
   },
   {
@@ -3936,17 +3936,17 @@
   },
   {
     "oldPath": "email.firstInvoiceUploaded.whatHappensNext.0",
-    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.0",
+    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.firstInvoiceUploaded.whatHappensNext.1",
-    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.1",
+    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.firstInvoiceUploaded.whatHappensNext.2",
-    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.2",
+    "newPath": "emails.firstInvoiceUploaded.whatHappensNext.item2",
     "reason": "email templates"
   },
   {
@@ -4086,22 +4086,22 @@
   },
   {
     "oldPath": "email.incompleteInvoice.tips.0",
-    "newPath": "emails.incompleteInvoice.tips.0",
+    "newPath": "emails.incompleteInvoice.tips.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.incompleteInvoice.tips.1",
-    "newPath": "emails.incompleteInvoice.tips.1",
+    "newPath": "emails.incompleteInvoice.tips.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.incompleteInvoice.tips.2",
-    "newPath": "emails.incompleteInvoice.tips.2",
+    "newPath": "emails.incompleteInvoice.tips.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.incompleteInvoice.tips.3",
-    "newPath": "emails.incompleteInvoice.tips.3",
+    "newPath": "emails.incompleteInvoice.tips.item3",
     "reason": "email templates"
   },
   {
@@ -4201,27 +4201,27 @@
   },
   {
     "oldPath": "email.invoiceAnalyzed.whatWasAnalyzed.0",
-    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.0",
+    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceAnalyzed.whatWasAnalyzed.1",
-    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.1",
+    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceAnalyzed.whatWasAnalyzed.2",
-    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.2",
+    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceAnalyzed.whatWasAnalyzed.3",
-    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.3",
+    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.item3",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceAnalyzed.whatWasAnalyzed.4",
-    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.4",
+    "newPath": "emails.invoiceAnalyzed.whatWasAnalyzed.item4",
     "reason": "email templates"
   },
   {
@@ -4311,22 +4311,22 @@
   },
   {
     "oldPath": "email.invoiceDeleted.whatYouShouldKnow.0",
-    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.0",
+    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceDeleted.whatYouShouldKnow.1",
-    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.1",
+    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceDeleted.whatYouShouldKnow.2",
-    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.2",
+    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceDeleted.whatYouShouldKnow.3",
-    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.3",
+    "newPath": "emails.invoiceDeleted.whatYouShouldKnow.item3",
     "reason": "email templates"
   },
   {
@@ -4336,22 +4336,22 @@
   },
   {
     "oldPath": "email.invoiceInactivity.badge.14",
-    "newPath": "emails.invoiceInactivity.badge.14",
+    "newPath": "emails.invoiceInactivity.badge.item14",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.badge.3",
-    "newPath": "emails.invoiceInactivity.badge.3",
+    "newPath": "emails.invoiceInactivity.badge.item3",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.badge.30",
-    "newPath": "emails.invoiceInactivity.badge.30",
+    "newPath": "emails.invoiceInactivity.badge.item30",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.badge.7",
-    "newPath": "emails.invoiceInactivity.badge.7",
+    "newPath": "emails.invoiceInactivity.badge.item7",
     "reason": "email templates"
   },
   {
@@ -4371,22 +4371,22 @@
   },
   {
     "oldPath": "email.invoiceInactivity.heading.14",
-    "newPath": "emails.invoiceInactivity.heading.14",
+    "newPath": "emails.invoiceInactivity.heading.item14",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.heading.3",
-    "newPath": "emails.invoiceInactivity.heading.3",
+    "newPath": "emails.invoiceInactivity.heading.item3",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.heading.30",
-    "newPath": "emails.invoiceInactivity.heading.30",
+    "newPath": "emails.invoiceInactivity.heading.item30",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.heading.7",
-    "newPath": "emails.invoiceInactivity.heading.7",
+    "newPath": "emails.invoiceInactivity.heading.item7",
     "reason": "email templates"
   },
   {
@@ -4406,22 +4406,22 @@
   },
   {
     "oldPath": "email.invoiceInactivity.intro.14",
-    "newPath": "emails.invoiceInactivity.intro.14",
+    "newPath": "emails.invoiceInactivity.intro.item14",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.intro.3",
-    "newPath": "emails.invoiceInactivity.intro.3",
+    "newPath": "emails.invoiceInactivity.intro.item3",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.intro.30",
-    "newPath": "emails.invoiceInactivity.intro.30",
+    "newPath": "emails.invoiceInactivity.intro.item30",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceInactivity.intro.7",
-    "newPath": "emails.invoiceInactivity.intro.7",
+    "newPath": "emails.invoiceInactivity.intro.item7",
     "reason": "email templates"
   },
   {
@@ -4561,17 +4561,17 @@
   },
   {
     "oldPath": "email.invoiceMadePublic.howToShare.0",
-    "newPath": "emails.invoiceMadePublic.howToShare.0",
+    "newPath": "emails.invoiceMadePublic.howToShare.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceMadePublic.howToShare.1",
-    "newPath": "emails.invoiceMadePublic.howToShare.1",
+    "newPath": "emails.invoiceMadePublic.howToShare.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceMadePublic.howToShare.2",
-    "newPath": "emails.invoiceMadePublic.howToShare.2",
+    "newPath": "emails.invoiceMadePublic.howToShare.item2",
     "reason": "email templates"
   },
   {
@@ -4701,17 +4701,17 @@
   },
   {
     "oldPath": "email.invoiceShared.whatYouCanDo.0",
-    "newPath": "emails.invoiceShared.whatYouCanDo.0",
+    "newPath": "emails.invoiceShared.whatYouCanDo.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceShared.whatYouCanDo.1",
-    "newPath": "emails.invoiceShared.whatYouCanDo.1",
+    "newPath": "emails.invoiceShared.whatYouCanDo.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceShared.whatYouCanDo.2",
-    "newPath": "emails.invoiceShared.whatYouCanDo.2",
+    "newPath": "emails.invoiceShared.whatYouCanDo.item2",
     "reason": "email templates"
   },
   {
@@ -4961,17 +4961,17 @@
   },
   {
     "oldPath": "email.invoiceUnshared.whatThisMeans.0",
-    "newPath": "emails.invoiceUnshared.whatThisMeans.0",
+    "newPath": "emails.invoiceUnshared.whatThisMeans.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceUnshared.whatThisMeans.1",
-    "newPath": "emails.invoiceUnshared.whatThisMeans.1",
+    "newPath": "emails.invoiceUnshared.whatThisMeans.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.invoiceUnshared.whatThisMeans.2",
-    "newPath": "emails.invoiceUnshared.whatThisMeans.2",
+    "newPath": "emails.invoiceUnshared.whatThisMeans.item2",
     "reason": "email templates"
   },
   {
@@ -5066,17 +5066,17 @@
   },
   {
     "oldPath": "email.newsletterSubscribed.whatToExpect.0",
-    "newPath": "emails.newsletterSubscribed.whatToExpect.0",
+    "newPath": "emails.newsletterSubscribed.whatToExpect.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.newsletterSubscribed.whatToExpect.1",
-    "newPath": "emails.newsletterSubscribed.whatToExpect.1",
+    "newPath": "emails.newsletterSubscribed.whatToExpect.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.newsletterSubscribed.whatToExpect.2",
-    "newPath": "emails.newsletterSubscribed.whatToExpect.2",
+    "newPath": "emails.newsletterSubscribed.whatToExpect.item2",
     "reason": "email templates"
   },
   {
@@ -5146,17 +5146,17 @@
   },
   {
     "oldPath": "email.newsletterUnsubscribed.whatHappensNext.0",
-    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.0",
+    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.newsletterUnsubscribed.whatHappensNext.1",
-    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.1",
+    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.newsletterUnsubscribed.whatHappensNext.2",
-    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.2",
+    "newPath": "emails.newsletterUnsubscribed.whatHappensNext.item2",
     "reason": "email templates"
   },
   {
@@ -5291,32 +5291,32 @@
   },
   {
     "oldPath": "email.spendingAlert.tipsOnTrack.0",
-    "newPath": "emails.spendingAlert.tipsOnTrack.0",
+    "newPath": "emails.spendingAlert.tipsOnTrack.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.spendingAlert.tipsOnTrack.1",
-    "newPath": "emails.spendingAlert.tipsOnTrack.1",
+    "newPath": "emails.spendingAlert.tipsOnTrack.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.spendingAlert.tipsOnTrack.2",
-    "newPath": "emails.spendingAlert.tipsOnTrack.2",
+    "newPath": "emails.spendingAlert.tipsOnTrack.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.spendingAlert.tipsOverBudget.0",
-    "newPath": "emails.spendingAlert.tipsOverBudget.0",
+    "newPath": "emails.spendingAlert.tipsOverBudget.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.spendingAlert.tipsOverBudget.1",
-    "newPath": "emails.spendingAlert.tipsOverBudget.1",
+    "newPath": "emails.spendingAlert.tipsOverBudget.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.spendingAlert.tipsOverBudget.2",
-    "newPath": "emails.spendingAlert.tipsOverBudget.2",
+    "newPath": "emails.spendingAlert.tipsOverBudget.item2",
     "reason": "email templates"
   },
   {
@@ -5331,27 +5331,27 @@
   },
   {
     "oldPath": "email.unanalyzedInvoices.analysisProvides.0",
-    "newPath": "emails.unanalyzedInvoices.analysisProvides.0",
+    "newPath": "emails.unanalyzedInvoices.analysisProvides.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.unanalyzedInvoices.analysisProvides.1",
-    "newPath": "emails.unanalyzedInvoices.analysisProvides.1",
+    "newPath": "emails.unanalyzedInvoices.analysisProvides.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.unanalyzedInvoices.analysisProvides.2",
-    "newPath": "emails.unanalyzedInvoices.analysisProvides.2",
+    "newPath": "emails.unanalyzedInvoices.analysisProvides.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.unanalyzedInvoices.analysisProvides.3",
-    "newPath": "emails.unanalyzedInvoices.analysisProvides.3",
+    "newPath": "emails.unanalyzedInvoices.analysisProvides.item3",
     "reason": "email templates"
   },
   {
     "oldPath": "email.unanalyzedInvoices.analysisProvides.4",
-    "newPath": "emails.unanalyzedInvoices.analysisProvides.4",
+    "newPath": "emails.unanalyzedInvoices.analysisProvides.item4",
     "reason": "email templates"
   },
   {
@@ -5486,17 +5486,17 @@
   },
   {
     "oldPath": "email.weeklyUploadReminder.quickTips.0",
-    "newPath": "emails.weeklyUploadReminder.quickTips.0",
+    "newPath": "emails.weeklyUploadReminder.quickTips.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.weeklyUploadReminder.quickTips.1",
-    "newPath": "emails.weeklyUploadReminder.quickTips.1",
+    "newPath": "emails.weeklyUploadReminder.quickTips.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.weeklyUploadReminder.quickTips.2",
-    "newPath": "emails.weeklyUploadReminder.quickTips.2",
+    "newPath": "emails.weeklyUploadReminder.quickTips.item2",
     "reason": "email templates"
   },
   {
@@ -5561,17 +5561,17 @@
   },
   {
     "oldPath": "email.welcome.howItWorks.0",
-    "newPath": "emails.welcome.howItWorks.0",
+    "newPath": "emails.welcome.howItWorks.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.welcome.howItWorks.1",
-    "newPath": "emails.welcome.howItWorks.1",
+    "newPath": "emails.welcome.howItWorks.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.welcome.howItWorks.2",
-    "newPath": "emails.welcome.howItWorks.2",
+    "newPath": "emails.welcome.howItWorks.item2",
     "reason": "email templates"
   },
   {
@@ -5606,22 +5606,22 @@
   },
   {
     "oldPath": "email.welcome.whatYouCanDo.0",
-    "newPath": "emails.welcome.whatYouCanDo.0",
+    "newPath": "emails.welcome.whatYouCanDo.item0",
     "reason": "email templates"
   },
   {
     "oldPath": "email.welcome.whatYouCanDo.1",
-    "newPath": "emails.welcome.whatYouCanDo.1",
+    "newPath": "emails.welcome.whatYouCanDo.item1",
     "reason": "email templates"
   },
   {
     "oldPath": "email.welcome.whatYouCanDo.2",
-    "newPath": "emails.welcome.whatYouCanDo.2",
+    "newPath": "emails.welcome.whatYouCanDo.item2",
     "reason": "email templates"
   },
   {
     "oldPath": "email.welcome.whatYouCanDo.3",
-    "newPath": "emails.welcome.whatYouCanDo.3",
+    "newPath": "emails.welcome.whatYouCanDo.item3",
     "reason": "email templates"
   },
   {
@@ -11941,17 +11941,17 @@
   },
   {
     "oldPath": "IMS--List.generativeView.settings.retention.30",
-    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.30",
+    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.item30",
     "reason": "view-invoices page"
   },
   {
     "oldPath": "IMS--List.generativeView.settings.retention.60",
-    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.60",
+    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.item60",
     "reason": "view-invoices page"
   },
   {
     "oldPath": "IMS--List.generativeView.settings.retention.90",
-    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.90",
+    "newPath": "pages.invoices.viewInvoices.generativeView.settings.retention.item90",
     "reason": "view-invoices page"
   },
   {
@@ -12111,22 +12111,22 @@
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.amountPresets.0to50",
-    "newPath": "forms.invoices.filters.amountPresets.0to50",
+    "newPath": "forms.invoices.filters.amountPresets.value0to50",
     "reason": "invoice list filters"
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.amountPresets.100to500",
-    "newPath": "forms.invoices.filters.amountPresets.100to500",
+    "newPath": "forms.invoices.filters.amountPresets.value100to500",
     "reason": "invoice list filters"
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.amountPresets.500plus",
-    "newPath": "forms.invoices.filters.amountPresets.500plus",
+    "newPath": "forms.invoices.filters.amountPresets.value500plus",
     "reason": "invoice list filters"
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.amountPresets.50to100",
-    "newPath": "forms.invoices.filters.amountPresets.50to100",
+    "newPath": "forms.invoices.filters.amountPresets.value50to100",
     "reason": "invoice list filters"
   },
   {
@@ -12176,12 +12176,12 @@
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.datePresets.30d",
-    "newPath": "forms.invoices.filters.datePresets.30d",
+    "newPath": "forms.invoices.filters.datePresets.value30d",
     "reason": "invoice list filters"
   },
   {
     "oldPath": "IMS--List.invoicesView.filters.datePresets.90d",
-    "newPath": "forms.invoices.filters.datePresets.90d",
+    "newPath": "forms.invoices.filters.datePresets.value90d",
     "reason": "invoice list filters"
   },
   {
