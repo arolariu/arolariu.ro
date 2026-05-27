@@ -100,12 +100,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
       const result = await deleteScan({blobUrl: scan.blobUrl});
       if (result.success) {
         removeScan(scan.id);
-        toast.success(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.success));
+        toast.success(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.success));
       } else {
-        toast.error(result.error.message || t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
+        toast.error(result.error.message || t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       }
     } catch (error) {
-      toast.error(t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.error));
+      toast.error(t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.error));
       console.error("Error deleting scan:", error);
     } finally {
       setIsDeleting(false);
@@ -128,7 +128,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
       const trimmedName = newName.trim();
       if (trimmedName && trimmedName !== scan.name) {
         updateScanName(scan.id, trimmedName);
-        toast.success(t((m) => m["IMS--ViewScans"].scanCard.rename));
+        toast.success(t((m) => m.pages.invoices.viewScans.scanCard.rename));
         setJustRenamed(true);
         setTimeout(() => setJustRenamed(false), 300);
       }
@@ -164,7 +164,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   const handleRotate = useCallback(
     async (degrees: number): Promise<void> => {
       if (!scan.blobUrl || scan.mimeType === "application/pdf") {
-        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateUnsupported));
+        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateUnsupported));
         return;
       }
 
@@ -242,12 +242,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         if (result.success && result.data.blobUrl) {
           const cacheBustedUrl = `${result.data.blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
-          toast.success(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateSuccess));
+          toast.success(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateSuccess));
         } else {
-          toast.error(result.success ? t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError) : result.error.message || t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
+          toast.error(result.success ? t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError) : result.error.message || t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
         }
       } catch (error) {
-        toast.error(t((m) => m["IMS--ViewScans"].scanCard.actions.rotateError));
+        toast.error(t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateError));
         console.error("Error rotating scan:", error);
       } finally {
         setIsRotating(false);
@@ -291,7 +291,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["pdfPlaceholder"]}>{/* Empty placeholder */}</div>
           </div>
           <div className={styles["fileInfo"]}>
-            <div className={styles["fileName"]}>{t((m) => m["IMS--ViewScans"].scanCard.loading)}</div>
+            <div className={styles["fileName"]}>{t((m) => m.pages.invoices.viewScans.scanCard.loading)}</div>
           </div>
         </CardContent>
       </Card>
@@ -371,7 +371,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem onClick={handleStartRename}>
                     <TbPencil className={styles["trashIcon"]} />
-                    {t((m) => m["IMS--ViewScans"].scanCard.actions.rename)}
+                    {t((m) => m.pages.invoices.viewScans.scanCard.actions.rename)}
                   </DropdownMenuItem>
                   {scan.mimeType !== "application/pdf" && (
                     <>
@@ -379,13 +379,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                         onClick={handleRotate90}
                         disabled={isRotating}>
                         <TbRotateClockwise className={styles["trashIcon"]} />
-                        {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCW)}
+                        {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCW)}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={handleRotateMinus90}
                         disabled={isRotating}>
                         <TbRotate className={styles["trashIcon"]} />
-                        {t((m) => m["IMS--ViewScans"].scanCard.actions.rotateCCW)}
+                        {t((m) => m.pages.invoices.viewScans.scanCard.actions.rotateCCW)}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -393,7 +393,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                     className={styles["deleteMenuItem"]}
                     onClick={handleOpenDeleteDialog}>
                     <TbTrash className={styles["trashIcon"]} />
-                    {t((m) => m["IMS--ViewScans"].scanCard.actions.delete)}
+                    {t((m) => m.pages.invoices.viewScans.scanCard.actions.delete)}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -404,7 +404,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               <div className={styles["linkedBadgePosition"]}>
                 <div className={styles["linkedBadge"]}>
                   <TbLink className={styles["linkedIcon"]} />
-                  {t((m) => m["IMS--ViewScans"].scanCard.linked)}
+                  {t((m) => m.pages.invoices.viewScans.scanCard.linked)}
                 </div>
               </div>
             ) : null}
@@ -413,7 +413,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {isRotating ? (
               <div className={styles["rotatingOverlay"]}>
                 <div className={styles["rotatingSpinner"]} />
-                <span className={styles["rotatingText"]}>{t((m) => m["IMS--ViewScans"].scanCard.actions.rotating)}</span>
+                <span className={styles["rotatingText"]}>{t((m) => m.pages.invoices.viewScans.scanCard.actions.rotating)}</span>
               </div>
             ) : null}
           </div>
@@ -431,7 +431,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   onChange={handleNameChange}
                   onKeyDown={handleRenameKeyDown}
                   onBlur={handleCancelRename}
-                  placeholder={t((m) => m["IMS--ViewScans"].scanCard.renamePlaceholder)}
+                  placeholder={t((m) => m.pages.invoices.viewScans.scanCard.renamePlaceholder)}
                   className={styles["renameInput"]}
                 />
                 <div className={styles["renameActions"]}>
@@ -486,7 +486,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         onOpenChange={setShowPreview}>
         <DialogContent className={styles["previewDialog"]}>
           <DialogHeader>
-            <DialogTitle>{t((m) => m["IMS--ViewScans"].scanCard.previewTitle)}</DialogTitle>
+            <DialogTitle>{t((m) => m.pages.invoices.viewScans.scanCard.previewTitle)}</DialogTitle>
           </DialogHeader>
           {scan.mimeType === "application/pdf" ? (
             <div className={styles["pdfPreviewContainer"]}>
@@ -517,25 +517,25 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.title)}</AlertDialogTitle>
+            <AlertDialogTitle>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
               {isUsedByInvoice ? (
                 <>
-                  <span className={styles["linkedWarning"]}>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.linkedWarning)}</span>
-                  {t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.linkedDescription)}
+                  <span className={styles["linkedWarning"]}>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.linkedWarning)}</span>
+                  {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.linkedDescription)}
                 </>
               ) : (
-                <>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.description, {name: scan.name})}</>
+                <>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.description, {name: scan.name})}</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>{t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.cancel)}</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className={styles["deleteButton"]}>
-              {isDeleting ? t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.deleting) : t((m) => m["IMS--ViewScans"].scanCard.deleteDialog.delete)}
+              {isDeleting ? t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.deleting) : t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.delete)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

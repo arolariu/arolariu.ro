@@ -99,15 +99,15 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       // This ensures the cached invoice list is immediately updated
       removeInvoice(invoice.id);
 
-      toast(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deletedTitle), {
-        description: t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deletedDescription),
+      toast(t((m) => m.dialogs.invoices.deleteInvoiceDialog.toasts.deletedTitle), {
+        description: t((m) => m.dialogs.invoices.deleteInvoiceDialog.toasts.deletedDescription),
       });
       handleClose();
       router.push("/domains/invoices/view-invoices");
     } catch (error) {
-      console.error(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.console.deleteError), error);
-      toast(t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deleteFailedTitle), {
-        description: t((m) => m["IMS--Dialogs"].deleteInvoiceDialog.toasts.deleteFailedDescription),
+      console.error(t((m) => m.dialogs.invoices.deleteInvoiceDialog.console.deleteError), error);
+      toast(t((m) => m.dialogs.invoices.deleteInvoiceDialog.toasts.deleteFailedTitle), {
+        description: t((m) => m.dialogs.invoices.deleteInvoiceDialog.toasts.deleteFailedDescription),
       });
     } finally {
       setIsDeleting(false);

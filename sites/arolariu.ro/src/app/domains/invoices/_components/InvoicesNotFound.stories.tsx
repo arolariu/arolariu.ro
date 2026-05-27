@@ -12,7 +12,7 @@ import messages from "../../../../../messages/en.json";
  * and styling using the English i18n strings directly.
  */
 
-const namespace = messages["IMS--Common"].invoicesNotFound;
+const namespace = messages.shared.invoices.invoicesNotFound;
 
 const meta = {
   title: "Invoices/States/InvoicesNotFound",

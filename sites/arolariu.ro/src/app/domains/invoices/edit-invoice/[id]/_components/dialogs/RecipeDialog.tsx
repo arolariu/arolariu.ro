@@ -125,15 +125,15 @@ const CreateDialog = () => {
       });
 
       if (result.success) {
-        toast.success(t((m) => m["IMS--Dialogs"].recipeDialog.create.success) ?? "Recipe created successfully");
+        toast.success(t((m) => m.dialogs.invoices.recipeDialog.create.success) ?? "Recipe created successfully");
         close();
         router.refresh();
       } else {
-        toast.error(result.error.message || t((m) => m["IMS--Dialogs"].recipeDialog.create.error) || "Failed to create recipe");
+        toast.error(result.error.message || t((m) => m.dialogs.invoices.recipeDialog.create.error) || "Failed to create recipe");
       }
     } catch (error) {
       console.error("Failed to create recipe:", error);
-      toast.error(t((m) => m["IMS--Dialogs"].recipeDialog.create.error) ?? "Failed to create recipe");
+      toast.error(t((m) => m.dialogs.invoices.recipeDialog.create.error) ?? "Failed to create recipe");
     } finally {
       setIsSaving(false);
     }
@@ -171,14 +171,14 @@ const CreateDialog = () => {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.create.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].recipeDialog.create.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.create.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.create.description)}</DialogDescription>
         </DialogHeader>
 
         <form className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='name'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.recipeName)}</Label>
+              <Label htmlFor='name'>{t((m) => m.dialogs.invoices.recipeDialog.fields.recipeName)}</Label>
               <div>
                 <TooltipProvider>
                   <Tooltip>
@@ -191,12 +191,12 @@ const CreateDialog = () => {
                           onClick={handleGenerateName}
                           className={styles["generateButton"]}>
                           <TbSparkles className={styles["sparklesIcon"]} />
-                          {t((m) => m["IMS--Dialogs"].recipeDialog.actions.generateName)}
+                          {t((m) => m.dialogs.invoices.recipeDialog.actions.generateName)}
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.generateName)}</p>
+                      <p className={styles["tooltipText"]}>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.generateName)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -207,32 +207,32 @@ const CreateDialog = () => {
               name='name'
               value={recipe.name}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.recipeName)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
             />
           </div>
 
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.description)}</Label>
+            <Label htmlFor='description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
             <Textarea
               id='description'
               name='description'
               value={recipe.description} // updated from formData to recipe
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.description)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.ingredients)}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'>
                 <TbPlus className={styles["addIcon"]} />
-                {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.add)}
+                {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
 
@@ -263,17 +263,17 @@ const CreateDialog = () => {
 
           {/* Add difficulty selector */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='difficulty'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.difficulty)}</Label>
+            <Label htmlFor='difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
             <Select
               value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
               onValueChange={handleDifficultyChange}>
               <SelectTrigger>
-                <SelectValue placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.selectDifficulty)} />
+                <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='Easy'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.easy)}</SelectItem>
-                <SelectItem value='Normal'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.medium)}</SelectItem>
-                <SelectItem value='Hard'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.hard)}</SelectItem>
+                <SelectItem value='Easy'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
+                <SelectItem value='Normal'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
+                <SelectItem value='Hard'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -281,7 +281,7 @@ const CreateDialog = () => {
           {/* Add instructions field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='instructions'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.instructions)}</Label>
+              <Label htmlFor='instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
@@ -292,12 +292,12 @@ const CreateDialog = () => {
                         size='sm'
                         onClick={handleEnhanceInstructions}>
                         <TbWand className={styles["addIcon"]} />
-                        {t((m) => m["IMS--Dialogs"].recipeDialog.actions.enhanceInstructions)}
+                        {t((m) => m.dialogs.invoices.recipeDialog.actions.enhanceInstructions)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.enhanceInstructions)}</p>
+                    <p>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.enhanceInstructions)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -307,7 +307,7 @@ const CreateDialog = () => {
               name='instructions'
               value={recipe.instructions}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.instructions)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.instructions)}
               rows={4}
             />
           </div>
@@ -315,7 +315,7 @@ const CreateDialog = () => {
           {/* Add preparation time field */}
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='preparationTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.prepTime)}</Label>
+              <Label htmlFor='preparationTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <Input
@@ -324,14 +324,14 @@ const CreateDialog = () => {
                   type='number'
                   value={recipe.preparationTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.prepTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.prepTime)}
                 />
               </div>
             </div>
 
             {/* Add cooking time field */}
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='cookingTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.cookTime)}</Label>
+              <Label htmlFor='cookingTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
@@ -340,7 +340,7 @@ const CreateDialog = () => {
                   type='number'
                   value={recipe.cookingTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.cookTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.cookTime)}
                 />
               </div>
             </div>
@@ -349,11 +349,11 @@ const CreateDialog = () => {
           {/* Display total duration */}
           {(Number(recipe.preparationTime) > 0 || Number(recipe.cookingTime) > 0) && (
             <div className={styles["fieldGroup"]}>
-              <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.totalDuration) ?? "Total Duration"}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.totalDuration) ?? "Total Duration"}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen3 className={styles["mutedIcon"]} />
                 <span>
-                  {Number(recipe.preparationTime) + Number(recipe.cookingTime)} {t((m) => m["IMS--Dialogs"].recipeDialog.minutes) ?? "minutes"}
+                  {Number(recipe.preparationTime) + Number(recipe.cookingTime)} {t((m) => m.dialogs.invoices.recipeDialog.minutes) ?? "minutes"}
                 </span>
               </div>
             </div>
@@ -367,14 +367,14 @@ const CreateDialog = () => {
               variant='outline'
               onClick={close}
               disabled={isSaving}>
-              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.cancel)}
+              {t((m) => m.dialogs.invoices.recipeDialog.buttons.cancel)}
             </Button>
             <Button
               type='button'
               onClick={handleCreate}
               disabled={isSaving}>
               <TbDisc className={styles["saveIcon"]} />
-              {isSaving ? (t((m) => m["IMS--Dialogs"].recipeDialog.buttons.saving) ?? "Saving...") : t((m) => m["IMS--Dialogs"].recipeDialog.buttons.save)}
+              {isSaving ? (t((m) => m.dialogs.invoices.recipeDialog.buttons.saving) ?? "Saving...") : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
             </Button>
           </div>
         </DialogFooter>
@@ -402,18 +402,18 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].recipeDialog.read.description)}</DialogDescription>
+          <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.read.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.description)}</Label>
-            <p className={styles["readText"]}>{recipe?.description || t((m) => m["IMS--Dialogs"].recipeDialog.read.noDescription)}</p>
+            <Label htmlFor='description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
+            <p className={styles["readText"]}>{recipe?.description || t((m) => m.dialogs.invoices.recipeDialog.read.noDescription)}</p>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.ingredients)}</Label>
+            <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
             <ul className={styles["ingredientReadList"]}>
               {recipe?.ingredients.map((ingredient, idx) => (
                 <li
@@ -426,7 +426,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='complexity'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.complexity)}</Label>
+            <Label htmlFor='complexity'>{t((m) => m.dialogs.invoices.recipeDialog.fields.complexity)}</Label>
             <Badge
               variant={
                 recipe?.complexity === RecipeComplexity.Easy
@@ -435,24 +435,24 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                     ? "secondary"
                     : "outline"
               }>
-              {recipe?.complexity || t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.medium).toUpperCase()}
+              {recipe?.complexity || t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium).toUpperCase()}
             </Badge>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='instructions'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.instructions)}</Label>
+            <Label htmlFor='instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
 
             <div className={styles["timeGrid"]}>
-              <Label htmlFor='preparationTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.prepTime)}</Label>
+              <Label htmlFor='preparationTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
               <TbClock className={styles["mutedIcon"]} />
-              <span>{recipe?.preparationTime || t((m) => m["IMS--Dialogs"].recipeDialog.read.notSpecified)}</span>
+              <span>{recipe?.preparationTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}</span>
             </div>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='cookingTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.cookTime)}</Label>
+            <Label htmlFor='cookingTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
             <TbToolsKitchen3 className={styles["mutedIcon"]} />
-            <span>{recipe?.cookingTime || t((m) => m["IMS--Dialogs"].recipeDialog.read.notSpecified)}</span>
+            <span>{recipe?.cookingTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}</span>
           </div>
         </div>
 
@@ -460,7 +460,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <Button
             type='button'
             onClick={close}>
-            {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.close)}
+            {t((m) => m.dialogs.invoices.recipeDialog.buttons.close)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -518,14 +518,14 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.update.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].recipeDialog.update.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.update.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.recipeDialog.update.description)}</DialogDescription>
         </DialogHeader>
 
         <form className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='name'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.recipeName)}</Label>
+              <Label htmlFor='name'>{t((m) => m.dialogs.invoices.recipeDialog.fields.recipeName)}</Label>
               <div>
                 <TooltipProvider>
                   <Tooltip>
@@ -538,12 +538,12 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                           onClick={generateName}
                           className={styles["generateButton"]}>
                           <TbSparkles className={styles["sparklesIcon"]} />
-                          {t((m) => m["IMS--Dialogs"].recipeDialog.actions.generateName)}
+                          {t((m) => m.dialogs.invoices.recipeDialog.actions.generateName)}
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.generateName)}</p>
+                      <p className={styles["tooltipText"]}>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.generateName)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -554,19 +554,19 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               name='name'
               value={recipeDetails.name}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.recipeName)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
             />
           </div>
 
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.description)}</Label>
+            <Label htmlFor='description'>{t((m) => m.dialogs.invoices.recipeDialog.fields.description)}</Label>
             <Textarea
               id='description'
               name='description'
               value={recipeDetails.description} // updated from formData to recipe
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.description)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
             />
           </div>
@@ -574,13 +574,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add ingredients field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.ingredients)}</Label>
+              <Label>{t((m) => m.dialogs.invoices.recipeDialog.fields.ingredients)}</Label>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'>
                 <TbPlus className={styles["addIcon"]} />
-                {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.add)}
+                {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
 
@@ -611,17 +611,17 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
           {/* Add difficulty selector */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='difficulty'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.difficulty)}</Label>
+            <Label htmlFor='difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
             <Select
               value={formatEnum(RecipeComplexity, recipe.complexity) || "Unknown"}
               onValueChange={handleDifficultyChange}>
               <SelectTrigger>
-                <SelectValue placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.selectDifficulty)} />
+                <SelectValue placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.selectDifficulty)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='EASY'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.easy)}</SelectItem>
-                <SelectItem value='MEDIUM'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.medium)}</SelectItem>
-                <SelectItem value='HARD'>{t((m) => m["IMS--Dialogs"].recipeDialog.difficulty.hard)}</SelectItem>
+                <SelectItem value='EASY'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.easy)}</SelectItem>
+                <SelectItem value='MEDIUM'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.medium)}</SelectItem>
+                <SelectItem value='HARD'>{t((m) => m.dialogs.invoices.recipeDialog.difficulty.hard)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -629,7 +629,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add instructions field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='instructions'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.instructions)}</Label>
+              <Label htmlFor='instructions'>{t((m) => m.dialogs.invoices.recipeDialog.fields.instructions)}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
@@ -640,12 +640,12 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                         size='sm'
                         onClick={enhanceInstructions}>
                         <TbWand className={styles["addIcon"]} />
-                        {t((m) => m["IMS--Dialogs"].recipeDialog.actions.enhanceInstructions)}
+                        {t((m) => m.dialogs.invoices.recipeDialog.actions.enhanceInstructions)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t((m) => m["IMS--Dialogs"].recipeDialog.tooltips.enhanceInstructions)}</p>
+                    <p>{t((m) => m.dialogs.invoices.recipeDialog.tooltips.enhanceInstructions)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -655,7 +655,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               name='instructions'
               value={recipeDetails.instructions}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.instructions)}
+              placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.instructions)}
               rows={4}
             />
           </div>
@@ -663,7 +663,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add preparation time field */}
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='prepTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.prepTime)}</Label>
+              <Label htmlFor='prepTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <Input
@@ -671,14 +671,14 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   name='prepTime'
                   value={recipeDetails.preparationTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.prepTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.prepTime)}
                 />
               </div>
             </div>
 
             {/* Add cooking time field */}
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='cookTime'>{t((m) => m["IMS--Dialogs"].recipeDialog.fields.cookTime)}</Label>
+              <Label htmlFor='cookTime'>{t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
@@ -686,7 +686,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   name='cookTime'
                   value={recipeDetails.cookingTime}
                   onChange={handleChange}
-                  placeholder={t((m) => m["IMS--Dialogs"].recipeDialog.placeholders.cookTime)}
+                  placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.cookTime)}
                 />
               </div>
             </div>
@@ -699,13 +699,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               type='button'
               variant='outline'
               onClick={close}>
-              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.cancel)}
+              {t((m) => m.dialogs.invoices.recipeDialog.buttons.cancel)}
             </Button>
             <Button
               type='button'
               onClick={handleCreate}>
               <TbDisc className={styles["saveIcon"]} />
-              {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.save)}
+              {t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
             </Button>
           </div>
         </DialogFooter>
@@ -737,15 +737,15 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t((m) => m["IMS--Dialogs"].recipeDialog.delete.title)}</AlertDialogTitle>
-          <AlertDialogDescription>{t.rich((m) => m["IMS--Dialogs"].recipeDialog.delete.description, {name: recipe.name, strong: RichTextStrong})}</AlertDialogDescription>
+          <AlertDialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.delete.title)}</AlertDialogTitle>
+          <AlertDialogDescription>{t.rich((m) => m.dialogs.invoices.recipeDialog.delete.description, {name: recipe.name, strong: RichTextStrong})}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t((m) => m["IMS--Dialogs"].recipeDialog.buttons.cancel)}</AlertDialogCancel>
+          <AlertDialogCancel>{t((m) => m.dialogs.invoices.recipeDialog.buttons.cancel)}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className={styles["deleteAction"]}>
-            {t((m) => m["IMS--Dialogs"].recipeDialog.buttons.delete)}
+            {t((m) => m.dialogs.invoices.recipeDialog.buttons.delete)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

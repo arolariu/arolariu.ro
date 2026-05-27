@@ -13,8 +13,8 @@ export default function LoadingInvoice({invoiceIdentifier}: Readonly<{invoiceIde
   return (
     <section className={styles["section"]}>
       <article className={styles["article"]}>
-        <h1 className={styles["title"]}>{t((m) => m["IMS--Common"].statesLoading.title)}</h1>
-        <p className={styles["description"]}>{t((m) => m["IMS--Common"].statesLoading.description, {invoiceIdentifier})}</p>
+        <h1 className={styles["title"]}>{t((m) => m.shared.invoices.statesLoading.title)}</h1>
+        <p className={styles["description"]}>{t((m) => m.shared.invoices.statesLoading.description, {invoiceIdentifier})}</p>
       </article>
     </section>
   );

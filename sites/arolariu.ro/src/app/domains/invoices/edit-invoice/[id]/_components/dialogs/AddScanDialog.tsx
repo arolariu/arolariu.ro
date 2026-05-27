@@ -19,7 +19,7 @@ import {
   SelectValue,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
@@ -155,7 +155,7 @@ export default function AddScanDialog(): React.JSX.Element {
       const {status, blobUrl} = createScanResult.data;
 
       if (status !== 201) {
-        throw new Error(t((m) => m.dialogs.invoices.addScanDialog.errors.uploadStorageFailed));
+        throw new Error(t(selectorFromPath("dialogs.invoices.addScanDialog.errors.uploadStorageFailed")));
       }
 
       // Step 4: Attach scan to invoice
@@ -171,8 +171,8 @@ export default function AddScanDialog(): React.JSX.Element {
         },
       });
 
-      toast.success(t((m) => m.dialogs.invoices.addScanDialog.toasts.scanAddedTitle), {
-        description: t((m) => m.dialogs.invoices.addScanDialog.toasts.scanAddedDescription),
+      toast.success(t(selectorFromPath("dialogs.invoices.addScanDialog.toasts.scanAddedTitle")), {
+        description: t(selectorFromPath("dialogs.invoices.addScanDialog.toasts.scanAddedDescription")),
       });
 
       // Reset state and close dialog
@@ -182,9 +182,9 @@ export default function AddScanDialog(): React.JSX.Element {
       // Refresh the page to show new scan
       router.refresh();
     } catch (error) {
-      console.error(t((m) => m.dialogs.invoices.addScanDialog.console.uploadError), error);
-      toast.error(t((m) => m.dialogs.invoices.addScanDialog.toasts.scanFailedTitle), {
-        description: error instanceof Error ? error.message : t((m) => m.dialogs.invoices.addScanDialog.errors.unknown),
+      console.error(t(selectorFromPath("dialogs.invoices.addScanDialog.console.uploadError")), error);
+      toast.error(t(selectorFromPath("dialogs.invoices.addScanDialog.toasts.scanFailedTitle")), {
+        description: error instanceof Error ? error.message : t(selectorFromPath("dialogs.invoices.addScanDialog.errors.unknown")),
       });
     } finally {
       setIsUploading(false);

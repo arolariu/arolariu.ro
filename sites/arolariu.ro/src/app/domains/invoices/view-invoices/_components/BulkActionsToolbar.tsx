@@ -131,17 +131,17 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
 
       // Show appropriate toast based on results
       if (failureCount === 0) {
-        toast.success(t((m) => m["IMS--List"].bulkActions.deleteSuccess, {count: successCount}));
+        toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteSuccess, {count: successCount}));
       } else if (successCount === 0) {
-        toast.error(t((m) => m["IMS--List"].bulkActions.deleteError));
+        toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteError));
       } else {
-        toast.success(t((m) => m["IMS--List"].bulkActions.deletePartialSuccess, {success: String(successCount), failed: String(failureCount)}));
+        toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.deletePartialSuccess, {success: String(successCount), failed: String(failureCount)}));
       }
 
       clearSelectedInvoices();
     } catch (error) {
       console.error("Bulk delete error:", error);
-      toast.error(t((m) => m["IMS--List"].bulkActions.deleteError));
+      toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteError));
     } finally {
       setIsDeleting(false);
     }

@@ -826,12 +826,19 @@
           "upload": "Încarcă scan",
           "uploading": "Se încarcă..."
         },
+        "console": {
+          "uploadError": "Eroare la încărcarea scanării:"
+        },
         "description": "Încarcă o imagine nouă a bonului sau un document nou pentru a-l atașa la această factură.",
         "dropzone": {
           "dragAndDrop": "Trage și plasează un fișier aici",
           "dropHere": "Plasează fișierul aici...",
           "formats": "JPEG, PNG, PDF (max 10MB)",
           "orClickBrowse": "sau apasă pentru a răsfoi"
+        },
+        "errors": {
+          "unknown": "A apărut o eroare necunoscută",
+          "uploadStorageFailed": "Încărcarea scanării în spațiul de stocare a eșuat"
         },
         "scanType": {
           "jpeg": "Imagine JPEG",
@@ -844,7 +851,10 @@
         "title": "Adaugă o scanare nouă",
         "toasts": {
           "fileTooLargeDescription": "Dimensiunea maximă a fișierului este 10MB",
-          "fileTooLargeTitle": "Fișier prea mare"
+          "fileTooLargeTitle": "Fișier prea mare",
+          "scanAddedDescription": "Scanarea a fost atașată la factură",
+          "scanAddedTitle": "Scan adăugat cu succes",
+          "scanFailedTitle": "Adăugarea scanării a eșuat"
         }
       },
       "allergenDialog": {
