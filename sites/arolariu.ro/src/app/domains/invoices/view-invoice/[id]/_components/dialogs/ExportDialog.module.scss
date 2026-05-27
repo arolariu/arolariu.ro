@@ -8,7 +8,7 @@
  * - Hover and disabled states with proper accessibility
  * - Dark mode support with proper contrast
  */
-@use '../../../../../../styles/abstracts' as *;
+@use '../../../../../../../styles/abstracts' as *;
 
 .dialogContent {
   max-width: 600px;

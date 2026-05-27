@@ -1,6 +1,4 @@
-"use client";
-
-import type {MessageSelector} from "next-intl-selector";
+"use client";`r`n`r`nimport type {MessageSelector} from "next-intl-selector";
 
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, InvoiceCategory, Merchant} from "@/types/invoices";

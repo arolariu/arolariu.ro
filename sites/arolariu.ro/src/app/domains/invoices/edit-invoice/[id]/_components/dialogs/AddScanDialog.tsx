@@ -155,7 +155,7 @@ export default function AddScanDialog(): React.JSX.Element {
       const {status, blobUrl} = createScanResult.data;
 
       if (status !== 201) {
-        throw new Error(t("errors.uploadStorageFailed"));
+        throw new Error(t((m) => m["IMS--Dialogs"].addScanDialog.errors.uploadStorageFailed));
       }
 
       // Step 4: Attach scan to invoice
@@ -171,8 +171,8 @@ export default function AddScanDialog(): React.JSX.Element {
         },
       });
 
-      toast.success(t("toasts.scanAddedTitle"), {
-        description: t("toasts.scanAddedDescription"),
+      toast.success(t((m) => m["IMS--Dialogs"].addScanDialog.toasts.scanAddedTitle), {
+        description: t((m) => m["IMS--Dialogs"].addScanDialog.toasts.scanAddedDescription),
       });
 
       // Reset state and close dialog
@@ -182,9 +182,9 @@ export default function AddScanDialog(): React.JSX.Element {
       // Refresh the page to show new scan
       router.refresh();
     } catch (error) {
-      console.error(t("console.uploadError"), error);
-      toast.error(t("toasts.scanFailedTitle"), {
-        description: error instanceof Error ? error.message : t("errors.unknown"),
+      console.error(t((m) => m["IMS--Dialogs"].addScanDialog.console.uploadError), error);
+      toast.error(t((m) => m["IMS--Dialogs"].addScanDialog.toasts.scanFailedTitle), {
+        description: error instanceof Error ? error.message : t((m) => m["IMS--Dialogs"].addScanDialog.errors.unknown),
       });
     } finally {
       setIsUploading(false);

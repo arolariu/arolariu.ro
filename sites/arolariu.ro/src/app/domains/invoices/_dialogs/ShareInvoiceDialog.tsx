@@ -300,9 +300,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       toast.promise(
         sendEmailAction().finally(() => setIsSendingEmail(false)),
         {
-          loading: t("toasts.sendEmail.loading", {email}),
-          success: t("toasts.sendEmail.success", {email}),
-          error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
+          loading: t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.sendEmail.loading, {email}),
+          success: t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.sendEmail.success, {email}),
+          error: (error: unknown) => t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.sendEmail.error, {message: error instanceof Error ? error.message : String(error)}),
         },
       );
     },
@@ -337,9 +337,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(
       revokeAction().finally(() => setIsRevoking(false)),
       {
-        loading: t("toasts.revoke.loading"),
-        success: t("toasts.revoke.success"),
-        error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
+        loading: t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.revoke.loading),
+        success: t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.revoke.success),
+        error: (error: unknown) => t((m) => m["IMS--Dialogs"].shareInvoiceDialog.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice, router, handleClose, t]);
