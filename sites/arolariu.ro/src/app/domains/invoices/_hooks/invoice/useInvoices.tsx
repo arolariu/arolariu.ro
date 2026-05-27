@@ -2,18 +2,18 @@
 
 /**
  * @fileoverview Custom React hook for fetching all invoices for the current user.
- * @module hooks/useInvoices
+* @module app/domains/invoices/_hooks/invoice/useInvoices
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
  * fetches fresh invoices via a server action.
  */
 
-import fetchInvoices from "@/app/domains/invoices/_actions/invoices/fetchInvoices";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
+import fetchInvoices from "../../_actions/invoices/fetchInvoices";
 
 /**
  * Input parameters for the useInvoices hook (currently unused).
@@ -71,8 +71,8 @@ type HookOutputType = Readonly<{
  * - No refetch on component remount (reads from store)
  * - setInvoices is stable (excluded from deps)
  *
- * @param _void - Unused parameter (for potential future expansion)
- * @returns Object containing invoices array, loading state, and error state
+ * @param _void - Reserved parameter for potential future filter or pagination options.
+ * @returns Hook state containing cached invoices, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx
@@ -132,7 +132,7 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
           setIsError(true);
         }
       } catch (error: unknown) {
-        console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
+        console.error(">>> Error fetching invoices in useInvoices hook:", error);
         setIsError(true);
       }
     };
