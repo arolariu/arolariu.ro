@@ -5,7 +5,7 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans
  */
 
-import {fetchScans} from "@/lib/actions/scans";
+import {fetchScans} from "@/app/domains/invoices/_actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
@@ -103,12 +103,16 @@ export function useScans(): UseScansOutput {
       setIsSyncing(true);
 
       try {
-        const fetchedScans = await fetchScans({
+        const result = await fetchScans({
           includeArchived: false,
         });
 
+        if (!result.success) {
+          throw new Error(result.error.message);
+        }
+
         // Convert to cached scans with cache timestamp
-        const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+        const cachedScans: CachedScan[] = result.data.map((scan) => ({
           ...scan,
           cachedAt: new Date(),
         }));

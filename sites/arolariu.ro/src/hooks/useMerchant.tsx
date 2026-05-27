@@ -10,7 +10,7 @@
  * background when the identifier changes.
  */
 
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
+import fetchMerchant from "@/app/domains/invoices/_actions/merchants/fetchMerchant";
 import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";

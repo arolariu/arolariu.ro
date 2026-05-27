@@ -1,6 +1,6 @@
 "use client";
 
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
 import {formatDate} from "@/lib/utils.generic";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
@@ -62,7 +62,7 @@ type AnalysisOption = Readonly<{
  * - Items Only: Line item categorization
  * - Merchant Only: Merchant identification
  *
- * **Server Actions**: Uses `analyzeInvoice` from `@/lib/actions/invoices/analyzeInvoice`
+ * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices/analyzeInvoice`
  *
  * @returns The AnalysisPanel component.
  */
@@ -158,7 +158,7 @@ export function AnalysisPanel(): React.JSX.Element {
 
         // Check if the analysis failed
         if (result && !result.success) {
-          throw new Error(result.error ?? "Analysis failed");
+          throw new Error(result.error.message || "Analysis failed");
         }
 
         setCurrentStep(t("steps.complete"));

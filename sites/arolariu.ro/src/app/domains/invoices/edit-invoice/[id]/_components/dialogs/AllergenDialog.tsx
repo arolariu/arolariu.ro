@@ -9,7 +9,7 @@
  * Includes quick-add buttons for common allergens to streamline data entry.
  */
 
-import updateProduct from "@/lib/actions/invoices/updateProduct";
+import updateProduct from "@/app/domains/invoices/_actions/invoices/products/updateInvoiceProduct";
 import type {Allergen} from "@/types/invoices";
 import {
   Badge,
@@ -231,13 +231,10 @@ export default function AllergenDialog(): React.JSX.Element {
         invoiceId: invoice.id,
         payload: {
           originalProductName: product.name,
-          name: product.name,
-          category: product.category,
-          quantity: product.quantity,
-          quantityUnit: product.quantityUnit,
-          productCode: product.productCode,
-          price: product.price,
-          detectedAllergens: allergens,
+          updatedProduct: {
+            ...product,
+            detectedAllergens: allergens,
+          },
         },
       });
 
@@ -247,7 +244,7 @@ export default function AllergenDialog(): React.JSX.Element {
         // Trigger page refresh to show updated data
         globalThis.window.location.reload();
       } else {
-        toast.error(result.error);
+        toast.error(result.error.message);
       }
     } catch (error) {
       console.error("Failed to save allergens:", error);

@@ -1,5 +1,5 @@
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
+import fetchInvoice from "@/app/domains/invoices/_actions/invoices/fetchInvoice";
+import fetchMerchant from "@/app/domains/invoices/_actions/merchants/fetchMerchant";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {EMPTY_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";

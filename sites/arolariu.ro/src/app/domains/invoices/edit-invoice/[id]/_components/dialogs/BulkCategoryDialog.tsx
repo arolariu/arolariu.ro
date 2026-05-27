@@ -8,7 +8,7 @@
  * Provides UI for changing the category of multiple products at once.
  */
 
-import updateProduct from "@/lib/actions/invoices/updateProduct";
+import updateProduct from "@/app/domains/invoices/_actions/invoices/products/updateInvoiceProduct";
 import type {ProductCategory} from "@/types/invoices";
 import {
   Button,
@@ -167,13 +167,10 @@ export default function BulkCategoryDialog(): React.JSX.Element {
               invoiceId: invoice.id,
               payload: {
                 originalProductName: product.name,
-                name: product.name,
-                category: selectedCategory,
-                quantity: product.quantity,
-                quantityUnit: product.quantityUnit,
-                productCode: product.productCode,
-                price: product.price,
-                detectedAllergens: product.detectedAllergens,
+                updatedProduct: {
+                  ...product,
+                  category: selectedCategory,
+                },
               },
             });
 

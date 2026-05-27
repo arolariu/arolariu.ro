@@ -5,7 +5,7 @@ import {TbAlertTriangle, TbTrash} from "react-icons/tb";
  * Static visual preview of the RemoveScanDialog component.
  *
  * @remarks Static preview — component imports "use server" action (deleteInvoiceScan
- * from `@/lib/actions/invoices/deleteInvoiceScan`) that cannot be bundled by
+ * from `@/app/domains/invoices/_actions/invoices/scans/deleteInvoiceScan`) that cannot be bundled by
  * Storybook's Vite/Rollup. Also depends on `useDialog` context. This story renders
  * a faithful HTML replica of the scan removal confirmation dialog with image preview.
  */

@@ -28,7 +28,7 @@
 
 "use client";
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
@@ -193,7 +193,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       })
         .then((result) => {
           if (result.success) {
-            setInvoice(result.invoice);
+            setInvoice(result.data);
             toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
             return;
           }

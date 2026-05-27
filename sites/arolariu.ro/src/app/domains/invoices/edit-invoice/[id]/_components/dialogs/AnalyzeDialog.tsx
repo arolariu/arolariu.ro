@@ -1,7 +1,7 @@
 "use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,

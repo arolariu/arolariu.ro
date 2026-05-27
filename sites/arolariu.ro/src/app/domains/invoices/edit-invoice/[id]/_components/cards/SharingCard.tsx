@@ -1,5 +1,5 @@
 import {useUserInformation} from "@/hooks";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {
@@ -110,7 +110,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       });
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error.message);
       }
 
       // Refresh the page data to reflect the new private state
