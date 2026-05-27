@@ -5,7 +5,7 @@ import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
  * Static visual preview of the TimelineSharedWithList component.
  *
  * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/lib/actions/invoices/fetchInvoice`) that cannot be bundled
+ * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
  * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext`, `useDialog`, and
  * `useUserInformation`. This story renders a faithful HTML replica showing shared users
  * with avatars, email actions, and a public access warning.

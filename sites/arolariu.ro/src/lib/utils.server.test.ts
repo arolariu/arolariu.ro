@@ -459,7 +459,7 @@ describe("createErrorResult", () => {
     const {createErrorResult} = await import("./utils.server");
     const error = new Error("Something went wrong");
 
-    const result = createErrorResult<string>(error, "Default message");
+    const result = await createErrorResult<string>(error, "Default message");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -472,7 +472,7 @@ describe("createErrorResult", () => {
     const {createErrorResult} = await import("./utils.server");
     const error = new Error("Request timed out after 5000ms");
 
-    const result = createErrorResult<string>(error, "Default message");
+    const result = await createErrorResult<string>(error, "Default message");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -481,10 +481,22 @@ describe("createErrorResult", () => {
     }
   });
 
+  it("should preserve numeric status values from Error objects", async () => {
+    const {createErrorResult} = await import("./utils.server");
+    const error = Object.assign(new Error("Not found"), {status: 404});
+
+    const result = await createErrorResult<string>(error, "Default message");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.status).toBe(404);
+    }
+  });
+
   it("should handle non-Error objects", async () => {
     const {createErrorResult} = await import("./utils.server");
 
-    const result = createErrorResult<string>("String error", "Default message");
+    const result = await createErrorResult<string>("String error", "Default message");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -496,7 +508,7 @@ describe("createErrorResult", () => {
   it("should use default message for unknown errors", async () => {
     const {createErrorResult} = await import("./utils.server");
 
-    const result = createErrorResult<number>(null, "An unknown error occurred");
+    const result = await createErrorResult<number>(null, "An unknown error occurred");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -508,7 +520,7 @@ describe("createErrorResult", () => {
   it("should handle undefined as error", async () => {
     const {createErrorResult} = await import("./utils.server");
 
-    const result = createErrorResult<boolean>(undefined, "Unexpected error");
+    const result = await createErrorResult<boolean>(undefined, "Unexpected error");
 
     expect(result.success).toBe(false);
     if (!result.success) {

@@ -5,7 +5,7 @@ import {TbCalendar, TbFileInvoice, TbRobot, TbShare, TbStar, TbUsers} from "reac
  * Static visual preview of the InvoiceTimeline component.
  *
  * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/lib/actions/invoices/fetchInvoice`) that cannot be bundled
+ * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
  * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext` and `useDialog`.
  * This story renders a faithful HTML replica of the visual structure with mock timeline
  * data and sharing information.

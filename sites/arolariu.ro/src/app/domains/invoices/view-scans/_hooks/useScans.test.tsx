@@ -37,7 +37,7 @@ vi.mock("@/lib/utils.server", () => ({
 
 // Mock the fetchScans server action
 const mockFetchScans = vi.fn();
-vi.mock("@/lib/actions/scans", () => ({
+vi.mock("@/app/domains/invoices/_actions/scans", () => ({
   fetchScans: () => mockFetchScans(),
 }));
 
@@ -103,7 +103,7 @@ describe("useScans", () => {
     mockStoreState.hasHydrated = true;
     mockStoreState.isSyncing = false;
     mockStoreState.lastSyncTimestamp = null;
-    mockFetchScans.mockResolvedValue([]);
+    mockFetchScans.mockResolvedValue({success: true, data: []});
   });
 
   afterEach(() => {
@@ -226,7 +226,7 @@ describe("useScans", () => {
           uploadedAt: new Date(),
         },
       ];
-      mockFetchScans.mockResolvedValue(fetchedScans);
+      mockFetchScans.mockResolvedValue({success: true, data: fetchedScans});
 
       const {result} = renderHook(() => useScans());
 
@@ -350,7 +350,7 @@ describe("useScans", () => {
           uploadedAt: new Date(),
         },
       ];
-      mockFetchScans.mockResolvedValue(fetchedScans);
+      mockFetchScans.mockResolvedValue({success: true, data: fetchedScans});
 
       const {result} = renderHook(() => useScans());
 
@@ -371,7 +371,7 @@ describe("useScans", () => {
 
   describe("manual sync", () => {
     it("should show success toast when manual=true and component is mounted", async () => {
-      mockFetchScans.mockResolvedValue([]);
+      mockFetchScans.mockResolvedValue({success: true, data: []});
 
       const {result} = renderHook(() => useScans());
 
@@ -392,7 +392,7 @@ describe("useScans", () => {
     it("should auto-sync when hydrated and no lastSyncTimestamp", async () => {
       mockStoreState.hasHydrated = true;
       mockStoreState.lastSyncTimestamp = null;
-      mockFetchScans.mockResolvedValue([]);
+      mockFetchScans.mockResolvedValue({success: true, data: []});
 
       renderHook(() => useScans());
 

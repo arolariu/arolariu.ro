@@ -5,7 +5,7 @@ import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
  * Static visual preview of the InvoiceTabs component.
  *
  * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/lib/actions/invoices/fetchInvoice`) that cannot be bundled
+ * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
  * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext` for recipes and metadata.
  * This story renders a faithful HTML replica showing the "Possible Recipes" and
  * "Additional Info" tabs.

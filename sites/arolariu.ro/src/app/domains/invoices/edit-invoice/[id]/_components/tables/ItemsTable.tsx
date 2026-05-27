@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -406,7 +406,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           setLocalItems(updatedItems);
           toast.success(t("softDelete.success", {name: product.name}));
         } else {
-          toast.error(result.error);
+          toast.error(result.error.message);
         }
       } catch (error) {
         console.error("Failed to soft-delete product:", error);
@@ -450,7 +450,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           setLocalItems(updatedItems);
           toast.success(t("restore.success", {name: product.name}));
         } else {
-          toast.error(result.error);
+          toast.error(result.error.message);
         }
       } catch (error) {
         console.error("Failed to restore product:", error);

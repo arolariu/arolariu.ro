@@ -85,7 +85,7 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
 /**
  * JWT token verification result type.
  */
-export type JwtVerificationResult = {valid: true; payload: Record<string, any>} | {valid: false; error: string};
+export type JwtVerificationResult = {valid: true; payload: JWTPayload} | {valid: false; error: string};
 
 /**
  * Error codes for server action failures.
@@ -103,9 +103,10 @@ export type ServerActionErrorCode =
  * Standardized result type for server actions.
  * Use this for consistent error handling across all server actions.
  */
-export type ServerActionResult<T> =
-  | {success: true; data: T}
-  | {success: false; error: {code: ServerActionErrorCode; message: string; status?: number}};
+export type ServerActionResult<T> = Promise<
+  | Readonly<{success: true; data: T; error?: never}>
+  | Readonly<{success: false; data?: never; error: {code: ServerActionErrorCode; message: string; status?: number}}>
+>;
 
 /**
  * Default timeout for fetch requests in milliseconds (30 seconds).
@@ -283,22 +284,38 @@ export function parseBackendError(status: number, body: string): string {
  * @param defaultMessage - Default message if error doesn't have one
  * @returns ServerActionResult with error details
  */
-export function createErrorResult<T>(error: unknown, defaultMessage: string): ServerActionResult<T> {
+function readHttpStatus(value: unknown): number | undefined {
+  if (typeof value !== "object" || value === null || !("status" in value)) {
+    return undefined;
+  }
+
+  const {status} = value as {readonly status?: unknown};
+  return typeof status === "number" ? status : undefined;
+}
+
+export async function createErrorResult<T>(error: unknown, defaultMessage?: string): ServerActionResult<T> {
   if (error instanceof Error) {
     const isTimeout = error.message.includes("timed out");
+    const status = isTimeout ? undefined : readHttpStatus(error);
+
     return {
       success: false,
       error: {
         code: isTimeout ? "TIMEOUT_ERROR" : "NETWORK_ERROR",
         message: error.message,
+        ...(status === undefined ? {} : {status}),
       },
     };
   }
+
+  const status = readHttpStatus(error);
+
   return {
     success: false,
     error: {
       code: "UNKNOWN_ERROR",
-      message: defaultMessage,
+      message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
+      ...(status === undefined ? {} : {status}),
     },
   };
 }
@@ -344,7 +361,7 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
 
       logWithTrace("info", "JWT token verified successfully", {subject: payload["sub"], duration}, "server");
 
-      return {valid: true, payload: payload as Record<string, any>};
+      return {valid: true, payload};
     } catch (error) {
       addSpanEvent("jwt.verification.failed", {
         "jwt.valid": false,

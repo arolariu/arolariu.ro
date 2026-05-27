@@ -3,7 +3,7 @@
 // TODO: refactor.
 /* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
@@ -129,7 +129,7 @@ const CreateDialog = () => {
         close();
         router.refresh();
       } else {
-        toast.error(result.error ?? t("create.error") ?? "Failed to create recipe");
+        toast.error(result.error.message || t("create.error") || "Failed to create recipe");
       }
     } catch (error) {
       console.error("Failed to create recipe:", error);

@@ -9,7 +9,7 @@
  * fetches fresh invoices via a server action.
  */
 
-import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import fetchInvoices from "@/app/domains/invoices/_actions/invoices/fetchInvoices";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
