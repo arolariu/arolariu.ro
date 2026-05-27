@@ -1,0 +1,60 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.cardSection {
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(3);
+  background-color: color('background');
+  @include transition((border-color, background-color));
+}
+
+.cardSectionActive {
+  border-color: color-alpha('primary', 0.3);
+  background-color: color-alpha('primary', 0.04);
+}
+
+.cardSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(2);
+}
+
+.cardSectionTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  display: inline-flex;
+  align-items: center;
+  gap: space(1.5);
+}
+
+.dynamicHintIcon {
+  color: color('muted-foreground');
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  @include transition(color);
+
+  &:hover,
+  &:focus-visible {
+    color: color('foreground');
+  }
+}
+
+.activeValuePill {
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  border: 1px solid color-alpha('primary', 0.3);
+  border-radius: radius('sm');
+  padding: space(0.5) space(2);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  max-width: 12rem;
+  @include truncate;
+}
+
+.inactiveLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
