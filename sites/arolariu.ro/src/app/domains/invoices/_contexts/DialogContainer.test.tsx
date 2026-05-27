@@ -51,7 +51,7 @@ vi.mock("@/lib/utils.server", () => ({
 }));
 
 // Mock server actions
-vi.mock("@/lib/actions/invoices/patchInvoice", () => ({
+vi.mock("@/app/domains/invoices/_actions/invoices/patchInvoice", () => ({
   default: vi.fn(),
 }));
 

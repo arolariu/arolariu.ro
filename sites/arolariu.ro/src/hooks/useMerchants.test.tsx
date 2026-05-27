@@ -30,7 +30,7 @@ vi.mock("./index", () => ({
   })),
 }));
 
-vi.mock("@/lib/actions/invoices/fetchMerchants", () => ({
+vi.mock("@/app/domains/invoices/_actions/merchants/fetchMerchants", () => ({
   default: mockFetchMerchants,
 }));
 

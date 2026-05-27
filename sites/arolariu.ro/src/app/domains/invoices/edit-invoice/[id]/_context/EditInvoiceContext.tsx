@@ -18,7 +18,7 @@
  * @see patchInvoice server action for persistence
  */
 
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";
@@ -207,7 +207,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         globalThis.window.location.reload();
         return true;
       } else {
-        toast.error(result.error);
+        toast.error(result.error.message);
         return false;
       }
     } catch (error) {

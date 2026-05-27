@@ -1,6 +1,6 @@
 "use client";
 
-import {deleteInvoiceScan} from "@/lib/actions/invoices/deleteInvoiceScan";
+import {deleteInvoiceScan} from "@/app/domains/invoices/_actions/invoices/scans/deleteInvoiceScan";
 import type {Invoice, InvoiceScan} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl";

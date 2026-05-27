@@ -5,7 +5,7 @@
  * @module app/domains/invoices/view-scans/_components/ScanSelectionToolbar
  */
 
-import {deleteScan} from "@/lib/actions/scans";
+import {deleteScan} from "@/app/domains/invoices/_actions/scans";
 import {
   AlertDialog,
   AlertDialogAction,

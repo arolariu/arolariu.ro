@@ -9,7 +9,7 @@
  * fetches fresh merchant data via a server action.
  */
 
-import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
+import fetchMerchants from "@/app/domains/invoices/_actions/merchants/fetchMerchants";
 import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";

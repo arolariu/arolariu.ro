@@ -5,7 +5,7 @@ import {TbAlertTriangle, TbFileX, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, T
  * Static visual preview of the DeleteInvoiceDialog component.
  *
  * @remarks Static preview — component imports "use server" action (deleteInvoice
- * from `@/lib/actions/invoices/deleteInvoice`) that cannot be bundled by Storybook's
+ * from `@/app/domains/invoices/_actions/invoices/deleteInvoice`) that cannot be bundled by Storybook's
  * Vite/Rollup. Also depends on `useDialog` context and Zustand stores. This story
  * renders a faithful HTML replica of the confirmation dialog with impact summary.
  */

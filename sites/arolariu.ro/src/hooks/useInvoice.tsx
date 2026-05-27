@@ -10,7 +10,7 @@
  * data after hydration while re-fetching in the background.
  */
 
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import fetchInvoice from "@/app/domains/invoices/_actions/invoices/fetchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";

@@ -20,8 +20,8 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {markScansAsUsed} from "@/lib/actions/scans/markScansAsUsed";
+import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
+import {markScansAsUsed} from "@/app/domains/invoices/_actions/scans/markScansAsUsed";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {

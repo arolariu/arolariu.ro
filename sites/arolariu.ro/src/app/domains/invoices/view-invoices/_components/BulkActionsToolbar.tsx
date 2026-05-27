@@ -25,8 +25,8 @@
  * ```
  */
 
-import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import deleteInvoice from "@/app/domains/invoices/_actions/invoices/deleteInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory} from "@/types/invoices";
 import {

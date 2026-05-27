@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_components/ScanCard
  */
 
-import {deleteScan, updateScan} from "@/lib/actions/scans";
+import {deleteScan, updateScan} from "@/app/domains/invoices/_actions/scans";
 import {formatDate} from "@/lib/utils.generic";
 import {useScansStore} from "@/stores";
 import type {CachedScan} from "@/types/scans";
@@ -102,7 +102,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         removeScan(scan.id);
         toast.success(t("deleteDialog.success"));
       } else {
-        toast.error(result.error ?? t("deleteDialog.error"));
+        toast.error(result.error.message || t("deleteDialog.error"));
       }
     } catch (error) {
       toast.error(t("deleteDialog.error"));
@@ -239,12 +239,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         URL.revokeObjectURL(objectUrl);
 
         // 8. Update scan in store (append cache-buster to force browser to re-fetch rotated image)
-        if (result.success && result.blobUrl) {
-          const cacheBustedUrl = `${result.blobUrl}?t=${Date.now()}`;
+        if (result.success && result.data.blobUrl) {
+          const cacheBustedUrl = `${result.data.blobUrl}?t=${Date.now()}`;
           updateScanBlobUrl(scan.id, cacheBustedUrl);
           toast.success(t("actions.rotateSuccess"));
         } else {
-          toast.error(result.error || t("actions.rotateError"));
+          toast.error(result.success ? t("actions.rotateError") : result.error.message || t("actions.rotateError"));
         }
       } catch (error) {
         toast.error(t("actions.rotateError"));

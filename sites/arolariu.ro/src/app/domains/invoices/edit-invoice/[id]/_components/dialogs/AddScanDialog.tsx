@@ -1,7 +1,7 @@
 "use client";
 
-import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
-import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
+import {attachInvoiceScan} from "@/app/domains/invoices/_actions/invoices/scans/attachInvoiceScan";
+import {createInvoiceScan} from "@/app/domains/invoices/_actions/invoices/scans/createInvoiceScan";
 import {type Invoice, InvoiceScanType} from "@/types/invoices";
 import {
   Button,
@@ -139,7 +139,7 @@ export default function AddScanDialog(): React.JSX.Element {
       const blobName = `${invoice.userIdentifier}/${invoice.id}/${crypto.randomUUID()}.${extension}`;
 
       // Step 3: Upload to Azure Blob Storage
-      const {status, blobUrl} = await createInvoiceScan({
+      const createScanResult = await createInvoiceScan({
         base64Data,
         blobName,
         metadata: {
@@ -147,6 +147,12 @@ export default function AddScanDialog(): React.JSX.Element {
           uploadedAt: new Date().toISOString(),
         },
       });
+
+      if (!createScanResult.success) {
+        throw new Error(createScanResult.error.message);
+      }
+
+      const {status, blobUrl} = createScanResult.data;
 
       if (status !== 201) {
         throw new Error(t("errors.uploadStorageFailed"));

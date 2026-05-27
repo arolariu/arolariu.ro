@@ -1,4 +1,4 @@
-import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import fetchInvoices from "@/app/domains/invoices/_actions/invoices/fetchInvoices";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";

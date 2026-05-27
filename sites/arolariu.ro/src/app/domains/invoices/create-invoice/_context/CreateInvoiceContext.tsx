@@ -12,8 +12,8 @@
  * - Invoice creation orchestration
  */
 
-import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {createInvoice} from "@/lib/actions/invoices/createInvoice";
+import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
+import {createInvoice} from "@/app/domains/invoices/_actions/invoices/createInvoice";
 import {useScansStore} from "@/stores";
 import {InvoiceAnalysisOptions, InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
@@ -213,7 +213,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       // Create invoice with first scan and ALL invoice details in metadata
       // Note: All form fields (name, category, paymentType, transactionDate, description)
       // are included in metadata. Backend should extract these to populate top-level Invoice fields.
-      const invoice = await createInvoice({
+      const createResult = await createInvoice({
         initialScan: {
           scanType,
           location: firstScan.blobUrl,
@@ -229,6 +229,12 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
           description: invoiceDetails.description,
         },
       });
+
+      if (!createResult.success) {
+        throw new Error(createResult.error.message);
+      }
+
+      const invoice = createResult.data;
 
       // Mark scans as used
       const scanIds = selectedScans.map((s) => s.id);

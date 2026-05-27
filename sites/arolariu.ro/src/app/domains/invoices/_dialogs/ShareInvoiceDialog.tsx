@@ -1,7 +1,7 @@
 "use client";
 
 import {sendEmail} from "@/lib/actions/email";
-import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {EmailLocale} from "@/types/emails";
 import {
@@ -199,7 +199,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     });
 
     if (!result.success) {
-      throw new Error(result.error);
+      throw new Error(result.error.message);
     }
   }, [invoice]);
 
@@ -325,7 +325,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       });
 
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error.message);
       }
 
       // Refresh the page data to reflect the new private state

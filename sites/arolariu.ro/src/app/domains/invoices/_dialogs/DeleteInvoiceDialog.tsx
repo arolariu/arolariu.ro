@@ -1,6 +1,6 @@
 "use client";
 
-import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
+import deleteInvoice from "@/app/domains/invoices/_actions/invoices/deleteInvoice";
 import {useInvoicesStore} from "@/stores";
 import {
   Alert,
