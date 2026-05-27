@@ -5,7 +5,7 @@
  * @module app/domains/invoices/_contexts/DialogContainer
  *
  * @remarks
- * **Dialog Registry Pattern**: Centralized router for 27 dialog types across the
+ * **Dialog Registry Pattern**: Centralized router for 31 dialog types across the
  * invoices bounded context. Maps dialog type discriminators to lazily-loaded
  * dialog components, ensuring optimal code splitting and bundle sizes.
  *
@@ -15,12 +15,12 @@
  * - Leverage dialog open animations to mask import-fetch latency
  * - Improve Time to Interactive (TTI) by deferring non-critical code
  *
- * **Dialog Organization** (27 dialogs across 4 route domains):
- * - **edit-invoice/[id]**: 16 dialogs (items, metadata, merchant, analysis, recipes, etc.)
+ * **Dialog Organization** (31 dialogs across 4 route domains):
+ * - **edit-invoice/[id]**: 20 dialogs (items, metadata, merchant, analysis, recipes, etc.)
  * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
  * - **view-invoices**: 2 dialogs (import, export)
  * - **view-scans**: 1 dialog (create invoice from scans)
- * - **shared**: 4 dialogs (delete/share invoice, delete/preview scan)
+ * - **shared**: 2 dialogs (delete/share invoice)
  *
  * **Performance Optimizations**:
  * - `React.memo` on component to prevent re-renders from unrelated context churn
@@ -56,7 +56,11 @@ const InvoiceMerchantReceiptsDialog = dynamic(() => import("../edit-invoice/[id]
   ssr: false,
 });
 const InvoiceMetadataDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/MetadataDialog"), {ssr: false});
-const InvoiceRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RecipeDialog"), {ssr: false});
+const AddRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/AddRecipeDialog"), {ssr: false});
+const UpdateRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/UpdateRecipeDialog"), {ssr: false});
+const DeleteRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/DeleteRecipeDialog"), {ssr: false});
+const PreviewRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/PreviewRecipeDialog"), {ssr: false});
+const ShareRecipeDialog = dynamic(() => import("../edit-invoice/[id]/_dialogs/ShareRecipeDialog"), {ssr: false});
 const InvoicesExportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ExportDialog"), {ssr: false});
 const InvoicesImportDialog = dynamic(() => import("../view-invoices/_components/dialogs/ImportDialog"), {ssr: false});
 const RemoveScanDialog = dynamic(() => import("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog"), {ssr: false});
@@ -108,8 +112,16 @@ function DialogContainerImpl(): React.JSX.Element | null {
       case "EDIT_INVOICE__SCAN":
         // Differentiate by mode: "add" shows AddScanDialog, anything else shows RemoveScanDialog
         return mode === "add" ? <AddScanDialog /> : <RemoveScanDialog />;
-      case "EDIT_INVOICE__RECIPE":
-        return <InvoiceRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_ADD":
+        return <AddRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_UPDATE":
+        return <UpdateRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_DELETE":
+        return <DeleteRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_PREVIEW":
+        return <PreviewRecipeDialog />;
+      case "EDIT_INVOICE__RECIPE_SHARE":
+        return <ShareRecipeDialog />;
       // view-invoice/[id] Dialogs
       case "VIEW_INVOICE__SHARE_ANALYTICS":
         return <ShareAnalyticsDialog />;

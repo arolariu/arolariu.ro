@@ -18,12 +18,12 @@
  * the active dialog. Callers must guard trigger buttons to prevent dispatching dialogs
  * without required payloads.
  *
- * **27 Dialog Types** across 4 route domains:
- * - **edit-invoice/[id]**: 16 dialogs (analysis, items, merchant, metadata, recipes, etc.)
+ * **31 Dialog Types** across 4 route domains:
+ * - **edit-invoice/[id]**: 20 dialogs (analysis, items, merchant, metadata, recipes, etc.)
  * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
  * - **view-invoices**: 2 dialogs (import, export)
  * - **view-scans**: 1 dialog (create invoice from scans)
- * - **shared**: 4 dialogs (delete/share invoice, delete/preview scan)
+ * - **shared**: 2 dialogs (delete/share invoice)
  *
  * **Performance**: Actions context value is stable (empty deps array), preventing
  * unnecessary re-renders for components that only need dispatch capabilities.
@@ -53,7 +53,11 @@ export type DialogType = Readonly<
   | "EDIT_INVOICE__SCAN"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
-  | "EDIT_INVOICE__RECIPE"
+  | "EDIT_INVOICE__RECIPE_ADD"
+  | "EDIT_INVOICE__RECIPE_UPDATE"
+  | "EDIT_INVOICE__RECIPE_DELETE"
+  | "EDIT_INVOICE__RECIPE_PREVIEW"
+  | "EDIT_INVOICE__RECIPE_SHARE"
   | "EDIT_INVOICE__METADATA"
   | "EDIT_INVOICE__ITEMS"
   | "EDIT_INVOICE__ALLERGENS"
@@ -87,7 +91,11 @@ export type DialogPayloads = {
   EDIT_INVOICE__SCAN: Invoice | {invoice: Invoice; scan: InvoiceScan; scanIndex: number};
   EDIT_INVOICE__MERCHANT: Merchant;
   EDIT_INVOICE__MERCHANT_INVOICES: Merchant;
-  EDIT_INVOICE__RECIPE: Recipe;
+  EDIT_INVOICE__RECIPE_ADD: undefined;
+  EDIT_INVOICE__RECIPE_UPDATE: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_DELETE: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_PREVIEW: {recipe: Recipe};
+  EDIT_INVOICE__RECIPE_SHARE: {recipe: Recipe};
   EDIT_INVOICE__METADATA: Record<string, string>;
   EDIT_INVOICE__ITEMS: Invoice;
   EDIT_INVOICE__ALLERGENS: {invoice: Invoice; product: Product; productIndex: number};
