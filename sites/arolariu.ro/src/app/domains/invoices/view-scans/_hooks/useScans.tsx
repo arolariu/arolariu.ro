@@ -5,12 +5,12 @@
  * @module app/domains/invoices/view-scans/_hooks/useScans
  */
 
-import {fetchScans} from "@/app/domains/invoices/_actions/scans";
 import {useScansStore} from "@/stores";
 import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
+import { fetchScans } from "../../_actions/scans";
 
 /**
  * Hook output type
@@ -107,22 +107,21 @@ export function useScans(): UseScansOutput {
           includeArchived: false,
         });
 
-        if (!result.success) {
-          throw new Error(result.error.message);
-        }
+        if (result.success && result.data) {
+          const fetchedScans = result.data;
+          // Convert to cached scans with cache timestamp
+          const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+            ...scan,
+            cachedAt: new Date(),
+          }));
 
-        // Convert to cached scans with cache timestamp
-        const cachedScans: CachedScan[] = result.data.map((scan) => ({
-          ...scan,
-          cachedAt: new Date(),
-        }));
+          setScans(cachedScans);
+          setLastSyncTimestamp(new Date());
 
-        setScans(cachedScans);
-        setLastSyncTimestamp(new Date());
-
-        // Only show success toast for manual sync
-        if (manual && isMountedRef.current) {
-          toast.success("Scans synced successfully");
+          // Only show success toast for manual sync
+          if (manual && isMountedRef.current) {
+            toast.success("Scans synced successfully");
+          }
         }
       } catch (error) {
         console.error("Failed to sync scans:", error);
@@ -139,12 +138,12 @@ export function useScans(): UseScansOutput {
     [setIsSyncing, setScans, setLastSyncTimestamp],
   );
 
-  // Auto-sync on mount when hydrated
+  // Always background-sync after IndexedDB hydration. Cached scans still render immediately.
   useEffect(() => {
-    if (hasHydrated && !lastSyncTimestamp) {
+    if (hasHydrated) {
       syncScans();
     }
-  }, [hasHydrated, lastSyncTimestamp, syncScans]);
+  }, [hasHydrated, syncScans]);
 
   // Cleanup: mark component as unmounted
   useEffect(() => {

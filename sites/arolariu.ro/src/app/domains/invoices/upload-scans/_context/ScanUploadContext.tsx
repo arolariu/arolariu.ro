@@ -1,420 +1,230 @@
 "use client";
 
 /**
- * @fileoverview Context provider for managing scan upload state.
+ * @fileoverview Context provider for managing route-scoped scan upload state.
  * @module app/domains/invoices/upload-scans/_context/ScanUploadContext
  *
  * @remarks
- * Simplified version of InvoiceCreatorContext that only handles uploading
- * scans to Azure Blob Storage. Does not create invoices.
+ * Keeps transient browser upload state in memory while delegating validation,
+ * reducer transitions, and one-file upload orchestration to focused utilities.
  */
 
-import {generateUploadSasUrl, registerScan, uploadScan} from "@/app/domains/invoices/_actions/scans";
 import {withConcurrencyLimit} from "@/lib/concurrency.client";
-import {useScansStore} from "@/stores";
-import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
+import {createContext, use, useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode} from "react";
 import {v4 as uuidv4} from "uuid";
+import {generateUploadSasUrl, registerScan, uploadScan} from "../../_actions/scans";
+import {initialUploadState, selectUploadableItems, uploadReducer} from "../_utils/uploadReducer";
+import {readFileAsBase64, uploadPendingScan} from "../_utils/uploadRunner";
+import {
+  COMPLETED_UPLOAD_REMOVAL_DELAY_MS,
+  UPLOAD_CONCURRENCY_LIMIT,
+  type PendingUpload,
+  type SessionStats,
+  type UploadCompletionSummary,
+  type UploadProgressEvent,
+  type UploadRunnerDependencies,
+} from "../_utils/uploadTypes";
+import {validateUploadFiles} from "../_utils/uploadValidation";
 
-/**
- * Status of a pending upload
- */
-type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";
-
-/**
- * Represents a file pending upload
- */
-interface PendingUpload {
-  id: string;
-  name: string;
-  file: File | null; // null after upload completes to free memory
-  mimeType: string;
-  size: number;
-  preview: string;
-  status: PendingUploadStatus;
-  progress: number;
-  attempts: number;
-  error?: string;
-  blobUrl?: string; // Azure blob URL after successful upload
-}
-
-/**
- * Session statistics for tracking upload progress
- */
-interface SessionStats {
-  /** Total files added this session */
-  totalAdded: number;
-  /** Successfully uploaded files this session */
-  totalCompleted: number;
-  /** Failed uploads this session */
-  totalFailed: number;
-}
+type TimeoutHandle = ReturnType<typeof globalThis.setTimeout>;
 
 interface ScanUploadContextType {
-  /** Files pending upload */
-  pendingUploads: PendingUpload[];
-  /** Whether any uploads are in progress */
-  isUploading: boolean;
-  /** Session statistics that persist through the upload flow */
-  sessionStats: SessionStats;
-  /** Add files to the upload queue (async due to batching) */
-  addFiles: (files: FileList) => Promise<void>;
-  /** Remove files from the upload queue */
-  removeFiles: (ids: string[]) => void;
-  /** Clear all pending files */
-  clearAll: () => void;
-  /** Rename a pending file */
-  renameFile: (id: string, newName: string) => void;
-  /** Upload all pending files to Azure */
-  uploadAll: () => Promise<void>;
-  /** Reset session statistics */
-  resetSessionStats: () => void;
+  /** Files currently tracked by the upload route. */
+  readonly pendingUploads: PendingUpload[];
+  /** Whether a batch upload is currently running. */
+  readonly isUploading: boolean;
+  /** Upload statistics for the current route session. */
+  readonly sessionStats: SessionStats;
+  /** Latest successfully uploaded scans for the post-upload prompt. */
+  readonly completedBatch: UploadCompletionSummary[];
+  /** Add files to the upload queue. */
+  readonly addFiles: (files: FileList | File[]) => Promise<void>;
+  /** Remove idle or failed files from the upload queue. */
+  readonly removeFiles: (ids: string[]) => void;
+  /** Clear all idle or failed files. Active uploads remain locked. */
+  readonly clearAll: () => void;
+  /** Rename an idle or failed file. */
+  readonly renameFile: (id: string, newName: string) => void;
+  /** Upload all idle and failed files. */
+  readonly uploadAll: () => Promise<void>;
+  /** Reset route session statistics. */
+  readonly resetSessionStats: () => void;
+  /** Clear the post-upload prompt completion summary. */
+  readonly clearCompletedBatch: () => void;
 }
 
 const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undefined);
 
 /**
- * Revokes the object URL for a pending upload to free memory.
+ * Provides route-scoped scan upload state and actions.
+ *
+ * @param props - Provider props.
+ * @param props.children - Route subtree that consumes upload state.
+ * @returns Provider wrapping the upload route subtree.
  */
-function revokePreview(upload: PendingUpload): void {
-  if (upload.preview) {
-    URL.revokeObjectURL(upload.preview);
-  }
-}
+export function ScanUploadProvider({children}: Readonly<{children: ReactNode}>): React.JSX.Element {
+  const [state, dispatch] = useReducer(uploadReducer, initialUploadState);
+  const removalTimersRef = useRef<Set<TimeoutHandle>>(new Set());
+  const progressFrameRef = useRef<number | null>(null);
+  const pendingProgressEventsRef = useRef<Map<string, UploadProgressEvent>>(new Map());
+  const revokedPreviewUrlsRef = useRef<Set<string>>(new Set());
+  const latestUploadsRef = useRef<PendingUpload[]>([]);
 
-/**
- * Removes an upload from the list by ID, revoking its preview first.
- */
-function removeUploadFromList(uploads: PendingUpload[], uploadId: string): PendingUpload[] {
-  const toRemove = uploads.find((u) => u.id === uploadId);
-  if (toRemove) revokePreview(toRemove);
-  return uploads.filter((u) => u.id !== uploadId);
-}
-
-/**
- * Converts a File to base64 string.
- */
-async function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(reader.result as string));
-    reader.addEventListener("error", () => reject(reader.error));
-    reader.readAsDataURL(file);
-  });
-}
-
-const initialSessionStats: SessionStats = {
-  totalAdded: 0,
-  totalCompleted: 0,
-  totalFailed: 0,
-};
-
-export function ScanUploadProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
-  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [sessionStats, setSessionStats] = useState<SessionStats>(initialSessionStats);
-  const addScan = useScansStore((state) => state.addScan);
-
-  // Batched progress updates to reduce React re-renders during concurrent uploads
-  const pendingProgressUpdatesRef = useRef<Map<string, {status: PendingUploadStatus; progress: number; error?: string; blobUrl?: string}>>(
-    new Map(),
-  );
-  const rafIdRef = useRef<number | null>(null);
-
-  /**
-   * Add files to the upload queue.
-   * Uses batching to prevent DOM overload when dropping 50+ files.
-   */
-  const addFiles = useCallback(async (files: FileList) => {
-    const newUploads: PendingUpload[] = [];
-
-    for (const file of files) {
-      const isImage = file.type.startsWith("image/");
-      const isPdf = file.type === "application/pdf";
-
-      if (!isImage && !isPdf) {
-        toast.error(`Unsupported file type: ${file.type}`);
-      } else if (file.size > 10 * 1024 * 1024) {
-        // Check file size (max 10MB)
-        toast.error(`File too large: ${file.name} (max 10MB)`);
-      } else {
-        const id = uuidv4();
-        const preview = URL.createObjectURL(file);
-
-        newUploads.push({
-          id,
-          name: file.name,
-          file,
-          mimeType: file.type,
-          size: file.size,
-          preview,
-          status: "idle",
-          progress: 0,
-          attempts: 0,
-        });
-      }
-    }
-
-    if (newUploads.length > 0) {
-      // Batch updates to prevent DOM overload with large file counts
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < newUploads.length; i += BATCH_SIZE) {
-        const batch = newUploads.slice(i, i + BATCH_SIZE);
-        // Yield to the browser (macrotask) so it can paint/respond between batches.
-        // Note: an awaited Promise that resolves synchronously only yields a microtask,
-        // which is NOT enough for the browser to render between batches.
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, 0);
-        });
-        setPendingUploads((prev) => [...prev, ...batch]);
-      }
-
-      setSessionStats((prev) => ({
-        ...prev,
-        totalAdded: prev.totalAdded + newUploads.length,
-      }));
-      toast.success(`Added ${newUploads.length} file(s) to upload queue`);
+  const revokePreviewUrl = useCallback((preview: string): void => {
+    if (preview && preview.startsWith("blob:") && !revokedPreviewUrlsRef.current.has(preview)) {
+      URL.revokeObjectURL(preview);
+      revokedPreviewUrlsRef.current.add(preview);
     }
   }, []);
 
-  /**
-   * Remove files from the upload queue.
-   */
-  const removeFiles = useCallback((ids: string[]) => {
-    setPendingUploads((prev) => {
-      const idsSet = new Set(ids);
-      const toRemove = prev.filter((u) => idsSet.has(u.id));
-
-      for (const upload of toRemove) {
-        revokePreview(upload);
-      }
-
-      return prev.filter((u) => !idsSet.has(u.id));
-    });
-  }, []);
-
-  /**
-   * Clear all pending files.
-   */
-  const clearAll = useCallback(() => {
-    setPendingUploads((prev) => {
-      for (const upload of prev) {
-        revokePreview(upload);
-      }
-      return [];
-    });
-    toast.info("All files cleared");
-  }, []);
-
-  /**
-   * Rename a pending file.
-   */
-  const renameFile = useCallback((id: string, newName: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, name: newName} : u)));
-  }, []);
-
-  /**
-   * Batched progress update function to reduce React re-renders during concurrent uploads.
-   * Uses requestAnimationFrame to batch multiple progress updates into a single state update.
-   */
-  const batchedUpdateProgress = useCallback(
-    (id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
-      pendingProgressUpdatesRef.current.set(id, {status, progress, error, blobUrl});
-
-      if (rafIdRef.current === null) {
-        rafIdRef.current = requestAnimationFrame(() => {
-          const updates = new Map(pendingProgressUpdatesRef.current);
-          pendingProgressUpdatesRef.current.clear();
-          rafIdRef.current = null;
-
-          setPendingUploads((prev) =>
-            prev.map((u) => {
-              const update = updates.get(u.id);
-              return update
-                ? {
-                    ...u,
-                    status: update.status,
-                    progress: update.progress,
-                    ...(update.error && {error: update.error}),
-                    ...(update.blobUrl && {blobUrl: update.blobUrl}),
-                  }
-                : u;
-            }),
-          );
-        });
+  const revokePreviews = useCallback(
+    (uploads: PendingUpload[]): void => {
+      for (const upload of uploads) {
+        revokePreviewUrl(upload.preview);
       }
     },
-    [],
+    [revokePreviewUrl],
   );
 
-  /**
-   * Update a single upload's status, progress, and optionally its blobUrl.
-   * Use this for final/critical states (completed, error).
-   * Use batchedUpdateProgress for intermediate progress updates.
-   */
-  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, progress: number, error?: string, blobUrl?: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, progress, error, ...(blobUrl && {blobUrl})} : u)));
+  useEffect(() => {
+    latestUploadsRef.current = state.pendingUploads;
+  }, [state.pendingUploads]);
+
+  useEffect(() => {
+    return () => {
+      if (progressFrameRef.current !== null) {
+        cancelAnimationFrame(progressFrameRef.current);
+      }
+
+      for (const timerId of removalTimersRef.current) {
+        globalThis.clearTimeout(timerId);
+      }
+
+      revokePreviews(latestUploadsRef.current);
+    };
+  }, [revokePreviews]);
+
+  const addFiles = useCallback(async (files: FileList | File[]): Promise<void> => {
+    const validation = validateUploadFiles(Array.from(files));
+
+    for (const invalidFile of validation.invalidFiles) {
+      toast.error(invalidFile.message);
+    }
+
+    const uploads: PendingUpload[] = validation.validFiles.map((file) => ({
+      id: uuidv4(),
+      name: file.name,
+      file,
+      mimeType: file.type,
+      size: file.size,
+      preview: URL.createObjectURL(file),
+      status: "idle",
+      progress: 0,
+      attempts: 0,
+    }));
+
+    if (uploads.length === 0) {
+      return;
+    }
+
+    dispatch({type: "uploads-added", uploads});
+    toast.success(`Added ${uploads.length} file(s) to upload queue`);
   }, []);
 
-  /**
-   * Remove a completed upload from the pending list after a delay.
-   */
-  const scheduleUploadRemoval = useCallback((uploadId: string, delayMs: number) => {
-    setTimeout(() => {
-      setPendingUploads((prev) => removeUploadFromList(prev, uploadId));
-    }, delayMs);
+  const removeFiles = useCallback(
+    (ids: string[]): void => {
+      const idsSet = new Set(ids);
+      const removableUploads = state.pendingUploads.filter(
+        (upload) => idsSet.has(upload.id) && (upload.status === "idle" || upload.status === "failed"),
+      );
+      revokePreviews(removableUploads);
+      dispatch({type: "uploads-removed", ids});
+    },
+    [revokePreviews, state.pendingUploads],
+  );
+
+  const clearAll = useCallback((): void => {
+    const removableUploads = state.pendingUploads.filter((upload) => upload.status === "idle" || upload.status === "failed");
+    revokePreviews(removableUploads);
+    dispatch({type: "uploads-cleared"});
+    toast.info("All files cleared");
+  }, [revokePreviews, state.pendingUploads]);
+
+  const renameFile = useCallback((id: string, newName: string): void => {
+    dispatch({type: "upload-renamed", id, name: newName});
   }, []);
 
-  /**
-   * Upload all pending files to Azure.
-   * Uses parallel direct-to-Azure uploads with SAS tokens for better performance.
-   * Falls back to server-side upload if SAS generation fails.
-   */
+  const dispatchProgress = useCallback((event: UploadProgressEvent): void => {
+    pendingProgressEventsRef.current.set(event.uploadId, event);
+
+    if (progressFrameRef.current === null) {
+      progressFrameRef.current = requestAnimationFrame(() => {
+        const events = Array.from(pendingProgressEventsRef.current.values());
+        pendingProgressEventsRef.current.clear();
+        progressFrameRef.current = null;
+
+        for (const progressEvent of events) {
+          dispatch({
+            type: "upload-progressed",
+            id: progressEvent.uploadId,
+            status: progressEvent.status,
+            progress: progressEvent.progress,
+            attempts: progressEvent.attempts,
+            ...(progressEvent.error === undefined ? {} : {error: progressEvent.error}),
+            ...(progressEvent.blobUrl === undefined ? {} : {blobUrl: progressEvent.blobUrl}),
+          });
+        }
+      });
+    }
+  }, []);
+
+  const scheduleUploadRemoval = useCallback((uploadId: string): void => {
+    const timerId = globalThis.setTimeout(() => {
+      dispatch({type: "upload-removed-after-completion", id: uploadId});
+      removalTimersRef.current.delete(timerId);
+    }, COMPLETED_UPLOAD_REMOVAL_DELAY_MS);
+
+    removalTimersRef.current.add(timerId);
+  }, []);
+
   const uploadAll = useCallback(async (): Promise<void> => {
-    const uploadsToProcess = pendingUploads.filter((u) => u.status === "idle" || u.status === "failed");
+    const uploadsToProcess = selectUploadableItems(state);
 
     if (uploadsToProcess.length === 0) {
       toast.info("No files to upload");
       return;
     }
 
-    setIsUploading(true);
+    dispatch({type: "batch-started"});
 
-    // Mark all as uploading
-    for (const upload of uploadsToProcess) {
-      updateUploadStatus(upload.id, "uploading", 0);
-    }
+    const dependencies: UploadRunnerDependencies = {
+      generateUploadSasUrl,
+      registerScan,
+      uploadScan,
+      fetchImpl: fetch,
+      readFileAsBase64,
+    };
 
-    let successCount = 0;
-    let failCount = 0;
-
-    // Create upload tasks with concurrency limit (max 5 parallel)
-    // Attempts direct Azure upload via SAS URL first (fast, no server bottleneck).
-    // Falls back to server-side upload if SAS fails (CORS not deployed yet, etc.)
     const uploadTasks = uploadsToProcess.map((upload) => async () => {
-      try {
-        // Guard against null file reference
-        if (!upload.file) {
-          updateUploadStatus(upload.id, "failed", 0, "File reference lost");
-          failCount++;
-          return {success: false, uploadId: upload.id, error: "File reference lost"};
-        }
+      const result = await uploadPendingScan(upload, dependencies, {onProgress: dispatchProgress});
 
-        // Step 1: Preparing SAS URL (0% → 30%)
-        batchedUpdateProgress(upload.id, "uploading", 0);
-
-        const sasResult = await generateUploadSasUrl({
-          fileName: upload.name,
-          mimeType: upload.mimeType,
-        });
-
-        batchedUpdateProgress(upload.id, "uploading", 30);
-
-        if (sasResult.success && sasResult.data.sasUrl && sasResult.data.scanId && sasResult.data.blobUrl) {
-          // Step 2: Upload file directly to Azure using SAS URL (30% → 70%)
-          const uploadResponse = await fetch(sasResult.data.sasUrl, {
-            method: "PUT",
-            body: upload.file,
-            headers: {
-              "x-ms-blob-type": "BlockBlob",
-              "Content-Type": upload.mimeType,
-            },
-          });
-
-          batchedUpdateProgress(upload.id, "uploading", 70);
-
-          if (uploadResponse.ok) {
-            // Step 3: Register scan metadata with server (70% → 90%)
-            const registerResult = await registerScan({
-              scanId: sasResult.data.scanId,
-              blobUrl: sasResult.data.blobUrl,
-              fileName: upload.name,
-              mimeType: upload.mimeType,
-              sizeInBytes: upload.size,
-            });
-
-            batchedUpdateProgress(upload.id, "uploading", 90);
-
-            if (registerResult.success && registerResult.scan) {
-              const cachedScan: CachedScan = {
-                ...registerResult.scan,
-                cachedAt: new Date(),
-              };
-              addScan(cachedScan);
-              // Step 4: Complete (100%)
-              updateUploadStatus(upload.id, "completed", 100, undefined, registerResult.scan.blobUrl);
-
-              // FIX 1: Immediately revoke the object URL to free memory
-              if (upload.preview) {
-                URL.revokeObjectURL(upload.preview);
-              }
-
-              // FIX 2: Clear file reference to free memory
-              setPendingUploads((prev) => prev.map((u) => (u.id === upload.id ? {...u, file: null, preview: ""} : u)));
-
-              successCount++;
-              scheduleUploadRemoval(upload.id, 1000);
-              return {success: true, uploadId: upload.id};
-            }
-          }
-          // If direct upload or registration failed, fall through to server upload
-        }
-
-        // Fallback: Server-side upload (works without CORS)
-        // Reset progress for fallback path
-        batchedUpdateProgress(upload.id, "uploading", 50);
-
-        const base64Data = await fileToBase64(upload.file);
-        const result = await uploadScan({
-          base64Data,
-          fileName: upload.name,
-          mimeType: upload.mimeType,
-        });
-
-        batchedUpdateProgress(upload.id, "uploading", 90);
-
-        if (result.success && result.data.status === 201) {
-          const cachedScan: CachedScan = {
-            ...result.data.scan,
-            cachedAt: new Date(),
-          };
-          addScan(cachedScan);
-          updateUploadStatus(upload.id, "completed", 100, undefined, result.data.scan.blobUrl);
-
-          // FIX 1: Immediately revoke the object URL to free memory
-          if (upload.preview) {
-            URL.revokeObjectURL(upload.preview);
-          }
-
-          // FIX 2: Clear file reference to free memory
-          setPendingUploads((prev) => prev.map((u) => (u.id === upload.id ? {...u, file: null, preview: ""} : u)));
-
-          successCount++;
-          scheduleUploadRemoval(upload.id, 1000);
-          return {success: true, uploadId: upload.id};
-        } else {
-          throw new Error(result.success ? `Upload failed with status ${result.data.status}` : result.error.message);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        updateUploadStatus(upload.id, "failed", 0, errorMessage);
-        failCount++;
-        return {success: false, uploadId: upload.id, error: errorMessage};
+      if (result.success) {
+        revokePreviewUrl(upload.preview);
+        dispatch({type: "upload-completed", id: upload.id, attempts: result.attempts, blobUrl: result.blobUrl});
+        scheduleUploadRemoval(upload.id);
+      } else {
+        dispatch({type: "upload-failed", id: upload.id, attempts: result.attempts, error: result.error});
       }
+
+      return result;
     });
 
-    // Execute uploads with concurrency limit (5 parallel uploads)
-    await withConcurrencyLimit(uploadTasks, 5);
+    const results = await withConcurrencyLimit(uploadTasks, UPLOAD_CONCURRENCY_LIMIT);
+    dispatch({type: "batch-finished"});
 
-    setIsUploading(false);
-
-    // Update session stats
-    setSessionStats((prev) => ({
-      ...prev,
-      totalCompleted: prev.totalCompleted + successCount,
-      totalFailed: prev.totalFailed + failCount,
-    }));
+    const successCount = results.filter((result) => result?.success === true).length;
+    const failCount = results.filter((result) => result?.success === false).length;
 
     if (successCount > 0) {
       toast.success(`Successfully uploaded ${successCount} scan(s)`);
@@ -422,37 +232,47 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     if (failCount > 0) {
       toast.error(`Failed to upload ${failCount} scan(s)`);
     }
-  }, [pendingUploads, updateUploadStatus, batchedUpdateProgress, addScan, scheduleUploadRemoval]);
+  }, [dispatchProgress, revokePreviewUrl, scheduleUploadRemoval, state]);
 
-  /**
-   * Reset session statistics.
-   */
-  const resetSessionStats = useCallback(() => {
-    setSessionStats(initialSessionStats);
+  const resetSessionStats = useCallback((): void => {
+    dispatch({type: "session-stats-reset"});
+  }, []);
+
+  const clearCompletedBatch = useCallback((): void => {
+    dispatch({type: "completed-batch-cleared"});
   }, []);
 
   const value = useMemo<ScanUploadContextType>(
     () => ({
-      pendingUploads,
-      sessionStats,
-      isUploading,
+      pendingUploads: state.pendingUploads,
+      sessionStats: state.sessionStats,
+      completedBatch: state.completedBatch,
+      isUploading: state.isUploading,
       addFiles,
       removeFiles,
       clearAll,
       renameFile,
       uploadAll,
       resetSessionStats,
+      clearCompletedBatch,
     }),
-    [pendingUploads, sessionStats, isUploading, addFiles, removeFiles, clearAll, renameFile, uploadAll, resetSessionStats],
+    [addFiles, clearAll, clearCompletedBatch, removeFiles, renameFile, resetSessionStats, state, uploadAll],
   );
 
   return <ScanUploadContext value={value}>{children}</ScanUploadContext>;
 }
 
+/**
+ * Reads scan upload context.
+ *
+ * @returns Current scan upload context value.
+ * @throws When used outside `ScanUploadProvider`.
+ */
 export function useScanUpload(): ScanUploadContextType {
   const context = use(ScanUploadContext);
   if (context === undefined) {
     throw new Error("useScanUpload must be used within a ScanUploadProvider");
   }
+
   return context;
 }
