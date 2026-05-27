@@ -1,6 +1,7 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderTermsOfServiceScreen from "./island";
 import styles from "./page.module.scss";
 
@@ -20,7 +21,7 @@ import styles from "./page.module.scss";
  * - Proper SEO ensures users can find and reference terms when needed
  *
  * **Async Operations**:
- * - Fetches translations from `Legal.TermsOfService.metadata` namespace
+ * - Fetches translations from `sections.legal.termsOfService.metadata` namespace
  * - Retrieves current locale for language-specific legal content
  *
  * **Metadata Generation**:
@@ -55,12 +56,12 @@ import styles from "./page.module.scss";
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Legal.TermsOfService.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.pages.legal.termsOfService.metadata.title),
+    description: t((m) => m.pages.legal.termsOfService.metadata.description),
   });
 }
 
@@ -144,16 +145,16 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link https://termly.io/resources/articles/what-are-terms-and-conditions/ | Terms & Conditions Best Practices}
  */
 export default async function TermsOfServiceHomepage(_props: Readonly<PageProps<"/terms-of-service">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("Legal.TermsOfService");
+  const t = await getTranslations();
 
   return (
     <div className={styles["termsOfServiceMain"]}>
       <section className={styles["headerSection"]}>
-        <h1 className={styles["pageTitle"]}>{t("title")}</h1>
-        <span>{t("last_updated")}</span>
+        <h1 className={styles["pageTitle"]}>{t((m) => m.sections.legal.termsOfService.title)}</h1>
+        <span>{t((m) => m.sections.legal.termsOfService.lastUpdated)}</span>
       </section>
       <RenderTermsOfServiceScreen />
-      <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
+      <section className={styles["footerSection"]}>{t((m) => m.sections.legal.termsOfService.contactInformation.content)}</section>
     </div>
   );
 }

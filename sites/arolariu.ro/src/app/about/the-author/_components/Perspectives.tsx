@@ -3,7 +3,7 @@
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbQuote} from "react-icons/tb";
 import styles from "./Perspectives.module.scss";
@@ -36,73 +36,73 @@ const itemVariants: Variants = {
  * @returns A section element containing a grid of perspective cards with animation effects
  */
 export default function Perspectives(): React.JSX.Element {
-  const t = useTranslations("About.Author.Perspectives");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: true});
 
   const perspectives = [
     {
-      author: t("perspectiveFromX.author"),
-      avatar: t("perspectiveFromX.avatar"),
-      position: t("perspectiveFromX.position"),
-      company: t("perspectiveFromX.company"),
-      quote: t("perspectiveFromX.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromX.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromX.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromX.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromX.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromX.quote),
     },
     {
-      author: t("perspectiveFromY.author"),
-      avatar: t("perspectiveFromY.avatar"),
-      position: t("perspectiveFromY.position"),
-      company: t("perspectiveFromY.company"),
-      quote: t("perspectiveFromY.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromY.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromY.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromY.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromY.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromY.quote),
     },
     {
-      author: t("perspectiveFromZ.author"),
-      avatar: t("perspectiveFromZ.avatar"),
-      position: t("perspectiveFromZ.position"),
-      company: t("perspectiveFromZ.company"),
-      quote: t("perspectiveFromZ.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromZ.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromZ.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromZ.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromZ.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromZ.quote),
     },
     {
-      author: t("perspectiveFromXX.author"),
-      avatar: t("perspectiveFromXX.avatar"),
-      position: t("perspectiveFromXX.position"),
-      company: t("perspectiveFromXX.company"),
-      quote: t("perspectiveFromXX.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromXX.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromXX.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromXX.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromXX.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromXX.quote),
     },
     {
-      author: t("perspectiveFromXY.author"),
-      avatar: t("perspectiveFromXY.avatar"),
-      position: t("perspectiveFromXY.position"),
-      company: t("perspectiveFromXY.company"),
-      quote: t("perspectiveFromXY.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromXY.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromXY.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromXY.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromXY.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromXY.quote),
     },
     {
-      author: t("perspectiveFromXZ.author"),
-      avatar: t("perspectiveFromXZ.avatar"),
-      position: t("perspectiveFromXZ.position"),
-      company: t("perspectiveFromXZ.company"),
-      quote: t("perspectiveFromXZ.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromXZ.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromXZ.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromXZ.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromXZ.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromXZ.quote),
     },
     {
-      author: t("perspectiveFromYX.author"),
-      avatar: t("perspectiveFromYX.avatar"),
-      position: t("perspectiveFromYX.position"),
-      company: t("perspectiveFromYX.company"),
-      quote: t("perspectiveFromYX.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromYX.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromYX.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromYX.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromYX.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromYX.quote),
     },
     {
-      author: t("perspectiveFromYY.author"),
-      avatar: t("perspectiveFromYY.avatar"),
-      position: t("perspectiveFromYY.position"),
-      company: t("perspectiveFromYY.company"),
-      quote: t("perspectiveFromYY.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromYY.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromYY.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromYY.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromYY.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromYY.quote),
     },
     {
-      author: t("perspectiveFromYZ.author"),
-      avatar: t("perspectiveFromYZ.avatar"),
-      position: t("perspectiveFromYZ.position"),
-      company: t("perspectiveFromYZ.company"),
-      quote: t("perspectiveFromYZ.quote"),
+      author: t((m) => m.sections.about.author.perspectives.perspectiveFromYZ.author),
+      avatar: t((m) => m.sections.about.author.perspectives.perspectiveFromYZ.avatar),
+      position: t((m) => m.sections.about.author.perspectives.perspectiveFromYZ.position),
+      company: t((m) => m.sections.about.author.perspectives.perspectiveFromYZ.company),
+      quote: t((m) => m.sections.about.author.perspectives.perspectiveFromYZ.quote),
     },
   ] satisfies PerspectiveType[];
 
@@ -117,10 +117,10 @@ export default function Perspectives(): React.JSX.Element {
           transition={{duration: 0.6}}
           className={styles["header"]}>
           <h2 className={styles["title"]}>
-            {t("title")}
+            {t((m) => m.sections.about.author.perspectives.title)}
             <span className={styles["titleUnderline"]} />
           </h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.sections.about.author.perspectives.subtitle)}</p>
         </motion.div>
 
         <motion.div

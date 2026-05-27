@@ -1,10 +1,12 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {AnimatePresence, motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef, useState} from "react";
 import {
@@ -77,7 +79,7 @@ const featureConfigs: FeatureConfig[] = [
  * @returns The Features component, CSR'ed.
  */
 export default function Features(): React.JSX.Element {
-  const t = useTranslations("About.Platform.features");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
@@ -101,13 +103,13 @@ export default function Features(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t("badge")}
+              {t((m) => m.sections.about.platform.features.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
+            {t((m) => m.sections.about.platform.features.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.features.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t("description")}</p>
+          <p className={styles["description"]}>{t((m) => m.sections.about.platform.features.description)}</p>
         </motion.div>
 
         {/* Features Grid */}
@@ -153,15 +155,15 @@ export default function Features(): React.JSX.Element {
                       <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className={styles["cardTitle"]}>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
+                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
-                    {t(`items.${feature.id}.description` as Parameters<typeof t>[0])}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.description`}`))}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["tags"]}>
-                    {t(`items.${feature.id}.tags` as Parameters<typeof t>[0])
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.tags`}`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -193,7 +195,7 @@ export default function Features(): React.JSX.Element {
             <button
               type='button'
               className={styles["modalBackdrop"]}
-              aria-label={t("modal.close")}
+              aria-label={t((m) => m.sections.about.platform.features.modal.close)}
               // eslint-disable-next-line react/jsx-no-bind -- simple modal close
               onClick={() => setSelectedFeature(null)}
             />
@@ -210,16 +212,16 @@ export default function Features(): React.JSX.Element {
                   <h3
                     id={`feature-modal-title-${selectedFeature.id}`}
                     className={styles["modalTitle"]}>
-                    {t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.title`}`))}
                   </h3>
-                  <p className={styles["modalSubtitle"]}>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
+                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
                 </div>
               </div>
 
-              <p className={styles["modalDescription"]}>{t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}</p>
+              <p className={styles["modalDescription"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
 
               <div className={styles["modalTags"]}>
-                {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])
+                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.tags`}`))
                   .split(",")
                   .map((tag) => (
                     <Badge
@@ -234,7 +236,7 @@ export default function Features(): React.JSX.Element {
                 <Link
                   href={selectedFeature.link}
                   className={`${styles["modalLink"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
-                  {t("modal.exploreFeature")}
+                  {t((m) => m.sections.about.platform.features.modal.exploreFeature)}
                   <TbArrowRight className={styles["modalLinkIcon"]} />
                 </Link>
                 <Button
@@ -242,7 +244,7 @@ export default function Features(): React.JSX.Element {
                   // eslint-disable-next-line react/jsx-no-bind -- simple modal close
                   onClick={() => setSelectedFeature(null)}
                   className={styles["modalClose"]}>
-                  {t("modal.close")}
+                  {t((m) => m.sections.about.platform.features.modal.close)}
                 </Button>
               </div>
             </motion.div>

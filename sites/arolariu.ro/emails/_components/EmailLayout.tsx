@@ -9,6 +9,7 @@ import {Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text} from
 import type {EmailLocale} from "../_lib/i18n";
 
 import {BRAND, EMAIL_COLORS, EMAIL_TYPOGRAPHY} from "./brand";
+import {selectorFromPath} from "next-intl-selector";
 import {getLayoutTranslator} from "./layoutTranslator";
 
 type Cta = {
@@ -80,7 +81,7 @@ const styles = {
  * The shared chrome wrapping every email body.
  *
  * @remarks
- * **Self-contained i18n.** Resolves its own `email.layout`-scoped strings
+ * **Self-contained i18n.** Resolves its own `emails.layout`-scoped strings
  * via {@link getLayoutTranslator} (memoised per locale in
  * `./layoutTranslator.ts`). Templates pass only data — they do **not**
  * thread a translator function down. This keeps the layout's prop
@@ -137,7 +138,7 @@ export default async function EmailLayout({
               alt={BRAND.name}
               style={styles.logo}
             />
-            <Text style={styles.headerTagline}>{tLayout("tagline")}</Text>
+            <Text style={styles.headerTagline}>{tLayout(selectorFromPath("emails.layout.tagline"))}</Text>
           </Section>
 
           <Section style={styles.content}>
@@ -153,7 +154,7 @@ export default async function EmailLayout({
                   {primaryCta.label}
                 </Link>
                 <Text style={styles.fallbackLinkText}>
-                  {tLayout("buttonFallback")}{" "}
+                  {tLayout(selectorFromPath("emails.layout.buttonFallback"))}{" "}
                   <Link
                     href={primaryCta.href}
                     style={styles.link}>
@@ -165,7 +166,7 @@ export default async function EmailLayout({
 
             {secondaryCta ? (
               <Text style={styles.fallbackLinkText}>
-                {tLayout("secondaryFallback")}{" "}
+                {tLayout(selectorFromPath("emails.layout.secondaryFallback"))}{" "}
                 <Link
                   href={secondaryCta.href}
                   style={styles.link}>
@@ -199,7 +200,7 @@ export default async function EmailLayout({
                 <Link
                   href={managePreferencesUrl}
                   style={styles.link}>
-                  {tLayout("managePreferences")}
+                  {tLayout(selectorFromPath("emails.layout.managePreferences"))}
                 </Link>
               </Text>
             ) : null}
@@ -209,12 +210,12 @@ export default async function EmailLayout({
                 <Link
                   href={unsubscribeUrl}
                   style={styles.link}>
-                  {tLayout("unsubscribe")}
+                  {tLayout(selectorFromPath("emails.layout.unsubscribe"))}
                 </Link>
               </Text>
             ) : null}
 
-            <Text style={styles.footerFinePrint}>{tLayout("allRightsReserved", {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
+            <Text style={styles.footerFinePrint}>{tLayout(selectorFromPath("emails.layout.allRightsReserved"), {year: new Date().getFullYear(), brand: BRAND.name})}</Text>
           </Section>
         </Container>
       </Body>

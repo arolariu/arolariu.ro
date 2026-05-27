@@ -19,7 +19,7 @@ import {
   PieChart,
   ResponsiveContainer,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {CategoryAggregate} from "../../../_utils/statistics";
 import styles from "./CategoryBreakdownChart.module.scss";
 
@@ -51,7 +51,7 @@ type CustomLegendProps = {
  * Custom tooltip for the category pie chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.categoryBreakdown");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -63,7 +63,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.count)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.tooltip.invoiceCount, {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -97,7 +97,7 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
  * @returns Pie chart component
  */
 export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.categoryBreakdown");
+  const t = useTranslations();
 
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
@@ -117,8 +117,8 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -156,7 +156,7 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
           <p className={styles["totalAmount"]}>
             {formatAmount(total)} {currency}
           </p>
-          <p className={styles["totalLabel"]}>{t("totalLabel")}</p>
+          <p className={styles["totalLabel"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.totalLabel)}</p>
         </div>
       </CardContent>
     </Card>

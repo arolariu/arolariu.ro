@@ -1,17 +1,18 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderAboutScreen from "./island";
 import styles from "./page.module.scss";
 
 /** Generates localized SEO metadata for the About hub page. */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.shared.legacy.about.metadata.title),
+    description: t((m) => m.shared.legacy.about.metadata.description),
   });
 }
 

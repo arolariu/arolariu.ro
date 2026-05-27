@@ -1,6 +1,6 @@
 "use client";
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useEffect} from "react";
 
 type ProfileErrorProps = Readonly<{
@@ -9,7 +9,7 @@ type ProfileErrorProps = Readonly<{
 }>;
 
 export default function ProfileError({error, reset}: ProfileErrorProps): React.JSX.Element {
-  const t = useTranslations("Errors.globalError");
+  const t = useTranslations();
 
   useEffect(() => {
     console.error("[app/my-profile/error.tsx]", error);
@@ -20,17 +20,17 @@ export default function ProfileError({error, reset}: ProfileErrorProps): React.J
       role='alert'
       aria-live='assertive'
       data-scope='my-profile'>
-      <h1>{t("hero.title")}</h1>
-      <p>{t("hero.subtitle")}</p>
+      <h1>{t((m) => m.app.errors.globalError.hero.title)}</h1>
+      <p>{t((m) => m.app.errors.globalError.hero.subtitle)}</p>
       {error.digest ? (
         <p>
-          <span>{t("details.errorIdLabel")}</span> <code>{error.digest}</code>
+          <span>{t((m) => m.app.errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
         </p>
       ) : null}
       <button
         type='button'
         onClick={reset}>
-        {t("buttons.tryAgain")}
+        {t((m) => m.app.errors.globalError.buttons.tryAgain)}
       </button>
     </section>
   );

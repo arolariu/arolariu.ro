@@ -11,7 +11,8 @@
 import {createMetadata} from "@/metadata";
 import {currentUser} from "@clerk/nextjs/server";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {redirect} from "next/navigation";
 import RenderMyProfileScreen from "./island";
 
@@ -33,12 +34,12 @@ import RenderMyProfileScreen from "./island";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Profile.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.pages.profile.metadata.title),
+    description: t((m) => m.pages.profile.metadata.description),
   });
 }
 

@@ -1,9 +1,11 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import type {User} from "@clerk/nextjs/server";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
 
@@ -43,8 +45,8 @@ const PANEL_VARIANTS = {
 };
 
 export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
-  const t = useTranslations("Profile.sidebar.nav");
-  const tStats = useTranslations("Profile.island");
+  const t = useTranslations();
+  const tStats = useTranslations();
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);
   const statistics = getMockStatistics();
@@ -210,7 +212,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         {/* Desktop Sidebar */}
         <nav
           className={styles["sidebar"]}
-          aria-label={tStats("settingsNavigationAriaLabel")}>
+          aria-label={tStats((m) => m.pages.profile.island.settingsNavigationAriaLabel)}>
           {TAB_CONFIG.map(({id, icon: Icon, key}) => (
             <button
               key={id}
@@ -220,7 +222,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
               onClick={handleNavClick}
               aria-current={activeSection === id ? "page" : undefined}>
               <Icon aria-hidden='true' />
-              <span>{t(key)}</span>
+              <span>{t(selectorFromPath(`Profile.sidebar.nav.${key}`))}</span>
             </button>
           ))}
         </nav>
@@ -239,7 +241,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
                 <SelectItem
                   key={id}
                   value={id}>
-                  {t(key)}
+                  {t(selectorFromPath(`Profile.sidebar.nav.${key}`))}
                 </SelectItem>
               ))}
             </SelectContent>

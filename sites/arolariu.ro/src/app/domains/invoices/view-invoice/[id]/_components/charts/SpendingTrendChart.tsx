@@ -17,7 +17,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback} from "react";
 import type {SpendingTrendData} from "../../_utils/analytics";
@@ -45,7 +45,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--View.spendingTrendChart");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -60,7 +60,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         <Badge
           variant='secondary'
           className={styles["tooltipCurrentBadge"]}>
-          {t("tooltip.currentInvoice")}
+          {t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.tooltip.currentInvoice)}
         </Badge>
       ) : null}
       {data.invoices && data.invoices.length > 0 ? (
@@ -78,7 +78,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             </li>
           ))}
           {data.invoices.length > 10 ? (
-            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
+            <li className={styles["tooltipMore"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.tooltip.andMore, {count: String(data.invoices.length - 10)})}</li>
           ) : null}
         </ul>
       ) : null}
@@ -87,10 +87,10 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 }
 
 export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--View.spendingTrendChart");
+  const t = useTranslations();
   const chartConfig = {
     amount: {
-      label: t("labels.amount"),
+      label: t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.labels.amount),
       color: "var(--ac-chart-1)",
     },
   };
@@ -101,8 +101,8 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

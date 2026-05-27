@@ -4,7 +4,7 @@
  */
 
 import {Alert, AlertDescription, AlertTitle, Button, Input, Label} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
 import styles from "./ShareInvoiceDialog.Private.module.scss";
@@ -43,7 +43,7 @@ export interface PrivateModeProps {
  * @returns The private sharing mode UI
  */
 export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSending = false}: PrivateModeProps): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPrivate");
+  const t = useTranslations();
   return (
     <div className={styles["body"]}>
       <Button
@@ -52,40 +52,40 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
         onClick={onBack}
         className={styles["backButtonMl"]}>
         <TbArrowLeft className={styles["backIcon"]} />
-        {t("backToOptions")}
+        {t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.backToOptions)}
       </Button>
 
       <Alert
         variant='default'
         className={styles["alertGreen"]}>
         <TbLock className={styles["lockIcon"]} />
-        <AlertTitle className={styles["alertGreenTitle"]}>{t("title")}</AlertTitle>
-        <AlertDescription className={styles["alertGreenDesc"]}>{t("description")}</AlertDescription>
+        <AlertTitle className={styles["alertGreenTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.title)}</AlertTitle>
+        <AlertDescription className={styles["alertGreenDesc"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}</AlertDescription>
       </Alert>
 
       <form
         onSubmit={onSendEmail}
         className={styles["formBody"]}>
         <div className={styles["fieldGroup"]}>
-          <Label htmlFor='email'>{t("emailLabel")}</Label>
+          <Label htmlFor='email'>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailLabel)}</Label>
           <Input
             id='email'
             type='email'
-            placeholder={t("emailPlaceholder")}
+            placeholder={t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailPlaceholder)}
             value={email}
             // eslint-disable-next-line react/jsx-no-bind -- input always changes.
             onChange={(e) => onEmailChange(e.target.value)}
             disabled={isSending}
             required
           />
-          <p className={styles["emailHint"]}>{t("emailHint")}</p>
+          <p className={styles["emailHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailHint)}</p>
         </div>
         <Button
           type='submit'
           disabled={isSending || !email}
           className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
-          {isSending ? t("sending") : t("sendInvitation")}
+          {isSending ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending) : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
         </Button>
       </form>
     </div>

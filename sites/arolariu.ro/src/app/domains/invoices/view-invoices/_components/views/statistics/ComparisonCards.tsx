@@ -8,7 +8,7 @@
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbArrowDown, TbArrowUp, TbBuildingStore, TbMinus, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import type {MonthComparison} from "../../../_utils/statistics";
 import styles from "./ComparisonCards.module.scss";
@@ -83,7 +83,7 @@ function ComparisonCard({icon, label, value, delta, isPositive, progressValue, i
  * @returns Grid of comparison cards
  */
 export function ComparisonCards({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.comparison");
+  const t = useTranslations();
 
   const spendingIcon = data.spendingDelta < 0 ? <TbArrowDown size={20} /> : <TbArrowUp size={20} />;
   const invoiceIcon = data.invoiceCountDelta < 0 ? <TbArrowDown size={20} /> : <TbArrowUp size={20} />;
@@ -91,7 +91,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
   const cards: Omit<ComparisonCardProps, "index">[] = [
     {
       icon: spendingIcon,
-      label: t("spendingDelta"),
+      label: t((m) => m.cards.invoices.statistics.comparison.spendingDelta),
       value: `${formatAmount(Math.abs(data.spendingDelta))} ${currency}`,
       delta: `${data.spendingDeltaPercent >= 0 ? "+" : ""}${formatAmount(data.spendingDeltaPercent, "en-US", 1)}%`,
       isPositive: data.spendingDelta < 0, // Spending less is positive (saving)
@@ -99,7 +99,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     },
     {
       icon: invoiceIcon,
-      label: t("invoiceCount"),
+      label: t((m) => m.cards.invoices.statistics.comparison.invoiceCount),
       value: Math.abs(data.invoiceCountDelta).toString(),
       delta: `${data.invoiceCountDelta >= 0 ? "+" : ""}${data.invoiceCountDelta}`,
       isPositive: data.invoiceCountDelta >= 0,
@@ -107,9 +107,9 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     },
     {
       icon: <TbBuildingStore size={20} />,
-      label: t("newMerchants"),
+      label: t((m) => m.cards.invoices.statistics.comparison.newMerchants),
       value: data.newMerchantCount.toString(),
-      delta: data.newMerchantCount > 0 ? t("discovered") : t("none"),
+      delta: data.newMerchantCount > 0 ? t((m) => m.cards.invoices.statistics.comparison.discovered) : t((m) => m.cards.invoices.statistics.comparison.none),
       isPositive: data.newMerchantCount > 0 ? true : null,
       progressValue: Math.min(data.newMerchantCount * 20, 100),
     },
@@ -117,7 +117,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
 
   return (
     <div className={styles["container"]}>
-      <h3 className={styles["sectionTitle"]}>{t("title")}</h3>
+      <h3 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.statistics.comparison.title)}</h3>
       <div className={styles["grid"]}>
         {cards.map((card, index) => (
           <ComparisonCard

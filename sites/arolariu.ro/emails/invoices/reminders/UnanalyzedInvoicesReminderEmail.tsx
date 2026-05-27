@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Reminder email for invoices awaiting AI analysis.
  * @module emails/invoices/reminders/UnanalyzedInvoicesReminderEmail
@@ -25,7 +26,7 @@ import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagra
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, loadMessages} from "../../_lib/i18n";
 
 /**
- * Represents a single unanalyzed invoice for display in the email.
+ * Represents a single unanalyzed invoice for display in the emails.
  */
 type UnanalyzedInvoice = {
   /** Invoice name or fallback identifier. */
@@ -56,7 +57,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Unanalyzed Invoices Reminder" email.
+ * React component that renders the "Unanalyzed Invoices Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -87,7 +88,7 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.unanalyzedInvoices"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.unanalyzedInvoices"});
 
   const name = username?.trim() ? username : "there";
   const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
@@ -98,26 +99,26 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
     <EmailLayout
       locale={locale}
       title={`${BRAND.name} | Invoices awaiting analysis`}
-      preview={t("preview", {name, count})}
-      badge={t("badge")}
-      heading={t("heading", {count})}
-      primaryCta={{href: effectiveInvoicesUrl, label: t("primaryCta")}}
+      preview={t(selectorFromPath("emails.unanalyzedInvoices.preview"), {name, count})}
+      badge={t(selectorFromPath("emails.unanalyzedInvoices.badge"))}
+      heading={t(selectorFromPath("emails.unanalyzedInvoices.heading"), {count})}
+      primaryCta={{href: effectiveInvoicesUrl, label: t(selectorFromPath("emails.unanalyzedInvoices.primaryCta"))}}
       secondaryCta={null}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-      <Text style={EmailParagraphStyles}>{t("intro", {count})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.unanalyzedInvoices.greeting"), {name})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.unanalyzedInvoices.intro"), {count})}</Text>
       <KeyValueTable
-        title={t("invoicesAwaitingTitle")}
+        title={t(selectorFromPath("emails.unanalyzedInvoices.invoicesAwaitingTitle"))}
         items={displayInvoices.map((invoice) => ({
           label: invoice.name,
-          value: t("uploadedDate", {date: invoice.uploadDate}),
+          value: t(selectorFromPath("emails.unanalyzedInvoices.uploadedDate"), {date: invoice.uploadDate}),
         }))}
       />
       {count > 5 ? (
         <Text style={{...EmailParagraphStyles, fontSize: "13px"}}>
-          {t.rich("andMore", {
+          {t.rich(selectorFromPath("emails.unanalyzedInvoices.andMore"), {
             remaining: count - 5,
             // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
             dashboard: () => (
@@ -130,20 +131,20 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
           })}
         </Text>
       ) : null}
-      <EmailCard title={t("analysisProvidedTitle")}>
+      <EmailCard title={t(selectorFromPath("emails.unanalyzedInvoices.analysisProvidedTitle"))}>
         <BulletList
           items={[
-            t("analysisProvides.0"),
-            t("analysisProvides.1"),
-            t("analysisProvides.2"),
-            t("analysisProvides.3"),
-            t("analysisProvides.4"),
+            t(selectorFromPath("emails.unanalyzedInvoices.analysisProvides.item0")),
+            t(selectorFromPath("emails.unanalyzedInvoices.analysisProvides.item1")),
+            t(selectorFromPath("emails.unanalyzedInvoices.analysisProvides.item2")),
+            t(selectorFromPath("emails.unanalyzedInvoices.analysisProvides.item3")),
+            t(selectorFromPath("emails.unanalyzedInvoices.analysisProvides.item4")),
           ]}
         />
       </EmailCard>
-      <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.unanalyzedInvoices.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>
-        {t.rich("feedback", {
+        {t.rich(selectorFromPath("emails.unanalyzedInvoices.feedback"), {
           supportEmail: BRAND.supportEmail,
           // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
@@ -156,9 +157,9 @@ const UnanalyzedInvoicesReminderEmail = async (props: Readonly<Props>): Promise<
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}
+        {t(selectorFromPath("emails.unanalyzedInvoices.signOff.line1"))}
         <br />
-        {t("signOff.line2", {brand: BRAND.name})}
+        {t(selectorFromPath("emails.unanalyzedInvoices.signOff.line2"), {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );

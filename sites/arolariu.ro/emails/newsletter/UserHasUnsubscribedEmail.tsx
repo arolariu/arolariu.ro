@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for confirming newsletter unsubscription.
  * @module emails/newsletter/Unsubscription
@@ -20,7 +21,7 @@ type Props = {
 };
 
 const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
-  namespace: "email.newsletterUnsubscribed",
+  namespace: "emails.newsletterUnsubscribed",
   render: ({locale, t, props}) => {
     const {username, managePreferencesUrl, resubscribeUrl} = props;
 
@@ -33,27 +34,27 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
       <EmailLayout
         locale={locale}
         title={`${BRAND.name} | Unsubscribed`}
-        preview={t("preview", {name})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: effectiveManagePreferencesUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: effectiveResubscribeUrl, label: t("ctaSecondary")}}
+        preview={t(selectorFromPath("emails.newsletterUnsubscribed.preview"), {name})}
+        badge={t(selectorFromPath("emails.newsletterUnsubscribed.badge"))}
+        heading={t(selectorFromPath("emails.newsletterUnsubscribed.heading"))}
+        primaryCta={{href: effectiveManagePreferencesUrl, label: t(selectorFromPath("emails.newsletterUnsubscribed.ctaPrimary"))}}
+        secondaryCta={{href: effectiveResubscribeUrl, label: t(selectorFromPath("emails.newsletterUnsubscribed.ctaSecondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.newsletterUnsubscribed.greeting"), {name})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("intro", {
+          {t.rich(selectorFromPath("emails.newsletterUnsubscribed.intro"), {
             brandName: BRAND.name,
             brand: (chunks) => <strong>{chunks}</strong>,
           })}
         </Text>
-        <EmailCard title={t("whatHappensNextTitle")}>
-          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        <EmailCard title={t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNextTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item0")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item1")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item2"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.newsletterUnsubscribed.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.newsletterUnsubscribed.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -64,9 +65,9 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.newsletterUnsubscribed.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.newsletterUnsubscribed.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

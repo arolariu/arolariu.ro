@@ -1,10 +1,11 @@
+import {selectorFromPath} from "next-intl-selector";
 import {describe, expect, it, vi} from "vitest";
 
 import {defineEmailTemplate} from "./defineEmailTemplate";
 import * as i18n from "./i18n";
 
 const FIXTURE_MESSAGES = {
-  email: {
+  emails: {
     welcome: {
       subject: "Welcome, {name}!",
       greeting: "Hi {name}",
@@ -18,17 +19,17 @@ const FIXTURE_MESSAGES = {
 describe("defineEmailTemplate", () => {
   it("attaches .namespace to the returned template", () => {
     const T = defineEmailTemplate<{}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: () => ({type: "div", props: {}}) as never,
     });
-    expect(T.namespace).toBe("email.welcome");
+    expect(T.namespace).toBe("emails.welcome");
   });
 
   it("defaults locale to 'en' when omitted", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const seen: {locale?: string} = {};
     const T = defineEmailTemplate<{}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: (ctx) => {
         seen.locale = ctx.locale;
         return {type: "div", props: {}} as never;
@@ -42,7 +43,7 @@ describe("defineEmailTemplate", () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const seen: {locale?: string} = {};
     const T = defineEmailTemplate<{}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: (ctx) => {
         seen.locale = ctx.locale;
         return {type: "div", props: {}} as never;
@@ -57,7 +58,7 @@ describe("defineEmailTemplate", () => {
     const seen: {props?: unknown} = {};
     type P = {readonly username: string};
     const T = defineEmailTemplate<P>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: (ctx) => {
         seen.props = ctx.props;
         return {type: "div", props: {}} as never;
@@ -71,9 +72,9 @@ describe("defineEmailTemplate", () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const seen: {greeting?: string} = {};
     const T = defineEmailTemplate<{readonly name: string}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: ({t, props}) => {
-        seen.greeting = t("greeting", {name: props.name});
+        seen.greeting = t(selectorFromPath("emails.welcome.greeting"), {name: props.name});
         return {type: "div", props: {}} as never;
       },
     });
@@ -85,7 +86,7 @@ describe("defineEmailTemplate", () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const expected = {type: "div", props: {"data-marker": "ok"}};
     const T = defineEmailTemplate<{}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: () => expected as never,
     });
     const out = await T({});
@@ -95,7 +96,7 @@ describe("defineEmailTemplate", () => {
   it(".getSubject() defaults locale to 'en'", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const T = defineEmailTemplate<{}>({
-      namespace: "email.plain",
+      namespace: "emails.plain",
       render: () => ({type: "div", props: {}}) as never,
     });
     const subject = await T.getSubject();
@@ -105,7 +106,7 @@ describe("defineEmailTemplate", () => {
   it(".getSubject() interpolates ICU vars", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValueOnce(FIXTURE_MESSAGES);
     const T = defineEmailTemplate<{}>({
-      namespace: "email.welcome",
+      namespace: "emails.welcome",
       render: () => ({type: "div", props: {}}) as never,
     });
     const subject = await T.getSubject("en", {name: "Alex"});

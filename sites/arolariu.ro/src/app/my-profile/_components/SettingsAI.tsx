@@ -18,7 +18,7 @@ import {
   Switch,
 } from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef} from "react";
 import {TbBrain, TbMicrophone, TbRobot, TbSettings, TbSparkles, TbTemperature} from "react-icons/tb";
 import {AI_BEHAVIOR_PRESETS, AI_MODELS} from "../_utils/constants";
@@ -31,7 +31,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("Profile.settings.ai");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 
@@ -80,8 +80,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t("title")}</h2>
-        <p>{t("description")}</p>
+        <h2>{t((m) => m.pages.profile.settings.ai.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.ai.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -95,9 +95,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbRobot className={styles["iconSm"]} />
-                {t("model.title")}
+                {t((m) => m.pages.profile.settings.ai.model.title)}
               </CardTitle>
-              <CardDescription>{t("model.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.model.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <Select
@@ -142,9 +142,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSparkles className={styles["iconSm"]} />
-                {t("behavior.title")}
+                {t((m) => m.pages.profile.settings.ai.behavior.title)}
               </CardTitle>
-              <CardDescription>{t("behavior.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.behavior.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <Select
@@ -177,15 +177,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbTemperature className={styles["iconSm"]} />
-                {t("temperature.title")}
+                {t((m) => m.pages.profile.settings.ai.temperature.title)}
               </CardTitle>
-              <CardDescription>{t("temperature.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.temperature.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
-                <span>{t("temperature.precise")}</span>
+                <span>{t((m) => m.pages.profile.settings.ai.temperature.precise)}</span>
                 <span>{settings.temperature.toFixed(1)}</span>
-                <span>{t("temperature.creative")}</span>
+                <span>{t((m) => m.pages.profile.settings.ai.temperature.creative)}</span>
               </div>
               <Slider
                 value={[settings.temperature]}
@@ -208,9 +208,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbSettings className={styles["iconSm"]} />
-                {t("maxTokens.title")}
+                {t((m) => m.pages.profile.settings.ai.maxTokens.title)}
               </CardTitle>
-              <CardDescription>{t("maxTokens.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.maxTokens.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
@@ -239,15 +239,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbBrain className={styles["iconSm"]} />
-                {t("features.title")}
+                {t((m) => m.pages.profile.settings.ai.features.title)}
               </CardTitle>
-              <CardDescription>{t("features.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.features.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("features.autoSuggest")}</Label>
-                  <p>{t("features.autoSuggestHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.autoSuggest)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.autoSuggestHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -258,8 +258,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("features.contextAwareness")}</Label>
-                  <p>{t("features.contextAwarenessHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.contextAwareness)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.contextAwarenessHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -270,8 +270,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("features.memory")}</Label>
-                  <p>{t("features.memoryHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.features.memory)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.features.memoryHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -292,15 +292,15 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbMicrophone className={styles["iconSm"]} />
-                {t("voice.title")}
+                {t((m) => m.pages.profile.settings.ai.voice.title)}
               </CardTitle>
-              <CardDescription>{t("voice.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.ai.voice.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("voice.enabled")}</Label>
-                  <p>{t("voice.enabledHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.ai.voice.enabled)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.ai.voice.enabledHint)}</p>
                 </div>
                 <Switch
                   nativeButton

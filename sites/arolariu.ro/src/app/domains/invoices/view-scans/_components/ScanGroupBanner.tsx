@@ -24,7 +24,7 @@ import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
 import {Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCheck, TbFileTypePdf} from "react-icons/tb";
@@ -49,7 +49,7 @@ interface ScanGroupBannerProps {
  * @returns The ScanGroupBanner component
  */
 export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGroupBannerProps>): React.JSX.Element | null {
-  const t = useTranslations("IMS--ViewScans.groupBanner");
+  const t = useTranslations();
   const router = useRouter();
   const {scans, setSelectedScans} = useScansStore();
   const [isDismissed, setIsDismissed] = useState<boolean>(!initialVisible);
@@ -166,8 +166,8 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
           {remainingCount > 0 && <div className={styles["thumbnailMore"]}>+{remainingCount}</div>}
         </div>
         <div className={styles["text"]}>
-          <p className={styles["title"]}>{t("title", {count: String(scanGroup.length)})}</p>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <p className={styles["title"]}>{t((m) => m.pages.invoices.viewScans.groupBanner.title, {count: String(scanGroup.length)})}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewScans.groupBanner.subtitle)}</p>
         </div>
       </div>
       <div className={styles["actions"]}>
@@ -176,14 +176,14 @@ export default function ScanGroupBanner({initialVisible = true}: Readonly<ScanGr
           onClick={handleCombine}
           className={styles["createButton"]}>
           <TbCheck className={styles["checkIcon"]} />
-          {t("createInvoice")}
+          {t((m) => m.pages.invoices.viewScans.groupBanner.createInvoice)}
         </Button>
         <Button
           variant='ghost'
           size='sm'
           onClick={handleDismiss}
           className={styles["dismissButton"]}>
-          {t("dismiss")}
+          {t((m) => m.pages.invoices.viewScans.groupBanner.dismiss)}
         </Button>
       </div>
     </motion.div>

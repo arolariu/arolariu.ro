@@ -1,3 +1,5 @@
+"use client";
+
 import {formatEnum} from "@/lib/utils.generic";
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
@@ -13,7 +15,7 @@ import {
   TableCell,
   TableRow,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
@@ -58,7 +60,7 @@ import styles from "./MerchantDialog.module.scss";
  * @see {@link MerchantCategory} - Category const-object for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.merchantDialog");
+  const t = useTranslations();
   const {
     currentDialog: {payload},
     isOpen,
@@ -77,8 +79,8 @@ export default function MerchantDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader className={styles["dialogHeader"]}>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {merchantName: merchant.name})}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.merchantDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.merchantDialog.description, {merchantName: merchant.name})}</DialogDescription>
         </DialogHeader>
         <div className={styles["body"]}>
           <div className={styles["merchantProfile"]}>
@@ -101,7 +103,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
                     <TbMapPin className={styles["mutedIcon"]} />
-                    <span className={styles["detailLabel"]}>{t("fields.address")}</span>
+                    <span className={styles["detailLabel"]}>{t((m) => m.dialogs.invoices.merchantDialog.fields.address)}</span>
                   </div>
                 </TableCell>
                 <TableCell className={styles["valueCell"]}>{merchant.address.address}</TableCell>
@@ -110,7 +112,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
                     <TbPhone className={styles["mutedIcon"]} />
-                    <span className={styles["detailLabel"]}>{t("fields.phone")}</span>
+                    <span className={styles["detailLabel"]}>{t((m) => m.dialogs.invoices.merchantDialog.fields.phone)}</span>
                   </div>
                 </TableCell>
                 <TableCell className={styles["valueCell"]}>{merchant.address.phoneNumber}</TableCell>
@@ -119,7 +121,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
                     <TbBuildingStore className={styles["mutedIcon"]} />
-                    <span className={styles["detailLabel"]}>{t("fields.parentCompany")}</span>
+                    <span className={styles["detailLabel"]}>{t((m) => m.dialogs.invoices.merchantDialog.fields.parentCompany)}</span>
                   </div>
                 </TableCell>
                 <TableCell className={styles["valueCell"]}>{merchant.parentCompanyId}</TableCell>
@@ -132,7 +134,7 @@ export default function MerchantDialog(): React.JSX.Element {
           <Button
             type='button'
             className={styles["mapsButton"]}>
-            {t("buttons.openInMaps")}
+            {t((m) => m.dialogs.invoices.merchantDialog.buttons.openInMaps)}
           </Button>
         </div>
       </DialogContent>

@@ -19,7 +19,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {PriceBucket} from "../../../_utils/statistics";
 import styles from "./PriceDistributionChart.module.scss";
 
@@ -42,7 +42,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the price distribution chart.
  */
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.priceDistribution");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -52,7 +52,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipRange"]}>
         {data.range} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: String(data.count)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.tooltip.itemCount, {count: String(data.count)})}</p>
     </div>
   );
 }
@@ -65,11 +65,11 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
  * @returns Bar chart component
  */
 export function PriceDistributionChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.priceDistribution");
+  const t = useTranslations();
 
   const chartConfig = {
     count: {
-      label: t("labels.itemCount"),
+      label: t((m) => m.cards.invoices.statistics.priceDistribution.labels.itemCount),
       color: "var(--ac-chart-3)",
     },
   };
@@ -82,8 +82,8 @@ export function PriceDistributionChart({data, currency}: Props): React.JSX.Eleme
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.priceDistribution.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

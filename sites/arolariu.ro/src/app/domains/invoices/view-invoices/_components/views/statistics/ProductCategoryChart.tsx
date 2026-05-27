@@ -34,7 +34,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import type {ProductCategorySpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
@@ -69,7 +69,7 @@ function CustomTooltip({
   payload = EMPTY_TOOLTIP_PAYLOAD,
   currency,
 }: Readonly<CustomTooltipProps>): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.productCategory");
+  const t = useTranslations();
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
   if (!firstItem) return null;
@@ -82,7 +82,7 @@ function CustomTooltip({
         {formatAmount(data.totalSpent)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.productCount", {count: String(data.productCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.productCategory.tooltip.productCount, {count: String(data.productCount)})}</p>
     </div>
   );
 }
@@ -109,19 +109,19 @@ function CustomTooltip({
  * @returns Horizontal bar chart component
  */
 export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.productCategory");
+  const t = useTranslations();
 
   // Empty state
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.productCategory.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyText"]}>{t("empty")}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.productCategory.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -159,8 +159,8 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.productCategory.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

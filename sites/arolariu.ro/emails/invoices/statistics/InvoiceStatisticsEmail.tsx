@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Base email template for invoice statistics summaries.
  * @module emails/invoices/statistics/InvoiceStatisticsEmail
@@ -91,7 +92,7 @@ function rankedItems(items: readonly RankedItem[], currency: string, fallback: s
 }
 
 const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>({
-  namespace: "email.invoiceStats",
+  namespace: "emails.invoiceStats",
   render: ({locale, t, props}) => {
     const {
       username,
@@ -113,68 +114,68 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
     const effectiveInvoicesUrl = invoicesUrl ?? `${BRAND.url}/domains/invoices/view-invoices`;
     const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
 
-    const label = t("frequencyLabel", {frequency});
-    const preview = t("preview", {frequencyLabel: label, name, totalSpend: safeFormatCurrency(totals.totalSpend, currency)});
+    const label = t(selectorFromPath("emails.invoiceStats.frequencyLabel"), {frequency});
+    const preview = t(selectorFromPath("emails.invoiceStats.preview"), {frequencyLabel: label, name, totalSpend: safeFormatCurrency(totals.totalSpend, currency)});
 
     const breakdownSource = categorySpendBreakdown ?? topCategories;
     const breakdownTop = breakdownSource.slice(0, 6);
     const breakdownForChart = breakdownTop.map((item) => ({label: item.name, value: item.totalSpend}));
 
-    const noDataFallback = t("noDataFallback");
+    const noDataFallback = t(selectorFromPath("emails.invoiceStats.noDataFallback"));
 
     return (
       <EmailLayout
-        title={t("title", {frequencyLabel: label})}
+        title={t(selectorFromPath("emails.invoiceStats.title"), {frequencyLabel: label})}
         preview={preview}
-        badge={t("badge")}
-        heading={t("heading", {frequencyLabel: label})}
-        primaryCta={{href: effectiveInvoicesUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: effectiveCreateInvoiceUrl, label: t("ctaSecondary")}}
+        badge={t(selectorFromPath("emails.invoiceStats.badge"))}
+        heading={t(selectorFromPath("emails.invoiceStats.heading"), {frequencyLabel: label})}
+        primaryCta={{href: effectiveInvoicesUrl, label: t(selectorFromPath("emails.invoiceStats.ctaPrimary"))}}
+        secondaryCta={{href: effectiveCreateInvoiceUrl, label: t(selectorFromPath("emails.invoiceStats.ctaSecondary"))}}
         locale={locale}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceStats.greeting"), {name})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("intro", {
+          {t.rich(selectorFromPath("emails.invoiceStats.intro"), {
             start: () => <strong>{periodStart}</strong>,
             end: () => <strong>{periodEnd}</strong>,
           })}
         </Text>
         <MetricsGrid
           metrics={[
-            {label: t("metrics.invoices"), value: String(totals.invoicesCount)},
-            {label: t("metrics.scans"), value: String(totals.scansCount)},
-            {label: t("metrics.totalSpend"), value: safeFormatCurrency(totals.totalSpend, currency)},
-            {label: t("metrics.averagePerInvoice"), value: safeFormatCurrency(totals.averageSpend, currency)},
+            {label: t(selectorFromPath("emails.invoiceStats.metrics.invoices")), value: String(totals.invoicesCount)},
+            {label: t(selectorFromPath("emails.invoiceStats.metrics.scans")), value: String(totals.scansCount)},
+            {label: t(selectorFromPath("emails.invoiceStats.metrics.totalSpend")), value: safeFormatCurrency(totals.totalSpend, currency)},
+            {label: t(selectorFromPath("emails.invoiceStats.metrics.averagePerInvoice")), value: safeFormatCurrency(totals.averageSpend, currency)},
           ]}
         />
-        <EmailCard title={t("reportDetailsTitle")}>
+        <EmailCard title={t(selectorFromPath("emails.invoiceStats.reportDetailsTitle"))}>
           <KeyValueTable
             title=''
             items={[
-              {label: t("reportDetails.period"), value: `${periodStart} → ${periodEnd}`},
-              {label: t("reportDetails.currency"), value: currency},
+              {label: t(selectorFromPath("emails.invoiceStats.reportDetails.period")), value: `${periodStart} → ${periodEnd}`},
+              {label: t(selectorFromPath("emails.invoiceStats.reportDetails.currency")), value: currency},
             ]}
           />
         </EmailCard>
-        <EmailCard title={t("topMerchantsTitle")}>
+        <EmailCard title={t(selectorFromPath("emails.invoiceStats.topMerchantsTitle"))}>
           <BulletList items={rankedItems(topMerchants, currency, noDataFallback)} />
         </EmailCard>
-        <EmailCard title={t("topCategoriesTitle")}>
+        <EmailCard title={t(selectorFromPath("emails.invoiceStats.topCategoriesTitle"))}>
           <BulletList items={rankedItems(topCategories, currency, noDataFallback)} />
         </EmailCard>
         {breakdownForChart.length > 0 ? (
-          <EmailCard title={t("breakdownCardTitle")}>
+          <EmailCard title={t(selectorFromPath("emails.invoiceStats.breakdownCardTitle"))}>
             <DonutChart
-              title={t("donutChartTitle")}
+              title={t(selectorFromPath("emails.invoiceStats.donutChartTitle"))}
               data={breakdownForChart}
               chartImageUrl={categorySpendChartUrl ?? ""}
-              alt={t("donutChartAlt")}
+              alt={t(selectorFromPath("emails.invoiceStats.donutChartAlt"))}
             />
 
             <KeyValueTable
-              title={t("breakdownTableTitle")}
+              title={t(selectorFromPath("emails.invoiceStats.breakdownTableTitle"))}
               items={breakdownTop.map((item) => ({
                 label: item.name,
                 value: `${safeFormatCurrency(item.totalSpend, currency)} (${toPercent(item.totalSpend, totals.totalSpend)})`,
@@ -183,14 +184,14 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
 
             {categorySpendBreakdown ? null : (
               <Text style={{...EmailParagraphStyles, fontSize: "12px", lineHeight: "18px", margin: "0", color: EMAIL_COLORS.muted}}>
-                {t("breakdownNote")}
+                {t(selectorFromPath("emails.invoiceStats.breakdownNote"))}
               </Text>
             )}
           </EmailCard>
         ) : null}
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceStats.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.invoiceStats.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -201,9 +202,9 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.invoiceStats.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceStats.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

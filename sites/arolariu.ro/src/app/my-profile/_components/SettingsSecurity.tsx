@@ -18,7 +18,7 @@ import {
   Switch,
 } from "@arolariu/components";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useRef} from "react";
 import {TbClock, TbDevices, TbKey, TbLock, TbShieldCheck, TbTrash} from "react-icons/tb";
 import type {SecuritySettings} from "../_utils/types";
@@ -30,7 +30,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("Profile.settings.security");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 
@@ -65,8 +65,8 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
       animate={isInView ? {opacity: 1} : {opacity: 0}}
       transition={{duration: 0.3}}>
       <div className={styles["header"]}>
-        <h2>{t("title")}</h2>
-        <p>{t("description")}</p>
+        <h2>{t((m) => m.pages.profile.settings.security.title)}</h2>
+        <p>{t((m) => m.pages.profile.settings.security.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -80,15 +80,15 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbKey className={styles["iconSm"]} />
-                {t("twoFactor.title")}
+                {t((m) => m.pages.profile.settings.security.twoFactor.title)}
               </CardTitle>
-              <CardDescription>{t("twoFactor.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.security.twoFactor.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("twoFactor.enabled")}</Label>
-                  <p>{t("twoFactor.enabledHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.security.twoFactor.enabled)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.security.twoFactor.enabledHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -100,7 +100,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                 <div className={styles["twoFactorActive"]}>
                   <p>
                     <TbShieldCheck />
-                    {t("twoFactor.activeMessage")}
+                    {t((m) => m.pages.profile.settings.security.twoFactor.activeMessage)}
                   </p>
                 </div>
               ) : null}
@@ -117,13 +117,13 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbClock className={styles["iconSm"]} />
-                {t("session.title")}
+                {t((m) => m.pages.profile.settings.security.session.title)}
               </CardTitle>
-              <CardDescription>{t("session.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.security.session.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <div>
-                <Label>{t("session.timeout")}</Label>
+                <Label>{t((m) => m.pages.profile.settings.security.session.timeout)}</Label>
                 <Select
                   value={settings.sessionTimeout.toString()}
                   onValueChange={handleSessionTimeoutChange}>
@@ -131,19 +131,19 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='15'>15 {t("session.minutes")}</SelectItem>
-                    <SelectItem value='30'>30 {t("session.minutes")}</SelectItem>
-                    <SelectItem value='60'>1 {t("session.hour")}</SelectItem>
-                    <SelectItem value='120'>2 {t("session.hours")}</SelectItem>
-                    <SelectItem value='480'>8 {t("session.hours")}</SelectItem>
+                    <SelectItem value='15'>15 {t((m) => m.pages.profile.settings.security.session.minutes)}</SelectItem>
+                    <SelectItem value='30'>30 {t((m) => m.pages.profile.settings.security.session.minutes)}</SelectItem>
+                    <SelectItem value='60'>1 {t((m) => m.pages.profile.settings.security.session.hour)}</SelectItem>
+                    <SelectItem value='120'>2 {t((m) => m.pages.profile.settings.security.session.hours)}</SelectItem>
+                    <SelectItem value='480'>8 {t((m) => m.pages.profile.settings.security.session.hours)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
-                  <Label>{t("session.loginNotifications")}</Label>
-                  <p>{t("session.loginNotificationsHint")}</p>
+                  <Label>{t((m) => m.pages.profile.settings.security.session.loginNotifications)}</Label>
+                  <p>{t((m) => m.pages.profile.settings.security.session.loginNotificationsHint)}</p>
                 </div>
                 <Switch
                   nativeButton
@@ -164,9 +164,9 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbLock className={styles["iconSm"]} />
-                {t("password.title")}
+                {t((m) => m.pages.profile.settings.security.password.title)}
               </CardTitle>
-              <CardDescription>{t("password.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.security.password.description)}</CardDescription>
             </CardHeader>
             <CardContent className={styles["cardContentSpaced"]}>
               <Button
@@ -177,10 +177,10 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   href='https://accounts.arolariu.ro/user/security'
                   target='_blank'
                   rel='noopener noreferrer'>
-                  {t("password.changePassword")}
+                  {t((m) => m.pages.profile.settings.security.password.changePassword)}
                 </a>
               </Button>
-              <p className={styles["clerkNote"]}>{t("password.clerkNote")}</p>
+              <p className={styles["clerkNote"]}>{t((m) => m.pages.profile.settings.security.password.clerkNote)}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -195,9 +195,9 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardHeader className={styles["cardHeaderPb"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbDevices className={styles["iconSm"]} />
-                {t("devices.title")}
+                {t((m) => m.pages.profile.settings.security.devices.title)}
               </CardTitle>
-              <CardDescription>{t("devices.description")}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.settings.security.devices.description)}</CardDescription>
             </CardHeader>
             <CardContent>
               {settings.trustedDevices.length > 0 ? (
@@ -209,12 +209,12 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                       <div className={styles["deviceInfo"]}>
                         <p>{device.name}</p>
                         <p>
-                          {t("devices.lastUsed")}: {new Date(device.lastUsed).toLocaleDateString()}
+                          {t((m) => m.pages.profile.settings.security.devices.lastUsed)}: {new Date(device.lastUsed).toLocaleDateString()}
                         </p>
                       </div>
                       <div className={styles["deviceActions"]}>
                         {device.isCurrent ? (
-                          <Badge variant='secondary'>{t("devices.current")}</Badge>
+                          <Badge variant='secondary'>{t((m) => m.pages.profile.settings.security.devices.current)}</Badge>
                         ) : (
                           <Button
                             variant='ghost'
@@ -234,7 +234,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                 </div>
               ) : (
                 <div className={styles["devicesEmpty"]}>
-                  <p>{t("devices.empty")}</p>
+                  <p>{t((m) => m.pages.profile.settings.security.devices.empty)}</p>
                 </div>
               )}
             </CardContent>

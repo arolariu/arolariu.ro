@@ -66,6 +66,32 @@ vi.mock("next-intl", () => ({
   },
 }));
 
+vi.mock("next-intl-selector", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl-selector")>();
+  const translations: Record<string, string> = {
+    "app.navigation.domains": "Domains",
+    "app.navigation.invoices": "Invoices",
+    "app.navigation.uploadScans": "Upload Scans",
+    "app.navigation.viewScans": "View Scans",
+    "app.navigation.myInvoices": "My Invoices",
+    "app.navigation.about": "About",
+    "app.navigation.thePlatform": "The Platform",
+    "app.navigation.theAuthor": "The Author",
+    "app.navigation.myProfile": "My Profile",
+    "app.navigation.mobile.openNavigation": "Open navigation",
+    "app.navigation.mobile.closeNavigation": "Close navigation",
+    "app.navigation.mobile.title": "Navigation",
+  };
+
+  return {
+    ...actual,
+    useTranslations: () => (selector: import("next-intl-selector").MessageSelector) => {
+      const path = actual.pathFromSelector(selector);
+      return translations[path] ?? path;
+    },
+  };
+});
+
 // Mock next/link
 vi.mock("next/link", () => ({
   default: ({children, href, className}: {children: ReactNode; href: string; className?: string}) => (

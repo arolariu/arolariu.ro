@@ -20,7 +20,7 @@
 
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbAlertTriangle} from "react-icons/tb";
 import type {AllergenFrequency} from "../../../_utils/statistics";
 import styles from "./AllergenSummaryChart.module.scss";
@@ -48,7 +48,7 @@ function getWarningLevel(percentage: number): "high" | "medium" | "low" {
  * @returns Allergen card component
  */
 function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.allergenSummary");
+  const t = useTranslations();
   const warningLevel = getWarningLevel(allergen.percentage);
 
   return (
@@ -71,11 +71,11 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
       <div className={styles["allergenStats"]}>
         <div className={styles["statItem"]}>
           <span className={styles["statValue"]}>{allergen.productCount}</span>
-          <span className={styles["statLabel"]}>{t("stats.products")}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.products)}</span>
         </div>
         <div className={styles["statItem"]}>
           <span className={styles["statValue"]}>{formatAmount(allergen.percentage, "en-US", 1)}%</span>
-          <span className={styles["statLabel"]}>{t("stats.ofTotal")}</span>
+          <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.stats.ofTotal)}</span>
         </div>
       </div>
     </div>
@@ -105,20 +105,20 @@ function AllergenCard({allergen}: {readonly allergen: AllergenFrequency}): React
  * @returns Grid of allergen cards
  */
 export function AllergenSummaryChart({data}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.allergenSummary");
+  const t = useTranslations();
 
   // Empty state - positive message
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
+          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
             <div className={styles["emptyIcon"]}>✓</div>
-            <p className={styles["emptyText"]}>{t("empty")}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -128,14 +128,14 @@ export function AllergenSummaryChart({data}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.allergenSummary.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <div
           className={styles["allergenGrid"]}
           role='list'
-          aria-label={t("ariaLabel")}>
+          aria-label={t((m) => m.cards.invoices.statistics.allergenSummary.ariaLabel)}>
           {data.map((allergen) => (
             <AllergenCard
               key={allergen.name}

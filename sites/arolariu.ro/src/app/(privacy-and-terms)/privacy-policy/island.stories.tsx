@@ -4,7 +4,7 @@ import RenderPrivacyPolicyScreen from "./island";
 /**
  * Client island for the Privacy Policy page.
  * Delegates rendering to `EnhancedLegalArticles` configured with
- * `pageType="Legal.PrivacyPolicy"`. Renders 19 legal article sections
+ * `pageType="sections.legal.privacyPolicy"`. Renders 19 legal article sections
  * covering data collection, processing, cookies, children's privacy,
  * and user rights.
  */

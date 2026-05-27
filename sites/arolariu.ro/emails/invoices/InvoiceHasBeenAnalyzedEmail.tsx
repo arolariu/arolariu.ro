@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been analyzed.
  * @module emails/invoices/AnalyzedInvoice
@@ -33,7 +34,7 @@ type Props = {
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceAnalyzed",
+  namespace: "emails.invoiceAnalyzed",
   render: ({locale, t, props}) => {
     const {username, invoice} = props;
 
@@ -47,34 +48,34 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {name: safeName})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceAnalyzed.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceAnalyzed.preview"), {name: safeName})}
+        badge={t(selectorFromPath("emails.invoiceAnalyzed.badge"))}
+        heading={t(selectorFromPath("emails.invoiceAnalyzed.heading"))}
+        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("emails.invoiceAnalyzed.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceAnalyzed.greeting"), {name: safeName})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceAnalyzed.intro"))}</Text>
         <KeyValueTable
-          title={t("summaryTitle")}
+          title={t(selectorFromPath("emails.invoiceAnalyzed.summaryTitle"))}
           items={[
-            {label: t("summary.invoiceName"), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
-            {label: t("summary.merchantId"), value: invoice?.merchantReference ?? t("summary.notIdentified")},
-            {label: t("summary.itemsDetected"), value: String(itemCount)},
-            {label: t("summary.totalAmount"), value: totalText},
+            {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.invoiceName")), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
+            {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.merchantId")), value: invoice?.merchantReference ?? t(selectorFromPath("emails.invoiceAnalyzed.summary.notIdentified"))},
+            {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.itemsDetected")), value: String(itemCount)},
+            {label: t(selectorFromPath("emails.invoiceAnalyzed.summary.totalAmount")), value: totalText},
           ]}
         />
-        <EmailCard title={t("whatWasAnalyzedTitle")}>
+        <EmailCard title={t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzedTitle"))}>
           <BulletList
-            items={[t("whatWasAnalyzed.0"), t("whatWasAnalyzed.1"), t("whatWasAnalyzed.2"), t("whatWasAnalyzed.3"), t("whatWasAnalyzed.4")]}
+            items={[t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item0")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item1")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item2")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item3")), t(selectorFromPath("emails.invoiceAnalyzed.whatWasAnalyzed.item4"))]}
           />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceAnalyzed.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.invoiceAnalyzed.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -85,9 +86,9 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.invoiceAnalyzed.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceAnalyzed.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

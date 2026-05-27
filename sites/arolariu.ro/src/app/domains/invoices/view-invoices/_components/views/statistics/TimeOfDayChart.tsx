@@ -20,7 +20,7 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {TimeOfDaySegment} from "../../../_utils/statistics";
 import styles from "./TimeOfDayChart.module.scss";
 
@@ -41,7 +41,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the time-of-day radar chart.
  */
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.timeOfDay");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -49,7 +49,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   return (
     <div className={styles["tooltip"]}>
       <p className={styles["tooltipSegment"]}>{data.segment}</p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
     </div>
   );
 }
@@ -76,12 +76,12 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
  * ```
  */
 export function TimeOfDayChart({data}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.timeOfDay");
+  const t = useTranslations();
 
   // IMPORTANT: This key must match the field name in TimeOfDaySegment
   const chartConfig = {
     invoiceCount: {
-      label: t("labels.invoiceCount"),
+      label: t((m) => m.cards.invoices.statistics.timeOfDay.labels.invoiceCount),
       color: "var(--ac-chart-4)",
     },
   };
@@ -89,8 +89,8 @@ export function TimeOfDayChart({data}: Props): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.timeOfDay.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

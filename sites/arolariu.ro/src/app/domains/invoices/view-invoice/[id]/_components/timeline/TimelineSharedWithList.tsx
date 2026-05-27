@@ -1,9 +1,10 @@
+"use client";
+
 /**
  * @fileoverview Displays list of users the invoice is shared with.
  * @module components/invoice/timeline/shared-with-list
  */
 
-"use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import {useUserInformation} from "@/hooks";
@@ -21,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -40,7 +41,7 @@ import styles from "./TimelineSharedWithList.module.scss";
  * ```
  */
 export function TimelineSharedWithList(): React.JSX.Element | null {
-  const t = useTranslations("IMS--View.timelineSharedWithList");
+  const t = useTranslations();
   const {invoice} = useInvoiceContext();
   const {userInformation} = useUserInformation();
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
@@ -68,12 +69,12 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
     <div className={styles["container"]}>
       <div className={styles["header"]}>
         <TbUsers className={styles["iconMuted"]} />
-        <p className={styles["headerLabel"]}>{t("header.title")}</p>
+        <p className={styles["headerLabel"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.header.title)}</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
             className={styles["badgeSmall"]}>
-            {isPublic ? t("header.publicBadge") : sharedUsers.length}
+            {isPublic ? t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.header.publicBadge) : sharedUsers.length}
           </Badge>
         )}
       </div>
@@ -84,8 +85,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
           variant='default'
           className={styles["alertWarning"]}>
           <TbGlobe className={styles["iconWarning"]} />
-          <AlertTitle className={styles["alertTitleWarning"]}>{t("publicAccess.title")}</AlertTitle>
-          <AlertDescription className={styles["alertDescMuted"]}>{t("publicAccess.description")}</AlertDescription>
+          <AlertTitle className={styles["alertTitleWarning"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.title)}</AlertTitle>
+          <AlertDescription className={styles["alertDescMuted"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.description)}</AlertDescription>
         </Alert>
       )}
 
@@ -113,7 +114,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                         variant='ghost'
                         size='icon'
                         className={styles["iconButton"]}
-                        aria-label={t("aria.sendEmail", {user})}>
+                        aria-label={t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.aria.sendEmail, {user})}>
                         <TbMail className={styles["iconXs"]} />
                       </Button>
                     }
@@ -121,7 +122,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                   <TooltipContent
                     side='left'
                     className={styles["tooltipXs"]}>
-                    {t("actions.sendEmail")}
+                    {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.actions.sendEmail)}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -136,7 +137,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
         onClick={openShareDialog}
         className={styles["manageButton"]}>
         <TbExternalLink className={styles["iconXs"]} />
-        {t("actions.manageSharing")}
+        {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.actions.manageSharing)}
       </Button>
     </div>
   );

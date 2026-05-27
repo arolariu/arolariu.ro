@@ -3,7 +3,7 @@
 import type {NodePackagesJSON} from "@/types";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbCopyright, TbInfoCircle, TbLicense, TbScale} from "react-icons/tb";
 import styles from "./LicenseBreakdown.module.scss";
@@ -16,7 +16,7 @@ type Props = Readonly<{
  * License distribution visualization showing MIT vs Apache vs GPL vs Other breakdown.
  */
 export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.licenses");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -46,7 +46,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t("title")}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.licenses.title)}</span>
           </h2>
         </motion.div>
 
@@ -64,8 +64,8 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                     <TbLicense className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
-                    <h3 className={styles["licenseName"]}>{t("mit")}</h3>
-                    <p className={styles["packageCount"]}>{t("packages", {count: mitCount})}</p>
+                    <h3 className={styles["licenseName"]}>{t((m) => m.sections.legal.acknowledgements.licenses.mit)}</h3>
+                    <p className={styles["packageCount"]}>{t((m) => m.sections.legal.acknowledgements.licenses.packages, {count: mitCount})}</p>
                   </div>
                 </div>
 
@@ -80,7 +80,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                 </div>
 
                 <div className={styles["cardFooter"]}>
-                  <span className={styles["description"]}>{t("mitDescription")}</span>
+                  <span className={styles["description"]}>{t((m) => m.sections.legal.acknowledgements.licenses.mitDescription)}</span>
                   <span className={styles["percentage"]}>{mitPercentage}%</span>
                 </div>
               </CardContent>
@@ -99,8 +99,8 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                     <TbScale className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
-                    <h3 className={styles["licenseName"]}>{t("apache")}</h3>
-                    <p className={styles["packageCount"]}>{t("packages", {count: apacheCount})}</p>
+                    <h3 className={styles["licenseName"]}>{t((m) => m.sections.legal.acknowledgements.licenses.apache)}</h3>
+                    <p className={styles["packageCount"]}>{t((m) => m.sections.legal.acknowledgements.licenses.packages, {count: apacheCount})}</p>
                   </div>
                 </div>
 
@@ -115,7 +115,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                 </div>
 
                 <div className={styles["cardFooter"]}>
-                  <span className={styles["description"]}>{t("apacheDescription")}</span>
+                  <span className={styles["description"]}>{t((m) => m.sections.legal.acknowledgements.licenses.apacheDescription)}</span>
                   <span className={styles["percentage"]}>{apachePercentage}%</span>
                 </div>
               </CardContent>
@@ -134,8 +134,8 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                     <TbCopyright className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
-                    <h3 className={styles["licenseName"]}>{t("gpl")}</h3>
-                    <p className={styles["packageCount"]}>{t("packages", {count: gplCount})}</p>
+                    <h3 className={styles["licenseName"]}>{t((m) => m.sections.legal.acknowledgements.licenses.gpl)}</h3>
+                    <p className={styles["packageCount"]}>{t((m) => m.sections.legal.acknowledgements.licenses.packages, {count: gplCount})}</p>
                   </div>
                 </div>
 
@@ -150,7 +150,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                 </div>
 
                 <div className={styles["cardFooter"]}>
-                  <span className={styles["description"]}>{t("gplDescription")}</span>
+                  <span className={styles["description"]}>{t((m) => m.sections.legal.acknowledgements.licenses.gplDescription)}</span>
                   <span className={styles["percentage"]}>{gplPercentage}%</span>
                 </div>
               </CardContent>
@@ -169,8 +169,8 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                     <TbInfoCircle className={styles["icon"]} />
                   </div>
                   <div className={styles["licenseInfo"]}>
-                    <h3 className={styles["licenseName"]}>{t("other")}</h3>
-                    <p className={styles["packageCount"]}>{t("packages", {count: otherCount})}</p>
+                    <h3 className={styles["licenseName"]}>{t((m) => m.sections.legal.acknowledgements.licenses.other)}</h3>
+                    <p className={styles["packageCount"]}>{t((m) => m.sections.legal.acknowledgements.licenses.packages, {count: otherCount})}</p>
                   </div>
                 </div>
 
@@ -185,7 +185,7 @@ export default function LicenseBreakdown({packages}: Readonly<Props>): React.JSX
                 </div>
 
                 <div className={styles["cardFooter"]}>
-                  <span className={styles["description"]}>{t("otherDescription")}</span>
+                  <span className={styles["description"]}>{t((m) => m.sections.legal.acknowledgements.licenses.otherDescription)}</span>
                   <span className={styles["percentage"]}>{otherPercentage}%</span>
                 </div>
               </CardContent>

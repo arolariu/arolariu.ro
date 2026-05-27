@@ -13,7 +13,8 @@
 import {formatAmount} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCalendar, TbReceipt, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import type {MerchantVisitPattern} from "../../../_utils/statistics";
 import styles from "./MerchantVisitChart.module.scss";
@@ -38,7 +39,7 @@ function MerchantVisitCard({
   readonly merchantName: string;
   readonly locale: string;
 }): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.merchantVisit");
+  const t = useTranslations();
 
   // Format day name using Intl.DateTimeFormat for i18n support
   const dayName = new Intl.DateTimeFormat(locale, {weekday: "long"}).format(new Date(2024, 0, pattern.mostCommonDayOfWeek + 1));
@@ -54,7 +55,7 @@ function MerchantVisitCard({
             <TbReceipt size={20} />
           </div>
           <div className={styles["metricContent"]}>
-            <span className={styles["metricLabel"]}>{t("metrics.totalVisits")}</span>
+            <span className={styles["metricLabel"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.metrics.totalVisits)}</span>
             <span className={styles["metricValue"]}>{pattern.totalVisits}</span>
           </div>
         </div>
@@ -64,7 +65,7 @@ function MerchantVisitCard({
             <TbTrendingUp size={20} />
           </div>
           <div className={styles["metricContent"]}>
-            <span className={styles["metricLabel"]}>{t("metrics.visitsPerMonth")}</span>
+            <span className={styles["metricLabel"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.metrics.visitsPerMonth)}</span>
             <span className={styles["metricValue"]}>{formatAmount(pattern.averageVisitsPerMonth, locale, 1)}</span>
           </div>
         </div>
@@ -74,7 +75,7 @@ function MerchantVisitCard({
             <TbShoppingCart size={20} />
           </div>
           <div className={styles["metricContent"]}>
-            <span className={styles["metricLabel"]}>{t("metrics.basketSize")}</span>
+            <span className={styles["metricLabel"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.metrics.basketSize)}</span>
             <span className={styles["metricValue"]}>{formatAmount(pattern.averageBasketSize, locale, 1)}</span>
           </div>
         </div>
@@ -84,14 +85,14 @@ function MerchantVisitCard({
             <TbCalendar size={20} />
           </div>
           <div className={styles["metricContent"]}>
-            <span className={styles["metricLabel"]}>{t("metrics.preferredDay")}</span>
+            <span className={styles["metricLabel"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.metrics.preferredDay)}</span>
             <span className={styles["metricValue"]}>{dayName}</span>
           </div>
         </div>
 
         <div className={styles["metricFull"]}>
           <div className={styles["metricContent"]}>
-            <span className={styles["metricLabel"]}>{t("metrics.avgSpend")}</span>
+            <span className={styles["metricLabel"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.metrics.avgSpend)}</span>
             <span className={styles["metricValue"]}>
               {formatAmount(pattern.averageSpendPerVisit, locale)} {currency}
             </span>
@@ -133,7 +134,7 @@ function MerchantVisitCard({
  * @returns Merchant visit patterns grid component
  */
 export function MerchantVisitChart({data, currency, topN = 6}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.merchantVisit");
+  const t = useTranslations();
   const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
@@ -143,11 +144,11 @@ export function MerchantVisitChart({data, currency, topN = 6}: Readonly<Props>):
     return (
       <Card className={styles["card"]}>
         <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
+          <CardTitle>{t((m) => m.cards.invoices.statistics.merchantVisit.title)}</CardTitle>
+          <CardDescription>{t((m) => m.cards.invoices.statistics.merchantVisit.description)}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className={styles["emptyState"]}>{t("empty")}</p>
+          <p className={styles["emptyState"]}>{t((m) => m.cards.invoices.statistics.merchantVisit.empty)}</p>
         </CardContent>
       </Card>
     );
@@ -156,8 +157,8 @@ export function MerchantVisitChart({data, currency, topN = 6}: Readonly<Props>):
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
+        <CardTitle>{t((m) => m.cards.invoices.statistics.merchantVisit.title)}</CardTitle>
+        <CardDescription>{t((m) => m.cards.invoices.statistics.merchantVisit.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["content"]}>
         <div className={styles["grid"]}>

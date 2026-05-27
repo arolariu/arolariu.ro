@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {MerchantBreakdown} from "../../_utils/analytics";
 import styles from "./MerchantBreakdownChart.module.scss";
 
@@ -75,18 +75,18 @@ function CustomTooltip({
 }
 
 export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--View.merchantBreakdownChart");
+  const t = useTranslations();
   const merchants = useMerchantsStore((state) => state.entities);
 
   // Resolve merchant names from Zustand store
   const getMerchantName = (merchantId: string): string => {
     const merchant = merchants.find((m) => m.id === merchantId);
-    return merchant?.name ?? t("unknownMerchant");
+    return merchant?.name ?? t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.unknownMerchant);
   };
 
   const chartConfig = {
     total: {
-      label: t("labels.totalSpent"),
+      label: t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.totalSpent),
       color: "var(--ac-chart-2)",
     },
   };
@@ -102,8 +102,8 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -137,9 +137,9 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                     active={false}
                     payload={[]}
                     currency={currency}
-                    totalLabel={t("labels.total")}
-                    visitsLabel={t("labels.visits")}
-                    averagePerVisitLabel={t("labels.averagePerVisit")}
+                    totalLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.total)}
+                    visitsLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.visits)}
+                    averagePerVisitLabel={t((m) => m.pages.invoices.viewInvoice.merchantBreakdownChart.labels.averagePerVisit)}
                   />
                 }
               />

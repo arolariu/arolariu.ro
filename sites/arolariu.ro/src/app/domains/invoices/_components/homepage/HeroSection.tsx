@@ -2,7 +2,7 @@
 
 import {Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import {TbFileInvoice, TbUpload} from "react-icons/tb";
@@ -19,7 +19,7 @@ interface Props {
  * @returns The hero section.
  */
 export default function HeroSection({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Landing");
+  const t = useTranslations();
 
   return (
     <section className={styles["heroSection"]}>
@@ -31,9 +31,9 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
               animate={{opacity: 1, y: 0}}
               transition={{duration: 0.6}}>
               <h1 className={styles["heroTitle"]}>
-                {t("hero.title")} <span className={styles["heroHighlight"]}>{t("hero.titleHighlight")}</span> {t("hero.titleSuffix")}
+                {t((m) => m.pages.invoices.landing.hero.title)} <span className={styles["heroHighlight"]}>{t((m) => m.pages.invoices.landing.hero.titleHighlight)}</span> {t((m) => m.pages.invoices.landing.hero.titleSuffix)}
               </h1>
-              <p className={styles["heroDescription"]}>{t("hero.description")}</p>
+              <p className={styles["heroDescription"]}>{t((m) => m.pages.invoices.landing.hero.description)}</p>
 
               <div className={styles["heroButtons"]}>
                 <Button
@@ -42,7 +42,7 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
                   className={styles["heroPrimaryBtn"]}>
                   <Link href='/domains/invoices/upload-scans'>
                     <TbUpload className={styles["heroButtonIcon"]} />
-                    {t("hero.getStarted")}
+                    {t((m) => m.pages.invoices.landing.hero.getStarted)}
                   </Link>
                 </Button>
                 {isAuthenticated ? (
@@ -52,7 +52,7 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
                     size='lg'>
                     <Link href='/domains/invoices/view-invoices'>
                       <TbFileInvoice className={styles["heroButtonIcon"]} />
-                      {t("hero.viewMyInvoices")}
+                      {t((m) => m.pages.invoices.landing.hero.viewMyInvoices)}
                     </Link>
                   </Button>
                 ) : null}
@@ -67,7 +67,7 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
             transition={{duration: 0.6, delay: 0.2}}>
             <Image
               src='/images/domains/invoices/invoice-top.svg'
-              alt={t("hero.imageAlt")}
+              alt={t((m) => m.pages.invoices.landing.hero.imageAlt)}
               width={500}
               height={500}
               className={styles["heroImage"]}

@@ -7,7 +7,7 @@
 
 import {Button, useLocalStorage} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbArrowLeft, TbArrowRight, TbCamera, TbChartBar, TbSparkles, TbX} from "react-icons/tb";
 import styles from "./OnboardingOverlay.module.scss";
@@ -46,7 +46,7 @@ type Step = {
  * @returns The OnboardingOverlay component (only visible when not completed or dismissed)
  */
 export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.Element | null {
-  const t = useTranslations("IMS--Common.onboarding");
+  const t = useTranslations();
   const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>("invoice-onboarding-complete", false);
   const [onboardingDismissed, setOnboardingDismissed] = useLocalStorage<boolean>("invoice-onboarding-dismissed", false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -56,18 +56,18 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
   const steps: Step[] = [
     {
       icon: <TbCamera className={styles["stepIcon"]} />,
-      title: t("steps.upload.title"),
-      description: t("steps.upload.description"),
+      title: t((m) => m.shared.invoices.onboarding.steps.upload.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.upload.description),
     },
     {
       icon: <TbSparkles className={styles["stepIcon"]} />,
-      title: t("steps.analyze.title"),
-      description: t("steps.analyze.description"),
+      title: t((m) => m.shared.invoices.onboarding.steps.analyze.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.analyze.description),
     },
     {
       icon: <TbChartBar className={styles["stepIcon"]} />,
-      title: t("steps.track.title"),
-      description: t("steps.track.description"),
+      title: t((m) => m.shared.invoices.onboarding.steps.track.title),
+      description: t((m) => m.shared.invoices.onboarding.steps.track.description),
     },
   ];
 
@@ -142,14 +142,14 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
             variant='ghost'
             size='sm'
             onClick={handleClose}
-            aria-label={t("skip")}>
-            {t("skip")}
+            aria-label={t((m) => m.shared.invoices.onboarding.skip)}>
+            {t((m) => m.shared.invoices.onboarding.skip)}
           </Button>
           <Button
             variant='ghost'
             size='icon'
             onClick={handleClose}
-            aria-label={t("skip")}>
+            aria-label={t((m) => m.shared.invoices.onboarding.skip)}>
             <TbX />
           </Button>
         </div>
@@ -174,7 +174,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
               <div className={styles["iconWrapper"]}>{steps.at(currentStep)?.icon}</div>
 
               <p className={styles["stepIndicator"]}>
-                {t("stepOf", {
+                {t((m) => m.shared.invoices.onboarding.stepOf, {
                   current: String(currentStep + 1),
                   total: String(steps.length),
                 })}
@@ -195,7 +195,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 key={step.title}
                 className={`${styles["dot"]} ${index === currentStep ? styles["dotActive"] : ""}`}
                 onClick={createStepClickHandler(index)}
-                aria-label={`${t("stepOf", {
+                aria-label={`${t((m) => m.shared.invoices.onboarding.stepOf, {
                   current: String(index + 1),
                   total: String(steps.length),
                 })}`}
@@ -213,7 +213,7 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 checked={dontShowAgain}
                 onChange={handleDontShowAgainChange}
               />
-              <span className={styles["checkboxText"]}>{t("dontShowAgain")}</span>
+              <span className={styles["checkboxText"]}>{t((m) => m.shared.invoices.onboarding.dontShowAgain)}</span>
             </label>
           </div>
 
@@ -223,18 +223,18 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 variant='outline'
                 onClick={handleBack}>
                 <TbArrowLeft />
-                {t("back")}
+                {t((m) => m.shared.invoices.onboarding.back)}
               </Button>
             )}
 
             <Button onClick={handleNext}>
               {currentStep < steps.length - 1 ? (
                 <>
-                  {t("next")}
+                  {t((m) => m.shared.invoices.onboarding.next)}
                   <TbArrowRight />
                 </>
               ) : (
-                t("getStarted")
+                t((m) => m.shared.invoices.onboarding.getStarted)
               )}
             </Button>
           </div>

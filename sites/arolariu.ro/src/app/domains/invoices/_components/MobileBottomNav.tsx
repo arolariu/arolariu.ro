@@ -1,3 +1,6 @@
+"use client";
+
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Mobile bottom navigation bar for the invoices domain.
  * @module app/domains/invoices/_components/MobileBottomNav
@@ -10,9 +13,8 @@
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/use-pathname}
  */
 
-"use client";
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {TbCamera, TbFileInvoice, TbHome, TbUser} from "react-icons/tb";
@@ -61,7 +63,7 @@ interface NavItem {
  */
 export default function MobileBottomNav(): React.JSX.Element {
   const pathname = usePathname();
-  const t = useTranslations("IMS--Common.mobileNav");
+  const t = useTranslations();
 
   /**
    * Navigation items configuration.
@@ -106,7 +108,7 @@ export default function MobileBottomNav(): React.JSX.Element {
   return (
     <nav
       className={styles["nav"]}
-      aria-label={t("ariaLabel")}>
+      aria-label={t((m) => m.shared.invoices.mobileNav.ariaLabel)}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = isActive(item);
@@ -121,7 +123,7 @@ export default function MobileBottomNav(): React.JSX.Element {
               className={styles["navIcon"]}
               aria-hidden='true'
             />
-            <span className={styles["navLabel"]}>{t(item.labelKey)}</span>
+            <span className={styles["navLabel"]}>{t(selectorFromPath(`shared.invoices.mobileNav.${item.labelKey}`))}</span>
           </Link>
         );
       })}

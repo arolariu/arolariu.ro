@@ -1,9 +1,10 @@
+import {selectorFromPath} from "next-intl-selector";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import * as i18n from "../_lib/i18n";
 import {__resetLayoutTranslatorCache, getLayoutTranslator} from "./layoutTranslator";
 
-const FIXTURE = {email: {layout: {tagline: "Tag", buttonFallback: "BF"}}};
+const FIXTURE = {emails: {layout: {tagline: "Tag", buttonFallback: "BF"}}};
 
 describe("getLayoutTranslator", () => {
   beforeEach(() => {
@@ -43,11 +44,11 @@ describe("getLayoutTranslator", () => {
     expect(createSpy).toHaveBeenCalledTimes(3); // one per locale
   });
 
-  it("returns translators that resolve namespace 'email.layout' keys", async () => {
+  it("returns translators that resolve namespace 'emails.layout' keys", async () => {
     vi.spyOn(i18n, "loadMessages").mockResolvedValue(FIXTURE);
     const t = await getLayoutTranslator("en");
-    expect(t("tagline")).toBe("Tag");
-    expect(t("buttonFallback")).toBe("BF");
+    expect(t(selectorFromPath("emails.layout.tagline"))).toBe("Tag");
+    expect(t(selectorFromPath("emails.layout.buttonFallback"))).toBe("BF");
   });
 
   it("__resetLayoutTranslatorCache clears the cache", async () => {

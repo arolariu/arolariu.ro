@@ -1,7 +1,7 @@
 "use client";
 
 import {motion, useInView, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbAntenna, TbBook, TbBulb, TbCode, TbDeviceGamepad} from "react-icons/tb";
 import styles from "./Biography.module.scss";
@@ -32,7 +32,7 @@ const itemVariants: Variants = {
  * @returns A section containing the animated biography content
  */
 export default function Biography(): React.JSX.Element {
-  const t = useTranslations("About.Author.Biography");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
@@ -51,27 +51,27 @@ export default function Biography(): React.JSX.Element {
     {
       key: "first",
       icon: <TbCode className={styles["iconBlue"]} />,
-      content: t("FirstPoint", {age: (new Date().getFullYear() - 2000).toString()}),
+      content: t((m) => m.sections.about.author.biography.firstPoint, {age: (new Date().getFullYear() - 2000).toString()}),
     },
     {
       key: "second",
       icon: <TbDeviceGamepad className={styles["iconGreen"]} />,
-      content: t("SecondPoint"),
+      content: t((m) => m.sections.about.author.biography.secondPoint),
     },
     {
       key: "third",
       icon: <TbBulb className={styles["iconPurple"]} />,
-      content: t("ThirdPoint"),
+      content: t((m) => m.sections.about.author.biography.thirdPoint),
     },
     {
       key: "fourth",
       icon: <TbBook className={styles["iconAmber"]} />,
-      content: t("FourthPoint"),
+      content: t((m) => m.sections.about.author.biography.fourthPoint),
     },
     {
       key: "fifth",
       icon: <TbAntenna className={styles["iconPink"]} />,
-      content: t("FifthPoint"),
+      content: t((m) => m.sections.about.author.biography.fifthPoint),
     },
   ];
 
@@ -105,7 +105,7 @@ export default function Biography(): React.JSX.Element {
         <motion.div
           variants={itemVariants}
           className={styles["header"]}>
-          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.biography.title)}</h2>
         </motion.div>
 
         <motion.div variants={itemVariants}>

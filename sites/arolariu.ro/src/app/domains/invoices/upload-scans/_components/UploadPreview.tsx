@@ -9,7 +9,7 @@
  */
 
 import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbChevronLeft, TbChevronRight, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
@@ -62,7 +62,7 @@ function UploadCard({
   error,
   onRemove,
 }: Readonly<PendingUploadCardProps>): React.JSX.Element {
-  const t = useTranslations("IMS--UploadScans");
+  const t = useTranslations();
   const handleRemove = useCallback(() => {
     onRemove([id]);
   }, [onRemove, id]);
@@ -117,11 +117,11 @@ function UploadCard({
                       <Badge
                         variant='secondary'
                         className={styles["badgePending"]}>
-                        {t("preview.status.pending")}
+                        {t((m) => m.pages.invoices.uploadScans.preview.status.pending)}
                       </Badge>
                     }
                   />
-                  <TooltipContent side='top'>{t("preview.pendingTooltip")}</TooltipContent>
+                  <TooltipContent side='top'>{t((m) => m.pages.invoices.uploadScans.preview.pendingTooltip)}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -129,28 +129,28 @@ function UploadCard({
               <Badge
                 variant='secondary'
                 className={styles["badgeUploading"]}>
-                {t("preview.status.uploading")}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.uploading)}
               </Badge>
             )}
             {status === "retrying" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeRetrying"]}>
-                {t("preview.status.retrying")}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.retrying)}
               </Badge>
             )}
             {status === "completed" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeCompleted"]}>
-                {t("preview.status.completed")}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.completed)}
               </Badge>
             )}
             {status === "failed" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeFailed"]}>
-                {t("preview.status.failed")}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.failed)}
               </Badge>
             )}
           </div>
@@ -170,7 +170,7 @@ function UploadCard({
                     </Button>
                   }
                 />
-                <TooltipContent side='right'>{t("preview.removeTooltip")}</TooltipContent>
+                <TooltipContent side='right'>{t((m) => m.pages.invoices.uploadScans.preview.removeTooltip)}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -195,7 +195,7 @@ function UploadCard({
               <p className={styles["fileSize"]}>{progress}%</p>
             </>
           )}
-          {status === "retrying" ? <p className={styles["fileError"]}>{t("preview.retryAttempt", {attempt: String(attempts)})}</p> : null}
+          {status === "retrying" ? <p className={styles["fileError"]}>{t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}</p> : null}
           {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>
@@ -215,7 +215,7 @@ const DESKTOP_PAGE_SIZE = 50;
  * Paginates uploads with different page sizes for mobile (7) and desktop (50).
  */
 export default function UploadPreview(): React.JSX.Element | null {
-  const t = useTranslations("IMS--UploadScans");
+  const t = useTranslations();
   const {pendingUploads, removeFiles} = useScanUpload();
   const [page, setPage] = useState(0);
 
@@ -259,7 +259,7 @@ export default function UploadPreview(): React.JSX.Element | null {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>{t("preview.title", {count: String(pendingUploads.length)})}</h2>
+        <h2 className={styles["title"]}>{t((m) => m.pages.invoices.uploadScans.preview.title, {count: String(pendingUploads.length)})}</h2>
       </div>
 
       <StaggerContainer
@@ -291,10 +291,10 @@ export default function UploadPreview(): React.JSX.Element | null {
             onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
-            {t("preview.pagination.previous")}
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.previous)}
           </Button>
           <span className={styles["paginationInfo"]}>
-            {t("preview.pagination.pageInfo", {
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.pageInfo, {
               current: String(page + 1),
               total: String(totalPages),
               count: String(pendingUploads.length),
@@ -305,7 +305,7 @@ export default function UploadPreview(): React.JSX.Element | null {
             size='sm'
             onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
-            {t("preview.pagination.next")}
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.next)}
             <TbChevronRight />
           </Button>
         </div>

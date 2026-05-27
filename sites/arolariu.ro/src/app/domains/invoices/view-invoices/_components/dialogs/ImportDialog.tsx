@@ -13,7 +13,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
@@ -36,7 +36,7 @@ const ACCEPT_TYPES: Record<ImportFileFormat, Accept> = {
  * @returns The ImportDialog component, CSR'ed.
  */
 export default function ImportDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.importDialog");
+  const t = useTranslations();
   const [files, setFiles] = useState<File[]>([]);
   const {isOpen, close} = useDialog("VIEW_INVOICES__IMPORT");
   const [activeTab, setActiveTab] = useState<ImportFileFormat>("csv");
@@ -121,8 +121,8 @@ export default function ImportDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.importDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.importDialog.description)}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -130,9 +130,9 @@ export default function ImportDialog(): React.JSX.Element {
           onValueChange={handleTabChange}
           className={styles["tabs"]}>
           <TabsList className={styles["tabsList"]}>
-            <TabsTrigger value='csv'>{t("tabs.csv")}</TabsTrigger>
-            <TabsTrigger value='pdf'>{t("tabs.pdf")}</TabsTrigger>
-            <TabsTrigger value='xlsx'>{t("tabs.xlsx")}</TabsTrigger>
+            <TabsTrigger value='csv'>{t((m) => m.dialogs.invoices.importDialog.tabs.csv)}</TabsTrigger>
+            <TabsTrigger value='pdf'>{t((m) => m.dialogs.invoices.importDialog.tabs.pdf)}</TabsTrigger>
+            <TabsTrigger value='xlsx'>{t((m) => m.dialogs.invoices.importDialog.tabs.xlsx)}</TabsTrigger>
           </TabsList>
 
           <div
@@ -150,19 +150,19 @@ export default function ImportDialog(): React.JSX.Element {
                 transition={{duration: 0.2}}>
                 <TbUpload className={styles["uploadIcon"]} />
               </motion.div>
-              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? t("dropzone.dropHere") : t("dropzone.dragAndDrop")}</h3>
-              <p className={styles["dropzoneSubtitle"]}>{t("dropzone.orClickBrowse")}</p>
+              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? t((m) => m.dialogs.invoices.importDialog.dropzone.dropHere) : t((m) => m.dialogs.invoices.importDialog.dropzone.dragAndDrop)}</h3>
+              <p className={styles["dropzoneSubtitle"]}>{t((m) => m.dialogs.invoices.importDialog.dropzone.orClickBrowse)}</p>
               <p className={styles["dropzoneHint"]}>
-                {activeTab === "csv" && t("dropzone.acceptsCsv")}
-                {activeTab === "pdf" && t("dropzone.acceptsPdf")}
-                {activeTab === "xlsx" && t("dropzone.acceptsXlsx")}
+                {activeTab === "csv" && t((m) => m.dialogs.invoices.importDialog.dropzone.acceptsCsv)}
+                {activeTab === "pdf" && t((m) => m.dialogs.invoices.importDialog.dropzone.acceptsPdf)}
+                {activeTab === "xlsx" && t((m) => m.dialogs.invoices.importDialog.dropzone.acceptsXlsx)}
               </p>
             </div>
           </div>
 
           {files.length > 0 && (
             <div className={styles["fileListWrapper"]}>
-              <h4 className={styles["fileListTitle"]}>{t("selectedFiles")}</h4>
+              <h4 className={styles["fileListTitle"]}>{t((m) => m.dialogs.invoices.importDialog.selectedFiles)}</h4>
               <div className={styles["fileList"]}>
                 {files.map((file, index) => (
                   <div
@@ -177,7 +177,7 @@ export default function ImportDialog(): React.JSX.Element {
                       size='sm'
                       data-index={index}
                       onClick={handleRemoveClick}>
-                      {t("remove")}
+                      {t((m) => m.dialogs.invoices.importDialog.remove)}
                     </Button>
                   </div>
                 ))}
@@ -194,7 +194,7 @@ export default function ImportDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["statusSuccess"]}>
               <TbCheck className={styles["statusIcon"]} />
-              <span>{t("status.success")}</span>
+              <span>{t((m) => m.dialogs.invoices.importDialog.status.success)}</span>
             </motion.div>
           )}
 
@@ -205,7 +205,7 @@ export default function ImportDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["statusError"]}>
               <TbAlertCircle className={styles["statusIcon"]} />
-              <span>{t("status.error")}</span>
+              <span>{t((m) => m.dialogs.invoices.importDialog.status.error)}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -214,12 +214,12 @@ export default function ImportDialog(): React.JSX.Element {
           <Button
             variant='outline'
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m.dialogs.invoices.importDialog.buttons.cancel)}
           </Button>
           <Button
             onClick={handleImport}
             disabled={files.length === 0 || uploadStatus !== "idle"}>
-            {files.length > 0 ? t("buttons.importWithCount", {count: String(files.length)}) : t("buttons.import")}
+            {files.length > 0 ? t((m) => m.dialogs.invoices.importDialog.buttons.importWithCount, {count: String(files.length)}) : t((m) => m.dialogs.invoices.importDialog.buttons.import)}
           </Button>
         </DialogFooter>
       </DialogContent>

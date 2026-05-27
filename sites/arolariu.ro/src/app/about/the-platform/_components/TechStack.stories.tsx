@@ -5,8 +5,8 @@ import TechStack from "./TechStack";
  * TechStack section displaying technologies used in the platform.
  * Features tabbed navigation (Frontend, Backend, Cloud, Tooling) with
  * animated technology cards and merged platform statistics with animated
- * counters. Uses the `About.Platform.techStack` and
- * `About.Platform.statistics` i18n namespaces.
+ * counters. Uses the `sections.about.platform.techStack` and
+ * `sections.about.platform.statistics` i18n namespaces.
  */
 const meta = {
   title: "Pages/About/ThePlatform/TechStack",

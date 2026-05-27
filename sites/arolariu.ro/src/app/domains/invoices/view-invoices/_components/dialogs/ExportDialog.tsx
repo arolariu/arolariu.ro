@@ -18,7 +18,7 @@ import {
   RadioGroupItem,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbCheck, TbCopy, TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -33,7 +33,7 @@ import styles from "./ExportDialog.module.scss";
  * @returns The ExportDialog component, CSR'ed.
  */
 export default function ExportDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.exportDialog");
+  const t = useTranslations();
   const [exportOptions, setExportOptions] = useState<InvoiceExportRequest>({
     format: "csv",
     includeMetadata: false,
@@ -132,14 +132,14 @@ export default function ExportDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {count: String(invoicesToExport.length)})}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.exportDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.exportDialog.description, {count: String(invoicesToExport.length)})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
           {/* Custom Filename Input */}
           <div className={styles["section"]}>
-            <Label htmlFor='filename'>{t("filename.label")}</Label>
+            <Label htmlFor='filename'>{t((m) => m.dialogs.invoices.exportDialog.filename.label)}</Label>
             <Input
               id='filename'
               placeholder={defaultFilename}
@@ -148,13 +148,13 @@ export default function ExportDialog(): React.JSX.Element {
               onChange={(e) => setFilename(e.target.value)}
               className={styles["filenameInput"]}
             />
-            <p className={styles["hint"]}>{t("filename.hint")}</p>
+            <p className={styles["hint"]}>{t((m) => m.dialogs.invoices.exportDialog.filename.hint)}</p>
           </div>
 
           {/* Format Selection Card */}
           <Card className={styles["formatCard"]}>
             <CardContent className={styles["cardContent"]}>
-              <h3 className={styles["sectionTitle"]}>{t("format.title")}</h3>
+              <h3 className={styles["sectionTitle"]}>{t((m) => m.dialogs.invoices.exportDialog.format.title)}</h3>
               <RadioGroup
                 value={exportOptions.format}
                 // eslint-disable-next-line react/jsx-no-bind -- inline event handler
@@ -170,8 +170,8 @@ export default function ExportDialog(): React.JSX.Element {
                     className={styles["formatLabel"]}>
                     <TbFileSpreadsheet className={styles["formatIcon"]} />
                     <div>
-                      <p className={styles["formatName"]}>{t("format.labels.csv")}</p>
-                      <p className={styles["formatDesc"]}>{t("format.descriptions.csv")}</p>
+                      <p className={styles["formatName"]}>{t((m) => m.dialogs.invoices.exportDialog.format.labels.csv)}</p>
+                      <p className={styles["formatDesc"]}>{t((m) => m.dialogs.invoices.exportDialog.format.descriptions.csv)}</p>
                     </div>
                   </Label>
                 </div>
@@ -186,8 +186,8 @@ export default function ExportDialog(): React.JSX.Element {
                     className={styles["formatLabel"]}>
                     <TbJson className={styles["formatIcon"]} />
                     <div>
-                      <p className={styles["formatName"]}>{t("format.labels.json")}</p>
-                      <p className={styles["formatDesc"]}>{t("format.descriptions.json")}</p>
+                      <p className={styles["formatName"]}>{t((m) => m.dialogs.invoices.exportDialog.format.labels.json)}</p>
+                      <p className={styles["formatDesc"]}>{t((m) => m.dialogs.invoices.exportDialog.format.descriptions.json)}</p>
                     </div>
                   </Label>
                 </div>
@@ -202,8 +202,8 @@ export default function ExportDialog(): React.JSX.Element {
                     className={styles["formatLabel"]}>
                     <TbFileText className={styles["formatIcon"]} />
                     <div>
-                      <p className={styles["formatName"]}>{t("format.labels.pdf")}</p>
-                      <p className={styles["formatDesc"]}>{t("format.descriptions.pdf")}</p>
+                      <p className={styles["formatName"]}>{t((m) => m.dialogs.invoices.exportDialog.format.labels.pdf)}</p>
+                      <p className={styles["formatDesc"]}>{t((m) => m.dialogs.invoices.exportDialog.format.descriptions.pdf)}</p>
                     </div>
                   </Label>
                 </div>
@@ -214,7 +214,7 @@ export default function ExportDialog(): React.JSX.Element {
           {/* Options Card */}
           <Card className={styles["optionsCard"]}>
             <CardContent className={styles["cardContent"]}>
-              <h3 className={styles["sectionTitle"]}>{t("options.title")}</h3>
+              <h3 className={styles["sectionTitle"]}>{t((m) => m.dialogs.invoices.exportDialog.options.title)}</h3>
               <div className={styles["checkboxGroup"]}>
                 <div className={styles["radioRow"]}>
                   <Checkbox
@@ -224,7 +224,7 @@ export default function ExportDialog(): React.JSX.Element {
                     // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeMetadata", checked === true)}
                   />
-                  <Label htmlFor='include-metadata'>{t("options.includeMetadata")}</Label>
+                  <Label htmlFor='include-metadata'>{t((m) => m.dialogs.invoices.exportDialog.options.includeMetadata)}</Label>
                 </div>
                 <div className={styles["radioRow"]}>
                   <Checkbox
@@ -234,7 +234,7 @@ export default function ExportDialog(): React.JSX.Element {
                     // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeProducts", checked === true)}
                   />
-                  <Label htmlFor='include-items'>{t("options.includeProducts")}</Label>
+                  <Label htmlFor='include-items'>{t((m) => m.dialogs.invoices.exportDialog.options.includeProducts)}</Label>
                 </div>
                 <div className={styles["radioRow"]}>
                   <Checkbox
@@ -244,7 +244,7 @@ export default function ExportDialog(): React.JSX.Element {
                     // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                     onCheckedChange={(checked) => handleOptionsChange("includeMerchant", checked === true)}
                   />
-                  <Label htmlFor='include-merchant'>{t("options.includeMerchant")}</Label>
+                  <Label htmlFor='include-merchant'>{t((m) => m.dialogs.invoices.exportDialog.options.includeMerchant)}</Label>
                 </div>
               </div>
 
@@ -264,14 +264,14 @@ export default function ExportDialog(): React.JSX.Element {
                         })
                       }
                     />
-                    <Label htmlFor='csv-include-headers'>{t("options.csv.includeHeaders")}</Label>
+                    <Label htmlFor='csv-include-headers'>{t((m) => m.dialogs.invoices.exportDialog.options.csv.includeHeaders)}</Label>
                   </div>
                   <div className={styles["delimiterGroup"]}>
-                    <Label htmlFor='csv-delimiter'>{t("options.csv.delimiterLabel")}</Label>
+                    <Label htmlFor='csv-delimiter'>{t((m) => m.dialogs.invoices.exportDialog.options.csv.delimiterLabel)}</Label>
                     <Input
                       className={styles["delimiterInput"]}
                       id='csv-delimiter'
-                      placeholder={t("options.csv.delimiterPlaceholder")}
+                      placeholder={t((m) => m.dialogs.invoices.exportDialog.options.csv.delimiterPlaceholder)}
                       value={exportOptions.csvOptions?.delimiter ?? ","}
                       // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                       onChange={(e) =>
@@ -294,7 +294,7 @@ export default function ExportDialog(): React.JSX.Element {
                       // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                       onCheckedChange={(checked) => handleOptionsChange("jsonOptions", {prettyPrint: checked === true})}
                     />
-                    <Label htmlFor='json-pretty-print'>{t("options.json.prettyPrint")}</Label>
+                    <Label htmlFor='json-pretty-print'>{t((m) => m.dialogs.invoices.exportDialog.options.json.prettyPrint)}</Label>
                   </div>
                 </div>
               )}
@@ -304,7 +304,7 @@ export default function ExportDialog(): React.JSX.Element {
           {/* File Size Estimate */}
           <div className={styles["estimate"]}>
             <p className={styles["estimateText"]}>
-              {t("estimate.label")} <strong>~{estimatedSizeKB} KB</strong>
+              {t((m) => m.dialogs.invoices.exportDialog.estimate.label)} <strong>~{estimatedSizeKB} KB</strong>
             </p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function ExportDialog(): React.JSX.Element {
           <Button
             variant='outline'
             onClick={close}>
-            {t("buttons.cancel")}
+            {t((m) => m.dialogs.invoices.exportDialog.buttons.cancel)}
           </Button>
           {exportOptions.format === "json" && (
             <Button
@@ -323,12 +323,12 @@ export default function ExportDialog(): React.JSX.Element {
               {copied ? (
                 <>
                   <TbCheck className={styles["formatIcon"]} />
-                  {t("buttons.copied")}
+                  {t((m) => m.dialogs.invoices.exportDialog.buttons.copied)}
                 </>
               ) : (
                 <>
                   <TbCopy className={styles["formatIcon"]} />
-                  {t("buttons.copy")}
+                  {t((m) => m.dialogs.invoices.exportDialog.buttons.copy)}
                 </>
               )}
             </Button>
@@ -337,7 +337,7 @@ export default function ExportDialog(): React.JSX.Element {
             onClick={handleExport}
             className={styles["exportButton"]}>
             <TbDownload className={styles["formatIcon"]} />
-            {t("buttons.export")}
+            {t((m) => m.dialogs.invoices.exportDialog.buttons.export)}
           </Button>
         </DialogFooter>
       </DialogContent>

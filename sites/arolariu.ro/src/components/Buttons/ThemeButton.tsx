@@ -14,7 +14,7 @@
  */
 
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useTheme} from "next-themes";
 import {useCallback, useEffect, useState} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
@@ -87,7 +87,7 @@ const SunIcon = (): React.JSX.Element => (
 export default function ThemeButton(): React.JSX.Element {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
-  const t = useTranslations("Common.accessibility");
+  const t = useTranslations();
 
   useEffect(() => {
     setMounted(true);
@@ -110,7 +110,7 @@ export default function ThemeButton(): React.JSX.Element {
     <motion.button
       className={styles["themeButton"]}
       onClick={handleSetTheme}
-      aria-label={t("toggleTheme")}
+      aria-label={t((m) => m.shared.accessibility.toggleTheme)}
       whileTap={{scale: 0.95}}>
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </motion.button>

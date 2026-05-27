@@ -17,14 +17,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbArrowLeft, TbArrowRight, TbDownload, TbRotateClockwise, TbZoomIn, TbZoomOut, TbZoomReset} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 
 export function ReceiptScanCard(): React.JSX.Element {
-  const t = useTranslations("IMS--Cards.receiptScanCard");
+  const t = useTranslations();
   const {invoice} = useInvoiceContext();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentScanIndex, setCurrentScanIndex] = useState<number>(0);
@@ -159,7 +159,7 @@ export function ReceiptScanCard(): React.JSX.Element {
       <Card className={styles["card"]}>
         <CardHeader>
           <CardTitle className={styles["cardTitle"]}>
-            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
+            {totalScans > 1 ? t((m) => m.cards.invoices.receiptScanCard.titleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)}) : t((m) => m.cards.invoices.receiptScanCard.title)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -183,7 +183,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={currentScanSrc}
-                      alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
+                      alt={t((m) => m.cards.invoices.receiptScanCard.scanAlt, {index: String(currentScanIndex + 1)})}
                       width={400}
                       height={600}
                       loading='lazy'
@@ -198,8 +198,8 @@ export function ReceiptScanCard(): React.JSX.Element {
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
-                    ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)})
-                    : t("dialogTitle")}
+                    ? t((m) => m.cards.invoices.receiptScanCard.dialogTitleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    : t((m) => m.cards.invoices.receiptScanCard.dialogTitle)}
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["dialogImageContainer"]}>
@@ -214,13 +214,13 @@ export function ReceiptScanCard(): React.JSX.Element {
                   onMouseMove={handleDialogMouseMove}
                   role='button'
                   tabIndex={0}
-                  aria-label={t("controls.toggleZoom")}
+                  aria-label={t((m) => m.cards.invoices.receiptScanCard.controls.toggleZoom)}
                   onKeyDown={handleDialogImageKeyDown}>
                   {/* Plain <img> with direct HTTP GET — bypasses next/image optimization. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={currentScanSrc}
-                    alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
+                    alt={t((m) => m.cards.invoices.receiptScanCard.scanAltFullSize, {index: String(currentScanIndex + 1)})}
                     width={800}
                     height={1200}
                     loading='lazy'
@@ -241,12 +241,12 @@ export function ReceiptScanCard(): React.JSX.Element {
                           onClick={handleDialogResetZoom}
                           disabled={dialogZoomLevel === 1}>
                           <TbZoomReset className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t("controls.reset")}</span>
+                          <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.controls.reset)}</span>
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p>{t("controls.reset")}</p>
+                      <p>{t((m) => m.cards.invoices.receiptScanCard.controls.reset)}</p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>
@@ -257,12 +257,12 @@ export function ReceiptScanCard(): React.JSX.Element {
                           size='sm'
                           onClick={handleDialogRotate}>
                           <TbRotateClockwise className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t("controls.rotate")}</span>
+                          <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.controls.rotate)}</span>
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p>{t("controls.rotate")}</p>
+                      <p>{t((m) => m.cards.invoices.receiptScanCard.controls.rotate)}</p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>
@@ -273,12 +273,12 @@ export function ReceiptScanCard(): React.JSX.Element {
                           size='sm'
                           onClick={handleDownload}>
                           <TbDownload className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t("controls.download")}</span>
+                          <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.controls.download)}</span>
                         </Button>
                       }
                     />
                     <TooltipContent>
-                      <p>{t("controls.download")}</p>
+                      <p>{t((m) => m.cards.invoices.receiptScanCard.controls.download)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -290,17 +290,17 @@ export function ReceiptScanCard(): React.JSX.Element {
                       onClick={handlePreviousScan}
                       disabled={currentScanIndex === 0}>
                       <TbArrowLeft className={styles["controlIcon"]} />
-                      <span className={styles["controlLabelDesktop"]}>{t("navigation.previous")}</span>
+                      <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.navigation.previous)}</span>
                     </Button>
                     <span className={styles["scanCounter"]}>
-                      {currentScanIndex + 1} {t("navigation.of")} {totalScans}
+                      {currentScanIndex + 1} {t((m) => m.cards.invoices.receiptScanCard.navigation.of)} {totalScans}
                     </span>
                     <Button
                       variant='secondary'
                       size='sm'
                       onClick={handleNextScan}
                       disabled={currentScanIndex === totalScans - 1}>
-                      <span className={styles["controlLabelDesktop"]}>{t("navigation.next")}</span>
+                      <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.navigation.next)}</span>
                       <TbArrowRight className={styles["controlIcon"]} />
                     </Button>
                   </div>
@@ -325,7 +325,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   }
                 />
                 <TooltipContent>
-                  <p>{t("controls.zoomIn")}</p>
+                  <p>{t((m) => m.cards.invoices.receiptScanCard.controls.zoomIn)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -341,7 +341,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   }
                 />
                 <TooltipContent>
-                  <p>{t("controls.zoomOut")}</p>
+                  <p>{t((m) => m.cards.invoices.receiptScanCard.controls.zoomOut)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -357,7 +357,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   }
                 />
                 <TooltipContent>
-                  <p>{t("controls.reset")}</p>
+                  <p>{t((m) => m.cards.invoices.receiptScanCard.controls.reset)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -372,7 +372,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   }
                 />
                 <TooltipContent>
-                  <p>{t("controls.rotate")}</p>
+                  <p>{t((m) => m.cards.invoices.receiptScanCard.controls.rotate)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -387,7 +387,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   }
                 />
                 <TooltipContent>
-                  <p>{t("controls.download")}</p>
+                  <p>{t((m) => m.cards.invoices.receiptScanCard.controls.download)}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -405,12 +405,12 @@ export function ReceiptScanCard(): React.JSX.Element {
                         className={styles["navButton"]}
                         onClick={handlePreviousScan}>
                         <TbArrowLeft className={styles["navIcon"]} />
-                        {t("buttons.previousScan")}
+                        {t((m) => m.cards.invoices.receiptScanCard.buttons.previousScan)}
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t("tooltips.previousScan")}</p>
+                    <p>{t((m) => m.cards.invoices.receiptScanCard.tooltips.previousScan)}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -422,13 +422,13 @@ export function ReceiptScanCard(): React.JSX.Element {
                         variant='secondary'
                         className={styles["navButton"]}
                         onClick={handleNextScan}>
-                        {t("buttons.nextScan")}
+                        {t((m) => m.cards.invoices.receiptScanCard.buttons.nextScan)}
                         <TbArrowRight className={styles["navIcon"]} />
                       </Button>
                     }
                   />
                   <TooltipContent>
-                    <p>{t("tooltips.nextScan")}</p>
+                    <p>{t((m) => m.cards.invoices.receiptScanCard.tooltips.nextScan)}</p>
                   </TooltipContent>
                 </Tooltip>
               )}

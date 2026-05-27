@@ -3,7 +3,7 @@
 import {useUserInformation} from "@/hooks";
 import {useInvoicesStore} from "@/stores";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
@@ -28,7 +28,7 @@ import {SpendingTrendChart} from "./charts/SpendingTrendChart";
 import styles from "./InvoiceAnalytics.module.scss";
 
 export function InvoiceAnalytics(): React.JSX.Element {
-  const t = useTranslations("IMS--View.invoiceAnalytics");
+  const t = useTranslations();
   const {invoice, merchant} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},
@@ -61,21 +61,21 @@ export function InvoiceAnalytics(): React.JSX.Element {
         <div className={styles["tabHeader"]}>
           <div className={styles["sectionTitle"]}>
             <TbChartBar className={styles["sectionIcon"]} />
-            <h2 className={styles["sectionTitleText"]}>{t("title")}</h2>
+            <h2 className={styles["sectionTitleText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.title)}</h2>
           </div>
           <TabsList className={styles["tabsList"]}>
             <TabsTrigger
               value='current'
               className={styles["tabsTrigger"]}>
               <TbChartBar className={styles["tabIcon"]} />
-              {t("tabs.current")}
+              {t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.tabs.current)}
             </TabsTrigger>
             {Boolean(isOwner) && (
               <TabsTrigger
                 value='compare'
                 className={styles["tabsTrigger"]}>
                 <TbTrendingUp className={styles["tabIcon"]} />
-                {t("tabs.compare")}
+                {t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.tabs.compare)}
               </TabsTrigger>
             )}
           </TabsList>
@@ -163,8 +163,8 @@ export function InvoiceAnalytics(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbTrendingUp className={styles["emptyIcon"]} />
-                <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
-                <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
+                <h3 className={styles["emptyTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.title)}</h3>
+                <p className={styles["emptyDescription"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.description)}</p>
               </div>
             )}
           </TabsContent>

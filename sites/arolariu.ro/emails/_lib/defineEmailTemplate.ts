@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 import type {ReactElement} from "react";
 
 import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTranslator, loadMessages} from "./i18n";
@@ -15,14 +16,14 @@ import {createEmailTranslator, DEFAULT_LOCALE, type EmailLocale, type EmailTrans
  * do not call `loadMessages` themselves; doing so re-parses the bundle and
  * defeats the optimisation.
  *
- * `EmailLayout` resolves its own `email.layout`-scoped translator via the
+ * `EmailLayout` resolves its own `emails.layout`-scoped translator via the
  * memoised `getLayoutTranslator` helper, so no `tLayout` is threaded
  * through this context.
  */
 export type EmailRenderContext<P> = {
   /** Resolved locale (defaulted to `"en"` if the caller omitted it). */
   readonly locale: EmailLocale;
-  /** Translator scoped to the template's namespace, e.g. `"email.welcome"`. */
+  /** Translator scoped to the template's namespace, e.g. `"emails.welcome"`. */
   readonly t: EmailTranslator;
   /** The caller-supplied props, minus `locale`. */
   readonly props: P;
@@ -36,7 +37,7 @@ export type EmailRenderContext<P> = {
 export type EmailTemplateConfig<P> = {
   /**
    * Full next-intl namespace path — must point at a JSON object that
-   * contains a `subject` key. Example: `"email.welcome"`.
+   * contains a `subject` key. Example: `"emails.welcome"`.
    *
    * @remarks
    * The HOF reads this string when constructing the namespace-scoped
@@ -57,9 +58,9 @@ export type EmailTemplateConfig<P> = {
    * render: ({locale, t, props}) => (
    *   <EmailLayout
    *     locale={locale}
-   *     preview={t("preview", {name: props.username})}
-   *     heading={t("heading")}>
-   *     <Text>{t("greeting", {name: props.username})}</Text>
+   *     preview={t(selectorFromPath("emails.welcome.preview"), {name: props.username})}
+   *     heading={t(selectorFromPath("emails.welcome.heading"))}>
+   *     <Text>{t(selectorFromPath("emails.welcome.greeting"), {name: props.username})}</Text>
    *   </EmailLayout>
    * )
    * ```
@@ -129,15 +130,15 @@ export type EmailTemplate<P> = ((props: P & {readonly locale?: EmailLocale}) => 
  * };
  *
  * const WelcomeEmail = defineEmailTemplate<Props>({
- *   namespace: "email.welcome",
+ *   namespace: "emails.welcome",
  *   render: ({locale, t, props}) => {
  *     const name = props.username?.trim() || "there";
  *     return (
  *       <EmailLayout
  *         locale={locale}
- *         preview={t("preview", {brand: BRAND.name, name})}
- *         heading={t("heading", {brand: BRAND.name})}>
- *         <Text>{t("greeting", {name})}</Text>
+ *         preview={t(selectorFromPath("emails.welcome.preview"), {brand: BRAND.name, name})}
+ *         heading={t(selectorFromPath("emails.welcome.heading"), {brand: BRAND.name})}>
+ *         <Text>{t(selectorFromPath("emails.welcome.greeting"), {name})}</Text>
  *       </EmailLayout>
  *     );
  *   },
@@ -151,7 +152,7 @@ export type EmailTemplate<P> = ((props: P & {readonly locale?: EmailLocale}) => 
  * @example Reading the namespace from outside
  * ```ts
  * import WelcomeEmail from "./WelcomeEmail";
- * console.log(WelcomeEmail.namespace);            // "email.welcome"
+ * console.log(WelcomeEmail.namespace);            // "emails.welcome"
  * const subject = await WelcomeEmail.getSubject("ro", {name: "Alex"});
  * ```
  */
@@ -174,7 +175,7 @@ export function defineEmailTemplate<P>(config: EmailTemplateConfig<P>): EmailTem
   ): Promise<string> => {
     const messages = await loadMessages(locale);
     const t = createEmailTranslator({locale, messages, namespace: config.namespace});
-    return t("subject", vars);
+    return t(selectorFromPath(`${config.namespace}.subject`), vars);
   };
 
   return Object.assign(component, {

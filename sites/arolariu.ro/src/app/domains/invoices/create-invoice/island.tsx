@@ -15,7 +15,7 @@
 
 import {Button, Card, CardContent} from "@arolariu/components";
 import {motion, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {TbArrowLeft} from "react-icons/tb";
 import InvoiceDetailsForm from "./_components/InvoiceDetailsForm";
@@ -69,7 +69,7 @@ function WizardContent(): React.JSX.Element {
  * Navigation buttons component.
  */
 function WizardNavigation(): React.JSX.Element {
-  const t = useTranslations("IMS--Create");
+  const t = useTranslations();
   const {currentStep, canGoNext, goBack, goNext, isCreating} = useCreateInvoiceContext();
 
   const showBack = currentStep !== "select-scans";
@@ -83,7 +83,7 @@ function WizardNavigation(): React.JSX.Element {
           onClick={goBack}
           disabled={isCreating}>
           <TbArrowLeft />
-          {t("navigation.back")}
+          {t((m) => m.forms.invoices.createInvoice.navigation.back)}
         </Button>
       ) : null}
 
@@ -92,7 +92,7 @@ function WizardNavigation(): React.JSX.Element {
           onClick={goNext}
           disabled={!canGoNext || isCreating}
           className={styles["nextButton"]}>
-          {t("navigation.next")}
+          {t((m) => m.forms.invoices.createInvoice.navigation.next)}
         </Button>
       ) : null}
     </div>
@@ -103,20 +103,20 @@ function WizardNavigation(): React.JSX.Element {
  * Empty state component when no scans are available.
  */
 function EmptyState(): React.JSX.Element {
-  const t = useTranslations("IMS--Create");
+  const t = useTranslations();
 
   return (
     <Card className={styles["emptyState"]}>
       <CardContent className={styles["emptyStateContent"]}>
         <div className={styles["emptyStateIcon"]}>📄</div>
-        <h2 className={styles["emptyStateTitle"]}>{t("emptyState.title")}</h2>
-        <p className={styles["emptyStateDescription"]}>{t("emptyState.description")}</p>
+        <h2 className={styles["emptyStateTitle"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.title)}</h2>
+        <p className={styles["emptyStateDescription"]}>{t((m) => m.forms.invoices.createInvoice.emptyState.description)}</p>
         <div className={styles["emptyStateActions"]}>
           <Link href='/domains/invoices/upload-scans'>
-            <Button>{t("emptyState.uploadButton")}</Button>
+            <Button>{t((m) => m.forms.invoices.createInvoice.emptyState.uploadButton)}</Button>
           </Link>
           <Link href='/domains/invoices/view-scans'>
-            <Button variant='outline'>{t("emptyState.viewScansButton")}</Button>
+            <Button variant='outline'>{t((m) => m.forms.invoices.createInvoice.emptyState.viewScansButton)}</Button>
           </Link>
         </div>
       </CardContent>
@@ -128,7 +128,7 @@ function EmptyState(): React.JSX.Element {
  * Main wizard component wrapped with context.
  */
 function CreateInvoiceWizard(): React.JSX.Element {
-  const t = useTranslations("IMS--Create");
+  const t = useTranslations();
   const {hasScans} = useCreateInvoiceContext();
 
   if (!hasScans) {
@@ -143,10 +143,10 @@ function CreateInvoiceWizard(): React.JSX.Element {
           href='/domains/invoices'
           className={styles["backLink"]}>
           <TbArrowLeft />
-          {t("header.backToInvoices")}
+          {t((m) => m.forms.invoices.createInvoice.header.backToInvoices)}
         </Link>
-        <h1 className={styles["title"]}>{t("header.title")}</h1>
-        <p className={styles["subtitle"]}>{t("header.subtitle")}</p>
+        <h1 className={styles["title"]}>{t((m) => m.forms.invoices.createInvoice.header.title)}</h1>
+        <p className={styles["subtitle"]}>{t((m) => m.forms.invoices.createInvoice.header.subtitle)}</p>
       </div>
 
       {/* Step Indicator */}

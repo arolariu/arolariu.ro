@@ -1,9 +1,11 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Avatar, AvatarFallback} from "@arolariu/components/avatar";
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbPackage} from "react-icons/tb";
 import styles from "./Contributors.module.scss";
@@ -21,7 +23,7 @@ const gradientClasses = [
  * Top contributors section showing major package authors.
  */
 export default function Contributors(): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.contributors");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -37,9 +39,9 @@ export default function Contributors(): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t("title")}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.contributors.title)}</span>
           </h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.sections.legal.acknowledgements.contributors.subtitle)}</p>
         </motion.div>
 
         {/* Contributors grid */}
@@ -55,7 +57,7 @@ export default function Contributors(): React.JSX.Element {
                   {/* Avatar */}
                   <Avatar className={styles["avatar"]}>
                     <AvatarFallback className={`${styles["avatarFallback"]} ${gradientClasses[index]}`}>
-                      {t(`items.${key}.name`)
+                      {t(selectorFromPath(`Acknowledgements.contributors.items.${key}.name`))
                         .split(" ")
                         .slice(0, 2)
                         .map((n) => n.charAt(0))
@@ -64,16 +66,16 @@ export default function Contributors(): React.JSX.Element {
                   </Avatar>
 
                   {/* Name */}
-                  <h3 className={styles["contributorName"]}>{t(`items.${key}.name`)}</h3>
+                  <h3 className={styles["contributorName"]}>{t(selectorFromPath(`Acknowledgements.contributors.items.${key}.name`))}</h3>
 
                   {/* Package count */}
                   <div className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
-                    <span>{t("packages", {count: Number(t(`items.${key}.packages`))})}</span>
+                    <span>{t((m) => m.sections.legal.acknowledgements.contributors.packages, {count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`)))})}</span>
                   </div>
 
                   {/* Description */}
-                  <p className={styles["description"]}>{t(`items.${key}.description`)}</p>
+                  <p className={styles["description"]}>{t(selectorFromPath(`Acknowledgements.contributors.items.${key}.description`))}</p>
                 </CardContent>
               </Card>
             </motion.div>

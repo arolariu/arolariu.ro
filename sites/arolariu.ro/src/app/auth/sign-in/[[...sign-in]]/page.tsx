@@ -5,7 +5,8 @@
 
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderAuthSignInPage from "./island";
 import styles from "./page.module.scss";
 
@@ -13,13 +14,13 @@ import styles from "./page.module.scss";
  * Generates localized metadata for the sign-in page.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Auth.SignIn.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
 
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.pages.auth.signIn.metadata.title),
+    description: t((m) => m.pages.auth.signIn.metadata.description),
   });
 }
 

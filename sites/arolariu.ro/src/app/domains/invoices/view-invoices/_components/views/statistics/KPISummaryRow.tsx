@@ -8,7 +8,7 @@
 import {formatAmount} from "@/lib/utils.generic";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbBuildingStore, TbCurrencyDollar, TbReceipt, TbShoppingCart, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import type {KPIData} from "../../../_utils/statistics";
 import styles from "./KPISummaryRow.module.scss";
@@ -72,37 +72,37 @@ function KPICard({icon, label, value, subtitle, trend, index}: Readonly<KPICardP
  * @returns Row of animated KPI cards
  */
 export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.kpi");
+  const t = useTranslations();
 
   const kpiCards: Omit<KPICardProps, "index">[] = [
     {
       icon: <TbCurrencyDollar size={24} />,
-      label: t("totalSpending"),
+      label: t((m) => m.cards.invoices.statistics.kpi.totalSpending),
       value: `${formatAmount(data.totalSpending)} ${currency}`,
       subtitle: `${data.invoiceCount} invoices`,
       trend: null,
     },
     {
       icon: <TbReceipt size={24} />,
-      label: t("invoiceCount"),
+      label: t((m) => m.cards.invoices.statistics.kpi.invoiceCount),
       value: data.invoiceCount.toString(),
-      subtitle: t("avgPerInvoice", {
+      subtitle: t((m) => m.cards.invoices.statistics.kpi.avgPerInvoice, {
         amount: data.invoiceCount > 0 ? formatAmount(data.totalSpending / data.invoiceCount) : formatAmount(0),
       }),
       trend: null,
     },
     {
       icon: <TbBuildingStore size={24} />,
-      label: t("topMerchant"),
-      value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t("noneYet"),
-      subtitle: data.mostFrequentMerchant ? t("visits", {count: String(data.mostFrequentMerchant.count)}) : "",
+      label: t((m) => m.cards.invoices.statistics.kpi.topMerchant),
+      value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t((m) => m.cards.invoices.statistics.kpi.noneYet),
+      subtitle: data.mostFrequentMerchant ? t((m) => m.cards.invoices.statistics.kpi.visits, {count: String(data.mostFrequentMerchant.count)}) : "",
       trend: null,
     },
     {
       icon: <TbShoppingCart size={24} />,
-      label: t("averageItems"),
+      label: t((m) => m.cards.invoices.statistics.kpi.averageItems),
       value: formatAmount(data.averageItemsPerInvoice, "en-US", 1),
-      subtitle: t("acrossInvoices", {count: String(data.invoiceCount)}),
+      subtitle: t((m) => m.cards.invoices.statistics.kpi.acrossInvoices, {count: String(data.invoiceCount)}),
       trend: null,
     },
   ];

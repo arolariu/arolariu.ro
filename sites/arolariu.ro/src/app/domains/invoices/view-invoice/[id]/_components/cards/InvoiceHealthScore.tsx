@@ -1,3 +1,6 @@
+"use client";
+
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Invoice Health Score component for view-invoice domain.
  * @module domains/invoices/view-invoice/[id]/components/cards/InvoiceHealthScore
@@ -36,7 +39,6 @@
  * @see {@link ProductMetadata} for completeness flags
  */
 
-"use client";
 
 import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 import {
@@ -50,7 +52,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback, useMemo, useState} from "react";
 import {TbAlertCircle, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink, TbSparkles, TbX} from "react-icons/tb";
@@ -162,7 +164,7 @@ const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  */
 export function InvoiceHealthScore(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
-  const t = useTranslations("IMS--View.healthScore");
+  const t = useTranslations();
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(true);
 
@@ -373,8 +375,8 @@ export function InvoiceHealthScore(): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("subtitle")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.subtitle)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         {/* Circular Progress */}
@@ -416,18 +418,18 @@ export function InvoiceHealthScore(): React.JSX.Element {
         </div>
 
         {/* Status label */}
-        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>{t(`status.${status.key}`)}</div>
+        <div className={`${styles["statusLabel"]} ${styles[status.color]}`}>{t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.status.${status.key}`))}</div>
 
         {/* Score breakdown */}
         <div className={styles["scoreBreakdown"]}>
-          {score} / {maxScore} {t("points")}
+          {score} / {maxScore} {t((m) => m.pages.invoices.viewInvoice.healthScore.points)}
         </div>
 
         {/* Improvement Suggestions */}
         {suggestions.length > 0 && showSuggestions ? (
           <div className={styles["suggestionsContainer"]}>
             <div className={styles["suggestionsHeader"]}>
-              <h4 className={styles["suggestionsTitle"]}>{t("suggestions.title")}</h4>
+              <h4 className={styles["suggestionsTitle"]}>{t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.title)}</h4>
               <Button
                 variant='ghost'
                 size='sm'
@@ -444,12 +446,12 @@ export function InvoiceHealthScore(): React.JSX.Element {
                   <suggestion.icon className={styles["suggestionIcon"]} />
                   <span className={styles["suggestionText"]}>
                     {suggestion.params
-                      ? t.rich(`suggestions.${suggestion.key}` as "suggestions.incompleteProducts", {
+                      ? t.rich(selectorFromPath(`pages.invoices.viewInvoice.healthScore.suggestions.${suggestion.key}`), {
                           count: String(suggestion.params["count"] ?? ""),
                           // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
                           strong: (chunks) => <strong>{chunks}</strong>,
                         })
-                      : t(`suggestions.${suggestion.key}` as "suggestions.noProducts")}
+                      : t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.suggestions.${suggestion.key}`))}
                   </span>
                   {suggestion.link ? (
                     <Button
@@ -459,7 +461,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                       className={styles["suggestionAction"]}>
                       <Link href={suggestion.link}>
                         <TbExternalLink className={styles["actionIcon"]} />
-                        {t("suggestions.fix")}
+                        {t((m) => m.pages.invoices.viewInvoice.healthScore.suggestions.fix)}
                       </Link>
                     </Button>
                   ) : null}
@@ -479,7 +481,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                 variant='ghost'
                 className={styles["toggleButton"]}>
                 {isExpanded ? <TbChevronUp className={styles["chevronIcon"]} /> : <TbChevronDown className={styles["chevronIcon"]} />}
-                {isExpanded ? t("hideDetails") : t("showDetails")}
+                {isExpanded ? t((m) => m.pages.invoices.viewInvoice.healthScore.hideDetails) : t((m) => m.pages.invoices.viewInvoice.healthScore.showDetails)}
               </Button>
             }
           />
@@ -494,7 +496,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
                   </div>
                   <div className={styles["factorContent"]}>
                     <span className={factor.achieved ? styles["achievedText"] : styles["missingText"]}>
-                      {t(`factors.${factor.key}`)}
+                      {t(selectorFromPath(`pages.invoices.viewInvoice.healthScore.factors.${factor.key}`))}
                       {factor.detail ? <span className={styles["factorDetail"]}> ({factor.detail})</span> : null}
                     </span>
                     <span className={styles["factorPoints"]}>
@@ -516,7 +518,7 @@ export function InvoiceHealthScore(): React.JSX.Element {
               className={styles["ctaButton"]}>
               <Link href={`/domains/invoices/edit-invoice/${invoice.id}`}>
                 <TbSparkles className={styles["ctaIcon"]} />
-                {t("cta.edit")}
+                {t((m) => m.pages.invoices.viewInvoice.healthScore.cta.edit)}
               </Link>
             </Button>
           </div>

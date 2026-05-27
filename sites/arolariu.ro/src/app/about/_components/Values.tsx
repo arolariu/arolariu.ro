@@ -1,8 +1,10 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbAccessible, TbBook, TbCode, TbRocket, TbShield, TbUsers} from "react-icons/tb";
 import styles from "./Values.module.scss";
@@ -30,7 +32,7 @@ const values = [
  * Values section displaying the core values that guide development.
  */
 export default function Values(): React.JSX.Element {
-  const t = useTranslations("About.Hub.values");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -45,8 +47,8 @@ export default function Values(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.values.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.about.hub.values.subtitle)}</p>
         </motion.div>
 
         {/* Values grid */}
@@ -63,9 +65,9 @@ export default function Values(): React.JSX.Element {
                     <div className={styles[colorClassMap[value.colorKey]]}>
                       <value.icon className={styles["icon"]} />
                     </div>
-                    <h3 className={styles["cardTitle"]}>{t(`items.${value.key}.title`)}</h3>
+                    <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.values.items.${value.key}.title`))}</h3>
                   </div>
-                  <p className={styles["cardDescription"]}>{t(`items.${value.key}.description`)}</p>
+                  <p className={styles["cardDescription"]}>{t(selectorFromPath(`About.Hub.values.items.${value.key}.description`))}</p>
                 </CardContent>
               </Card>
             </motion.div>

@@ -13,7 +13,7 @@ import {
   PieChart,
   ResponsiveContainer,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
 
@@ -42,7 +42,7 @@ type CustomLegendProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("IMS--View.spendingByCategoryChart");
+  const t = useTranslations();
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -52,7 +52,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.tooltip.itemCount, {count: data.count})}</p>
     </div>
   );
 }
@@ -76,7 +76,7 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
 }
 
 export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--View.spendingByCategoryChart");
+  const t = useTranslations();
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
@@ -98,8 +98,8 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -137,7 +137,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
           <p className={styles["totalAmount"]}>
             {total.toFixed(2)} {currency}
           </p>
-          <p className={styles["totalLabel"]}>{t("totalLabel")}</p>
+          <p className={styles["totalLabel"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.totalLabel)}</p>
         </div>
       </CardContent>
     </Card>

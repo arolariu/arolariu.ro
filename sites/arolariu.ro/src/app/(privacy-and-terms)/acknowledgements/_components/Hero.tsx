@@ -2,7 +2,7 @@
 
 import {Badge} from "@arolariu/components/badge";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbHeart, TbPackage} from "react-icons/tb";
 import styles from "./Hero.module.scss";
@@ -15,7 +15,7 @@ type Props = Readonly<{
  * Hero section for the Acknowledgements page with animated background.
  */
 export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Acknowledgements.hero");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true});
 
@@ -66,7 +66,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
             variant='secondary'
             className={styles["badge"]}>
             <TbHeart className={styles["badgeIcon"]} />
-            {t("badge")}
+            {t((m) => m.sections.legal.acknowledgements.hero.badge)}
           </Badge>
         </motion.div>
 
@@ -76,7 +76,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.6}}>
-          <span className={styles["titleGradient"]}>{t("title")}</span>
+          <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.hero.title)}</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -85,7 +85,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.4, duration: 0.6}}>
-          {t("subtitle")}
+          {t((m) => m.sections.legal.acknowledgements.hero.subtitle)}
         </motion.p>
 
         {/* Last updated */}
@@ -95,7 +95,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.6, duration: 0.5}}>
           <TbPackage className={styles["lastUpdatedIcon"]} />
-          <span>{t("lastUpdate", {date: lastUpdatedDate})}</span>
+          <span>{t((m) => m.sections.legal.acknowledgements.hero.lastUpdate, {date: lastUpdatedDate})}</span>
         </motion.div>
       </motion.div>
     </section>

@@ -4,7 +4,7 @@
  */
 
 import {Alert, AlertDescription, AlertTitle, Button, Input, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import React from "react";
 import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShieldOff} from "react-icons/tb";
 import QRCode from "react-qr-code";
@@ -57,7 +57,7 @@ export interface PublicModeProps {
  * @returns The link and QR code tabs UI
  */
 export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}: ShareLinkAndQRTabsProps): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPublic");
+  const t = useTranslations();
   return (
     <Tabs
       defaultValue='link'
@@ -67,13 +67,13 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
           value='link'
           className={styles["tabsTriggerCursor"]}>
           <TbCopy className={styles["tabIcon"]} />
-          {t("tabs.directLink")}
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.tabs.directLink)}
         </TabsTrigger>
         <TabsTrigger
           value='qr'
           className={styles["tabsTriggerCursor"]}>
           <TbQrcode className={styles["tabIcon"]} />
-          {t("tabs.qrCode")}
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.tabs.qrCode)}
         </TabsTrigger>
       </TabsList>
 
@@ -93,7 +93,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             {copied ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
           </Button>
         </div>
-        <p className={styles["linkHint"]}>{t("hints.link")}</p>
+        <p className={styles["linkHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.hints.link)}</p>
       </TabsContent>
 
       <TabsContent
@@ -110,13 +110,13 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
               level='L'
             />
           </div>
-          <p className={styles["qrHint"]}>{t("hints.qr")}</p>
+          <p className={styles["qrHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.hints.qr)}</p>
           <Button
             variant='outline'
             onClick={onCopyQRCode}
             className={styles["buttonFull"]}>
             <TbCopy className={styles["tabIcon"]} />
-            {t("copyQrImage")}
+            {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.copyQrImage)}
           </Button>
         </div>
       </TabsContent>
@@ -144,16 +144,16 @@ export function AlreadyPublicMode({
   onRevokeAccess,
   isRevoking,
 }: AlreadyPublicModeProps): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPublic");
+  const t = useTranslations();
   return (
     <div className={styles["body"]}>
       <Alert
         variant='destructive'
         className={styles["alertOrange"]}>
         <TbGlobe className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertOrangeTitle"]}>{t("alreadyPublic.title")}</AlertTitle>
+        <AlertTitle className={styles["alertOrangeTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.title)}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("alreadyPublic.description", {
+          {t.rich((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.description, {
             // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
             strong: (chunks) => <strong>{chunks}</strong>,
           })}
@@ -174,9 +174,9 @@ export function AlreadyPublicMode({
           disabled={isRevoking}
           className={styles["buttonFull"]}>
           <TbShieldOff className={styles["tabIcon"]} />
-          {isRevoking ? t("alreadyPublic.revoking") : t("alreadyPublic.revoke")}
+          {isRevoking ? t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoking) : t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revoke)}
         </Button>
-        <p className={styles["revokeHint"]}>{t("alreadyPublic.revokeHint")}</p>
+        <p className={styles["revokeHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.alreadyPublic.revokeHint)}</p>
       </div>
     </div>
   );
@@ -195,7 +195,7 @@ export function AlreadyPublicMode({
  * @returns The public sharing mode UI
  */
 export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}: PublicModeProps): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.shareInvoiceDialogPublic");
+  const t = useTranslations();
   return (
     <div className={styles["body"]}>
       <Button
@@ -204,16 +204,16 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         onClick={onBack}
         className={styles["backButtonMl"]}>
         <TbArrowLeft className={styles["backIcon"]} />
-        {t("backToOptions")}
+        {t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.backToOptions)}
       </Button>
 
       <Alert
         variant='destructive'
         className={styles["alertOrange"]}>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertOrangeTitle"]}>{t("warning.title")}</AlertTitle>
+        <AlertTitle className={styles["alertOrangeTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPublic.warning.title)}</AlertTitle>
         <AlertDescription className={styles["alertOrangeDesc"]}>
-          {t.rich("warning.description", {
+          {t.rich((m) => m.dialogs.invoices.shareInvoiceDialogPublic.warning.description, {
             // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
             strong: (chunks) => <strong>{chunks}</strong>,
           })}

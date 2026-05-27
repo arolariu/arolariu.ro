@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been made public.
  * @module emails/invoices/InvoiceHasBeenMadePublicEmail
@@ -27,7 +28,7 @@ import {defineEmailTemplate} from "../_lib/defineEmailTemplate";
  * Properties for the InvoiceHasBeenMadePublicEmail component.
  *
  * @remarks
- * All fields are required to provide a complete summary of the invoice in the email.
+ * All fields are required to provide a complete summary of the invoice in the emails.
  */
 type Props = {
   /** The username of the recipient */
@@ -54,11 +55,11 @@ type Props = {
  *
  * **Design**: Uses shared email primitives and includes a QR code for quick access.
  *
- * @param props - The invoice details to be displayed in the email.
+ * @param props - The invoice details to be displayed in the emails.
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceMadePublic",
+  namespace: "emails.invoiceMadePublic",
   render: ({locale, t, props}) => {
     const {username, invoiceId, invoiceName, merchantName, totalAmount, currency, dateCreated} = props;
 
@@ -69,26 +70,26 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {invoiceName})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceMadePublic.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceMadePublic.preview"), {invoiceName})}
+        badge={t(selectorFromPath("emails.invoiceMadePublic.badge"))}
+        heading={t(selectorFromPath("emails.invoiceMadePublic.heading"))}
+        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("emails.invoiceMadePublic.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceMadePublic.greeting"), {name: safeName})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceMadePublic.intro"))}</Text>
         <KeyValueTable
-          title={t("detailsTitle")}
+          title={t(selectorFromPath("emails.invoiceMadePublic.detailsTitle"))}
           items={[
-            {label: t("details.invoiceName"), value: invoiceName},
-            {label: t("details.invoiceId"), value: invoiceId},
-            {label: t("details.merchant"), value: merchantName},
-            {label: t("details.total"), value: `${totalAmount} ${currency}`.trim()},
-            {label: t("details.created"), value: dateCreated},
-            {label: t("details.access"), value: t("accessValue")},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.invoiceName")), value: invoiceName},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.invoiceId")), value: invoiceId},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.merchant")), value: merchantName},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.total")), value: `${totalAmount} ${currency}`.trim()},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.created")), value: dateCreated},
+            {label: t(selectorFromPath("emails.invoiceMadePublic.details.access")), value: t(selectorFromPath("emails.invoiceMadePublic.accessValue"))},
           ]}
         />
         <Section
@@ -100,10 +101,10 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             margin: "18px 0",
             textAlign: "center",
           }}>
-          <Text style={{...EmailParagraphStyles, margin: "0 0 10px", fontSize: "14px", fontWeight: "700"}}>{t("qrTitle")}</Text>
+          <Text style={{...EmailParagraphStyles, margin: "0 0 10px", fontSize: "14px", fontWeight: "700"}}>{t(selectorFromPath("emails.invoiceMadePublic.qrTitle"))}</Text>
           <Img
             src={qrUrl}
-            alt={t("qrAlt")}
+            alt={t(selectorFromPath("emails.invoiceMadePublic.qrAlt"))}
             style={{
               display: "block",
               margin: "0 auto",
@@ -113,10 +114,10 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
               border: `1px solid ${EMAIL_COLORS.border}`,
             }}
           />
-          <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>{t("qrSubText")}</Text>
+          <Text style={{...EmailParagraphStyles, margin: "10px 0 0", fontSize: "12px", color: EMAIL_COLORS.muted}}>{t(selectorFromPath("emails.invoiceMadePublic.qrSubText"))}</Text>
         </Section>
-        <EmailCard title={t("howToShareTitle")}>
-          <BulletList items={[t("howToShare.0"), t("howToShare.1"), t("howToShare.2")]} />
+        <EmailCard title={t(selectorFromPath("emails.invoiceMadePublic.howToShareTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.invoiceMadePublic.howToShare.item0")), t(selectorFromPath("emails.invoiceMadePublic.howToShare.item1")), t(selectorFromPath("emails.invoiceMadePublic.howToShare.item2"))]} />
         </EmailCard>
         <Section
           style={{
@@ -127,14 +128,14 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
             margin: "18px 0",
           }}>
           <Text style={{...EmailParagraphStyles, margin: "0 0 6px", fontSize: "14px", fontWeight: "700", color: EMAIL_COLORS.warningInk}}>
-            {t("privacyNoticeTitle")}
+            {t(selectorFromPath("emails.invoiceMadePublic.privacyNoticeTitle"))}
           </Text>
           <Text style={{...EmailParagraphStyles, margin: "0", fontSize: "14px", color: EMAIL_COLORS.warningInk}}>
-            {t("privacyNoticeBody")}
+            {t(selectorFromPath("emails.invoiceMadePublic.privacyNoticeBody"))}
           </Text>
         </Section>
         <Text style={EmailParagraphStyles}>
-          {t("directLinkLabel")}{" "}
+          {t(selectorFromPath("emails.invoiceMadePublic.directLinkLabel"))}{" "}
           <Link
             href={invoiceUrl}
             style={EmailLinkStyles}>
@@ -142,7 +143,7 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
           </Link>
         </Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.invoiceMadePublic.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -153,9 +154,9 @@ const InvoiceHasBeenMadePublicEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.invoiceMadePublic.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceMadePublic.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

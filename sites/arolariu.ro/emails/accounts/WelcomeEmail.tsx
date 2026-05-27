@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Welcome email sent to new users upon first sign-up.
  * @module emails/accounts/WelcomeEmail
@@ -15,7 +16,7 @@ type Props = {
 };
 
 const WelcomeEmail = defineEmailTemplate<Props>({
-  namespace: "email.welcome",
+  namespace: "emails.welcome",
   render: ({locale, t, props}) => {
     const name = props.username?.trim() || "there";
     const uploadUrl = props.uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
@@ -24,26 +25,26 @@ const WelcomeEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {brand: BRAND.name, name})}
-        badge={t("badge")}
-        heading={t("heading", {brand: BRAND.name})}
-        primaryCta={{href: uploadUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: dashboardUrl, label: t("ctaSecondary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.welcome.badge"))}`}
+        preview={t(selectorFromPath("emails.welcome.preview"), {brand: BRAND.name, name})}
+        badge={t(selectorFromPath("emails.welcome.badge"))}
+        heading={t(selectorFromPath("emails.welcome.heading"), {brand: BRAND.name})}
+        primaryCta={{href: uploadUrl, label: t(selectorFromPath("emails.welcome.ctaPrimary"))}}
+        secondaryCta={{href: dashboardUrl, label: t(selectorFromPath("emails.welcome.ctaSecondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
-        <EmailCard title={t("howItWorksTitle")}>
-          <BulletList items={[t("howItWorks.0"), t("howItWorks.1"), t("howItWorks.2")]} />
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.greeting"), {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.intro"), {brand: BRAND.name})}</Text>
+        <EmailCard title={t(selectorFromPath("emails.welcome.howItWorksTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.welcome.howItWorks.item0")), t(selectorFromPath("emails.welcome.howItWorks.item1")), t(selectorFromPath("emails.welcome.howItWorks.item2"))]} />
         </EmailCard>
-        <EmailCard title={t("whatYouCanDoTitle")}>
-          <BulletList items={[t("whatYouCanDo.0"), t("whatYouCanDo.1"), t("whatYouCanDo.2"), t("whatYouCanDo.3")]} />
+        <EmailCard title={t(selectorFromPath("emails.welcome.whatYouCanDoTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.welcome.whatYouCanDo.item0")), t(selectorFromPath("emails.welcome.whatYouCanDo.item1")), t(selectorFromPath("emails.welcome.whatYouCanDo.item2")), t(selectorFromPath("emails.welcome.whatYouCanDo.item3"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.welcome.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -54,9 +55,9 @@ const WelcomeEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.welcome.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.welcome.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

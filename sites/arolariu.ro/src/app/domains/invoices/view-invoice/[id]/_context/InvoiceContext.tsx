@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Invoice context for the view-invoice domain.
  * @module domains/invoices/view-invoice/[id]/context/InvoiceContext
@@ -13,7 +15,6 @@
  * @see {@link useInvoiceContext} for consuming the context
  */
 
-"use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";
 import {createContext, use, useMemo, useState} from "react";

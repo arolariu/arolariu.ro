@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Reminder email for invoices with incomplete or partial AI analysis.
  * @module emails/invoices/reminders/IncompleteInvoiceReminderEmail
@@ -67,7 +68,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Incomplete Invoice Reminder" email.
+ * React component that renders the "Incomplete Invoice Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -99,7 +100,7 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.incompleteInvoice"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.incompleteInvoice"});
 
   const name = username?.trim() ? username : "there";
 
@@ -107,28 +108,28 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
     <EmailLayout
       locale={locale}
       title={`${BRAND.name} | Incomplete invoice`}
-      preview={t("preview", {name, invoiceName})}
-      badge={t("badge")}
-      heading={t("heading")}
-      primaryCta={{href: editInvoiceUrl, label: t("primaryCta")}}
-      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t("secondaryCta")} : null}
+      preview={t(selectorFromPath("emails.incompleteInvoice.preview"), {name, invoiceName})}
+      badge={t(selectorFromPath("emails.incompleteInvoice.badge"))}
+      heading={t(selectorFromPath("emails.incompleteInvoice.heading"))}
+      primaryCta={{href: editInvoiceUrl, label: t(selectorFromPath("emails.incompleteInvoice.primaryCta"))}}
+      secondaryCta={reanalyzeUrl ? {href: reanalyzeUrl, label: t(selectorFromPath("emails.incompleteInvoice.secondaryCta"))} : null}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-      <Text style={EmailParagraphStyles}>{t("intro", {invoiceName: `"${invoiceName}"`})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.greeting"), {name})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.intro"), {invoiceName: `"${invoiceName}"`})}</Text>
       <KeyValueTable
-        title={t("invoiceDetailsTitle")}
+        title={t(selectorFromPath("emails.incompleteInvoice.invoiceDetailsTitle"))}
         items={[
-          {label: t("invoiceLabel"), value: invoiceName},
-          {label: t("analyzedOnLabel"), value: analysisDate},
-          {label: t("missingFieldsLabel"), value: String(missingFields.length)},
+          {label: t(selectorFromPath("emails.incompleteInvoice.invoiceLabel")), value: invoiceName},
+          {label: t(selectorFromPath("emails.incompleteInvoice.analyzedOnLabel")), value: analysisDate},
+          {label: t(selectorFromPath("emails.incompleteInvoice.missingFieldsLabel")), value: String(missingFields.length)},
         ]}
       />
-      <EmailCard title={t("whatsMissingTitle")}>
+      <EmailCard title={t(selectorFromPath("emails.incompleteInvoice.whatsMissingTitle"))}>
         {missingFields.map((field) => {
-          const label = t(`missingFields.${field}.label`);
-          const suggestion = t(`missingFields.${field}.suggestion`);
+          const label = t(selectorFromPath(`emails.incompleteInvoice.missingFields.${field}.label`));
+          const suggestion = t(selectorFromPath(`emails.incompleteInvoice.missingFields.${field}.suggestion`));
           return (
             <Text
               key={field}
@@ -146,12 +147,12 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
           );
         })}
       </EmailCard>
-      <EmailCard title={t("tipsTitle")}>
-        <BulletList items={[t("tips.0"), t("tips.1"), t("tips.2"), t("tips.3")]} />
+      <EmailCard title={t(selectorFromPath("emails.incompleteInvoice.tipsTitle"))}>
+        <BulletList items={[t(selectorFromPath("emails.incompleteInvoice.tips.item0")), t(selectorFromPath("emails.incompleteInvoice.tips.item1")), t(selectorFromPath("emails.incompleteInvoice.tips.item2")), t(selectorFromPath("emails.incompleteInvoice.tips.item3"))]} />
       </EmailCard>
-      <Text style={EmailParagraphStyles}>{t("bodyText")}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>
-        {t.rich("feedback", {
+        {t.rich(selectorFromPath("emails.incompleteInvoice.feedback"), {
           supportEmail: BRAND.supportEmail,
           // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
@@ -164,9 +165,9 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t("signOff.line1")}
+        {t(selectorFromPath("emails.incompleteInvoice.signOff.line1"))}
         <br />
-        {t("signOff.line2", {brand: BRAND.name})}
+        {t(selectorFromPath("emails.incompleteInvoice.signOff.line2"), {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );

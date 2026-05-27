@@ -18,7 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@arolariu/components";
-import {Locale, useTranslations} from "next-intl";
+import {Locale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback, useEffect, useState} from "react";
 import {TbAlertTriangle, TbClipboard, TbClipboardCheck, TbHome, TbRefresh} from "react-icons/tb";
@@ -40,10 +41,10 @@ function detectLocale(): Locale {
 }
 
 function GlobalErrorDocumentTitle(): null {
-  const t = useTranslations("Errors.globalError");
+  const t = useTranslations();
 
   useEffect(() => {
-    globalThis.document.title = t("metadata.title");
+    globalThis.document.title = t((m) => m.app.errors.globalError.metadata.title);
   }, [t]);
 
   return null;
@@ -51,7 +52,7 @@ function GlobalErrorDocumentTitle(): null {
 
 function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.JSX.Element {
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const t = useTranslations("Errors.globalError");
+  const t = useTranslations();
   const errorContext = JSON.stringify(
     {
       errorId: error.digest ?? "NO_DIGEST",
@@ -81,7 +82,7 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
         setIsCopied(false);
       }, 2000);
     } catch (clipboardError) {
-      console.error(t("copyErrorConsoleMessage"), clipboardError);
+      console.error(t((m) => m.app.errors.globalError.copyErrorConsoleMessage), clipboardError);
     }
   }, [error.digest, t]);
 
@@ -103,8 +104,8 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
           <div className={styles["iconCircle"]}>
             <TbAlertTriangle className={styles["heroIcon"]} />
           </div>
-          <h1 className={styles["heroTitle"]}>{t("hero.title")}</h1>
-          <p className={styles["heroSubtitle"]}>{t("hero.subtitle")}</p>
+          <h1 className={styles["heroTitle"]}>{t((m) => m.app.errors.globalError.hero.title)}</h1>
+          <p className={styles["heroSubtitle"]}>{t((m) => m.app.errors.globalError.hero.subtitle)}</p>
         </section>
 
         {/* Error Details Card */}
@@ -112,15 +113,15 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
           <CardHeader>
             <CardTitle className={styles["cardTitleWrapper"]}>
               <TbAlertTriangle className={styles["cardTitleIcon"]} />
-              {t("details.title")}
+              {t((m) => m.app.errors.globalError.details.title)}
             </CardTitle>
             <CardDescription>
               {error.digest ? (
                 <>
-                  {t("details.errorIdLabel")} <code className={styles["errorCode"]}>{error.digest}</code>
+                  {t((m) => m.app.errors.globalError.details.errorIdLabel)} <code className={styles["errorCode"]}>{error.digest}</code>
                 </>
               ) : (
-                t("details.genericDescription")
+                t((m) => m.app.errors.globalError.details.genericDescription)
               )}
             </CardDescription>
           </CardHeader>
@@ -130,27 +131,27 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
             <Alert variant='destructive'>
               <AlertTitle className={styles["alertTitleInner"]}>
                 <TbAlertTriangle className={styles["alertIcon"]} />
-                {t("details.whatHappenedTitle")}
+                {t((m) => m.app.errors.globalError.details.whatHappenedTitle)}
               </AlertTitle>
               <AlertDescription className={styles["alertDescription"]}>
-                <p className={styles["errorMessage"]}>{error.message || t("details.unknownError")}</p>
+                <p className={styles["errorMessage"]}>{error.message || t((m) => m.app.errors.globalError.details.unknownError)}</p>
               </AlertDescription>
             </Alert>
 
             {/* What to do section */}
             <div className={styles["infoBox"]}>
-              <h3 className={styles["infoTitle"]}>{t("actions.whatCanYouDoTitle")}</h3>
+              <h3 className={styles["infoTitle"]}>{t((m) => m.app.errors.globalError.actions.whatCanYouDoTitle)}</h3>
               <ul className={styles["infoList"]}>
-                <li>{t("actions.step1")}</li>
-                <li>{t("actions.step2")}</li>
-                <li>{t("actions.step3")}</li>
+                <li>{t((m) => m.app.errors.globalError.actions.step1)}</li>
+                <li>{t((m) => m.app.errors.globalError.actions.step2)}</li>
+                <li>{t((m) => m.app.errors.globalError.actions.step3)}</li>
               </ul>
             </div>
 
             {/* QR Code with Diagnostic Data */}
             {Boolean(errorContext) && (
               <div className={styles["qrSection"]}>
-                <p className={styles["qrLabel"]}>{t("diagnostics.scanLabel")}</p>
+                <p className={styles["qrLabel"]}>{t((m) => m.app.errors.globalError.diagnostics.scanLabel)}</p>
                 <QRCode
                   value={errorContext}
                   size={128}
@@ -161,14 +162,14 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
 
             {/* Technical Details (Collapsible) */}
             <details className={styles["technicalDetails"]}>
-              <summary className={styles["technicalSummary"]}>{t("diagnostics.technicalSummary")}</summary>
+              <summary className={styles["technicalSummary"]}>{t((m) => m.app.errors.globalError.diagnostics.technicalSummary)}</summary>
               <div className={styles["technicalContent"]}>
                 <pre className={styles["preBlock"]}>
-                  <code>{errorContext || t("diagnostics.loading")}</code>
+                  <code>{errorContext || t((m) => m.app.errors.globalError.diagnostics.loading)}</code>
                 </pre>
                 {Boolean(error.stack) && (
                   <>
-                    <h4 className={styles["stackTitle"]}>{t("diagnostics.stackTraceLabel")}</h4>
+                    <h4 className={styles["stackTitle"]}>{t((m) => m.app.errors.globalError.diagnostics.stackTraceLabel)}</h4>
                     <pre className={styles["preBlock"]}>
                       <code>{error.stack}</code>
                     </pre>
@@ -186,7 +187,7 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
               size='default'
               className={styles["actionButton"]}>
               <TbRefresh className={styles["buttonIcon"]} />
-              {t("buttons.tryAgain")}
+              {t((m) => m.app.errors.globalError.buttons.tryAgain)}
             </Button>
 
             {/* Secondary Action - Return Home */}
@@ -199,7 +200,7 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
                 href='/'
                 onClick={handleReset}>
                 <TbHome className={styles["buttonIcon"]} />
-                {t("buttons.returnHome")}
+                {t((m) => m.app.errors.globalError.buttons.returnHome)}
               </Link>
             </Button>
 
@@ -210,16 +211,16 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
                 variant='ghost'
                 size='default'
                 className={styles["actionButton"]}
-                title={t("buttons.copyErrorIdTitle")}>
+                title={t((m) => m.app.errors.globalError.buttons.copyErrorIdTitle)}>
                 {isCopied ? (
                   <>
                     <TbClipboardCheck className={styles["buttonIcon"]} />
-                    {t("buttons.copied")}
+                    {t((m) => m.app.errors.globalError.buttons.copied)}
                   </>
                 ) : (
                   <>
                     <TbClipboard className={styles["buttonIcon"]} />
-                    {t("buttons.copyErrorId")}
+                    {t((m) => m.app.errors.globalError.buttons.copyErrorId)}
                   </>
                 )}
               </Button>
@@ -230,7 +231,7 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
         {/* Additional Help Section */}
         <section className={styles["helpSection"]}>
           <p className={styles["helpText"]}>
-            {t("support.contactPrefix")}{" "}
+            {t((m) => m.app.errors.globalError.support.contactPrefix)}{" "}
             <a
               href='mailto:support@arolariu.ro'
               className={styles["helpLink"]}>
@@ -239,7 +240,7 @@ function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.J
             {Boolean(error.digest) && (
               <>
                 {" "}
-                {t("support.includeErrorId")} <code className={styles["helpErrorCode"]}>{error.digest}</code>
+                {t((m) => m.app.errors.globalError.support.includeErrorId)} <code className={styles["helpErrorCode"]}>{error.digest}</code>
               </>
             )}
           </p>

@@ -11,7 +11,8 @@
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderInvoiceDomainScreen from "./island";
 
 /**
@@ -34,12 +35,12 @@ import RenderInvoiceDomainScreen from "./island";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("IMS--Landing.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.pages.invoices.landing.metadata.title),
+    description: t((m) => m.pages.invoices.landing.metadata.description),
   });
 }
 

@@ -2,7 +2,7 @@
 
 import {SignUp} from "@clerk/nextjs";
 import {motion, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import dynamic from "next/dynamic";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
@@ -71,29 +71,29 @@ const containerVariants: Variants = {
  * @returns The sign up component with Clerk authentication
  */
 export default function RenderAuthSignUpPage(): React.JSX.Element {
-  const t = useTranslations("Auth.SignUp");
-  const trust = useTranslations("Auth.Island.trust");
+  const t = useTranslations();
+  const trust = useTranslations();
 
   return (
     <div className={styles["grid"]}>
       <div className={styles["column"]}>
         <AuthMarketingPanel
-          title={t("hero.title")}
-          subtitle={t("hero.subtitle")}
+          title={t((m) => m.pages.auth.signUp.hero.title)}
+          subtitle={t((m) => m.pages.auth.signUp.hero.subtitle)}
           illustrationSrc='/images/auth/sign-up.svg'
-          illustrationAlt={t("illustrationAlt")}
-          bullets={[t("bullets.first"), t("bullets.second"), t("bullets.third")]}
-          trustBadges={[trust("oauth"), trust("session"), trust("privacy")]}
+          illustrationAlt={t((m) => m.pages.auth.signUp.illustrationAlt)}
+          bullets={[t((m) => m.pages.auth.signUp.bullets.first), t((m) => m.pages.auth.signUp.bullets.second), t((m) => m.pages.auth.signUp.bullets.third)]}
+          trustBadges={[trust((m) => m.pages.auth.island.trust.oauth), trust((m) => m.pages.auth.island.trust.session), trust((m) => m.pages.auth.island.trust.privacy)]}
         />
       </div>
 
       <div className={styles["column"]}>
         <AuthFormShell
-          kicker={t("form.kicker")}
-          secondaryPrompt={t("form.secondaryPrompt")}
-          secondaryAction={t("form.secondaryAction")}
+          kicker={t((m) => m.pages.auth.signUp.form.kicker)}
+          secondaryPrompt={t((m) => m.pages.auth.signUp.form.secondaryPrompt)}
+          secondaryAction={t((m) => m.pages.auth.signUp.form.secondaryAction)}
           secondaryHref='/auth/sign-in/'
-          footer={t("footer")}>
+          footer={t((m) => m.pages.auth.signUp.footer)}>
           <motion.div
             variants={containerVariants}
             initial='hidden'

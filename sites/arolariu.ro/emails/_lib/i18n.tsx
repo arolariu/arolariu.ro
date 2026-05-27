@@ -33,8 +33,8 @@
  * `../../messages/*.json` (two levels up from `_lib/`).
  */
 
-import {createTranslator, type AbstractIntlMessages} from "next-intl";
-import type {ReactNode} from "react";
+import {type AbstractIntlMessages} from "next-intl";
+import {createTranslator, type SelectorTranslator} from "next-intl-selector";
 
 // ============================================================================
 // LOCALE DATA & CONSTANTS
@@ -46,23 +46,16 @@ export const SUPPORTED_LOCALES = ["en", "ro", "fr"] as const satisfies readonly 
 
 export const DEFAULT_LOCALE: EmailLocale = "en";
 
-/** Loaded message tree (untyped — templates address keys by string). */
+/** Loaded message tree used by selector translators. */
 export type EmailMessages = Record<string, unknown>;
 
 /**
- * Loosely-typed translator returned by {@link createEmailTranslator}.
+ * Selector translator returned by {@link createEmailTranslator}.
  *
- * Mirrors the shape of `next-intl`'s callable translator (with a `.rich`
- * method) but without the deep key inference that would otherwise
- * propagate the entire message tree's type.
- *
- * `.rich` accepts a mix of scalar ICU vars (`string | number`) and tag
- * callbacks (`(chunks?) => ReactNode`), matching next-intl's runtime
- * contract.
+ * @remarks
+ * Email templates use full selector paths, matching the website runtime.
  */
-export type EmailTranslator = ((key: string, vars?: Readonly<Record<string, string | number>>) => string) & {
-  readonly rich: (key: string, replacements?: Readonly<Record<string, string | number | ((chunks?: ReactNode) => ReactNode)>>) => ReactNode;
-};
+export type EmailTranslator = SelectorTranslator;
 
 // ============================================================================
 // MESSAGE LOADING
@@ -98,22 +91,17 @@ export async function loadMessages(locale: EmailLocale = DEFAULT_LOCALE): Promis
 // ============================================================================
 
 /**
- * Creates a translator scoped to a specific email namespace (e.g.
- * `"email.welcome"`).
+ * Creates a selector translator for email messages.
  *
  * @remarks
- * Explicit `<AbstractIntlMessages, string>` type arguments on
- * `createTranslator` short-circuit the deep key-path inference that
- * previously triggered V8's Map-size limit during `next build`. The
- * `as unknown as EmailTranslator` widening is the deliberate cast —
- * necessary because next-intl's return type still ties back to the
- * (now-erased) key tree generic. No `any` anywhere.
+ * The `namespace` option is accepted for existing template configuration
+ * compatibility, but selectors always encode the full message path.
  *
  * @example
  * ```ts
  * const messages = await loadMessages("ro");
- * const t = createEmailTranslator({locale: "ro", messages, namespace: "email.welcome"});
- * t("greeting", {name: "Alex"}); // → "Salut, Alex"
+ * const t = createEmailTranslator({locale: "ro", messages, namespace: "emails.welcome"});
+ * t(selectorFromPath("emails.welcome.greeting"), {name: "Alex"}); // → "Salut, Alex"
  * ```
  */
 export function createEmailTranslator(opts: {
@@ -121,9 +109,8 @@ export function createEmailTranslator(opts: {
   readonly messages: EmailMessages;
   readonly namespace: string;
 }): EmailTranslator {
-  return createTranslator<AbstractIntlMessages, string>({
+  return createTranslator({
     locale: opts.locale,
     messages: opts.messages as AbstractIntlMessages,
-    namespace: opts.namespace,
-  }) as unknown as EmailTranslator;
+  });
 }

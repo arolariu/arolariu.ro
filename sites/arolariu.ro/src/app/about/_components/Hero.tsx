@@ -2,7 +2,7 @@
 
 import {Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {TbChevronDown, TbRocket, TbSparkles} from "react-icons/tb";
 import styles from "./Hero.module.scss";
@@ -12,7 +12,7 @@ import styles from "./Hero.module.scss";
  * Features animated background, gradient text, and CTAs.
  */
 export default function Hero(): React.JSX.Element {
-  const t = useTranslations("About.Hub.hero");
+  const t = useTranslations();
 
   return (
     <section className={styles["section"]}>
@@ -79,7 +79,7 @@ export default function Hero(): React.JSX.Element {
             variant='secondary'
             className={styles["badge"]}>
             <TbSparkles className={styles["badgeIcon"]} />
-            {t("badge")}
+            {t((m) => m.pages.about.hub.hero.badge)}
           </Badge>
         </motion.div>
 
@@ -89,7 +89,7 @@ export default function Hero(): React.JSX.Element {
           initial={{y: 20}}
           animate={{y: 0}}
           transition={{delay: 0.3}}>
-          {t("title")}
+          {t((m) => m.pages.about.hub.hero.title)}
         </motion.h1>
 
         {/* Subtitle */}
@@ -98,7 +98,7 @@ export default function Hero(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.4}}>
-          {t("subtitle")}
+          {t((m) => m.pages.about.hub.hero.subtitle)}
         </motion.p>
 
         {/* CTA buttons */}
@@ -113,7 +113,7 @@ export default function Hero(): React.JSX.Element {
             className={styles["ctaButton"]}>
             <Link href='/about/the-platform'>
               <TbRocket className={styles["ctaIcon"]} />
-              {t("ctaPrimary")}
+              {t((m) => m.pages.about.hub.hero.ctaPrimary)}
             </Link>
           </Button>
           <Button
@@ -121,7 +121,7 @@ export default function Hero(): React.JSX.Element {
             variant='outline'
             size='lg'
             className={styles["ctaButton"]}>
-            <Link href='/about/the-author'>{t("ctaSecondary")}</Link>
+            <Link href='/about/the-author'>{t((m) => m.pages.about.hub.hero.ctaSecondary)}</Link>
           </Button>
         </motion.div>
       </motion.div>

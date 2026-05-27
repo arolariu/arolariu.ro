@@ -51,7 +51,7 @@ type SendEmailOptions = {
  *
  * @remarks
  * Wraps the underlying `resend.emails.send` call in:
- * - An OpenTelemetry span (`api.email.send`).
+ * - An OpenTelemetry span (`api.emails.send`).
  * - Structured logs at info (success) and error (failure) levels.
  * - Three tags on every send: `template`, `locale`, `env`.
  *
@@ -71,7 +71,7 @@ type SendEmailOptions = {
  * ```
  */
 async function sendEmail(options: SendEmailOptions): Promise<void> {
-  return withSpan("api.email.send", async () => {
+  return withSpan("api.emails.send", async () => {
     const resend = await getResendClient();
 
     // Pre-render to HTML via `react-email`'s exported `render` instead of

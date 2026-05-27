@@ -1,12 +1,14 @@
+"use client";
+
 /**
  * @fileoverview Main invoice timeline component for the left pane.
  * @module components/invoice/timeline/invoice-timeline
  */
 
-"use client";
 
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCalendar} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
@@ -27,7 +29,7 @@ import {TimelineSharedWithList} from "./TimelineSharedWithList";
  * \`\`\`
  */
 export function InvoiceTimeline(): React.JSX.Element {
-  const t = useTranslations("IMS--View.invoiceTimeline");
+  const t = useTranslations();
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const events = generateTimelineFromInvoice(invoice);
@@ -40,15 +42,15 @@ export function InvoiceTimeline(): React.JSX.Element {
         <div className={styles["headerRow"]}>
           <CardTitle className={styles["cardTitle"]}>
             <TbCalendar className={styles["calendarIcon"]} />
-            {t("title")}
+            {t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.title)}
           </CardTitle>
           <Badge
             variant='secondary'
             className={styles["badge"]}>
-            {t("eventCount", {count: totalEvents})}
+            {t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.eventCount, {count: totalEvents})}
           </Badge>
         </div>
-        <p className={styles["subtitle"]}>{t("subtitle")}</p>
+        <p className={styles["subtitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTimeline.subtitle)}</p>
       </CardHeader>
 
       <CardContent className={styles["cardContent"]}>

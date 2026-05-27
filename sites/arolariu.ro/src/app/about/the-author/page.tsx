@@ -12,7 +12,8 @@
 import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import Biography from "./_components/Biography";
 import Certifications from "./_components/Certifications";
 import Competencies from "./_components/Competencies";
@@ -29,7 +30,7 @@ import styles from "./page.module.scss";
  * @remarks
  * **Rendering Context**: Server Component metadata generator.
  *
- * **i18n**: Uses `next-intl` translations from the About.Author namespace.
+ * **i18n**: Uses `next-intl` translations from the sections.about.author namespace.
  *
  * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *
@@ -43,12 +44,12 @@ import styles from "./page.module.scss";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.Author.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.pages.about.author.metadata.title),
+    description: t((m) => m.pages.about.author.metadata.description),
   });
 }
 

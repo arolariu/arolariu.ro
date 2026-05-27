@@ -68,6 +68,7 @@
     "jose": "*",
     "motion": "*",
     "next-intl": "*",
+    "next-intl-selector": "*",
     "next-themes": "*",
     "next": "*",
     "react-dom": "*",

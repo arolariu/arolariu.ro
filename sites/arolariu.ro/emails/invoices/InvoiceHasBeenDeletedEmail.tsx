@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been deleted.
  * @module emails/invoices/DeletedInvoice
@@ -34,7 +35,7 @@ type Props = {
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceDeleted",
+  namespace: "emails.invoiceDeleted",
   render: ({locale, t, props}) => {
     const {username, invoiceId, invoiceName} = props;
 
@@ -45,30 +46,30 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {invoiceLabel})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceDeleted.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceDeleted.preview"), {invoiceLabel})}
+        badge={t(selectorFromPath("emails.invoiceDeleted.badge"))}
+        heading={t(selectorFromPath("emails.invoiceDeleted.heading"))}
+        primaryCta={{href: invoicesUrl, label: t(selectorFromPath("emails.invoiceDeleted.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro", {brand: BRAND.name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceDeleted.greeting"), {name: safeName})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceDeleted.intro"), {brand: BRAND.name})}</Text>
         <KeyValueTable
-          title={t("detailsTitle")}
+          title={t(selectorFromPath("emails.invoiceDeleted.detailsTitle"))}
           items={[
-            {label: t("details.invoice"), value: invoiceName ?? `#${invoiceId}`},
-            {label: t("details.invoiceId"), value: invoiceId ?? t("placeholder")},
-            {label: t("details.status"), value: t("statusValue")},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.invoice")), value: invoiceName ?? `#${invoiceId}`},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.invoiceId")), value: invoiceId ?? t(selectorFromPath("emails.invoiceDeleted.placeholder"))},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.status")), value: t(selectorFromPath("emails.invoiceDeleted.statusValue"))},
           ]}
         />
-        <EmailCard title={t("whatYouShouldKnowTitle")}>
-          <BulletList items={[t("whatYouShouldKnow.0"), t("whatYouShouldKnow.1"), t("whatYouShouldKnow.2"), t("whatYouShouldKnow.3")]} />
+        <EmailCard title={t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnowTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item0")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item1")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item2")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item3"))]} />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
-          {t.rich("body", {
+          {t.rich(selectorFromPath("emails.invoiceDeleted.body"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -79,9 +80,9 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.invoiceDeleted.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceDeleted.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

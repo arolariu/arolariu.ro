@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that their access to a shared invoice was revoked.
  * @module emails/invoices/InvoiceHasBeenUnsharedWithEmail
@@ -23,7 +24,7 @@ type Props = {
 };
 
 const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceUnshared",
+  namespace: "emails.invoiceUnshared",
   render: ({locale, t, props}) => {
     const {fromUsername, toUsername, identifier, revokedAt} = props;
 
@@ -35,40 +36,40 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {fromName: safeFrom})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoicesUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t("ctaSecondary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceUnshared.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceUnshared.preview"), {fromName: safeFrom})}
+        badge={t(selectorFromPath("emails.invoiceUnshared.badge"))}
+        heading={t(selectorFromPath("emails.invoiceUnshared.heading"))}
+        primaryCta={{href: invoicesUrl, label: t(selectorFromPath("emails.invoiceUnshared.ctaPrimary"))}}
+        secondaryCta={{href: `mailto:${BRAND.supportEmail}`, label: t(selectorFromPath("emails.invoiceUnshared.ctaSecondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceUnshared.greeting"), {toName: safeTo})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("intro", {
+          {t.rich(selectorFromPath("emails.invoiceUnshared.intro"), {
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
         <KeyValueTable
-          title={t("detailsTitle")}
+          title={t(selectorFromPath("emails.invoiceUnshared.detailsTitle"))}
           items={[
-            {label: t("details.revokedBy"), value: safeFrom},
-            {label: t("details.invoiceId"), value: identifier},
-            {label: t("details.revokedAt"), value: revokedAt ?? t("details.notProvided")},
-            {label: t("details.yourAccess"), value: t("details.accessRevoked")},
+            {label: t(selectorFromPath("emails.invoiceUnshared.details.revokedBy")), value: safeFrom},
+            {label: t(selectorFromPath("emails.invoiceUnshared.details.invoiceId")), value: identifier},
+            {label: t(selectorFromPath("emails.invoiceUnshared.details.revokedAt")), value: revokedAt ?? t(selectorFromPath("emails.invoiceUnshared.details.notProvided"))},
+            {label: t(selectorFromPath("emails.invoiceUnshared.details.yourAccess")), value: t(selectorFromPath("emails.invoiceUnshared.details.accessRevoked"))},
           ]}
         />
-        <EmailCard title={t("whatThisMeansTitle")}>
-          <BulletList items={[t("whatThisMeans.0"), t("whatThisMeans.1"), t("whatThisMeans.2")]} />
+        <EmailCard title={t(selectorFromPath("emails.invoiceUnshared.whatThisMeansTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item0")), t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item1")), t(selectorFromPath("emails.invoiceUnshared.whatThisMeans.item2"))]} />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
-          {t.rich("body", {
+          {t.rich(selectorFromPath("emails.invoiceUnshared.body"), {
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("emails.invoiceUnshared.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -79,9 +80,9 @@ const InvoiceHasBeenUnsharedWithEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("emails.invoiceUnshared.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceUnshared.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

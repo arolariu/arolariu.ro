@@ -1,5 +1,7 @@
+"use client";
+
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ImageDialog.module.scss";
@@ -38,7 +40,7 @@ import styles from "./ImageDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ImageDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.imageDialog");
+  const t = useTranslations();
   const {
     currentDialog: {payload},
     isOpen,
@@ -58,12 +60,12 @@ export default function ImageDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title", {image})}</DialogTitle>
+          <DialogTitle>{t((m) => m.dialogs.invoices.imageDialog.title, {image})}</DialogTitle>
           <div className={styles["imageContainer"]}>
             <Image
               src={image}
               fill
-              alt={t("imageAlt")}
+              alt={t((m) => m.dialogs.invoices.imageDialog.imageAlt)}
               className={styles["receiptImage"]}
             />
           </div>

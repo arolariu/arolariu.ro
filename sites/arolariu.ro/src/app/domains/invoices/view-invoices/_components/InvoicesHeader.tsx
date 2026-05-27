@@ -2,7 +2,7 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback} from "react";
 import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
@@ -15,7 +15,7 @@ import styles from "./InvoicesHeader.module.scss";
  * @returns The rendered invoices header.
  */
 export default function InvoicesHeader(): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesHeader");
+  const t = useTranslations();
   const {open: openImportDialog} = useDialog("VIEW_INVOICES__IMPORT");
   const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 
@@ -30,8 +30,8 @@ export default function InvoicesHeader(): React.JSX.Element {
       transition={{duration: 0.3}}
       className={styles["header"]}>
       <div>
-        <h1 className={styles["title"]}>{t("title")}</h1>
-        <p className={styles["description"]}>{t("description")}</p>
+        <h1 className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.title)}</h1>
+        <p className={styles["description"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.description)}</p>
       </div>
       <div className={styles["actions"]}>
         <TooltipProvider>
@@ -44,11 +44,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={openImportDialog}>
                   <TbUpload className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t("actions.import")}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.import)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t("tooltips.import")}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.import)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -62,11 +62,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={openExportDialog}>
                   <TbDownload className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t("actions.export")}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.export)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t("tooltips.export")}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.export)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -80,11 +80,11 @@ export default function InvoicesHeader(): React.JSX.Element {
                   className={styles["actionButton"]}
                   onClick={handlePrintAction}>
                   <TbPrinter className={styles["actionIcon"]} />
-                  <span className={styles["buttonLabel"]}>{t("actions.print")}</span>
+                  <span className={styles["buttonLabel"]}>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.print)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t("tooltips.print")}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.print)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -97,12 +97,12 @@ export default function InvoicesHeader(): React.JSX.Element {
                     size='sm'
                     className={styles["actionButton"]}>
                     <TbPlus className={styles["actionIcon"]} />
-                    <span>{t("actions.newInvoice")}</span>
+                    <span>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.actions.newInvoice)}</span>
                   </Button>
                 </Link>
               }
             />
-            <TooltipContent>{t("tooltips.newInvoice")}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewInvoices.invoicesHeader.tooltips.newInvoice)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

@@ -4,7 +4,7 @@ import {useUserInformation} from "@/hooks";
 import {useInvoicesStore, useMerchantsStore} from "@/stores";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
@@ -37,7 +37,7 @@ type Props = Readonly<{
 
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
-  const t = useTranslations("IMS--View");
+  const t = useTranslations();
   const upsertInvoice = useInvoicesStore((state) => state.upsertEntity);
   const upsertMerchant = useMerchantsStore((state) => state.upsertEntity);
   const {
@@ -107,7 +107,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                     variant='ghost'
                     size='sm'
                     onClick={handleShowHealthDialog}>
-                    {t("healthScore.seeReport")}
+                    {t((m) => m.pages.invoices.viewInvoice.healthScore.seeReport)}
                   </Button>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
           onOpenChange={setShowHealthDialog}>
           <DialogContent className='max-h-[85vh] max-w-2xl overflow-y-auto'>
             <DialogHeader>
-              <DialogTitle>{t("healthScore.dialogTitle")}</DialogTitle>
+              <DialogTitle>{t((m) => m.pages.invoices.viewInvoice.healthScore.dialogTitle)}</DialogTitle>
             </DialogHeader>
             <InvoiceHealthScore />
           </DialogContent>

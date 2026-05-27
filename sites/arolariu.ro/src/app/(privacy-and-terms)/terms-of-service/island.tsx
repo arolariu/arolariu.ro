@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Client island for the Terms of Service page.
  * @module app/(privacy-and-terms)/terms-of-service/island
@@ -7,7 +9,6 @@
  * browser-only behaviors such as in-page navigation and dynamic expansion.
  */
 
-"use client";
 
 import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
 
@@ -31,5 +32,5 @@ import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
  * ```
  */
 export default function RenderTermsOfServiceScreen(): React.JSX.Element {
-  return <EnhancedLegalArticles pageType='Legal.TermsOfService' />;
+  return <EnhancedLegalArticles pageType='sections.legal.termsOfService' />;
 }

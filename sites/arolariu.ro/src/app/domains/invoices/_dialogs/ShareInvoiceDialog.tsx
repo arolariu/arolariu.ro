@@ -20,7 +20,8 @@ import {
   toast,
 } from "@arolariu/components";
 import {useUser} from "@clerk/nextjs";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
@@ -45,7 +46,7 @@ type SharingMode = "selection" | "public" | "private";
 interface SelectionModeProps {
   readonly onSelectPublic: () => void;
   readonly onSelectPrivate: () => void;
-  readonly t: ReturnType<typeof useTranslations<"IMS--Dialogs.shareInvoiceDialog">>;
+  readonly t: ReturnType<typeof useTranslations>;
 }
 
 /**
@@ -64,7 +65,7 @@ interface SelectionModeProps {
 function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionModeProps>): React.JSX.Element {
   return (
     <div className={styles["selectionBody"]}>
-      <p className={styles["selectionDescription"]}>{t("selection.description")}</p>
+      <p className={styles["selectionDescription"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.description)}</p>
 
       <div className={styles["selectionGrid"]}>
         <Card
@@ -75,9 +76,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
               <TbGlobe className={styles["globeIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className={styles["cardTitleBase"]}>{t("selection.publicTitle")}</CardTitle>
+              <CardTitle className={styles["cardTitleBase"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.publicTitle)}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.publicDescription", {
+                {t.rich((m) => m.dialogs.invoices.shareInvoiceDialog.selection.publicDescription, {
                   // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
                   strong: (chunks) => <strong>{chunks}</strong>,
                 })}
@@ -94,9 +95,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
               <TbLock className={styles["lockIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className={styles["cardTitleBase"]}>{t("selection.privateTitle")}</CardTitle>
+              <CardTitle className={styles["cardTitleBase"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privateTitle)}</CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
-                {t.rich("selection.privateDescription", {
+                {t.rich((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privateDescription, {
                   // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
                   strong: (chunks) => <strong>{chunks}</strong>,
                 })}
@@ -110,8 +111,8 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
         variant='default'
         className={styles["alertMt"]}>
         <TbAlertTriangle className={styles["alertIcon"]} />
-        <AlertTitle>{t("selection.privacyNoticeTitle")}</AlertTitle>
-        <AlertDescription className={styles["alertDescXs"]}>{t("selection.privacyNoticeDescription")}</AlertDescription>
+        <AlertTitle>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privacyNoticeTitle)}</AlertTitle>
+        <AlertDescription className={styles["alertDescXs"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privacyNoticeDescription)}</AlertDescription>
       </Alert>
     </div>
   );
@@ -145,7 +146,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.shareInvoiceDialog");
+  const t = useTranslations();
   // Sender's UI locale — forwarded to the recipient so the email matches
   // the language the sender is composing in. Cast is safe because the
   // app's next-intl provider is configured for exactly en/ro/fr.
@@ -225,9 +226,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyLinkAction(), {
-      loading: isInvoicePublic ? t("toasts.copyLink.loadingPublic") : t("toasts.copyLink.loadingMakePublic"),
-      success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
-      error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
+      loading: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingMakePublic),
+      success: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successMadePublic),
+      error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.error, {message: error instanceof Error ? error.message : String(error)}),
     });
   }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
 
@@ -245,7 +246,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
 
       const qrCodeElement = document.querySelector("#invoice-qr-code");
       if (!qrCodeElement) {
-        throw new Error(t("errors.qrNotFound"));
+        throw new Error(t((m) => m.dialogs.invoices.shareInvoiceDialog.errors.qrNotFound));
       }
 
       await copySvgToClipboard(qrCodeElement);
@@ -257,9 +258,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyQRCodeAction(), {
-      loading: isInvoicePublic ? t("toasts.copyQr.loadingPublic") : t("toasts.copyQr.loadingMakePublic"),
-      success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
-      error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
+      loading: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingMakePublic),
+      success: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successMadePublic),
+      error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.error, {message: error instanceof Error ? error.message : String(error)}),
     });
   }, [invoice, isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
@@ -299,9 +300,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       toast.promise(
         sendEmailAction().finally(() => setIsSendingEmail(false)),
         {
-          loading: t("toasts.sendEmail.loading", {email}),
-          success: t("toasts.sendEmail.success", {email}),
-          error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
+          loading: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.sendEmail.loading, {email}),
+          success: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.sendEmail.success, {email}),
+          error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.sendEmail.error, {message: error instanceof Error ? error.message : String(error)}),
         },
       );
     },
@@ -336,9 +337,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(
       revokeAction().finally(() => setIsRevoking(false)),
       {
-        loading: t("toasts.revoke.loading"),
-        success: t("toasts.revoke.success"),
-        error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
+        loading: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.loading),
+        success: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.success),
+        error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice, router, handleClose, t]);
@@ -370,15 +371,15 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {
     if (isInvoicePublic) {
-      return t("dialogDescription.currentlyPublic", {invoiceName: invoice.name});
+      return t((m) => m.dialogs.invoices.shareInvoiceDialog.dialogDescription.currentlyPublic, {invoiceName: invoice.name});
     }
     switch (sharingMode) {
       case "selection":
-        return t("dialogDescription.selection", {invoiceName: invoice.name});
+        return t((m) => m.dialogs.invoices.shareInvoiceDialog.dialogDescription.selection, {invoiceName: invoice.name});
       case "public":
-        return t("dialogDescription.public", {invoiceName: invoice.name});
+        return t((m) => m.dialogs.invoices.shareInvoiceDialog.dialogDescription.public, {invoiceName: invoice.name});
       case "private":
-        return t("dialogDescription.private", {invoiceName: invoice.name});
+        return t((m) => m.dialogs.invoices.shareInvoiceDialog.dialogDescription.private, {invoiceName: invoice.name});
       default:
         return "";
     }
@@ -390,7 +391,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className={styles["dialogContentMd"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogTitle>{t((m) => m.dialogs.invoices.shareInvoiceDialog.title)}</DialogTitle>
           <DialogDescription>{getDialogDescription()}</DialogDescription>
         </DialogHeader>
 

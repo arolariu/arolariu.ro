@@ -1,8 +1,10 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbBulb, TbHeart, TbTargetArrow} from "react-icons/tb";
 import styles from "./Mission.module.scss";
@@ -24,7 +26,7 @@ const pillars = [
  * Mission section displaying the platform's purpose and core pillars.
  */
 export default function Mission(): React.JSX.Element {
-  const t = useTranslations("About.Hub.mission");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -39,15 +41,15 @@ export default function Mission(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className={styles["title"]}>{t("title")}</h2>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.mission.title)}</h2>
           <motion.p
             className={styles["statement"]}
             initial={{opacity: 0, scale: 0.95}}
             animate={isInView ? {opacity: 1, scale: 1} : {}}
             transition={{delay: 0.2, duration: 0.5}}>
-            {t("statement")}
+            {t((m) => m.pages.about.hub.mission.statement)}
           </motion.p>
-          <p className={styles["description"]}>{t("description")}</p>
+          <p className={styles["description"]}>{t((m) => m.pages.about.hub.mission.description)}</p>
         </motion.div>
 
         {/* Pillars grid */}
@@ -64,8 +66,8 @@ export default function Mission(): React.JSX.Element {
                   <div className={`${styles["iconWrapper"]} ${styles[gradientClassMap[pillar.key]]}`}>
                     <pillar.icon className={styles["icon"]} />
                   </div>
-                  <h3 className={styles["cardTitle"]}>{t(`pillars.${pillar.key}.title`)}</h3>
-                  <p className={styles["cardDescription"]}>{t(`pillars.${pillar.key}.description`)}</p>
+                  <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.mission.pillars.${pillar.key}.title`))}</h3>
+                  <p className={styles["cardDescription"]}>{t(selectorFromPath(`About.Hub.mission.pillars.${pillar.key}.description`))}</p>
                 </CardContent>
               </Card>
             </motion.div>

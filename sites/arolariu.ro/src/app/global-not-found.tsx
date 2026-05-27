@@ -5,7 +5,8 @@ import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {Button} from "@arolariu/components";
 import type {Metadata} from "next";
 import type {AbstractIntlMessages} from "next-intl";
-import {getLocale, getMessages, getTranslations} from "next-intl/server";
+import {getLocale, getMessages} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {headers} from "next/headers";
 import Link from "next/link";
 import QRCode from "react-qr-code";
@@ -33,7 +34,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
   const locale = await getLocale();
   const messages = await getMessages();
   const {user} = await fetchAaaSUserFromAuthService();
-  const t = await getTranslations("Errors.notFound");
+  const t = await getTranslations();
   const eulaCookie = await getCookie("eula-accepted");
 
   const qrCodeData = JSON.stringify({
@@ -54,26 +55,26 @@ export default async function NotFound(): Promise<React.JSX.Element> {
           <Header />
           <div className={styles["pageContainer"]}>
             <section className={styles["heroContent"]}>
-              <h1 className={styles["title"]}>{t("title")}</h1>
-              <span className={styles["subtitle"]}>{t("subtitle")}</span>
+              <h1 className={styles["title"]}>{t((m) => m.app.errors.notFound.title)}</h1>
+              <span className={styles["subtitle"]}>{t((m) => m.app.errors.notFound.subtitle)}</span>
             </section>
             <section className={styles["qrSection"]}>
-              <h2 className={styles["qrTitle"]}>{t("additionalInfo")}</h2>
+              <h2 className={styles["qrTitle"]}>{t((m) => m.app.errors.notFound.additionalInfo)}</h2>
               <QRCode value={qrCodeData} />
             </section>
             <section className={styles["bottomSection"]}>
-              <span className={styles["falsePositive"]}>{t("falsePositive")}</span>
+              <span className={styles["falsePositive"]}>{t((m) => m.app.errors.notFound.falsePositive)}</span>
               <div className={styles["buttonRow"]}>
                 <Button
                   asChild
                   variant='outline'
                   className={styles["actionButtonOutline"]}>
-                  <Link href='/'>{t("buttons.submitErrorButton")}</Link>
+                  <Link href='/'>{t((m) => m.app.errors.notFound.buttons.submitErrorButton)}</Link>
                 </Button>
                 <Button
                   asChild
                   className={styles["actionButtonDefault"]}>
-                  <Link href='https://arolariu.ro/'>{t("buttons.returnButton")}</Link>
+                  <Link href='https://arolariu.ro/'>{t((m) => m.app.errors.notFound.buttons.returnButton)}</Link>
                 </Button>
               </div>
             </section>

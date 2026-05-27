@@ -4,7 +4,7 @@ import RenderTermsOfServiceScreen from "./island";
 /**
  * Client island for the Terms of Service page.
  * Delegates rendering to `EnhancedLegalArticles` configured with
- * `pageType="Legal.TermsOfService"`. Renders 23 legal article sections
+ * `pageType="sections.legal.termsOfService"`. Renders 23 legal article sections
  * covering license, restrictions, cookies, liability, and arbitration.
  */
 const meta = {
