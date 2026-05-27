@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching a single merchant by identifier.
- * @module hooks/useMerchant
+* @module app/domains/invoices/_hooks/merchant/useMerchant
  *
  * @remarks
  * Client-side data hook that integrates with the merchants Zustand store.
@@ -10,11 +10,11 @@
  * background when the identifier changes.
  */
 
-import fetchMerchant from "@/app/domains/invoices/_actions/merchants/fetchMerchant";
 import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
+import {fetchMerchant} from "../../_actions/merchants/fetchMerchant";
 
 /**
  * Input parameters for the useMerchant hook.
@@ -72,9 +72,9 @@ type HookOutputType = Readonly<{
  * - Stale-while-revalidate pattern: shows cached data while fetching fresh
  * - Consider using {@link useMerchants} with client-side filtering for list views
  *
- * @param params - Hook configuration
- * @param params.merchantIdentifier - UUID of merchant to fetch
- * @returns Object containing merchant data, loading state, and error state
+ * @param params - Hook configuration.
+ * @param params.merchantIdentifier - UUID of the merchant to fetch and cache.
+ * @returns Hook state containing the cached merchant, hydration loading state, and fetch error flag.
  *
  * @example
  * ```tsx
@@ -120,7 +120,7 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
           setIsError(true);
         }
       } catch (error: unknown) {
-        console.error(">>> Error fetching merchant in useMerchant hook:", error as Error);
+        console.error(">>> Error fetching merchant in useMerchant hook:", error);
         setIsError(true);
       }
     };
