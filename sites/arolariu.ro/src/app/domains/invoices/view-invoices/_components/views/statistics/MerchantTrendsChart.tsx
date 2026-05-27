@@ -13,7 +13,8 @@
 import {formatAmount} from "@/lib/utils.generic";
 import {useMerchantsStore} from "@/stores/merchantsStore";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useMemo} from "react";
 import type {MerchantTrend} from "../../../_utils/statistics";
 import styles from "./MerchantTrendsChart.module.scss";
@@ -61,7 +62,7 @@ function formatMonthLabel(monthKey: string, locale: string): string {
  * @returns Merchant trends visualization component
  */
 export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.merchantTrends");
+  const t = useTranslations();
   const locale = useLocale();
   const getMerchantById = useMerchantsStore((state) => state.getEntityById);
 
@@ -96,11 +97,11 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
     return (
       <Card className={styles["card"]}>
         <CardHeader>
-          <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
+          <CardTitle>{t((m) => m["IMS--Stats"].merchantTrends.title)}</CardTitle>
+          <CardDescription>{t((m) => m["IMS--Stats"].merchantTrends.description)}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className={styles["emptyState"]}>{t("empty")}</p>
+          <p className={styles["emptyState"]}>{t((m) => m["IMS--Stats"].merchantTrends.empty)}</p>
         </CardContent>
       </Card>
     );
@@ -109,17 +110,17 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-        <CardDescription>{t("description")}</CardDescription>
+        <CardTitle>{t((m) => m["IMS--Stats"].merchantTrends.title)}</CardTitle>
+        <CardDescription>{t((m) => m["IMS--Stats"].merchantTrends.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["content"]}>
         <div className={styles["tableWrapper"]}>
           <table className={styles["table"]}>
             <thead>
               <tr>
-                <th className={styles["headerMerchant"]}>{t("labels.merchant")}</th>
-                <th className={styles["headerTotal"]}>{t("labels.totalSpend")}</th>
-                <th className={styles["headerTrend"]}>{t("labels.trend")}</th>
+                <th className={styles["headerMerchant"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.merchant)}</th>
+                <th className={styles["headerTotal"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.totalSpend)}</th>
+                <th className={styles["headerTrend"]}>{t((m) => m["IMS--Stats"].merchantTrends.labels.trend)}</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +147,7 @@ export function MerchantTrendsChart({data, currency}: Props): React.JSX.Element 
                     <td className={styles["cellTrend"]}>
                       <div
                         className={styles["sparkline"]}
-                        aria-label={t("aria.sparkline", {merchant: merchantName})}>
+                        aria-label={t((m) => m["IMS--Stats"].merchantTrends.aria.sparkline, {merchant: merchantName})}>
                         {displayMonths.map((monthKey) => {
                           const amount = monthlyMap.get(monthKey) ?? 0;
                           const heightPercent = maxMonthlyAmount > 0 ? (amount / maxMonthlyAmount) * 100 : 0;

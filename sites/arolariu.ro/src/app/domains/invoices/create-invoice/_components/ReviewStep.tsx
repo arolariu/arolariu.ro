@@ -1,5 +1,7 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 /**
  * @fileoverview Review step component for final confirmation before invoice creation.
  * @module app/domains/invoices/create-invoice/_components/ReviewStep
@@ -14,7 +16,8 @@
 import {InvoiceCategory, PaymentType} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Spinner} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useFormatter, useTranslations} from "next-intl";
+import {useFormatter} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, TbFileTypePdf, TbPhoto, TbSparkles} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
@@ -46,15 +49,15 @@ const PAYMENT_TYPE_KEYS: Record<number, "unknown" | "cash" | "card" | "transfer"
  * @returns JSX element with review UI
  */
 export default function ReviewStep(): React.JSX.Element {
-  const t = useTranslations("IMS--Create.reviewStep");
+  const t = useTranslations();
   const {selectedScans, invoiceDetails, isCreating, createInvoiceWithScans} = useCreateInvoiceContext();
   const format = useFormatter();
 
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>{t("title")}</h2>
-        <p className={styles["subtitle"]}>{t("subtitle")}</p>
+        <h2 className={styles["title"]}>{t((m) => m["IMS--Create"].reviewStep.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].reviewStep.subtitle)}</p>
       </div>
 
       {/* Selected Scans */}
@@ -62,7 +65,7 @@ export default function ReviewStep(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["sectionTitle"]}>
             <TbPhoto />
-            {t("sections.scans.title")}
+            {t((m) => m["IMS--Create"].reviewStep.sections.scans.title)}
             <Badge variant='secondary'>{selectedScans.length}</Badge>
           </CardTitle>
         </CardHeader>
@@ -99,14 +102,14 @@ export default function ReviewStep(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["sectionTitle"]}>
             <TbFileInvoice />
-            {t("sections.details.title")}
+            {t((m) => m["IMS--Create"].reviewStep.sections.details.title)}
           </CardTitle>
         </CardHeader>
         <CardContent className={styles["detailsContent"]}>
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbFileDescription />
-              {t("sections.details.name")}
+              {t((m) => m["IMS--Create"].reviewStep.sections.details.name)}
             </div>
             <div className={styles["detailValue"]}>{invoiceDetails.name}</div>
           </div>
@@ -114,27 +117,27 @@ export default function ReviewStep(): React.JSX.Element {
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCategory />
-              {t("sections.details.category")}
+              {t((m) => m["IMS--Create"].reviewStep.sections.details.category)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(`categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`)}</Badge>
+              <Badge variant='outline'>{t(selectorFromPath(`IMS--Create.reviewStep.categories.${CATEGORY_KEYS[invoiceDetails.category] ?? "notDefined"}`))}</Badge>
             </div>
           </div>
 
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCreditCard />
-              {t("sections.details.paymentType")}
+              {t((m) => m["IMS--Create"].reviewStep.sections.details.paymentType)}
             </div>
             <div className={styles["detailValue"]}>
-              <Badge variant='outline'>{t(`paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`)}</Badge>
+              <Badge variant='outline'>{t(selectorFromPath(`IMS--Create.reviewStep.paymentTypes.${PAYMENT_TYPE_KEYS[invoiceDetails.paymentType] ?? "unknown"}`))}</Badge>
             </div>
           </div>
 
           <div className={styles["detailRow"]}>
             <div className={styles["detailLabel"]}>
               <TbCalendar />
-              {t("sections.details.transactionDate")}
+              {t((m) => m["IMS--Create"].reviewStep.sections.details.transactionDate)}
             </div>
             <div className={styles["detailValue"]}>{format.dateTime(invoiceDetails.transactionDate, {dateStyle: "long"})}</div>
           </div>
@@ -143,7 +146,7 @@ export default function ReviewStep(): React.JSX.Element {
             <div className={styles["detailRow"]}>
               <div className={styles["detailLabel"]}>
                 <TbFileDescription />
-                {t("sections.details.description")}
+                {t((m) => m["IMS--Create"].reviewStep.sections.details.description)}
               </div>
               <div className={styles["detailValue"]}>{invoiceDetails.description}</div>
             </div>
@@ -161,16 +164,16 @@ export default function ReviewStep(): React.JSX.Element {
           {isCreating ? (
             <>
               <Spinner className={styles["spinner"]} />
-              {t("actions.creating")}
+              {t((m) => m["IMS--Create"].reviewStep.actions.creating)}
             </>
           ) : (
             <>
               <TbSparkles />
-              {t("actions.create")}
+              {t((m) => m["IMS--Create"].reviewStep.actions.create)}
             </>
           )}
         </Button>
-        <p className={styles["createHint"]}>{t("actions.hint")}</p>
+        <p className={styles["createHint"]}>{t((m) => m["IMS--Create"].reviewStep.actions.hint)}</p>
       </div>
     </div>
   );

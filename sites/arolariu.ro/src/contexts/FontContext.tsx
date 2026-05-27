@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Font management context for accessibility and user preferences.
  * @module contexts/FontContext
@@ -17,7 +19,6 @@
  * @see {@link https://brailleinstitute.org/freefont|Atkinson Hyperlegible Font}
  */
 
-"use client";
 
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFontWithVariable} from "next/dist/compiled/@next/font";

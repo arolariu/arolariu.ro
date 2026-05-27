@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Celebration email sent after a user uploads their very first invoice.
  * @module emails/invoices/FirstInvoiceUploadedEmail
@@ -80,34 +81,34 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {name})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: effectiveInvoiceUrl, label: t("ctaPrimary")}}
-        secondaryCta={{href: effectiveUploadUrl, label: t("ctaSecondary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("email.firstInvoiceUploaded.badge"))}`}
+        preview={t(selectorFromPath("email.firstInvoiceUploaded.preview"), {name})}
+        badge={t(selectorFromPath("email.firstInvoiceUploaded.badge"))}
+        heading={t(selectorFromPath("email.firstInvoiceUploaded.heading"))}
+        primaryCta={{href: effectiveInvoiceUrl, label: t(selectorFromPath("email.firstInvoiceUploaded.ctaPrimary"))}}
+        secondaryCta={{href: effectiveUploadUrl, label: t(selectorFromPath("email.firstInvoiceUploaded.ctaSecondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.firstInvoiceUploaded.greeting"), {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.firstInvoiceUploaded.intro"))}</Text>
         <KeyValueTable
-          title={t("invoiceSummaryTitle")}
+          title={t(selectorFromPath("email.firstInvoiceUploaded.invoiceSummaryTitle"))}
           items={[
-            {label: t("invoiceSummary.invoiceName"), value: invoiceName || t("untitledFallback")},
-            {label: t("invoiceSummary.uploaded"), value: uploadDate},
-            {label: t("invoiceSummary.status"), value: t("statusValue")},
+            {label: t(selectorFromPath("email.firstInvoiceUploaded.invoiceSummary.invoiceName")), value: invoiceName || t(selectorFromPath("email.firstInvoiceUploaded.untitledFallback"))},
+            {label: t(selectorFromPath("email.firstInvoiceUploaded.invoiceSummary.uploaded")), value: uploadDate},
+            {label: t(selectorFromPath("email.firstInvoiceUploaded.invoiceSummary.status")), value: t(selectorFromPath("email.firstInvoiceUploaded.statusValue"))},
           ]}
         />
-        <EmailCard title={t("whatHappensNextTitle")}>
-          <BulletList items={[t("whatHappensNext.0"), t("whatHappensNext.1"), t("whatHappensNext.2")]} />
+        <EmailCard title={t(selectorFromPath("email.firstInvoiceUploaded.whatHappensNextTitle"))}>
+          <BulletList items={[t(selectorFromPath("email.firstInvoiceUploaded.whatHappensNext.0")), t(selectorFromPath("email.firstInvoiceUploaded.whatHappensNext.1")), t(selectorFromPath("email.firstInvoiceUploaded.whatHappensNext.2"))]} />
         </EmailCard>
-        <EmailCard title={t("featuresToExploreTitle")}>
-          <BulletList items={[t("featuresToExplore.0"), t("featuresToExplore.1"), t("featuresToExplore.2"), t("featuresToExplore.3")]} />
+        <EmailCard title={t(selectorFromPath("email.firstInvoiceUploaded.featuresToExploreTitle"))}>
+          <BulletList items={[t(selectorFromPath("email.firstInvoiceUploaded.featuresToExplore.0")), t(selectorFromPath("email.firstInvoiceUploaded.featuresToExplore.1")), t(selectorFromPath("email.firstInvoiceUploaded.featuresToExplore.2")), t(selectorFromPath("email.firstInvoiceUploaded.featuresToExplore.3"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.firstInvoiceUploaded.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("email.firstInvoiceUploaded.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -118,9 +119,9 @@ const FirstInvoiceUploadedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.firstInvoiceUploaded.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.firstInvoiceUploaded.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

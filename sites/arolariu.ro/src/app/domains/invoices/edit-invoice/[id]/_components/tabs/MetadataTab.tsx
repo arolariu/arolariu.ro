@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MetadataTab.module.scss";
@@ -63,7 +63,7 @@ type Props = {
  * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Edit.metadataTab");
+  const t = useTranslations();
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__METADATA", "add");
   const {open: openEditDialog} = useDialog("EDIT_INVOICE__METADATA", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__METADATA", "delete", metadata);
@@ -77,8 +77,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div>
-            <CardTitle>{t("header.title")}</CardTitle>
-            <CardDescription>{t("header.description")}</CardDescription>
+            <CardTitle>{t((m) => m["IMS--Edit"].metadataTab.header.title)}</CardTitle>
+            <CardDescription>{t((m) => m["IMS--Edit"].metadataTab.header.description)}</CardDescription>
           </div>
           <TooltipProvider>
             <Tooltip>
@@ -89,12 +89,12 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                     onClick={openAddDialog}
                     size='sm'>
                     <TbPlus className={styles["buttonIcon"]} />
-                    {t("buttons.addField")}
+                    {t((m) => m["IMS--Edit"].metadataTab.buttons.addField)}
                   </Button>
                 }
               />
               <TooltipContent>
-                <p>{t("tooltips.addCustomMetadata")}</p>
+                <p>{t((m) => m["IMS--Edit"].metadataTab.tooltips.addCustomMetadata)}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -115,7 +115,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                     <Badge
                       variant='outline'
                       className={styles["readonlyBadge"]}>
-                      {t("badges.readonly")}
+                      {t((m) => m["IMS--Edit"].metadataTab.badges.readonly)}
                     </Badge>
                   </div>
                   <span className={styles["fieldValue"]}>{String(value)}</span>
@@ -137,14 +137,14 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                           onClick={openEditDialog}
                           disabled>
                           <TbEdit className={styles["menuIcon"]} />
-                          {t("dropdown.edit")}
+                          {t((m) => m["IMS--Edit"].metadataTab.dropdown.edit)}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={openDeleteDialog}
                           className={styles["deleteMenuItem"]}
                           disabled>
                           <TbTrash className={styles["menuIcon"]} />
-                          {t("dropdown.delete")}
+                          {t((m) => m["IMS--Edit"].metadataTab.dropdown.delete)}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -154,12 +154,12 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
             </div>
           ) : (
             <div className={styles["emptyState"]}>
-              <p className={styles["emptyText"]}>{t("emptyState.noMetadataFields")}</p>
+              <p className={styles["emptyText"]}>{t((m) => m["IMS--Edit"].metadataTab.emptyState.noMetadataFields)}</p>
               <Button
                 onClick={openAddDialog}
                 variant='outline'>
                 <TbPlus className={styles["buttonIcon"]} />
-                {t("buttons.addFirstMetadataField")}
+                {t((m) => m["IMS--Edit"].metadataTab.buttons.addFirstMetadataField)}
               </Button>
             </div>
           )}

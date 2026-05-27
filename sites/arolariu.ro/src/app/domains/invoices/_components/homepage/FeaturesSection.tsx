@@ -1,7 +1,7 @@
 "use client";
 
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {TbChartBar, TbFileInvoice, TbPhoto} from "react-icons/tb";
 import FeatureItem from "./FeatureItem";
@@ -18,7 +18,7 @@ interface Props {
  * @returns The features section.
  */
 export default function FeaturesSection({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--Landing");
+  const t = useTranslations();
 
   return (
     <section className={styles["featuresSection"]}>
@@ -31,7 +31,7 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             transition={{duration: 0.6}}>
             <Image
               src='/images/domains/invoices/invoice-bottom.svg'
-              alt={t("features.imageAlt")}
+              alt={t((m) => m["IMS--Landing"].features.imageAlt)}
               width={500}
               height={500}
               className={styles["featuresImage"]}
@@ -44,32 +44,32 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.6, delay: 0.2}}>
             <div className={styles["featuresHeader"]}>
-              <h2 className={styles["sectionTitle"]}>{t("features.title")}</h2>
-              <p className={styles["sectionDescription"]}>{t("features.description")}</p>
+              <h2 className={styles["sectionTitle"]}>{t((m) => m["IMS--Landing"].features.title)}</h2>
+              <p className={styles["sectionDescription"]}>{t((m) => m["IMS--Landing"].features.description)}</p>
             </div>
 
             <div className={styles["featuresList"]}>
               <FeatureItem
                 icon={TbPhoto}
-                title={t("features.ocr.title")}
-                description={t("features.ocr.description")}
+                title={t((m) => m["IMS--Landing"].features.ocr.title)}
+                description={t((m) => m["IMS--Landing"].features.ocr.description)}
               />
               <FeatureItem
                 icon={TbChartBar}
-                title={t("features.analytics.title")}
-                description={t("features.analytics.description")}
+                title={t((m) => m["IMS--Landing"].features.analytics.title)}
+                description={t((m) => m["IMS--Landing"].features.analytics.description)}
               />
               <FeatureItem
                 icon={TbFileInvoice}
-                title={t("features.batch.title")}
-                description={t("features.batch.description")}
+                title={t((m) => m["IMS--Landing"].features.batch.title)}
+                description={t((m) => m["IMS--Landing"].features.batch.description)}
               />
             </div>
 
             {!isAuthenticated && (
               <div className={styles["signInPrompt"]}>
                 <p className={styles["signInPromptText"]}>
-                  <strong>{t("features.signIn")}</strong> {t("features.signInPrompt")}
+                  <strong>{t((m) => m["IMS--Landing"].features.signIn)}</strong> {t((m) => m["IMS--Landing"].features.signInPrompt)}
                 </p>
               </div>
             )}

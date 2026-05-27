@@ -1,4 +1,5 @@
-"use client";
+"use client";import {selectorFromPath} from "next-intl-selector";
+
 
 import {formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
@@ -26,7 +27,8 @@ import {
   useDebounce,
   useWindowSize,
 } from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
+import {useLocale} from "next-intl";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCalendar, TbCards, TbCurrencyDollar, TbFilter, TbInfoCircle, TbSearch, TbTable, TbX} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
@@ -105,7 +107,7 @@ export default function FilterBar({
   onViewModeChange,
   filteredCount,
 }: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("IMS--List.invoicesView");
+  const t = useTranslations();
   const locale = useLocale();
   const {isMobile} = useWindowSize();
   // Read full unfiltered invoice list straight from the store — matches the
@@ -318,15 +320,15 @@ export default function FilterBar({
     (cat: InvoiceCategory): string => {
       switch (cat) {
         case InvoiceCategory.GROCERY:
-          return t("categories.groceries");
+          return t((m) => m["IMS--List"].invoicesView.categories.groceries);
         case InvoiceCategory.FAST_FOOD:
-          return t("categories.dining");
+          return t((m) => m["IMS--List"].invoicesView.categories.dining);
         case InvoiceCategory.HOME_CLEANING:
-          return t("categories.utilities");
+          return t((m) => m["IMS--List"].invoicesView.categories.utilities);
         case InvoiceCategory.CAR_AUTO:
-          return t("categories.travel");
+          return t((m) => m["IMS--List"].invoicesView.categories.travel);
         default:
-          return t("categories.other");
+          return t((m) => m["IMS--List"].invoicesView.categories.other);
       }
     },
     [t],
@@ -336,17 +338,17 @@ export default function FilterBar({
     (pt: PaymentType): string => {
       switch (pt) {
         case PaymentType.Cash:
-          return t("filters.paymentTypeLabels.cash");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.cash);
         case PaymentType.Card:
-          return t("filters.paymentTypeLabels.card");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.card);
         case PaymentType.Transfer:
-          return t("filters.paymentTypeLabels.transfer");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.transfer);
         case PaymentType.MobilePayment:
-          return t("filters.paymentTypeLabels.mobile");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.mobile);
         case PaymentType.Voucher:
-          return t("filters.paymentTypeLabels.voucher");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.voucher);
         default:
-          return t("filters.paymentTypeLabels.other");
+          return t((m) => m["IMS--List"].invoicesView.filters.paymentTypeLabels.other);
       }
     },
     [t],
@@ -354,12 +356,12 @@ export default function FilterBar({
 
   const getSortLabel = useCallback(
     (sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): string => {
-      if (sortBy === "date" && sortOrder === "desc") return t("filters.sortOptions.dateNewest");
-      if (sortBy === "date" && sortOrder === "asc") return t("filters.sortOptions.dateOldest");
-      if (sortBy === "amount" && sortOrder === "desc") return t("filters.sortOptions.amountHighToLow");
-      if (sortBy === "amount" && sortOrder === "asc") return t("filters.sortOptions.amountLowToHigh");
-      if (sortBy === "name" && sortOrder === "asc") return t("filters.sortOptions.nameAZ");
-      if (sortBy === "name" && sortOrder === "desc") return t("filters.sortOptions.nameZA");
+      if (sortBy === "date" && sortOrder === "desc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateNewest);
+      if (sortBy === "date" && sortOrder === "asc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateOldest);
+      if (sortBy === "amount" && sortOrder === "desc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountHighToLow);
+      if (sortBy === "amount" && sortOrder === "asc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountLowToHigh);
+      if (sortBy === "name" && sortOrder === "asc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameAZ);
+      if (sortBy === "name" && sortOrder === "desc") return t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameZA);
       return "";
     },
     [t],
@@ -367,9 +369,9 @@ export default function FilterBar({
 
   const dateActivePillText = useMemo(() => {
     if (!isDateActive) return null;
-    if (activeDatePreset === "30d") return t("filters.datePresets.30d");
-    if (activeDatePreset === "90d") return t("filters.datePresets.90d");
-    if (activeDatePreset === "ytd") return t("filters.datePresets.ytd");
+    if (activeDatePreset === "30d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["30d"]);
+    if (activeDatePreset === "90d") return t((m) => m["IMS--List"].invoicesView.filters.datePresets["90d"]);
+    if (activeDatePreset === "ytd") return t((m) => m["IMS--List"].invoicesView.filters.datePresets.ytd);
     if (filters.dateFrom && filters.dateTo) return `${formatDate(filters.dateFrom, {locale})} – ${formatDate(filters.dateTo, {locale})}`;
     if (filters.dateFrom) return `≥ ${formatDate(filters.dateFrom, {locale})}`;
     if (filters.dateTo) return `≤ ${formatDate(filters.dateTo, {locale})}`;
@@ -393,12 +395,12 @@ export default function FilterBar({
         render={
           <span
             className={styles["dynamicHintIcon"]}
-            aria-label={t("filters.dynamicHint")}>
+            aria-label={t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}>
             <TbInfoCircle aria-hidden='true' />
           </span>
         }
       />
-      <TooltipContent>{t("filters.dynamicHint")}</TooltipContent>
+      <TooltipContent>{t((m) => m["IMS--List"].invoicesView.filters.dynamicHint)}</TooltipContent>
     </Tooltip>
   );
 
@@ -413,12 +415,12 @@ export default function FilterBar({
         <div className={`${styles["cardSection"]} ${isDateActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
             <span className={styles["cardSectionTitle"]}>
-              <TbCalendar /> {t("filters.dateRange")}
+              <TbCalendar /> {t((m) => m["IMS--List"].invoicesView.filters.dateRange)}
             </span>
             {dateActivePillText ? (
               <span className={styles["activeValuePill"]}>{dateActivePillText}</span>
             ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+              <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.anyValue)}</span>
             )}
           </div>
           <div className={styles["presetRow"]}>
@@ -430,7 +432,7 @@ export default function FilterBar({
                 className={`${styles["presetButton"]} ${activeDatePreset === preset ? styles["presetButtonActive"] : ""}`}
                 // eslint-disable-next-line react/jsx-no-bind -- preset is a stable literal
                 onClick={createPresetClickHandler(preset)}>
-                {t(`filters.datePresets.${preset}`)}
+                {t(selectorFromPath(`filters.datePresets.${preset}`))}
               </button>
             ))}
           </div>
@@ -442,7 +444,7 @@ export default function FilterBar({
                     variant='outline'
                     className={styles["dateButton"]}>
                     <TbCalendar className={styles["dateIcon"]} />
-                    {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t("filters.dateFrom")}
+                    {filters.dateFrom ? formatDate(filters.dateFrom, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateFrom)}
                   </Button>
                 }
               />
@@ -461,7 +463,7 @@ export default function FilterBar({
                     variant='outline'
                     className={styles["dateButton"]}>
                     <TbCalendar className={styles["dateIcon"]} />
-                    {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t("filters.dateTo")}
+                    {filters.dateTo ? formatDate(filters.dateTo, {locale}) : t((m) => m["IMS--List"].invoicesView.filters.dateTo)}
                   </Button>
                 }
               />
@@ -480,12 +482,12 @@ export default function FilterBar({
         <div className={`${styles["cardSection"]} ${isAmountActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
             <span className={styles["cardSectionTitle"]}>
-              <TbCurrencyDollar /> {t("filters.amountRange")}
+              <TbCurrencyDollar /> {t((m) => m["IMS--List"].invoicesView.filters.amountRange)}
             </span>
             {amountActivePillText ? (
               <span className={styles["activeValuePill"]}>{amountActivePillText}</span>
             ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+              <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.anyValue)}</span>
             )}
           </div>
           <div className={styles["amountRangeInputs"]}>
@@ -493,7 +495,7 @@ export default function FilterBar({
               <TbCurrencyDollar className={styles["currencyIcon"]} />
               <Input
                 type='number'
-                placeholder={t("filters.amountMin")}
+                placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMin)}
                 value={filters.amountMin ?? ""}
                 onChange={handleAmountMinChange}
                 className={styles["amountInput"]}
@@ -503,7 +505,7 @@ export default function FilterBar({
               <TbCurrencyDollar className={styles["currencyIcon"]} />
               <Input
                 type='number'
-                placeholder={t("filters.amountMax")}
+                placeholder={t((m) => m["IMS--List"].invoicesView.filters.amountMax)}
                 value={filters.amountMax ?? ""}
                 onChange={handleAmountMaxChange}
                 className={styles["amountInput"]}
@@ -519,7 +521,7 @@ export default function FilterBar({
                 className={`${styles["presetButton"]} ${activeAmountPreset === presetKey ? styles["presetButtonActive"] : ""}`}
                 // eslint-disable-next-line react/jsx-no-bind -- presetKey is a stable literal
                 onClick={createAmountPresetClickHandler(presetKey)}>
-                {t(`filters.amountPresets.${labelKey}`)}
+                {t(selectorFromPath(`filters.amountPresets.${labelKey}`))}
               </button>
             ))}
           </div>
@@ -530,13 +532,13 @@ export default function FilterBar({
           <div className={`${styles["cardSection"]} ${isCurrencyActive ? styles["cardSectionActive"] : ""}`}>
             <div className={styles["cardSectionHeader"]}>
               <span className={styles["cardSectionTitle"]}>
-                💵 {t("filters.currency")}
+                💵 {t((m) => m["IMS--List"].invoicesView.filters.currency)}
                 {dynamicHint}
               </span>
               {isCurrencyActive ? (
                 <span className={styles["activeValuePill"]}>{formatCurrencyList(filters.currencies)}</span>
               ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.currencyAny")}</span>
+                <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.currencyAny)}</span>
               )}
             </div>
             <div className={styles["categoryChips"]}>
@@ -564,7 +566,7 @@ export default function FilterBar({
           <div className={`${styles["cardSection"]} ${isCategoryActive ? styles["cardSectionActive"] : ""}`}>
             <div className={styles["cardSectionHeader"]}>
               <span className={styles["cardSectionTitle"]}>
-                📂 {t("filters.categories")}
+                📂 {t((m) => m["IMS--List"].invoicesView.filters.categories)}
                 {dynamicHint}
               </span>
               {isCategoryActive ? (
@@ -572,7 +574,7 @@ export default function FilterBar({
                   {filters.categories.map((c) => getCategoryLabel(c as InvoiceCategory)).join(", ")}
                 </span>
               ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+                <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.anyValue)}</span>
               )}
             </div>
             <div className={styles["categoryChips"]}>
@@ -600,7 +602,7 @@ export default function FilterBar({
           <div className={`${styles["cardSection"]} ${isPaymentActive ? styles["cardSectionActive"] : ""}`}>
             <div className={styles["cardSectionHeader"]}>
               <span className={styles["cardSectionTitle"]}>
-                💳 {t("filters.paymentTypes")}
+                💳 {t((m) => m["IMS--List"].invoicesView.filters.paymentTypes)}
                 {dynamicHint}
               </span>
               {isPaymentActive ? (
@@ -608,7 +610,7 @@ export default function FilterBar({
                   {filters.paymentTypes.map((p) => getPaymentTypeLabel(p as PaymentType)).join(", ")}
                 </span>
               ) : (
-                <span className={styles["inactiveLabel"]}>{t("filters.anyValue")}</span>
+                <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.anyValue)}</span>
               )}
             </div>
             <div className={styles["categoryChips"]}>
@@ -634,11 +636,11 @@ export default function FilterBar({
         {/* ─────── Sort By ─────── */}
         <div className={`${styles["cardSection"]} ${isSortActive ? styles["cardSectionActive"] : ""}`}>
           <div className={styles["cardSectionHeader"]}>
-            <span className={styles["cardSectionTitle"]}>↕ {t("filters.sortBy")}</span>
+            <span className={styles["cardSectionTitle"]}>↕ {t((m) => m["IMS--List"].invoicesView.filters.sortBy)}</span>
             {isSortActive ? (
               <span className={styles["activeValuePill"]}>{getSortLabel(filters.sortBy, filters.sortOrder)}</span>
             ) : (
-              <span className={styles["inactiveLabel"]}>{t("filters.defaultValue")}</span>
+              <span className={styles["inactiveLabel"]}>{t((m) => m["IMS--List"].invoicesView.filters.defaultValue)}</span>
             )}
           </div>
           <Select
@@ -648,12 +650,12 @@ export default function FilterBar({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='date-desc'>{t("filters.sortOptions.dateNewest")}</SelectItem>
-              <SelectItem value='date-asc'>{t("filters.sortOptions.dateOldest")}</SelectItem>
-              <SelectItem value='amount-desc'>{t("filters.sortOptions.amountHighToLow")}</SelectItem>
-              <SelectItem value='amount-asc'>{t("filters.sortOptions.amountLowToHigh")}</SelectItem>
-              <SelectItem value='name-asc'>{t("filters.sortOptions.nameAZ")}</SelectItem>
-              <SelectItem value='name-desc'>{t("filters.sortOptions.nameZA")}</SelectItem>
+              <SelectItem value='date-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateNewest)}</SelectItem>
+              <SelectItem value='date-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.dateOldest)}</SelectItem>
+              <SelectItem value='amount-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountHighToLow)}</SelectItem>
+              <SelectItem value='amount-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.amountLowToHigh)}</SelectItem>
+              <SelectItem value='name-asc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameAZ)}</SelectItem>
+              <SelectItem value='name-desc'>{t((m) => m["IMS--List"].invoicesView.filters.sortOptions.nameZA)}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -669,7 +671,7 @@ export default function FilterBar({
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
-            placeholder={t("searchPlaceholder")}
+            placeholder={t((m) => m["IMS--List"].invoicesView.searchPlaceholder)}
             className={styles["searchInput"]}
             value={searchInput}
             onChange={handleSearchChange}
@@ -701,9 +703,9 @@ export default function FilterBar({
             <SheetContent className={styles["filterSheet"]}>
               <div className={styles["sheetHeader"]}>
                 <h3 className={styles["sheetTitle"]}>
-                  {t("filters.title")}
+                  {t((m) => m["IMS--List"].invoicesView.filters.title)}
                   {activeFilterCount > 0 && (
-                    <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
+                    <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
                   )}
                 </h3>
                 {activeFilterCount > 0 && (
@@ -713,7 +715,7 @@ export default function FilterBar({
                     onClick={handleClearFilters}
                     className={styles["clearButton"]}>
                     <TbX className={styles["clearIcon"]} />
-                    {t("filters.clear")}
+                    {t((m) => m["IMS--List"].invoicesView.filters.clear)}
                   </Button>
                 )}
               </div>
@@ -723,7 +725,7 @@ export default function FilterBar({
                   className={styles["mobileShowResultsButton"]}
                   // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                   onClick={() => setIsFilterOpen(false)}>
-                  {t("filters.showResults", {count: filteredCount})}
+                  {t((m) => m["IMS--List"].invoicesView.filters.showResults, {count: filteredCount})}
                 </Button>
               </div>
             </SheetContent>
@@ -738,7 +740,7 @@ export default function FilterBar({
             aria-expanded={isFilterOpen}
             aria-controls='inline-filter-panel'>
             <TbFilter className={styles["filterIcon"]} />
-            {t("filters.button")}
+            {t((m) => m["IMS--List"].invoicesView.filters.button)}
             {activeFilterCount > 0 && (
               <Badge
                 variant='default'
@@ -757,7 +759,7 @@ export default function FilterBar({
             onClick={handleClearFilters}
             className={styles["clearFiltersButton"]}>
             <TbX className={styles["clearIcon"]} />
-            {t("filters.clear")}
+            {t((m) => m["IMS--List"].invoicesView.filters.clear)}
           </Button>
         )}
 
@@ -778,7 +780,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t("viewModes.table")}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.table)}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger
@@ -794,7 +796,7 @@ export default function FilterBar({
                   </Button>
                 }
               />
-              <TooltipContent>{t("viewModes.grid")}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--List"].invoicesView.viewModes.grid)}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -807,9 +809,9 @@ export default function FilterBar({
           className={styles["inlineFilterPanel"]}>
           <div className={styles["inlineFilterHeader"]}>
             <h4 className={styles["inlineFilterTitle"]}>
-              {t("filters.title")}
+              {t((m) => m["IMS--List"].invoicesView.filters.title)}
               {activeFilterCount > 0 && (
-                <span className={styles["panelHeaderActiveBadge"]}>{t("filters.activeCount", {count: String(activeFilterCount)})}</span>
+                <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m["IMS--List"].invoicesView.filters.activeCount, {count: String(activeFilterCount)})}</span>
               )}
             </h4>
             <div className={styles["inlineFilterActions"]}>
@@ -820,7 +822,7 @@ export default function FilterBar({
                   onClick={handleClearFilters}
                   className={styles["clearButton"]}>
                   <TbX className={styles["clearIcon"]} />
-                  {t("filters.clear")}
+                  {t((m) => m["IMS--List"].invoicesView.filters.clear)}
                 </Button>
               )}
               <Button
@@ -828,7 +830,7 @@ export default function FilterBar({
                 size='sm'
                 // eslint-disable-next-line react/jsx-no-bind -- inline close handler
                 onClick={() => setIsFilterOpen(false)}
-                aria-label={t("filters.title")}
+                aria-label={t((m) => m["IMS--List"].invoicesView.filters.title)}
                 className={styles["clearButton"]}>
                 <TbX className={styles["clearIcon"]} />
               </Button>

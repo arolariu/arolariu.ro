@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbFileInvoice, TbTrash, TbX} from "react-icons/tb";
@@ -40,7 +40,7 @@ type ScanSelectionToolbarProps = {
  * Provides bulk actions like create invoice, delete, and deselect all.
  */
 export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSelectionToolbarProps>): React.JSX.Element | null {
-  const t = useTranslations("IMS--ViewScans.toolbar");
+  const t = useTranslations();
   const router = useRouter();
   const {selectedScans, clearSelection, removeScan} = useScans();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,18 +66,18 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
       });
 
       if (failed === 0) {
-        toast.success(t("delete.success", {count: String(succeeded)}));
+        toast.success(t((m) => m["IMS--ViewScans"].toolbar.delete.success, {count: String(succeeded)}));
       } else if (succeeded > 0) {
-        toast.warning(t("delete.partial", {success: String(succeeded), failed: String(failed)}));
+        toast.warning(t((m) => m["IMS--ViewScans"].toolbar.delete.partial, {success: String(succeeded), failed: String(failed)}));
       } else {
-        toast.error(t("delete.failed"));
+        toast.error(t((m) => m["IMS--ViewScans"].toolbar.delete.failed));
       }
 
       clearSelection(); // Clear the selection after deletion
       router.refresh(); // Refresh to update the scan list
     } catch (error) {
       console.error("Failed to delete scans:", error);
-      toast.error(t("delete.error"));
+      toast.error(t((m) => m["IMS--ViewScans"].toolbar.delete.error));
     } finally {
       setIsDeleting(false);
     }
@@ -99,7 +99,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               transition={{type: "spring", stiffness: 300, damping: 20}}>
               {selectedScans.length}
             </motion.span>{" "}
-            {t("selected")}
+            {t((m) => m["IMS--ViewScans"].toolbar.selected)}
           </span>
           <TooltipProvider>
             <Tooltip>
@@ -111,11 +111,11 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                     onClick={clearSelection}
                     className={styles["clearButton"]}>
                     <TbX className={styles["clearIcon"]} />
-                    <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
+                    <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].toolbar.clearSelection)}</span>
                   </Button>
                 }
               />
-              <TooltipContent>{t("clearSelection")}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--ViewScans"].toolbar.clearSelection)}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -132,25 +132,25 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                         size='sm'
                         disabled={isDeleting}>
                         <TbTrash />
-                        <span className={styles["hiddenMobile"]}>{t("delete.button", {count: String(selectedScans.length)})}</span>
+                        <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].toolbar.delete.button, {count: String(selectedScans.length)})}</span>
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
+                        <AlertDialogTitle>{t((m) => m["IMS--ViewScans"].toolbar.delete.confirmTitle)}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          {t("delete.confirmDescription", {count: String(selectedScans.length)})}
+                          {t((m) => m["IMS--ViewScans"].toolbar.delete.confirmDescription, {count: String(selectedScans.length)})}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>{t("delete.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteSelected}>{t("delete.confirm")}</AlertDialogAction>
+                        <AlertDialogCancel>{t((m) => m["IMS--ViewScans"].toolbar.delete.cancel)}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteSelected}>{t((m) => m["IMS--ViewScans"].toolbar.delete.confirm)}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 }
               />
-              <TooltipContent>{t("delete.button", {count: String(selectedScans.length)})}</TooltipContent>
+              <TooltipContent>{t((m) => m["IMS--ViewScans"].toolbar.delete.button, {count: String(selectedScans.length)})}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -162,12 +162,12 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                     onClick={onCreateInvoice}
                     className={styles["createButton"]}>
                     <TbFileInvoice className={styles["createIcon"]} />
-                    <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
-                    <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
+                    <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].toolbar.createInvoices) : t((m) => m["IMS--ViewScans"].toolbar.createInvoice)}</span>
+                    <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].toolbar.createInvoice).split(" ")[0]}</span>
                   </Button>
                 }
               />
-              <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>
+              <TooltipContent>{selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].toolbar.createInvoices) : t((m) => m["IMS--ViewScans"].toolbar.createInvoice)}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

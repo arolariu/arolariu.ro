@@ -17,7 +17,7 @@
 
 import logo from "@/app/logo.svg";
 import {useWindowSize} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import Link from "next/link";
 import {memo} from "react";
@@ -111,7 +111,7 @@ import {DesktopNavigation, MobileNavigation} from "./Navigation";
  */
 function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
-  const t = useTranslations("Common.accessibility");
+  const t = useTranslations();
 
   return (
     <header className='header'>
@@ -124,7 +124,7 @@ function Header(): React.JSX.Element {
             className='header__brand'>
             <Image
               src={logo}
-              alt={t("logoAlt")}
+              alt={t((m) => m.Common.accessibility.logoAlt)}
               className='header__logo'
               width={40}
               height={40}

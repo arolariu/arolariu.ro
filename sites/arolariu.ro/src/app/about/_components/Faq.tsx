@@ -1,8 +1,10 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@arolariu/components/accordion";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbQuestionMark} from "react-icons/tb";
 import styles from "./Faq.module.scss";
@@ -13,7 +15,7 @@ const questions = ["q1", "q2", "q3", "q4"] as const;
  * FAQ section with accordion-style questions and answers.
  */
 export default function Faq(): React.JSX.Element {
-  const t = useTranslations("About.Hub.faq");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -33,8 +35,8 @@ export default function Faq(): React.JSX.Element {
               <TbQuestionMark className={styles["icon"]} />
             </div>
           </div>
-          <h2 className={styles["title"]}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t((m) => m.About.Hub.faq.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.faq.subtitle)}</p>
         </motion.div>
 
         {/* Accordion */}
@@ -56,10 +58,10 @@ export default function Faq(): React.JSX.Element {
                   value={q}
                   className={styles["accordionItem"]}>
                   <AccordionTrigger className={styles["accordionTrigger"]}>
-                    <span className={styles["question"]}>{t(`questions.${q}.question`)}</span>
+                    <span className={styles["question"]}>{t(selectorFromPath(`About.Hub.faq.questions.${q}.question`))}</span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className={styles["answer"]}>{t(`questions.${q}.answer`)}</p>
+                    <p className={styles["answer"]}>{t(selectorFromPath(`About.Hub.faq.questions.${q}.answer`))}</p>
                   </AccordionContent>
                 </AccordionItem>
               </motion.div>

@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been shared with them.
  * @module emails/invoices/SharedInvoice
@@ -45,35 +46,35 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {fromName: safeFrom})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("email.invoiceShared.badge"))}`}
+        preview={t(selectorFromPath("email.invoiceShared.preview"), {fromName: safeFrom})}
+        badge={t(selectorFromPath("email.invoiceShared.badge"))}
+        heading={t(selectorFromPath("email.invoiceShared.heading"))}
+        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("email.invoiceShared.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {toName: safeTo})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceShared.greeting"), {toName: safeTo})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("intro", {
+          {t.rich(selectorFromPath("email.invoiceShared.intro"), {
             brand: BRAND.name,
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
         <KeyValueTable
-          title={t("detailsTitle")}
+          title={t(selectorFromPath("email.invoiceShared.detailsTitle"))}
           items={[
-            {label: t("details.sharedBy"), value: safeFrom},
-            {label: t("details.invoiceId"), value: identifier},
+            {label: t(selectorFromPath("email.invoiceShared.details.sharedBy")), value: safeFrom},
+            {label: t(selectorFromPath("email.invoiceShared.details.invoiceId")), value: identifier},
           ]}
         />
-        <EmailCard title={t("whatYouCanDoTitle")}>
-          <BulletList items={[t("whatYouCanDo.0"), t("whatYouCanDo.1"), t("whatYouCanDo.2")]} />
+        <EmailCard title={t(selectorFromPath("email.invoiceShared.whatYouCanDoTitle"))}>
+          <BulletList items={[t(selectorFromPath("email.invoiceShared.whatYouCanDo.0")), t(selectorFromPath("email.invoiceShared.whatYouCanDo.1")), t(selectorFromPath("email.invoiceShared.whatYouCanDo.2"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceShared.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("email.invoiceShared.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -84,9 +85,9 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.invoiceShared.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.invoiceShared.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

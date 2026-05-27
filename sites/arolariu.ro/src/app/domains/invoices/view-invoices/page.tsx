@@ -4,7 +4,8 @@ import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
 import {Skeleton} from "@arolariu/components";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {Suspense} from "react";
 import RenderViewInvoicesScreen from "./island";
 import styles from "./island.module.scss";
@@ -56,12 +57,12 @@ import pageStyles from "./page.module.scss";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("IMS--List.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m["IMS--List"].metadata.title),
+    description: t((m) => m["IMS--List"].metadata.description),
   });
 }
 
@@ -132,15 +133,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see RFC 1003 - Internationalization System (rich text formatting)
  */
 export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("IMS--List");
-  const tCommon = await getTranslations("IMS--List.viewInvoicesPage");
+  const t = await getTranslations();
+  const tCommon = await getTranslations();
   const {user} = await fetchAaaSUserFromAuthService();
-  const username = user?.fullName ?? tCommon("guestName");
+  const username = user?.fullName ?? tCommon((m) => m["IMS--List"].viewInvoicesPage.guestName);
 
   return (
     <div className={pageStyles["pageMain"]}>
       <section className={pageStyles["headerSection"]}>
-        <h1 className={pageStyles["title"]}>{t("title", {name: username})}</h1>
+        <h1 className={pageStyles["title"]}>{t((m) => m["IMS--List"].title, {name: username})}</h1>
         <article className={pageStyles["subtitleArticle"]}>
           <RichText
             sectionKey='IMS--List'

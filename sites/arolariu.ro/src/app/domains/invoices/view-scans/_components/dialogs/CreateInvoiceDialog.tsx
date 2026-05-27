@@ -22,7 +22,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -112,7 +112,7 @@ function ProcessStep({
  * Uses the DialogContext for state management.
  */
 export default function CreateInvoiceDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.createInvoiceDialog");
+  const t = useTranslations();
   const router = useRouter();
 
   // Dialog state from context
@@ -210,17 +210,17 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         // Show partial failure toast with first error details
         const [firstError] = result.errors;
         const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
-        const partialFailMessage = t("errors.partialFail", {count: String(result.errors.length)});
+        const partialFailMessage = t((m) => m["IMS--Dialogs"].createInvoiceDialog.errors.partialFail, {count: String(result.errors.length)});
         toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : t("errors.unknown");
+      const errorMessage = error instanceof Error ? error.message : t((m) => m["IMS--Dialogs"].createInvoiceDialog.errors.unknown);
       setErrors([{message: String(errorMessage), scanId: undefined, scanName: undefined}]);
       setCreatedCount(0);
       setProgress(100);
       setStep("complete");
       // Show error toast with backend details
-      toast.error(t("errors.createFailed", {message: errorMessage}));
+      toast.error(t((m) => m["IMS--Dialogs"].createInvoiceDialog.errors.createFailed, {message: errorMessage}));
     }
   };
 
@@ -256,19 +256,19 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       <DialogHeader>
         <DialogTitle className={styles["dialogTitle"]}>
           <TbFileInvoice className={styles["dialogTitleIcon"]} />
-          {selectedScans.length > 1 ? t("titlePlural") : t("title")}
+          {selectedScans.length > 1 ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.titlePlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.title)}
         </DialogTitle>
-        <DialogDescription>{t("description")}</DialogDescription>
+        <DialogDescription>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.description)}</DialogDescription>
       </DialogHeader>
 
       {/* Scans Preview */}
       <div className={styles["scansPreviewBox"]}>
         <div className={styles["scansPreviewHeader"]}>
           <span className={styles["scansPreviewLabel"]}>
-            {t("selectedScans")} ({selectedScans.length})
+            {t((m) => m["IMS--Dialogs"].createInvoiceDialog.selectedScans)} ({selectedScans.length})
           </span>
           <span className={styles["scansPreviewSize"]}>
-            {formatFileSize(totalSize)} {t("totalSize")}
+            {formatFileSize(totalSize)} {t((m) => m["IMS--Dialogs"].createInvoiceDialog.totalSize)}
           </span>
         </div>
         <div className={styles["scansPreviewGrid"]}>
@@ -285,7 +285,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       {/* Mode Selection for multiple scans */}
       {selectedScans.length > 1 ? (
         <div className={styles["modeSection"]}>
-          <p className={styles["modeLabel"]}>{t("chooseMode")}</p>
+          <p className={styles["modeLabel"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.chooseMode)}</p>
           <RadioGroup
             value={mode}
             onValueChange={handleModeChange}>
@@ -301,9 +301,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <div className={styles["modeOptionContent"]}>
                 <span className={styles["modeLabelText"]}>
                   <TbPhoto className={styles["modePurpleIcon"]} />
-                  {t("singleMode.title")}
+                  {t((m) => m["IMS--Dialogs"].createInvoiceDialog.singleMode.title)}
                 </span>
-                <p className={styles["modeOptionDescription"]}>{t("singleMode.description", {count: String(selectedScans.length)})}</p>
+                <p className={styles["modeOptionDescription"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.singleMode.description, {count: String(selectedScans.length)})}</p>
               </div>
             </Label>
             {/* Batch mode option */}
@@ -318,9 +318,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <div className={styles["modeOptionContent"]}>
                 <span className={styles["modeLabelText"]}>
                   <TbStack2 className={styles["modeBlueIcon"]} />
-                  {t("batchMode.title")}
+                  {t((m) => m["IMS--Dialogs"].createInvoiceDialog.batchMode.title)}
                 </span>
-                <p className={styles["modeOptionDescription"]}>{t("batchMode.description", {count: String(selectedScans.length)})}</p>
+                <p className={styles["modeOptionDescription"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.batchMode.description, {count: String(selectedScans.length)})}</p>
               </div>
             </Label>
           </RadioGroup>
@@ -331,8 +331,8 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <div className={styles["singleScanBannerContent"]}>
             <TbSparkles className={styles["singleScanBannerIcon"]} />
             <div>
-              <p className={styles["singleScanBannerTitle"]}>{t("singleScanInfo.title")}</p>
-              <p className={styles["singleScanBannerDescription"]}>{t("singleScanInfo.description")}</p>
+              <p className={styles["singleScanBannerTitle"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.singleScanInfo.title)}</p>
+              <p className={styles["singleScanBannerDescription"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.singleScanInfo.description)}</p>
             </div>
           </div>
         </div>
@@ -342,14 +342,14 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         <Button
           variant='outline'
           onClick={handleClose}>
-          {t("buttons.cancel")}
+          {t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.cancel)}
         </Button>
         <Button
           onClick={handleCreate}
           className={styles["createButton"]}>
           {mode === "batch" || selectedScans.length === 1
-            ? t("buttons.createSingle")
-            : t("buttons.createMultiple", {count: String(selectedScans.length)})}
+            ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.createSingle)
+            : t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.createMultiple, {count: String(selectedScans.length)})}
           <TbArrowRight className={styles["arrowRightIcon"]} />
         </Button>
       </DialogFooter>
@@ -369,12 +369,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <TbLoader2 className={styles["creatingSpinIcon"]} />
         </div>
         <h3 className={styles["creatingTitle"]}>
-          {mode === "single" && selectedScans.length > 1 ? t("creating.titlePlural") : t("creating.title")}
+          {mode === "single" && selectedScans.length > 1 ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.titlePlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.title)}
         </h3>
         <p className={styles["creatingDescription"]}>
           {selectedScans.length > 1
-            ? t("creating.processingPlural", {count: String(selectedScans.length)})
-            : t("creating.processing", {count: String(selectedScans.length)})}
+            ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.processingPlural, {count: String(selectedScans.length)})
+            : t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.processing, {count: String(selectedScans.length)})}
         </p>
       </div>
 
@@ -389,22 +389,22 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       <div className={styles["stepsSection"]}>
         <ProcessStep
           step={1}
-          title={t("creating.step1Title")}
-          description={t("creating.step1Description")}
+          title={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step1Title)}
+          description={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step1Description)}
           isActive={progress < 30}
           isComplete={progress >= 30}
         />
         <ProcessStep
           step={2}
-          title={t("creating.step2Title")}
-          description={t("creating.step2Description")}
+          title={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step2Title)}
+          description={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step2Description)}
           isActive={progress >= 30 && progress < 70}
           isComplete={progress >= 70}
         />
         <ProcessStep
           step={3}
-          title={t("creating.step3Title")}
-          description={t("creating.step3Description")}
+          title={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step3Title)}
+          description={t((m) => m["IMS--Dialogs"].createInvoiceDialog.creating.step3Description)}
           isActive={progress >= 70}
           isComplete={progress >= 100}
         />
@@ -430,8 +430,8 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <div className={`${styles["completeIconCircle"]} ${styles["completeIconCircleError"]}`}>
             <TbAlertCircle className={styles["completeErrorIcon"]} />
           </div>
-          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleError"]}`}>{t("complete.failureTitle")}</h3>
-          <p className={styles["completeDescription"]}>{t("complete.failureDescription")}</p>
+          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleError"]}`}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.failureTitle)}</h3>
+          <p className={styles["completeDescription"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.failureDescription)}</p>
 
           {errors.length > 0 && (
             <div className={styles["completeErrorsList"]}>
@@ -453,12 +453,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <Button
               variant='outline'
               onClick={handleClose}>
-              {t("buttons.cancel")}
+              {t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.cancel)}
             </Button>
             <Button
               onClick={handleRetry}
               className={styles["retryButton"]}>
-              {t("complete.retryButton")}
+              {t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.retryButton)}
               <TbArrowRight className={styles["arrowRightIcon"]} />
             </Button>
           </DialogFooter>
@@ -478,16 +478,16 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <TbAlertTriangle className={styles["completeWarningIcon"]} />
           </div>
           <h3 className={`${styles["completeTitle"]} ${styles["completeTitleWarning"]}`}>
-            {t("complete.partialTitle", {
+            {t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.partialTitle, {
               created: String(createdCount),
               total: String(selectedScans.length),
             })}
           </h3>
-          <p className={styles["completeDescription"]}>{t("complete.partialDescription")}</p>
+          <p className={styles["completeDescription"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.partialDescription)}</p>
 
           {errors.length > 0 && (
             <div className={styles["completeErrorsList"]}>
-              <p className={styles["completeErrorsListTitle"]}>{t("complete.errorsLabel")}</p>
+              <p className={styles["completeErrorsListTitle"]}>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.errorsLabel)}</p>
               {errors.map((error) => (
                 <div
                   key={error.scanId ?? error.message ?? "unknown-error"}
@@ -503,12 +503,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <Button
               variant='outline'
               onClick={handleClose}>
-              {t("buttons.close")}
+              {t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.close)}
             </Button>
             <Button
               onClick={handleViewInvoices}
               className={styles["completeButton"]}>
-              {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
+              {isPlural ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.viewButtonPlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.viewButton)}
               <TbArrowRight className={styles["arrowRightIcon"]} />
             </Button>
           </DialogFooter>
@@ -527,14 +527,14 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <TbCheck className={styles["completeCheckIcon"]} />
         </div>
         <h3 className={styles["completeTitle"]}>
-          {isPlural ? t("complete.titlePlural", {count: String(createdCount)}) : t("complete.title", {count: String(createdCount)})}
+          {isPlural ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.titlePlural, {count: String(createdCount)}) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.title, {count: String(createdCount)})}
         </h3>
-        <p className={styles["completeDescription"]}>{isPlural ? t("complete.descriptionPlural") : t("complete.description")}</p>
+        <p className={styles["completeDescription"]}>{isPlural ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.descriptionPlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.description)}</p>
 
         <div className={styles["completeNextSteps"]}>
           <p className={styles["completeNextStepsText"]}>
-            <strong>{t("complete.nextSteps")}</strong>{" "}
-            {isPlural ? t("complete.nextStepsDescriptionPlural") : t("complete.nextStepsDescription")}
+            <strong>{t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.nextSteps)}</strong>{" "}
+            {isPlural ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.nextStepsDescriptionPlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.nextStepsDescription)}
           </p>
         </div>
 
@@ -542,12 +542,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <Button
             variant='outline'
             onClick={handleClose}>
-            {t("buttons.close")}
+            {t((m) => m["IMS--Dialogs"].createInvoiceDialog.buttons.close)}
           </Button>
           <Button
             onClick={handleViewInvoices}
             className={styles["completeButton"]}>
-            {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
+            {isPlural ? t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.viewButtonPlural) : t((m) => m["IMS--Dialogs"].createInvoiceDialog.complete.viewButton)}
             <TbArrowRight className={styles["arrowRightIcon"]} />
           </Button>
         </DialogFooter>

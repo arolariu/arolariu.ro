@@ -1,6 +1,7 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {Suspense} from "react";
 import Loading from "./loading";
 
@@ -48,12 +49,12 @@ import Loading from "./loading";
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Acknowledgements.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.Acknowledgements.metadata.title),
+    description: t((m) => m.Acknowledgements.metadata.description),
   });
 }
 

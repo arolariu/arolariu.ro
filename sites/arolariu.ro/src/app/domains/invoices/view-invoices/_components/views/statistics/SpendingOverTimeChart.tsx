@@ -20,7 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import type {MonthlySpending} from "../../../_utils/statistics";
 import styles from "./SpendingOverTimeChart.module.scss";
@@ -44,7 +44,7 @@ type CustomTooltipProps = {
  * Custom tooltip for the spending chart.
  */
 function CustomTooltip({active = false, payload = [], currency}: Readonly<CustomTooltipProps>): React.JSX.Element | null {
-  const t = useTranslations("IMS--Stats.spendingOverTime");
+  const t = useTranslations();
   if (!active || !payload || payload.length === 0) return null;
   const [firstItem] = payload;
   if (!firstItem) return null;
@@ -56,7 +56,7 @@ function CustomTooltip({active = false, payload = [], currency}: Readonly<Custom
       <p className={styles["tooltipAmount"]}>
         {formatAmount(data.amount)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(data.invoiceCount)})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--Stats"].spendingOverTime.tooltip.invoiceCount, {count: String(data.invoiceCount)})}</p>
       {data.invoices && data.invoices.length > 0 ? (
         <ul className={styles["tooltipInvoices"]}>
           {data.invoices.slice(0, 10).map((inv) => (
@@ -71,7 +71,7 @@ function CustomTooltip({active = false, payload = [], currency}: Readonly<Custom
             </li>
           ))}
           {data.invoices.length > 10 && (
-            <li className={styles["tooltipMore"]}>{t("tooltip.andMore", {count: String(data.invoices.length - 10)})}</li>
+            <li className={styles["tooltipMore"]}>{t((m) => m["IMS--Stats"].spendingOverTime.tooltip.andMore, {count: String(data.invoices.length - 10)})}</li>
           )}
         </ul>
       ) : null}
@@ -94,11 +94,11 @@ function formatYAxisTick(value: number): string {
  * @returns Area chart component
  */
 export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("IMS--Stats.spendingOverTime");
+  const t = useTranslations();
 
   const chartConfig = {
     amount: {
-      label: t("labels.amount"),
+      label: t((m) => m["IMS--Stats"].spendingOverTime.labels.amount),
       color: "var(--ac-chart-1)",
     },
   };
@@ -106,8 +106,8 @@ export function SpendingOverTimeChart({data, currency}: Props): React.JSX.Elemen
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--Stats"].spendingOverTime.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--Stats"].spendingOverTime.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

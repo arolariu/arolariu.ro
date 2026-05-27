@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Share & Collaborate card for the invoice view page.
  * @module domains/invoices/view-invoice/[id]/components/cards/ShareCollaborateCard
@@ -26,12 +28,11 @@
  * - Computed status values are memoized with `useMemo`
  */
 
-"use client";
 
 import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
@@ -82,7 +83,7 @@ type SharingStatus = "private" | "public" | "shared";
  * ```
  */
 export function ShareCollaborateCard(): React.JSX.Element {
-  const t = useTranslations("IMS--View.shareCollaborate");
+  const t = useTranslations();
   const {invoice, setInvoice} = useInvoiceContext();
   const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
@@ -194,15 +195,15 @@ export function ShareCollaborateCard(): React.JSX.Element {
         .then((result) => {
           if (result.success) {
             setInvoice(result.data);
-            toast.success(t(isCurrentlyPublic ? "madePrivate" : "madePublic"));
+            toast.success(t((m) => (isCurrentlyPublic ? m["IMS--View"].shareCollaborate.madePrivate : m["IMS--View"].shareCollaborate.madePublic)));
             return;
           }
-          toast.error(t("toggleError"));
+          toast.error(t((m) => m["IMS--View"].shareCollaborate.toggleError));
           return;
         })
         .catch((error) => {
           console.error("Failed to toggle public status:", error);
-          toast.error(t("toggleError"));
+          toast.error(t((m) => m["IMS--View"].shareCollaborate.toggleError));
         });
     });
   }, [sharingStatus, invoice, setInvoice, t]);
@@ -224,7 +225,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
       <CardHeader>
         <CardTitle className={styles["cardTitle"]}>
           <TbShare className={styles["titleIcon"]} />
-          {t("title")}
+          {t((m) => m["IMS--View"].shareCollaborate.title)}
         </CardTitle>
       </CardHeader>
 
@@ -236,7 +237,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
               htmlFor='public-toggle'
               className={styles["toggleLabel"]}>
               <TbWorld className={styles["toggleIcon"]} />
-              {t("publicAccess")}
+              {t((m) => m["IMS--View"].shareCollaborate.publicAccess)}
             </Label>
             <Switch
               nativeButton
@@ -246,7 +247,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
               disabled={isPending}
             />
           </div>
-          <p className={styles["toggleDescription"]}>{t("publicAccessDescription")}</p>
+          <p className={styles["toggleDescription"]}>{t((m) => m["IMS--View"].shareCollaborate.publicAccessDescription)}</p>
         </div>
 
         {/* Sharing Status Section */}
@@ -257,13 +258,13 @@ export function ShareCollaborateCard(): React.JSX.Element {
               variant={badgeVariant}
               className={styles["statusBadge"]}>
               <StatusIcon className={styles["badgeIcon"]} />
-              {t(sharingStatus)}
+              {t(selectorFromPath(`IMS--View.shareCollaborate.${sharingStatus}`))}
             </Badge>
           </div>
 
           {sharingStatus !== "private" && (
             <div className={styles["sharedWithRow"]}>
-              <span className={styles["sharedWithLabel"]}>{t("sharedWith")}:</span>
+              <span className={styles["sharedWithLabel"]}>{t((m) => m["IMS--View"].shareCollaborate.sharedWith)}:</span>
               <span className={styles["sharedWithCount"]}>{sharedWithCount} people</span>
             </div>
           )}
@@ -271,10 +272,10 @@ export function ShareCollaborateCard(): React.JSX.Element {
 
         {/* Activity Summary Section */}
         <div className={styles["activitySection"]}>
-          <h4 className={styles["activityTitle"]}>{t("activity.title")}:</h4>
+          <h4 className={styles["activityTitle"]}>{t((m) => m["IMS--View"].shareCollaborate.activity.title)}:</h4>
           <ul className={styles["activityList"]}>
-            <li className={styles["activityItem"]}>• {t("activity.created", {time: formatRelativeTime(invoice.createdAt)})}</li>
-            <li className={styles["activityItem"]}>• {t("activity.modified", {time: formatRelativeTime(invoice.lastUpdatedAt)})}</li>
+            <li className={styles["activityItem"]}>• {t((m) => m["IMS--View"].shareCollaborate.activity.created, {time: formatRelativeTime(invoice.createdAt)})}</li>
+            <li className={styles["activityItem"]}>• {t((m) => m["IMS--View"].shareCollaborate.activity.modified, {time: formatRelativeTime(invoice.lastUpdatedAt)})}</li>
           </ul>
         </div>
 
@@ -284,7 +285,7 @@ export function ShareCollaborateCard(): React.JSX.Element {
           size='sm'
           onClick={handleManageSharing}
           className={styles["manageButton"]}>
-          {t("manageSharing")} →
+          {t((m) => m["IMS--View"].shareCollaborate.manageSharing)} →
         </Button>
       </CardContent>
     </Card>

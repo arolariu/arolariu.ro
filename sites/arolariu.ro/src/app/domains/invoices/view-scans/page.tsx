@@ -1,7 +1,8 @@
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import {redirect} from "next/navigation";
 import RenderViewScansScreen from "./island";
 import styles from "./page.module.scss";
@@ -10,12 +11,12 @@ import styles from "./page.module.scss";
  * Generates SEO metadata for the view scans page.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("IMS--ViewScans.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m["IMS--ViewScans"].metadata.title),
+    description: t((m) => m["IMS--ViewScans"].metadata.description),
   });
 }
 

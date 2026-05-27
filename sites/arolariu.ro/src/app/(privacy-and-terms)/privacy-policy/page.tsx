@@ -1,6 +1,7 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderPrivacyPolicyScreen from "./island";
 import styles from "./page.module.scss";
 
@@ -53,12 +54,12 @@ import styles from "./page.module.scss";
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Legal.PrivacyPolicy.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.Legal.PrivacyPolicy.metadata.title),
+    description: t((m) => m.Legal.PrivacyPolicy.metadata.description),
   });
 }
 
@@ -127,16 +128,16 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link https://oag.ca.gov/privacy/ccpa | CCPA Privacy Policy Requirements}
  */
 export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"/privacy-policy">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("Legal.PrivacyPolicy");
+  const t = await getTranslations();
 
   return (
     <div className={styles["privacyPolicyMain"]}>
       <section className={styles["headerSection"]}>
-        <h1 className={styles["pageTitle"]}>{t("title")}</h1>
-        <span>{t("last_updated")}</span>
+        <h1 className={styles["pageTitle"]}>{t((m) => m.Legal.PrivacyPolicy.title)}</h1>
+        <span>{t((m) => m.Legal.PrivacyPolicy.last_updated)}</span>
       </section>
       <RenderPrivacyPolicyScreen />
-      <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
+      <section className={styles["footerSection"]}>{t((m) => m.Legal.PrivacyPolicy.contactInformation.content)}</section>
     </div>
   );
 }

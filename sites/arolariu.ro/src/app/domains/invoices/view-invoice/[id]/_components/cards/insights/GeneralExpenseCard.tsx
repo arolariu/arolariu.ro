@@ -2,7 +2,8 @@
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
@@ -10,20 +11,20 @@ import styles from "./GeneralExpenseCard.module.scss";
 
 export function GeneralExpenseCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--Cards.generalExpenseCard");
+  const t = useTranslations();
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;
 
   // Auto-detected category (mock)
-  const detectedCategory = t("detectedCategory");
+  const detectedCategory = t((m) => m["IMS--Cards"].generalExpenseCard.detectedCategory);
   const confidence = 87;
 
   // Budget categories (mock)
   const budgets = [
-    {name: t("budgetCategories.electronics"), spent: 450, limit: 500, color: "bg-blue-500"},
-    {name: t("budgetCategories.entertainment"), spent: 120, limit: 300, color: "bg-purple-500"},
-    {name: t("budgetCategories.shopping"), spent: 280, limit: 400, color: "bg-pink-500"},
+    {name: t((m) => m["IMS--Cards"].generalExpenseCard.budgetCategories.electronics), spent: 450, limit: 500, color: "bg-blue-500"},
+    {name: t((m) => m["IMS--Cards"].generalExpenseCard.budgetCategories.entertainment), spent: 120, limit: 300, color: "bg-purple-500"},
+    {name: t((m) => m["IMS--Cards"].generalExpenseCard.budgetCategories.shopping), spent: 280, limit: 400, color: "bg-pink-500"},
   ];
 
   // Tax options
@@ -59,7 +60,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
         <CardTitle>
           <span className={styles["titleRow"]}>
             <TbChartBar className={styles["titleIcon"]} />
-            {t("title")}
+            {t((m) => m["IMS--Cards"].generalExpenseCard.title)}
           </span>
         </CardTitle>
       </CardHeader>
@@ -67,29 +68,29 @@ export function GeneralExpenseCard(): React.JSX.Element {
         <div className={styles["contentSpaced"]}>
           {/* Auto-detected Category */}
           <div>
-            <h4 className={styles["sectionTitle"]}>{t("sections.autoDetectedCategory")}</h4>
+            <h4 className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].generalExpenseCard.sections.autoDetectedCategory)}</h4>
             <div className={styles["detectedBox"]}>
               <div className={styles["detectedRow"]}>
                 <div className={styles["detectedLabel"]}>
                   <TbTag className={styles["iconIndigo"]} />
                   <span className={styles["detectedName"]}>{detectedCategory}</span>
                 </div>
-                <Badge variant='secondary'>{t("confidence", {value: String(confidence)})}</Badge>
+                <Badge variant='secondary'>{t((m) => m["IMS--Cards"].generalExpenseCard.confidence, {value: String(confidence)})}</Badge>
               </div>
               <div className={styles["detectedActions"]}>
                 <Button
                   variant='outline'
                   size='sm'
-                  aria-label={t("aria.confirmCategory")}>
+                  aria-label={t((m) => m["IMS--Cards"].generalExpenseCard.aria.confirmCategory)}>
                   <TbCheck className={styles["iconSmColored"]} />
-                  {t("buttons.correct")}
+                  {t((m) => m["IMS--Cards"].generalExpenseCard.buttons.correct)}
                 </Button>
                 <Button
                   variant='ghost'
                   size='sm'
-                  aria-label={t("aria.changeCategory")}>
+                  aria-label={t((m) => m["IMS--Cards"].generalExpenseCard.aria.changeCategory)}>
                   <TbRefresh className={styles["iconSmColored"]} />
-                  {t("buttons.change")}
+                  {t((m) => m["IMS--Cards"].generalExpenseCard.buttons.change)}
                 </Button>
               </div>
             </div>
@@ -97,7 +98,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
 
           {/* Budget Impact */}
           <div className={styles["budgetSection"]}>
-            <h4 className={styles["sectionTitle"]}>{t("sections.budgetImpact")}</h4>
+            <h4 className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].generalExpenseCard.sections.budgetImpact)}</h4>
             <div className={styles["budgetSection"]}>
               {budgets.map((budget) => {
                 const pct = (budget.spent / budget.limit) * 100;
@@ -124,7 +125,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 role='alert'
                 aria-live='polite'>
                 <span aria-hidden='true'>!</span>
-                {t("nearLimitAlert", {
+                {t((m) => m["IMS--Cards"].generalExpenseCard.nearLimitAlert, {
                   name: nearLimitBudget.name,
                   percent: String(Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)),
                 })}
@@ -136,7 +137,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <div>
             <h4 className={styles["sectionTitleWithIcon"]}>
               <TbFileText className={styles["iconSm"]} />
-              {t("sections.taxBusiness")}
+              {t((m) => m["IMS--Cards"].generalExpenseCard.sections.taxBusiness)}
             </h4>
             <div className={styles["checkboxSection"]}>
               <div className={styles["checkboxRow"]}>
@@ -145,7 +146,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                   checked={businessExpense}
                   onCheckedChange={handleBusinessExpenseChange}
                 />
-                <Label htmlFor='business'>{t("options.businessExpense")}</Label>
+                <Label htmlFor='business'>{t((m) => m["IMS--Cards"].generalExpenseCard.options.businessExpense)}</Label>
               </div>
               <div className={styles["checkboxRow"]}>
                 <Checkbox
@@ -153,7 +154,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                   checked={trackWarranty}
                   onCheckedChange={handleTrackWarrantyChange}
                 />
-                <Label htmlFor='warranty'>{t("options.trackWarranty")}</Label>
+                <Label htmlFor='warranty'>{t((m) => m["IMS--Cards"].generalExpenseCard.options.trackWarranty)}</Label>
               </div>
               <div className={styles["checkboxRow"]}>
                 <Checkbox
@@ -161,13 +162,13 @@ export function GeneralExpenseCard(): React.JSX.Element {
                   checked={insuranceInventory}
                   onCheckedChange={handleInsuranceInventoryChange}
                 />
-                <Label htmlFor='insurance'>{t("options.insuranceInventory")}</Label>
+                <Label htmlFor='insurance'>{t((m) => m["IMS--Cards"].generalExpenseCard.options.insuranceInventory)}</Label>
               </div>
             </div>
             {businessExpense ? (
               <p className={styles["vatText"]}>
                 <TbBriefcase className={styles["briefcaseIcon"]} />
-                {t("vatReclaimable")}: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
+                {t((m) => m["IMS--Cards"].generalExpenseCard.vatReclaimable)}: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
               </p>
             ) : null}
           </div>
@@ -176,7 +177,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <div>
             <div className={styles["pastHeader"]}>
               <TbHistory className={styles["iconGray"]} />
-              <h4 className={styles["pastTitle"]}>{t("sections.similarPurchases")}</h4>
+              <h4 className={styles["pastTitle"]}>{t((m) => m["IMS--Cards"].generalExpenseCard.sections.similarPurchases)}</h4>
             </div>
             <ul className={styles["pastList"]}>
               {pastPurchases.map((p) => (
@@ -195,16 +196,16 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <Button
               variant='outline'
               size='sm'
-              aria-label={t("aria.organize")}>
+              aria-label={t((m) => m["IMS--Cards"].generalExpenseCard.aria.organize)}>
               <TbFolderOpen className={styles["iconSmColored"]} />
-              {t("buttons.organize")}
+              {t((m) => m["IMS--Cards"].generalExpenseCard.buttons.organize)}
             </Button>
             <Button
               variant='outline'
               size='sm'
-              aria-label={t("aria.export")}>
+              aria-label={t((m) => m["IMS--Cards"].generalExpenseCard.aria.export)}>
               <TbDownload className={styles["iconSmColored"]} />
-              {t("buttons.export")}
+              {t((m) => m["IMS--Cards"].generalExpenseCard.buttons.export)}
             </Button>
           </div>
         </div>

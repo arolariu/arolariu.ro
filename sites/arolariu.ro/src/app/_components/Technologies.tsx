@@ -2,7 +2,7 @@
 
 import {Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbCheck, TbExternalLink} from "react-icons/tb";
 import styles from "./Technologies.module.scss";
 
@@ -12,20 +12,20 @@ import styles from "./Technologies.module.scss";
  * @returns The technology showcase section of the homepage, CSR'ed.
  */
 export default function TechnologiesSection(): React.JSX.Element {
-  const t = useTranslations("Home.technologyTab");
+  const t = useTranslations();
 
   const points = [
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t("points.point1"),
+      text: t((m) => m.Home.technologyTab.points.point1),
     },
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t("points.point2"),
+      text: t((m) => m.Home.technologyTab.points.point2),
     },
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t("points.point3"),
+      text: t((m) => m.Home.technologyTab.points.point3),
     },
   ];
 
@@ -40,9 +40,9 @@ export default function TechnologiesSection(): React.JSX.Element {
             viewport={{once: true}}
             transition={{duration: 0.8}}
             className={styles["content"]}>
-            <Badge className={styles["badge"]}>{t("badgeTitle")}</Badge>
-            <h2 className={styles["title"]}>{t("title")}</h2>
-            <span className={styles["description"]}>{t("description")}</span>
+            <Badge className={styles["badge"]}>{t((m) => m.Home.technologyTab.badgeTitle)}</Badge>
+            <h2 className={styles["title"]}>{t((m) => m.Home.technologyTab.title)}</h2>
+            <span className={styles["description"]}>{t((m) => m.Home.technologyTab.description)}</span>
             <ul className={styles["pointsList"]}>
               {points.map((point) => (
                 <li
@@ -54,7 +54,7 @@ export default function TechnologiesSection(): React.JSX.Element {
               ))}
             </ul>
             <Button className={styles["button"]}>
-              {t("learnMoreBtn")} <TbExternalLink className={styles["buttonIcon"]} />
+              {t((m) => m.Home.technologyTab.learnMoreBtn)} <TbExternalLink className={styles["buttonIcon"]} />
             </Button>
           </motion.div>
 

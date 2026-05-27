@@ -2,7 +2,7 @@
 
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbDeviceFloppy, TbPrinter, TbScanEye, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -46,7 +46,7 @@ import styles from "./InvoiceHeader.module.scss";
  * @see {@link useEditInvoiceContext} - Context for tracking pending changes
  */
 export default function InvoiceHeader(): React.JSX.Element {
-  const t = useTranslations("IMS--Common.invoiceHeader");
+  const t = useTranslations();
   const {invoice, pendingChanges, hasChanges, isSaving, setName, saveChanges, discardChanges} = useEditInvoiceContext();
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
@@ -105,12 +105,12 @@ export default function InvoiceHeader(): React.JSX.Element {
                       onClick={handleSave}
                       disabled={isSaving}>
                       <TbDeviceFloppy className={styles["buttonIcon"]} />
-                      {isSaving ? t("buttons.saving") : t("buttons.save")}
+                      {isSaving ? t((m) => m["IMS--Common"].invoiceHeader.buttons.saving) : t((m) => m["IMS--Common"].invoiceHeader.buttons.save)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.saveAllPendingChanges")}</p>
+                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.saveAllPendingChanges)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -122,12 +122,12 @@ export default function InvoiceHeader(): React.JSX.Element {
                       onClick={handleDiscard}
                       disabled={isSaving}>
                       <TbX className={styles["buttonIcon"]} />
-                      {t("buttons.discard")}
+                      {t((m) => m["IMS--Common"].invoiceHeader.buttons.discard)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t("tooltips.discardAllPendingChanges")}</p>
+                  <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.discardAllPendingChanges)}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -140,12 +140,12 @@ export default function InvoiceHeader(): React.JSX.Element {
                   size='sm'
                   onClick={handleInvoicePrint}>
                   <TbPrinter className={styles["buttonIcon"]} />
-                  {t("buttons.print")}
+                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.print)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.printInvoiceWithAllDetails")}</p>
+              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.printInvoiceWithAllDetails)}</p>
             </TooltipContent>
           </Tooltip>
           {Boolean(canAnalyze) && (
@@ -157,12 +157,12 @@ export default function InvoiceHeader(): React.JSX.Element {
                     variant='outline'
                     size='sm'>
                     <TbScanEye className={styles["buttonIcon"]} />
-                    {t("buttons.analyzeWithAi")}
+                    {t((m) => m["IMS--Common"].invoiceHeader.buttons.analyzeWithAi)}
                   </Button>
                 }
               />
               <TooltipContent>
-                <p>{t("tooltips.analyzeSpendingPatterns")}</p>
+                <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.analyzeSpendingPatterns)}</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -174,12 +174,12 @@ export default function InvoiceHeader(): React.JSX.Element {
                   variant='destructive'
                   size='sm'>
                   <TbTrash className={styles["buttonIcon"]} />
-                  {t("buttons.delete")}
+                  {t((m) => m["IMS--Common"].invoiceHeader.buttons.delete)}
                 </Button>
               }
             />
             <TooltipContent>
-              <p>{t("tooltips.deleteInvoicePermanently")}</p>
+              <p>{t((m) => m["IMS--Common"].invoiceHeader.tooltips.deleteInvoicePermanently)}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

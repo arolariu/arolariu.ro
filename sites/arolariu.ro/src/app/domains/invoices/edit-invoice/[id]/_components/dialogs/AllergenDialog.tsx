@@ -24,7 +24,7 @@ import {
   Label,
   toast,
 } from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -101,7 +101,7 @@ const COMMON_ALLERGENS: ReadonlyArray<string> = [
  * @see {@link Allergen} - Allergen type definition
  */
 export default function AllergenDialog(): React.JSX.Element {
-  const t = useTranslations("IMS--Dialogs.allergenDialog");
+  const t = useTranslations();
   const {
     currentDialog: {payload},
     isOpen,
@@ -129,26 +129,26 @@ export default function AllergenDialog(): React.JSX.Element {
     (name: string) => {
       const trimmedName = name.trim();
       if (!trimmedName) {
-        toast.error(t("errors.emptyName"));
+        toast.error(t((m) => m["IMS--Dialogs"].allergenDialog.errors.emptyName));
         return;
       }
 
       // Check for duplicates (case-insensitive)
       const isDuplicate = allergens.some((a) => a.name.toLowerCase() === trimmedName.toLowerCase());
       if (isDuplicate) {
-        toast.warning(t("errors.duplicate", {name: trimmedName}));
+        toast.warning(t((m) => m["IMS--Dialogs"].allergenDialog.errors.duplicate, {name: trimmedName}));
         return;
       }
 
       const newAllergen: Allergen = {
         name: trimmedName,
-        description: t("defaultDescription", {name: trimmedName}),
+        description: t((m) => m["IMS--Dialogs"].allergenDialog.defaultDescription, {name: trimmedName}),
         learnMoreAddress: "",
       };
 
       setAllergens((prev) => [...prev, newAllergen]);
       setCustomAllergen("");
-      toast.success(t("success.added", {name: trimmedName}));
+      toast.success(t((m) => m["IMS--Dialogs"].allergenDialog.success.added, {name: trimmedName}));
     },
     [allergens, t],
   );
@@ -163,7 +163,7 @@ export default function AllergenDialog(): React.JSX.Element {
       const allergenName = allergens[index]?.name;
       setAllergens((prev) => prev.filter((_, i) => i !== index));
       if (allergenName) {
-        toast.success(t("success.removed", {name: allergenName}));
+        toast.success(t((m) => m["IMS--Dialogs"].allergenDialog.success.removed, {name: allergenName}));
       }
     },
     [allergens, t],
@@ -219,7 +219,7 @@ export default function AllergenDialog(): React.JSX.Element {
    */
   const handleSave = useCallback(async () => {
     if (!invoice || !product || productIndex === undefined) {
-      toast.error(t("errors.missingData"));
+      toast.error(t((m) => m["IMS--Dialogs"].allergenDialog.errors.missingData));
       return;
     }
 
@@ -239,16 +239,17 @@ export default function AllergenDialog(): React.JSX.Element {
       });
 
       if (result.success) {
-        toast.success(t("success.saved"));
+        toast.success(t((m) => m["IMS--Dialogs"].allergenDialog.success.saved));
         close();
         // Trigger page refresh to show updated data
         globalThis.window.location.reload();
       } else {
-        toast.error(result.error.message);
+        console.error("Failed to save allergens:", result.error);
+        toast.error(t((m) => m["IMS--Dialogs"].allergenDialog.errors.saveFailed));
       }
     } catch (error) {
       console.error("Failed to save allergens:", error);
-      toast.error(t("errors.saveFailed"));
+      toast.error(t((m) => m["IMS--Dialogs"].allergenDialog.errors.saveFailed));
     } finally {
       setIsSaving(false);
     }
@@ -264,16 +265,16 @@ export default function AllergenDialog(): React.JSX.Element {
       onOpenChange={close}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description", {productName: product.name})}</DialogDescription>
+          <DialogTitle>{t((m) => m["IMS--Dialogs"].allergenDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m["IMS--Dialogs"].allergenDialog.description, {productName: product.name})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["content"]}>
           {/* Current Allergens */}
           <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t("labels.currentAllergens")}</Label>
+            <Label className={styles["sectionLabel"]}>{t((m) => m["IMS--Dialogs"].allergenDialog.labels.currentAllergens)}</Label>
             {allergens.length === 0 ? (
-              <p className={styles["emptyText"]}>{t("empty.noAllergens")}</p>
+              <p className={styles["emptyText"]}>{t((m) => m["IMS--Dialogs"].allergenDialog.empty.noAllergens)}</p>
             ) : (
               <div className={styles["allergenList"]}>
                 {allergens.map((allergen, index) => (
@@ -286,7 +287,7 @@ export default function AllergenDialog(): React.JSX.Element {
                       type='button'
                       onClick={createRemoveAllergenHandler(index)}
                       className={styles["removeButton"]}
-                      aria-label={t("aria.removeAllergen", {name: allergen.name})}>
+                      aria-label={t((m) => m["IMS--Dialogs"].allergenDialog.aria.removeAllergen, {name: allergen.name})}>
                       <TbX className={styles["removeIcon"]} />
                     </button>
                   </Badge>
@@ -297,7 +298,7 @@ export default function AllergenDialog(): React.JSX.Element {
 
           {/* Quick Add Common Allergens */}
           <div className={styles["section"]}>
-            <Label className={styles["sectionLabel"]}>{t("labels.quickAdd")}</Label>
+            <Label className={styles["sectionLabel"]}>{t((m) => m["IMS--Dialogs"].allergenDialog.labels.quickAdd)}</Label>
             <div className={styles["quickAddGrid"]}>
               {COMMON_ALLERGENS.map((allergenName) => {
                 const isAdded = allergens.some((a) => a.name.toLowerCase() === allergenName.toLowerCase());
@@ -321,7 +322,7 @@ export default function AllergenDialog(): React.JSX.Element {
             <Label
               htmlFor='custom-allergen'
               className={styles["sectionLabel"]}>
-              {t("labels.customAllergen")}
+              {t((m) => m["IMS--Dialogs"].allergenDialog.labels.customAllergen)}
             </Label>
             <div className={styles["inputRow"]}>
               <Input
@@ -330,7 +331,7 @@ export default function AllergenDialog(): React.JSX.Element {
                 value={customAllergen}
                 onChange={handleCustomAllergenChange}
                 onKeyDown={handleKeyDown}
-                placeholder={t("placeholders.customAllergen")}
+                placeholder={t((m) => m["IMS--Dialogs"].allergenDialog.placeholders.customAllergen)}
                 className={styles["customInput"]}
               />
               <Button
@@ -340,7 +341,7 @@ export default function AllergenDialog(): React.JSX.Element {
                 disabled={!customAllergen.trim()}
                 className={styles["addButton"]}>
                 <TbPlus className={styles["addIcon"]} />
-                {t("buttons.add")}
+                {t((m) => m["IMS--Dialogs"].allergenDialog.buttons.add)}
               </Button>
             </div>
           </div>
@@ -351,12 +352,12 @@ export default function AllergenDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isSaving}>
-            {t("buttons.cancel")}
+            {t((m) => m["IMS--Dialogs"].allergenDialog.buttons.cancel)}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving}>
-            {isSaving ? t("buttons.saving") : t("buttons.save")}
+            {isSaving ? t((m) => m["IMS--Dialogs"].allergenDialog.buttons.saving) : t((m) => m["IMS--Dialogs"].allergenDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,9 +1,11 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";
 import {motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrandGithub, TbMail, TbRocket, TbUser} from "react-icons/tb";
@@ -23,7 +25,7 @@ const trustIds = ["openSource", "privacyFirst", "freeToUse"] as const;
  * @returns The CallToAction component, CSR'ed.
  */
 export default function CallToAction(): React.JSX.Element {
-  const t = useTranslations("About.Platform.callToAction");
+  const t = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -85,7 +87,7 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6}}>
             <h2 className={styles["title"]}>
-              {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}?</span>
+              {t((m) => m.About.Platform.callToAction.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.callToAction.titleHighlight)}?</span>
             </h2>
           </motion.div>
 
@@ -95,7 +97,7 @@ export default function CallToAction(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6, delay: 0.1}}>
-            {t("description")}
+            {t((m) => m.About.Platform.callToAction.description)}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -114,7 +116,7 @@ export default function CallToAction(): React.JSX.Element {
                 className={styles["ctaButton"]}>
                 <Link href='/domains'>
                   <TbRocket className={styles["ctaIcon"]} />
-                  <span>{t("cta.exploreApplications")}</span>
+                  <span>{t((m) => m.About.Platform.callToAction.cta.exploreApplications)}</span>
                   <TbArrowRight className={styles["ctaArrow"]} />
                   <motion.span
                     className={styles["ctaOverlay"]}
@@ -137,7 +139,7 @@ export default function CallToAction(): React.JSX.Element {
                 className={styles["ctaButton"]}>
                 <Link href='/auth/sign-up'>
                   <TbUser className={styles["ctaIcon"]} />
-                  <span>{t("cta.createAccount")}</span>
+                  <span>{t((m) => m.About.Platform.callToAction.cta.createAccount)}</span>
                   <motion.span
                     className={styles["ctaOverlay"]}
                     initial={{x: "-100%", opacity: 0}}
@@ -161,21 +163,21 @@ export default function CallToAction(): React.JSX.Element {
               rel='noopener noreferrer'
               className={styles["secondaryLink"]}>
               <TbBrandGithub className={styles["secondaryLinkIcon"]} />
-              <span>{t("links.viewSource")}</span>
+              <span>{t((m) => m.About.Platform.callToAction.links.viewSource)}</span>
             </Link>
             <span className={styles["linkDivider"]}>|</span>
             <Link
               href='/about/the-author'
               className={styles["secondaryLink"]}>
               <TbUser className={styles["secondaryLinkIcon"]} />
-              <span>{t("links.meetAuthor")}</span>
+              <span>{t((m) => m.About.Platform.callToAction.links.meetAuthor)}</span>
             </Link>
             <span className={styles["linkDivider"]}>|</span>
             <Link
               href='mailto:contact@arolariu.ro'
               className={styles["secondaryLink"]}>
               <TbMail className={styles["secondaryLinkIcon"]} />
-              <span>{t("links.getInTouch")}</span>
+              <span>{t((m) => m.About.Platform.callToAction.links.getInTouch)}</span>
             </Link>
           </motion.div>
 
@@ -194,8 +196,8 @@ export default function CallToAction(): React.JSX.Element {
                 transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
                 whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
                 <div className={`${styles["trustAccent"]} ${styles[trustAccentClassMap[trustId]]}`} />
-                <h3 className={styles["trustTitle"]}>{t(`trust.${trustId}.title` as Parameters<typeof t>[0])}</h3>
-                <p className={styles["trustDescription"]}>{t(`trust.${trustId}.description` as Parameters<typeof t>[0])}</p>
+                <h3 className={styles["trustTitle"]}>{t(selectorFromPath(`About.Platform.callToAction.${`trust.${trustId}.title`}`))}</h3>
+                <p className={styles["trustDescription"]}>{t(selectorFromPath(`About.Platform.callToAction.${`trust.${trustId}.description`}`))}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -207,13 +209,13 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1} : {}}
             transition={{duration: 0.6, delay: 0.8}}>
             <p className={styles["footerText"]}>
-              {t("footer")}{" "}
+              {t((m) => m.About.Platform.callToAction.footer)}{" "}
               <Link
                 href='/about/the-author'
                 className={styles["footerLink"]}>
                 Alexandru-Razvan Olariu
               </Link>
-              {t("footerRole")}
+              {t((m) => m.About.Platform.callToAction.footerRole)}
             </p>
           </motion.div>
         </div>

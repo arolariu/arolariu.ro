@@ -4,7 +4,7 @@ import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
 import {useAuth} from "@clerk/nextjs";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import React, {memo, useCallback, useMemo, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
@@ -16,28 +16,28 @@ import styles from "./Navigation.module.scss";
  */
 function useNavigationItems(): ReadonlyArray<NavigationItem> {
   const {isSignedIn} = useAuth();
-  const t = useTranslations("Navigation");
+  const t = useTranslations();
 
   return useMemo(() => {
     const items: NavigationItem[] = [
       {
-        label: t("domains"),
+        label: t((m) => m.Navigation.domains),
         href: "/domains",
         children: [
           {
-            label: t("invoices"),
+            label: t((m) => m.Navigation.invoices),
             href: "/domains/invoices",
             children: [
               {
-                label: t("uploadScans"),
+                label: t((m) => m.Navigation.uploadScans),
                 href: "/domains/invoices/upload-scans",
               },
               {
-                label: t("viewScans"),
+                label: t((m) => m.Navigation.viewScans),
                 href: "/domains/invoices/view-scans",
               },
               {
-                label: t("myInvoices"),
+                label: t((m) => m.Navigation.myInvoices),
                 href: "/domains/invoices/view-invoices",
               },
             ],
@@ -45,15 +45,15 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
         ],
       },
       {
-        label: t("about"),
+        label: t((m) => m.Navigation.about),
         href: "/about",
         children: [
           {
-            label: t("thePlatform"),
+            label: t((m) => m.Navigation.thePlatform),
             href: "/about/the-platform",
           },
           {
-            label: t("theAuthor"),
+            label: t((m) => m.Navigation.theAuthor),
             href: "/about/the-author",
           },
         ],
@@ -63,7 +63,7 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
     // Add My Profile when signed in
     if (isSignedIn) {
       items.push({
-        label: t("myProfile"),
+        label: t((m) => m.Navigation.myProfile),
         href: "/my-profile",
       });
     }
@@ -226,7 +226,7 @@ const MobileNavigationItem = ({
  * @returns The mobile navigation component.
  */
 function MobileNavigationComponent(): React.JSX.Element {
-  const t = useTranslations("Navigation.mobile");
+  const t = useTranslations();
   const navigationItems = useNavigationItems();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
@@ -245,7 +245,7 @@ function MobileNavigationComponent(): React.JSX.Element {
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
         className='mobile-nav__toggle'>
-        <span className={styles["srOnly"]}>{t("openNavigation")}</span>
+        <span className={styles["srOnly"]}>{t((m) => m.Navigation.mobile.openNavigation)}</span>
         <TbMenu className='mobile-nav__toggle-icon' />
       </Button>
 
@@ -254,21 +254,21 @@ function MobileNavigationComponent(): React.JSX.Element {
           <button
             type='button'
             className='mobile-nav__backdrop'
-            aria-label={t("closeNavigation")}
+            aria-label={t((m) => m.Navigation.mobile.closeNavigation)}
             onClick={toggleMobile}
           />
           <aside
             id='mobile-navigation'
             role='dialog'
             aria-modal='true'
-            aria-label={t("title")}
+            aria-label={t((m) => m.Navigation.mobile.title)}
             className='mobile-nav__panel'>
             <div className='mobile-nav__header'>
-              <h3 className='mobile-nav__title'>{t("title")}</h3>
+              <h3 className='mobile-nav__title'>{t((m) => m.Navigation.mobile.title)}</h3>
               <Button
                 variant='ghost'
                 onClick={toggleMobile}
-                aria-label={t("closeNavigation")}
+                aria-label={t((m) => m.Navigation.mobile.closeNavigation)}
                 className='mobile-nav__close'>
                 ✕
               </Button>

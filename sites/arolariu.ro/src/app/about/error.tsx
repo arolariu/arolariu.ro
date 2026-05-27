@@ -1,6 +1,6 @@
 "use client";
 
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useEffect} from "react";
 
 type AboutErrorProps = Readonly<{
@@ -9,7 +9,7 @@ type AboutErrorProps = Readonly<{
 }>;
 
 export default function AboutError({error, reset}: AboutErrorProps): React.JSX.Element {
-  const t = useTranslations("Errors.globalError");
+  const t = useTranslations();
 
   useEffect(() => {
     console.error("[app/about/error.tsx]", error);
@@ -20,17 +20,17 @@ export default function AboutError({error, reset}: AboutErrorProps): React.JSX.E
       role='alert'
       aria-live='assertive'
       data-scope='about'>
-      <h1>{t("hero.title")}</h1>
-      <p>{t("hero.subtitle")}</p>
+      <h1>{t((m) => m.Errors.globalError.hero.title)}</h1>
+      <p>{t((m) => m.Errors.globalError.hero.subtitle)}</p>
       {error.digest ? (
         <p>
-          <span>{t("details.errorIdLabel")}</span> <code>{error.digest}</code>
+          <span>{t((m) => m.Errors.globalError.details.errorIdLabel)}</span> <code>{error.digest}</code>
         </p>
       ) : null}
       <button
         type='button'
         onClick={reset}>
-        {t("buttons.tryAgain")}
+        {t((m) => m.Errors.globalError.buttons.tryAgain)}
       </button>
     </section>
   );

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Professional PDF template for invoice export using @react-pdf/renderer.
  * @module domains/invoices/view-invoice/[id]/components/export/InvoicePDF
@@ -26,7 +28,6 @@
  * @see {@link Merchant} for merchant data structure
  */
 
-"use client";
 
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";

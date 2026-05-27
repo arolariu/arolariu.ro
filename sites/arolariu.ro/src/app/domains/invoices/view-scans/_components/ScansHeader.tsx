@@ -7,7 +7,7 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {useCallback} from "react";
 import {TbFileInvoice, TbInfoCircle, TbRefresh, TbUpload} from "react-icons/tb";
@@ -34,7 +34,7 @@ function formatRelativeTime(date: Date): string {
  * Header component showing scan count and sync button.
  */
 export default function ScansHeader(): React.JSX.Element {
-  const t = useTranslations("IMS--ViewScans.header");
+  const t = useTranslations();
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
 
   /**
@@ -49,7 +49,7 @@ export default function ScansHeader(): React.JSX.Element {
     <div className={styles["header"]}>
       <div className={styles["headerLeft"]}>
         <div>
-          <h1 className={styles["headerTitle"]}>{t("titleWithCount", {count: String(scans.length)})}</h1>
+          <h1 className={styles["headerTitle"]}>{t((m) => m["IMS--ViewScans"].header.titleWithCount, {count: String(scans.length)})}</h1>
           {lastSyncTimestamp ? (
             <motion.p
               key={lastSyncTimestamp.getTime()}
@@ -57,7 +57,7 @@ export default function ScansHeader(): React.JSX.Element {
               animate={{backgroundColor: "transparent"}}
               transition={{duration: 1}}
               className={styles["lastSynced"]}>
-              {t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}
+              {t((m) => m["IMS--ViewScans"].header.lastSynced, {time: formatRelativeTime(lastSyncTimestamp)})}
             </motion.p>
           ) : null}
         </div>
@@ -76,7 +76,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipContent
               side='right'
               className={styles["tooltipContent"]}>
-              <p>{t("tooltip")}</p>
+              <p>{t((m) => m["IMS--ViewScans"].header.tooltip)}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -92,14 +92,14 @@ export default function ScansHeader(): React.JSX.Element {
                   render={
                     <Link href='/domains/invoices/upload-scans'>
                       <TbUpload className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("uploadMore")}</span>
-                      <span className={styles["visibleMobile"]}>{t("upload")}</span>
+                      <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].header.uploadMore)}</span>
+                      <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].header.upload)}</span>
                     </Link>
                   }
                 />
               }
             />
-            <TooltipContent>{t("uploadTooltip")}</TooltipContent>
+            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.uploadTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -113,14 +113,14 @@ export default function ScansHeader(): React.JSX.Element {
                   render={
                     <Link href='/domains/invoices/view-invoices'>
                       <TbFileInvoice className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("myInvoices")}</span>
-                      <span className={styles["visibleMobile"]}>{t("invoices")}</span>
+                      <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].header.myInvoices)}</span>
+                      <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].header.invoices)}</span>
                     </Link>
                   }
                 />
               }
             />
-            <TooltipContent>{t("myInvoicesTooltip")}</TooltipContent>
+            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.myInvoicesTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -134,11 +134,11 @@ export default function ScansHeader(): React.JSX.Element {
                   disabled={isSyncing}
                   className={styles["outlineButton"]}>
                   <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />
-                  <span className={styles["hiddenMobile"]}>{isSyncing ? t("syncing") : t("sync")}</span>
+                  <span className={styles["hiddenMobile"]}>{isSyncing ? t((m) => m["IMS--ViewScans"].header.syncing) : t((m) => m["IMS--ViewScans"].header.sync)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t("syncTooltip")}</TooltipContent>
+            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.syncTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

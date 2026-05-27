@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Progressive engagement email for invoice upload inactivity.
  * @module emails/invoices/inactivity/InvoiceUploadInactivityReminderEmail
@@ -112,36 +113,36 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t(`heading.${dayKey}`)}`}
-        preview={t("preview", {name, days: daysWithoutUpload})}
-        badge={t(`badge.${dayKey}`)}
-        heading={t(`heading.${dayKey}`)}
-        primaryCta={{href: effectiveCreateInvoiceUrl, label: t("cta.primary")}}
-        secondaryCta={{href: effectiveInvoicesUrl, label: t("cta.secondary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath(`email.invoiceInactivity.heading.${dayKey}`))}`}
+        preview={t(selectorFromPath("email.invoiceInactivity.preview"), {name, days: daysWithoutUpload})}
+        badge={t(selectorFromPath(`email.invoiceInactivity.badge.${dayKey}`))}
+        heading={t(selectorFromPath(`email.invoiceInactivity.heading.${dayKey}`))}
+        primaryCta={{href: effectiveCreateInvoiceUrl, label: t(selectorFromPath("email.invoiceInactivity.cta.primary"))}}
+        secondaryCta={{href: effectiveInvoicesUrl, label: t(selectorFromPath("email.invoiceInactivity.cta.secondary"))}}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name})}</Text>
-        <Text style={EmailParagraphStyles}>{t(`intro.${dayKey}`)}</Text>
-        <EmailCard title={t("whyWorthIt.title")}>
-          <BulletList items={[t("whyWorthIt.bullet1"), t("whyWorthIt.bullet2"), t("whyWorthIt.bullet3")]} />
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceInactivity.greeting"), {name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath(`email.invoiceInactivity.intro.${dayKey}`))}</Text>
+        <EmailCard title={t(selectorFromPath("email.invoiceInactivity.whyWorthIt.title"))}>
+          <BulletList items={[t(selectorFromPath("email.invoiceInactivity.whyWorthIt.bullet1")), t(selectorFromPath("email.invoiceInactivity.whyWorthIt.bullet2")), t(selectorFromPath("email.invoiceInactivity.whyWorthIt.bullet3"))]} />
         </EmailCard>
-        <EmailCard title={t("status.title")}>
+        <EmailCard title={t(selectorFromPath("email.invoiceInactivity.status.title"))}>
           <KeyValueTable
             title=''
             items={[
-              {label: t("status.daysWithoutUpload"), value: String(daysWithoutUpload)},
-              {label: t("status.lastUpload"), value: lastUploadDate ?? "—"},
+              {label: t(selectorFromPath("email.invoiceInactivity.status.daysWithoutUpload")), value: String(daysWithoutUpload)},
+              {label: t(selectorFromPath("email.invoiceInactivity.status.lastUpload")), value: lastUploadDate ?? "—"},
             ]}
           />
         </EmailCard>
         {daysWithoutUpload >= 14 ? (
-          <EmailCard title={t("tip.title")}>
-            <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t("tip.message")}</Text>
+          <EmailCard title={t(selectorFromPath("email.invoiceInactivity.tip.title"))}>
+            <Text style={{...EmailParagraphStyles, fontSize: "14px", margin: "0"}}>{t(selectorFromPath("email.invoiceInactivity.tip.message"))}</Text>
           </EmailCard>
         ) : null}
         {daysWithoutUpload >= 30 ? (
-          <EmailCard title={t("important.title")}>
+          <EmailCard title={t(selectorFromPath("email.invoiceInactivity.important.title"))}>
             <Text
               style={{
                 ...EmailParagraphStyles,
@@ -152,12 +153,12 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
                 borderRadius: "10px",
                 padding: "12px",
               }}>
-              {t("important.message")}
+              {t(selectorFromPath("email.invoiceInactivity.important.message"))}
             </Text>
           </EmailCard>
         ) : null}
         <Text style={EmailParagraphStyles}>
-          {t.rich("helpPrompt", {
+          {t.rich(selectorFromPath("email.invoiceInactivity.helpPrompt"), {
             supportEmail: BRAND.supportEmail,
             link: (chunks) => (
               <Link
@@ -169,9 +170,9 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.invoiceInactivity.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.invoiceInactivity.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

@@ -16,7 +16,7 @@
 import {useScansStore} from "@/stores";
 import {ScanStatus} from "@/types/scans";
 import {Badge, Button} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbChevronLeft, TbChevronRight, TbPhoto, TbX} from "react-icons/tb";
 import ScanCard from "../../_components/ScanCard";
@@ -29,7 +29,7 @@ import styles from "./ScanSelector.module.scss";
  * @returns JSX element with scan selection UI
  */
 export default function ScanSelector(): React.JSX.Element {
-  const t = useTranslations("IMS--Create.scanSelector");
+  const t = useTranslations();
   const {scans} = useScansStore();
   const {selectedScans, toggleScan, selectAllScans, clearSelection} = useCreateInvoiceContext();
 
@@ -91,8 +91,8 @@ export default function ScanSelector(): React.JSX.Element {
       {/* Header with actions */}
       <div className={styles["header"]}>
         <div className={styles["headerInfo"]}>
-          <h2 className={styles["title"]}>{t("title")}</h2>
-          <p className={styles["subtitle"]}>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t((m) => m["IMS--Create"].scanSelector.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m["IMS--Create"].scanSelector.subtitle)}</p>
         </div>
 
         <div className={styles["actions"]}>
@@ -100,7 +100,7 @@ export default function ScanSelector(): React.JSX.Element {
             <Badge
               variant='secondary'
               className={styles["selectedBadge"]}>
-              {t("selectedCount", {count: String(selectedScans.length)})}
+              {t((m) => m["IMS--Create"].scanSelector.selectedCount, {count: String(selectedScans.length)})}
             </Badge>
           ) : null}
 
@@ -111,7 +111,7 @@ export default function ScanSelector(): React.JSX.Element {
                 size='sm'
                 onClick={clearSelection}>
                 <TbX />
-                {t("clearAll")}
+                {t((m) => m["IMS--Create"].scanSelector.clearAll)}
               </Button>
             ) : (
               <Button
@@ -120,7 +120,7 @@ export default function ScanSelector(): React.JSX.Element {
                 onClick={selectAllScans}
                 disabled={readyScans.length > 5}>
                 <TbCheck />
-                {t("selectAll")}
+                {t((m) => m["IMS--Create"].scanSelector.selectAll)}
               </Button>
             )
           ) : null}
@@ -150,17 +150,17 @@ export default function ScanSelector(): React.JSX.Element {
                 onClick={handlePreviousPage}
                 disabled={page === 0}>
                 <TbChevronLeft />
-                {t("previous")}
+                {t((m) => m["IMS--Create"].scanSelector.previous)}
               </Button>
               <span className={styles["pageInfo"]}>
-                {page + 1} / {totalPages} ({readyScans.length} {t("scansCount")})
+                {page + 1} / {totalPages} ({readyScans.length} {t((m) => m["IMS--Create"].scanSelector.scansCount)})
               </span>
               <Button
                 variant='outline'
                 size='sm'
                 onClick={handleNextPage}
                 disabled={page >= totalPages - 1}>
-                {t("next")}
+                {t((m) => m["IMS--Create"].scanSelector.next)}
                 <TbChevronRight />
               </Button>
             </div>
@@ -169,7 +169,7 @@ export default function ScanSelector(): React.JSX.Element {
       ) : (
         <div className={styles["emptyState"]}>
           <TbPhoto className={styles["emptyIcon"]} />
-          <p className={styles["emptyText"]}>{t("noScans")}</p>
+          <p className={styles["emptyText"]}>{t((m) => m["IMS--Create"].scanSelector.noScans)}</p>
         </div>
       )}
     </div>

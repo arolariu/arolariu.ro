@@ -1,7 +1,7 @@
 "use client";
 
 import {motion, useInView, type Variants} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef} from "react";
 import {TbBook2, TbBrain, TbCalculator, TbCheck, TbTestPipe, TbUsers} from "react-icons/tb";
 import styles from "./Competencies.module.scss";
@@ -29,40 +29,40 @@ const itemVariants: Variants = {
  * @returns A section element containing the competencies grid with animated entries
  */
 export default function Competencies(): React.JSX.Element {
-  const t = useTranslations("About.Author.Competencies");
+  const t = useTranslations();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
   const skills = [
     {
-      title: t("competences.algorithmicSkills.title"),
+      title: t((m) => m.About.Author.Competencies.competences.algorithmicSkills.title),
       icon: <TbCalculator className={styles["icon"]} />,
-      description: t("competences.algorithmicSkills.description"),
+      description: t((m) => m.About.Author.Competencies.competences.algorithmicSkills.description),
     },
     {
-      title: t("competences.testDrivenDevelopment.title"),
+      title: t((m) => m.About.Author.Competencies.competences.testDrivenDevelopment.title),
       icon: <TbTestPipe className={styles["icon"]} />,
-      description: t("competences.testDrivenDevelopment.description"),
+      description: t((m) => m.About.Author.Competencies.competences.testDrivenDevelopment.description),
     },
     {
-      title: t("competences.domainDrivenDesign.title"),
+      title: t((m) => m.About.Author.Competencies.competences.domainDrivenDesign.title),
       icon: <TbBook2 className={styles["icon"]} />,
-      description: t("competences.domainDrivenDesign.description"),
+      description: t((m) => m.About.Author.Competencies.competences.domainDrivenDesign.description),
     },
     {
-      title: t("competences.agileMethodologies.title"),
+      title: t((m) => m.About.Author.Competencies.competences.agileMethodologies.title),
       icon: <TbUsers className={styles["icon"]} />,
-      description: t("competences.agileMethodologies.description"),
+      description: t((m) => m.About.Author.Competencies.competences.agileMethodologies.description),
     },
     {
-      title: t("competences.customerCentric.title"),
+      title: t((m) => m.About.Author.Competencies.competences.customerCentric.title),
       icon: <TbBrain className={styles["icon"]} />,
-      description: t("competences.customerCentric.description"),
+      description: t((m) => m.About.Author.Competencies.competences.customerCentric.description),
     },
     {
-      title: t("competences.engineeringExcellence.title"),
+      title: t((m) => m.About.Author.Competencies.competences.engineeringExcellence.title),
       icon: <TbCheck className={styles["icon"]} />,
-      description: t("competences.engineeringExcellence.description"),
+      description: t((m) => m.About.Author.Competencies.competences.engineeringExcellence.description),
     },
   ];
 
@@ -73,8 +73,8 @@ export default function Competencies(): React.JSX.Element {
         animate={inView ? {opacity: 1, y: 0} : {opacity: 0, y: 20}}
         transition={{duration: 0.6}}
         className={styles["header"]}>
-        <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
-        <p className={styles["subtitle"]}>{t("subtitle")}</p>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Competencies.title)}</h2>
+        <p className={styles["subtitle"]}>{t((m) => m.About.Author.Competencies.subtitle)}</p>
       </motion.div>
 
       <motion.div

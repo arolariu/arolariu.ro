@@ -49,6 +49,9 @@ function runStep(label: string, command: string, args: readonly string[]): Promi
 }
 
 export default async function typeCheck(): Promise<void> {
+  console.info("[arolariu.ro::typecheck] Checking next-intl selector import boundaries...");
+  await runStep("next-intl selector import guard", "node", ["../../scripts/migrations/next-intl-selector/check.ts"]);
+
   // Step 1: regenerate Next.js route-aware ambient types. Without this, tsc
   // reports TS2304 for every `PageProps`/`LayoutProps` use across the app
   // (and the SVG-import errors that cascade from those broken types).

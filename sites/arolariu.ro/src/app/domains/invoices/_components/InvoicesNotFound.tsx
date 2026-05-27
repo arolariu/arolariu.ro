@@ -1,4 +1,4 @@
-import {getTranslations} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import Link from "next/link";
 import styles from "./InvoicesNotFound.module.scss";
 
@@ -7,15 +7,15 @@ import styles from "./InvoicesNotFound.module.scss";
  * @returns The JSX for the invoices not found view.
  */
 export default async function InvoicesNotFound(): Promise<React.JSX.Element> {
-  const t = await getTranslations("IMS--Common.invoicesNotFound");
+  const t = await getTranslations();
   return (
     <div className={styles["container"]}>
-      <h1 className={styles["title"]}>{t("title")}</h1>
-      <article className={styles["description"]}>{t("description")}</article>
+      <h1 className={styles["title"]}>{t((m) => m["IMS--Common"].invoicesNotFound.title)}</h1>
+      <article className={styles["description"]}>{t((m) => m["IMS--Common"].invoicesNotFound.description)}</article>
       <Link
         href='/domains/invoices/create-invoice'
         className={styles["ctaLink"]}>
-        {t("cta")}
+        {t((m) => m["IMS--Common"].invoicesNotFound.cta)}
       </Link>
     </div>
   );

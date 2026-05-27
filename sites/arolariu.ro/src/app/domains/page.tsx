@@ -1,6 +1,7 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import {getLocale} from "next-intl/server";
+import {getTranslations} from "next-intl-selector/server";
 import RenderDomainsScreen from "./island";
 
 /**
@@ -48,12 +49,12 @@ import RenderDomainsScreen from "./island";
  * @see RFC 1003 - Internationalization System documentation
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Domains.metadata");
+  const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t("title"),
-    description: t("description"),
+    title: t((m) => m.Domains.metadata.title),
+    description: t((m) => m.Domains.metadata.description),
   });
 }
 

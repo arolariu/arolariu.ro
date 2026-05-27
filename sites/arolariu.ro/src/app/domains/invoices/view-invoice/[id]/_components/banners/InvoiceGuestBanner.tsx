@@ -1,19 +1,19 @@
 "use client";
 
 import {Alert, AlertDescription, AlertTitle} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {TbInfoCircle} from "react-icons/tb";
 import styles from "./InvoiceGuestBanner.module.scss";
 
 export function InvoiceGuestBanner(): React.JSX.Element {
-  const t = useTranslations("IMS--View.invoiceGuestBanner");
+  const t = useTranslations();
   return (
     <Alert
       variant='default'
       className={styles["alert"]}>
       <TbInfoCircle className={styles["infoIcon"]} />
-      <AlertTitle className={styles["alertTitle"]}>{t("title")}</AlertTitle>
-      <AlertDescription className={styles["alertDescription"]}>{t("description")}</AlertDescription>
+      <AlertTitle className={styles["alertTitle"]}>{t((m) => m["IMS--View"].invoiceGuestBanner.title)}</AlertTitle>
+      <AlertDescription className={styles["alertDescription"]}>{t((m) => m["IMS--View"].invoiceGuestBanner.description)}</AlertDescription>
     </Alert>
   );
 }

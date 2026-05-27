@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @fileoverview Item-level analytics card with search, sort, and detailed product display.
  * @module domains/invoices/view-invoice/[id]/components/cards/ItemAnalyticsCard
@@ -40,7 +42,6 @@
  * @see {@link useInvoiceContext} for invoice data access
  */
 
-"use client";
 
 import {formatEnum} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";
@@ -63,7 +64,8 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale, useTranslations} from "next-intl";
+import {useLocale} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbArrowsSort, TbSearch, TbShoppingCart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -138,7 +140,7 @@ const categoryColors: Record<number, "default" | "secondary" | "outline" | "dest
  */
 export function ItemAnalyticsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("IMS--View.itemAnalytics");
+  const t = useTranslations();
   const {invoice} = useInvoiceContext();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -317,14 +319,14 @@ export function ItemAnalyticsCard(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["titleRow"]}>
             <TbShoppingCart className={styles["iconTitle"]} />
-            {t("title")}
+            {t((m) => m["IMS--View"].itemAnalytics.title)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className={styles["emptyState"]}>
             <TbShoppingCart className={styles["emptyIcon"]} />
-            <h3 className={styles["emptyTitle"]}>{t("empty.title")}</h3>
-            <p className={styles["emptySubtitle"]}>{t("empty.subtitle")}</p>
+            <h3 className={styles["emptyTitle"]}>{t((m) => m["IMS--View"].itemAnalytics.empty.title)}</h3>
+            <p className={styles["emptySubtitle"]}>{t((m) => m["IMS--View"].itemAnalytics.empty.subtitle)}</p>
           </div>
         </CardContent>
       </Card>
@@ -340,7 +342,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
         <CardHeader>
           <CardTitle className={styles["titleRow"]}>
             <TbShoppingCart className={styles["iconTitle"]} />
-            {t("title")} ({invoice.items.length})
+            {t((m) => m["IMS--View"].itemAnalytics.title)} ({invoice.items.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -351,7 +353,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                 <TbSearch className={styles["searchIcon"]} />
                 <Input
                   type='text'
-                  placeholder={t("searchPlaceholder")}
+                  placeholder={t((m) => m["IMS--View"].itemAnalytics.searchPlaceholder)}
                   value={searchQuery}
                   onChange={handleSearchQueryChange}
                   className={styles["searchInput"]}
@@ -370,7 +372,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                           type='button'
                           onClick={handleSortByName}
                           className={styles["sortButton"]}>
-                          {t("columns.name")}
+                          {t((m) => m["IMS--View"].itemAnalytics.columns.name)}
                           <TbArrowsSort className={styles["sortIcon"]} />
                         </button>
                       </TableHead>
@@ -379,7 +381,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                           type='button'
                           onClick={handleSortByCategory}
                           className={styles["sortButton"]}>
-                          {t("columns.category")}
+                          {t((m) => m["IMS--View"].itemAnalytics.columns.category)}
                           <TbArrowsSort className={styles["sortIcon"]} />
                         </button>
                       </TableHead>
@@ -388,7 +390,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                           type='button'
                           onClick={handleSortByPrice}
                           className={styles["sortButton"]}>
-                          {t("columns.price")}
+                          {t((m) => m["IMS--View"].itemAnalytics.columns.price)}
                           <TbArrowsSort className={styles["sortIcon"]} />
                         </button>
                       </TableHead>
@@ -397,11 +399,11 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                           type='button'
                           onClick={handleSortByQuantity}
                           className={styles["sortButton"]}>
-                          {t("columns.quantity")}
+                          {t((m) => m["IMS--View"].itemAnalytics.columns.quantity)}
                           <TbArrowsSort className={styles["sortIcon"]} />
                         </button>
                       </TableHead>
-                      <TableHead>{t("columns.total")}</TableHead>
+                      <TableHead>{t((m) => m["IMS--View"].itemAnalytics.columns.total)}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -424,13 +426,13 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                             : "destructive"
                                       }
                                       className={styles["confidenceBadge"]}
-                                      aria-label={t("confidence.ariaLabel", {
+                                      aria-label={t((m) => m["IMS--View"].itemAnalytics.confidence.ariaLabel, {
                                         level:
                                           item.metadata.confidence >= 0.9
-                                            ? t("confidence.high")
+                                            ? t((m) => m["IMS--View"].itemAnalytics.confidence.high)
                                             : item.metadata.confidence >= 0.7
-                                              ? t("confidence.medium")
-                                              : t("confidence.low"),
+                                              ? t((m) => m["IMS--View"].itemAnalytics.confidence.medium)
+                                              : t((m) => m["IMS--View"].itemAnalytics.confidence.low),
                                         percent: (item.metadata.confidence * 100).toFixed(0),
                                       })}>
                                       {item.metadata.confidence >= 0.9 ? "✓" : item.metadata.confidence >= 0.7 ? "~" : "!"}
@@ -438,10 +440,10 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className={styles["confidenceTooltip"]}>
-                                      {t("confidence.label")}: {(item.metadata.confidence * 100).toFixed(0)}%
+                                      {t((m) => m["IMS--View"].itemAnalytics.confidence.label)}: {(item.metadata.confidence * 100).toFixed(0)}%
                                     </p>
                                     {item.metadata.confidence < 0.7 && (
-                                      <p className={styles["confidenceWarning"]}>{t("confidence.lowWarning")}</p>
+                                      <p className={styles["confidenceWarning"]}>{t((m) => m["IMS--View"].itemAnalytics.confidence.lowWarning)}</p>
                                     )}
                                   </TooltipContent>
                                 </Tooltip>
@@ -494,7 +496,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
 
             {/* Total Row */}
             <div className={styles["totalRow"]}>
-              <div className={styles["totalLabel"]}>{t("totalLabel")}</div>
+              <div className={styles["totalLabel"]}>{t((m) => m["IMS--View"].itemAnalytics.totalLabel)}</div>
               <div className={styles["totalValues"]}>
                 <div className={styles["totalQuantity"]}>{totals.quantity}</div>
                 <div className={styles["totalPrice"]}>{totals.price.toFixed(2)}</div>
@@ -503,24 +505,24 @@ export function ItemAnalyticsCard(): React.JSX.Element {
 
             {/* Summary Section */}
             <div className={styles["summarySection"]}>
-              <h4 className={styles["summaryTitle"]}>📊 {t("summary.title")}</h4>
+              <h4 className={styles["summaryTitle"]}>📊 {t((m) => m["IMS--View"].itemAnalytics.summary.title)}</h4>
               <ul className={styles["summaryList"]}>
                 {summary.mostExpensive ? (
                   <li className={styles["summaryItem"]}>
-                    • {t("summary.mostExpensive")}: <strong>{summary.mostExpensive.name}</strong> (
+                    • {t((m) => m["IMS--View"].itemAnalytics.summary.mostExpensive)}: <strong>{summary.mostExpensive.name}</strong> (
                     {summary.mostExpensive.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 {summary.cheapest ? (
                   <li className={styles["summaryItem"]}>
-                    • {t("summary.cheapest")}: <strong>{summary.cheapest.name}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
+                    • {t((m) => m["IMS--View"].itemAnalytics.summary.cheapest)}: <strong>{summary.cheapest.name}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 <li className={styles["summaryItem"]}>
-                  • {summary.categoryCount} {t("summary.categories", {count: String(summary.categoryCount)})}
+                  • {summary.categoryCount} {t((m) => m["IMS--View"].itemAnalytics.summary.categories, {count: String(summary.categoryCount)})}
                 </li>
                 <li className={styles["summaryItem"]}>
-                  • {summary.allergenCount} {t("summary.allergens", {count: String(summary.allergenCount)})}
+                  • {summary.allergenCount} {t((m) => m["IMS--View"].itemAnalytics.summary.allergens, {count: String(summary.allergenCount)})}
                 </li>
               </ul>
             </div>

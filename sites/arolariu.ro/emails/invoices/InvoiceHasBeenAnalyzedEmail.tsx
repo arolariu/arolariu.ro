@@ -1,3 +1,4 @@
+import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Email template for notifying users that an invoice has been analyzed.
  * @module emails/invoices/AnalyzedInvoice
@@ -47,34 +48,34 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t("badge")}`}
-        preview={t("preview", {name: safeName})}
-        badge={t("badge")}
-        heading={t("heading")}
-        primaryCta={{href: invoiceUrl, label: t("ctaPrimary")}}
+        title={`${BRAND.name} | ${t(selectorFromPath("email.invoiceAnalyzed.badge"))}`}
+        preview={t(selectorFromPath("email.invoiceAnalyzed.preview"), {name: safeName})}
+        badge={t(selectorFromPath("email.invoiceAnalyzed.badge"))}
+        heading={t(selectorFromPath("email.invoiceAnalyzed.heading"))}
+        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("email.invoiceAnalyzed.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t("greeting", {name: safeName})}</Text>
-        <Text style={EmailParagraphStyles}>{t("intro")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceAnalyzed.greeting"), {name: safeName})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceAnalyzed.intro"))}</Text>
         <KeyValueTable
-          title={t("summaryTitle")}
+          title={t(selectorFromPath("email.invoiceAnalyzed.summaryTitle"))}
           items={[
-            {label: t("summary.invoiceName"), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
-            {label: t("summary.merchantId"), value: invoice?.merchantReference ?? t("summary.notIdentified")},
-            {label: t("summary.itemsDetected"), value: String(itemCount)},
-            {label: t("summary.totalAmount"), value: totalText},
+            {label: t(selectorFromPath("email.invoiceAnalyzed.summary.invoiceName")), value: invoice?.name ?? `#${invoice?.id ?? "—"}`},
+            {label: t(selectorFromPath("email.invoiceAnalyzed.summary.merchantId")), value: invoice?.merchantReference ?? t(selectorFromPath("email.invoiceAnalyzed.summary.notIdentified"))},
+            {label: t(selectorFromPath("email.invoiceAnalyzed.summary.itemsDetected")), value: String(itemCount)},
+            {label: t(selectorFromPath("email.invoiceAnalyzed.summary.totalAmount")), value: totalText},
           ]}
         />
-        <EmailCard title={t("whatWasAnalyzedTitle")}>
+        <EmailCard title={t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzedTitle"))}>
           <BulletList
-            items={[t("whatWasAnalyzed.0"), t("whatWasAnalyzed.1"), t("whatWasAnalyzed.2"), t("whatWasAnalyzed.3"), t("whatWasAnalyzed.4")]}
+            items={[t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzed.0")), t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzed.1")), t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzed.2")), t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzed.3")), t(selectorFromPath("email.invoiceAnalyzed.whatWasAnalyzed.4"))]}
           />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t("body")}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceAnalyzed.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich("feedbackPrompt", {
+          {t.rich(selectorFromPath("email.invoiceAnalyzed.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -85,9 +86,9 @@ const InvoiceHasBeenAnalyzedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t("signOff.line1")}
+          {t(selectorFromPath("email.invoiceAnalyzed.signOff.line1"))}
           <br />
-          {t("signOff.line2", {brand: BRAND.name})}
+          {t(selectorFromPath("email.invoiceAnalyzed.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

@@ -1,11 +1,13 @@
 "use client";
 
+import {selectorFromPath} from "next-intl-selector";
+
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";
 import {CountingNumber} from "@arolariu/components/counting-number";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {AnimatePresence, motion, useInView} from "motion/react";
-import {useTranslations} from "next-intl";
+import {useTranslations} from "next-intl-selector";
 import {useRef, useState} from "react";
 import {
   TbBrandAzure,
@@ -157,8 +159,8 @@ const statConfigs: StatConfig[] = [
  * @returns The TechStack component, CSR'ed.
  */
 export default function TechStack(): React.JSX.Element {
-  const t = useTranslations("About.Platform.techStack");
-  const tStats = useTranslations("About.Platform.statistics");
+  const t = useTranslations();
+  const tStats = useTranslations();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [activeTab, setActiveTab] = useState<string>("frontend");
@@ -188,13 +190,13 @@ export default function TechStack(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t("badge")}
+              {t((m) => m.About.Platform.techStack.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
+            {t((m) => m.About.Platform.techStack.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.techStack.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t("description")}</p>
+          <p className={styles["description"]}>{t((m) => m.About.Platform.techStack.description)}</p>
         </motion.div>
 
         {/* Tabs */}
@@ -216,7 +218,7 @@ export default function TechStack(): React.JSX.Element {
                   value={category.id}
                   className={activeTab === category.id ? styles["tabTriggerActive"] : styles["tabTrigger"]}>
                   <category.icon className={styles["tabIcon"]} />
-                  <span className={styles["tabLabel"]}>{t(`categories.${category.id}.name` as Parameters<typeof t>[0])}</span>
+                  <span className={styles["tabLabel"]}>{t(selectorFromPath(`About.Platform.techStack.${`categories.${category.id}.name`}`))}</span>
                   {activeTab === category.id && (
                     <motion.span
                       className={`${styles["tabIndicator"]} ${styles[gradientClassMap[category.colorKey]]}`}
@@ -242,7 +244,7 @@ export default function TechStack(): React.JSX.Element {
                   transition={{duration: 0.3}}>
                   {/* Category Description */}
                   <div className={styles["categoryDescription"]}>
-                    <p>{t(`categories.${category.id}.description` as Parameters<typeof t>[0])}</p>
+                    <p>{t(selectorFromPath(`About.Platform.techStack.${`categories.${category.id}.description`}`))}</p>
                   </div>
 
                   {/* Technologies Grid */}
@@ -279,7 +281,7 @@ export default function TechStack(): React.JSX.Element {
                             {/* Content */}
                             <div className={styles["techInfo"]}>
                               <div className={styles["techName"]}>
-                                <h3>{t(`technologies.${tech.id}.name` as Parameters<typeof t>[0])}</h3>
+                                <h3>{t(selectorFromPath(`About.Platform.techStack.${`technologies.${tech.id}.name`}`))}</h3>
                                 {tech.version !== undefined && (
                                   <Badge
                                     variant='secondary'
@@ -289,7 +291,7 @@ export default function TechStack(): React.JSX.Element {
                                 )}
                               </div>
                               <p className={styles["techDescription"]}>
-                                {t(`technologies.${tech.id}.description` as Parameters<typeof t>[0])}
+                                {t(selectorFromPath(`About.Platform.techStack.${`technologies.${tech.id}.description`}`))}
                               </p>
                             </div>
                           </CardContent>
@@ -321,12 +323,12 @@ export default function TechStack(): React.JSX.Element {
           <Badge
             variant='outline'
             className={styles["badge"]}>
-            {tStats("badge")}
+            {tStats((m) => m.About.Platform.statistics.badge)}
           </Badge>
           <h3 className={styles["statsTitle"]}>
-            {tStats("title")} <span className={styles["titleHighlight"]}>{tStats("titleHighlight")}</span>
+            {tStats((m) => m.About.Platform.statistics.title)} <span className={styles["titleHighlight"]}>{tStats((m) => m.About.Platform.statistics.titleHighlight)}</span>
           </h3>
-          <p className={styles["statsDescription"]}>{tStats("description")}</p>
+          <p className={styles["statsDescription"]}>{tStats((m) => m.About.Platform.statistics.description)}</p>
         </motion.div>
 
         <div className={styles["statsGrid"]}>
@@ -362,15 +364,15 @@ export default function TechStack(): React.JSX.Element {
                   {/* Animated Number */}
                   <div className={styles["statValue"]}>
                     <CountingNumber
-                      number={Number(tStats(`items.${stat.id}.value` as Parameters<typeof tStats>[0]))}
+                      number={Number(tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.value`)))}
                       inView
                     />
-                    {tStats(`items.${stat.id}.suffix` as Parameters<typeof tStats>[0])}
+                    {tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.suffix`))}
                   </div>
 
                   {/* Label */}
-                  <h3 className={styles["statLabel"]}>{tStats(`items.${stat.id}.label` as Parameters<typeof tStats>[0])}</h3>
-                  <p className={styles["statDescription"]}>{tStats(`items.${stat.id}.description` as Parameters<typeof tStats>[0])}</p>
+                  <h3 className={styles["statLabel"]}>{tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.label`))}</h3>
+                  <p className={styles["statDescription"]}>{tStats(selectorFromPath(`About.Platform.statistics.items.${stat.id}.description`))}</p>
                 </CardContent>
 
                 {/* Animated border */}

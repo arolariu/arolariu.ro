@@ -1,5 +1,41 @@
 "use client";
 
+/**
+ * @fileoverview Dialog registry and lazy-loading orchestrator for invoices domain.
+ * @module app/domains/invoices/_contexts/DialogContainer
+ *
+ * @remarks
+ * **Dialog Registry Pattern**: Centralized router for 27 dialog types across the
+ * invoices bounded context. Maps dialog type discriminators to lazily-loaded
+ * dialog components, ensuring optimal code splitting and bundle sizes.
+ *
+ * **Lazy Loading Strategy**: All dialogs use `next/dynamic` with `ssr: false` to:
+ * - Exclude dialog code from initial bundle (reduces main bundle by ~200KB)
+ * - Defer loading until user actually opens a dialog
+ * - Leverage dialog open animations to mask import-fetch latency
+ * - Improve Time to Interactive (TTI) by deferring non-critical code
+ *
+ * **Dialog Organization** (27 dialogs across 4 route domains):
+ * - **edit-invoice/[id]**: 16 dialogs (items, metadata, merchant, analysis, recipes, etc.)
+ * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
+ * - **view-invoices**: 2 dialogs (import, export)
+ * - **view-scans**: 1 dialog (create invoice from scans)
+ * - **shared**: 4 dialogs (delete/share invoice, delete/preview scan)
+ *
+ * **Performance Optimizations**:
+ * - `React.memo` on component to prevent re-renders from unrelated context churn
+ * - `useMemo` on switch expression with `type` dependency for stable references
+ * - `ssr: false` on all dynamic imports to exclude from server bundle
+ * - Dialog animations mask ~50-200ms chunk-fetch latency on first open
+ *
+ * **Context Integration**: Works with `DialogContext` provider and `useDialogs` hook.
+ * Dialog type changes trigger re-render, switch returns appropriate component.
+ *
+ * @see {@link DialogProvider} - Context provider managing dialog state
+ * @see {@link useDialogs} - Hook for accessing dialog context
+ * @see RFC 1005 - State management patterns (context usage)
+ */
+
 import dynamic from "next/dynamic";
 import {memo, useMemo} from "react";
 import {useDialogs} from "./DialogContext";

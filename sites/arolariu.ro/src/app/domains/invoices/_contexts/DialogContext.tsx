@@ -1,5 +1,43 @@
 "use client";
 
+/**
+ * @fileoverview Type-safe dialog context system with split state/actions pattern.
+ * @module app/domains/invoices/_contexts/DialogContext
+ *
+ * @remarks
+ * **Architecture Pattern**: Split-context design separating state (re-renders consumers)
+ * from actions (stable for provider lifetime) to enable selective subscription in the future.
+ *
+ * **Type-Safe Payload Narrowing**: Compile-time registry (`DialogPayloads`) maps each
+ * dialog type to its expected payload shape. The `useDialog<T>` hook leverages TypeScript's
+ * type narrowing to provide fully-typed access to `currentDialog.payload` when reading
+ * under `isOpen === true`.
+ *
+ * **Soundness Contract**: Runtime payload is `unknown`. Narrowing is sound only when
+ * the active dialog reads its own payload — enforced by DialogContainer mounting only
+ * the active dialog. Callers must guard trigger buttons to prevent dispatching dialogs
+ * without required payloads.
+ *
+ * **27 Dialog Types** across 4 route domains:
+ * - **edit-invoice/[id]**: 16 dialogs (analysis, items, merchant, metadata, recipes, etc.)
+ * - **view-invoice/[id]**: 2 dialogs (share analytics, export)
+ * - **view-invoices**: 2 dialogs (import, export)
+ * - **view-scans**: 1 dialog (create invoice from scans)
+ * - **shared**: 4 dialogs (delete/share invoice, delete/preview scan)
+ *
+ * **Performance**: Actions context value is stable (empty deps array), preventing
+ * unnecessary re-renders for components that only need dispatch capabilities.
+ * State context re-renders all subscribers on every open/close.
+ *
+ * **No-Op Guard**: Opening a dialog while another is already open is a no-op,
+ * enforced in the functional setState updater.
+ *
+ * @see {@link DialogContainer} - Dialog registry and lazy-loading orchestrator
+ * @see {@link useDialogs} - Hook for dynamic dialog dispatching
+ * @see {@link useDialog} - Hook bound to a single dialog type
+ * @see RFC 1005 - State management patterns (context architecture)
+ */
+
 import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";
