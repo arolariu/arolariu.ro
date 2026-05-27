@@ -199,7 +199,7 @@
     "playwright": "1.60.0",
     "postcss": "8.5.15",
     "prettier-plugin-organize-imports": "4.3.0",
-    "prettier-plugin-svelte": "3.5.2",
+    "prettier-plugin-svelte": "4.0.1",
     "prettier": "3.8.3",
     "prism-react-renderer": "2.4.1",
     "raw-loader": "4.0.2",
