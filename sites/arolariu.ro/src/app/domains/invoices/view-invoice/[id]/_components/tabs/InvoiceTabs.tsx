@@ -78,13 +78,13 @@ export function InvoiceTabs(): React.JSX.Element {
               value='recipes'
               className={styles["tabsTrigger"]}>
               <TbChefHat className={styles["tabIcon"]} />
-              {t((m) => m["IMS--View"].invoiceTabs.tabs.possibleRecipes)}
+              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.tabs.possibleRecipes)}
             </TabsTrigger>
             <TabsTrigger
               value='info'
               className={styles["tabsTrigger"]}>
               <TbInfoCircle className={styles["tabIcon"]} />
-              {t((m) => m["IMS--View"].invoiceTabs.tabs.additionalInfo)}
+              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.tabs.additionalInfo)}
             </TabsTrigger>
           </TabsList>
         </CardHeader>
@@ -119,11 +119,11 @@ export function InvoiceTabs(): React.JSX.Element {
                         <div className={styles["recipeDetails"]}>
                           <div className={styles["recipeDetailItem"]}>
                             <TbClock className={styles["tabIcon"]} />
-                            <span>{t((m) => m["IMS--View"].invoiceTabs.recipe.duration, {minutes: String(recipe.approximateTotalDuration)})}</span>
+                            <span>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.duration, {minutes: String(recipe.approximateTotalDuration)})}</span>
                           </div>
                           {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
                             <div className={styles["recipeDetailMuted"]}>
-                              {t((m) => m["IMS--View"].invoiceTabs.recipe.prepCook, {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
+                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.prepCook, {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
                             </div>
                           )}
                         </div>
@@ -133,7 +133,7 @@ export function InvoiceTabs(): React.JSX.Element {
                           <div className={styles["ingredientsSection"]}>
                             <div className={styles["ingredientsHeader"]}>
                               <TbToolsKitchen2 className={styles["sectionIcon"]} />
-                              <h4 className={styles["sectionTitle"]}>{t((m) => m["IMS--View"].invoiceTabs.recipe.ingredients)}</h4>
+                              <h4 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.ingredients)}</h4>
                             </div>
                             <ul className={styles["ingredientsList"]}>
                               {recipe.ingredients.map((ingredient) => (
@@ -150,7 +150,7 @@ export function InvoiceTabs(): React.JSX.Element {
                         {/* Instructions */}
                         {recipe.instructions ? (
                           <div className={styles["instructionsSection"]}>
-                            <h4 className={styles["sectionTitle"]}>{t((m) => m["IMS--View"].invoiceTabs.recipe.instructions)}</h4>
+                            <h4 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.instructions)}</h4>
                             <p className={styles["instructionsText"]}>{recipe.instructions}</p>
                           </div>
                         ) : null}
@@ -165,7 +165,7 @@ export function InvoiceTabs(): React.JSX.Element {
                               href={recipe.referenceForMoreDetails}
                               target='_blank'
                               rel='noopener noreferrer'>
-                              {t((m) => m["IMS--View"].invoiceTabs.recipe.viewRecipe)}
+                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.viewRecipe)}
                               <TbExternalLink className={styles["externalLinkIcon"]} />
                             </a>
                           </Button>
@@ -178,7 +178,7 @@ export function InvoiceTabs(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbChefHat className={styles["emptyIcon"]} />
-                <p className={styles["emptyStateText"]}>{t((m) => m["IMS--View"].invoiceTabs.empty.recipes)}</p>
+                <p className={styles["emptyStateText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.empty.recipes)}</p>
               </div>
             )}
           </TabsContent>
@@ -199,7 +199,7 @@ export function InvoiceTabs(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbInfoCircle className={styles["emptyIcon"]} />
-                <p className={styles["emptyStateText"]}>{t((m) => m["IMS--View"].invoiceTabs.empty.additionalInfo)}</p>
+                <p className={styles["emptyStateText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.empty.additionalInfo)}</p>
               </div>
             )}
           </TabsContent>

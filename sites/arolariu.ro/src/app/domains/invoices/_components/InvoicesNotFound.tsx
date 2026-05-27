@@ -10,12 +10,12 @@ export default async function InvoicesNotFound(): Promise<React.JSX.Element> {
   const t = await getTranslations();
   return (
     <div className={styles["container"]}>
-      <h1 className={styles["title"]}>{t((m) => m["IMS--Common"].invoicesNotFound.title)}</h1>
-      <article className={styles["description"]}>{t((m) => m["IMS--Common"].invoicesNotFound.description)}</article>
+      <h1 className={styles["title"]}>{t((m) => m.shared.invoices.invoicesNotFound.title)}</h1>
+      <article className={styles["description"]}>{t((m) => m.shared.invoices.invoicesNotFound.description)}</article>
       <Link
         href='/domains/invoices/create-invoice'
         className={styles["ctaLink"]}>
-        {t((m) => m["IMS--Common"].invoicesNotFound.cta)}
+        {t((m) => m.shared.invoices.invoicesNotFound.cta)}
       </Link>
     </div>
   );

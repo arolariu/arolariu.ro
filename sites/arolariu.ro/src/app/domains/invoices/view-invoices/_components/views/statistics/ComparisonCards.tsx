@@ -91,7 +91,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
   const cards: Omit<ComparisonCardProps, "index">[] = [
     {
       icon: spendingIcon,
-      label: t((m) => m["IMS--Stats"].comparison.spendingDelta),
+      label: t((m) => m.cards.invoices.statistics.comparison.spendingDelta),
       value: `${formatAmount(Math.abs(data.spendingDelta))} ${currency}`,
       delta: `${data.spendingDeltaPercent >= 0 ? "+" : ""}${formatAmount(data.spendingDeltaPercent, "en-US", 1)}%`,
       isPositive: data.spendingDelta < 0, // Spending less is positive (saving)
@@ -99,7 +99,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     },
     {
       icon: invoiceIcon,
-      label: t((m) => m["IMS--Stats"].comparison.invoiceCount),
+      label: t((m) => m.cards.invoices.statistics.comparison.invoiceCount),
       value: Math.abs(data.invoiceCountDelta).toString(),
       delta: `${data.invoiceCountDelta >= 0 ? "+" : ""}${data.invoiceCountDelta}`,
       isPositive: data.invoiceCountDelta >= 0,
@@ -107,9 +107,9 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
     },
     {
       icon: <TbBuildingStore size={20} />,
-      label: t((m) => m["IMS--Stats"].comparison.newMerchants),
+      label: t((m) => m.cards.invoices.statistics.comparison.newMerchants),
       value: data.newMerchantCount.toString(),
-      delta: data.newMerchantCount > 0 ? t((m) => m["IMS--Stats"].comparison.discovered) : t((m) => m["IMS--Stats"].comparison.none),
+      delta: data.newMerchantCount > 0 ? t((m) => m.cards.invoices.statistics.comparison.discovered) : t((m) => m.cards.invoices.statistics.comparison.none),
       isPositive: data.newMerchantCount > 0 ? true : null,
       progressValue: Math.min(data.newMerchantCount * 20, 100),
     },
@@ -117,7 +117,7 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
 
   return (
     <div className={styles["container"]}>
-      <h3 className={styles["sectionTitle"]}>{t((m) => m["IMS--Stats"].comparison.title)}</h3>
+      <h3 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.statistics.comparison.title)}</h3>
       <div className={styles["grid"]}>
         {cards.map((card, index) => (
           <ComparisonCard

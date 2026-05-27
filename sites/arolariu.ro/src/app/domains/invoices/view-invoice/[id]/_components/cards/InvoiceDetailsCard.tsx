@@ -87,7 +87,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           <div className={styles["headerInfo"]}>
             <CardTitle>
               <span className={styles["titleRow"]}>
-                {t((m) => m["IMS--Cards"].invoiceDetailsCard.title)}
+                {t((m) => m.cards.invoices.invoiceDetailsCard.title)}
                 {Boolean(invoice.isImportant) && <TbHeart className={styles["heartIcon"]} />}
               </span>
             </CardTitle>
@@ -104,7 +104,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             <div className={styles["infoItem"]}>
               <div className={styles["infoLabel"]}>
                 <TbCalendar className={styles["iconSm"]} />
-                <span>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.dateUtc)}</span>
+                <span>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.dateUtc)}</span>
               </div>
               <p className={styles["infoValue"]}>
                 {formatDate(invoice.paymentInformation.transactionDate, {
@@ -116,18 +116,18 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </p>
             </div>
             <div className={styles["infoItem"]}>
-              <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.category)}</p>
+              <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.category)}</p>
               <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
             </div>
             <div className={styles["infoItem"]}>
               <div className={styles["infoLabel"]}>
                 <TbCreditCard className={styles["iconSm"]} />
-                <span>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.payment)}</span>
+                <span>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.payment)}</span>
               </div>
               <p className={styles["infoValue"]}>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
             </div>
             <div className={styles["infoItem"]}>
-              <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.totalAmount)}</p>
+              <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.totalAmount)}</p>
               <p className={styles["totalAmount"]}>
                 {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                   currencyCode: invoice.paymentInformation.currency.code,
@@ -139,7 +139,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {/* Receipt Type Badge - New DI v4.0 field */}
             {invoice.receiptType ? (
               <div className={styles["infoItem"]}>
-                <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.receiptType)}</p>
+                <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.receiptType)}</p>
                 <Badge variant='secondary'>
                   <TbReceipt className={styles["iconSm"]} />
                   <span>
@@ -152,7 +152,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {/* Country/Region - New DI v4.0 field */}
             {invoice.countryRegion ? (
               <div className={styles["infoItem"]}>
-                <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.countryRegion)}</p>
+                <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.countryRegion)}</p>
                 <Badge variant='outline'>
                   <TbFlag3 className={styles["iconSm"]} />
                   <span>{invoice.countryRegion}</span>
@@ -163,7 +163,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {/* Subtotal Amount - New DI v4.0 field */}
             {invoice.paymentInformation.subtotalAmount > 0 && (
               <div className={styles["infoItem"]}>
-                <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.subtotal)}</p>
+                <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.subtotal)}</p>
                 <p className={styles["infoValue"]}>
                   {formatCurrency(invoice.paymentInformation.subtotalAmount, {
                     currencyCode: invoice.paymentInformation.currency.code,
@@ -176,7 +176,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {/* Tip Amount - New DI v4.0 field */}
             {invoice.paymentInformation.tipAmount > 0 && (
               <div className={styles["infoItem"]}>
-                <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.tip)}</p>
+                <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.tip)}</p>
                 <p className={styles["infoValue"]}>
                   {formatCurrency(invoice.paymentInformation.tipAmount, {
                     currencyCode: invoice.paymentInformation.currency.code,
@@ -189,7 +189,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {/* RON Equivalent for non-RON currencies - Enhancement for multi-currency */}
             {ronEquivalent ? (
               <div className={styles["infoItem"]}>
-                <p className={styles["infoLabelPlain"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.labels.ronEquivalent)}</p>
+                <p className={styles["infoLabelPlain"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.labels.ronEquivalent)}</p>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -202,7 +202,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                     />
                     <TooltipContent>
                       <p>
-                        {t((m) => m["IMS--Cards"].invoiceDetailsCard.tooltips.exchangeRate, {
+                        {t((m) => m.cards.invoices.invoiceDetailsCard.tooltips.exchangeRate, {
                           fromCurrency: invoice.paymentInformation.currency.code,
                           rate: ronEquivalent.rateUsed.toFixed(4),
                           year: ronEquivalent.rateYear.toString(),
@@ -221,7 +221,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           {invoice.payments && invoice.payments.length > 0 ? (
             <>
               <div className={styles["paymentsSection"]}>
-                <h3 className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.sections.paymentMethods)}</h3>
+                <h3 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.sections.paymentMethods)}</h3>
                 <div className={styles["paymentsList"]}>
                   {invoice.payments.map((payment) => (
                     <div
@@ -246,7 +246,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           {invoice.taxDetails && invoice.taxDetails.length > 0 ? (
             <>
               <div className={styles["taxSection"]}>
-                <h3 className={styles["sectionTitle"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.sections.taxBreakdown)}</h3>
+                <h3 className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.sections.taxBreakdown)}</h3>
                 <div className={styles["taxTable"]}>
                   {invoice.taxDetails.map((taxDetail) => (
                     <div
@@ -258,14 +258,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                       </div>
                       <div className={styles["taxAmounts"]}>
                         <span className={styles["taxNetAmount"]}>
-                          {t((m) => m["IMS--Cards"].invoiceDetailsCard.taxLabels.net)}:{" "}
+                          {t((m) => m.cards.invoices.invoiceDetailsCard.taxLabels.net)}:{" "}
                           {formatCurrency(taxDetail.netAmount, {
                             currencyCode: invoice.paymentInformation.currency.code,
                             locale,
                           })}
                         </span>
                         <span className={styles["taxAmount"]}>
-                          {t((m) => m["IMS--Cards"].invoiceDetailsCard.taxLabels.tax)}:{" "}
+                          {t((m) => m.cards.invoices.invoiceDetailsCard.taxLabels.tax)}:{" "}
                           {formatCurrency(taxDetail.amount, {
                             currencyCode: invoice.paymentInformation.currency.code,
                             locale,
@@ -282,16 +282,16 @@ export function InvoiceDetailsCard(): React.JSX.Element {
 
           {/* Items Table */}
           <div className={styles["itemsSection"]}>
-            <h3 className={styles["itemsTitle"]}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)})}</h3>
+            <h3 className={styles["itemsTitle"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)})}</h3>
             <div className={styles["tableContainer"]}>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.item)}</TableHead>
-                    <TableHead>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.qty)}</TableHead>
-                    <TableHead>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.unit)}</TableHead>
-                    <TableHead>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.price)}</TableHead>
-                    <TableHead>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.total)}</TableHead>
+                    <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.item)}</TableHead>
+                    <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.qty)}</TableHead>
+                    <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.unit)}</TableHead>
+                    <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.price)}</TableHead>
+                    <TableHead>{t((m) => m.cards.invoices.invoiceDetailsCard.table.total)}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -327,7 +327,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={4}>{t((m) => m["IMS--Cards"].invoiceDetailsCard.table.grandTotal)}</TableCell>
+                    <TableCell colSpan={4}>{t((m) => m.cards.invoices.invoiceDetailsCard.table.grandTotal)}</TableCell>
                     <TableCell>
                       {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                         currencyCode: invoice.paymentInformation.currency.code,
@@ -343,7 +343,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {totalPages > 1 && (
               <div className={styles["pagination"]}>
                 <p className={styles["paginationText"]}>
-                  {t((m) => m["IMS--Cards"].invoiceDetailsCard.pagination.pageOf, {current: String(currentPage), total: String(totalPages)})}
+                  {t((m) => m.cards.invoices.invoiceDetailsCard.pagination.pageOf, {current: String(currentPage), total: String(totalPages)})}
                 </p>
                 <div className={styles["paginationButtons"]}>
                   <Button
@@ -352,14 +352,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                     onClick={handlePreviousPage}
                     disabled={currentPage === 1}>
                     <TbChevronLeft className={styles["navIcon"]} />
-                    {t((m) => m["IMS--Cards"].invoiceDetailsCard.pagination.previous)}
+                    {t((m) => m.cards.invoices.invoiceDetailsCard.pagination.previous)}
                   </Button>
                   <Button
                     variant='outline'
                     size='sm'
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}>
-                    {t((m) => m["IMS--Cards"].invoiceDetailsCard.pagination.next)}
+                    {t((m) => m.cards.invoices.invoiceDetailsCard.pagination.next)}
                     <TbChevronRight className={styles["navIcon"]} />
                   </Button>
                 </div>

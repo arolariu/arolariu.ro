@@ -35,7 +35,7 @@ type Props = {
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceShared",
+  namespace: "emails.invoiceShared",
   render: ({locale, t, props}) => {
     const {fromUsername, toUsername, identifier} = props;
 
@@ -46,35 +46,35 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t(selectorFromPath("email.invoiceShared.badge"))}`}
-        preview={t(selectorFromPath("email.invoiceShared.preview"), {fromName: safeFrom})}
-        badge={t(selectorFromPath("email.invoiceShared.badge"))}
-        heading={t(selectorFromPath("email.invoiceShared.heading"))}
-        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("email.invoiceShared.ctaPrimary"))}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceShared.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceShared.preview"), {fromName: safeFrom})}
+        badge={t(selectorFromPath("emails.invoiceShared.badge"))}
+        heading={t(selectorFromPath("emails.invoiceShared.heading"))}
+        primaryCta={{href: invoiceUrl, label: t(selectorFromPath("emails.invoiceShared.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceShared.greeting"), {toName: safeTo})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceShared.greeting"), {toName: safeTo})}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich(selectorFromPath("email.invoiceShared.intro"), {
+          {t.rich(selectorFromPath("emails.invoiceShared.intro"), {
             brand: BRAND.name,
             from: () => <strong>{safeFrom}</strong>,
           })}
         </Text>
         <KeyValueTable
-          title={t(selectorFromPath("email.invoiceShared.detailsTitle"))}
+          title={t(selectorFromPath("emails.invoiceShared.detailsTitle"))}
           items={[
-            {label: t(selectorFromPath("email.invoiceShared.details.sharedBy")), value: safeFrom},
-            {label: t(selectorFromPath("email.invoiceShared.details.invoiceId")), value: identifier},
+            {label: t(selectorFromPath("emails.invoiceShared.details.sharedBy")), value: safeFrom},
+            {label: t(selectorFromPath("emails.invoiceShared.details.invoiceId")), value: identifier},
           ]}
         />
-        <EmailCard title={t(selectorFromPath("email.invoiceShared.whatYouCanDoTitle"))}>
-          <BulletList items={[t(selectorFromPath("email.invoiceShared.whatYouCanDo.0")), t(selectorFromPath("email.invoiceShared.whatYouCanDo.1")), t(selectorFromPath("email.invoiceShared.whatYouCanDo.2"))]} />
+        <EmailCard title={t(selectorFromPath("emails.invoiceShared.whatYouCanDoTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item0")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item1")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item2"))]} />
         </EmailCard>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceShared.body"))}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceShared.body"))}</Text>
         <Text style={EmailParagraphStyles}>
-          {t.rich(selectorFromPath("email.invoiceShared.feedbackPrompt"), {
+          {t.rich(selectorFromPath("emails.invoiceShared.feedbackPrompt"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -85,9 +85,9 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t(selectorFromPath("email.invoiceShared.signOff.line1"))}
+          {t(selectorFromPath("emails.invoiceShared.signOff.line1"))}
           <br />
-          {t(selectorFromPath("email.invoiceShared.signOff.line2"), {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceShared.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

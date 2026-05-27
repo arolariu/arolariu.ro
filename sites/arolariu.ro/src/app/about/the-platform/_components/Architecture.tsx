@@ -72,13 +72,13 @@ export default function Architecture(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t((m) => m.About.Platform.architecture.badge)}
+              {t((m) => m.sections.about.platform.architecture.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.About.Platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.architecture.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.architecture.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.architecture.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t((m) => m.About.Platform.architecture.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.sections.about.platform.architecture.description)}</p>
         </motion.div>
 
         {/* Architecture Diagram */}
@@ -116,14 +116,14 @@ export default function Architecture(): React.JSX.Element {
                         <layer.icon className={styles["layerIcon"]} />
                       </motion.div>
                       <div>
-                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
-                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.description`}`))}</p>
+                        <h3 className={styles["layerName"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.name`}`))}</h3>
+                        <p className={styles["layerDescription"]}>{t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.description`}`))}</p>
                       </div>
                     </div>
 
                     {/* Technologies */}
                     <div className={styles["technologies"]}>
-                      {t(selectorFromPath(`About.Platform.architecture.${`layers.${layer.id}.technologies`}`))
+                      {t(selectorFromPath(`sections.about.platform.architecture.${`layers.${layer.id}.technologies`}`))
                         .split(",")
                         .map((tech, techIndex) => (
                           <motion.div

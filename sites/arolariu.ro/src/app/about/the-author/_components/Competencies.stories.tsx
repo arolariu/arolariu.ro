@@ -4,7 +4,7 @@ import Competencies from "./Competencies";
 /**
  * Competencies section displaying the author's professional skill set.
  * Renders six animated skill cards with icons, titles, and descriptions.
- * Uses the `About.Author.Competencies` i18n namespace.
+ * Uses the `sections.about.author.Competencies` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Competencies",

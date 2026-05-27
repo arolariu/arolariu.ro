@@ -61,30 +61,30 @@ const AddDialog = () => {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.add.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.add.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.add.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.add.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.keyLabel)}</Label>
+            <Label htmlFor='key'>{t((m) => m.dialogs.invoices.metadataDialog.fields.keyLabel)}</Label>
             <Input
               id='key'
               name='key'
               value={addedMetadata.key}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.keyPlaceholder)}
+              placeholder={t((m) => m.dialogs.invoices.metadataDialog.fields.keyPlaceholder)}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.valueLabel)}</Label>
+            <Label htmlFor='value'>{t((m) => m.dialogs.invoices.metadataDialog.fields.valueLabel)}</Label>
             <Input
               id='value'
               name='value'
               value={addedMetadata.value}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.valuePlaceholder)}
+              placeholder={t((m) => m.dialogs.invoices.metadataDialog.fields.valuePlaceholder)}
             />
           </div>
         </div>
@@ -94,13 +94,13 @@ const AddDialog = () => {
             type='button'
             variant='outline'
             onClick={close}>
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className={styles["saveIcon"]} />
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.save)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -132,13 +132,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.edit.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.edit.description)}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>{t((m) => m["IMS--Dialogs"].metadataDialog.edit.fieldLabel)}</Label>
+            <Label htmlFor='key'>{t((m) => m.dialogs.invoices.metadataDialog.edit.fieldLabel)}</Label>
             <Input
               id='key'
               value={editedMetadata["key"]}
@@ -147,12 +147,12 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>{t((m) => m["IMS--Dialogs"].metadataDialog.fields.valueLabel)}</Label>
+            <Label htmlFor='value'>{t((m) => m.dialogs.invoices.metadataDialog.fields.valueLabel)}</Label>
             <Input
               id='value'
               value={editedMetadata["value"]}
               onChange={handleChange}
-              placeholder={t((m) => m["IMS--Dialogs"].metadataDialog.fields.valuePlaceholder)}
+              placeholder={t((m) => m.dialogs.invoices.metadataDialog.fields.valuePlaceholder)}
             />
           </div>
         </div>
@@ -162,13 +162,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className={styles["saveIcon"]} />
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.save)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -195,8 +195,8 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].metadataDialog.delete.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].metadataDialog.delete.description)}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.metadataDialog.delete.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.metadataDialog.delete.description)}</DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
@@ -204,13 +204,13 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.cancel)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.cancel)}
           </Button>
           <Button
             type='button'
             onClick={handleDelete}
             className={styles["deleteButton"]}>
-            {t((m) => m["IMS--Dialogs"].metadataDialog.buttons.delete)}
+            {t((m) => m.dialogs.invoices.metadataDialog.buttons.delete)}
           </Button>
         </DialogFooter>
       </DialogContent>

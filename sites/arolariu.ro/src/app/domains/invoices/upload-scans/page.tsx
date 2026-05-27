@@ -7,16 +7,14 @@ import {redirect} from "next/navigation";
 import RenderUploadScansScreen from "./island";
 import styles from "./page.module.scss";
 
-/**
- * Generates SEO metadata for the scan upload page.
- */
+/** Generates SEO metadata for the scan upload page. */
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m["IMS--UploadScans"].metadata.title),
-    description: t((m) => m["IMS--UploadScans"].metadata.description),
+    title: t((m) => m.pages.invoices.uploadScans.metadata.title),
+    description: t((m) => m.pages.invoices.uploadScans.metadata.description),
   });
 }
 

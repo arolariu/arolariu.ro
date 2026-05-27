@@ -24,7 +24,7 @@ import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import styles from "./ShareAnalyticsDialog.module.scss";
 
 /**
- * Dialog for sharing spending analytics via image download, clipboard, or email.
+ * Dialog for sharing spending analytics via image download, clipboard, or emails.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
@@ -90,16 +90,16 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     const item = new ClipboardItem({[blob.type]: blob});
     await navigator.clipboard.write([item]);
 
-    toast(t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.imageCopied.title), {
-      description: t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.imageCopied.description),
+    toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.title), {
+      description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.description),
     });
   }, [invoice, merchant, t]);
 
   const handleSendEmail = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      toast(t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.emailSent.title), {
-        description: t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.emailSent.description, {email}),
+      toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.title), {
+        description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.description, {email}),
       });
       setEmail("");
     },
@@ -108,8 +108,8 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
 
   const handleDownloadImage = useCallback(() => {
     // In a real app, this would generate and download an image
-    toast(t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.imageSaved.title), {
-      description: t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.toasts.imageSaved.description, {merchant: merchant.name}),
+    toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.title), {
+      description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.description, {merchant: merchant.name}),
     });
   }, [merchant, t]);
 
@@ -122,26 +122,26 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.description, {merchant: merchant?.name ?? ""})}</DialogDescription>
+          <DialogTitle>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.title)}</DialogTitle>
+          <DialogDescription>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.description, {merchant: merchant?.name ?? ""})}</DialogDescription>
         </DialogHeader>
 
         <Tabs
           defaultValue='image'
           className={styles["tabs"]}>
           <TabsList className={styles["tabsList"]}>
-            <TabsTrigger value='image'>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.tabs.image)}</TabsTrigger>
-            <TabsTrigger value='email'>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.tabs.email)}</TabsTrigger>
+            <TabsTrigger value='image'>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.tabs.image)}</TabsTrigger>
+            <TabsTrigger value='email'>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.tabs.email)}</TabsTrigger>
           </TabsList>
 
           <TabsContent
             value='image'
             className={styles["tabsContent"]}>
             <div className={styles["contentSection"]}>
-              <p className={styles["description"]}>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.image.description)}</p>
+              <p className={styles["description"]}>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.description)}</p>
               <div className={styles["previewContainer"]}>
                 <div className={styles["previewBox"]}>
-                  <div className={styles["previewPlaceholder"]}>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.image.previewPlaceholder)}</div>
+                  <div className={styles["previewPlaceholder"]}>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.previewPlaceholder)}</div>
                 </div>
               </div>
             </div>
@@ -151,14 +151,14 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   onClick={handleDownloadImage}
                   className={styles["fullWidthButton"]}>
                   <TbDownload className={styles["buttonIcon"]} />
-                  {t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.image.download)}
+                  {t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.download)}
                 </Button>
                 <Button
                   variant='outline'
                   onClick={handleCopyImage}
                   className={styles["fullWidthButton"]}>
                   <TbCopy className={styles["buttonIcon"]} />
-                  {t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.image.copyToClipboard)}
+                  {t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.copyToClipboard)}
                 </Button>
               </div>
             </DialogFooter>
@@ -168,13 +168,13 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
             value='email'
             className={styles["tabsContent"]}>
             <div className={styles["contentSection"]}>
-              <p className={styles["description"]}>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.email.description)}</p>
+              <p className={styles["description"]}>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.email.description)}</p>
               <div className={styles["emailSection"]}>
-                <Label htmlFor='email'>{t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.email.label)}</Label>
+                <Label htmlFor='email'>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.email.label)}</Label>
                 <Input
                   id='email'
                   type='email'
-                  placeholder={t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.email.placeholder)}
+                  placeholder={t((m) => m.dialogs.invoices.shareAnalyticsDialog.email.placeholder)}
                   value={email}
                   // eslint-disable-next-line react/jsx-no-bind -- inline event handler
                   onChange={(e) => setEmail(e.target.value)}
@@ -186,7 +186,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                 onClick={handleSendEmail}
                 className={styles["fullWidthButton"]}>
                 <TbMail className={styles["buttonIcon"]} />
-                {t((m) => m["IMS--Dialogs"].shareAnalyticsDialog.email.send)}
+                {t((m) => m.dialogs.invoices.shareAnalyticsDialog.email.send)}
               </Button>
             </DialogFooter>
           </TabsContent>

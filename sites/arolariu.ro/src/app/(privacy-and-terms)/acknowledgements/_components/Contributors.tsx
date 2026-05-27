@@ -39,9 +39,9 @@ export default function Contributors(): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t((m) => m.Acknowledgements.contributors.title)}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.sections.legal.acknowledgements.contributors.title)}</span>
           </h2>
-          <p className={styles["subtitle"]}>{t((m) => m.Acknowledgements.contributors.subtitle)}</p>
+          <p className={styles["subtitle"]}>{t((m) => m.sections.legal.acknowledgements.contributors.subtitle)}</p>
         </motion.div>
 
         {/* Contributors grid */}
@@ -71,7 +71,7 @@ export default function Contributors(): React.JSX.Element {
                   {/* Package count */}
                   <div className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
-                    <span>{t((m) => m.Acknowledgements.contributors.packages, {count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`)))})}</span>
+                    <span>{t((m) => m.sections.legal.acknowledgements.contributors.packages, {count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`)))})}</span>
                   </div>
 
                   {/* Description */}

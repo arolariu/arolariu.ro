@@ -107,7 +107,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                     variant='ghost'
                     size='sm'
                     onClick={handleShowHealthDialog}>
-                    {t((m) => m["IMS--View"].healthScore.seeReport)}
+                    {t((m) => m.pages.invoices.viewInvoice.healthScore.seeReport)}
                   </Button>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
           onOpenChange={setShowHealthDialog}>
           <DialogContent className='max-h-[85vh] max-w-2xl overflow-y-auto'>
             <DialogHeader>
-              <DialogTitle>{t((m) => m["IMS--View"].healthScore.dialogTitle)}</DialogTitle>
+              <DialogTitle>{t((m) => m.pages.invoices.viewInvoice.healthScore.dialogTitle)}</DialogTitle>
             </DialogHeader>
             <InvoiceHealthScore />
           </DialogContent>

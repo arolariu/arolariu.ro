@@ -55,28 +55,28 @@ export function PrintHeader(props: Readonly<PrintHeaderProps>): React.JSX.Elemen
         {/* Invoice Details Grid */}
         <div className={styles["detailsGrid"]}>
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.date)}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m.pages.invoices.viewInvoice.print.labels.date)}:</span>
             <span className={styles["detailValue"]}>{invoiceDate}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.merchant)}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m.pages.invoices.viewInvoice.print.labels.merchant)}:</span>
             <span className={styles["detailValue"]}>{merchant?.name ?? ""}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.total)}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m.pages.invoices.viewInvoice.print.labels.total)}:</span>
             <span className={styles["detailValue"]}>{formattedTotal}</span>
           </div>
 
           <div className={styles["detailItem"]}>
-            <span className={styles["detailLabel"]}>{t((m) => m["IMS--View"].print.labels.items)}:</span>
+            <span className={styles["detailLabel"]}>{t((m) => m.pages.invoices.viewInvoice.print.labels.items)}:</span>
             <span className={styles["detailValue"]}>{invoice.items.length}</span>
           </div>
         </div>
 
         {/* Generated Timestamp */}
-        <div className={styles["generatedOn"]}>{t((m) => m["IMS--View"].print.generatedOn, {date: printDate})}</div>
+        <div className={styles["generatedOn"]}>{t((m) => m.pages.invoices.viewInvoice.print.generatedOn, {date: printDate})}</div>
       </div>
 
       {/* Bottom Border */}

@@ -49,7 +49,7 @@ export default function ScansHeader(): React.JSX.Element {
     <div className={styles["header"]}>
       <div className={styles["headerLeft"]}>
         <div>
-          <h1 className={styles["headerTitle"]}>{t((m) => m["IMS--ViewScans"].header.titleWithCount, {count: String(scans.length)})}</h1>
+          <h1 className={styles["headerTitle"]}>{t((m) => m.pages.invoices.viewScans.header.titleWithCount, {count: String(scans.length)})}</h1>
           {lastSyncTimestamp ? (
             <motion.p
               key={lastSyncTimestamp.getTime()}
@@ -57,7 +57,7 @@ export default function ScansHeader(): React.JSX.Element {
               animate={{backgroundColor: "transparent"}}
               transition={{duration: 1}}
               className={styles["lastSynced"]}>
-              {t((m) => m["IMS--ViewScans"].header.lastSynced, {time: formatRelativeTime(lastSyncTimestamp)})}
+              {t((m) => m.pages.invoices.viewScans.header.lastSynced, {time: formatRelativeTime(lastSyncTimestamp)})}
             </motion.p>
           ) : null}
         </div>
@@ -76,7 +76,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipContent
               side='right'
               className={styles["tooltipContent"]}>
-              <p>{t((m) => m["IMS--ViewScans"].header.tooltip)}</p>
+              <p>{t((m) => m.pages.invoices.viewScans.header.tooltip)}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -92,14 +92,14 @@ export default function ScansHeader(): React.JSX.Element {
                   render={
                     <Link href='/domains/invoices/upload-scans'>
                       <TbUpload className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].header.uploadMore)}</span>
-                      <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].header.upload)}</span>
+                      <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.uploadMore)}</span>
+                      <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.upload)}</span>
                     </Link>
                   }
                 />
               }
             />
-            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.uploadTooltip)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewScans.header.uploadTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -113,14 +113,14 @@ export default function ScansHeader(): React.JSX.Element {
                   render={
                     <Link href='/domains/invoices/view-invoices'>
                       <TbFileInvoice className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].header.myInvoices)}</span>
-                      <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].header.invoices)}</span>
+                      <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.header.myInvoices)}</span>
+                      <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.header.invoices)}</span>
                     </Link>
                   }
                 />
               }
             />
-            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.myInvoicesTooltip)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewScans.header.myInvoicesTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -134,11 +134,11 @@ export default function ScansHeader(): React.JSX.Element {
                   disabled={isSyncing}
                   className={styles["outlineButton"]}>
                   <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />
-                  <span className={styles["hiddenMobile"]}>{isSyncing ? t((m) => m["IMS--ViewScans"].header.syncing) : t((m) => m["IMS--ViewScans"].header.sync)}</span>
+                  <span className={styles["hiddenMobile"]}>{isSyncing ? t((m) => m.pages.invoices.viewScans.header.syncing) : t((m) => m.pages.invoices.viewScans.header.sync)}</span>
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--ViewScans"].header.syncTooltip)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.viewScans.header.syncTooltip)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

@@ -77,32 +77,32 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
   const kpiCards: Omit<KPICardProps, "index">[] = [
     {
       icon: <TbCurrencyDollar size={24} />,
-      label: t((m) => m["IMS--Stats"].kpi.totalSpending),
+      label: t((m) => m.cards.invoices.statistics.kpi.totalSpending),
       value: `${formatAmount(data.totalSpending)} ${currency}`,
       subtitle: `${data.invoiceCount} invoices`,
       trend: null,
     },
     {
       icon: <TbReceipt size={24} />,
-      label: t((m) => m["IMS--Stats"].kpi.invoiceCount),
+      label: t((m) => m.cards.invoices.statistics.kpi.invoiceCount),
       value: data.invoiceCount.toString(),
-      subtitle: t((m) => m["IMS--Stats"].kpi.avgPerInvoice, {
+      subtitle: t((m) => m.cards.invoices.statistics.kpi.avgPerInvoice, {
         amount: data.invoiceCount > 0 ? formatAmount(data.totalSpending / data.invoiceCount) : formatAmount(0),
       }),
       trend: null,
     },
     {
       icon: <TbBuildingStore size={24} />,
-      label: t((m) => m["IMS--Stats"].kpi.topMerchant),
-      value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t((m) => m["IMS--Stats"].kpi.noneYet),
-      subtitle: data.mostFrequentMerchant ? t((m) => m["IMS--Stats"].kpi.visits, {count: String(data.mostFrequentMerchant.count)}) : "",
+      label: t((m) => m.cards.invoices.statistics.kpi.topMerchant),
+      value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t((m) => m.cards.invoices.statistics.kpi.noneYet),
+      subtitle: data.mostFrequentMerchant ? t((m) => m.cards.invoices.statistics.kpi.visits, {count: String(data.mostFrequentMerchant.count)}) : "",
       trend: null,
     },
     {
       icon: <TbShoppingCart size={24} />,
-      label: t((m) => m["IMS--Stats"].kpi.averageItems),
+      label: t((m) => m.cards.invoices.statistics.kpi.averageItems),
       value: formatAmount(data.averageItemsPerInvoice, "en-US", 1),
-      subtitle: t((m) => m["IMS--Stats"].kpi.acrossInvoices, {count: String(data.invoiceCount)}),
+      subtitle: t((m) => m.cards.invoices.statistics.kpi.acrossInvoices, {count: String(data.invoiceCount)}),
       trend: null,
     },
   ];

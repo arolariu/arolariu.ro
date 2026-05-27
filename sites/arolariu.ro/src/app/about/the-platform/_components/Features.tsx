@@ -103,13 +103,13 @@ export default function Features(): React.JSX.Element {
             <Badge
               variant='outline'
               className={styles["badge"]}>
-              {t((m) => m.About.Platform.features.badge)}
+              {t((m) => m.sections.about.platform.features.badge)}
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.About.Platform.features.title)} <span className={styles["titleHighlight"]}>{t((m) => m.About.Platform.features.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.features.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.features.titleHighlight)}</span>
           </h2>
-          <p className={styles["description"]}>{t((m) => m.About.Platform.features.description)}</p>
+          <p className={styles["description"]}>{t((m) => m.sections.about.platform.features.description)}</p>
         </motion.div>
 
         {/* Features Grid */}
@@ -155,15 +155,15 @@ export default function Features(): React.JSX.Element {
                       <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
+                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.description`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.description`}`))}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["tags"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${feature.id}.tags`}`))
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.tags`}`))
                       .split(",")
                       .map((tag) => (
                         <Badge
@@ -195,7 +195,7 @@ export default function Features(): React.JSX.Element {
             <button
               type='button'
               className={styles["modalBackdrop"]}
-              aria-label={t((m) => m.About.Platform.features.modal.close)}
+              aria-label={t((m) => m.sections.about.platform.features.modal.close)}
               // eslint-disable-next-line react/jsx-no-bind -- simple modal close
               onClick={() => setSelectedFeature(null)}
             />
@@ -212,16 +212,16 @@ export default function Features(): React.JSX.Element {
                   <h3
                     id={`feature-modal-title-${selectedFeature.id}`}
                     className={styles["modalTitle"]}>
-                    {t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.title`}`))}
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.title`}`))}
                   </h3>
-                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
+                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
                 </div>
               </div>
 
-              <p className={styles["modalDescription"]}>{t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
+              <p className={styles["modalDescription"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
 
               <div className={styles["modalTags"]}>
-                {t(selectorFromPath(`About.Platform.features.${`items.${selectedFeature.id}.tags`}`))
+                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.tags`}`))
                   .split(",")
                   .map((tag) => (
                     <Badge
@@ -236,7 +236,7 @@ export default function Features(): React.JSX.Element {
                 <Link
                   href={selectedFeature.link}
                   className={`${styles["modalLink"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
-                  {t((m) => m.About.Platform.features.modal.exploreFeature)}
+                  {t((m) => m.sections.about.platform.features.modal.exploreFeature)}
                   <TbArrowRight className={styles["modalLinkIcon"]} />
                 </Link>
                 <Button
@@ -244,7 +244,7 @@ export default function Features(): React.JSX.Element {
                   // eslint-disable-next-line react/jsx-no-bind -- simple modal close
                   onClick={() => setSelectedFeature(null)}
                   className={styles["modalClose"]}>
-                  {t((m) => m.About.Platform.features.modal.close)}
+                  {t((m) => m.sections.about.platform.features.modal.close)}
                 </Button>
               </div>
             </motion.div>

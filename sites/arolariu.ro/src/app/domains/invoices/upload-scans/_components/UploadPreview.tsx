@@ -117,11 +117,11 @@ function UploadCard({
                       <Badge
                         variant='secondary'
                         className={styles["badgePending"]}>
-                        {t((m) => m["IMS--UploadScans"].preview.status.pending)}
+                        {t((m) => m.pages.invoices.uploadScans.preview.status.pending)}
                       </Badge>
                     }
                   />
-                  <TooltipContent side='top'>{t((m) => m["IMS--UploadScans"].preview.pendingTooltip)}</TooltipContent>
+                  <TooltipContent side='top'>{t((m) => m.pages.invoices.uploadScans.preview.pendingTooltip)}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -129,28 +129,28 @@ function UploadCard({
               <Badge
                 variant='secondary'
                 className={styles["badgeUploading"]}>
-                {t((m) => m["IMS--UploadScans"].preview.status.uploading)}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.uploading)}
               </Badge>
             )}
             {status === "retrying" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeRetrying"]}>
-                {t((m) => m["IMS--UploadScans"].preview.status.retrying)}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.retrying)}
               </Badge>
             )}
             {status === "completed" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeCompleted"]}>
-                {t((m) => m["IMS--UploadScans"].preview.status.completed)}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.completed)}
               </Badge>
             )}
             {status === "failed" && (
               <Badge
                 variant='secondary'
                 className={styles["badgeFailed"]}>
-                {t((m) => m["IMS--UploadScans"].preview.status.failed)}
+                {t((m) => m.pages.invoices.uploadScans.preview.status.failed)}
               </Badge>
             )}
           </div>
@@ -170,7 +170,7 @@ function UploadCard({
                     </Button>
                   }
                 />
-                <TooltipContent side='right'>{t((m) => m["IMS--UploadScans"].preview.removeTooltip)}</TooltipContent>
+                <TooltipContent side='right'>{t((m) => m.pages.invoices.uploadScans.preview.removeTooltip)}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -195,7 +195,7 @@ function UploadCard({
               <p className={styles["fileSize"]}>{progress}%</p>
             </>
           )}
-          {status === "retrying" ? <p className={styles["fileError"]}>{t((m) => m["IMS--UploadScans"].preview.retryAttempt, {attempt: String(attempts)})}</p> : null}
+          {status === "retrying" ? <p className={styles["fileError"]}>{t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}</p> : null}
           {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>
@@ -259,7 +259,7 @@ export default function UploadPreview(): React.JSX.Element | null {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>{t((m) => m["IMS--UploadScans"].preview.title, {count: String(pendingUploads.length)})}</h2>
+        <h2 className={styles["title"]}>{t((m) => m.pages.invoices.uploadScans.preview.title, {count: String(pendingUploads.length)})}</h2>
       </div>
 
       <StaggerContainer
@@ -291,10 +291,10 @@ export default function UploadPreview(): React.JSX.Element | null {
             onClick={handlePreviousPage}
             disabled={page === 0}>
             <TbChevronLeft />
-            {t((m) => m["IMS--UploadScans"].preview.pagination.previous)}
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.previous)}
           </Button>
           <span className={styles["paginationInfo"]}>
-            {t((m) => m["IMS--UploadScans"].preview.pagination.pageInfo, {
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.pageInfo, {
               current: String(page + 1),
               total: String(totalPages),
               count: String(pendingUploads.length),
@@ -305,7 +305,7 @@ export default function UploadPreview(): React.JSX.Element | null {
             size='sm'
             onClick={handleNextPage}
             disabled={page >= totalPages - 1}>
-            {t((m) => m["IMS--UploadScans"].preview.pagination.next)}
+            {t((m) => m.pages.invoices.uploadScans.preview.pagination.next)}
             <TbChevronRight />
           </Button>
         </div>

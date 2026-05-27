@@ -65,11 +65,11 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
   const t = useTranslations();
   const chartConfig = {
     current: {
-      label: t((m) => m["IMS--View"].categoryComparisonChart.labels.current),
+      label: t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.current),
       color: "var(--ac-chart-1)",
     },
     average: {
-      label: t((m) => m["IMS--View"].categoryComparisonChart.labels.average),
+      label: t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.average),
       color: "var(--ac-chart-3)",
     },
   };
@@ -77,8 +77,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].categoryComparisonChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].categoryComparisonChart.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -111,8 +111,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                     active={false}
                     payload={[]}
                     currency={currency}
-                    currentLabel={t((m) => m["IMS--View"].categoryComparisonChart.labels.current)}
-                    averageLabel={t((m) => m["IMS--View"].categoryComparisonChart.labels.average)}
+                    currentLabel={t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.current)}
+                    averageLabel={t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.average)}
                   />
                 }
               />
@@ -125,14 +125,14 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 fill='var(--ac-chart-1)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name={t((m) => m["IMS--View"].categoryComparisonChart.labels.current)}
+                name={t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.current)}
               />
               <Bar
                 dataKey='average'
                 fill='var(--ac-chart-3)'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name={t((m) => m["IMS--View"].categoryComparisonChart.labels.average)}
+                name={t((m) => m.pages.invoices.viewInvoice.categoryComparisonChart.labels.average)}
               />
             </BarChart>
           </ResponsiveContainer>

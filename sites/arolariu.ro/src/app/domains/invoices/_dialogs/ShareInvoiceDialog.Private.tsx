@@ -52,40 +52,40 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
         onClick={onBack}
         className={styles["backButtonMl"]}>
         <TbArrowLeft className={styles["backIcon"]} />
-        {t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.backToOptions)}
+        {t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.backToOptions)}
       </Button>
 
       <Alert
         variant='default'
         className={styles["alertGreen"]}>
         <TbLock className={styles["lockIcon"]} />
-        <AlertTitle className={styles["alertGreenTitle"]}>{t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.title)}</AlertTitle>
-        <AlertDescription className={styles["alertGreenDesc"]}>{t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.description)}</AlertDescription>
+        <AlertTitle className={styles["alertGreenTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.title)}</AlertTitle>
+        <AlertDescription className={styles["alertGreenDesc"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}</AlertDescription>
       </Alert>
 
       <form
         onSubmit={onSendEmail}
         className={styles["formBody"]}>
         <div className={styles["fieldGroup"]}>
-          <Label htmlFor='email'>{t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.emailLabel)}</Label>
+          <Label htmlFor='email'>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailLabel)}</Label>
           <Input
             id='email'
             type='email'
-            placeholder={t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.emailPlaceholder)}
+            placeholder={t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailPlaceholder)}
             value={email}
             // eslint-disable-next-line react/jsx-no-bind -- input always changes.
             onChange={(e) => onEmailChange(e.target.value)}
             disabled={isSending}
             required
           />
-          <p className={styles["emailHint"]}>{t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.emailHint)}</p>
+          <p className={styles["emailHint"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.emailHint)}</p>
         </div>
         <Button
           type='submit'
           disabled={isSending || !email}
           className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
-          {isSending ? t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.sending) : t((m) => m["IMS--Dialogs"].shareInvoiceDialogPrivate.sendInvitation)}
+          {isSending ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending) : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
         </Button>
       </form>
     </div>

@@ -51,27 +51,27 @@ export default function Biography(): React.JSX.Element {
     {
       key: "first",
       icon: <TbCode className={styles["iconBlue"]} />,
-      content: t((m) => m.About.Author.Biography.FirstPoint, {age: (new Date().getFullYear() - 2000).toString()}),
+      content: t((m) => m.sections.about.author.biography.firstPoint, {age: (new Date().getFullYear() - 2000).toString()}),
     },
     {
       key: "second",
       icon: <TbDeviceGamepad className={styles["iconGreen"]} />,
-      content: t((m) => m.About.Author.Biography.SecondPoint),
+      content: t((m) => m.sections.about.author.biography.secondPoint),
     },
     {
       key: "third",
       icon: <TbBulb className={styles["iconPurple"]} />,
-      content: t((m) => m.About.Author.Biography.ThirdPoint),
+      content: t((m) => m.sections.about.author.biography.thirdPoint),
     },
     {
       key: "fourth",
       icon: <TbBook className={styles["iconAmber"]} />,
-      content: t((m) => m.About.Author.Biography.FourthPoint),
+      content: t((m) => m.sections.about.author.biography.fourthPoint),
     },
     {
       key: "fifth",
       icon: <TbAntenna className={styles["iconPink"]} />,
-      content: t((m) => m.About.Author.Biography.FifthPoint),
+      content: t((m) => m.sections.about.author.biography.fifthPoint),
     },
   ];
 
@@ -105,7 +105,7 @@ export default function Biography(): React.JSX.Element {
         <motion.div
           variants={itemVariants}
           className={styles["header"]}>
-          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Biography.title)}</h2>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.biography.title)}</h2>
         </motion.div>
 
         <motion.div variants={itemVariants}>

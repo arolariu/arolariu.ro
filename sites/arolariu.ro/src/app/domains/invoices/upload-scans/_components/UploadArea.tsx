@@ -228,7 +228,7 @@ export default function UploadArea(): React.JSX.Element {
           multiple
           onChange={handleFileChange}
           className={styles["hiddenInput"]}
-          aria-label={t((m) => m["IMS--UploadScans"].uploadArea.aria.uploadFiles)}
+          aria-label={t((m) => m.pages.invoices.uploadScans.uploadArea.aria.uploadFiles)}
         />
         <button
           type='button'
@@ -245,14 +245,14 @@ export default function UploadArea(): React.JSX.Element {
             <motion.div className={styles["iconCircle"]}>
               <TbUpload className={styles["iconCircleIcon"]} />
             </motion.div>
-            <h3 className={styles["dropzoneTitle"]}>{t((m) => m["IMS--UploadScans"].uploadArea.empty.title)}</h3>
+            <h3 className={styles["dropzoneTitle"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.title)}</h3>
             <p className={styles["dropzoneSubtitle"]}>
-              {isDragActive ? t((m) => m["IMS--UploadScans"].uploadArea.empty.dropActive) : t((m) => m["IMS--UploadScans"].uploadArea.empty.dropInactive)}
+              {isDragActive ? t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropActive) : t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropInactive)}
             </p>
-            <p className={styles["dropzoneFormats"]}>{t((m) => m["IMS--UploadScans"].uploadArea.empty.formats)}</p>
-            <p className={styles["dropzoneNote"]}>{t((m) => m["IMS--UploadScans"].uploadArea.empty.note)}</p>
-            <p className={styles["dropzoneNote"]}>{t((m) => m["IMS--UploadScans"].uploadArea.empty.pasteHint)}</p>
-            <span className={styles["chooseFilesButton"]}>{t((m) => m["IMS--UploadScans"].uploadArea.empty.chooseFiles)}</span>
+            <p className={styles["dropzoneFormats"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.formats)}</p>
+            <p className={styles["dropzoneNote"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.note)}</p>
+            <p className={styles["dropzoneNote"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.pasteHint)}</p>
+            <span className={styles["chooseFilesButton"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.chooseFiles)}</span>
           </motion.div>
           {isDragActive && dragCount > 0 ? (
             <Badge
@@ -295,7 +295,7 @@ export default function UploadArea(): React.JSX.Element {
         multiple
         onChange={handleFileChange}
         className={styles["hiddenInput"]}
-        aria-label={t((m) => m["IMS--UploadScans"].uploadArea.aria.uploadFiles)}
+        aria-label={t((m) => m.pages.invoices.uploadScans.uploadArea.aria.uploadFiles)}
       />
       <button
         type='button'
@@ -312,9 +312,9 @@ export default function UploadArea(): React.JSX.Element {
           </div>
           <div className={styles["compactTextBlock"]}>
             <p className={styles["compactTitle"]}>
-              {isDragActive ? t((m) => m["IMS--UploadScans"].uploadArea.compact.dropActive) : t((m) => m["IMS--UploadScans"].uploadArea.compact.dropInactive)}
+              {isDragActive ? t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropActive) : t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropInactive)}
             </p>
-            <p className={styles["compactSubtitle"]}>{t((m) => m["IMS--UploadScans"].uploadArea.compact.subtitle)}</p>
+            <p className={styles["compactSubtitle"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.compact.subtitle)}</p>
           </div>
         </div>
       </button>
@@ -330,11 +330,11 @@ export default function UploadArea(): React.JSX.Element {
                   className={styles["clearButton"]}
                   type='button'
                   disabled={isUploading}>
-                  {t((m) => m["IMS--UploadScans"].uploadArea.actions.clearAll)}
+                  {t((m) => m.pages.invoices.uploadScans.uploadArea.actions.clearAll)}
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--UploadScans"].uploadArea.tooltips.clearAll)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.uploadScans.uploadArea.tooltips.clearAll)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
@@ -346,11 +346,11 @@ export default function UploadArea(): React.JSX.Element {
                   className={styles["uploadButton"]}
                   type='button'
                   disabled={isUploading}>
-                  {isUploading ? t((m) => m["IMS--UploadScans"].uploadArea.actions.uploading) : t((m) => m["IMS--UploadScans"].uploadArea.actions.uploadScans)}
+                  {isUploading ? t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploading) : t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploadScans)}
                 </Button>
               }
             />
-            <TooltipContent>{t((m) => m["IMS--UploadScans"].uploadArea.tooltips.uploadScans)}</TooltipContent>
+            <TooltipContent>{t((m) => m.pages.invoices.uploadScans.uploadArea.tooltips.uploadScans)}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

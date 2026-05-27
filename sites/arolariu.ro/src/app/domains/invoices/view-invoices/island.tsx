@@ -85,17 +85,17 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
               <TabsTrigger
                 value='invoices'
                 className={styles["tabTrigger"]}>
-                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.invoices)}
+                {t((m) => m.pages.invoices.viewInvoices.viewInvoicesIsland.tabs.invoices)}
               </TabsTrigger>
               <TabsTrigger
                 value='statistics'
                 className={styles["tabTrigger"]}>
-                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.statistics)}
+                {t((m) => m.pages.invoices.viewInvoices.viewInvoicesIsland.tabs.statistics)}
               </TabsTrigger>
               <TabsTrigger
                 value='liveAnalysis'
                 className={styles["tabTrigger"]}>
-                {t((m) => m["IMS--List"].viewInvoicesIsland.tabs.liveAnalysis)}
+                {t((m) => m.pages.invoices.viewInvoices.viewInvoicesIsland.tabs.liveAnalysis)}
               </TabsTrigger>
             </TabsList>
             <TabsContent

@@ -61,21 +61,21 @@ export function InvoiceAnalytics(): React.JSX.Element {
         <div className={styles["tabHeader"]}>
           <div className={styles["sectionTitle"]}>
             <TbChartBar className={styles["sectionIcon"]} />
-            <h2 className={styles["sectionTitleText"]}>{t((m) => m["IMS--View"].invoiceAnalytics.title)}</h2>
+            <h2 className={styles["sectionTitleText"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.title)}</h2>
           </div>
           <TabsList className={styles["tabsList"]}>
             <TabsTrigger
               value='current'
               className={styles["tabsTrigger"]}>
               <TbChartBar className={styles["tabIcon"]} />
-              {t((m) => m["IMS--View"].invoiceAnalytics.tabs.current)}
+              {t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.tabs.current)}
             </TabsTrigger>
             {Boolean(isOwner) && (
               <TabsTrigger
                 value='compare'
                 className={styles["tabsTrigger"]}>
                 <TbTrendingUp className={styles["tabIcon"]} />
-                {t((m) => m["IMS--View"].invoiceAnalytics.tabs.compare)}
+                {t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.tabs.compare)}
               </TabsTrigger>
             )}
           </TabsList>
@@ -163,8 +163,8 @@ export function InvoiceAnalytics(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbTrendingUp className={styles["emptyIcon"]} />
-                <h3 className={styles["emptyTitle"]}>{t((m) => m["IMS--View"].invoiceAnalytics.emptyState.title)}</h3>
-                <p className={styles["emptyDescription"]}>{t((m) => m["IMS--View"].invoiceAnalytics.emptyState.description)}</p>
+                <h3 className={styles["emptyTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.title)}</h3>
+                <p className={styles["emptyDescription"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.description)}</p>
               </div>
             )}
           </TabsContent>

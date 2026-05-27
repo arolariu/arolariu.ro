@@ -83,8 +83,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(t((m) => m["IMS--Edit"].recipesTab.toasts.aiGenerationComingSoon.title), {
-      description: t((m) => m["IMS--Edit"].recipesTab.toasts.aiGenerationComingSoon.description),
+    toast(t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title), {
+      description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),
     });
   }, [t]);
 
@@ -101,8 +101,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <div>
-            <CardTitle>{t((m) => m["IMS--Edit"].recipesTab.header.title)}</CardTitle>
-            <CardDescription>{t((m) => m["IMS--Edit"].recipesTab.header.description)}</CardDescription>
+            <CardTitle>{t((m) => m.pages.invoices.editInvoice.recipesTab.header.title)}</CardTitle>
+            <CardDescription>{t((m) => m.pages.invoices.editInvoice.recipesTab.header.description)}</CardDescription>
           </div>
           <TooltipProvider>
             <div className={styles["headerActions"]}>
@@ -115,12 +115,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                       onClick={handleGenerateRecipe}
                       size='sm'>
                       <TbConfetti className={styles["buttonIcon"]} />
-                      {t((m) => m["IMS--Edit"].recipesTab.buttons.generate)}
+                      {t((m) => m.pages.invoices.editInvoice.recipesTab.buttons.generate)}
                     </Button>
                   }
                 />
                 <TooltipContent side='bottom'>
-                  <p>{t((m) => m["IMS--Edit"].recipesTab.tooltips.generateRecipeUsingAi)}</p>
+                  <p>{t((m) => m.pages.invoices.editInvoice.recipesTab.tooltips.generateRecipeUsingAi)}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -131,12 +131,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                       onClick={openAddDialog}
                       size='sm'>
                       <TbPlus className={styles["buttonIcon"]} />
-                      {t((m) => m["IMS--Edit"].recipesTab.buttons.addRecipe)}
+                      {t((m) => m.pages.invoices.editInvoice.recipesTab.buttons.addRecipe)}
                     </Button>
                   }
                 />
                 <TooltipContent>
-                  <p>{t((m) => m["IMS--Edit"].recipesTab.tooltips.createRecipeWithIngredients)}</p>
+                  <p>{t((m) => m.pages.invoices.editInvoice.recipesTab.tooltips.createRecipeWithIngredients)}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -154,13 +154,13 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             </div>
           ) : (
             <div className={styles["emptyState"]}>
-              <p className={styles["emptyText"]}>{t((m) => m["IMS--Edit"].recipesTab.emptyState.noRecipesAvailable)}</p>
+              <p className={styles["emptyText"]}>{t((m) => m.pages.invoices.editInvoice.recipesTab.emptyState.noRecipesAvailable)}</p>
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
                 className={styles["createButton"]}>
                 <TbPlus className={styles["buttonIcon"]} />
-                {t((m) => m["IMS--Edit"].recipesTab.buttons.createFirstRecipe)}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.buttons.createFirstRecipe)}
               </Button>
             </div>
           )}
@@ -171,17 +171,17 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 size='sm'
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}>
-                {t((m) => m["IMS--Edit"].recipesTab.pagination.previous)}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.previous)}
               </Button>
               <div className={styles["pageInfo"]}>
-                {t((m) => m["IMS--Edit"].recipesTab.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
               </div>
               <Button
                 variant='ghost'
                 size='sm'
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}>
-                {t((m) => m["IMS--Edit"].recipesTab.pagination.next)}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.next)}
               </Button>
             </div>
           )}

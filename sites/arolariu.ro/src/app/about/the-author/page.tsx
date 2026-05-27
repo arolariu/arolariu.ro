@@ -30,7 +30,7 @@ import styles from "./page.module.scss";
  * @remarks
  * **Rendering Context**: Server Component metadata generator.
  *
- * **i18n**: Uses `next-intl` translations from the About.Author namespace.
+ * **i18n**: Uses `next-intl` translations from the sections.about.author namespace.
  *
  * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *
@@ -48,8 +48,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m.About.Author.metadata.title),
-    description: t((m) => m.About.Author.metadata.description),
+    title: t((m) => m.pages.about.author.metadata.title),
+    description: t((m) => m.pages.about.author.metadata.description),
   });
 }
 

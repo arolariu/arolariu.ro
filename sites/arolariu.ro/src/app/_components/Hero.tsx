@@ -27,7 +27,7 @@ export default function HeroSection(): React.JSX.Element {
           transition={{duration: 0.8, delay: 0.3}}
           className={styles["content"]}>
           <h1 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>{t((m) => m.Home.title)}</span>
+            <span className={styles["titleGradient"]}>{t((m) => m.pages.home.title)}</span>
           </h1>
           <p className={styles["subtitle"]}>
             <RichText
@@ -41,13 +41,13 @@ export default function HeroSection(): React.JSX.Element {
               href='/domains'
               title=''
               className={styles["ctaButton"]}>
-              {t((m) => m.Home.cta)}
+              {t((m) => m.pages.home.cta)}
             </Link>
           </div>
 
           <div className={styles["appreciation"]}>
             <Separator className={styles["appreciationSeparator"]} />
-            <span className={styles["appreciationText"]}>{t((m) => m.Home.appreciation)}</span>
+            <span className={styles["appreciationText"]}>{t((m) => m.pages.home.appreciation)}</span>
           </div>
         </motion.div>
         {/* Right side */}

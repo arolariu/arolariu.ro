@@ -70,25 +70,25 @@ function ScanStats(): React.JSX.Element | null {
         <div className={styles["scanStatsGroup"]}>
           <StatsCard
             value={scans.length}
-            label={t((m) => m["IMS--ViewScans"].stats.totalScans)}
+            label={t((m) => m.pages.invoices.viewScans.stats.totalScans)}
             colorClass='statsCardValueDefault'
           />
           <StatsCard
             value={readyScans}
-            label={t((m) => m["IMS--ViewScans"].stats.ready)}
+            label={t((m) => m.pages.invoices.viewScans.stats.ready)}
             colorClass='statsCardValueGreen'
           />
           <StatsCard
             value={selectedScans.length}
-            label={t((m) => m["IMS--ViewScans"].stats.selected)}
+            label={t((m) => m.pages.invoices.viewScans.stats.selected)}
             colorClass='statsCardValuePurple'
           />
         </div>
 
         {selectedScans.length === 0 && scans.length > 0 && (
           <p className={styles["selectHint"]}>
-            <span className={styles["hiddenMobile"]}>{t((m) => m["IMS--ViewScans"].stats.selectHint)}</span>
-            <span className={styles["visibleMobile"]}>{t((m) => m["IMS--ViewScans"].stats.tapHint)}</span>
+            <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.stats.selectHint)}</span>
+            <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.stats.tapHint)}</span>
           </p>
         )}
       </div>
@@ -108,22 +108,22 @@ function SidebarContent(): React.JSX.Element {
       {/* How to Use */}
       <Card>
         <CardContent className={styles["sidebarCardContent"]}>
-          <h3 className={styles["sidebarTitle"]}>{t((m) => m["IMS--ViewScans"].sidebar.howTo.title)}</h3>
+          <h3 className={styles["sidebarTitle"]}>{t((m) => m.pages.invoices.viewScans.sidebar.howTo.title)}</h3>
           <div className={styles["howToList"]}>
             <QuickTip
               icon={<TbClick className={styles["tipIcon"]} />}
-              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step1Title)}
-              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step1Description)}
+              title={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step1Title)}
+              description={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step1Description)}
             />
             <QuickTip
               icon={<TbStack2 className={styles["tipIcon"]} />}
-              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step2Title)}
-              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step2Description)}
+              title={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step2Title)}
+              description={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step2Description)}
             />
             <QuickTip
               icon={<TbFileInvoice className={styles["tipIcon"]} />}
-              title={t((m) => m["IMS--ViewScans"].sidebar.howTo.step3Title)}
-              description={t((m) => m["IMS--ViewScans"].sidebar.howTo.step3Description)}
+              title={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step3Title)}
+              description={t((m) => m.pages.invoices.viewScans.sidebar.howTo.step3Description)}
             />
           </div>
         </CardContent>
@@ -143,10 +143,10 @@ function SidebarContent(): React.JSX.Element {
                 <div>
                   <p className={styles["selectionTitle"]}>
                     {selectedScans.length}{" "}
-                    {selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.plural) : t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.singular)}
+                    {selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.plural) : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.singular)}
                   </p>
                   <p className={styles["selectionDescription"]}>
-                    {selectedScans.length > 1 ? t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.readyPlural) : t((m) => m["IMS--ViewScans"].sidebar.selectionStatus.readySingular)}
+                    {selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readyPlural) : t((m) => m.pages.invoices.viewScans.sidebar.selectionStatus.readySingular)}
                   </p>
                 </div>
               </div>
@@ -163,14 +163,14 @@ function SidebarContent(): React.JSX.Element {
               <TbPhoto className={styles["quickUploadIcon"]} />
             </div>
             <div className={styles["quickUploadTextBlock"]}>
-              <p className={styles["quickUploadTitle"]}>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.title)}</p>
-              <p className={styles["quickUploadDescription"]}>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.description)}</p>
+              <p className={styles["quickUploadTitle"]}>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.title)}</p>
+              <p className={styles["quickUploadDescription"]}>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.description)}</p>
             </div>
             <Button
               asChild
               size='sm'
               variant='outline'>
-              <Link href='/domains/invoices/upload-scans'>{t((m) => m["IMS--ViewScans"].sidebar.quickUpload.button)}</Link>
+              <Link href='/domains/invoices/upload-scans'>{t((m) => m.pages.invoices.viewScans.sidebar.quickUpload.button)}</Link>
             </Button>
           </div>
         </CardContent>
@@ -249,7 +249,7 @@ function ViewScansContent(): React.JSX.Element {
           href='/domains/invoices'
           className={styles["breadcrumbLink"]}>
           <TbArrowLeft className={styles["breadcrumbIcon"]} />
-          {t((m) => m["IMS--ViewScans"].breadcrumb)}
+          {t((m) => m.pages.invoices.viewScans.breadcrumb)}
         </Link>
       </div>
 

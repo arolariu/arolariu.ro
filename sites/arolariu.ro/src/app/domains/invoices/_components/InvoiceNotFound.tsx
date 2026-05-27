@@ -13,8 +13,8 @@ export default function InvoiceNotFound({invoiceIdentifier}: Readonly<{invoiceId
   return (
     <section className={styles["section"]}>
       <article className={styles["article"]}>
-        <h1 className={styles["title"]}>{t((m) => m["IMS--Common"].statesNotFound.title)}</h1>
-        <p className={styles["description"]}>{t((m) => m["IMS--Common"].statesNotFound.description, {invoiceIdentifier})}</p>
+        <h1 className={styles["title"]}>{t((m) => m.shared.invoices.statesNotFound.title)}</h1>
+        <p className={styles["description"]}>{t((m) => m.shared.invoices.statesNotFound.description, {invoiceIdentifier})}</p>
       </article>
     </section>
   );

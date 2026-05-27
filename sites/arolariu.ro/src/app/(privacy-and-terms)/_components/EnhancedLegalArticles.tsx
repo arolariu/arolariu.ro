@@ -3,7 +3,7 @@
 import {RichText} from "@/presentation/Text";
 import styles from "./EnhancedLegalArticles.module.scss";
 
-type TranslatedPage = Readonly<"Legal.PrivacyPolicy" | "Legal.TermsOfService">;
+type TranslatedPage = Readonly<"sections.legal.privacyPolicy" | "sections.legal.termsOfService">;
 type TranslatedPageArticle = Readonly<{titleKey: string; contentKey: string}>;
 type TranslatedPageArticles = Readonly<TranslatedPageArticle[]>;
 
@@ -56,8 +56,8 @@ const articlesForTermsOfService: TranslatedPageArticles = [
 ] as const;
 
 const articles = {
-  "Legal.PrivacyPolicy": articlesForPrivacyPolicy,
-  "Legal.TermsOfService": articlesForTermsOfService,
+  "sections.legal.privacyPolicy": articlesForPrivacyPolicy,
+  "sections.legal.termsOfService": articlesForTermsOfService,
 } as Readonly<Record<TranslatedPage, TranslatedPageArticles>>;
 
 /**

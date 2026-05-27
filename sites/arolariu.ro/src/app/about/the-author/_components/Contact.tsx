@@ -88,8 +88,8 @@ export default function Contact(): React.JSX.Element {
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.6}}
         className={styles["header"]}>
-        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.About.Author.Contact.title)}</h2>
-        <span className={styles["subtitle"]}>{t((m) => m.About.Author.Contact.subtitle)}</span>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t((m) => m.sections.about.author.contact.title)}</h2>
+        <span className={styles["subtitle"]}>{t((m) => m.sections.about.author.contact.subtitle)}</span>
       </motion.div>
 
       <motion.div
@@ -103,8 +103,8 @@ export default function Contact(): React.JSX.Element {
             <div className={styles["cardAccent"]} />
 
             <CardHeader>
-              <CardTitle className={styles["cardTitle"]}>{t((m) => m.About.Author.Contact.socials.title)}</CardTitle>
-              <CardDescription>{t((m) => m.About.Author.Contact.socials.subtitle)}</CardDescription>
+              <CardTitle className={styles["cardTitle"]}>{t((m) => m.sections.about.author.contact.socials.title)}</CardTitle>
+              <CardDescription>{t((m) => m.sections.about.author.contact.socials.subtitle)}</CardDescription>
             </CardHeader>
 
             <CardContent className={styles["linksContainer"]}>
@@ -171,7 +171,7 @@ export default function Contact(): React.JSX.Element {
               </div>
 
               <div className={styles["linksFooter"]}>
-                <span className={styles["linksFooterText"]}>{t((m) => m.About.Author.Contact.socials.footer)}</span>
+                <span className={styles["linksFooterText"]}>{t((m) => m.sections.about.author.contact.socials.footer)}</span>
               </div>
             </CardContent>
           </Card>
@@ -183,17 +183,17 @@ export default function Contact(): React.JSX.Element {
             <div className={styles["cardAccent"]} />
 
             <CardHeader>
-              <CardTitle className={styles["cardTitle"]}>{t((m) => m.About.Author.Contact.collaborate.title)}</CardTitle>
-              <CardDescription>{t((m) => m.About.Author.Contact.collaborate.subtitle)}</CardDescription>
+              <CardTitle className={styles["cardTitle"]}>{t((m) => m.sections.about.author.contact.collaborate.title)}</CardTitle>
+              <CardDescription>{t((m) => m.sections.about.author.contact.collaborate.subtitle)}</CardDescription>
             </CardHeader>
 
             <CardContent>
               <div className={styles["disciplinesGrid"]}>
                 {[
-                  t((m) => m.About.Author.Contact.collaborate.discipline1),
-                  t((m) => m.About.Author.Contact.collaborate.discipline2),
-                  t((m) => m.About.Author.Contact.collaborate.discipline3),
-                  t((m) => m.About.Author.Contact.collaborate.discipline4),
+                  t((m) => m.sections.about.author.contact.collaborate.discipline1),
+                  t((m) => m.sections.about.author.contact.collaborate.discipline2),
+                  t((m) => m.sections.about.author.contact.collaborate.discipline3),
+                  t((m) => m.sections.about.author.contact.collaborate.discipline4),
                 ].map((field, index) => (
                   <motion.div
                     key={field}
@@ -207,7 +207,7 @@ export default function Contact(): React.JSX.Element {
                 ))}
               </div>
 
-              <p className={styles["footerText"]}>{t((m) => m.About.Author.Contact.collaborate.footer)}</p>
+              <p className={styles["footerText"]}>{t((m) => m.sections.about.author.contact.collaborate.footer)}</p>
 
               <motion.div
                 initial={{opacity: 0}}
@@ -224,7 +224,7 @@ export default function Contact(): React.JSX.Element {
                     repeat: Number.POSITIVE_INFINITY,
                     repeatType: "reverse",
                   }}>
-                  <h3 className={styles["ctaText"]}>{t((m) => m.About.Author.Contact.footer)}</h3>
+                  <h3 className={styles["ctaText"]}>{t((m) => m.sections.about.author.contact.footer)}</h3>
                 </motion.div>
               </motion.div>
             </CardContent>

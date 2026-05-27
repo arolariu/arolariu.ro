@@ -60,12 +60,12 @@ export default function ImageDialog(): React.JSX.Element {
       }}>
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle>{t((m) => m["IMS--Dialogs"].imageDialog.title, {image})}</DialogTitle>
+          <DialogTitle>{t((m) => m.dialogs.invoices.imageDialog.title, {image})}</DialogTitle>
           <div className={styles["imageContainer"]}>
             <Image
               src={image}
               fill
-              alt={t((m) => m["IMS--Dialogs"].imageDialog.imageAlt)}
+              alt={t((m) => m.dialogs.invoices.imageDialog.imageAlt)}
               className={styles["receiptImage"]}
             />
           </div>

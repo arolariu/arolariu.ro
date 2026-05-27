@@ -53,8 +53,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m.Acknowledgements.metadata.title),
-    description: t((m) => m.Acknowledgements.metadata.description),
+    title: t((m) => m.pages.legal.acknowledgements.metadata.title),
+    description: t((m) => m.pages.legal.acknowledgements.metadata.description),
   });
 }
 

@@ -78,22 +78,22 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
     <div className={styles["grid"]}>
       <div className={styles["column"]}>
         <AuthMarketingPanel
-          title={t((m) => m.Auth.SignUp.hero.title)}
-          subtitle={t((m) => m.Auth.SignUp.hero.subtitle)}
+          title={t((m) => m.pages.auth.signUp.hero.title)}
+          subtitle={t((m) => m.pages.auth.signUp.hero.subtitle)}
           illustrationSrc='/images/auth/sign-up.svg'
-          illustrationAlt={t((m) => m.Auth.SignUp.illustrationAlt)}
-          bullets={[t((m) => m.Auth.SignUp.bullets.first), t((m) => m.Auth.SignUp.bullets.second), t((m) => m.Auth.SignUp.bullets.third)]}
-          trustBadges={[trust((m) => m.Auth.Island.trust.oauth), trust((m) => m.Auth.Island.trust.session), trust((m) => m.Auth.Island.trust.privacy)]}
+          illustrationAlt={t((m) => m.pages.auth.signUp.illustrationAlt)}
+          bullets={[t((m) => m.pages.auth.signUp.bullets.first), t((m) => m.pages.auth.signUp.bullets.second), t((m) => m.pages.auth.signUp.bullets.third)]}
+          trustBadges={[trust((m) => m.pages.auth.island.trust.oauth), trust((m) => m.pages.auth.island.trust.session), trust((m) => m.pages.auth.island.trust.privacy)]}
         />
       </div>
 
       <div className={styles["column"]}>
         <AuthFormShell
-          kicker={t((m) => m.Auth.SignUp.form.kicker)}
-          secondaryPrompt={t((m) => m.Auth.SignUp.form.secondaryPrompt)}
-          secondaryAction={t((m) => m.Auth.SignUp.form.secondaryAction)}
+          kicker={t((m) => m.pages.auth.signUp.form.kicker)}
+          secondaryPrompt={t((m) => m.pages.auth.signUp.form.secondaryPrompt)}
+          secondaryAction={t((m) => m.pages.auth.signUp.form.secondaryAction)}
           secondaryHref='/auth/sign-in/'
-          footer={t((m) => m.Auth.SignUp.footer)}>
+          footer={t((m) => m.pages.auth.signUp.footer)}>
           <motion.div
             variants={containerVariants}
             initial='hidden'

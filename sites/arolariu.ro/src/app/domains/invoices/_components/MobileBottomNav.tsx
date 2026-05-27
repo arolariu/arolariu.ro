@@ -108,7 +108,7 @@ export default function MobileBottomNav(): React.JSX.Element {
   return (
     <nav
       className={styles["nav"]}
-      aria-label={t((m) => m["IMS--Common"].mobileNav.ariaLabel)}>
+      aria-label={t((m) => m.shared.invoices.mobileNav.ariaLabel)}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = isActive(item);
@@ -123,7 +123,7 @@ export default function MobileBottomNav(): React.JSX.Element {
               className={styles["navIcon"]}
               aria-hidden='true'
             />
-            <span className={styles["navLabel"]}>{t(selectorFromPath(`IMS--Common.mobileNav.${item.labelKey}`))}</span>
+            <span className={styles["navLabel"]}>{t(selectorFromPath(`shared.invoices.mobileNav.${item.labelKey}`))}</span>
           </Link>
         );
       })}

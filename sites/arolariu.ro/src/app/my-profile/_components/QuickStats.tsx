@@ -48,8 +48,8 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
   return (
     <section className={styles["section"]}>
       <div className={styles["header"]}>
-        <h2>{t((m) => m.Profile.stats.title)}</h2>
-        <p>{t((m) => m.Profile.stats.description)}</p>
+        <h2>{t((m) => m.pages.profile.stats.title)}</h2>
+        <p>{t((m) => m.pages.profile.stats.description)}</p>
       </div>
 
       <div className={styles["grid"]}>
@@ -80,9 +80,9 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <div className={styles["storageInfo"]}>
               <CardTitle className={styles["cardTitleBase"]}>
                 <TbCloud className={styles["iconSm"]} />
-                {t((m) => m.Profile.stats.storage.title)}
+                {t((m) => m.pages.profile.stats.storage.title)}
               </CardTitle>
-              <CardDescription>{t((m) => m.Profile.stats.storage.description)}</CardDescription>
+              <CardDescription>{t((m) => m.pages.profile.stats.storage.description)}</CardDescription>
             </div>
             <span className={styles["storageSize"]}>
               {formatStorageSize(statistics.storageUsed)} / {formatStorageSize(statistics.storageLimit)}
@@ -95,7 +95,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             className={styles["progressHeight"]}
           />
           <p className={styles["storageHint"]}>
-            {storagePercentage.toFixed(1)}% {t((m) => m.Profile.stats.storage.used)}
+            {storagePercentage.toFixed(1)}% {t((m) => m.pages.profile.stats.storage.used)}
           </p>
         </CardContent>
       </Card>

@@ -10,8 +10,8 @@ export default async function LoadingInvoices(): Promise<React.JSX.Element> {
   return (
     <section className={styles["section"]}>
       <article className={styles["article"]}>
-        <h1 className={styles["title"]}>{t((m) => m["IMS--Common"].loadingInvoices.title)}</h1>
-        <p className={styles["description"]}>{t((m) => m["IMS--Common"].loadingInvoices.description)}</p>
+        <h1 className={styles["title"]}>{t((m) => m.shared.invoices.loadingInvoices.title)}</h1>
+        <p className={styles["description"]}>{t((m) => m.shared.invoices.loadingInvoices.description)}</p>
       </article>
     </section>
   );

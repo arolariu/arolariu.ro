@@ -38,8 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m.Profile.metadata.title),
-    description: t((m) => m.Profile.metadata.description),
+    title: t((m) => m.pages.profile.metadata.title),
+    description: t((m) => m.pages.profile.metadata.description),
   });
 }
 

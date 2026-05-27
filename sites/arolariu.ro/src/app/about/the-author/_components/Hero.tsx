@@ -25,7 +25,7 @@ export default function Hero(): React.JSX.Element {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  const words = t((m) => m.About.Author.title)
+  const words = t((m) => m.sections.about.author.title)
     .split(" ")
     .map((word) => ({
       text: word,
@@ -68,7 +68,7 @@ export default function Hero(): React.JSX.Element {
             animate={{opacity: 1, y: 0}}
             transition={{delay: 1.5, duration: 0.8}}
             className='blue-underline'>
-            <span className={styles["subtitle"]}>{t((m) => m.About.Author.subtitle)}</span>
+            <span className={styles["subtitle"]}>{t((m) => m.sections.about.author.subtitle)}</span>
           </motion.div>
         </div>
       </motion.div>

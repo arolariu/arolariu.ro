@@ -21,7 +21,7 @@ import styles from "./page.module.scss";
  * - Proper SEO ensures users can find and reference terms when needed
  *
  * **Async Operations**:
- * - Fetches translations from `Legal.TermsOfService.metadata` namespace
+ * - Fetches translations from `sections.legal.termsOfService.metadata` namespace
  * - Retrieves current locale for language-specific legal content
  *
  * **Metadata Generation**:
@@ -60,8 +60,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m.Legal.TermsOfService.metadata.title),
-    description: t((m) => m.Legal.TermsOfService.metadata.description),
+    title: t((m) => m.pages.legal.termsOfService.metadata.title),
+    description: t((m) => m.pages.legal.termsOfService.metadata.description),
   });
 }
 
@@ -150,11 +150,11 @@ export default async function TermsOfServiceHomepage(_props: Readonly<PageProps<
   return (
     <div className={styles["termsOfServiceMain"]}>
       <section className={styles["headerSection"]}>
-        <h1 className={styles["pageTitle"]}>{t((m) => m.Legal.TermsOfService.title)}</h1>
-        <span>{t((m) => m.Legal.TermsOfService.last_updated)}</span>
+        <h1 className={styles["pageTitle"]}>{t((m) => m.sections.legal.termsOfService.title)}</h1>
+        <span>{t((m) => m.sections.legal.termsOfService.lastUpdated)}</span>
       </section>
       <RenderTermsOfServiceScreen />
-      <section className={styles["footerSection"]}>{t((m) => m.Legal.TermsOfService.contactInformation.content)}</section>
+      <section className={styles["footerSection"]}>{t((m) => m.sections.legal.termsOfService.contactInformation.content)}</section>
     </div>
   );
 }

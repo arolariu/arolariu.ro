@@ -6,7 +6,7 @@ import EnhancedLegalArticles from "./EnhancedLegalArticles";
  * page type. It uses the RichText component internally to render
  * internationalised titles and content for each article section.
  *
- * Supports two page types: `Legal.PrivacyPolicy` and `Legal.TermsOfService`.
+ * Supports two page types: `sections.legal.privacyPolicy` and `sections.legal.termsOfService`.
  */
 const meta = {
   title: "Pages/Legal/EnhancedLegalArticles",
@@ -22,21 +22,21 @@ type Story = StoryObj<typeof meta>;
 /** Privacy Policy articles — 19 sections covering data handling. */
 export const PrivacyPolicy: Story = {
   args: {
-    pageType: "Legal.PrivacyPolicy",
+    pageType: "sections.legal.privacyPolicy",
   },
 };
 
 /** Terms of Service articles — 23 sections covering usage terms. */
 export const TermsOfService: Story = {
   args: {
-    pageType: "Legal.TermsOfService",
+    pageType: "sections.legal.termsOfService",
   },
 };
 
 /** Privacy Policy — dark mode. */
 export const PrivacyPolicyDark: Story = {
   args: {
-    pageType: "Legal.PrivacyPolicy",
+    pageType: "sections.legal.privacyPolicy",
   },
   parameters: {
     themes: {themeOverride: "dark"},
@@ -46,7 +46,7 @@ export const PrivacyPolicyDark: Story = {
 /** Terms of Service — dark mode. */
 export const TermsOfServiceDark: Story = {
   args: {
-    pageType: "Legal.TermsOfService",
+    pageType: "sections.legal.termsOfService",
   },
   parameters: {
     themes: {themeOverride: "dark"},

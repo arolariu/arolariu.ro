@@ -19,7 +19,7 @@ import styles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from the
- * translation key `IMS--Edit.metadata`. Falls back
+ * translation key `pages.invoices.editInvoice.metadata`. Falls back
  * to sensible defaults if translation keys are not yet defined.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility following RFC 1004
@@ -62,8 +62,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return createMetadata({
     locale,
-    title: t((m) => m["IMS--Edit"].metadata.title),
-    description: t((m) => m["IMS--Edit"].metadata.description),
+    title: t((m) => m.pages.invoices.editInvoice.metadata.title),
+    description: t((m) => m.pages.invoices.editInvoice.metadata.description),
   });
 }
 

@@ -42,7 +42,7 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
       <p className={styles["tooltipRange"]}>
         {data.range} {data.currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m["IMS--View"].priceDistributionChart.tooltip.itemCount, {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>{t((m) => m.pages.invoices.viewInvoice.priceDistributionChart.tooltip.itemCount, {count: data.count})}</p>
     </div>
   );
 }
@@ -51,7 +51,7 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   const t = useTranslations();
   const chartConfig = {
     count: {
-      label: t((m) => m["IMS--View"].priceDistributionChart.labels.items),
+      label: t((m) => m.pages.invoices.viewInvoice.priceDistributionChart.labels.items),
       color: "var(--ac-chart-1)",
     },
   };
@@ -61,8 +61,8 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].priceDistributionChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].priceDistributionChart.description, {currency})}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.priceDistributionChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.priceDistributionChart.description, {currency})}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

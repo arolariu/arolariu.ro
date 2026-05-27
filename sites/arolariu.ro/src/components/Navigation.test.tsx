@@ -69,18 +69,18 @@ vi.mock("next-intl", () => ({
 vi.mock("next-intl-selector", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next-intl-selector")>();
   const translations: Record<string, string> = {
-    "Navigation.domains": "Domains",
-    "Navigation.invoices": "Invoices",
-    "Navigation.uploadScans": "Upload Scans",
-    "Navigation.viewScans": "View Scans",
-    "Navigation.myInvoices": "My Invoices",
-    "Navigation.about": "About",
-    "Navigation.thePlatform": "The Platform",
-    "Navigation.theAuthor": "The Author",
-    "Navigation.myProfile": "My Profile",
-    "Navigation.mobile.openNavigation": "Open navigation",
-    "Navigation.mobile.closeNavigation": "Close navigation",
-    "Navigation.mobile.title": "Navigation",
+    "app.navigation.domains": "Domains",
+    "app.navigation.invoices": "Invoices",
+    "app.navigation.uploadScans": "Upload Scans",
+    "app.navigation.viewScans": "View Scans",
+    "app.navigation.myInvoices": "My Invoices",
+    "app.navigation.about": "About",
+    "app.navigation.thePlatform": "The Platform",
+    "app.navigation.theAuthor": "The Author",
+    "app.navigation.myProfile": "My Profile",
+    "app.navigation.mobile.openNavigation": "Open navigation",
+    "app.navigation.mobile.closeNavigation": "Close navigation",
+    "app.navigation.mobile.title": "Navigation",
   };
 
   return {

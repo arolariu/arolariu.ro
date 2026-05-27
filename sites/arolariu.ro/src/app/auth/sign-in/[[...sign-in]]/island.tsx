@@ -75,22 +75,22 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
     <div className={styles["grid"]}>
       <div className={`${styles["column"]} ${styles["columnReverse"]}`}>
         <AuthMarketingPanel
-          title={t((m) => m.Auth.SignIn.hero.title)}
-          subtitle={t((m) => m.Auth.SignIn.hero.subtitle)}
+          title={t((m) => m.pages.auth.signIn.hero.title)}
+          subtitle={t((m) => m.pages.auth.signIn.hero.subtitle)}
           illustrationSrc='/images/auth/sign-in.svg'
-          illustrationAlt={t((m) => m.Auth.SignIn.illustrationAlt)}
-          bullets={[t((m) => m.Auth.SignIn.bullets.first), t((m) => m.Auth.SignIn.bullets.second), t((m) => m.Auth.SignIn.bullets.third)]}
-          trustBadges={[trust((m) => m.Auth.Island.trust.oauth), trust((m) => m.Auth.Island.trust.session), trust((m) => m.Auth.Island.trust.privacy)]}
+          illustrationAlt={t((m) => m.pages.auth.signIn.illustrationAlt)}
+          bullets={[t((m) => m.pages.auth.signIn.bullets.first), t((m) => m.pages.auth.signIn.bullets.second), t((m) => m.pages.auth.signIn.bullets.third)]}
+          trustBadges={[trust((m) => m.pages.auth.island.trust.oauth), trust((m) => m.pages.auth.island.trust.session), trust((m) => m.pages.auth.island.trust.privacy)]}
         />
       </div>
 
       <div className={`${styles["column"]} ${styles["columnForward"]}`}>
         <AuthFormShell
-          kicker={t((m) => m.Auth.SignIn.form.kicker)}
-          secondaryPrompt={t((m) => m.Auth.SignIn.form.secondaryPrompt)}
-          secondaryAction={t((m) => m.Auth.SignIn.form.secondaryAction)}
+          kicker={t((m) => m.pages.auth.signIn.form.kicker)}
+          secondaryPrompt={t((m) => m.pages.auth.signIn.form.secondaryPrompt)}
+          secondaryAction={t((m) => m.pages.auth.signIn.form.secondaryAction)}
           secondaryHref='/auth/sign-up/'
-          footer={t((m) => m.Auth.SignIn.footer)}>
+          footer={t((m) => m.pages.auth.signIn.footer)}>
           <motion.div
             variants={containerVariants}
             initial='hidden'

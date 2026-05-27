@@ -55,7 +55,7 @@ type Props = {
 };
 
 /**
- * React component that renders the "Weekly Upload Reminder" email.
+ * React component that renders the "Weekly Upload Reminder" emails.
  *
  * @remarks
  * **Rendering Context**: React Email.
@@ -86,7 +86,7 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
 
   const locale: EmailLocale = props.locale ?? DEFAULT_LOCALE;
   const messages = await loadMessages(locale);
-  const t = createEmailTranslator({locale, messages, namespace: "email.weeklyUploadReminder"});
+  const t = createEmailTranslator({locale, messages, namespace: "emails.weeklyUploadReminder"});
 
   const name = username?.trim() ? username : "there";
   const effectiveUploadUrl = uploadUrl ?? `${BRAND.url}/domains/invoices/upload-scans`;
@@ -96,30 +96,30 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
     <EmailLayout
       locale={locale}
       title={`${BRAND.name} | Weekly upload reminder`}
-      preview={t(selectorFromPath("email.weeklyUploadReminder.preview"), {name})}
-      badge={t(selectorFromPath("email.weeklyUploadReminder.badge"))}
-      heading={t(selectorFromPath("email.weeklyUploadReminder.heading"))}
-      primaryCta={{href: effectiveUploadUrl, label: t(selectorFromPath("email.weeklyUploadReminder.primaryCta"))}}
-      secondaryCta={{href: effectiveDashboardUrl, label: t(selectorFromPath("email.weeklyUploadReminder.secondaryCta"))}}
+      preview={t(selectorFromPath("emails.weeklyUploadReminder.preview"), {name})}
+      badge={t(selectorFromPath("emails.weeklyUploadReminder.badge"))}
+      heading={t(selectorFromPath("emails.weeklyUploadReminder.heading"))}
+      primaryCta={{href: effectiveUploadUrl, label: t(selectorFromPath("emails.weeklyUploadReminder.primaryCta"))}}
+      secondaryCta={{href: effectiveDashboardUrl, label: t(selectorFromPath("emails.weeklyUploadReminder.secondaryCta"))}}
       showUnsubscribe={true}
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}
       managePreferencesUrl={`${BRAND.url}/settings/notifications`}>
-      <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.weeklyUploadReminder.greeting"), {name})}</Text>
-      <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.weeklyUploadReminder.intro"))}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.weeklyUploadReminder.greeting"), {name})}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.weeklyUploadReminder.intro"))}</Text>
       <MetricsGrid
         metrics={[
-          {label: t(selectorFromPath("email.weeklyUploadReminder.metricsLabels.thisWeek")), value: String(thisWeekCount)},
-          {label: t(selectorFromPath("email.weeklyUploadReminder.metricsLabels.lastWeek")), value: String(lastWeekCount)},
-          {label: t(selectorFromPath("email.weeklyUploadReminder.metricsLabels.totalInvoices")), value: String(totalInvoices)},
-          {label: t(selectorFromPath("email.weeklyUploadReminder.metricsLabels.totalTracked")), value: totalTracked},
+          {label: t(selectorFromPath("emails.weeklyUploadReminder.metricsLabels.thisWeek")), value: String(thisWeekCount)},
+          {label: t(selectorFromPath("emails.weeklyUploadReminder.metricsLabels.lastWeek")), value: String(lastWeekCount)},
+          {label: t(selectorFromPath("emails.weeklyUploadReminder.metricsLabels.totalInvoices")), value: String(totalInvoices)},
+          {label: t(selectorFromPath("emails.weeklyUploadReminder.metricsLabels.totalTracked")), value: totalTracked},
         ]}
       />
-      <EmailCard title={t(selectorFromPath("email.weeklyUploadReminder.quickTipsTitle"))}>
-        <BulletList items={[t(selectorFromPath("email.weeklyUploadReminder.quickTips.0")), t(selectorFromPath("email.weeklyUploadReminder.quickTips.1")), t(selectorFromPath("email.weeklyUploadReminder.quickTips.2"))]} />
+      <EmailCard title={t(selectorFromPath("emails.weeklyUploadReminder.quickTipsTitle"))}>
+        <BulletList items={[t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item0")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item1")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item2"))]} />
       </EmailCard>
-      <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.weeklyUploadReminder.bodyText"))}</Text>
+      <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.weeklyUploadReminder.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>
-        {t.rich(selectorFromPath("email.weeklyUploadReminder.feedback"), {
+        {t.rich(selectorFromPath("emails.weeklyUploadReminder.feedback"), {
           supportEmail: BRAND.supportEmail,
           // eslint-disable-next-line react/no-unstable-nested-components -- emails render server-side via React Email; never mounted, no reconciliation
           link: (chunks) => (
@@ -132,9 +132,9 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
         })}
       </Text>
       <Text style={{...EmailParagraphStyles, margin: "0"}}>
-        {t(selectorFromPath("email.weeklyUploadReminder.signOff.line1"))}
+        {t(selectorFromPath("emails.weeklyUploadReminder.signOff.line1"))}
         <br />
-        {t(selectorFromPath("email.weeklyUploadReminder.signOff.line2"), {brand: BRAND.name})}
+        {t(selectorFromPath("emails.weeklyUploadReminder.signOff.line2"), {brand: BRAND.name})}
       </Text>
     </EmailLayout>
   );

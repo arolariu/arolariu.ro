@@ -17,15 +17,15 @@ export default function TechnologiesSection(): React.JSX.Element {
   const points = [
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t((m) => m.Home.technologyTab.points.point1),
+      text: t((m) => m.pages.home.technologyTab.points.point1),
     },
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t((m) => m.Home.technologyTab.points.point2),
+      text: t((m) => m.pages.home.technologyTab.points.point2),
     },
     {
       check: <TbCheck className={styles["checkIcon"]} />,
-      text: t((m) => m.Home.technologyTab.points.point3),
+      text: t((m) => m.pages.home.technologyTab.points.point3),
     },
   ];
 
@@ -40,9 +40,9 @@ export default function TechnologiesSection(): React.JSX.Element {
             viewport={{once: true}}
             transition={{duration: 0.8}}
             className={styles["content"]}>
-            <Badge className={styles["badge"]}>{t((m) => m.Home.technologyTab.badgeTitle)}</Badge>
-            <h2 className={styles["title"]}>{t((m) => m.Home.technologyTab.title)}</h2>
-            <span className={styles["description"]}>{t((m) => m.Home.technologyTab.description)}</span>
+            <Badge className={styles["badge"]}>{t((m) => m.pages.home.technologyTab.badgeTitle)}</Badge>
+            <h2 className={styles["title"]}>{t((m) => m.pages.home.technologyTab.title)}</h2>
+            <span className={styles["description"]}>{t((m) => m.pages.home.technologyTab.description)}</span>
             <ul className={styles["pointsList"]}>
               {points.map((point) => (
                 <li
@@ -54,7 +54,7 @@ export default function TechnologiesSection(): React.JSX.Element {
               ))}
             </ul>
             <Button className={styles["button"]}>
-              {t((m) => m.Home.technologyTab.learnMoreBtn)} <TbExternalLink className={styles["buttonIcon"]} />
+              {t((m) => m.pages.home.technologyTab.learnMoreBtn)} <TbExternalLink className={styles["buttonIcon"]} />
             </Button>
           </motion.div>
 

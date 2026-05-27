@@ -91,20 +91,20 @@ export function AnalysisPanel(): React.JSX.Element {
   const analysisOptions: readonly AnalysisOption[] = [
     {
       id: InvoiceAnalysisOptions.CompleteAnalysis,
-      label: t((m) => m["IMS--View"].analysisPanel.options.completeAnalysis),
-      description: t((m) => m["IMS--View"].analysisPanel.tooltips.completeAnalysis),
+      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.completeAnalysis),
+      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.completeAnalysis),
       icon: <TbBrain className={styles["optionIcon"]} />,
     },
     {
       id: InvoiceAnalysisOptions.InvoiceOnly,
-      label: t((m) => m["IMS--View"].analysisPanel.options.invoiceOnly),
-      description: t((m) => m["IMS--View"].analysisPanel.tooltips.invoiceOnly),
+      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.invoiceOnly),
+      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.invoiceOnly),
       icon: <TbRefreshAlert className={styles["optionIcon"]} />,
     },
     {
       id: InvoiceAnalysisOptions.InvoiceItemsOnly,
-      label: t((m) => m["IMS--View"].analysisPanel.options.itemsOnly),
-      description: t((m) => m["IMS--View"].analysisPanel.tooltips.itemsOnly),
+      label: t((m) => m.pages.invoices.viewInvoice.analysisPanel.options.itemsOnly),
+      description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.itemsOnly),
       icon: <TbShoppingCart className={styles["optionIcon"]} />,
     },
   ];
@@ -125,7 +125,7 @@ export function AnalysisPanel(): React.JSX.Element {
           setTimeout(resolve, ms);
         });
 
-      const steps = [t((m) => m["IMS--View"].analysisPanel.steps.preparing), t((m) => m["IMS--View"].analysisPanel.steps.extracting), t((m) => m["IMS--View"].analysisPanel.steps.analyzing), t((m) => m["IMS--View"].analysisPanel.steps.processing), t((m) => m["IMS--View"].analysisPanel.steps.finalizing)];
+      const steps = [t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.preparing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.extracting), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.analyzing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing), t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.finalizing)];
 
       try {
         // Start analysis
@@ -146,7 +146,7 @@ export function AnalysisPanel(): React.JSX.Element {
             const settled = await Promise.race([analysisSettledPromise, delay(0).then(() => false)]);
             if (settled) return;
 
-            setCurrentStep(steps[i] ?? t((m) => m["IMS--View"].analysisPanel.steps.processing));
+            setCurrentStep(steps[i] ?? t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.processing));
             setProgress(((i + 1) / steps.length) * 95);
 
             const doneAfterDelay = await Promise.race([analysisSettledPromise, delay(stepDelayMs).then(() => false)]);
@@ -162,11 +162,11 @@ export function AnalysisPanel(): React.JSX.Element {
           throw new Error(result.error.message || "Analysis failed");
         }
 
-        setCurrentStep(t((m) => m["IMS--View"].analysisPanel.steps.complete));
+        setCurrentStep(t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.complete));
         setProgress(100);
 
-        toast(t((m) => m["IMS--View"].analysisPanel.toasts.success.title), {
-          description: t((m) => m["IMS--View"].analysisPanel.toasts.success.description),
+        toast(t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.title), {
+          description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.success.description),
         });
 
         // Wait briefly before refresh to show completion state
@@ -176,8 +176,8 @@ export function AnalysisPanel(): React.JSX.Element {
         router.refresh();
       } catch (error) {
         console.error("Error analyzing invoice:", error);
-        toast(t((m) => m["IMS--View"].analysisPanel.toasts.error.title), {
-          description: t((m) => m["IMS--View"].analysisPanel.toasts.error.description),
+        toast(t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.title), {
+          description: t((m) => m.pages.invoices.viewInvoice.analysisPanel.toasts.error.description),
         });
       } finally {
         setIsAnalyzing(false);
@@ -213,9 +213,9 @@ export function AnalysisPanel(): React.JSX.Element {
         <div className={styles["headerContent"]}>
           <div className={styles["titleRow"]}>
             <TbSparkles className={styles["sparklesIcon"]} />
-            <CardTitle className={styles["title"]}>{t((m) => m["IMS--View"].analysisPanel.title)}</CardTitle>
+            <CardTitle className={styles["title"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.title)}</CardTitle>
           </div>
-          <CardDescription className={styles["description"]}>{t((m) => m["IMS--View"].analysisPanel.description)}</CardDescription>
+          <CardDescription className={styles["description"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.description)}</CardDescription>
         </div>
       </CardHeader>
 
@@ -231,7 +231,7 @@ export function AnalysisPanel(): React.JSX.Element {
               <div className={styles["spinnerWrapper"]}>
                 <Spinner className={styles["spinner"]} />
                 <div className={styles["statusText"]}>
-                  <p className={styles["statusTitle"]}>{t((m) => m["IMS--View"].analysisPanel.analyzing.title)}</p>
+                  <p className={styles["statusTitle"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.title)}</p>
                   <p className={styles["statusStep"]}>{currentStep}</p>
                 </div>
               </div>
@@ -240,7 +240,7 @@ export function AnalysisPanel(): React.JSX.Element {
                 value={progress}
                 className={styles["progress"]}
               />
-              <p className={styles["progressText"]}>{t((m) => m["IMS--View"].analysisPanel.analyzing.progress, {progress: String(Math.round(progress))})}</p>
+              <p className={styles["progressText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.analyzing.progress, {progress: String(Math.round(progress))})}</p>
             </motion.div>
           ) : (
             <motion.div
@@ -254,7 +254,7 @@ export function AnalysisPanel(): React.JSX.Element {
                 <div className={styles["lastAnalyzed"]}>
                   <div className={styles["infoRow"]}>
                     <TbClock className={styles["infoIcon"]} />
-                    <span className={styles["infoLabel"]}>{t((m) => m["IMS--View"].analysisPanel.labels.lastAnalyzed)}</span>
+                    <span className={styles["infoLabel"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.lastAnalyzed)}</span>
                   </div>
                   <p className={styles["infoValue"]}>
                     {formatDate(invoice.lastUpdatedAt, {
@@ -265,7 +265,7 @@ export function AnalysisPanel(): React.JSX.Element {
                   </p>
                   {typeof invoice.numberOfUpdates === "number" && invoice.numberOfUpdates > 0 && (
                     <div className={styles["updatesBadge"]}>
-                      <Badge variant='outline'>{t((m) => m["IMS--View"].analysisPanel.labels.updates, {count: invoice.numberOfUpdates})}</Badge>
+                      <Badge variant='outline'>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.updates, {count: invoice.numberOfUpdates})}</Badge>
                     </div>
                   )}
                 </div>
@@ -280,13 +280,13 @@ export function AnalysisPanel(): React.JSX.Element {
                   variant='default'
                   size='default'>
                   <TbRefresh className={styles["buttonIcon"]} />
-                  {t((m) => m["IMS--View"].analysisPanel.buttons.reanalyze)}
+                  {t((m) => m.pages.invoices.viewInvoice.analysisPanel.buttons.reanalyze)}
                 </Button>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger render={<TbInfoCircle className={styles["infoIconButton"]} />} />
                     <TooltipContent>
-                      <p>{t((m) => m["IMS--View"].analysisPanel.tooltips.reanalyze)}</p>
+                      <p>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.tooltips.reanalyze)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -295,7 +295,7 @@ export function AnalysisPanel(): React.JSX.Element {
               {/* Granular Analysis Options */}
               {invoice.items.length === 0 ? (
                 <div className={styles["optionsSection"]}>
-                  <p className={styles["optionsLabel"]}>{t((m) => m["IMS--View"].analysisPanel.labels.granularOptions)}</p>
+                  <p className={styles["optionsLabel"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.granularOptions)}</p>
                   <div className={styles["optionsGrid"]}>
                     {analysisOptions.map((option) => (
                       <TooltipProvider key={option.id}>
@@ -325,14 +325,14 @@ export function AnalysisPanel(): React.JSX.Element {
               ) : (
                 <div className={styles["completionMessage"]}>
                   <TbCheck className={styles["completionIcon"]} />
-                  <p className={styles["completionText"]}>{t((m) => m["IMS--View"].analysisPanel.labels.analysisComplete)}</p>
+                  <p className={styles["completionText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.labels.analysisComplete)}</p>
                 </div>
               )}
 
               {/* Quick Tip */}
               <div className={styles["tip"]}>
                 <TbBolt className={styles["tipIcon"]} />
-                <p className={styles["tipText"]}>{t((m) => m["IMS--View"].analysisPanel.tip)}</p>
+                <p className={styles["tipText"]}>{t((m) => m.pages.invoices.viewInvoice.analysisPanel.tip)}</p>
               </div>
             </motion.div>
           )}

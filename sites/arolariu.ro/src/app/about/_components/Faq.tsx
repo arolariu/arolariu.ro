@@ -35,8 +35,8 @@ export default function Faq(): React.JSX.Element {
               <TbQuestionMark className={styles["icon"]} />
             </div>
           </div>
-          <h2 className={styles["title"]}>{t((m) => m.About.Hub.faq.title)}</h2>
-          <p className={styles["subtitle"]}>{t((m) => m.About.Hub.faq.subtitle)}</p>
+          <h2 className={styles["title"]}>{t((m) => m.pages.about.hub.faq.title)}</h2>
+          <p className={styles["subtitle"]}>{t((m) => m.pages.about.hub.faq.subtitle)}</p>
         </motion.div>
 
         {/* Accordion */}

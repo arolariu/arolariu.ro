@@ -22,7 +22,7 @@ type TranslateFn = {
 
 function createTimelineTranslator(t: ReturnType<typeof useTranslations>): TranslateFn {
   return ((key: string, values?: TranslationValues) =>
-    t(selectorFromPath(`IMS--View.timelineItem.${key}`), values)) as TranslateFn;
+    t(selectorFromPath(`sections.invoices.timeline.item.${key}`), values)) as TranslateFn;
 }
 
 function getEventTitle(event: TimelineEvent, translate: TranslateFn): string {
@@ -179,7 +179,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                         variant='ghost'
                         size='icon'
                         className={styles["infoButton"]}
-                        aria-label={t((m) => m["IMS--View"].timelineItem.aria.moreInfo, {title: eventTitle})}>
+                        aria-label={t((m) => m.sections.invoices.timeline.item.aria.moreInfo, {title: eventTitle})}>
                         <TbInfoCircle className={styles["infoIcon"]} />
                       </Button>
                     }
@@ -190,7 +190,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (
-                      <p className={styles["confidenceText"]}>{t((m) => m["IMS--View"].timelineItem.confidence, {value: String(event.metadata!.confidence)})}</p>
+                      <p className={styles["confidenceText"]}>{t((m) => m.sections.invoices.timeline.item.confidence, {value: String(event.metadata!.confidence)})}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>

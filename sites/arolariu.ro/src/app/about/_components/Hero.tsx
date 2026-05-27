@@ -79,7 +79,7 @@ export default function Hero(): React.JSX.Element {
             variant='secondary'
             className={styles["badge"]}>
             <TbSparkles className={styles["badgeIcon"]} />
-            {t((m) => m.About.Hub.hero.badge)}
+            {t((m) => m.pages.about.hub.hero.badge)}
           </Badge>
         </motion.div>
 
@@ -89,7 +89,7 @@ export default function Hero(): React.JSX.Element {
           initial={{y: 20}}
           animate={{y: 0}}
           transition={{delay: 0.3}}>
-          {t((m) => m.About.Hub.hero.title)}
+          {t((m) => m.pages.about.hub.hero.title)}
         </motion.h1>
 
         {/* Subtitle */}
@@ -98,7 +98,7 @@ export default function Hero(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.4}}>
-          {t((m) => m.About.Hub.hero.subtitle)}
+          {t((m) => m.pages.about.hub.hero.subtitle)}
         </motion.p>
 
         {/* CTA buttons */}
@@ -113,7 +113,7 @@ export default function Hero(): React.JSX.Element {
             className={styles["ctaButton"]}>
             <Link href='/about/the-platform'>
               <TbRocket className={styles["ctaIcon"]} />
-              {t((m) => m.About.Hub.hero.ctaPrimary)}
+              {t((m) => m.pages.about.hub.hero.ctaPrimary)}
             </Link>
           </Button>
           <Button
@@ -121,7 +121,7 @@ export default function Hero(): React.JSX.Element {
             variant='outline'
             size='lg'
             className={styles["ctaButton"]}>
-            <Link href='/about/the-author'>{t((m) => m.About.Hub.hero.ctaSecondary)}</Link>
+            <Link href='/about/the-author'>{t((m) => m.pages.about.hub.hero.ctaSecondary)}</Link>
           </Button>
         </motion.div>
       </motion.div>

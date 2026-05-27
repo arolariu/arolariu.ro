@@ -56,7 +56,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   const t = useTranslations();
   const chartConfig = {
     price: {
-      label: t((m) => m["IMS--View"].itemsBreakdownChart.labels.price),
+      label: t((m) => m.pages.invoices.viewInvoice.itemsBreakdownChart.labels.price),
       color: "var(--ac-chart-2)",
     },
   };
@@ -71,8 +71,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m["IMS--View"].itemsBreakdownChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m["IMS--View"].itemsBreakdownChart.description)}</CardDescription>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.itemsBreakdownChart.title)}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.itemsBreakdownChart.description)}</CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer
@@ -106,7 +106,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                     active={false}
                     payload={[]}
                     currency={currency}
-                    quantityLabel={t((m) => m["IMS--View"].itemsBreakdownChart.labels.quantity)}
+                    quantityLabel={t((m) => m.pages.invoices.viewInvoice.itemsBreakdownChart.labels.quantity)}
                   />
                 }
               />

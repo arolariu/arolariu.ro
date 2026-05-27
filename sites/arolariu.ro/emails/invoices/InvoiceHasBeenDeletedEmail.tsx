@@ -35,7 +35,7 @@ type Props = {
  * @returns A rendered React Email template.
  */
 const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
-  namespace: "email.invoiceDeleted",
+  namespace: "emails.invoiceDeleted",
   render: ({locale, t, props}) => {
     const {username, invoiceId, invoiceName} = props;
 
@@ -46,30 +46,30 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
     return (
       <EmailLayout
         locale={locale}
-        title={`${BRAND.name} | ${t(selectorFromPath("email.invoiceDeleted.badge"))}`}
-        preview={t(selectorFromPath("email.invoiceDeleted.preview"), {invoiceLabel})}
-        badge={t(selectorFromPath("email.invoiceDeleted.badge"))}
-        heading={t(selectorFromPath("email.invoiceDeleted.heading"))}
-        primaryCta={{href: invoicesUrl, label: t(selectorFromPath("email.invoiceDeleted.ctaPrimary"))}}
+        title={`${BRAND.name} | ${t(selectorFromPath("emails.invoiceDeleted.badge"))}`}
+        preview={t(selectorFromPath("emails.invoiceDeleted.preview"), {invoiceLabel})}
+        badge={t(selectorFromPath("emails.invoiceDeleted.badge"))}
+        heading={t(selectorFromPath("emails.invoiceDeleted.heading"))}
+        primaryCta={{href: invoicesUrl, label: t(selectorFromPath("emails.invoiceDeleted.ctaPrimary"))}}
         secondaryCta={null}
         showUnsubscribe={false}
         unsubscribeUrl=''
         managePreferencesUrl=''>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceDeleted.greeting"), {name: safeName})}</Text>
-        <Text style={EmailParagraphStyles}>{t(selectorFromPath("email.invoiceDeleted.intro"), {brand: BRAND.name})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceDeleted.greeting"), {name: safeName})}</Text>
+        <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceDeleted.intro"), {brand: BRAND.name})}</Text>
         <KeyValueTable
-          title={t(selectorFromPath("email.invoiceDeleted.detailsTitle"))}
+          title={t(selectorFromPath("emails.invoiceDeleted.detailsTitle"))}
           items={[
-            {label: t(selectorFromPath("email.invoiceDeleted.details.invoice")), value: invoiceName ?? `#${invoiceId}`},
-            {label: t(selectorFromPath("email.invoiceDeleted.details.invoiceId")), value: invoiceId ?? t(selectorFromPath("email.invoiceDeleted.placeholder"))},
-            {label: t(selectorFromPath("email.invoiceDeleted.details.status")), value: t(selectorFromPath("email.invoiceDeleted.statusValue"))},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.invoice")), value: invoiceName ?? `#${invoiceId}`},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.invoiceId")), value: invoiceId ?? t(selectorFromPath("emails.invoiceDeleted.placeholder"))},
+            {label: t(selectorFromPath("emails.invoiceDeleted.details.status")), value: t(selectorFromPath("emails.invoiceDeleted.statusValue"))},
           ]}
         />
-        <EmailCard title={t(selectorFromPath("email.invoiceDeleted.whatYouShouldKnowTitle"))}>
-          <BulletList items={[t(selectorFromPath("email.invoiceDeleted.whatYouShouldKnow.0")), t(selectorFromPath("email.invoiceDeleted.whatYouShouldKnow.1")), t(selectorFromPath("email.invoiceDeleted.whatYouShouldKnow.2")), t(selectorFromPath("email.invoiceDeleted.whatYouShouldKnow.3"))]} />
+        <EmailCard title={t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnowTitle"))}>
+          <BulletList items={[t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item0")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item1")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item2")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item3"))]} />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
-          {t.rich(selectorFromPath("email.invoiceDeleted.body"), {
+          {t.rich(selectorFromPath("emails.invoiceDeleted.body"), {
             email: () => (
               <Link
                 href={`mailto:${BRAND.supportEmail}`}
@@ -80,9 +80,9 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <Text style={{...EmailParagraphStyles, margin: "0"}}>
-          {t(selectorFromPath("email.invoiceDeleted.signOff.line1"))}
+          {t(selectorFromPath("emails.invoiceDeleted.signOff.line1"))}
           <br />
-          {t(selectorFromPath("email.invoiceDeleted.signOff.line2"), {brand: BRAND.name})}
+          {t(selectorFromPath("emails.invoiceDeleted.signOff.line2"), {brand: BRAND.name})}
         </Text>
       </EmailLayout>
     );

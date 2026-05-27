@@ -108,21 +108,21 @@ export default function WorkflowProgress({currentStep}: Readonly<Props>): React.
         step='upload'
         isActive={currentStep === "upload"}
         isCompleted={currentOrder > STEP_ORDER["upload"]}
-        label={t((m) => m["IMS--Common"].workflowProgress.upload)}
+        label={t((m) => m.shared.invoices.workflowProgress.upload)}
       />
       <Connector isCompleted={currentOrder > STEP_ORDER["upload"]} />
       <Step
         step='review'
         isActive={currentStep === "review"}
         isCompleted={currentOrder > STEP_ORDER["review"]}
-        label={t((m) => m["IMS--Common"].workflowProgress.review)}
+        label={t((m) => m.shared.invoices.workflowProgress.review)}
       />
       <Connector isCompleted={currentOrder > STEP_ORDER["review"]} />
       <Step
         step='create'
         isActive={currentStep === "create"}
         isCompleted={currentOrder > STEP_ORDER["create"]}
-        label={t((m) => m["IMS--Common"].workflowProgress.create)}
+        label={t((m) => m.shared.invoices.workflowProgress.create)}
       />
     </nav>
   );

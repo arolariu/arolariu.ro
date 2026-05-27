@@ -5,7 +5,7 @@ import Perspectives from "./Perspectives";
  * Perspectives section displaying testimonials from colleagues and peers.
  * Renders a grid of quote cards, each with an avatar, author name,
  * position, and quote text with staggered entrance animations.
- * Uses the `About.Author.Perspectives` i18n namespace.
+ * Uses the `sections.about.author.Perspectives` i18n namespace.
  */
 const meta = {
   title: "Pages/About/TheAuthor/Perspectives",

@@ -212,7 +212,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         {/* Desktop Sidebar */}
         <nav
           className={styles["sidebar"]}
-          aria-label={tStats((m) => m.Profile.island.settingsNavigationAriaLabel)}>
+          aria-label={tStats((m) => m.pages.profile.island.settingsNavigationAriaLabel)}>
           {TAB_CONFIG.map(({id, icon: Icon, key}) => (
             <button
               key={id}
