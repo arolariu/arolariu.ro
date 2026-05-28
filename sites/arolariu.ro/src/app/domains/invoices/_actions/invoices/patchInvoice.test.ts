@@ -5,25 +5,27 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
 import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 import {patchInvoice} from "./patchInvoice";
 
+// Hoist the actual createErrorResult before mocking
+const {createErrorResult: actualCreateErrorResult} = await vi.hoisted(async () => {
+  const mod = await import("../../../../../../src/lib/utils.server.ts");
+  return {createErrorResult: mod.createErrorResult};
+});
+
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("@/lib/utils.server", async () => {
-  const {createErrorResult} = await import(
-    "C:/Users/aolariu/source/repos/arolariu/arolariu.ro/.worktrees/invoice-actions-hooks-vitest/sites/arolariu.ro/src/lib/utils.server.ts"
-  );
   return {
-    createErrorResult,
+    createErrorResult: actualCreateErrorResult,
     fetchWithTimeout: vi.fn(),
     DEFAULT_FETCH_TIMEOUT: 30_000,
   };
 });
 
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+const mockFetchWithTimeout = vi.mocked((await import("@/lib/utils.server")).fetchWithTimeout);
 const mockRevalidatePath = vi.mocked(revalidatePath);
 
 describe("patchInvoice", () => {
@@ -57,6 +59,7 @@ describe("patchInvoice", () => {
       }),
     );
 
+    expect(mockRevalidatePath).toHaveBeenCalledTimes(2);
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
 
