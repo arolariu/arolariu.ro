@@ -123,5 +123,3 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default fetchInvoices;

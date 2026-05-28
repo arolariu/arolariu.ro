@@ -138,5 +138,3 @@ export async function analyzeInvoice({ invoiceIdentifier, analysisOptions }: Ser
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default analyzeInvoice;

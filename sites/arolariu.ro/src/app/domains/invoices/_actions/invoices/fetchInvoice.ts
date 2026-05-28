@@ -131,5 +131,3 @@ export async function fetchInvoice({ invoiceId }: ServerActionInputType): Server
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default fetchInvoice;

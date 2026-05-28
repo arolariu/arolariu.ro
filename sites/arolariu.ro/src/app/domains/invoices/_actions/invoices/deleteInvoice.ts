@@ -134,5 +134,3 @@ export async function deleteInvoice({ invoiceId }: ServerActionInputType): Serve
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default deleteInvoice;
