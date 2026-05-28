@@ -4,24 +4,33 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import type {ServerActionResult} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {buildInvoice, createJsonResponse} from "../../../../../../tests/helpers/invoiceDomain";
 import {createInvoice} from "./createInvoice";
 
-// Hoist the actual createErrorResult before mocking
-const {createErrorResult: actualCreateErrorResult} = await vi.hoisted(async () => {
-  const mod = await import("../../../../../../src/lib/utils.server.ts");
-  return {createErrorResult: mod.createErrorResult};
-});
-
 vi.mock("@/lib/actions/user/fetchUser");
-vi.mock("@/lib/utils.server", async () => {
-  return {
-    createErrorResult: actualCreateErrorResult,
-    fetchWithTimeout: vi.fn(),
-    DEFAULT_FETCH_TIMEOUT: 30_000,
-  };
-});
+vi.mock("@/lib/utils.server", () => ({
+  createErrorResult: vi.fn(<T>(error: unknown, defaultMessage = "Something went wrong") =>
+    Promise.resolve({
+      success: false as const,
+      error: {
+        code: "NETWORK_ERROR" as const,
+        message: error instanceof Error ? error.message : defaultMessage,
+      },
+    } as ServerActionResult<T>),
+  ),
+  fetchWithTimeout: vi.fn(),
+  DEFAULT_FETCH_TIMEOUT: 30_000,
+}));
+vi.mock("@/lib/utils.generic", () => ({
+  generateInvoiceId: vi.fn(() => "test-id"),
+  generateMerchantId: vi.fn(() => "test-merchant-id"),
+  generateProductId: vi.fn(() => "test-product-id"),
+  generateScanId: vi.fn(() => "test-scan-id"),
+  parseInvoiceJson: vi.fn((json: string) => JSON.parse(json)),
+  sleep: vi.fn(() => Promise.resolve()),
+}));
 
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked((await import("@/lib/utils.server")).fetchWithTimeout);

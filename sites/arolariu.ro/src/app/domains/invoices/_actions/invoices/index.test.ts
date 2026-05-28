@@ -6,10 +6,22 @@
 import {describe, expect, it, vi} from "vitest";
 
 // Mock the sub-modules that are covered in later tasks to avoid
-// pulling them into Task 2 coverage calculation
-vi.mock("./products");
-vi.mock("./metadata");
-vi.mock("./scans");
+// pulling them into Task 2 coverage calculation. Use explicit empty
+// factories to prevent Vitest from importing the real modules.
+vi.mock("./products", () => ({
+  addInvoiceProduct: vi.fn(),
+  deleteInvoiceProduct: vi.fn(),
+  updateInvoiceProduct: vi.fn(),
+}));
+vi.mock("./metadata", () => ({
+  addInvoiceMetadata: vi.fn(),
+  deleteInvoiceMetadata: vi.fn(),
+}));
+vi.mock("./scans", () => ({
+  createInvoiceScan: vi.fn(),
+  attachInvoiceScan: vi.fn(),
+  deleteInvoiceScan: vi.fn(),
+}));
 
 import * as invoiceActions from "./index";
 
