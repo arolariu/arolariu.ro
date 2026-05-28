@@ -135,7 +135,10 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    */
   const performMutation = useCallback(
     async (id: string): Promise<void> => {
-      await deleteInvoiceServerSide({invoiceId: id});
+      const result = await deleteInvoiceServerSide({invoiceId: id});
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
       deleteInvoiceClientSide(id);
     },
     [deleteInvoiceClientSide],
