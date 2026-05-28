@@ -101,10 +101,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
     }
   };
 
-  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE", "edit", recipe);
-  const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE", "view", recipe);
-  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE", "delete", recipe);
-  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE", "share", recipe);
+  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE_UPDATE", "edit", {recipe});
+  const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE_PREVIEW", "view", {recipe});
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE_DELETE", "delete", {recipe});
+  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE_SHARE", "share", {recipe});
 
   return (
     <Card className={styles["card"]}>

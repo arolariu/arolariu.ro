@@ -68,8 +68,8 @@ const dialogTypes = [
   {icon: <TbPhoto style={{height: "1.25rem", width: "1.25rem"}} />, type: "EDIT_INVOICE__SCAN", label: "Add/Remove Scan", color: "#14b8a6"},
   {
     icon: <TbToolsKitchen3 style={{height: "1.25rem", width: "1.25rem"}} />,
-    type: "EDIT_INVOICE__RECIPE",
-    label: "Recipe",
+    type: "EDIT_INVOICE__RECIPE_ADD",
+    label: "Add Recipe",
     color: "#f43f5e",
   },
   {

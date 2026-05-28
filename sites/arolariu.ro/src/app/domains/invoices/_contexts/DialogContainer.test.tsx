@@ -249,13 +249,13 @@ describe("DialogContainer", () => {
       expect(screen.getByText("InvoiceImageDialog")).toBeInTheDocument();
     });
 
-    test("renders InvoiceRecipeDialog when type is EDIT_INVOICE__RECIPE", () => {
-      setupMockDialogType("EDIT_INVOICE__RECIPE");
+    test("renders AddRecipeDialog when type is EDIT_INVOICE__RECIPE_ADD", () => {
+      setupMockDialogType("EDIT_INVOICE__RECIPE_ADD");
 
       render(<DialogContainer />);
 
-      expect(screen.getByTestId("recipe-dialog")).toBeInTheDocument();
-      expect(screen.getByText("InvoiceRecipeDialog")).toBeInTheDocument();
+      expect(screen.getByTestId("add-recipe-dialog")).toBeInTheDocument();
+      expect(screen.getByText("AddRecipeDialog")).toBeInTheDocument();
     });
 
     test("renders AllergenDialog when type is EDIT_INVOICE__ALLERGENS", () => {
@@ -357,7 +357,11 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__MERCHANT_INVOICES", expectedTestId: "merchant-receipts-dialog"},
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
-      {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_ADD", expectedTestId: "add-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_UPDATE", expectedTestId: "update-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_DELETE", expectedTestId: "delete-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_PREVIEW", expectedTestId: "preview-recipe-dialog"},
+      {type: "EDIT_INVOICE__RECIPE_SHARE", expectedTestId: "share-recipe-dialog"},
       {type: "EDIT_INVOICE__ALLERGENS", expectedTestId: "allergen-dialog"},
       {type: "EDIT_INVOICE__BULK_CATEGORY", expectedTestId: "bulk-category-dialog"},
       {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
@@ -386,7 +390,11 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__IMAGE",
         "EDIT_INVOICE__MERCHANT",
         "EDIT_INVOICE__MERCHANT_INVOICES",
-        "EDIT_INVOICE__RECIPE",
+        "EDIT_INVOICE__RECIPE_ADD",
+        "EDIT_INVOICE__RECIPE_UPDATE",
+        "EDIT_INVOICE__RECIPE_DELETE",
+        "EDIT_INVOICE__RECIPE_PREVIEW",
+        "EDIT_INVOICE__RECIPE_SHARE",
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",

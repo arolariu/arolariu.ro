@@ -16,64 +16,9 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
+import {ACCEPTED_UPLOAD_EXTENSIONS} from "../_utils/uploadTypes";
+import {extractFilesFromDataTransferItems} from "../_utils/uploadValidation";
 import styles from "./UploadArea.module.scss";
-
-/** Accepted MIME types for file uploads */
-const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
-
-/** Accepted file extensions */
-const ACCEPTED_EXTENSIONS = ".jpg,.jpeg,.png,.pdf";
-
-/** Valid file extensions for programmatic validation */
-const VALID_EXTENSIONS = new Set(["jpg", "jpeg", "png", "pdf"]);
-
-/** Maximum file size in bytes (10MB) */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-/**
- * Checks if a file is valid based on type, extension, and size constraints.
- * @param file - The file to validate
- * @returns True if the file passes all validation checks
- */
-function isValidFile(file: File): boolean {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  return ACCEPTED_TYPES.has(file.type) && file.size <= MAX_FILE_SIZE && extension !== undefined && VALID_EXTENSIONS.has(extension);
-}
-
-/**
- * Extracts a file from a DataTransferItem.
- * @param item - The DataTransferItem
- * @returns The file if valid, null otherwise
- */
-function extractFileFromDataTransferItem(item: DataTransferItem): File | null {
-  const file = item.getAsFile();
-  if (file && isValidFile(file)) {
-    return file;
-  }
-  return null;
-}
-
-/**
- * Filters and validates files from a DataTransferItemList.
- * @param items - The DataTransferItemList to filter
- * @returns An array of valid files
- */
-function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
-  const validFiles: File[] = [];
-  // Convert DataTransferItemList to array for iteration
-  const itemsArray = Array.from({length: items.length}, (_, index) => items[index]);
-
-  for (const item of itemsArray) {
-    if (item) {
-      const file = extractFileFromDataTransferItem(item);
-      if (file) {
-        validFiles.push(file);
-      }
-    }
-  }
-
-  return validFiles;
-}
 
 /**
  * Returns true if the active element is one where pasting should be left alone
@@ -174,13 +119,9 @@ export default function UploadArea(): React.JSX.Element {
 
       if (isUploading) return;
 
-      const droppedFiles = filterValidFilesFromDataTransfer(event.dataTransfer.items);
+      const droppedFiles = extractFilesFromDataTransferItems(event.dataTransfer.items);
       if (droppedFiles.length > 0) {
-        const dataTransfer = new DataTransfer();
-        for (const file of droppedFiles) {
-          dataTransfer.items.add(file);
-        }
-        void addFiles(dataTransfer.files).catch((error) => {
+        void addFiles(droppedFiles).catch((error) => {
           console.error("Failed to add files:", error);
         }); // Fire-and-forget async operation
       }
@@ -199,15 +140,11 @@ export default function UploadArea(): React.JSX.Element {
       if (isEditableTarget(event.target)) return;
       if (!event.clipboardData) return;
 
-      const pastedFiles = filterValidFilesFromDataTransfer(event.clipboardData.items);
+      const pastedFiles = extractFilesFromDataTransferItems(event.clipboardData.items);
       if (pastedFiles.length === 0) return;
 
       event.preventDefault();
-      const dataTransfer = new DataTransfer();
-      for (const file of pastedFiles) {
-        dataTransfer.items.add(file);
-      }
-      void addFiles(dataTransfer.files).catch((error) => {
+      void addFiles(pastedFiles).catch((error) => {
         console.error("Failed to add pasted files:", error);
       });
     };
@@ -224,7 +161,7 @@ export default function UploadArea(): React.JSX.Element {
         <input
           ref={fileInputRef}
           type='file'
-          accept={ACCEPTED_EXTENSIONS}
+          accept={ACCEPTED_UPLOAD_EXTENSIONS}
           multiple
           onChange={handleFileChange}
           className={styles["hiddenInput"]}
@@ -291,7 +228,7 @@ export default function UploadArea(): React.JSX.Element {
       <input
         ref={fileInputRef}
         type='file'
-        accept={ACCEPTED_EXTENSIONS}
+        accept={ACCEPTED_UPLOAD_EXTENSIONS}
         multiple
         onChange={handleFileChange}
         className={styles["hiddenInput"]}
