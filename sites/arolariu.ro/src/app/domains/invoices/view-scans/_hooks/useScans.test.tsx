@@ -401,13 +401,16 @@ describe("useScans", () => {
       });
     });
 
-    it("should not auto-sync when lastSyncTimestamp exists", () => {
+    it("should auto-sync even when lastSyncTimestamp exists (always background-sync)", async () => {
       mockStoreState.hasHydrated = true;
       mockStoreState.lastSyncTimestamp = new Date();
+      mockFetchScans.mockResolvedValue({success: true, data: []});
 
       renderHook(() => useScans());
 
-      expect(mockFetchScans).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockFetchScans).toHaveBeenCalled();
+      });
     });
 
     it("should not auto-sync when not hydrated", () => {
