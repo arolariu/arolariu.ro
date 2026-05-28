@@ -35,38 +35,6 @@ vi.mock("@/lib/utils.server", () => ({
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
 
-// Register before dynamically importing the action so coverage stays scoped to this action file.
-vi.doMock("@/lib/utils.generic", () => {
-  const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
-  const LAST_GUID = "99999999-9999-9999-9999-999999999999";
-  // Match production UUID_REGEX: v4/v7 only
-  const UUID_REGEX = /^[\da-f]{8}-[\da-f]{4}-[47][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu;
-
-  return {
-    EMPTY_GUID,
-    LAST_GUID,
-    generateInvoiceId: vi.fn(() => "test-id"),
-    generateMerchantId: vi.fn(() => "test-merchant-id"),
-    generateProductId: vi.fn(() => "test-product-id"),
-    generateScanId: vi.fn(() => "test-scan-id"),
-    parseInvoiceJson: vi.fn((json: string) => JSON.parse(json)),
-    sleep: vi.fn(() => Promise.resolve()),
-    validateStringIsGuidType: vi.fn((input: string, paramName = "identifier") => {
-      // Match production behavior from utils.generic.ts
-      if (typeof input !== "string" || input.length === 0) {
-        throw new Error(`Invalid ${paramName}: expected a non-empty string, got ${typeof input}`);
-      }
-      // Allow special sentinel GUIDs
-      if (input === EMPTY_GUID || input === LAST_GUID) {
-        return;
-      }
-      if (!UUID_REGEX.test(input)) {
-        throw new Error(`Invalid ${paramName}: "${input}" is not a valid GUID`);
-      }
-    }),
-  };
-});
-
 const {fetchMerchant} = await import("./fetchMerchant");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);

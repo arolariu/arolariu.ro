@@ -4,9 +4,7 @@
  *
  * @remarks
  * These tests verify that the barrel preserves the public import surface used by
- * invoice scan pages and legacy `uploadScan` consumers. This barrel test uses mocks
- * to avoid importing real implementations, which prevents lib/utils.generic from being
- * instrumented during coverage runs.
+ * invoice scan pages and legacy `uploadScan` consumers.
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";

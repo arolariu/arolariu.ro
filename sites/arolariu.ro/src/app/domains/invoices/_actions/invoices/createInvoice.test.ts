@@ -23,16 +23,6 @@ vi.mock("@/lib/utils.server", () => ({
   fetchWithTimeout: vi.fn(),
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
-// Register before dynamically importing the action so coverage stays scoped to this action file.
-vi.doMock("@/lib/utils.generic", () => ({
-  generateInvoiceId: vi.fn(() => "test-id"),
-  generateMerchantId: vi.fn(() => "test-merchant-id"),
-  generateProductId: vi.fn(() => "test-product-id"),
-  generateScanId: vi.fn(() => "test-scan-id"),
-  parseInvoiceJson: vi.fn((json: string) => JSON.parse(json)),
-  sleep: vi.fn(() => Promise.resolve()),
-}));
-
 const {createInvoice} = await import("./createInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);

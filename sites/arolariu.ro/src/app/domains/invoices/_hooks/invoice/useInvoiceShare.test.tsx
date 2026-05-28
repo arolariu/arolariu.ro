@@ -60,10 +60,6 @@ vi.mock("next-intl-selector", () => ({
   }),
 }));
 
-vi.mock("@/lib/utils.generic", () => ({
-  LAST_GUID: "99999999-9999-9999-9999-999999999999",
-}));
-
 // Import mocked modules
 const {useInvoicesStore} = await import("@/stores");
 const {patchInvoice} = await import("../../_actions/invoices");

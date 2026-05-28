@@ -36,7 +36,6 @@ vi.mock("@/lib/utils.server", () => ({
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
 
-// No need for utils.generic mock since fetchMerchants doesn't import it
 const {fetchMerchants} = await import("./fetchMerchants");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);

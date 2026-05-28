@@ -24,16 +24,6 @@ vi.mock("@/lib/utils.server", () => ({
   fetchWithTimeout: vi.fn(),
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
-// Register before dynamically importing the action so coverage stays scoped to this action file.
-vi.doMock("@/lib/utils.generic", () => ({
-  validateStringIsGuidType: vi.fn((value: string) => {
-    const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89ABab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-    if (!guidRegex.test(value)) {
-      throw new Error(`Invalid GUID: ${value}`);
-    }
-  }),
-}));
-
 const {addInvoiceProduct} = await import("./addInvoiceProduct");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
