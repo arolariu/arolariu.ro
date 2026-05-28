@@ -13,15 +13,25 @@ import {MerchantCategory} from "@/types/invoices";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("@/lib/utils.server", () => ({
-  createErrorResult: vi.fn(<T>(error: unknown, defaultMessage = "Something went wrong") =>
-    Promise.resolve({
+  createErrorResult: vi.fn(async <T>(error: unknown, defaultMessage?: string): ServerActionResult<T> => {
+    // Mirror production classification from utils.server.ts
+    if (error instanceof Error) {
+      const isTimeout = error.message.includes("timed out");
+      const code = isTimeout ? ("TIMEOUT_ERROR" as const) : ("NETWORK_ERROR" as const);
+      return {
+        success: false as const,
+        error: {code, message: error.message},
+      };
+    }
+    // Non-Error path
+    return {
       success: false as const,
       error: {
-        code: "NETWORK_ERROR" as const,
-        message: error instanceof Error ? error.message : defaultMessage,
+        code: "UNKNOWN_ERROR" as const,
+        message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
       },
-    } as ServerActionResult<T>),
-  ),
+    };
+  }),
   fetchWithTimeout: vi.fn(),
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
@@ -113,6 +123,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("404");
       expect(result.error.message).toContain("Not found");
     }
@@ -129,6 +140,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("500");
       expect(result.error.message).toContain("Internal server error");
     }
@@ -145,6 +157,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("502");
     }
   });
@@ -160,6 +173,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("503");
     }
   });
@@ -175,6 +189,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("400");
     }
   });
@@ -190,6 +205,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("401");
     }
   });
@@ -205,6 +221,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("403");
     }
   });
@@ -217,6 +234,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("Network failure");
     }
   });
@@ -228,6 +246,9 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      // Production catch converts non-Error to new Error("An unexpected error occurred")
+      // which is then classified as NETWORK_ERROR by createErrorResult
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toBeDefined();
     }
   });
@@ -239,6 +260,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("Auth failed");
     }
   });
@@ -284,6 +306,7 @@ describe("fetchMerchants", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("JSON parse error");
     }
   });
@@ -303,6 +326,9 @@ describe("fetchMerchants", () => {
     const result = await fetchMerchants();
 
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
+    }
   });
 
   it("preserves all merchant fields in the response", async () => {

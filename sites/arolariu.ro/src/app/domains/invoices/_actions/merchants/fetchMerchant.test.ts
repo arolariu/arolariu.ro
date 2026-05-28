@@ -12,34 +12,60 @@ import type {Merchant} from "@/types/invoices";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("@/lib/utils.server", () => ({
-  createErrorResult: vi.fn(<T>(error: unknown, defaultMessage = "Something went wrong") =>
-    Promise.resolve({
+  createErrorResult: vi.fn(async <T>(error: unknown, defaultMessage?: string): ServerActionResult<T> => {
+    // Mirror production classification from utils.server.ts
+    if (error instanceof Error) {
+      const isTimeout = error.message.includes("timed out");
+      const code = isTimeout ? ("TIMEOUT_ERROR" as const) : ("NETWORK_ERROR" as const);
+      return {
+        success: false as const,
+        error: {code, message: error.message},
+      };
+    }
+    // Non-Error path
+    return {
       success: false as const,
       error: {
-        code: "NETWORK_ERROR" as const,
-        message: error instanceof Error ? error.message : defaultMessage,
+        code: "UNKNOWN_ERROR" as const,
+        message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
       },
-    } as ServerActionResult<T>),
-  ),
+    };
+  }),
   fetchWithTimeout: vi.fn(),
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
 
 // Register before dynamically importing the action so coverage stays scoped to this action file.
-vi.doMock("@/lib/utils.generic", () => ({
-  generateInvoiceId: vi.fn(() => "test-id"),
-  generateMerchantId: vi.fn(() => "test-merchant-id"),
-  generateProductId: vi.fn(() => "test-product-id"),
-  generateScanId: vi.fn(() => "test-scan-id"),
-  parseInvoiceJson: vi.fn((json: string) => JSON.parse(json)),
-  sleep: vi.fn(() => Promise.resolve()),
-  validateStringIsGuidType: vi.fn((input: string, paramName = "identifier") => {
-    const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-    if (typeof input !== "string" || input.length === 0 || !UUID_REGEX.test(input)) {
-      throw new Error(`Invalid ${paramName}: "${input}" is not a valid GUID`);
-    }
-  }),
-}));
+vi.doMock("@/lib/utils.generic", () => {
+  const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+  const LAST_GUID = "99999999-9999-9999-9999-999999999999";
+  // Match production UUID_REGEX: v4/v7 only
+  const UUID_REGEX = /^[\da-f]{8}-[\da-f]{4}-[47][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu;
+
+  return {
+    EMPTY_GUID,
+    LAST_GUID,
+    generateInvoiceId: vi.fn(() => "test-id"),
+    generateMerchantId: vi.fn(() => "test-merchant-id"),
+    generateProductId: vi.fn(() => "test-product-id"),
+    generateScanId: vi.fn(() => "test-scan-id"),
+    parseInvoiceJson: vi.fn((json: string) => JSON.parse(json)),
+    sleep: vi.fn(() => Promise.resolve()),
+    validateStringIsGuidType: vi.fn((input: string, paramName = "identifier") => {
+      // Match production behavior from utils.generic.ts
+      if (typeof input !== "string" || input.length === 0) {
+        throw new Error(`Invalid ${paramName}: expected a non-empty string, got ${typeof input}`);
+      }
+      // Allow special sentinel GUIDs
+      if (input === EMPTY_GUID || input === LAST_GUID) {
+        return;
+      }
+      if (!UUID_REGEX.test(input)) {
+        throw new Error(`Invalid ${paramName}: "${input}" is not a valid GUID`);
+      }
+    }),
+  };
+});
 
 const {fetchMerchant} = await import("./fetchMerchant");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
@@ -95,6 +121,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("merchantId");
       expect(result.error.message).toContain("not a valid GUID");
     }
@@ -105,8 +132,46 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("merchantId");
+      expect(result.error.message).toContain("expected a non-empty string");
     }
+  });
+
+  it("accepts EMPTY_GUID sentinel and attempts fetch", async () => {
+    const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+    const mockMerchantEmpty = buildMerchant({id: EMPTY_GUID, name: "Empty Merchant"});
+    mockFetchWithTimeout.mockResolvedValue(
+      createJsonResponse(mockMerchantEmpty, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const result = await fetchMerchant({merchantId: EMPTY_GUID});
+
+    expect(result.success).toBe(true);
+    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
+      `/rest/v1/merchants/${EMPTY_GUID}`,
+      expect.objectContaining({
+        headers: expect.objectContaining({Authorization: "Bearer jwt-1"}),
+      }),
+    );
+  });
+
+  it("accepts LAST_GUID sentinel and attempts fetch", async () => {
+    const LAST_GUID = "99999999-9999-9999-9999-999999999999";
+    const mockMerchantLast = buildMerchant({id: LAST_GUID, name: "Last Merchant"});
+    mockFetchWithTimeout.mockResolvedValue(
+      createJsonResponse(mockMerchantLast, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const result = await fetchMerchant({merchantId: LAST_GUID});
+
+    expect(result.success).toBe(true);
+    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
+      `/rest/v1/merchants/${LAST_GUID}`,
+      expect.objectContaining({
+        headers: expect.objectContaining({Authorization: "Bearer jwt-1"}),
+      }),
+    );
   });
 
   it("returns 'Merchant not found' for HTTP 404 responses", async () => {
@@ -120,6 +185,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("404");
       expect(result.error.message).toContain("Not found");
     }
@@ -136,6 +202,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("500");
     }
   });
@@ -151,6 +218,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("403");
     }
   });
@@ -166,6 +234,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("401");
     }
   });
@@ -178,6 +247,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("Network failure");
     }
   });
@@ -189,6 +259,9 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      // Production catch converts non-Error to new Error("An unexpected error occurred")
+      // which is then classified as NETWORK_ERROR by createErrorResult
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toBeDefined();
     }
   });
@@ -200,6 +273,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("Auth failed");
     }
   });
@@ -242,6 +316,7 @@ describe("fetchMerchant", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
       expect(result.error.message).toContain("JSON parse error");
     }
   });
@@ -261,6 +336,9 @@ describe("fetchMerchant", () => {
     const result = await fetchMerchant({merchantId});
 
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
+    }
   });
 
   it("preserves all merchant fields in the response", async () => {
