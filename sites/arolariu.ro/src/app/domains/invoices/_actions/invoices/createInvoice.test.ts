@@ -1,0 +1,128 @@
+/**
+ * @fileoverview Unit tests for createInvoice server action.
+ * @module app/domains/invoices/_actions/invoices/createInvoice.test
+ */
+
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {revalidatePath} from "next/cache";
+import {buildInvoice, createJsonResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {createInvoice} from "./createInvoice";
+
+vi.mock("@/lib/actions/user/fetchUser");
+vi.mock("@/lib/utils.server", async () => {
+  const {createErrorResult} = await import(
+    "C:/Users/aolariu/source/repos/arolariu/arolariu.ro/.worktrees/invoice-actions-hooks-vitest/sites/arolariu.ro/src/lib/utils.server.ts"
+  );
+  return {
+    createErrorResult,
+    fetchWithTimeout: vi.fn(),
+    DEFAULT_FETCH_TIMEOUT: 30_000,
+  };
+});
+
+const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
+const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
+const mockRevalidatePath = vi.mocked(revalidatePath);
+
+describe("createInvoice", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
+    mockFetchWithTimeout.mockResolvedValue(
+      createJsonResponse(buildInvoice()) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+  });
+
+  it("posts a creation payload with authenticated userIdentifier when missing", async () => {
+    const payload = {
+      initialScan: {
+        scanType: "JPEG" as const,
+        location: "https://storage.test/scan.jpg",
+        metadata: {},
+      },
+      metadata: {isImportant: "false", requiresAnalysis: "true"},
+    };
+
+    const result = await createInvoice(payload);
+
+    expect(result.success).toBe(true);
+    expect(mockFetchWithTimeout).toHaveBeenCalledWith(
+      "/rest/v1/invoices",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer jwt-1",
+          "Content-Type": "application/json",
+        }),
+      }),
+    );
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body.userIdentifier).toBe("user-1");
+  });
+
+  it("preserves an explicit userIdentifier in the payload", async () => {
+    const payload = {
+      userIdentifier: "custom-user-id",
+      initialScan: {
+        scanType: "JPEG" as const,
+        location: "https://storage.test/scan.jpg",
+        metadata: {},
+      },
+      metadata: {isImportant: "false", requiresAnalysis: "true"},
+    };
+
+    await createInvoice(payload);
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body.userIdentifier).toBe("custom-user-id");
+  });
+
+  it("returns a server-error user message for 5xx responses", async () => {
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: "Internal Server Error",
+      text: async () => "Server error",
+    } as Response);
+
+    const result = await createInvoice({});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("500");
+      expect(result.error.message).toContain("Failed to create invoice");
+    }
+  });
+
+  it("returns a validation user message for non-5xx responses", async () => {
+    mockFetchWithTimeout.mockResolvedValue({
+      ok: false,
+      status: 400,
+      statusText: "Bad Request",
+      text: async () => "Validation failed",
+    } as Response);
+
+    const result = await createInvoice({});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("Failed to create invoice");
+    }
+  });
+
+  it("returns an error result when auth or fetch throws", async () => {
+    mockFetchUser.mockRejectedValue(new Error("Auth failed"));
+
+    const result = await createInvoice({});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("Auth failed");
+    }
+  });
+});
