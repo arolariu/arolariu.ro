@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Dialog for choosing invoice creation mode.
- * @module app/domains/invoices/view-scans/_components/dialogs/CreateInvoiceDialog
+ * @module app/domains/invoices/view-scans/_dialogs/CreateInvoiceDialog
  */
 
 import {useInvoicesStore, useScansStore} from "@/stores";

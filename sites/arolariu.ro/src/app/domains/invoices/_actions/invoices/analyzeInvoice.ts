@@ -66,7 +66,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @example
  * ```typescript
- * import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+ * import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
  * import {InvoiceAnalysisOptions} from "@/types/invoices";
  *
  * const result = await analyzeInvoice({
@@ -138,3 +138,5 @@ export async function analyzeInvoice({ invoiceIdentifier, analysisOptions }: Ser
     }
   }) satisfies ServerActionOutputType;
 }
+
+export default analyzeInvoice;

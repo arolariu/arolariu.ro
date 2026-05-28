@@ -59,7 +59,7 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Invoice>>;
  *
  * @example
  * ```typescript
- * import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+ * import fetchInvoices from "@/app/domains/invoices/_actions/invoices/fetchInvoices";
  *
  * const result = await fetchInvoices();
  *
@@ -123,3 +123,5 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
     }
   }) satisfies ServerActionOutputType;
 }
+
+export default fetchInvoices;

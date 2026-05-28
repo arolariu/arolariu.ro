@@ -66,7 +66,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @example
  * ```typescript
- * import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
+ * import deleteInvoice from "@/app/domains/invoices/_actions/invoices/deleteInvoice";
  *
  * const result = await deleteInvoice({
  *   invoiceId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
@@ -134,3 +134,5 @@ export async function deleteInvoice({ invoiceId }: ServerActionInputType): Serve
     }
   }) satisfies ServerActionOutputType;
 }
+
+export default deleteInvoice;

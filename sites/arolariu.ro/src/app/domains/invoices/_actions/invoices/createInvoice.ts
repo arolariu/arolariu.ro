@@ -63,7 +63,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *
  * @example
  * ```typescript
- * import {createInvoice} from "@/lib/actions/invoices/createInvoice";
+ * import {createInvoice} from "@/app/domains/invoices/_actions/invoices/createInvoice";
  * import {InvoiceScanType} from "@/types/invoices";
  *
  * const result = await createInvoice({

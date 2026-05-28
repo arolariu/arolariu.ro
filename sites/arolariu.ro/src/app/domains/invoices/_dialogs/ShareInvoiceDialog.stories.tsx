@@ -5,7 +5,7 @@ import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
  * Static visual preview of the ShareInvoiceDialog component.
  *
  * @remarks Static preview — component imports "use server" action (patchInvoice
- * from `@/lib/actions/invoices/patchInvoice`) that cannot be bundled by Storybook's
+ * from `@/app/domains/invoices/_actions/invoices/patchInvoice`) that cannot be bundled by Storybook's
  * Vite/Rollup. Also depends on `useDialog` context and clipboard APIs. This story
  * renders a faithful HTML replica of the initial sharing mode selection screen.
  */

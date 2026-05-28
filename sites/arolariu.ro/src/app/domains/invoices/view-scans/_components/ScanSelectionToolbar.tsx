@@ -27,9 +27,9 @@ import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbFileInvoice, TbTrash, TbX} from "react-icons/tb";
+import {deleteScan} from "../../_actions/scans";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScanSelectionToolbar.module.scss";
-import { deleteScan } from "../../_actions/scans";
 
 type ScanSelectionToolbarProps = {
   onCreateInvoice: () => void;
@@ -60,8 +60,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
 
       // Remove successfully deleted scans from store
       results.forEach((result, index) => {
-        if (result.status === "fulfilled" && result.value.success) {
-          removeScan(selectedScans[index]!.id);
+        const scan = selectedScans[index];
+        if (scan && result.status === "fulfilled" && result.value.success) {
+          removeScan(scan.id);
         }
       });
 

@@ -46,7 +46,10 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
     async (productName: string): Promise<void> => {
       setIsRemoving(true);
       try {
-        await removeProductServerSide({invoiceId: invoice.id, productName});
+        const result = await removeProductServerSide({invoiceId: invoice.id, productName});
+        if (!result.success) {
+          throw new Error(result.error.message);
+        }
         removeProductClientSide(invoice.id, {
           items: invoice.items.filter((item) => item.name !== productName),
         });
@@ -54,7 +57,7 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
         setIsRemoving(false);
       }
     },
-    [invoice.id, removeProductClientSide],
+    [invoice.id, invoice.items, removeProductClientSide],
   );
 
   return {isRemoving, removeProductCallback};

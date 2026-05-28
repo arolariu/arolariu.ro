@@ -43,7 +43,7 @@ type HookOutputType = Readonly<{
  *   8. Updates Zustand store via `updateScanBlobUrl` with cache-busted URL
  *   9. Shows success toast
  *   10. Sets `isRotating→false` in `finally` block
- * - On error at any step: shows error toast, sets `isRotating→false`
+ * - On error at each step: shows error toast, sets `isRotating→false`
  * - PDF scans are rejected with error toast (rotation not supported)
  *
  * **Canvas Pipeline Details:**

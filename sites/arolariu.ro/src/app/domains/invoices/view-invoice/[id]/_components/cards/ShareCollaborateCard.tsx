@@ -1,6 +1,5 @@
 "use client";
 
-import {selectorFromPath} from "next-intl-selector";
 /**
  * @fileoverview Share & Collaborate card for the invoice view page.
  * @module domains/invoices/view-invoice/[id]/components/cards/ShareCollaborateCard
@@ -30,15 +29,15 @@ import {selectorFromPath} from "next-intl-selector";
  */
 
 
+import {useInvoiceShare} from "@/app/domains/invoices/_hooks/invoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
-import {useTranslations} from "next-intl-selector";
+import {selectorFromPath, useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useTransition} from "react";
 import {TbLock, TbShare, TbUsers, TbWorld} from "react-icons/tb";
 import {useDialogs} from "../../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ShareCollaborateCard.module.scss";
-import { useInvoiceShare } from "@/app/domains/invoices/_hooks/invoice";
 
 /**
  * Type for sharing status computed from invoice.sharedWith array.

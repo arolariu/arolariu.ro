@@ -70,7 +70,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  *
  * @example
  * ```typescript
- * import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
+ * import {attachInvoiceScan} from "@/app/domains/invoices/_actions/invoices/scans/attachInvoiceScan";
  * import {InvoiceScanType} from "@/types/invoices";
  *
  * const result = await attachInvoiceScan({

@@ -233,44 +233,43 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    *
    * @see {@link BulkDeleteResult} - Return type for bulk operations
    */
-  const deleteInvoiceCallback = useCallback(
-    async (invoiceIdOrIds: string | readonly string[]): Promise<any> => {
-      setIsDeleting(true);
-      try {
-        if (typeof invoiceIdOrIds === "string") {
-          await performMutation(invoiceIdOrIds);
-          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
-          router.push("/domains/invoices/view-invoices");
+  async function deleteInvoiceCallback(invoiceId: string): Promise<void>;
+  async function deleteInvoiceCallback(invoiceIds: readonly string[]): Promise<BulkDeleteResult>;
+  async function deleteInvoiceCallback(invoiceIdOrIds: string | readonly string[]): Promise<void | BulkDeleteResult> {
+    setIsDeleting(true);
+    try {
+      if (typeof invoiceIdOrIds === "string") {
+        await performMutation(invoiceIdOrIds);
+        toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.deleteSuccess));
+        router.push("/domains/invoices/view-invoices");
+      } else {
+        const result = await processBulkRecursive(invoiceIdOrIds, 0, {
+          successCount: 0,
+          failureCount: 0,
+          failedIds: [],
+        });
+
+        const hasFailure = result.failureCount > 0;
+        const hasSuccess = result.successCount > 0;
+
+        if (!hasFailure) {
+          toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
+        } else if (!hasSuccess) {
+          toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
         } else {
-          const result = await processBulkRecursive(invoiceIdOrIds, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedIds: [],
-          });
-
-          const hasFailure = result.failureCount > 0;
-          const hasSuccess = result.successCount > 0;
-
-          if (!hasFailure) {
-            toast.success(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteSuccess, {count: String(result.successCount)}));
-          } else if (!hasSuccess) {
-            toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
-          } else {
-            toast.info(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
-          }
-
-          return result;
+          toast.info(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
         }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
-        console.error("Error deleting invoice:", error);
-      } finally {
-        setIsDeleting(false);
+
+        return result;
       }
-    },
-    [performMutation, processBulkRecursive, t],
-  );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.deleteError, {error: message}));
+      console.error("Error deleting invoice:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return {isDeleting, deleteInvoiceCallback};
 }

@@ -79,7 +79,10 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
    */
   const performMutation = useCallback(
     async (key: string, value: string): Promise<Invoice> => {
-      await addInvoiceMetadataServerSide({invoiceId: invoice.id, entries: {[key]: value}});
+      const result = await addInvoiceMetadataServerSide({invoiceId: invoice.id, entries: {[key]: value}});
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
       addInvoiceMedataClientSide(invoice.id, {
         additionalMetadata: {
           ...invoice.additionalMetadata,
@@ -92,7 +95,7 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
         additionalMetadata: { ...invoice.additionalMetadata, [key]: value },
       };
     },
-    [invoice, addInvoiceMedataClientSide],
+    [invoice.id, invoice.additionalMetadata, addInvoiceMedataClientSide],
   );
 
   /**
@@ -135,29 +138,28 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
     [performMutation],
   );
 
-  const addMetadataCallback = useCallback(
-    async (keyOrRecord: string | Record<string, string>, maybeValue?: string): Promise<any> => {
-      setIsAdding(true);
-      try {
-        if (typeof keyOrRecord === "string") {
-          if (maybeValue === undefined) {
-            throw new Error("Value must be specified for single metadata addition");
-          }
-          await performMutation(keyOrRecord, maybeValue);
-        } else {
-          const entries = Object.entries(keyOrRecord);
-          return await processBulkRecursive(entries, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedItems: [],
-          });
+  async function addMetadataCallback(key: string, value: string): Promise<void>;
+  async function addMetadataCallback(metadata: Record<string, string>): Promise<BulkAddResult>;
+  async function addMetadataCallback(keyOrRecord: string | Record<string, string>, maybeValue?: string): Promise<void | BulkAddResult> {
+    setIsAdding(true);
+    try {
+      if (typeof keyOrRecord === "string") {
+        if (maybeValue === undefined) {
+          throw new Error("Value must be specified for single metadata addition");
         }
-      } finally {
-        setIsAdding(false);
+        await performMutation(keyOrRecord, maybeValue);
+      } else {
+        const entries = Object.entries(keyOrRecord);
+        return await processBulkRecursive(entries, 0, {
+          successCount: 0,
+          failureCount: 0,
+          failedItems: [],
+        });
       }
-    },
-    [performMutation, processBulkRecursive],
-  );
+    } finally {
+      setIsAdding(false);
+    }
+  }
 
   return {isAdding, addMetadataCallback};
 }

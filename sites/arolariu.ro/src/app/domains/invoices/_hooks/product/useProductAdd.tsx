@@ -55,16 +55,19 @@ export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<Ho
     async (product: Product): Promise<Product> => {
       setIsAdding(true);
       try {
-        await addProductServerSide({invoiceId: invoice.id, product});
+        const result = await addProductServerSide({invoiceId: invoice.id, product});
+        if (!result.success) {
+          throw new Error(result.error.message);
+        }
         addProductClientSide(invoice.id, {
-          items: [...invoice.items, product],
+          items: [...invoice.items, result.data],
         });
-        return product;
+        return result.data;
       } finally {
         setIsAdding(false);
       }
     },
-    [invoice.id, addProductClientSide],
+    [invoice.id, invoice.items, addProductClientSide],
   );
 
   return {isAdding, addProductCallback};

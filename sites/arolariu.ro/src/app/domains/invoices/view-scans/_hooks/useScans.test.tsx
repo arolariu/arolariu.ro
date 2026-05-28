@@ -401,7 +401,7 @@ describe("useScans", () => {
       });
     });
 
-    it("should auto-sync when hydrated even if lastSyncTimestamp exists", async () => {
+    it("should auto-sync even when lastSyncTimestamp exists (always background-sync)", async () => {
       mockStoreState.hasHydrated = true;
       mockStoreState.lastSyncTimestamp = new Date("2026-05-26T00:00:00.000Z");
       mockFetchScans.mockResolvedValue({success: true, data: []});

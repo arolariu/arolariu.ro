@@ -481,6 +481,33 @@ describe("createErrorResult", () => {
     }
   });
 
+  it("should preserve numeric status from Error objects", async () => {
+    const {createErrorResult} = await import("./utils.server");
+    const error = Object.assign(new Error("Unauthorized"), {status: 401});
+
+    const result = await createErrorResult<string>(error, "Default message");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("NETWORK_ERROR");
+      expect(result.error.message).toBe("Unauthorized");
+      expect(result.error.status).toBe(401);
+    }
+  });
+
+  it("should ignore nonnumeric status values", async () => {
+    const {createErrorResult} = await import("./utils.server");
+    const error = {status: "401"};
+
+    const result = await createErrorResult<string>(error, "Default message");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("UNKNOWN_ERROR");
+      expect(result.error.status).toBeUndefined();
+    }
+  });
+
   it("should handle non-Error objects", async () => {
     const {createErrorResult} = await import("./utils.server");
 

@@ -75,7 +75,10 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
    */
   const performMutation = useCallback(
     async (key: string): Promise<void> => {
-      await deleteInvoiceMetadataServerSide({invoiceId: invoice.id, key});
+      const result = await deleteInvoiceMetadataServerSide({invoiceId: invoice.id, key});
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
       deleteInvoiceMedataClientSide(invoice.id, {
         additionalMetadata: {
           ...invoice.additionalMetadata,
@@ -83,7 +86,7 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
         },
       });
     },
-    [invoice.id, deleteInvoiceMedataClientSide],
+    [invoice.id, invoice.additionalMetadata, deleteInvoiceMedataClientSide],
   );
 
   /**
@@ -125,25 +128,24 @@ export function useInvoiceMetadataRemove(invoice: Invoice): Readonly<HookOutputT
     [performMutation],
   );
 
-  const removeMetadataCallback = useCallback(
-    async (keyOrKeys: string | readonly string[]): Promise<any> => {
-      setIsRemoving(true);
-      try {
-        if (typeof keyOrKeys === "string") {
-          await performMutation(keyOrKeys);
-        } else {
-          return await processBulkRecursive(keyOrKeys, 0, {
-            successCount: 0,
-            failureCount: 0,
-            failedKeys: [],
-          });
-        }
-      } finally {
-        setIsRemoving(false);
+  async function removeMetadataCallback(key: string): Promise<void>;
+  async function removeMetadataCallback(keys: readonly string[]): Promise<BulkRemoveResult>;
+  async function removeMetadataCallback(keyOrKeys: string | readonly string[]): Promise<void | BulkRemoveResult> {
+    setIsRemoving(true);
+    try {
+      if (typeof keyOrKeys === "string") {
+        await performMutation(keyOrKeys);
+      } else {
+        return await processBulkRecursive(keyOrKeys, 0, {
+          successCount: 0,
+          failureCount: 0,
+          failedKeys: [],
+        });
       }
-    },
-    [performMutation, processBulkRecursive],
-  );
+    } finally {
+      setIsRemoving(false);
+    }
+  }
 
   return {isRemoving, removeMetadataCallback};
 }

@@ -5,7 +5,7 @@ import {TbChartBar, TbTrendingUp} from "react-icons/tb";
  * Static visual preview of the InvoiceAnalytics component.
  *
  * @remarks Static preview — component uses `useInvoice` hook which imports "use server"
- * action (fetchInvoice from `@/lib/actions/invoices/fetchInvoice`) that cannot be bundled
+ * action (fetchInvoice from `@/app/domains/invoices/_actions/invoices/fetchInvoice`) that cannot be bundled
  * by Storybook's Vite/Rollup. Also depends on `useInvoiceContext` and `useUserInformation`.
  * This story renders a faithful HTML replica of the analytics dashboard with summary stats
  * and chart placeholders.

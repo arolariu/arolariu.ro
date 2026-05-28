@@ -230,22 +230,21 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
       });
 
       if (!success || !invoice) {
-        // TODO -- shoudl NEVER happen.
-        console.error("Invoice creation failed with error message:", error);
+        throw new Error(error?.message ?? "Invoice creation failed");
       }
 
 
       // Mark scans as used
       const scanIds = selectedScans.map((s) => s.id);
-      markScansAsUsedByInvoice(scanIds, invoice!.id);
+      markScansAsUsedByInvoice(scanIds, invoice.id);
 
       toast.success(`Invoice "${invoiceDetails.name}" has been created successfully.`);
 
       // Navigate to view invoice page — user can trigger analysis from there
-      router.push(`/domains/invoices/view-invoice/${invoice!.id}`);
+      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
 
       // Fire-and-forget auto-analysis after successful creation
-      analyzeInvoice({invoiceIdentifier: invoice!.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+      analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
         console.error("Background invoice analysis failed:", error);
       });
     } catch (error) {

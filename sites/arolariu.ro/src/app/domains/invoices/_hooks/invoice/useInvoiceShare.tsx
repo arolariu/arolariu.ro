@@ -220,48 +220,58 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
     [shareAndMutate],
   );
 
-  const shareInvoiceCallback = useCallback(
-    async (invoiceIdOrIds: string | readonly string[], action: ShareAction): Promise<any> => {
-      setIsSharing(true);
-      try {
-        if (typeof invoiceIdOrIds === "string") {
-          if (action.type === "sendEmail") {
-            const {to} = action;
-            await toast.promise(shareAndMutate(invoiceIdOrIds, action), {
-              loading: t((m) => m.toasts.invoices.useInvoiceShare.emailSending, {email: to}),
-              success: t((m) => m.toasts.invoices.useInvoiceShare.emailSuccess, {email: to}),
-              error: (err: unknown) =>
-                t((m) => m.toasts.invoices.useInvoiceShare.emailError, {
-                  email: to,
-                  error: err instanceof Error ? err.message : String(err),
-                }),
-            });
-          } else {
-            const updated = await shareAndMutate(invoiceIdOrIds, action);
-            onComplete?.();
-            return updated;
-          }
-        } else {
-          const result = await processBulkRecursive(invoiceIdOrIds, 0, action, {
-            successCount: 0,
-            failureCount: 0,
-            failedIds: [],
-            updatedInvoices: [],
+  async function shareInvoiceCallback(invoiceId: string, action: ShareAction): Promise<Invoice | null>;
+  async function shareInvoiceCallback(invoiceIds: readonly string[], action: ShareAction): Promise<BulkShareResult>;
+  async function shareInvoiceCallback(invoiceIdOrIds: string | readonly string[], action: ShareAction): Promise<Invoice | null | BulkShareResult> {
+    setIsSharing(true);
+    try {
+      if (typeof invoiceIdOrIds === "string") {
+        if (action.type === "sendEmail") {
+          const {to} = action;
+          await toast.promise(shareAndMutate(invoiceIdOrIds, action), {
+            loading: t((m) => m.toasts.invoices.useInvoiceShare.emailSending, {email: to}),
+            success: t((m) => m.toasts.invoices.useInvoiceShare.emailSuccess, {email: to}),
+            error: (err: unknown) =>
+              t((m) => m.toasts.invoices.useInvoiceShare.emailError, {
+                email: to,
+                error: err instanceof Error ? err.message : String(err),
+              }),
           });
-
+          return null;
+        } else {
+          const updated = await shareAndMutate(invoiceIdOrIds, action);
           onComplete?.();
-          return result;
+          return updated;
         }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        toast.error(`${t((m) => m.toasts.invoices.useInvoiceShare.revokeError)} ${message}`);
-        console.error("Error executing share operation:", error);
-      } finally {
-        setIsSharing(false);
+      } else {
+        const result = await processBulkRecursive(invoiceIdOrIds, 0, action, {
+          successCount: 0,
+          failureCount: 0,
+          failedIds: [],
+          updatedInvoices: [],
+        });
+
+        onComplete?.();
+        return result;
       }
-    },
-    [onComplete, processBulkRecursive, shareAndMutate, t],
-  );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`${t((m) => m.toasts.invoices.useInvoiceShare.revokeError)} ${message}`);
+      console.error("Error executing share operation:", error);
+      if (typeof invoiceIdOrIds === "string") {
+        return null;
+      }
+
+      return {
+        successCount: 0,
+        failureCount: invoiceIdOrIds.length,
+        failedIds: invoiceIdOrIds,
+        updatedInvoices: [],
+      };
+    } finally {
+      setIsSharing(false);
+    }
+  }
 
   return {isSharing, shareInvoiceCallback};
 }

@@ -24,7 +24,6 @@
  * </DialogProvider>
  * ```
  */
-
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory} from "@/types/invoices";
 import {
@@ -50,10 +49,10 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbCategory, TbDownload, TbTrash, TbX} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
+import {patchInvoice} from "../../_actions/invoices";
 import {useDialog} from "../../_contexts/DialogContext";
+import {useInvoiceDelete} from "../../_hooks/invoice";
 import styles from "./BulkActionsToolbar.module.scss";
-import { useInvoiceDelete } from "../../_hooks/invoice";
-import { patchInvoice } from "../../_actions/invoices";
 
 /**
  * Toolbar that appears when invoices are selected in the view-invoices list.

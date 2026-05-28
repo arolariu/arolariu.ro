@@ -112,7 +112,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       });
 
       if (!result.success) {
-        throw new Error("Failed to update invoice sharing settings");
+        throw new Error(result.error.message);
       }
 
       // Refresh the page data to reflect the new private state

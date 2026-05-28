@@ -230,7 +230,7 @@ function areMessageValuesEqual(baseTranslationMessage: Message, currentTranslati
 
     console.info("[arolariu.ro::areMessageValuesEqual] Finished comparing MessageFormat objects.");
     console.warn(
-      styleText("yellow", 
+      styleText("yellow",
         `[arolariu.ro::areMessageValuesEqual] Found ${styleText("red", String(equalValuesCount))} equal sub-message values out of ${styleText("green", String(baseMessageKeys.length))} total sub-messages.`,
       ),
     );
