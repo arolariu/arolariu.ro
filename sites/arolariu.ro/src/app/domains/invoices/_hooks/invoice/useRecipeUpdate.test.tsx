@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeUpdate.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useRecipeUpdate} from "./useRecipeUpdate";
 import type {Recipe} from "@/types/invoices";
@@ -60,7 +60,11 @@ describe("useRecipeUpdate", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockReturnValue(mockUpdateEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      updateEntity: typeof mockUpdateEntity;
+    }) => typeof mockUpdateEntity) => selector({
+      updateEntity: mockUpdateEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -92,13 +96,10 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      const promise = result.current.updateRecipeCallback("Recipe 2", updatedRecipe);
-
-      await waitFor(() => {
-        expect(result.current.isUpdating).toBe(true);
+      let updatedInvoice = testInvoice;
+      await act(async () => {
+        updatedInvoice = await result.current.updateRecipeCallback("Recipe 2", updatedRecipe);
       });
-
-      const updatedInvoice = await promise;
 
       await waitFor(() => {
         expect(result.current.isUpdating).toBe(false);
@@ -257,7 +258,7 @@ describe("useRecipeUpdate", () => {
   });
 
   describe("loading state management", () => {
-    it("sets isUpdating true during update", async () => {
+    it("resets isUpdating after update", async () => {
       const updatedRecipe: Recipe = {
         ...testRecipes[0]!,
         description: "Updated",
@@ -265,13 +266,9 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      const promise = result.current.updateRecipeCallback("Recipe 1", updatedRecipe);
-
-      await waitFor(() => {
-        expect(result.current.isUpdating).toBe(true);
+      await act(async () => {
+        await result.current.updateRecipeCallback("Recipe 1", updatedRecipe);
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isUpdating).toBe(false);

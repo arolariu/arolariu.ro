@@ -124,8 +124,8 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
    * mutation fails, the invoice will be deleted on the server but remain in the UI until
    * page refresh. In practice, client mutations are synchronous and infallible.
    *
-   * **Error Propagation:** Exceptions thrown by the server action or store mutation
-   * propagate to the caller. Server action error results are not inspected here.
+   * **Error Propagation:** Failed server action results and exceptions thrown by
+   * the server action or store mutation propagate to the caller.
    *
    * @param id - Invoice UUID to delete. Must be a valid identifier in both server and client stores.
    * @returns A promise that resolves after the server action has completed and the local store has been updated.

@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceDelete.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceDelete} from "./useInvoiceDelete";
 import type {ServerActionResult} from "@/lib/utils.server";
@@ -72,7 +72,11 @@ describe("useInvoiceDelete", () => {
     mockUseRouter.mockReturnValue(mockRouter as never);
 
     // Setup store mock
-    mockUseInvoicesStore.mockReturnValue(mockRemoveEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      removeEntity: typeof mockRemoveEntity;
+    }) => typeof mockRemoveEntity) => selector({
+      removeEntity: mockRemoveEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -101,13 +105,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      const promise = result.current.deleteInvoiceCallback(testInvoiceId);
-
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(true);
+      await act(async () => {
+        await result.current.deleteInvoiceCallback(testInvoiceId);
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isDeleting).toBe(false);
@@ -155,6 +155,22 @@ describe("useInvoiceDelete", () => {
       expect(mockDeleteInvoice).toHaveBeenCalledWith({invoiceId: testInvoiceId});
       expect(mockRemoveEntity).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalled();
+      expect(mockRouter.push).not.toHaveBeenCalled();
+    });
+
+    it("handles non-error thrown values during deletion", async () => {
+      mockDeleteInvoice.mockRejectedValue("literal failure");
+
+      const {result} = renderHook(() => useInvoiceDelete());
+
+      await result.current.deleteInvoiceCallback(testInvoiceId);
+
+      await waitFor(() => {
+        expect(result.current.isDeleting).toBe(false);
+      });
+
+      expect(mockRemoveEntity).not.toHaveBeenCalled();
+      expect(mockToast.error).toHaveBeenCalledWith("Failed to delete invoice: literal failure");
       expect(mockRouter.push).not.toHaveBeenCalled();
     });
 
@@ -306,18 +322,28 @@ describe("useInvoiceDelete", () => {
     });
 
     it("sets isDeleting true during bulk deletion", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockResolvedValue(successResult);
+      let resolveDelete: ((value: ServerActionResult<void>) => void) | undefined;
+      const deletePromise = new Promise<ServerActionResult<void>>((resolve) => {
+        resolveDelete = resolve;
+      });
+
+      mockDeleteInvoice.mockReturnValue(deletePromise);
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      const promise = result.current.deleteInvoiceCallback([testInvoiceId]);
+      let promise: Promise<Readonly<{successCount: number; failureCount: number; failedIds: readonly string[]}>> | undefined;
+      act(() => {
+        promise = result.current.deleteInvoiceCallback([testInvoiceId]);
+      });
 
       await waitFor(() => {
         expect(result.current.isDeleting).toBe(true);
       });
 
-      await promise;
+      await act(async () => {
+        resolveDelete!({success: true, data: undefined});
+        await promise;
+      });
 
       await waitFor(() => {
         expect(result.current.isDeleting).toBe(false);

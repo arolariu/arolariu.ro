@@ -63,73 +63,55 @@ vi.mock("./useRecipeDelete", () => ({
   })),
 }));
 
+import * as invoiceHooks from "./index";
+
 describe("invoice hooks barrel", () => {
-  it("exports useInvoice", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoice).toBeDefined();
-    expect(typeof barrel.useInvoice).toBe("function");
+  it("exports useInvoice", () => {
+    expect(invoiceHooks.useInvoice).toBeDefined();
+    expect(typeof invoiceHooks.useInvoice).toBe("function");
   });
 
-  it("exports useInvoices", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoices).toBeDefined();
-    expect(typeof barrel.useInvoices).toBe("function");
+  it("exports useInvoices", () => {
+    expect(invoiceHooks.useInvoices).toBeDefined();
+    expect(typeof invoiceHooks.useInvoices).toBe("function");
   });
 
-  it("exports useInvoiceDelete", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoiceDelete).toBeDefined();
-    expect(typeof barrel.useInvoiceDelete).toBe("function");
+  it("exports useInvoiceDelete", () => {
+    expect(invoiceHooks.useInvoiceDelete).toBeDefined();
+    expect(typeof invoiceHooks.useInvoiceDelete).toBe("function");
   });
 
-  it("exports useInvoiceMetadataAdd", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoiceMetadataAdd).toBeDefined();
-    expect(typeof barrel.useInvoiceMetadataAdd).toBe("function");
+  it("exports useInvoiceMetadataAdd", () => {
+    expect(invoiceHooks.useInvoiceMetadataAdd).toBeDefined();
+    expect(typeof invoiceHooks.useInvoiceMetadataAdd).toBe("function");
   });
 
-  it("exports useInvoiceMetadataRemove", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoiceMetadataRemove).toBeDefined();
-    expect(typeof barrel.useInvoiceMetadataRemove).toBe("function");
+  it("exports useInvoiceMetadataRemove", () => {
+    expect(invoiceHooks.useInvoiceMetadataRemove).toBeDefined();
+    expect(typeof invoiceHooks.useInvoiceMetadataRemove).toBe("function");
   });
 
-  it("exports useInvoiceShare", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useInvoiceShare).toBeDefined();
-    expect(typeof barrel.useInvoiceShare).toBe("function");
+  it("exports useInvoiceShare", () => {
+    expect(invoiceHooks.useInvoiceShare).toBeDefined();
+    expect(typeof invoiceHooks.useInvoiceShare).toBe("function");
   });
 
-  it("exports useRecipeAdd", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useRecipeAdd).toBeDefined();
-    expect(typeof barrel.useRecipeAdd).toBe("function");
+  it("exports useRecipeAdd", () => {
+    expect(invoiceHooks.useRecipeAdd).toBeDefined();
+    expect(typeof invoiceHooks.useRecipeAdd).toBe("function");
   });
 
-  it("exports useRecipeUpdate", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useRecipeUpdate).toBeDefined();
-    expect(typeof barrel.useRecipeUpdate).toBe("function");
+  it("exports useRecipeUpdate", () => {
+    expect(invoiceHooks.useRecipeUpdate).toBeDefined();
+    expect(typeof invoiceHooks.useRecipeUpdate).toBe("function");
   });
 
-  it("exports useRecipeDelete", async () => {
-    const barrel = await import("./index");
-
-    expect(barrel.useRecipeDelete).toBeDefined();
-    expect(typeof barrel.useRecipeDelete).toBe("function");
+  it("exports useRecipeDelete", () => {
+    expect(invoiceHooks.useRecipeDelete).toBeDefined();
+    expect(typeof invoiceHooks.useRecipeDelete).toBe("function");
   });
 
-  it("exports all expected hooks", async () => {
-    const barrel = await import("./index");
-
+  it("exports all expected hooks", () => {
     const expectedExports = [
       "useInvoice",
       "useInvoices",
@@ -142,7 +124,7 @@ describe("invoice hooks barrel", () => {
       "useRecipeDelete",
     ];
 
-    const actualExports = Object.keys(barrel);
+    const actualExports = Object.keys(invoiceHooks);
 
     expectedExports.forEach((exportName) => {
       expect(actualExports).toContain(exportName);
@@ -151,9 +133,7 @@ describe("invoice hooks barrel", () => {
     expect(actualExports.length).toBe(expectedExports.length);
   });
 
-  it("does not export any unexpected symbols", async () => {
-    const barrel = await import("./index");
-
+  it("does not export any unexpected symbols", () => {
     const allowedExports = [
       "useInvoice",
       "useInvoices",
@@ -166,7 +146,7 @@ describe("invoice hooks barrel", () => {
       "useRecipeDelete",
     ];
 
-    const actualExports = Object.keys(barrel);
+    const actualExports = Object.keys(invoiceHooks);
 
     actualExports.forEach((exportName) => {
       expect(allowedExports).toContain(exportName);

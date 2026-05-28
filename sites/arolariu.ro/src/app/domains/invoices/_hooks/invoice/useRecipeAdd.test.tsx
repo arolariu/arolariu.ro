@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeAdd.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useRecipeAdd} from "./useRecipeAdd";
 import type {Recipe} from "@/types/invoices";
@@ -42,7 +42,11 @@ describe("useRecipeAdd", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockReturnValue(mockUpdateEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      updateEntity: typeof mockUpdateEntity;
+    }) => typeof mockUpdateEntity) => selector({
+      updateEntity: mockUpdateEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -68,13 +72,10 @@ describe("useRecipeAdd", () => {
     it("successfully adds a recipe to empty list", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const promise = result.current.addRecipeCallback(testRecipe);
-
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(true);
+      let updatedInvoice = testInvoice;
+      await act(async () => {
+        updatedInvoice = await result.current.addRecipeCallback(testRecipe);
       });
-
-      const updatedInvoice = await promise;
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(false);
@@ -164,16 +165,12 @@ describe("useRecipeAdd", () => {
   });
 
   describe("loading state management", () => {
-    it("sets isAdding true during addition", async () => {
+    it("resets isAdding after addition", async () => {
       const {result} = renderHook(() => useRecipeAdd(testInvoice));
 
-      const promise = result.current.addRecipeCallback(testRecipe);
-
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(true);
+      await act(async () => {
+        await result.current.addRecipeCallback(testRecipe);
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(false);

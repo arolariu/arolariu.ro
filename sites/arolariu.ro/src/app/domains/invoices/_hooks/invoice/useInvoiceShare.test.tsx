@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceShare.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceShare} from "./useInvoiceShare";
 import type {ServerActionResult} from "@/lib/utils.server";
@@ -27,7 +27,16 @@ vi.mock("@arolariu/components", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
-    promise: vi.fn((promise, messages) => promise),
+    promise: vi.fn(async <T,>(promise: Promise<T>, messages: {
+      error?: (error: unknown) => string;
+    }) => {
+      try {
+        return await promise;
+      } catch (error) {
+        messages.error?.(error);
+        throw error;
+      }
+    }),
   },
 }));
 
@@ -51,13 +60,9 @@ vi.mock("next-intl-selector", () => ({
   }),
 }));
 
-vi.mock("@/lib/utils.generic", async () => {
-  const actual = await vi.importActual("@/lib/utils.generic");
-  return {
-    ...actual,
-    LAST_GUID: "99999999-9999-9999-9999-999999999999",
-  };
-});
+vi.mock("@/lib/utils.generic", () => ({
+  LAST_GUID: "99999999-9999-9999-9999-999999999999",
+}));
 
 // Import mocked modules
 const {useInvoicesStore} = await import("@/stores");
@@ -170,10 +175,9 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      await expect(async () => {
-        await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
-      }).rejects.toThrow();
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
+      expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalled();
     });
@@ -236,10 +240,9 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      await expect(async () => {
-        await result.current.shareInvoiceCallback(testInvoiceId, {type: "revoke"});
-      }).rejects.toThrow();
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "revoke"});
 
+      expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
   });
@@ -259,13 +262,7 @@ describe("useInvoiceShare", () => {
         replyTo: "sender@example.com",
       };
 
-      const emailPromise = result.current.shareInvoiceCallback(testInvoiceId, emailAction);
-
-      await waitFor(() => {
-        expect(result.current.isSharing).toBe(true);
-      });
-
-      const emailActionResult = await emailPromise;
+      const emailActionResult = await result.current.shareInvoiceCallback(testInvoiceId, emailAction);
 
       await waitFor(() => {
         expect(result.current.isSharing).toBe(false);
@@ -315,13 +312,33 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      await expect(async () => {
-        await result.current.shareInvoiceCallback(testInvoiceId, {
-          type: "sendEmail",
-          to: "recipient@example.com",
-          locale: "en",
-        });
-      }).rejects.toThrow();
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {
+        type: "sendEmail",
+        to: "recipient@example.com",
+        locale: "en",
+      });
+
+      expect(failureResult).toBeNull();
+      expect(mockToast.error).toHaveBeenCalled();
+      expect(mockToast.promise).toHaveBeenCalled();
+    });
+
+    it("formats email errors from non-error thrown values", async () => {
+      mockSendEmail.mockRejectedValue("email gateway unavailable");
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {
+        type: "sendEmail",
+        to: "recipient@example.com",
+        locale: "en",
+      });
+
+      const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
+      expect(failureResult).toBeNull();
+      expect(promiseMessages?.error?.("email gateway unavailable")).toBe(
+        "Failed to send email to recipient@example.com: email gateway unavailable",
+      );
     });
 
     it("omits replyTo when not provided", async () => {
@@ -439,6 +456,21 @@ describe("useInvoiceShare", () => {
         updatedInvoices: [],
       });
     });
+
+    it("stops bulk sharing when an empty invoice id is encountered", async () => {
+      const {result} = renderHook(() => useInvoiceShare());
+
+      const bulkResult = await result.current.shareInvoiceCallback([""], {type: "togglePublic"});
+
+      expect(bulkResult).toEqual({
+        successCount: 0,
+        failureCount: 0,
+        failedIds: [],
+        updatedInvoices: [],
+      });
+      expect(mockPatchInvoice).not.toHaveBeenCalled();
+      expect(mockUpsertEntity).not.toHaveBeenCalled();
+    });
   });
 
   describe("error handling", () => {
@@ -447,10 +479,9 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      await expect(async () => {
-        await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
-      }).rejects.toThrow("Invoice not found in store");
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
 
+      expect(failureResult).toBeNull();
       expect(mockToast.error).toHaveBeenCalled();
     });
 
@@ -461,9 +492,9 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      await expect(async () => {
-        await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
-      }).rejects.toThrow();
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
+
+      expect(failureResult).toBeNull();
 
       await waitFor(() => {
         expect(result.current.isSharing).toBe(false);
@@ -488,6 +519,46 @@ describe("useInvoiceShare", () => {
         updatedInvoices: [],
       });
     });
+
+    it("returns aggregate failure when bulk ids cannot be read", async () => {
+      const unreadableIds = new Proxy([testInvoiceId], {
+        get(target, property, receiver) {
+          if (property === "0") {
+            throw new Error("Unable to read invoice id");
+          }
+
+          return Reflect.get(target, property, receiver);
+        },
+      }) as readonly string[];
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      const bulkResult = await result.current.shareInvoiceCallback(unreadableIds, {
+        type: "togglePublic",
+      });
+
+      expect(bulkResult).toEqual({
+        successCount: 0,
+        failureCount: 1,
+        failedIds: unreadableIds,
+        updatedInvoices: [],
+      });
+      expect(mockToast.error).toHaveBeenCalled();
+    });
+
+    it("returns null for unsupported single share actions", async () => {
+      type ShareAction = Parameters<ReturnType<typeof useInvoiceShare>["shareInvoiceCallback"]>[1];
+      const unsupportedAction = {type: "unsupported"} as unknown as ShareAction;
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      const fallbackResult = await result.current.shareInvoiceCallback(testInvoiceId, unsupportedAction);
+
+      expect(fallbackResult).toBeNull();
+      expect(mockPatchInvoice).not.toHaveBeenCalled();
+      expect(mockSendEmail).not.toHaveBeenCalled();
+      expect(mockUpsertEntity).not.toHaveBeenCalled();
+    });
   });
 
   describe("loading state management", () => {
@@ -501,14 +572,19 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      const promise = result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
+      let promise: Promise<Invoice | null> | undefined;
+      act(() => {
+        promise = result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
+      });
 
       await waitFor(() => {
         expect(result.current.isSharing).toBe(true);
       });
 
-      resolvePatch!({success: true, data: {...testInvoice, sharedWith: [LAST_GUID]}});
-      await promise;
+      await act(async () => {
+        resolvePatch!({success: true, data: {...testInvoice, sharedWith: [LAST_GUID]}});
+        await promise;
+      });
 
       await waitFor(() => {
         expect(result.current.isSharing).toBe(false);

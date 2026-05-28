@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
 import type {ServerActionResult} from "@/lib/utils.server";
@@ -35,7 +35,11 @@ describe("useInvoiceMetadataAdd", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockReturnValue(mockUpdateEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      updateEntity: typeof mockUpdateEntity;
+    }) => typeof mockUpdateEntity) => selector({
+      updateEntity: mockUpdateEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -64,13 +68,9 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      const promise = result.current.addMetadataCallback("newKey", "newValue");
-
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(true);
+      await act(async () => {
+        await result.current.addMetadataCallback("newKey", "newValue");
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(false);
@@ -286,33 +286,45 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      const promise = result.current.addMetadataCallback("key", "value");
+      let promise: Promise<void> | undefined;
+      act(() => {
+        promise = result.current.addMetadataCallback("key", "value");
+      });
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(true);
       });
 
       resolveAdd!({success: true, data: undefined});
-      await promise;
-
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(false);
+      await act(async () => {
+        resolveAdd!({success: true, data: undefined});
+        await promise;
       });
     });
 
     it("sets isAdding true during bulk addition", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      let resolveAdd: ((value: ServerActionResult<void>) => void) | undefined;
+      const addPromise = new Promise<ServerActionResult<void>>((resolve) => {
+        resolveAdd = resolve;
+      });
+
+      mockAddInvoiceMetadata.mockReturnValue(addPromise);
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      const promise = result.current.addMetadataCallback({key: "value"});
+      let promise: Promise<Readonly<{successCount: number; failureCount: number; failedItems: readonly {key: string; value: string}[]}>> | undefined;
+      act(() => {
+        promise = result.current.addMetadataCallback({key: "value"});
+      });
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(true);
       });
 
-      await promise;
+      await act(async () => {
+        resolveAdd!({success: true, data: undefined});
+        await promise;
+      });
 
       await waitFor(() => {
         expect(result.current.isAdding).toBe(false);

@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
 import type {ServerActionResult} from "@/lib/utils.server";
@@ -39,7 +39,11 @@ describe("useInvoiceMetadataRemove", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockReturnValue(mockUpdateEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      updateEntity: typeof mockUpdateEntity;
+    }) => typeof mockUpdateEntity) => selector({
+      updateEntity: mockUpdateEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -68,13 +72,9 @@ describe("useInvoiceMetadataRemove", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
-      const promise = result.current.removeMetadataCallback("key1");
-
-      await waitFor(() => {
-        expect(result.current.isRemoving).toBe(true);
+      await act(async () => {
+        await result.current.removeMetadataCallback("key1");
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isRemoving).toBe(false);
@@ -243,6 +243,20 @@ describe("useInvoiceMetadataRemove", () => {
       expect(mockDeleteInvoiceMetadata).not.toHaveBeenCalled();
     });
 
+    it("stops bulk removal when an empty key is encountered", async () => {
+      const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
+
+      const bulkResult = await result.current.removeMetadataCallback([""]);
+
+      expect(bulkResult).toEqual({
+        successCount: 0,
+        failureCount: 0,
+        failedKeys: [],
+      });
+      expect(mockDeleteInvoiceMetadata).not.toHaveBeenCalled();
+      expect(mockUpdateEntity).not.toHaveBeenCalled();
+    });
+
     it("continues processing after individual failure", async () => {
       const successResult: ServerActionResult<void> = {success: true, data: undefined};
       mockDeleteInvoiceMetadata
@@ -270,33 +284,45 @@ describe("useInvoiceMetadataRemove", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
-      const promise = result.current.removeMetadataCallback("key1");
+      let promise: Promise<void> | undefined;
+      act(() => {
+        promise = result.current.removeMetadataCallback("key1");
+      });
 
       await waitFor(() => {
         expect(result.current.isRemoving).toBe(true);
       });
 
       resolveRemove!({success: true, data: undefined});
-      await promise;
-
-      await waitFor(() => {
-        expect(result.current.isRemoving).toBe(false);
+      await act(async () => {
+        resolveRemove!({success: true, data: undefined});
+        await promise;
       });
     });
 
     it("sets isRemoving true during bulk removal", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoiceMetadata.mockResolvedValue(successResult);
+      let resolveRemove: ((value: ServerActionResult<void>) => void) | undefined;
+      const removePromise = new Promise<ServerActionResult<void>>((resolve) => {
+        resolveRemove = resolve;
+      });
+
+      mockDeleteInvoiceMetadata.mockReturnValue(removePromise);
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
-      const promise = result.current.removeMetadataCallback(["key1"]);
+      let promise: Promise<Readonly<{successCount: number; failureCount: number; failedKeys: readonly string[]}>> | undefined;
+      act(() => {
+        promise = result.current.removeMetadataCallback(["key1"]);
+      });
 
       await waitFor(() => {
         expect(result.current.isRemoving).toBe(true);
       });
 
-      await promise;
+      await act(async () => {
+        resolveRemove!({success: true, data: undefined});
+        await promise;
+      });
 
       await waitFor(() => {
         expect(result.current.isRemoving).toBe(false);

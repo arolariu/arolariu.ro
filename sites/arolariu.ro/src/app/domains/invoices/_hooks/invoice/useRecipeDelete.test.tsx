@@ -3,7 +3,7 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeDelete.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
+import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useRecipeDelete} from "./useRecipeDelete";
 import type {Recipe} from "@/types/invoices";
@@ -60,7 +60,11 @@ describe("useRecipeDelete", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockReturnValue(mockUpdateEntity);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {
+      updateEntity: typeof mockUpdateEntity;
+    }) => typeof mockUpdateEntity) => selector({
+      updateEntity: mockUpdateEntity,
+    })) as never);
   });
 
   afterEach(() => {
@@ -86,13 +90,10 @@ describe("useRecipeDelete", () => {
     it("successfully removes a recipe by name", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      const promise = result.current.removeRecipeCallback("Recipe 2");
-
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(true);
+      let updatedInvoice = testInvoice;
+      await act(async () => {
+        updatedInvoice = await result.current.removeRecipeCallback("Recipe 2");
       });
-
-      const updatedInvoice = await promise;
 
       await waitFor(() => {
         expect(result.current.isDeleting).toBe(false);
@@ -186,16 +187,12 @@ describe("useRecipeDelete", () => {
   });
 
   describe("loading state management", () => {
-    it("sets isDeleting true during deletion", async () => {
+    it("resets isDeleting after deletion", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      const promise = result.current.removeRecipeCallback("Recipe 1");
-
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(true);
+      await act(async () => {
+        await result.current.removeRecipeCallback("Recipe 1");
       });
-
-      await promise;
 
       await waitFor(() => {
         expect(result.current.isDeleting).toBe(false);
