@@ -181,6 +181,17 @@ describe("useInvoiceShare", () => {
       expect(mockUpsertEntity).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalled();
     });
+
+    it("uses translated toggle fallback when the action returns no error", async () => {
+      mockPatchInvoice.mockResolvedValue({success: false} as Awaited<ServerActionResult<Invoice>>);
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
+
+      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to toggle public access"));
+      expect(mockUpsertEntity).not.toHaveBeenCalled();
+    });
   });
 
   describe("revoke action", () => {
@@ -245,6 +256,17 @@ describe("useInvoiceShare", () => {
       expect(failureResult).toBeNull();
       expect(mockUpsertEntity).not.toHaveBeenCalled();
     });
+
+    it("uses translated revoke fallback when the action returns no error", async () => {
+      mockPatchInvoice.mockResolvedValue({success: false} as Awaited<ServerActionResult<Invoice>>);
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      await result.current.shareInvoiceCallback(testInvoiceId, {type: "revoke"});
+
+      expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("Failed to revoke access"));
+      expect(mockUpsertEntity).not.toHaveBeenCalled();
+    });
   });
 
   describe("sendEmail action", () => {
@@ -306,6 +328,30 @@ describe("useInvoiceShare", () => {
       );
     });
 
+    it("uses email identity fallbacks for blank names and recipients", async () => {
+      const emailResult = {success: true as const};
+      mockSendEmail.mockResolvedValue(emailResult);
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      await result.current.shareInvoiceCallback(testInvoiceId, {
+        type: "sendEmail",
+        to: "@example.com",
+        locale: "en",
+        fromUsername: "   ",
+      });
+
+      expect(mockSendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          props: expect.objectContaining({
+            fromUsername: "Someone",
+            toUsername: "there",
+          }),
+          subjectVars: {fromName: "Someone"},
+        }),
+      );
+    });
+
     it("handles email send failure", async () => {
       const emailResult = {success: false as const, error: "Email service unavailable"};
       mockSendEmail.mockResolvedValue(emailResult);
@@ -321,6 +367,22 @@ describe("useInvoiceShare", () => {
       expect(failureResult).toBeNull();
       expect(mockToast.error).toHaveBeenCalled();
       expect(mockToast.promise).toHaveBeenCalled();
+    });
+
+    it("uses unknown when email failure has no error message", async () => {
+      mockSendEmail.mockResolvedValue({success: false, error: ""} as Awaited<ReturnType<typeof sendEmail>>);
+
+      const {result} = renderHook(() => useInvoiceShare());
+
+      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {
+        type: "sendEmail",
+        to: "recipient@example.com",
+        locale: "en",
+      });
+
+      const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
+      expect(failureResult).toBeNull();
+      expect(promiseMessages?.error?.(new Error("unknown"))).toBe("Failed to send email to recipient@example.com: unknown");
     });
 
     it("formats email errors from non-error thrown values", async () => {

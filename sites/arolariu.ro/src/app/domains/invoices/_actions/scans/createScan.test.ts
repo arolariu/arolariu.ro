@@ -453,6 +453,62 @@ describe("createScan", () => {
     expect(capturedMetadata.userIdentifier).toBe("user-meta");
   });
 
+  it("should use bin extension for filenames without a usable extension", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-no-ext"};
+    const capturedBlobNames: string[] = [];
+    const mockUploadResponse = {_response: {status: 201}};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn((name) => {
+            capturedBlobNames.push(name);
+            return {
+              url: `https://storage.test/invoices/${name}`,
+              uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
+            };
+          }),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      convertBase64ToBlob: vi.fn(() =>
+        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
+      ),
+      createErrorResult: vi.fn((error) => ({
+        success: false,
+        userMessage: error.message,
+      })),
+    }));
+
+    const {createScan} = await import("./createScan");
+
+    // Act
+    await createScan({base64Data: "test", fileName: "receipt", mimeType: "image/jpeg"});
+    await createScan({base64Data: "test", fileName: "receipt.", mimeType: "image/jpeg"});
+
+    // Assert
+    expect(capturedBlobNames).toHaveLength(2);
+    expect(capturedBlobNames.every((name) => name.endsWith(".bin"))).toBe(true);
+  });
+
   it("should handle unsupported MIME types as OTHER", async () => {
     // Arrange
     const mockUser = {userIdentifier: "user-unsupported"};

@@ -130,6 +130,46 @@ describe("markScansAsUsed", () => {
     expect(capturedMetadata.status).toBe("archived");
   });
 
+  it("should create metadata when the blob has no existing metadata", async () => {
+    // Arrange
+    let capturedMetadata: Record<string, string> = {};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn(() => ({
+            getProperties: vi.fn(() => Promise.resolve({etag: "etag-without-metadata"})),
+            setMetadata: vi.fn((metadata) => {
+              capturedMetadata = metadata;
+              return Promise.resolve();
+            }),
+          })),
+        })),
+      })),
+    }));
+
+    const {markScansAsUsed} = await import("./markScansAsUsed");
+
+    // Act
+    await markScansAsUsed({blobNames: ["scans/user-123/no-metadata.jpg"]});
+
+    // Assert
+    expect(capturedMetadata).toEqual({
+      usedByInvoice: "true",
+      status: "archived",
+    });
+  });
+
   it("should handle individual blob failures gracefully (best-effort)", async () => {
     // Arrange
     const goodBlob = "scans/user-123/good.jpg";

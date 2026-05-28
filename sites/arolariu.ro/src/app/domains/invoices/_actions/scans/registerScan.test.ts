@@ -506,4 +506,126 @@ describe("registerScan", () => {
       expect(result.scan?.mimeType).toBe("text/plain");
     }
   });
+
+  it("should classify supported MIME type variants", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-mime"};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn(() => ({
+            setMetadata: vi.fn(() => Promise.resolve()),
+          })),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("next/cache", () => ({
+      revalidatePath: vi.fn(),
+    }));
+
+    const {registerScan} = await import("./registerScan");
+
+    // Act
+    const jpgResult = await registerScan({
+      scanId: "scan_jpg",
+      blobUrl: "https://storage.test/invoices/scans/user-mime/scan_jpg.jpg",
+      fileName: "receipt.jpg",
+      mimeType: "image/jpg",
+      sizeInBytes: 1024,
+    });
+    const pngResult = await registerScan({
+      scanId: "scan_png",
+      blobUrl: "https://storage.test/invoices/scans/user-mime/scan_png.png",
+      fileName: "receipt.png",
+      mimeType: "image/png",
+      sizeInBytes: 1024,
+    });
+    const pdfResult = await registerScan({
+      scanId: "scan_pdf",
+      blobUrl: "https://storage.test/invoices/scans/user-mime/scan_pdf.pdf",
+      fileName: "receipt.pdf",
+      mimeType: "application/pdf",
+      sizeInBytes: 1024,
+    });
+
+    // Assert
+    expect(jpgResult.success).toBe(true);
+    expect(pngResult.success).toBe(true);
+    expect(pdfResult.success).toBe(true);
+    if (jpgResult.success && pngResult.success && pdfResult.success) {
+      expect(jpgResult.scan.scanType).toBe(ScanType.JPEG);
+      expect(pngResult.scan.scanType).toBe(ScanType.PNG);
+      expect(pdfResult.scan.scanType).toBe(ScanType.PDF);
+    }
+  });
+
+  it("should derive blob name from URLs without the invoices container segment", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-path"};
+    let capturedBlobName = "";
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn((blobName) => {
+            capturedBlobName = blobName;
+            return {
+              setMetadata: vi.fn(() => Promise.resolve()),
+            };
+          }),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("next/cache", () => ({
+      revalidatePath: vi.fn(),
+    }));
+
+    const {registerScan} = await import("./registerScan");
+
+    // Act
+    const result = await registerScan({
+      scanId: "scan_path",
+      blobUrl: "https://storage.test/scans/user-path/scan_path.jpg",
+      fileName: "receipt.jpg",
+      mimeType: "image/jpeg",
+      sizeInBytes: 1024,
+    });
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(capturedBlobName).toBe("scans/user-path/scan_path.jpg");
+  });
 });

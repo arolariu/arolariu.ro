@@ -114,6 +114,25 @@ describe("createInvoiceScan", () => {
     }
   });
 
+  it("returns an error result for non-server Azure upload failures", async () => {
+    mockUploadData.mockResolvedValue({
+      _response: {
+        status: 409,
+      },
+    });
+
+    const result = await createInvoiceScan({
+      base64Data: "data:image/jpeg;base64,test",
+      blobName: "scan.jpg",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("409");
+      expect(result.error.message).toContain("Failed to upload invoice scan");
+    }
+  });
+
   it("returns an error result when blob conversion or storage throws", async () => {
     mockUploadData.mockRejectedValue(new Error("Azure storage unavailable"));
 

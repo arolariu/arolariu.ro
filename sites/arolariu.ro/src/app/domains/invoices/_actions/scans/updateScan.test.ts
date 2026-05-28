@@ -157,6 +157,71 @@ describe("updateScan", () => {
     expect(capturedMetadata.lastModifiedBy).toBe("user-123");
   });
 
+  it("should update blobs that do not have existing metadata", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-empty-metadata"};
+    let capturedMetadata: Record<string, string> = {};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn(() => ({
+            url: "https://storage.test/invoices/scans/user-empty-metadata/scan.jpg",
+            getProperties: vi.fn(() => Promise.resolve({})),
+            uploadData: vi.fn((data, options) => {
+              capturedMetadata = options.metadata ?? {};
+              return Promise.resolve({_response: {status: 201}});
+            }),
+          })),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      convertBase64ToBlob: vi.fn(() =>
+        Promise.resolve(new Blob(["updated"], {type: "image/jpeg"})),
+      ),
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    vi.doMock("next/cache", () => ({
+      revalidatePath: vi.fn(),
+    }));
+
+    const {updateScan} = await import("./updateScan");
+
+    // Act
+    const result = await updateScan({
+      base64Data: "new-data",
+      blobName: "scans/user-empty-metadata/scan.jpg",
+      mimeType: "image/jpeg",
+      metadata: {rotated: "90"},
+    });
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(capturedMetadata.rotated).toBe("90");
+    expect(capturedMetadata.lastModifiedBy).toBe("user-empty-metadata");
+  });
+
   it("should handle authentication failures", async () => {
     // Arrange
     const authError = new Error("Unauthorized");

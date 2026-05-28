@@ -236,6 +236,56 @@ describe("generateUploadSasUrl", () => {
     }
   });
 
+  it("should use bin extension for filenames without a usable extension", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-no-ext"};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("http://localhost:10000")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn((name) => ({
+            url: `http://localhost:10000/invoices/${name}`,
+          })),
+        })),
+      })),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    const {generateUploadSasUrl} = await import("./generateSasUrl");
+
+    // Act
+    const extensionlessResult = await generateUploadSasUrl({fileName: "receipt", mimeType: "image/jpeg"});
+    const trailingDotResult = await generateUploadSasUrl({fileName: "receipt.", mimeType: "image/jpeg"});
+
+    // Assert
+    expect(extensionlessResult.success).toBe(true);
+    expect(trailingDotResult.success).toBe(true);
+    if (extensionlessResult.success && trailingDotResult.success) {
+      expect(extensionlessResult.data.blobName).toMatch(/\.bin$/u);
+      expect(trailingDotResult.data.blobName).toMatch(/\.bin$/u);
+    }
+  });
+
   it("should handle authentication failures", async () => {
     // Arrange
     const authError = new Error("Unauthorized");

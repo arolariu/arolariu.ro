@@ -267,6 +267,53 @@ describe("deleteScan", () => {
     expect(result.success).toBe(false);
   });
 
+  it("should reject blob URLs without a container path", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-123"};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          getBlockBlobClient: vi.fn(() => ({
+            deleteIfExists: vi.fn(),
+          })),
+        })),
+      })),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    const {deleteScan} = await import("./deleteScan");
+
+    // Act
+    const result = await deleteScan({blobUrl: "https://storage.test"});
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.userMessage).toBe("Invalid scan URL.");
+    }
+  });
+
   it("should handle non-Error thrown exceptions", async () => {
     // Arrange
     const mockUser = {userIdentifier: "user-123"};

@@ -494,6 +494,45 @@ describe("fetchScans", () => {
     }
   });
 
+  it("should handle non-Error thrown exceptions", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-123"};
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => {
+        throw "String error";
+      }),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    const {fetchScans} = await import("./fetchScans");
+
+    // Act
+    const result = await fetchScans();
+
+    // Assert
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.userMessage).toBe("Failed to fetch scans. Please try again.");
+    }
+  });
+
   it("should skip scans without scanId metadata", async () => {
     // Arrange
     const mockUser = {userIdentifier: "user-123"};
@@ -571,6 +610,147 @@ describe("fetchScans", () => {
     if (result.success) {
       expect(result.data).toHaveLength(1);
       expect(result.data[0]?.id).toBe("scan1");
+    }
+  });
+
+  it("should default optional blob properties when metadata and properties are missing", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-123"};
+    const mockBlobs = [
+      {
+        name: "",
+        metadata: {
+          scanId: "scan-missing-fields",
+        },
+        properties: {},
+      },
+    ];
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          listBlobsFlat: vi.fn(function* () {
+            yield* mockBlobs;
+          }),
+          getBlockBlobClient: vi.fn((name) => ({
+            url: `https://storage.test/invoices/${name}`,
+          })),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    const {fetchScans} = await import("./fetchScans");
+
+    // Act
+    const result = await fetchScans();
+
+    // Assert
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0]).toMatchObject({
+        id: "scan-missing-fields",
+        userIdentifier: "user-123",
+        name: "Unknown",
+        mimeType: "application/octet-stream",
+        sizeInBytes: 0,
+      });
+    }
+  });
+
+  it("should skip blobs without metadata and normalize invalid statuses", async () => {
+    // Arrange
+    const mockUser = {userIdentifier: "user-123"};
+    const mockBlobs = [
+      {
+        name: "scans/user-123/no-metadata.jpg",
+        properties: {
+          contentType: "image/jpeg",
+          contentLength: 1024,
+          createdOn: new Date("2024-01-01T00:00:00.000Z"),
+        },
+      },
+      {
+        name: "scans/user-123/invalid-status.jpg",
+        metadata: {
+          scanId: "invalid-status",
+          status: "not-a-real-status",
+        },
+        properties: {
+          contentType: "image/jpeg",
+          contentLength: 2048,
+          createdOn: new Date("2024-01-02T00:00:00.000Z"),
+        },
+      },
+    ];
+
+    vi.doMock("@/instrumentation.server", () => ({
+      withSpan: vi.fn((name, fn) => fn()),
+      addSpanEvent: vi.fn(),
+      logWithTrace: vi.fn(),
+    }));
+
+    vi.doMock("@/lib/actions/user/fetchUser", () => ({
+      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
+    }));
+
+    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
+      default: vi.fn(() => Promise.resolve("https://storage.test")),
+    }));
+
+    vi.doMock("@/lib/azure/storageClient", () => ({
+      createBlobClient: vi.fn(() => ({
+        getContainerClient: vi.fn(() => ({
+          listBlobsFlat: vi.fn(function* () {
+            yield* mockBlobs;
+          }),
+          getBlockBlobClient: vi.fn((name) => ({
+            url: `https://storage.test/invoices/${name}`,
+          })),
+        })),
+      })),
+      rewriteAzuriteUrl: vi.fn((url) => url),
+    }));
+
+    vi.doMock("@/lib/utils.server", () => ({
+      createErrorResult: vi.fn((error, userMsg) => ({
+        success: false,
+        userMessage: userMsg ?? error.message,
+      })),
+    }));
+
+    const {fetchScans} = await import("./fetchScans");
+
+    // Act
+    const result = await fetchScans();
+
+    // Assert
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.id).toBe("invalid-status");
+      expect(result.data[0]?.status).toBe(ScanStatus.READY);
     }
   });
 
