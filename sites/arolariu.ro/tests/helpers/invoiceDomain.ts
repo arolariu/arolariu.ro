@@ -29,7 +29,7 @@ import {ScanStatus, ScanType} from "@/types/scans";
 /**
  * Utility type to make readonly properties mutable for test fixtures.
  */
-type Mutable<T> = {-readonly [K in keyof T]: T[K]};
+export type Mutable<T> = {-readonly [K in keyof T]: T[K]};
 
 /**
  * Mock response object matching the Fetch API Response shape.
@@ -37,9 +37,11 @@ type Mutable<T> = {-readonly [K in keyof T]: T[K]};
  * @remarks
  * Used to mock server action responses in tests without requiring actual
  * HTTP calls. Implements the minimal Response interface needed for tests.
+ *
+ * The `ok` property follows Fetch API semantics: true if status is 200-299.
  */
 export type MockResponse = Readonly<{
-  /** True if status is in 200-299 range */
+  /** True if status is in 200-299 range (Fetch API semantics) */
   ok: boolean;
   /** HTTP status code */
   status: number;
@@ -73,7 +75,7 @@ export function createJsonResponse(
 ): MockResponse {
   const status = init.status ?? 200;
   return {
-    ok: init.ok ?? status < 400,
+    ok: init.ok ?? (status >= 200 && status < 300),
     status,
     statusText: init.statusText ?? "OK",
     json: async () => data,
@@ -101,7 +103,7 @@ export function createTextResponse(
   init: Readonly<{status: number; statusText?: string}>,
 ): MockResponse {
   return {
-    ok: init.status < 400,
+    ok: init.status >= 200 && init.status < 300,
     status: init.status,
     statusText: init.statusText ?? "Error",
     json: async () => ({message: text}),
@@ -178,7 +180,8 @@ export function buildPaymentInformation(overrides: Partial<PaymentInformation> =
  * - Single product (Coffee, 10 RON)
  * - Card payment
  * - No scans (add via overrides if needed)
- * - Not shared, not deleted
+ * - Not shared, not soft-deleted
+ * - Full audit metadata (IAuditable fields)
  *
  * @example
  * ```typescript
@@ -210,10 +213,14 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
     taxDetails: [],
     payments: [],
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    isDeleted: false,
+    createdBy: "user-1",
+    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    lastUpdatedBy: "user-1",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
     ...overrides,
-  } as Invoice;
+  };
 }
 
 /**
@@ -239,6 +246,14 @@ export function buildContactInformation(overrides: Partial<ContactInformation> =
  * @param overrides - Partial merchant properties to override defaults
  * @returns A complete Merchant object suitable for testing
  *
+ * @remarks
+ * Default merchant includes:
+ * - SUPERMARKET category
+ * - Complete contact information
+ * - Full audit metadata (IAuditable fields)
+ * - No parent company
+ * - Not soft-deleted, not marked important
+ *
  * @example
  * ```typescript
  * const merchant = buildMerchant({
@@ -258,8 +273,12 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     address: buildContactInformation(),
     parentCompanyId: "",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-    isDeleted: false,
+    createdBy: "user-1",
+    lastUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    lastUpdatedBy: "user-1",
+    numberOfUpdates: 0,
+    isImportant: false,
+    isSoftDeleted: false,
     ...overrides,
   };
 }
