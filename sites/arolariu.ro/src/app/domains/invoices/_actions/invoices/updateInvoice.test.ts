@@ -5,6 +5,7 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 import {updateInvoice} from "./updateInvoice";
@@ -39,7 +40,7 @@ vi.mock("@/lib/utils.generic", () => ({
 }));
 
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
-const mockFetchWithTimeout = vi.mocked((await import("@/lib/utils.server")).fetchWithTimeout);
+const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 
 describe("updateInvoice", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
@@ -118,7 +119,7 @@ describe("updateInvoice", () => {
     }
   });
 
-  it("returns an error result when auth or fetch throws", async () => {
+  it("returns an error result when auth throws", async () => {
     mockFetchUser.mockRejectedValue(new Error("Auth failed"));
 
     const invoice = buildInvoice({id: invoiceId});
@@ -127,6 +128,30 @@ describe("updateInvoice", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.message).toContain("Auth failed");
+    }
+  });
+
+  it("returns an error result when fetch throws", async () => {
+    mockFetchWithTimeout.mockRejectedValue(new Error("Network error"));
+
+    const invoice = buildInvoice({id: invoiceId});
+    const result = await updateInvoice({invoiceId, invoice});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("Network error");
+    }
+  });
+
+  it("returns a fallback error message when auth throws a non-Error", async () => {
+    mockFetchUser.mockRejectedValue(42);
+
+    const invoice = buildInvoice({id: invoiceId});
+    const result = await updateInvoice({invoiceId, invoice});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain("An unexpected error occurred");
     }
   });
 });

@@ -39,20 +39,7 @@ export default mergeConfig(
           // ── SCSS modules (instrumented by v8 as a side effect of import) ──
           "**/*.module.scss",
           "**/*.scss",
-
-          // ── lib utilities (tested separately, excluded from domain coverage) ──
-          "**/lib/**",
-
-          // ── barrel exports (re-exports only, no logic to test) ──
-          "**/index.ts",
         ],
-        thresholds: {
-          // Override base thresholds for invoice domain tests:
-          // - Branch coverage at 85% accounts for uncovered defensive error-handling
-          //   ternaries in catch blocks (error instanceof Error ? ... : ...)
-          //   which require anti-pattern testing (throwing non-Error objects).
-          branches: 85,
-        },
       },
     },
     resolve: {
@@ -64,6 +51,7 @@ export default mergeConfig(
         {find: "@/instrumentation.server", replacement: resolve(__dirname, "./tests/stubs/instrumentation.server.ts")},
         {find: "@/lib/config/configProxy", replacement: resolve(__dirname, "./tests/stubs/lib/config/configProxy.ts")},
         {find: "@/lib/utils.server", replacement: resolve(__dirname, "./tests/stubs/lib/utils.server.ts")},
+        {find: "@/lib/utils.generic", replacement: resolve(__dirname, "./tests/stubs/lib/utils.generic.ts")},
         {find: "@/lib/azure/storageClient", replacement: resolve(__dirname, "./tests/stubs/lib/azure/storageClient.ts")},
         {
           find: "@/lib/actions/storage/fetchConfig",
