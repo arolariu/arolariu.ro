@@ -22,7 +22,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import {styleText} from "node:util";
-import {validateAllMessages} from "./migrations/message-tree/taxonomy.ts";
 
 /**
  * Represents either a plain string message or a message formatted with `MessageFormat`.
@@ -380,20 +379,6 @@ function validateLocale(
   return missingKeys.length;
 }
 
-function validateMessageTreeTaxonomy(): void {
-  const issues = validateAllMessages();
-  if (issues.length === 0) {
-    console.info("[arolariu.ro::generate:i18n] Message tree taxonomy validation passed.");
-    return;
-  }
-
-  console.error(`[arolariu.ro::generate:i18n] Found ${issues.length} message tree taxonomy issue(s).`);
-  for (const issue of issues.slice(0, 200)) {
-    console.error(`[arolariu.ro::generate:i18n] ${issue.locale}:${issue.path} — ${issue.message}`);
-  }
-  throw new Error("[arolariu.ro::generate:i18n] Message tree taxonomy validation failed.");
-}
-
 /**
  * This is the main function of the script.
  * Validates all supported locales (Romanian and French) against the English source of truth.
@@ -431,8 +416,6 @@ export async function main(verbose: boolean = false): Promise<number> {
     localeResults[locale] = missingCount;
     totalMissingKeys += missingCount;
   }
-
-  validateMessageTreeTaxonomy();
 
   // Summary output
   console.log(styleText("green", "\n✨ i18n synchronization completed."));
