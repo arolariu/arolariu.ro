@@ -13,8 +13,8 @@ import {useCallback, useEffect, useState} from "react";
 import {TbCamera, TbChevronLeft, TbChevronRight} from "react-icons/tb";
 import DeferredMount from "../../_components/DeferredMount";
 import EmptyState from "../../_components/EmptyState";
-import ScanCard from "../../_components/ScanCard";
-import {CardShimmer} from "../../_components/ScanCard.shimmers";
+import ScanCard from "../../_cards/ScanCard";
+import {CardShimmer} from "../../_cards/ScanCard.shimmers";
 import {useScans} from "../_hooks/useScans";
 import styles from "./ScansGrid.module.scss";
 

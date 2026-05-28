@@ -6,16 +6,16 @@ import {motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
-import ImageCard from "./_components/cards/ImageCard";
-import InvoiceCard from "./_components/cards/InvoiceCard";
-import MerchantCard from "./_components/cards/MerchantCard";
-import SharingCard from "./_components/cards/SharingCard";
 import GuidedEditBanner from "./_components/GuidedEditBanner";
 import InvoiceHeader from "./_components/InvoiceHeader";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 import {EditInvoiceContextProvider} from "./_context/EditInvoiceContext";
 import styles from "./island.module.scss";
+import InvoiceCard from "./_cards/InvoiceCard";
+import ImageCard from "./_cards/ImageCard";
+import MerchantCard from "./_cards/MerchantCard";
+import SharingCard from "./_cards/SharingCard";
 
 type Props = Readonly<{
   readonly invoice: Invoice;

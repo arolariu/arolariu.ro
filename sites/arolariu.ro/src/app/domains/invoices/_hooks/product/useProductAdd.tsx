@@ -10,10 +10,10 @@
 * to show success and failure feedback.
  */
 
-import {useInvoicesStore} from "@/stores";
 import type {Invoice, Product} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import {addInvoiceProduct as addProductServerSide} from "../../_actions/invoices/products/addInvoiceProduct";
+import { addInvoiceProduct as addProductServerSide } from "../../_actions/invoices";
+import { useInvoicesStore } from "@/stores";
 
 /**
  * Input parameters for the product add hook.
@@ -67,7 +67,7 @@ export function useProductAdd({ invoice }: Readonly<HookInputType>): Readonly<Ho
         setIsAdding(false);
       }
     },
-    [invoice.id, addProductClientSide],
+    [invoice.id, invoice.items, addProductClientSide],
   );
 
   return {isAdding, addProductCallback};

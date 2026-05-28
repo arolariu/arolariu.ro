@@ -19,11 +19,9 @@
  * @see {@link fetchScans} for retrieving scans
  */
 
-import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
-import {markScansAsUsed} from "@/app/domains/invoices/_actions/scans/markScansAsUsed";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
+import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
+import { fetchWithTimeout } from "@/lib/utils.server";
 import {
   type CreateInvoiceDtoPayload,
   type CreateInvoiceScanDtoPayload,
@@ -31,7 +29,9 @@ import {
   InvoiceAnalysisOptions,
   InvoiceScanType,
 } from "@/types/invoices";
-import {type Scan, ScanType} from "@/types/scans";
+import { type Scan, ScanType } from "@/types/scans";
+import { analyzeInvoice } from "../../_actions/invoices";
+import { markScansAsUsed } from "../../_actions/scans";
 
 /**
  * Input parameters for creating invoices from scans.
@@ -57,7 +57,7 @@ type CreateInvoiceFromScansOutput = Promise<
     /** IDs of scans that were successfully converted */
     convertedScanIds: string[];
     /** Errors encountered during creation */
-    errors: Array<{scanId: string; error: string}>;
+    errors: Array<{ scanId: string; error: string; }>;
   }>
 >;
 
@@ -126,7 +126,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
 type CreationResult = {
   invoices: Invoice[];
   convertedScanIds: string[];
-  errors: Array<{scanId: string; error: string}>;
+  errors: Array<{ scanId: string; error: string; }>;
 };
 
 /**
@@ -165,19 +165,19 @@ async function processSingleScan(
   scan: Scan,
   userIdentifier: string,
   authToken: string,
-): Promise<{success: true; invoice: Invoice} | {success: false; error: string}> {
+): Promise<{ success: true; invoice: Invoice; } | { success: false; error: string; }> {
   try {
     const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
     logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
     // Fire-and-forget auto-analysis after successful creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({ invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis }).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
-    return {success: true, invoice};
+    return { success: true, invoice };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    logWithTrace("error", `Failed to create invoice from scan ${scan.id}`, {error}, "server");
-    return {success: false, error: errorMessage};
+    logWithTrace("error", `Failed to create invoice from scan ${scan.id}`, { error }, "server");
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -186,11 +186,11 @@ async function processSingleScan(
  */
 async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
   addSpanEvent("bff.invoices.create.single.start");
-  logWithTrace("info", `Creating ${scans.length} individual invoices`, {count: scans.length}, "server");
+  logWithTrace("info", `Creating ${scans.length} individual invoices`, { count: scans.length }, "server");
 
   const invoices: Invoice[] = [];
   const convertedScanIds: string[] = [];
-  const errors: Array<{scanId: string; error: string}> = [];
+  const errors: Array<{ scanId: string; error: string; }> = [];
 
   for (const scan of scans) {
     const result = await processSingleScan(scan, userIdentifier, authToken);
@@ -198,7 +198,7 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
       invoices.push(result.invoice);
       convertedScanIds.push(scan.id);
     } else {
-      errors.push({scanId: scan.id, error: result.error});
+      errors.push({ scanId: scan.id, error: result.error });
     }
   }
 
@@ -207,13 +207,13 @@ async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdenti
     const convertedSet = new Set(convertedScanIds);
     const blobNames = scans.filter((s) => convertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
 
-    markScansAsUsed({blobNames}).catch((error) => {
+    markScansAsUsed({ blobNames }).catch((error) => {
       console.warn("Failed to mark scans as used (non-critical):", error);
     });
   }
 
   addSpanEvent("bff.invoices.create.single.complete");
-  return {invoices, convertedScanIds, errors};
+  return { invoices, convertedScanIds, errors };
 }
 
 /**
@@ -223,9 +223,9 @@ async function attachRemainingScans(
   invoiceId: string,
   scans: ReadonlyArray<Scan>,
   authToken: string,
-): Promise<{convertedScanIds: string[]; errors: Array<{scanId: string; error: string}>}> {
+): Promise<{ convertedScanIds: string[]; errors: Array<{ scanId: string; error: string; }>; }> {
   const convertedScanIds: string[] = [];
-  const errors: Array<{scanId: string; error: string}> = [];
+  const errors: Array<{ scanId: string; error: string; }> = [];
 
   for (let i = 1; i < scans.length; i++) {
     const scan = scans[i];
@@ -236,13 +236,13 @@ async function attachRemainingScans(
         logWithTrace("info", `Attached scan ${scan.id} to invoice ${invoiceId}`, {}, "server");
       } catch (attachError) {
         const attachErrorMessage = attachError instanceof Error ? attachError.message : "Unknown error";
-        errors.push({scanId: scan.id, error: attachErrorMessage});
-        logWithTrace("error", `Failed to attach scan ${scan.id} to invoice ${invoiceId}`, {error: attachError}, "server");
+        errors.push({ scanId: scan.id, error: attachErrorMessage });
+        logWithTrace("error", `Failed to attach scan ${scan.id} to invoice ${invoiceId}`, { error: attachError }, "server");
       }
     }
   }
 
-  return {convertedScanIds, errors};
+  return { convertedScanIds, errors };
 }
 
 /**
@@ -250,7 +250,7 @@ async function attachRemainingScans(
  */
 async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
   addSpanEvent("bff.invoice.create.batch.start");
-  logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, {count: scans.length}, "server");
+  logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, { count: scans.length }, "server");
 
   const [firstScan] = scans;
   if (!firstScan) {
@@ -263,12 +263,12 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     logWithTrace("info", `Created invoice ${invoice.id} with initial scan ${firstScan.id}`, {}, "server");
 
     // Attach remaining scans
-    const {convertedScanIds, errors} = await attachRemainingScans(invoice.id, scans, authToken);
+    const { convertedScanIds, errors } = await attachRemainingScans(invoice.id, scans, authToken);
 
     logWithTrace(
       "info",
       `Created batch invoice ${invoice.id} with ${convertedScanIds.length + 1} scans attached`,
-      {invoiceId: invoice.id, scansAttached: convertedScanIds.length + 1},
+      { invoiceId: invoice.id, scansAttached: convertedScanIds.length + 1 },
       "server",
     );
 
@@ -276,12 +276,12 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     const allConvertedSet = new Set([firstScan.id, ...convertedScanIds]);
     const blobNames = scans.filter((s) => allConvertedSet.has(s.id)).map((s) => extractBlobNameFromScan(s));
 
-    markScansAsUsed({blobNames}).catch((error) => {
+    markScansAsUsed({ blobNames }).catch((error) => {
       console.warn("Failed to mark scans as used (non-critical):", error);
     });
 
     // Fire-and-forget auto-analysis after successful batch creation
-    analyzeInvoice({invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis}).catch((error) => {
+    analyzeInvoice({ invoiceIdentifier: invoice.id, analysisOptions: InvoiceAnalysisOptions.CompleteAnalysis }).catch((error) => {
       console.error("Background invoice analysis failed:", error);
     });
 
@@ -293,12 +293,12 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    logWithTrace("error", "Failed to create batch invoice", {error}, "server");
+    logWithTrace("error", "Failed to create batch invoice", { error }, "server");
 
     // In batch mode, initial creation failure affects all scans
-    const errors = scans.map((scan) => ({scanId: scan.id, error: errorMessage}));
+    const errors = scans.map((scan) => ({ scanId: scan.id, error: errorMessage }));
     addSpanEvent("bff.invoice.create.batch.complete");
-    return {invoices: [], convertedScanIds: [], errors};
+    return { invoices: [], convertedScanIds: [], errors };
   }
 }
 
@@ -342,7 +342,7 @@ async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentif
  * result.invoices.forEach(inv => invoicesStore.upsertInvoice(inv));
  * ```
  */
-export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromScansInput): CreateInvoiceFromScansOutput {
+export async function createInvoiceFromScans({ scans, mode }: CreateInvoiceFromScansInput): CreateInvoiceFromScansOutput {
   console.info(">>> Executing server action::createInvoiceFromScans");
 
   return withSpan("api.actions.scans.createInvoiceFromScans", async () => {
@@ -350,7 +350,7 @@ export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromSca
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
+      const { userIdentifier, userJwt: authToken } = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       if (!userIdentifier) {
@@ -366,14 +366,14 @@ export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromSca
       logWithTrace(
         "info",
         `Completed invoice creation: ${result.invoices.length} created, ${result.errors.length} errors`,
-        {created: result.invoices.length, errors: result.errors.length},
+        { created: result.invoices.length, errors: result.errors.length },
         "server",
       );
 
       return result;
     } catch (error) {
       addSpanEvent("bff.invoices.create.error");
-      logWithTrace("error", "Error creating invoices from scans", {error}, "server");
+      logWithTrace("error", "Error creating invoices from scans", { error }, "server");
       console.error("Error creating invoices from scans:", error);
       throw error;
     }

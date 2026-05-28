@@ -14,7 +14,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {deleteScan as removeScanServerSide} from "../../_actions/scans/deleteScan";
+import { deleteScan as removeScanServerSide } from "../../_actions/scans";
 
 /**
  * Hook output type for standalone scan deletion.

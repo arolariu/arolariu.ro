@@ -13,7 +13,7 @@ import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import {fetchMerchants} from "../../_actions/merchants/fetchMerchants";
+import { fetchMerchants } from "../../_actions/merchants";
 
 /**
  * Input parameters for the useMerchants hook (currently unused).

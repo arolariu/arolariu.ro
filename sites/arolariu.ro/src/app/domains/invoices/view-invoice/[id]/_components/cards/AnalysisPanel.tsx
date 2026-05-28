@@ -1,6 +1,6 @@
 "use client";
 
-import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
+import {analyzeInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {formatDate} from "@/lib/utils.generic";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
@@ -63,7 +63,7 @@ type AnalysisOption = Readonly<{
  * - Items Only: Line item categorization
  * - Merchant Only: Merchant identification
  *
- * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices/analyzeInvoice`
+ * **Server Actions**: Uses `analyzeInvoice` from `@/app/domains/invoices/_actions/invoices`
  *
  * @returns The AnalysisPanel component.
  */
@@ -72,9 +72,6 @@ export function AnalysisPanel(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const router = useRouter();
-
-  // Hide the entire card when analysis is complete (items exist)
-  if (invoice.items.length > 0) return <></>;
 
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -158,8 +155,8 @@ export function AnalysisPanel(): React.JSX.Element {
         const result = await analysisPromise;
 
         // Check if the analysis failed
-        if (result && !result.success) {
-          throw new Error(result.error.message || "Analysis failed");
+        if (!result.success) {
+          throw new Error(result.error.message);
         }
 
         setCurrentStep(t((m) => m.pages.invoices.viewInvoice.analysisPanel.steps.complete));
@@ -206,6 +203,9 @@ export function AnalysisPanel(): React.JSX.Element {
     },
     [handleAnalyze],
   );
+
+  // Hide the entire card when analysis is complete (items exist)
+  if (invoice.items.length > 0) return <></>;
 
   return (
     <Card className={styles["card"]}>

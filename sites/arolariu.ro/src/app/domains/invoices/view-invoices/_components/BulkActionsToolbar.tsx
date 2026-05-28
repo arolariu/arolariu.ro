@@ -24,9 +24,6 @@
  * </DialogProvider>
  * ```
  */
-
-import deleteInvoice from "@/app/domains/invoices/_actions/invoices/deleteInvoice";
-import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory} from "@/types/invoices";
 import {
@@ -52,7 +49,9 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbCategory, TbDownload, TbTrash, TbX} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
+import {patchInvoice} from "../../_actions/invoices";
 import {useDialog} from "../../_contexts/DialogContext";
+import {useInvoiceDelete} from "../../_hooks/invoice";
 import styles from "./BulkActionsToolbar.module.scss";
 
 /**
@@ -62,7 +61,7 @@ import styles from "./BulkActionsToolbar.module.scss";
  * @remarks
  * **State Management:**
  * - Reads `selectedInvoices` from Zustand store via `useShallow`
- * - Uses `clearSelectedInvoices`, `removeInvoice`, and `updateInvoice` store actions
+ * - Uses `clearSelectedInvoices` and `updateInvoice` store actions
  *
  * **Features:**
  * - Sticky bottom positioning with glass morphism
@@ -85,18 +84,18 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
   const {
     selectedEntities: selectedInvoices,
     clearSelectedEntities: clearSelectedInvoices,
-    removeEntity: removeInvoice,
+    setSelectedEntities: setSelectedInvoices,
     updateEntity: updateInvoice,
   } = useInvoicesStore(
     useShallow((state) => ({
       selectedEntities: state.selectedEntities,
       clearSelectedEntities: state.clearSelectedEntities,
-      removeEntity: state.removeEntity,
+      setSelectedEntities: state.setSelectedEntities,
       updateEntity: state.updateEntity,
     })),
   );
 
-  const [isDeleting, setIsDeleting] = useState(false);
+  const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
   /**
@@ -108,44 +107,20 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
 
   /**
    * Handles bulk deletion of selected invoices.
-   * Shows toast notifications for progress and completion.
    */
   const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
     const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
-    let successCount = 0;
-    let failureCount = 0;
 
-    try {
-      // Delete each invoice sequentially
-      for (const invoiceId of invoiceIds) {
-        try {
-          await deleteInvoice({invoiceId});
-          removeInvoice(invoiceId);
-          successCount++;
-        } catch (error) {
-          console.error(`Failed to delete invoice ${invoiceId}:`, error);
-          failureCount++;
-        }
-      }
+    const {failedIds} = await deleteInvoiceCallback(invoiceIds);
 
-      // Show appropriate toast based on results
-      if (failureCount === 0) {
-        toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteSuccess, {count: successCount}));
-      } else if (successCount === 0) {
-        toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteError));
-      } else {
-        toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.deletePartialSuccess, {success: String(successCount), failed: String(failureCount)}));
-      }
-
+    if (failedIds.length === 0) {
       clearSelectedInvoices();
-    } catch (error) {
-      console.error("Bulk delete error:", error);
-      toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteError));
-    } finally {
-      setIsDeleting(false);
+      return;
     }
-  }, [selectedInvoices, removeInvoice, clearSelectedInvoices, t]);
+
+    const failedInvoices = selectedInvoices.filter((invoice) => failedIds.includes(invoice.id));
+    setSelectedInvoices(failedInvoices);
+  }, [selectedInvoices, deleteInvoiceCallback, clearSelectedInvoices, setSelectedInvoices]);
 
   /**
    * Handles bulk category change for selected invoices.
