@@ -51,7 +51,6 @@ export default mergeConfig(
         {find: "@/instrumentation.server", replacement: resolve(__dirname, "./tests/stubs/instrumentation.server.ts")},
         {find: "@/lib/config/configProxy", replacement: resolve(__dirname, "./tests/stubs/lib/config/configProxy.ts")},
         {find: "@/lib/utils.server", replacement: resolve(__dirname, "./tests/stubs/lib/utils.server.ts")},
-        {find: "@/lib/utils.generic", replacement: resolve(__dirname, "./tests/stubs/lib/utils.generic.ts")},
         {find: "@/lib/azure/storageClient", replacement: resolve(__dirname, "./tests/stubs/lib/azure/storageClient.ts")},
         {
           find: "@/lib/actions/storage/fetchConfig",

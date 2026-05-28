@@ -9,7 +9,6 @@ import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {revalidatePath} from "next/cache";
 import {createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
-import {deleteInvoice} from "./deleteInvoice";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache");
@@ -26,7 +25,8 @@ vi.mock("@/lib/utils.server", () => ({
   fetchWithTimeout: vi.fn(),
   DEFAULT_FETCH_TIMEOUT: 30_000,
 }));
-vi.mock("@/lib/utils.generic", () => ({
+// Register before dynamically importing the action so coverage stays scoped to this action file.
+vi.doMock("@/lib/utils.generic", () => ({
   generateInvoiceId: vi.fn(() => "test-id"),
   generateMerchantId: vi.fn(() => "test-merchant-id"),
   generateProductId: vi.fn(() => "test-product-id"),
@@ -41,6 +41,7 @@ vi.mock("@/lib/utils.generic", () => ({
   }),
 }));
 
+const {deleteInvoice} = await import("./deleteInvoice");
 const mockFetchUser = vi.mocked(fetchBFFUserFromAuthService);
 const mockFetchWithTimeout = vi.mocked(fetchWithTimeout);
 const mockRevalidatePath = vi.mocked(revalidatePath);

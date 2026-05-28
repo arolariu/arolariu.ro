@@ -22,6 +22,13 @@ vi.mock("./scans", () => ({
   attachInvoiceScan: vi.fn(),
   deleteInvoiceScan: vi.fn(),
 }));
+vi.mock("./fetchInvoice", () => ({fetchInvoice: vi.fn()}));
+vi.mock("./fetchInvoices", () => ({fetchInvoices: vi.fn()}));
+vi.mock("./analyzeInvoice", () => ({analyzeInvoice: vi.fn()}));
+vi.mock("./createInvoice", () => ({createInvoice: vi.fn()}));
+vi.mock("./deleteInvoice", () => ({deleteInvoice: vi.fn()}));
+vi.mock("./updateInvoice", () => ({updateInvoice: vi.fn()}));
+vi.mock("./patchInvoice", () => ({patchInvoice: vi.fn()}));
 
 import * as invoiceActions from "./index";
 
