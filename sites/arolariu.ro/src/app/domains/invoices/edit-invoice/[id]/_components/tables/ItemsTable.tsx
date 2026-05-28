@@ -1,7 +1,6 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -37,6 +36,7 @@ import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} 
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
+import { patchInvoice } from "@/app/domains/invoices/_actions/invoices";
 
 type Props = {
   invoice: Invoice;

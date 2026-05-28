@@ -6,9 +6,9 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
 import "server-only";
 
-import {addSpanEvent, injectTraceContextHeaders, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
-import {fetchApiUrl} from "@/lib/config/configProxy";
-import {type JWTPayload, SignJWT, jwtVerify} from "jose";
+import { addSpanEvent, injectTraceContextHeaders, logWithTrace, recordSpanError, withSpan } from "@/instrumentation.server";
+import { fetchApiUrl } from "@/lib/config/configProxy";
+import { type JWTPayload, SignJWT, jwtVerify } from "jose";
 
 /**
  * This async function converts a base64 string to a Blob object.
@@ -29,7 +29,7 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   const byteArrays = [...byteCharacters].map((char) => char.codePointAt(0) as number);
 
   const byteArray = new Uint8Array(byteArrays);
-  return new Blob([byteArray], {type: mimeType});
+  return new Blob([byteArray], { type: mimeType });
 }
 
 /**
@@ -54,11 +54,11 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
       });
 
       addSpanEvent("jwt.signing.start");
-      logWithTrace("debug", "Creating JWT token", {subject: payload["sub"]}, "server");
+      logWithTrace("debug", "Creating JWT token", { subject: payload["sub"] }, "server");
 
       // Convert the base64-encoded secret to Uint8Array
       const secretKey = new TextEncoder().encode(secret);
-      const jwt = await new SignJWT(payload).setProtectedHeader({alg: "HS256", typ: "JWT"}).setIssuedAt().sign(secretKey);
+      const jwt = await new SignJWT(payload).setProtectedHeader({ alg: "HS256", typ: "JWT" }).setIssuedAt().sign(secretKey);
 
       const duration = Date.now() - startTime;
       addSpanEvent("jwt.signing.complete", {
@@ -70,14 +70,14 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
         "jwt.duration_ms": duration,
       });
 
-      logWithTrace("info", "JWT token created successfully", {subject: payload["sub"], duration}, "server");
+      logWithTrace("info", "JWT token created successfully", { subject: payload["sub"], duration }, "server");
 
       return jwt;
     } catch (error) {
       recordSpanError(error, "Failed to create JWT token");
       const errorMessage = error instanceof Error ? error.message : "Failed to create JWT token";
-      logWithTrace("error", "JWT token creation failed", {error: errorMessage}, "server");
-      throw new Error(errorMessage, {cause: error});
+      logWithTrace("error", "JWT token creation failed", { error: errorMessage }, "server");
+      throw new Error(errorMessage, { cause: error });
     }
   });
 }
@@ -85,27 +85,30 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
 /**
  * JWT token verification result type.
  */
-export type JwtVerificationResult = {valid: true; payload: JWTPayload} | {valid: false; error: string};
+export type JwtVerificationResult =
+  | Readonly<{ valid: true; payload: JWTPayload; }>
+  | Readonly<{ valid: false; error: string; }>;
 
 /**
  * Error codes for server action failures.
  */
 export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
+  Readonly<
+    | "NETWORK_ERROR"
+    | "TIMEOUT_ERROR"
+    | "AUTH_ERROR"
+    | "NOT_FOUND"
+    | "VALIDATION_ERROR"
+    | "SERVER_ERROR"
+    | "UNKNOWN_ERROR">;
 
 /**
  * Standardized result type for server actions.
  * Use this for consistent error handling across all server actions.
  */
 export type ServerActionResult<T> = Promise<
-  | Readonly<{success: true; data: T; error?: never}>
-  | Readonly<{success: false; data?: never; error: {code: ServerActionErrorCode; message: string; status?: number}}>
+  | Readonly<{ success: true; data: T; error?: never; }>
+  | Readonly<{ success: false; data?: never; error: { code: ServerActionErrorCode; message: string; status?: number; }; }>
 >;
 
 /**
@@ -189,7 +192,7 @@ export async function fetchWithTimeout(
     return response;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timed out after ${timeoutMs}ms`, {cause: error});
+      throw new Error(`Request timed out after ${timeoutMs}ms`, { cause: error });
     }
     throw error;
   } finally {
@@ -249,7 +252,7 @@ export function parseBackendError(status: number, body: string): string {
     case 413: {
       // Try to parse the actual limit from the backend response
       try {
-        const parsed = JSON.parse(body) as {detail?: string; maxSize?: string};
+        const parsed = JSON.parse(body) as { detail?: string; maxSize?: string; };
         if (parsed.maxSize) {
           return `File is too large. Maximum size is ${parsed.maxSize}.`;
         }
@@ -263,7 +266,7 @@ export function parseBackendError(status: number, body: string): string {
     }
     default: {
       try {
-        const parsed = JSON.parse(body) as {detail?: string};
+        const parsed = JSON.parse(body) as { detail?: string; };
         if (parsed.detail) {
           return parsed.detail;
         }
@@ -279,20 +282,25 @@ export function parseBackendError(status: number, body: string): string {
 }
 
 /**
- * Creates a standardized error result from an error object.
- * @param error - The caught error
- * @param defaultMessage - Default message if error doesn't have one
- * @returns ServerActionResult with error details
+ * Extracts numeric HTTP status from an unknown error object if present.
+ * @param value - The value to check for a numeric status property
+ * @returns The status number if present and valid, undefined otherwise
  */
 function readHttpStatus(value: unknown): number | undefined {
   if (typeof value !== "object" || value === null || !("status" in value)) {
     return undefined;
   }
 
-  const {status} = value as {readonly status?: unknown};
+  const { status } = value as { readonly status?: unknown; };
   return typeof status === "number" ? status : undefined;
 }
 
+/**
+ * Creates a standardized error result from an error object.
+ * @param error - The caught error
+ * @param defaultMessage - Default message if error doesn't have one
+ * @returns ServerActionResult with error details
+ */
 export async function createErrorResult<T>(error: unknown, defaultMessage?: string): ServerActionResult<T> {
   if (error instanceof Error) {
     const isTimeout = error.message.includes("timed out");
@@ -303,9 +311,9 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
       error: {
         code: isTimeout ? "TIMEOUT_ERROR" : "NETWORK_ERROR",
         message: error.message,
-        ...(status === undefined ? {} : {status}),
+        ...(status === undefined ? {} : { status }),
       },
-    };
+    } as const;
   }
 
   const status = readHttpStatus(error);
@@ -315,9 +323,9 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
     error: {
       code: "UNKNOWN_ERROR",
       message: defaultMessage ?? (typeof error === "string" ? error : "An unknown error occurred"),
-      ...(status === undefined ? {} : {status}),
+      ...(status === undefined ? {} : { status }),
     },
-  };
+  } as const;
 }
 
 /**
@@ -342,7 +350,7 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
 
       // Convert the base64-encoded secret to Uint8Array
       const secretKey = new TextEncoder().encode(secret);
-      const {payload} = await jwtVerify(token, secretKey, {
+      const { payload } = await jwtVerify(token, secretKey, {
         algorithms: ["HS256"],
       });
 
@@ -359,9 +367,9 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
         "jwt.duration_ms": duration,
       });
 
-      logWithTrace("info", "JWT token verified successfully", {subject: payload["sub"], duration}, "server");
+      logWithTrace("info", "JWT token verified successfully", { subject: payload["sub"], duration }, "server");
 
-      return {valid: true, payload};
+      return { valid: true, payload } as const;
     } catch (error) {
       addSpanEvent("jwt.verification.failed", {
         "jwt.valid": false,
@@ -373,12 +381,12 @@ export async function verifyJwtToken(token: Readonly<string>, secret: Readonly<s
         "jwt.error": error instanceof Error ? error.message : "Unknown error",
       });
 
-      logWithTrace("warn", "JWT token verification failed", {error: error instanceof Error ? error.message : "Unknown error"}, "server");
+      logWithTrace("warn", "JWT token verification failed", { error: error instanceof Error ? error.message : "Unknown error" }, "server");
 
       return {
         valid: false,
         error: error instanceof Error ? error.message : "Token verification failed",
-      };
+      } as const;
     }
   });
 }

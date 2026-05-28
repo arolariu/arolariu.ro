@@ -140,5 +140,3 @@ export async function patchInvoice({ invoiceId, payload }: ServerActionInputType
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default patchInvoice;

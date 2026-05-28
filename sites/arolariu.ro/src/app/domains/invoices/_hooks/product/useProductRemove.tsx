@@ -10,10 +10,10 @@
 * the backend action may use broader matching semantics.
  */
 
-import {useInvoicesStore} from "@/stores";
-import type {Invoice} from "@/types/invoices/Invoice";
 import {useCallback, useState} from "react";
-import {deleteInvoiceProduct as removeProductServerSide} from "../../_actions/invoices/products/deleteInvoiceProduct";
+import type { Invoice } from "@/types/invoices/Invoice";
+import { deleteInvoiceProduct as removeProductServerSide } from "../../_actions/invoices";
+import { useInvoicesStore } from "@/stores";
 
 /**
  * Hook output type for product removal.
@@ -57,7 +57,7 @@ export function useProductRemove(invoice: Invoice): Readonly<HookOutputType> {
         setIsRemoving(false);
       }
     },
-    [invoice.id, removeProductClientSide],
+    [invoice.id, invoice.items, removeProductClientSide],
   );
 
   return {isRemoving, removeProductCallback};

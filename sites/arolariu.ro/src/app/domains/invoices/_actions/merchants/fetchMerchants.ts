@@ -236,5 +236,3 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default fetchMerchants;

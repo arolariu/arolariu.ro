@@ -116,6 +116,9 @@ All agent assets in this repository must apply the same execution contract to en
 4. **Verification**: do not report success without command/file evidence.
 5. **Uncertainty reporting**: explicitly disclose assumptions, confidence risks, and required user checkpoints.
 
+### Agent Artifacts
+- Never commit `docs/superpowers/**` or `.superpowers/**`; these paths are ignored agent working artifacts, not repository deliverables.
+
 ### Instruction Precedence
 If rules conflict, resolve in this order:
 1. Runtime/system safety constraints
@@ -316,6 +319,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 - Use inline styles instead of CSS Modules
 - Use sync-over-async patterns (`.Result`, `.Wait()`) in .NET
 - Auto-create or delete files without user confirmation
+- Commit `docs/superpowers/**` or `.superpowers/**` agent working artifacts
 - Force-push to main/preview branches
 
 ---

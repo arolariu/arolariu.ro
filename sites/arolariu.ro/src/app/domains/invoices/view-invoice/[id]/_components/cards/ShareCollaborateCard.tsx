@@ -29,7 +29,7 @@
  */
 
 
-import patchInvoice from "@/app/domains/invoices/_actions/invoices/patchInvoice";
+import {useInvoiceShare} from "@/app/domains/invoices/_hooks/invoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
 import {selectorFromPath, useTranslations} from "next-intl-selector";
@@ -85,6 +85,7 @@ type SharingStatus = "private" | "public" | "shared";
 export function ShareCollaborateCard(): React.JSX.Element {
   const t = useTranslations();
   const {invoice, setInvoice} = useInvoiceContext();
+  const {shareInvoiceCallback} = useInvoiceShare();
   const {openDialog} = useDialogs();
   const [isPending, startTransition] = useTransition();
 
@@ -182,31 +183,25 @@ export function ShareCollaborateCard(): React.JSX.Element {
    * - Uses optimistic UI updates with server action
    * - Shows toast feedback for success/failure
    */
-  const handleTogglePublic = useCallback(async (): Promise<void> => {
+  const handleTogglePublic = useCallback((): void => {
     const isCurrentlyPublic = sharingStatus === "public";
-    const newSharedWith = isCurrentlyPublic ? invoice.sharedWith.filter((guid) => guid !== LAST_GUID) : [...invoice.sharedWith, LAST_GUID];
 
     startTransition(() => {
-      // Execute async work inside the transition without async keyword
-      patchInvoice({
-        invoiceId: invoice.id,
-        payload: {sharedWith: newSharedWith},
-      })
-        .then((result) => {
-          if (result.success) {
-            setInvoice(result.data);
-            toast.success(t((m) => (isCurrentlyPublic ? m.pages.invoices.viewInvoice.shareCollaborate.madePrivate : m.pages.invoices.viewInvoice.shareCollaborate.madePublic)));
-            return;
+      void (async () => {
+        try {
+          const action = isCurrentlyPublic ? {type: "revoke" as const} : {type: "togglePublic" as const};
+          const updatedInvoice = await shareInvoiceCallback(invoice.id, action);
+          if (updatedInvoice) {
+            setInvoice(updatedInvoice);
           }
-          toast.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
-          return;
-        })
-        .catch((error) => {
+          toast.success(t(selectorFromPath(`pages.invoices.viewInvoice.shareCollaborate.${isCurrentlyPublic ? "madePrivate" : "madePublic"}`)));
+        } catch (error) {
           console.error("Failed to toggle public status:", error);
           toast.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
-        });
+        }
+      })();
     });
-  }, [sharingStatus, invoice, setInvoice, t]);
+  }, [invoice.id, shareInvoiceCallback, setInvoice, sharingStatus, startTransition, t]);
 
   /**
    * Handles opening the ShareInvoiceDialog for managing sharing settings.

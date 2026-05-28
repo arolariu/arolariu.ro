@@ -14,8 +14,7 @@ import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {attachInvoiceScan} from "../../_actions/invoices/scans/attachInvoiceScan";
-import {createInvoiceScan} from "../../_actions/invoices/scans/createInvoiceScan";
+import { attachInvoiceScan, createInvoiceScan } from "../../_actions/invoices";
 
 /**
  * Arguments required to upload and attach a scan.

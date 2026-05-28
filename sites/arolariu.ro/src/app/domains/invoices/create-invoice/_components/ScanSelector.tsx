@@ -19,7 +19,7 @@ import {Badge, Button} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbChevronLeft, TbChevronRight, TbPhoto, TbX} from "react-icons/tb";
-import ScanCard from "../../_components/ScanCard";
+import ScanCard from "../../_cards/ScanCard";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ScanSelector.module.scss";
 

@@ -115,7 +115,7 @@ import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
 import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
 import { createBlobClient, rewriteAzuriteUrl } from "@/lib/azure/storageClient";
-import { convertBase64ToBlob, createErrorResult, type ServerActionResult } from "@/lib/utils.server";
+import { convertBase64ToBlob, createErrorResult, ServerActionResult } from "@/lib/utils.server";
 import { revalidatePath } from "next/cache";
 
 /**

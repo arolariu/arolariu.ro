@@ -13,7 +13,7 @@ import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import fetchInvoices from "../../_actions/invoices/fetchInvoices";
+import { fetchInvoices } from "../../_actions/invoices";
 
 /**
  * Input parameters for the useInvoices hook (currently unused).

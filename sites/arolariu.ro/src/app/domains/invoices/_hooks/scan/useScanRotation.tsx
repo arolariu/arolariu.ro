@@ -15,7 +15,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import {updateScan} from "../../_actions/scans/updateScan";
+import { updateScan } from "../../_actions/scans";
 
 /**
  * Hook output type for scan rotation.
@@ -43,7 +43,7 @@ type HookOutputType = Readonly<{
  *   8. Updates Zustand store via `updateScanBlobUrl` with cache-busted URL
  *   9. Shows success toast
  *   10. Sets `isRotating→false` in `finally` block
- * - On error at any step: shows error toast, sets `isRotating→false`
+ * - On error at each step: shows error toast, sets `isRotating→false`
  * - PDF scans are rejected with error toast (rotation not supported)
  *
  * **Canvas Pipeline Details:**

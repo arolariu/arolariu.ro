@@ -4,7 +4,7 @@
  */
 
 // Import types early for mock typing
-import {ScanStatus, ScanType, type CachedScan} from "@/types/scans";
+import type {CachedScan} from "../../../../../types/scans";
 
 // Create mock store state and actions
 const mockStoreState = {
@@ -37,7 +37,7 @@ vi.mock("@/lib/utils.server", () => ({
 
 // Mock the fetchScans server action
 const mockFetchScans = vi.fn();
-vi.mock("@/app/domains/invoices/_actions/scans", () => ({
+vi.mock("../../_actions/scans", () => ({
   fetchScans: () => mockFetchScans(),
 }));
 
@@ -85,8 +85,8 @@ describe("useScans", () => {
     userIdentifier: "user-123",
     name: "receipt.jpg",
     mimeType: "image/jpeg",
-    scanType: ScanType.JPEG,
-    status: ScanStatus.READY,
+    scanType: "JPEG",
+    status: "ready",
     blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user-123/scan-001.jpg",
     sizeInBytes: 1024,
     uploadedAt: new Date(),
@@ -146,9 +146,9 @@ describe("useScans", () => {
 
   describe("scan filtering", () => {
     it("should only return READY scans", () => {
-      const readyScan = createMockScan({id: "ready-scan", status: ScanStatus.READY});
-      const archivedScan = createMockScan({id: "archived-scan", status: ScanStatus.ARCHIVED});
-      const processingScan = createMockScan({id: "processing-scan", status: ScanStatus.PROCESSING});
+      const readyScan = createMockScan({id: "ready-scan", status: "ready"});
+      const archivedScan = createMockScan({id: "archived-scan", status: "archived"});
+      const processingScan = createMockScan({id: "processing-scan", status: "processing"});
       mockStoreState.scans = [readyScan, archivedScan, processingScan];
 
       const {result} = renderHook(() => useScans());
@@ -158,8 +158,8 @@ describe("useScans", () => {
     });
 
     it("should return all READY scans when multiple exist", () => {
-      const scan1 = createMockScan({id: "scan-1", status: ScanStatus.READY});
-      const scan2 = createMockScan({id: "scan-2", status: ScanStatus.READY});
+      const scan1 = createMockScan({id: "scan-1", status: "ready"});
+      const scan2 = createMockScan({id: "scan-2", status: "ready"});
       mockStoreState.scans = [scan1, scan2];
 
       const {result} = renderHook(() => useScans());
@@ -219,8 +219,8 @@ describe("useScans", () => {
           userIdentifier: "user-123",
           name: "receipt.jpg",
           mimeType: "image/jpeg",
-          scanType: ScanType.JPEG,
-          status: ScanStatus.READY,
+          scanType: "JPEG",
+          status: "ready",
           blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user-123/scan-001.jpg",
           size: 1024,
           uploadedAt: new Date(),
@@ -343,8 +343,8 @@ describe("useScans", () => {
           userIdentifier: "user-123",
           name: "receipt.jpg",
           mimeType: "image/jpeg",
-          scanType: ScanType.JPEG,
-          status: ScanStatus.READY,
+          scanType: "JPEG",
+          status: "ready",
           blobUrl: "https://storage.blob.core.windows.net/invoices/scans/user-123/scan-001.jpg",
           size: 1024,
           uploadedAt: new Date(),
@@ -403,7 +403,7 @@ describe("useScans", () => {
 
     it("should auto-sync even when lastSyncTimestamp exists (always background-sync)", async () => {
       mockStoreState.hasHydrated = true;
-      mockStoreState.lastSyncTimestamp = new Date();
+      mockStoreState.lastSyncTimestamp = new Date("2026-05-26T00:00:00.000Z");
       mockFetchScans.mockResolvedValue({success: true, data: []});
 
       renderHook(() => useScans());
@@ -475,7 +475,7 @@ describe("useScans", () => {
       // same identity. If `isSyncing` ever sneaks back into the useCallback
       // dep array, this assertion fails and we have proven the loop is back.
       mockStoreState.hasHydrated = true;
-      mockStoreState.lastSyncTimestamp = new Date(); // suppress auto-sync
+      mockStoreState.lastSyncTimestamp = new Date();
       mockStoreState.isSyncing = false;
 
       const {result, rerender} = renderHook(() => useScans());

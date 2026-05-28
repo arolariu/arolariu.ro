@@ -214,5 +214,3 @@ export async function fetchMerchant({ merchantId }: ServerActionInputType): Serv
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default fetchMerchant;

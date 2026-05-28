@@ -21,7 +21,7 @@ import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipesTab.module.scss";
-import RecipeCard from "../cards/RecipeCard";
+import RecipeCard from "../../_cards/RecipeCard";
 
 type Props = {
   recipes: Recipe[];

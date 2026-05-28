@@ -279,5 +279,3 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
     }
   }) satisfies ServerActionOutputType;
 }
-
-export default updateInvoiceProduct;
