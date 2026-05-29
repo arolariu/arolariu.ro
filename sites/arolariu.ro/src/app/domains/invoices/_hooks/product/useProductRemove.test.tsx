@@ -7,7 +7,7 @@ import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {actionFailure, invokeHookCallback} from "../../../../../../tests/helpers";
 import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
 import {useProductRemove} from "./useProductRemove";
 
@@ -111,10 +111,9 @@ describe("useProductRemove", () => {
   });
 
   it("throws server action failures and skips the local update", async () => {
-    mockDeleteInvoiceProduct.mockResolvedValue({
-      success: false,
-      error: {message: "Failed to remove product", userMessage: "Try again"},
-    });
+    mockDeleteInvoiceProduct.mockReturnValueOnce(
+      actionFailure({code: "UNKNOWN_ERROR", message: "Failed to remove product"}),
+    );
 
     const {result} = renderHook(() => useProductRemove(invoice));
 

@@ -121,7 +121,7 @@ describe("updateScan", () => {
   });
 
   it("should update blobs that do not have existing metadata", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-empty-metadata"});
+    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-empty-metadata"}));
     const capturedMetadata: Array<Record<string, string>> = [];
     setupBlobClient({
       blobUrl: "https://storage.test/invoices/scans/user-empty-metadata/scan.jpg",
@@ -156,7 +156,7 @@ describe("updateScan", () => {
   });
 
   it("should handle Azure upload failures with non-201 status", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-fail"});
+    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-fail"}));
     setupBlobClient({
       blobUrl: "https://storage.test/blob",
       uploadStatus: 500,
@@ -175,7 +175,7 @@ describe("updateScan", () => {
   });
 
   it("should handle base64 conversion errors", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-error"});
+    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-error"}));
 
     const result = await updateScan({
       base64Data: "invalid!!!",
@@ -197,7 +197,7 @@ describe("updateScan", () => {
   });
 
   it("should handle non-Error thrown exceptions", async () => {
-    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-weird"});
+    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-weird"}));
     mockFetchConfigurationValue.mockImplementation(() => {
       throw "String error";
     });

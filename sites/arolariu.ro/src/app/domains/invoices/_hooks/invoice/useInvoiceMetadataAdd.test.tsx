@@ -179,13 +179,10 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("handles partial failure in bulk addition", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
+      const successResult = actionSuccess<void>(undefined);
+      const errorResult = actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
 
-      mockAddInvoiceMetadata.mockResolvedValueOnce(successResult).mockResolvedValueOnce(errorResult).mockResolvedValueOnce(successResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(successResult).mockReturnValueOnce(errorResult).mockReturnValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -203,11 +200,8 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("handles all failures in bulk addition", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-      mockAddInvoiceMetadata.mockResolvedValue(errorResult);
+      const errorResult = actionFailure({code: "UNKNOWN_ERROR", message: "Error"});
+      mockAddInvoiceMetadata.mockReturnValue(errorResult);
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -240,8 +234,9 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("continues processing after individual failure", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(successResult);
+      mockAddInvoiceMetadata
+        .mockRejectedValueOnce(new Error("Network error"))
+        .mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -258,8 +253,8 @@ describe("useInvoiceMetadataAdd", () => {
 
   describe("loading state management", () => {
     it("sets isAdding true during single addition", async () => {
-      let resolveAdd: ((value: ServerActionResult<void>) => void) | undefined;
-      const addPromise = new Promise<ServerActionResult<void>>((resolve) => {
+      let resolveAdd: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
+      const addPromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
         resolveAdd = resolve;
       });
 
@@ -284,8 +279,8 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("sets isAdding true during bulk addition", async () => {
-      let resolveAdd: ((value: ServerActionResult<void>) => void) | undefined;
-      const addPromise = new Promise<ServerActionResult<void>>((resolve) => {
+      let resolveAdd: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
+      const addPromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
         resolveAdd = resolve;
       });
 
@@ -317,8 +312,7 @@ describe("useInvoiceMetadataAdd", () => {
 
   describe("store integration", () => {
     it("merges new metadata with existing metadata", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -333,8 +327,7 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("updates client store for each successful bulk addition", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      mockAddInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -347,11 +340,9 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("does not update store on failure", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-      mockAddInvoiceMetadata.mockResolvedValue(errorResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(
+        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+      );
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
