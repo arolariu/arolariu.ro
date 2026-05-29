@@ -6,6 +6,7 @@
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceDelete} from "./useInvoiceDelete";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {ServerActionResult} from "@/lib/utils.server";
 
 // Mock dependencies
@@ -105,13 +106,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await act(async () => {
-        await result.current.deleteInvoiceCallback(testInvoiceId);
-      });
+      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockDeleteInvoice).toHaveBeenCalledWith({invoiceId: testInvoiceId});
       expect(mockRemoveEntity).toHaveBeenCalledWith(testInvoiceId);
@@ -128,11 +125,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await result.current.deleteInvoiceCallback(testInvoiceId);
+      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockDeleteInvoice).toHaveBeenCalledWith({invoiceId: testInvoiceId});
       expect(mockRemoveEntity).not.toHaveBeenCalled();
@@ -146,11 +141,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await result.current.deleteInvoiceCallback(testInvoiceId);
+      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockDeleteInvoice).toHaveBeenCalledWith({invoiceId: testInvoiceId});
       expect(mockRemoveEntity).not.toHaveBeenCalled();
@@ -163,11 +156,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await result.current.deleteInvoiceCallback(testInvoiceId);
+      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockRemoveEntity).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to delete invoice: literal failure");
@@ -179,11 +170,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await result.current.deleteInvoiceCallback(testInvoiceId);
+      await invokeHookCallback(() => result.current.deleteInvoiceCallback(testInvoiceId));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
     });
   });
 
@@ -200,11 +189,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      const bulkResult = await result.current.deleteInvoiceCallback(invoiceIds);
+      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockDeleteInvoice).toHaveBeenCalledTimes(3);
       expect(mockRemoveEntity).toHaveBeenCalledTimes(3);
@@ -230,11 +217,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      const bulkResult = await result.current.deleteInvoiceCallback(invoiceIds);
+      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(bulkResult).toEqual({
         successCount: 2,
@@ -253,11 +238,9 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      const bulkResult = await result.current.deleteInvoiceCallback(invoiceIds);
+      const bulkResult = await invokeHookCallback(() => result.current.deleteInvoiceCallback(invoiceIds));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(bulkResult).toEqual({
         successCount: 0,

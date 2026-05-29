@@ -8,6 +8,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductRemove} from "./useProductRemove";
 
 vi.mock("@/stores", () => ({
@@ -77,7 +78,7 @@ describe("useProductRemove", () => {
   it("removes a product server-side and mirrors exact-name removal locally", async () => {
     const {result} = renderHook(() => useProductRemove(invoice));
 
-    await result.current.removeProductCallback(productToRemove.name);
+    await invokeHookCallback(() => result.current.removeProductCallback(productToRemove.name));
 
     expect(mockDeleteInvoiceProduct).toHaveBeenCalledWith({
       invoiceId: invoice.id,

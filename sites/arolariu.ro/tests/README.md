@@ -227,6 +227,16 @@ it("renders title", () => {
 
 ---
 
+## Speed and Flake Guardrails
+
+- Prefer awaiting public hook callbacks inside `act` and then asserting the settled state directly. Use `invokeHookCallback()` from the shared `tests/helpers` barrel for callback hooks that already return a promise.
+- Use `waitFor` when the code under test schedules work independently of the awaited action, such as `useEffect` fetches, debounced work, timers, or browser API callbacks.
+- Do not wrap an already-awaited hook callback with an extra `waitFor` just to assert that `isSaving`, `isDeleting`, or similar flags returned to `false`.
+- Keep `await import(...)` only when the test intentionally controls module evaluation order with `vi.doMock`, `vi.unmock`, `vi.resetModules`, or environment mutation before import.
+- Measure before optimizing. Runtime-only refactors should include before/after timing for the changed files or explain why a hotspot was intentionally left alone.
+
+---
+
 ## Important Gotchas
 
 ### `restoreMocks: true` in base config

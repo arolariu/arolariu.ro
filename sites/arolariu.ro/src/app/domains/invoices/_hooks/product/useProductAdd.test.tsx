@@ -8,6 +8,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useProductAdd} from "./useProductAdd";
 
 vi.mock("@/stores", () => ({
@@ -77,7 +78,7 @@ describe("useProductAdd", () => {
   it("adds a product server-side, mirrors it locally, and returns the created product", async () => {
     const {result} = renderHook(() => useProductAdd({invoice}));
 
-    const returnedProduct = await result.current.addProductCallback(productToAdd);
+    const returnedProduct = await invokeHookCallback(() => result.current.addProductCallback(productToAdd));
 
     expect(returnedProduct).toEqual(addedProduct);
     expect(mockAddInvoiceProduct).toHaveBeenCalledWith({

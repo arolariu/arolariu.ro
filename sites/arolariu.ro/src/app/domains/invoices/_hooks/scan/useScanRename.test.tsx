@@ -6,6 +6,7 @@
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanRename} from "./useScanRename";
 
 vi.mock("@/stores", () => ({
@@ -123,9 +124,7 @@ describe("useScanRename", () => {
       result.current.change("  renamed.png  ");
     });
 
-    await act(async () => {
-      await result.current.commit();
-    });
+    await invokeHookCallback(() => result.current.commit());
 
     expect(mockUpdateScanName).toHaveBeenCalledWith(testScan.id, "renamed.png");
     expect(mockToast.success).toHaveBeenCalledWith("Scan renamed");
@@ -142,11 +141,11 @@ describe("useScanRename", () => {
   it("exits edit mode without updating when the value is empty", async () => {
     const {result} = renderHook(() => useScanRename(testScan));
 
-    await act(async () => {
+    act(() => {
       result.current.start();
       result.current.change("   ");
-      await result.current.commit();
     });
+    await invokeHookCallback(() => result.current.commit());
 
     expect(mockUpdateScanName).not.toHaveBeenCalled();
     expect(mockToast.success).not.toHaveBeenCalled();
@@ -156,11 +155,11 @@ describe("useScanRename", () => {
   it("exits edit mode without updating when the trimmed value is unchanged", async () => {
     const {result} = renderHook(() => useScanRename(testScan));
 
-    await act(async () => {
+    act(() => {
       result.current.start();
       result.current.change(" receipt.jpg ");
-      await result.current.commit();
     });
+    await invokeHookCallback(() => result.current.commit());
 
     expect(mockUpdateScanName).not.toHaveBeenCalled();
     expect(mockToast.success).not.toHaveBeenCalled();
@@ -178,11 +177,7 @@ describe("useScanRename", () => {
       result.current.change("renamed.png");
     });
 
-    await expect(async () => {
-      await act(async () => {
-        await result.current.commit();
-      });
-    }).rejects.toThrow("store failed");
+    await expect(invokeHookCallback(() => result.current.commit())).rejects.toThrow("store failed");
 
     expect(mockToast.success).not.toHaveBeenCalled();
     expect(result.current.justRenamed).toBe(false);

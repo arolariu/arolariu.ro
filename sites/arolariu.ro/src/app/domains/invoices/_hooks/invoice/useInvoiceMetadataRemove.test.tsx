@@ -6,6 +6,7 @@
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {ServerActionResult} from "@/lib/utils.server";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 
@@ -72,13 +73,9 @@ describe("useInvoiceMetadataRemove", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
-      await act(async () => {
-        await result.current.removeMetadataCallback("key1");
-      });
+      await invokeHookCallback(() => result.current.removeMetadataCallback("key1"));
 
-      await waitFor(() => {
-        expect(result.current.isRemoving).toBe(false);
-      });
+      expect(result.current.isRemoving).toBe(false);
 
       expect(mockDeleteInvoiceMetadata).toHaveBeenCalledWith({
         invoiceId: testInvoice.id,
@@ -174,11 +171,9 @@ describe("useInvoiceMetadataRemove", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 
-      const bulkResult = await result.current.removeMetadataCallback(["key1", "key2", "key3"]);
+      const bulkResult = await invokeHookCallback(() => result.current.removeMetadataCallback(["key1", "key2", "key3"]));
 
-      await waitFor(() => {
-        expect(result.current.isRemoving).toBe(false);
-      });
+      expect(result.current.isRemoving).toBe(false);
 
       expect(mockDeleteInvoiceMetadata).toHaveBeenCalledTimes(3);
       expect(mockUpdateEntity).toHaveBeenCalledTimes(3);

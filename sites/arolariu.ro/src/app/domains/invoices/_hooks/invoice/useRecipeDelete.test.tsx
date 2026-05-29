@@ -3,9 +3,10 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeDelete.test
  */
 
-import {act, renderHook, waitFor} from "@testing-library/react";
+import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useRecipeDelete} from "./useRecipeDelete";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {Recipe} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 
@@ -90,14 +91,9 @@ describe("useRecipeDelete", () => {
     it("successfully removes a recipe by name", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      let updatedInvoice = testInvoice;
-      await act(async () => {
-        updatedInvoice = await result.current.removeRecipeCallback("Recipe 2");
-      });
+      const updatedInvoice = await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 2"));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], testRecipes[2]],
@@ -190,13 +186,9 @@ describe("useRecipeDelete", () => {
     it("resets isDeleting after deletion", async () => {
       const {result} = renderHook(() => useRecipeDelete(testInvoice));
 
-      await act(async () => {
-        await result.current.removeRecipeCallback("Recipe 1");
-      });
+      await invokeHookCallback(() => result.current.removeRecipeCallback("Recipe 1"));
 
-      await waitFor(() => {
-        expect(result.current.isDeleting).toBe(false);
-      });
+      expect(result.current.isDeleting).toBe(false);
     });
 
     it("resets isDeleting even if store update throws", async () => {

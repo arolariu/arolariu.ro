@@ -8,6 +8,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import {ScanType} from "@/types/scans";
 import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanRotation} from "./useScanRotation";
 
 vi.mock("@/stores", () => ({
@@ -204,9 +205,7 @@ describe("useScanRotation", () => {
   it("rejects scans without blob URLs before starting rotation", async () => {
     const {result} = renderHook(() => useScanRotation(buildCachedScan({blobUrl: ""})));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Rotation unsupported");
     expect(mockFetch).not.toHaveBeenCalled();
@@ -220,9 +219,7 @@ describe("useScanRotation", () => {
     });
     const {result} = renderHook(() => useScanRotation(pdfScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("ccw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("ccw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Rotation unsupported");
     expect(mockFetch).not.toHaveBeenCalled();
@@ -232,9 +229,7 @@ describe("useScanRotation", () => {
     const harness = stubCanvas();
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockFetch).toHaveBeenCalledWith(testScan.blobUrl);
     expect(mockCreateObjectURL).toHaveBeenCalled();
@@ -260,9 +255,7 @@ describe("useScanRotation", () => {
     const harness = stubCanvas();
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("ccw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("ccw"));
 
     expect(harness.context.rotate).toHaveBeenCalledWith(-Math.PI / 2);
     expect(mockUpdateScanBlobUrl).toHaveBeenCalledWith(testScan.id, `${rotatedUrl}?t=123456`);
@@ -301,9 +294,7 @@ describe("useScanRotation", () => {
     });
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScanBlobUrl).not.toHaveBeenCalled();
@@ -315,9 +306,7 @@ describe("useScanRotation", () => {
     mockFetch.mockRejectedValue(fetchError);
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(consoleErrorSpy).toHaveBeenCalledWith("Error rotating scan:", fetchError);
@@ -329,9 +318,7 @@ describe("useScanRotation", () => {
     stubImageLoad("error");
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(consoleErrorSpy).toHaveBeenCalledWith("Error rotating scan:", expect.any(Error));
@@ -342,9 +329,7 @@ describe("useScanRotation", () => {
     stubCanvas({hasContext: false});
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();
@@ -354,9 +339,7 @@ describe("useScanRotation", () => {
     stubCanvas({emitsBlob: false});
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();
@@ -366,9 +349,7 @@ describe("useScanRotation", () => {
     stubFileReader("error");
     const {result} = renderHook(() => useScanRotation(testScan));
 
-    await act(async () => {
-      await result.current.rotateScanCallback("cw");
-    });
+    await invokeHookCallback(() => result.current.rotateScanCallback("cw"));
 
     expect(mockToast.error).toHaveBeenCalledWith("Scan rotation failed");
     expect(mockUpdateScan).not.toHaveBeenCalled();

@@ -3,9 +3,10 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeUpdate.test
  */
 
-import {act, renderHook, waitFor} from "@testing-library/react";
+import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useRecipeUpdate} from "./useRecipeUpdate";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {Recipe} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 
@@ -96,14 +97,9 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      let updatedInvoice = testInvoice;
-      await act(async () => {
-        updatedInvoice = await result.current.updateRecipeCallback("Recipe 2", updatedRecipe);
-      });
+      const updatedInvoice = await invokeHookCallback(() => result.current.updateRecipeCallback("Recipe 2", updatedRecipe));
 
-      await waitFor(() => {
-        expect(result.current.isUpdating).toBe(false);
-      });
+      expect(result.current.isUpdating).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], updatedRecipe, testRecipes[2]],
@@ -266,13 +262,9 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      await act(async () => {
-        await result.current.updateRecipeCallback("Recipe 1", updatedRecipe);
-      });
+      await invokeHookCallback(() => result.current.updateRecipeCallback("Recipe 1", updatedRecipe));
 
-      await waitFor(() => {
-        expect(result.current.isUpdating).toBe(false);
-      });
+      expect(result.current.isUpdating).toBe(false);
     });
 
     it("resets isUpdating even if store update throws", async () => {

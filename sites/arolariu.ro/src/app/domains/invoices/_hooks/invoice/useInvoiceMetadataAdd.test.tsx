@@ -6,6 +6,7 @@
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {ServerActionResult} from "@/lib/utils.server";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 
@@ -68,13 +69,9 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      await act(async () => {
-        await result.current.addMetadataCallback("newKey", "newValue");
-      });
+      await invokeHookCallback(() => result.current.addMetadataCallback("newKey", "newValue"));
 
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(false);
-      });
+      expect(result.current.isAdding).toBe(false);
 
       expect(mockAddInvoiceMetadata).toHaveBeenCalledWith({
         invoiceId: testInvoice.id,
@@ -173,15 +170,13 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      const bulkResult = await result.current.addMetadataCallback({
+      const bulkResult = await invokeHookCallback(() => result.current.addMetadataCallback({
         key1: "value1",
         key2: "value2",
         key3: "value3",
-      });
+      }));
 
-      await waitFor(() => {
-        expect(result.current.isAdding).toBe(false);
-      });
+      expect(result.current.isAdding).toBe(false);
 
       expect(mockAddInvoiceMetadata).toHaveBeenCalledTimes(3);
       expect(mockUpdateEntity).toHaveBeenCalledTimes(3);

@@ -6,6 +6,7 @@
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoiceShare} from "./useInvoiceShare";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
@@ -127,13 +128,11 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare(mockOnComplete));
 
-      const updatedResult = await result.current.shareInvoiceCallback(testInvoiceId, {
+      const updatedResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, {
         type: "togglePublic",
-      });
+      }));
 
-      await waitFor(() => {
-        expect(result.current.isSharing).toBe(false);
-      });
+      expect(result.current.isSharing).toBe(false);
 
       expect(mockPatchInvoice).toHaveBeenCalledWith({
         invoiceId: testInvoiceId,
@@ -280,11 +279,9 @@ describe("useInvoiceShare", () => {
         replyTo: "sender@example.com",
       };
 
-      const emailActionResult = await result.current.shareInvoiceCallback(testInvoiceId, emailAction);
+      const emailActionResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, emailAction));
 
-      await waitFor(() => {
-        expect(result.current.isSharing).toBe(false);
-      });
+      expect(result.current.isSharing).toBe(false);
 
       expect(mockSendEmail).toHaveBeenCalledWith({
         templateKey: "invoice-shared",
@@ -550,13 +547,10 @@ describe("useInvoiceShare", () => {
 
       const {result} = renderHook(() => useInvoiceShare());
 
-      const failureResult = await result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"});
+      const failureResult = await invokeHookCallback(() => result.current.shareInvoiceCallback(testInvoiceId, {type: "togglePublic"}));
 
       expect(failureResult).toBeNull();
-
-      await waitFor(() => {
-        expect(result.current.isSharing).toBe(false);
-      });
+      expect(result.current.isSharing).toBe(false);
     });
 
     it("returns error result for bulk operation on exception", async () => {

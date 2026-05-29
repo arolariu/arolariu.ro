@@ -7,6 +7,7 @@ import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanDelete} from "./useScanDelete";
 
 vi.mock("@/stores", () => ({
@@ -98,9 +99,7 @@ describe("useScanDelete", () => {
   it("deletes the scan server-side before removing it locally", async () => {
     const {result} = renderHook(() => useScanDelete(testScan));
 
-    await act(async () => {
-      await result.current.deleteScanCallback();
-    });
+    await invokeHookCallback(() => result.current.deleteScanCallback());
 
     expect(mockDeleteScan).toHaveBeenCalledWith({blobUrl: testScan.blobUrl});
     expect(mockRemoveScan).toHaveBeenCalledWith(testScan.id);
@@ -115,9 +114,7 @@ describe("useScanDelete", () => {
     });
     const {result} = renderHook(() => useScanDelete(testScan));
 
-    await act(async () => {
-      await result.current.deleteScanCallback();
-    });
+    await invokeHookCallback(() => result.current.deleteScanCallback());
 
     expect(mockRemoveScan).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");
@@ -128,9 +125,7 @@ describe("useScanDelete", () => {
     mockDeleteScan.mockRejectedValue(thrownError);
     const {result} = renderHook(() => useScanDelete(testScan));
 
-    await act(async () => {
-      await result.current.deleteScanCallback();
-    });
+    await invokeHookCallback(() => result.current.deleteScanCallback());
 
     expect(mockRemoveScan).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");
@@ -145,9 +140,7 @@ describe("useScanDelete", () => {
     });
     const {result} = renderHook(() => useScanDelete(testScan));
 
-    await act(async () => {
-      await result.current.deleteScanCallback();
-    });
+    await invokeHookCallback(() => result.current.deleteScanCallback());
 
     expect(mockToast.success).not.toHaveBeenCalled();
     expect(mockToast.error).toHaveBeenCalledWith("Scan delete failed");

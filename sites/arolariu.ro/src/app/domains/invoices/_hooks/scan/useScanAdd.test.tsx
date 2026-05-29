@@ -7,6 +7,7 @@ import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {InvoiceScanType} from "@/types/invoices";
 import type {ServerActionResult} from "@/lib/utils.server";
+import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanAdd} from "./useScanAdd";
 
 vi.mock("../../_actions/invoices", () => ({
@@ -129,9 +130,7 @@ describe("useScanAdd", () => {
     it("uploads the blob and attaches the returned location to the invoice", async () => {
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await act(async () => {
-        await result.current.addScanCallback(addArgs);
-      });
+      await invokeHookCallback(() => result.current.addScanCallback(addArgs));
 
       expect(mockCreateInvoiceScan).toHaveBeenCalledWith({
         base64Data: "data:image/png;base64,c2Nhbi1kYXRh",
@@ -159,12 +158,10 @@ describe("useScanAdd", () => {
     it("defaults to jpg extension when the file name has no extension", async () => {
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await act(async () => {
-        await result.current.addScanCallback({
+      await invokeHookCallback(() => result.current.addScanCallback({
           ...addArgs,
           fileName: "receipt",
-        });
-      });
+        }));
 
       expect(mockCreateInvoiceScan).toHaveBeenCalledWith(expect.objectContaining({
         blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
@@ -174,12 +171,10 @@ describe("useScanAdd", () => {
     it("defaults to jpg extension when the file name ends with a dot", async () => {
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await act(async () => {
-        await result.current.addScanCallback({
+      await invokeHookCallback(() => result.current.addScanCallback({
           ...addArgs,
           fileName: "receipt.",
-        });
-      });
+        }));
 
       expect(mockCreateInvoiceScan).toHaveBeenCalledWith(expect.objectContaining({
         blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
@@ -219,11 +214,7 @@ describe("useScanAdd", () => {
       });
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(async () => {
-        await act(async () => {
-          await result.current.addScanCallback(addArgs);
-        });
-      }).rejects.toThrow("Upload failed with status 500");
+      await expect(invokeHookCallback(() => result.current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status 500");
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
@@ -239,11 +230,7 @@ describe("useScanAdd", () => {
       });
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(async () => {
-        await act(async () => {
-          await result.current.addScanCallback(addArgs);
-        });
-      }).rejects.toThrow("Upload failed with status unknown");
+      await expect(invokeHookCallback(() => result.current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status unknown");
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
     });
@@ -255,11 +242,7 @@ describe("useScanAdd", () => {
       });
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(async () => {
-        await act(async () => {
-          await result.current.addScanCallback(addArgs);
-        });
-      }).rejects.toThrow("Upload failed with status unknown");
+      await expect(invokeHookCallback(() => result.current.addScanCallback(addArgs))).rejects.toThrow("Upload failed with status unknown");
 
       expect(mockAttachInvoiceScan).not.toHaveBeenCalled();
     });
@@ -268,11 +251,7 @@ describe("useScanAdd", () => {
       stubFileReader("error");
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(async () => {
-        await act(async () => {
-          await result.current.addScanCallback(addArgs);
-        });
-      }).rejects.toThrow("read failed");
+      await expect(invokeHookCallback(() => result.current.addScanCallback(addArgs))).rejects.toThrow("read failed");
 
       expect(mockCreateInvoiceScan).not.toHaveBeenCalled();
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
@@ -285,11 +264,7 @@ describe("useScanAdd", () => {
       mockAttachInvoiceScan.mockRejectedValue("attach failed");
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await expect(async () => {
-        await act(async () => {
-          await result.current.addScanCallback(addArgs);
-        });
-      }).rejects.toBe("attach failed");
+      await expect(invokeHookCallback(() => result.current.addScanCallback(addArgs))).rejects.toBe("attach failed");
 
       expect(mockToast.error).toHaveBeenCalledWith("Failed to add scan", {
         description: "attach failed",
