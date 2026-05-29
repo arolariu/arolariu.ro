@@ -3,13 +3,26 @@
  * @module tests/helpers/hookAsync
  */
 
-import {act} from "@testing-library/react";
+import {act, type RenderHookResult} from "@testing-library/react";
 
-type HookCallbackResult<TResult> = Readonly<{resolved: false}> | Readonly<{resolved: true; value: Awaited<TResult>}>;
+type HookCallbackResult<TResult> =
+  | Readonly<{status: "pending"}>
+  | Readonly<{status: "resolved"; value: TResult}>;
+
+function readHookCallbackResult<TResult>(
+  callbackResult: HookCallbackResult<TResult>,
+): TResult {
+  if (callbackResult.status !== "resolved") {
+    throw new Error("Hook callback did not run inside act.");
+  }
+
+  return callbackResult.value;
+}
 
 /**
  * Invokes a hook callback inside React Testing Library's `act` boundary.
  *
+ * @param hook - The rendered hook result from renderHook.
  * @param callback - The hook callback invocation to execute.
  * @returns The resolved callback result.
  *
@@ -17,20 +30,21 @@ type HookCallbackResult<TResult> = Readonly<{resolved: false}> | Readonly<{resol
  * Use this for public hook callbacks that already return a promise. It lets the
  * test await the behavior directly instead of polling for settled state with
  * `waitFor`.
+ *
+ * Callback errors are propagated naturally through the `act` boundary.
  */
-export async function invokeHookCallback<TResult>(callback: () => TResult | Promise<TResult>): Promise<Awaited<TResult>> {
-  let callbackResult: HookCallbackResult<TResult> = {resolved: false};
+export async function invokeHookCallback<THookResult, TResult>(
+  hook: RenderHookResult<THookResult, unknown>,
+  callback: (current: THookResult) => Promise<TResult> | TResult,
+): Promise<TResult> {
+  let callbackResult: HookCallbackResult<TResult> = {status: "pending"};
 
   await act(async () => {
     callbackResult = {
-      resolved: true,
-      value: await callback(),
+      status: "resolved",
+      value: await callback(hook.result.current),
     };
   });
 
-  if (!callbackResult.resolved) {
-    throw new Error("Hook callback did not resolve.");
-  }
-
-  return callbackResult.value;
+  return readHookCallbackResult<TResult>(callbackResult);
 }
