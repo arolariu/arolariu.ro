@@ -3,10 +3,9 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {actionFailure, actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 import {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
 
@@ -63,8 +62,7 @@ describe("useInvoiceMetadataAdd", () => {
 
   describe("single metadata addition", () => {
     it("successfully adds a metadata field", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -86,8 +84,7 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("overwrites existing metadata field", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -109,11 +106,9 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("handles server action failure", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Server error", userMessage: "Failed to add metadata"},
-      };
-      mockAddInvoiceMetadata.mockResolvedValue(errorResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(
+        actionFailure({code: "SERVER_ERROR", message: "Server error"}),
+      );
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -142,11 +137,9 @@ describe("useInvoiceMetadataAdd", () => {
     });
 
     it("resets isAdding flag even on error", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-      mockAddInvoiceMetadata.mockResolvedValue(errorResult);
+      mockAddInvoiceMetadata.mockReturnValueOnce(
+        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+      );
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -162,8 +155,7 @@ describe("useInvoiceMetadataAdd", () => {
 
   describe("bulk metadata addition", () => {
     it("successfully adds multiple metadata fields", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata.mockResolvedValue(successResult);
+      mockAddInvoiceMetadata.mockReturnValue(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 

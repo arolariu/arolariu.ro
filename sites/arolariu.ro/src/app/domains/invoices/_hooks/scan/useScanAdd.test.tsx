@@ -3,11 +3,10 @@
  * @module app/domains/invoices/_hooks/scan/useScanAdd.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import {InvoiceScanType} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanAdd} from "./useScanAdd";
 
 vi.mock("../../_actions/invoices", () => ({
@@ -93,14 +92,8 @@ function stubFileReader(mode: "load" | "error", result = "data:image/png;base64,
 describe("useScanAdd", () => {
   const invoiceId = "11111111-1111-4111-8111-111111111111";
   const scanBlobUrl = "https://storage.test/invoices/scans/user-1/scan.png";
-  const uploadSuccess: ServerActionResult<{blobUrl: string}> = {
-    success: true,
-    data: {blobUrl: scanBlobUrl},
-  };
-  const attachSuccess: ServerActionResult<void> = {
-    success: true,
-    data: undefined,
-  };
+  const uploadSuccess = actionSuccess({blobUrl: scanBlobUrl});
+  const attachSuccess = actionSuccess<void>(undefined);
   const addArgs = {
     file: new Blob(["scan"], {type: "image/png"}),
     fileName: "receipt.png",
@@ -114,8 +107,8 @@ describe("useScanAdd", () => {
     vi.stubGlobal("crypto", {
       randomUUID: vi.fn(() => "99999999-9999-4999-8999-999999999999"),
     });
-    mockCreateInvoiceScan.mockResolvedValue(uploadSuccess);
-    mockAttachInvoiceScan.mockResolvedValue(attachSuccess);
+    mockCreateInvoiceScan.mockReturnValue(uploadSuccess);
+    mockAttachInvoiceScan.mockReturnValue(attachSuccess);
   });
 
   afterEach(() => {

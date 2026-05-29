@@ -6,6 +6,7 @@
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {buildUserInformation} from "../../../../../../../tests/helpers";
 import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -18,7 +19,7 @@ const mockRevalidatePath = vi.mocked((await import("next/cache")).revalidatePath
 describe("addInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
+    mockFetchUser.mockResolvedValue(buildUserInformation({userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(createJsonResponse(buildProduct()) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 

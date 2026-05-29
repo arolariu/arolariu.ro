@@ -3,10 +3,9 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceDelete.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {actionFailure, actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
 import {useInvoiceDelete} from "./useInvoiceDelete";
 
 // Mock dependencies
@@ -100,8 +99,7 @@ describe("useInvoiceDelete", () => {
 
   describe("single deletion", () => {
     it("successfully deletes an invoice", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockResolvedValue(successResult);
+      mockDeleteInvoice.mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -116,11 +114,9 @@ describe("useInvoiceDelete", () => {
     });
 
     it("handles deletion failure with error toast", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Not found", userMessage: "Invoice not found"},
-      };
-      mockDeleteInvoice.mockResolvedValue(errorResult);
+      mockDeleteInvoice.mockReturnValueOnce(
+        actionFailure({code: "NOT_FOUND", message: "Not found"}),
+      );
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -183,8 +179,7 @@ describe("useInvoiceDelete", () => {
     ];
 
     it("successfully deletes all invoices", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockResolvedValue(successResult);
+      mockDeleteInvoice.mockReturnValue(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -203,13 +198,10 @@ describe("useInvoiceDelete", () => {
     });
 
     it("handles partial failure in bulk deletion", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-
-      mockDeleteInvoice.mockResolvedValueOnce(successResult).mockResolvedValueOnce(errorResult).mockResolvedValueOnce(successResult);
+      mockDeleteInvoice
+        .mockReturnValueOnce(actionSuccess<void>(undefined))
+        .mockReturnValueOnce(actionFailure({code: "UNKNOWN_ERROR", message: "Error"}))
+        .mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -226,11 +218,9 @@ describe("useInvoiceDelete", () => {
     });
 
     it("handles all failures in bulk deletion", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-      mockDeleteInvoice.mockResolvedValue(errorResult);
+      mockDeleteInvoice.mockReturnValue(
+        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+      );
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -260,8 +250,9 @@ describe("useInvoiceDelete", () => {
     });
 
     it("continues processing after individual failure", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(successResult);
+      mockDeleteInvoice
+        .mockRejectedValueOnce(new Error("Network error"))
+        .mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -275,8 +266,8 @@ describe("useInvoiceDelete", () => {
 
   describe("loading state management", () => {
     it("sets isDeleting true during single deletion", async () => {
-      let resolveDelete: ((value: ServerActionResult<void>) => void) | undefined;
-      const deletePromise = new Promise<ServerActionResult<void>>((resolve) => {
+      let resolveDelete: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
+      const deletePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
         resolveDelete = resolve;
       });
 
@@ -299,8 +290,8 @@ describe("useInvoiceDelete", () => {
     });
 
     it("sets isDeleting true during bulk deletion", async () => {
-      let resolveDelete: ((value: ServerActionResult<void>) => void) | undefined;
-      const deletePromise = new Promise<ServerActionResult<void>>((resolve) => {
+      let resolveDelete: ((value: Awaited<ReturnType<typeof actionSuccess<void>>>) => void) | undefined;
+      const deletePromise = new Promise<Awaited<ReturnType<typeof actionSuccess<void>>>>((resolve) => {
         resolveDelete = resolve;
       });
 
@@ -330,8 +321,7 @@ describe("useInvoiceDelete", () => {
 
   describe("store integration", () => {
     it("calls removeEntity for successful single deletion", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockResolvedValue(successResult);
+      mockDeleteInvoice.mockReturnValueOnce(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -342,11 +332,9 @@ describe("useInvoiceDelete", () => {
     });
 
     it("does not call removeEntity on deletion failure", async () => {
-      const errorResult: ServerActionResult<void> = {
-        success: false,
-        error: {message: "Error", userMessage: "Error"},
-      };
-      mockDeleteInvoice.mockResolvedValue(errorResult);
+      mockDeleteInvoice.mockReturnValueOnce(
+        actionFailure({code: "UNKNOWN_ERROR", message: "Error"}),
+      );
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -356,8 +344,7 @@ describe("useInvoiceDelete", () => {
     });
 
     it("calls removeEntity for each successful bulk deletion", async () => {
-      const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice.mockResolvedValue(successResult);
+      mockDeleteInvoice.mockReturnValue(actionSuccess<void>(undefined));
 
       const {result} = renderHook(() => useInvoiceDelete());
 

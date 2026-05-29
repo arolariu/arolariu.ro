@@ -9,6 +9,7 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {revalidatePath} from "next/cache";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {buildUserInformation} from "../../../../../../tests/helpers";
 import {updateScan} from "./updateScan";
 
 const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
@@ -61,7 +62,7 @@ describe("updateScan", () => {
     mockWithSpan.mockImplementation((_name, fn) => fn());
     mockAddSpanEvent.mockImplementation(() => undefined);
     mockLogWithTrace.mockImplementation(() => undefined);
-    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-123"});
+    mockFetchBFFUserFromAuthService.mockResolvedValue(buildUserInformation({userIdentifier: "user-123"}));
     mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
     mockRewriteAzuriteUrl.mockImplementation((url) => url);
     setupBlobClient();
