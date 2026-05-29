@@ -45,7 +45,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
           <h1 className={styles["title"]}>{t((m) => m.pages.domains.title)}</h1>
           <article className={styles["subtitleArticle"]}>
             <RichText
-              sectionKey='Domains'
+              sectionKey='pages.domains'
               textKey='subtitle'
             />
           </article>

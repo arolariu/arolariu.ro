@@ -61,12 +61,12 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             transition={{duration: 0.3, delay: index * 0.05}}>
             <Card className={styles["statCard"]}>
               <CardHeader className={styles["cardHeaderFlex"]}>
-                <CardTitle className={styles["cardTitleSmall"]}>{t(selectorFromPath(`Profile.stats.${card.key}.title`))}</CardTitle>
+                <CardTitle className={styles["cardTitleSmall"]}>{t(selectorFromPath(`pages.profile.stats.${card.key}.title`))}</CardTitle>
                 <card.icon className={styles["cardIcon"]} />
               </CardHeader>
               <CardContent>
                 <div className={styles["statValue"]}>{getStatValue(card.key)}</div>
-                <p className={styles["statDescription"]}>{t(selectorFromPath(`Profile.stats.${card.key}.description`))}</p>
+                <p className={styles["statDescription"]}>{t(selectorFromPath(`pages.profile.stats.${card.key}.description`))}</p>
               </CardContent>
             </Card>
           </motion.div>

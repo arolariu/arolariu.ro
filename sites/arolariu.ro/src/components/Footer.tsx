@@ -132,7 +132,7 @@ function Footer(): React.JSX.Element {
             <div className='footer__brand-description'>
               <RichText
                 className='footer__rich-text prose'
-                sectionKey='Footer'
+                sectionKey='app.footer'
                 textKey='subtitle'
               />
             </div>

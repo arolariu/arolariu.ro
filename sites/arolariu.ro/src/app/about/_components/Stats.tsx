@@ -75,14 +75,14 @@ export default function Stats(): React.JSX.Element {
                       initial={{opacity: 0}}
                       animate={isInView ? {opacity: 1} : {}}
                       transition={{delay: 0.4 + index * 0.1}}>
-                      {t(selectorFromPath(`About.Hub.stats.items.${stat.key}.value`))}
+                      {t(selectorFromPath(`pages.about.hub.stats.items.${stat.key}.value`))}
                     </motion.div>
 
                     {/* Label */}
-                    <h3 className={styles["label"]}>{t(selectorFromPath(`About.Hub.stats.items.${stat.key}.label`))}</h3>
+                    <h3 className={styles["label"]}>{t(selectorFromPath(`pages.about.hub.stats.items.${stat.key}.label`))}</h3>
 
                     {/* Description */}
-                    <p className={styles["description"]}>{t(selectorFromPath(`About.Hub.stats.items.${stat.key}.description`))}</p>
+                    <p className={styles["description"]}>{t(selectorFromPath(`pages.about.hub.stats.items.${stat.key}.description`))}</p>
                   </CardContent>
                 </Card>
               </motion.div>

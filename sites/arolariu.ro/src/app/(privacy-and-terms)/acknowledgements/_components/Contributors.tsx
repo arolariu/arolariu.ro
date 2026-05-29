@@ -57,7 +57,7 @@ export default function Contributors(): React.JSX.Element {
                   {/* Avatar */}
                   <Avatar className={styles["avatar"]}>
                     <AvatarFallback className={`${styles["avatarFallback"]} ${gradientClasses[index]}`}>
-                      {t(selectorFromPath(`Acknowledgements.contributors.items.${key}.name`))
+                      {t(selectorFromPath(`sections.legal.acknowledgements.contributors.items.${key}.name`))
                         .split(" ")
                         .slice(0, 2)
                         .map((n) => n.charAt(0))
@@ -66,20 +66,24 @@ export default function Contributors(): React.JSX.Element {
                   </Avatar>
 
                   {/* Name */}
-                  <h3 className={styles["contributorName"]}>{t(selectorFromPath(`Acknowledgements.contributors.items.${key}.name`))}</h3>
+                  <h3 className={styles["contributorName"]}>
+                    {t(selectorFromPath(`sections.legal.acknowledgements.contributors.items.${key}.name`))}
+                  </h3>
 
                   {/* Package count */}
                   <div className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
                     <span>
                       {t((m) => m.sections.legal.acknowledgements.contributors.packages, {
-                        count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`))),
+                        count: Number(t(selectorFromPath(`sections.legal.acknowledgements.contributors.items.${key}.packages`))),
                       })}
                     </span>
                   </div>
 
                   {/* Description */}
-                  <p className={styles["description"]}>{t(selectorFromPath(`Acknowledgements.contributors.items.${key}.description`))}</p>
+                  <p className={styles["description"]}>
+                    {t(selectorFromPath(`sections.legal.acknowledgements.contributors.items.${key}.description`))}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>

@@ -31,7 +31,7 @@ export default function HeroSection(): React.JSX.Element {
           </h1>
           <p className={styles["subtitle"]}>
             <RichText
-              sectionKey='Home'
+              sectionKey='pages.home'
               textKey='subtitle'
             />
           </p>

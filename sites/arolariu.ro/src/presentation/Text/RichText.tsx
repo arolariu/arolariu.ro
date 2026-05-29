@@ -24,7 +24,7 @@ type Props = {
  * @returns The formatted internationalized text content
  * @example
  * ```tsx
- * <RichText sectionKey="Footer" textKey="subtitle" />
+ * <RichText sectionKey="app.footer" textKey="subtitle" />
  * ```
  */
 export function RichText({className, sectionKey, textKey}: Readonly<Props>): React.JSX.Element {
