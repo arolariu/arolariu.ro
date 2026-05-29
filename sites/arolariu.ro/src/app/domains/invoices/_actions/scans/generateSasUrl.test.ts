@@ -26,7 +26,7 @@ describe("generateUploadSasUrl", () => {
     };
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -83,7 +83,7 @@ describe("generateUploadSasUrl", () => {
     const mockUser = {userIdentifier: "user-dev"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -127,7 +127,7 @@ describe("generateUploadSasUrl", () => {
     const mockUser = {userIdentifier: "user-123"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -170,7 +170,7 @@ describe("generateUploadSasUrl", () => {
     const mockUser = {userIdentifier: "user-ext"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -213,7 +213,7 @@ describe("generateUploadSasUrl", () => {
     const mockUser = {userIdentifier: "user-no-ext"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -256,7 +256,7 @@ describe("generateUploadSasUrl", () => {
     const authError = new Error("Unauthorized");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -283,7 +283,7 @@ describe("generateUploadSasUrl", () => {
     const delegationError = new Error("Failed to get delegation key");
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
@@ -325,7 +325,7 @@ describe("generateUploadSasUrl", () => {
     const mockUser = {userIdentifier: "user-weird"};
 
     vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
+      withSpan: vi.fn((_name, fn) => fn()),
       addSpanEvent: vi.fn(),
       logWithTrace: vi.fn(),
     }));
