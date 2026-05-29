@@ -3,68 +3,32 @@
  * @module app/domains/invoices/_actions/invoices/index.test
  */
 
-import {describe, expect, it, vi} from "vitest";
-
-// Mock the sub-modules that are covered in later tasks to avoid
-// pulling them into Task 2 coverage calculation. Use explicit empty
-// factories to prevent Vitest from importing the real modules.
-vi.mock("./products", () => ({
-  addInvoiceProduct: vi.fn(),
-  deleteInvoiceProduct: vi.fn(),
-  updateInvoiceProduct: vi.fn(),
-}));
-vi.mock("./metadata", () => ({
-  addInvoiceMetadata: vi.fn(),
-  deleteInvoiceMetadata: vi.fn(),
-}));
-vi.mock("./scans", () => ({
-  createInvoiceScan: vi.fn(),
-  attachInvoiceScan: vi.fn(),
-  deleteInvoiceScan: vi.fn(),
-}));
-vi.mock("./fetchInvoice", () => ({fetchInvoice: vi.fn()}));
-vi.mock("./fetchInvoices", () => ({fetchInvoices: vi.fn()}));
-vi.mock("./analyzeInvoice", () => ({analyzeInvoice: vi.fn()}));
-vi.mock("./createInvoice", () => ({createInvoice: vi.fn()}));
-vi.mock("./deleteInvoice", () => ({deleteInvoice: vi.fn()}));
-vi.mock("./updateInvoice", () => ({updateInvoice: vi.fn()}));
-vi.mock("./patchInvoice", () => ({patchInvoice: vi.fn()}));
-
+import {describe, expect, it} from "vitest";
 import * as invoiceActions from "./index";
 
+const expectedExports = [
+  "addInvoiceMetadata",
+  "addInvoiceProduct",
+  "analyzeInvoice",
+  "attachInvoiceScan",
+  "createInvoice",
+  "createInvoiceScan",
+  "deleteInvoice",
+  "deleteInvoiceMetadata",
+  "deleteInvoiceProduct",
+  "deleteInvoiceScan",
+  "fetchInvoice",
+  "fetchInvoices",
+  "patchInvoice",
+  "updateInvoice",
+  "updateInvoiceProduct",
+] as const;
+
 describe("invoice actions index barrel", () => {
-  it("exports analyzeInvoice", () => {
-    expect(invoiceActions.analyzeInvoice).toBeDefined();
-    expect(typeof invoiceActions.analyzeInvoice).toBe("function");
-  });
-
-  it("exports createInvoice", () => {
-    expect(invoiceActions.createInvoice).toBeDefined();
-    expect(typeof invoiceActions.createInvoice).toBe("function");
-  });
-
-  it("exports deleteInvoice", () => {
-    expect(invoiceActions.deleteInvoice).toBeDefined();
-    expect(typeof invoiceActions.deleteInvoice).toBe("function");
-  });
-
-  it("exports fetchInvoice", () => {
-    expect(invoiceActions.fetchInvoice).toBeDefined();
-    expect(typeof invoiceActions.fetchInvoice).toBe("function");
-  });
-
-  it("exports fetchInvoices", () => {
-    expect(invoiceActions.fetchInvoices).toBeDefined();
-    expect(typeof invoiceActions.fetchInvoices).toBe("function");
-  });
-
-  it("exports patchInvoice", () => {
-    expect(invoiceActions.patchInvoice).toBeDefined();
-    expect(typeof invoiceActions.patchInvoice).toBe("function");
-  });
-
-  it("exports updateInvoice", () => {
-    expect(invoiceActions.updateInvoice).toBeDefined();
-    expect(typeof invoiceActions.updateInvoice).toBe("function");
+  it("exports the expected invoice action surface", () => {
+    expect(Object.keys(invoiceActions).sort()).toEqual([...expectedExports].sort());
+    for (const exportName of expectedExports) {
+      expect(typeof invoiceActions[exportName]).toBe("function");
+    }
   });
 });

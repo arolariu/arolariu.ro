@@ -42,6 +42,7 @@ Use `.test.ts(x)` suffix for Vitest. `.spec.ts(x)` is reserved for Playwright E2
 3. **Per-test mocks** (test file): `vi.mock("resend", ...)` applied to that test only
 
 If a module has a stub, the stub IS the module — no `vi.mock()` needed in vitest.setup.ts.
+Tests should not inline-mock aliased stubs just to set return values; import the stubbed export and configure it with `vi.mocked(...)` instead.
 
 ---
 
@@ -80,6 +81,20 @@ export const fetchApiUrl = vi.fn();
 
 Use `vi.fn(impl)` for passthrough behavior (withSpan, rewriteAzuriteUrl).
 Use `vi.fn()` for functions whose return value tests must control.
+
+### Configuring stubbed exports
+
+```typescript
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+
+const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
+
+beforeEach(() => {
+  mockFetchBFFUserFromAuthService.mockResolvedValue({
+    userIdentifier: "test-user",
+  });
+});
+```
 
 ---
 

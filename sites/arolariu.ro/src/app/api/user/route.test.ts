@@ -4,7 +4,10 @@
  */
 
 import type {UserInformation} from "@/types";
+import {withSpan} from "@/instrumentation.server";
+import {fetchApiJwtSecret} from "@/lib/config/configProxy";
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
+import {createJwtToken} from "@/lib/utils.server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
 
@@ -12,48 +15,19 @@ import {GET} from "./route";
 // mockFetchApiJwtSecret is hoisted separately so we can re-apply its
 // implementation in beforeEach (mockReset: true in vitest.config.ts clears all
 // mock implementations between tests).
-const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockFetchApiJwtSecret} = vi.hoisted(() => ({
+const {mockAuth, mockCurrentUser} = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockCurrentUser: vi.fn(),
-  mockCreateJwtToken: vi.fn(),
-  mockWithSpan: vi.fn(),
-  mockFetchApiJwtSecret: vi.fn(),
 }));
+
+const mockCreateJwtToken = vi.mocked(createJwtToken);
+const mockFetchApiJwtSecret = vi.mocked(fetchApiJwtSecret);
+const mockWithSpan = vi.mocked(withSpan);
 
 // Mock Clerk functions
 vi.mock("@clerk/nextjs/server", () => ({
   auth: mockAuth,
   currentUser: mockCurrentUser,
-}));
-
-// Mock server utilities - auth secrets now resolve through configProxy.
-vi.mock("@/lib/utils.server", () => ({
-  createJwtToken: mockCreateJwtToken,
-}));
-
-// Mock the config proxy JWT secret helper — avoids network calls to exp
-vi.mock("@/lib/config/configProxy", () => ({
-  fetchApiJwtSecret: mockFetchApiJwtSecret,
-}));
-
-// Mock telemetry functions
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: mockWithSpan,
-  createCounter: vi.fn(() => ({
-    add: vi.fn(),
-  })),
-  createHistogram: vi.fn(() => ({
-    record: vi.fn(),
-  })),
-  addSpanEvent: vi.fn(),
-  setSpanAttributes: vi.fn(),
-  logWithTrace: vi.fn(),
-  recordSpanError: vi.fn(),
-  createAuthAttributes: vi.fn(() => ({})),
-  createHttpServerAttributes: vi.fn(() => ({})),
-  createNextJsAttributes: vi.fn(() => ({})),
-  getTraceparentHeader: vi.fn(() => ""),
-  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 describe("GET /api/user", () => {
@@ -62,12 +36,12 @@ describe("GET /api/user", () => {
     // mockReset: true clears all implementations; re-apply defaults here.
     mockFetchApiJwtSecret.mockResolvedValue("mock-api-jwt-secret");
     // Default withSpan implementation that provides span object and handles nested withSpan calls
-    mockWithSpan.mockImplementation(async (_spanName: string, fn: (span?: unknown) => Promise<unknown>) => {
+    mockWithSpan.mockImplementation(async (_spanName, fn) => {
       const mockSpan = {
         setAttributes: vi.fn(),
       };
       try {
-        return await fn(mockSpan);
+        return await (fn as (span: typeof mockSpan) => Promise<unknown>)(mockSpan);
       } catch (error) {
         // Re-throw to allow outer withSpan to catch
         throw error;

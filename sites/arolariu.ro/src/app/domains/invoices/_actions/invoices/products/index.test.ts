@@ -3,35 +3,16 @@
  * @module app/domains/invoices/_actions/invoices/products/index.test
  */
 
-import {describe, expect, it, vi} from "vitest";
-
-// Mock the product action modules before importing the barrel to prevent pulling
-// real action modules into this barrel test coverage calculation.
-vi.mock("./addInvoiceProduct", () => ({
-  addInvoiceProduct: vi.fn(),
-}));
-vi.mock("./deleteInvoiceProduct", () => ({
-  deleteInvoiceProduct: vi.fn(),
-}));
-vi.mock("./updateInvoiceProduct", () => ({
-  updateInvoiceProduct: vi.fn(),
-}));
-
+import {describe, expect, it} from "vitest";
 import * as productActions from "./index";
 
+const expectedExports = ["addInvoiceProduct", "deleteInvoiceProduct", "updateInvoiceProduct"] as const;
+
 describe("invoice products actions index barrel", () => {
-  it("exports addInvoiceProduct", () => {
-    expect(productActions.addInvoiceProduct).toBeDefined();
-    expect(typeof productActions.addInvoiceProduct).toBe("function");
-  });
-
-  it("exports deleteInvoiceProduct", () => {
-    expect(productActions.deleteInvoiceProduct).toBeDefined();
-    expect(typeof productActions.deleteInvoiceProduct).toBe("function");
-  });
-
-  it("exports updateInvoiceProduct", () => {
-    expect(productActions.updateInvoiceProduct).toBeDefined();
-    expect(typeof productActions.updateInvoiceProduct).toBe("function");
+  it("exports the expected product action surface", () => {
+    expect(Object.keys(productActions).sort()).toEqual([...expectedExports].sort());
+    for (const exportName of expectedExports) {
+      expect(typeof productActions[exportName]).toBe("function");
+    }
   });
 });

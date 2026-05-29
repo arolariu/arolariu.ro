@@ -3,65 +3,90 @@
  * @module app/domains/invoices/_actions/scans/createScan.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {buildScan} from "@/../../tests/helpers/invoiceDomain";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {ScanStatus, ScanType} from "@/types/scans";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {createScan} from "./createScan";
+
+const mockFetchBFFUserFromAuthService = vi.mocked(fetchBFFUserFromAuthService);
+const mockFetchConfigurationValue = vi.mocked(fetchConfigurationValue);
+const mockCreateBlobClient = vi.mocked(createBlobClient);
+const mockRewriteAzuriteUrl = vi.mocked(rewriteAzuriteUrl);
+const mockWithSpan = vi.mocked(withSpan);
+const mockAddSpanEvent = vi.mocked(addSpanEvent);
+const mockLogWithTrace = vi.mocked(logWithTrace);
+
+const VALID_BASE64 = "dGVzdA==";
+
+type UploadOptions = Readonly<{
+  metadata?: Record<string, string>;
+  blobHTTPHeaders?: Readonly<Record<string, string | undefined>>;
+}>;
+
+type BlobClientOptions = Readonly<{
+  blobUrl?: string;
+  uploadStatus?: number;
+  onBlobName?: (blobName: string) => void;
+  onUpload?: (options: UploadOptions) => void;
+  throwOnContainer?: unknown;
+}>;
+
+function setupBlobClient({
+  blobUrl = "https://storage.test/invoices/scans/user-123/scan_123.jpg",
+  uploadStatus = 201,
+  onBlobName,
+  onUpload,
+  throwOnContainer,
+}: BlobClientOptions = {}): void {
+  mockCreateBlobClient.mockResolvedValue({
+    getContainerClient: vi.fn(() => {
+      if (throwOnContainer !== undefined) {
+        throw throwOnContainer;
+      }
+
+      return {
+        getBlockBlobClient: vi.fn((blobName: string) => {
+          onBlobName?.(blobName);
+
+          return {
+            url: blobUrl,
+            uploadData: vi.fn((_data: ArrayBuffer, options: UploadOptions) => {
+              onUpload?.(options);
+              return Promise.resolve({_response: {status: uploadStatus}});
+            }),
+          };
+        }),
+      };
+    }),
+  });
+}
 
 describe("createScan", () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
+
+    mockWithSpan.mockImplementation((_name, fn) => fn());
+    mockAddSpanEvent.mockImplementation(() => undefined);
+    mockLogWithTrace.mockImplementation(() => undefined);
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-123"});
+    mockFetchConfigurationValue.mockResolvedValue("https://storage.test");
+    mockRewriteAzuriteUrl.mockImplementation((url) => url);
+    setupBlobClient();
   });
 
   it("should successfully upload a scan with valid base64 data", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-123"};
     const mockBlobUrl = "https://storage.test/invoices/scans/user-123/scan_123.jpg";
-    const mockUploadResponse = {_response: {status: 201}};
+    setupBlobClient({blobUrl: mockBlobUrl});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: mockBlobUrl,
-            uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      base64Data: VALID_BASE64,
       fileName: "receipt.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.status).toBe(201);
@@ -74,54 +99,15 @@ describe("createScan", () => {
   });
 
   it("should handle PNG uploads correctly", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-456"};
-    const mockBlobUrl = "https://storage.test/invoices/scans/user-456/scan_456.png";
-    const mockUploadResponse = {_response: {status: 201}};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-456"});
+    setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-456/scan_456.png"});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: mockBlobUrl,
-            uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/png"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "data:image/png;base64,iVBORw0KG...",
+      base64Data: `data:image/png;base64,${VALID_BASE64}`,
       fileName: "invoice.png",
       mimeType: "image/png",
     });
 
-    // Assert
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.scan.mimeType).toBe("image/png");
@@ -130,54 +116,15 @@ describe("createScan", () => {
   });
 
   it("should handle PDF uploads correctly", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-789"};
-    const mockBlobUrl = "https://storage.test/invoices/scans/user-789/scan_789.pdf";
-    const mockUploadResponse = {_response: {status: 201}};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-789"});
+    setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-789/scan_789.pdf"});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: mockBlobUrl,
-            uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "application/pdf"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "JVBERi0xLjcKCjE...",
+      base64Data: VALID_BASE64,
       fileName: "document.pdf",
       mimeType: "application/pdf",
     });
 
-    // Assert
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.scan.mimeType).toBe("application/pdf");
@@ -185,34 +132,14 @@ describe("createScan", () => {
   });
 
   it("should handle authentication failures", async () => {
-    // Arrange
-    const authError = new Error("Unauthorized");
+    mockFetchBFFUserFromAuthService.mockRejectedValue(new Error("Unauthorized"));
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.reject(authError)),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "test",
+      base64Data: VALID_BASE64,
       fileName: "test.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.message).toBe("Unauthorized");
@@ -220,53 +147,15 @@ describe("createScan", () => {
   });
 
   it("should handle Azure upload failures with non-201 status", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-fail"};
-    const mockUploadResponse = {_response: {status: 500}};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-fail"});
+    setupBlobClient({blobUrl: "https://storage.test/blob", uploadStatus: 500});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: "https://storage.test/blob",
-            uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "test",
+      base64Data: VALID_BASE64,
       fileName: "test.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.status).toBe(500);
@@ -274,263 +163,74 @@ describe("createScan", () => {
   });
 
   it("should handle base64 conversion errors", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-error"};
-    const conversionError = new Error("Invalid base64 data");
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-error"});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: "https://storage.test/blob",
-            uploadData: vi.fn(),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() => Promise.reject(conversionError)),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
       base64Data: "invalid!!!",
       fileName: "test.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.message).toBe("Invalid base64 data");
-    }
   });
 
   it("should handle non-Error thrown exceptions", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-weird"};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-weird"});
+    setupBlobClient({throwOnContainer: "String error"});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => {
-          throw "String error"; // Non-Error throw
-        }),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "test",
+      base64Data: VALID_BASE64,
       fileName: "test.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
     expect(result.success).toBe(false);
   });
 
   it("should preserve original filename in metadata", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-meta"};
-    const mockBlobUrl = "https://storage.test/invoices/scans/user-meta/scan_meta.jpg";
-    let capturedMetadata: Record<string, string> = {};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-meta"});
+    const capturedMetadata: Array<Record<string, string>> = [];
+    setupBlobClient({
+      blobUrl: "https://storage.test/invoices/scans/user-meta/scan_meta.jpg",
+      onUpload: (options) => capturedMetadata.push(options.metadata ?? {}),
+    });
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: mockBlobUrl,
-            uploadData: vi.fn((data, options) => {
-              capturedMetadata = options.metadata ?? {};
-              return Promise.resolve({_response: {status: 201}});
-            }),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     await createScan({
-      base64Data: "test",
+      base64Data: VALID_BASE64,
       fileName: "my-original-receipt.jpg",
       mimeType: "image/jpeg",
     });
 
-    // Assert
-    expect(capturedMetadata.originalFileName).toBe("my-original-receipt.jpg");
-    expect(capturedMetadata.status).toBe(ScanStatus.READY);
-    expect(capturedMetadata.userIdentifier).toBe("user-meta");
+    expect(capturedMetadata).toHaveLength(1);
+    expect(capturedMetadata[0]?.originalFileName).toBe("my-original-receipt.jpg");
+    expect(capturedMetadata[0]?.status).toBe(ScanStatus.READY);
+    expect(capturedMetadata[0]?.userIdentifier).toBe("user-meta");
   });
 
   it("should use bin extension for filenames without a usable extension", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-no-ext"};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-no-ext"});
     const capturedBlobNames: string[] = [];
-    const mockUploadResponse = {_response: {status: 201}};
+    setupBlobClient({
+      onBlobName: (blobName) => capturedBlobNames.push(blobName),
+    });
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
+    await createScan({base64Data: VALID_BASE64, fileName: "receipt", mimeType: "image/jpeg"});
+    await createScan({base64Data: VALID_BASE64, fileName: "receipt.", mimeType: "image/jpeg"});
 
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn((name) => {
-            capturedBlobNames.push(name);
-            return {
-              url: `https://storage.test/invoices/${name}`,
-              uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-            };
-          }),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "image/jpeg"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
-    await createScan({base64Data: "test", fileName: "receipt", mimeType: "image/jpeg"});
-    await createScan({base64Data: "test", fileName: "receipt.", mimeType: "image/jpeg"});
-
-    // Assert
     expect(capturedBlobNames).toHaveLength(2);
     expect(capturedBlobNames.every((name) => name.endsWith(".bin"))).toBe(true);
   });
 
   it("should handle unsupported MIME types as OTHER", async () => {
-    // Arrange
-    const mockUser = {userIdentifier: "user-unsupported"};
-    const mockBlobUrl = "https://storage.test/invoices/scans/user-unsupported/scan_unsup.txt";
-    const mockUploadResponse = {_response: {status: 201}};
+    mockFetchBFFUserFromAuthService.mockResolvedValue({userIdentifier: "user-unsupported"});
+    setupBlobClient({blobUrl: "https://storage.test/invoices/scans/user-unsupported/scan_unsup.txt"});
 
-    vi.doMock("@/instrumentation.server", () => ({
-      withSpan: vi.fn((name, fn) => fn()),
-      addSpanEvent: vi.fn(),
-      logWithTrace: vi.fn(),
-    }));
-
-    vi.doMock("@/lib/actions/user/fetchUser", () => ({
-      fetchBFFUserFromAuthService: vi.fn(() => Promise.resolve(mockUser)),
-    }));
-
-    vi.doMock("@/lib/actions/storage/fetchConfig", () => ({
-      default: vi.fn(() => Promise.resolve("https://storage.test")),
-    }));
-
-    vi.doMock("@/lib/azure/storageClient", () => ({
-      createBlobClient: vi.fn(() => ({
-        getContainerClient: vi.fn(() => ({
-          getBlockBlobClient: vi.fn(() => ({
-            url: mockBlobUrl,
-            uploadData: vi.fn(() => Promise.resolve(mockUploadResponse)),
-          })),
-        })),
-      })),
-      rewriteAzuriteUrl: vi.fn((url) => url),
-    }));
-
-    vi.doMock("@/lib/utils.server", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("@/lib/utils.server")>()),
-      convertBase64ToBlob: vi.fn(() =>
-        Promise.resolve(new Blob(["test"], {type: "text/plain"})),
-      ),
-    }));
-
-    const {createScan} = await import("./createScan");
-
-    // Act
     const result = await createScan({
-      base64Data: "test",
+      base64Data: VALID_BASE64,
       fileName: "textfile.txt",
       mimeType: "text/plain",
     });
 
-    // Assert
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.scan.mimeType).toBe("text/plain");

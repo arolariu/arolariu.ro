@@ -3,27 +3,16 @@
  * @module app/domains/invoices/_actions/invoices/metadata/index.test
  */
 
-import {describe, expect, it, vi} from "vitest";
-
-// Mock the metadata action modules before importing the barrel to prevent pulling
-// real action modules into this barrel test coverage calculation.
-vi.mock("./addInvoiceMetadata", () => ({
-  addInvoiceMetadata: vi.fn(),
-}));
-vi.mock("./deleteInvoiceMetadata", () => ({
-  deleteInvoiceMetadata: vi.fn(),
-}));
-
+import {describe, expect, it} from "vitest";
 import * as metadataActions from "./index";
 
-describe("invoice metadata actions index barrel", () => {
-  it("exports addInvoiceMetadata", () => {
-    expect(metadataActions.addInvoiceMetadata).toBeDefined();
-    expect(typeof metadataActions.addInvoiceMetadata).toBe("function");
-  });
+const expectedExports = ["addInvoiceMetadata", "deleteInvoiceMetadata"] as const;
 
-  it("exports deleteInvoiceMetadata", () => {
-    expect(metadataActions.deleteInvoiceMetadata).toBeDefined();
-    expect(typeof metadataActions.deleteInvoiceMetadata).toBe("function");
+describe("invoice metadata actions index barrel", () => {
+  it("exports the expected metadata action surface", () => {
+    expect(Object.keys(metadataActions).sort()).toEqual([...expectedExports].sort());
+    for (const exportName of expectedExports) {
+      expect(typeof metadataActions[exportName]).toBe("function");
+    }
   });
 });
