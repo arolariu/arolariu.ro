@@ -256,6 +256,12 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
       const blobName = blobParts.join("/");
       addSpanEvent("blob.url.parse.complete");
 
+      if (!containerName || !blobName) {
+        addSpanEvent("blob.url.parse.invalid");
+        logWithTrace("warn", "Invalid scan blob URL", { blobUrl }, "server");
+        return createErrorResult(new Error("Invalid scan URL."));
+      }
+
       // Step 3. Verify user owns this scan (path contains their user ID)
       if (!blobName.includes(`scans/${userIdentifier}/`)) {
         addSpanEvent("authorization.failed");
@@ -268,7 +274,7 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
       const storageClient = await createBlobClient(storageEndpoint);
-      const containerClient = storageClient.getContainerClient(containerName ?? "invoices");
+      const containerClient = storageClient.getContainerClient(containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       addSpanEvent("azure.storage.connect.complete");
 
@@ -284,7 +290,7 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
       }
 
       addSpanEvent("azure.blob.delete.error");
-      const errorText = deleteResponse.errorCode ? `Error code: ${deleteResponse.errorCode}` : "Unknown error";
+      const errorText = `Error code: ${deleteResponse.errorCode}`;
       const internalMessage = `Failed to delete scan: ${errorText}`;
       logWithTrace("warn", internalMessage, { blobName, errorText }, "server");
       return createErrorResult(new Error(internalMessage), "Failed to delete the scan. Please try again.");

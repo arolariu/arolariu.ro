@@ -22,19 +22,6 @@ const mockStoreState = {
   removeScan: vi.fn(),
 };
 
-// Mock server-only modules FIRST
-vi.mock("@/instrumentation.server", () => ({
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
-  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
-  getTraceparentHeader: vi.fn(() => ""),
-  injectTraceContextHeaders: vi.fn(() => ({})),
-}));
-
-vi.mock("@/lib/utils.server", () => ({
-  fetchWithTimeout: vi.fn(),
-}));
-
 // Mock the fetchScans server action
 const mockFetchScans = vi.fn();
 vi.mock("../../_actions/scans", () => ({

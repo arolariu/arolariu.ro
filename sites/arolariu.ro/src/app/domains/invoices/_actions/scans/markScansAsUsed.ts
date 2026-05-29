@@ -102,6 +102,7 @@ export async function markScansAsUsed({blobNames}: MarkScansAsUsedInput): Promis
             // Log but don't fail—best-effort marking
             logWithTrace("warn", `Failed to mark scan as used: ${blobName}`, {blobName, error}, "server");
             console.warn(`Failed to mark scan as used: ${blobName}`, error);
+            throw error;
           }
         }),
       );

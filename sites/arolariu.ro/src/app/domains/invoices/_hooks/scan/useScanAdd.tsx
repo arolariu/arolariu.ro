@@ -88,7 +88,7 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
       setIsAdding(true);
       try {
         const base64Data = await readBlobAsDataUrl(args.file);
-        const ext = args.fileName.split(".").pop() || "jpg";
+        const ext = args.fileName.includes(".") ? args.fileName.split(".").pop() || "jpg" : "jpg";
         const blobName = `${args.userIdentifier}/${invoiceId}/${crypto.randomUUID()}.${ext}`;
         const {success, data, error} = await createInvoiceScan({
           base64Data,
@@ -100,7 +100,8 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         });
 
         if (!success || !data) {
-          throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status: String(error?.status) || "unknown"}));
+          const status = error?.status == null ? "unknown" : String(error.status);
+          throw new Error(t((m) => m.toasts.invoices.useScanAdd.uploadFailed, {status}));
         }
 
         await attachInvoiceScan({

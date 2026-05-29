@@ -152,11 +152,13 @@ export async function fetchScans({ includeArchived = false }: ServerActionInputT
 
             // Get original filename (support both camelCase and lowercase)
             const originalFileName = metadata["originalFileName"] ?? metadata["originalfilename"];
+            const blobFileName = blob.name.split("/").pop();
+            const displayName = originalFileName ?? (blobFileName ? blobFileName : "Unknown");
 
             const scan: Scan = {
               id: scanId,
               userIdentifier: metadata["userIdentifier"] ?? metadata["useridentifier"] ?? userIdentifier,
-              name: originalFileName ?? blob.name.split("/").pop() ?? "Unknown",
+              name: displayName,
               blobUrl,
               mimeType,
               sizeInBytes: blob.properties.contentLength ?? 0,

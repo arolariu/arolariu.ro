@@ -80,6 +80,16 @@ function generateScanId(): string {
   return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
+function getFileExtension(fileName: string): string {
+  const lastDotIndex = fileName.lastIndexOf(".");
+
+  if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+    return "bin";
+  }
+
+  return fileName.slice(lastDotIndex + 1);
+}
+
 /**
  * Generates a SAS URL for direct client-to-Azure upload.
  *
@@ -143,7 +153,7 @@ export async function generateUploadSasUrl(input: ServerActionInputType): Server
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = input.fileName.split(".").pop() ?? "bin";
+      const extension = getFileExtension(input.fileName);
       const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
       // Step 3. Prepare storage client

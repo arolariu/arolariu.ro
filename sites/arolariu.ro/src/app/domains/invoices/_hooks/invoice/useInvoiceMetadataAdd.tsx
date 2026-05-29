@@ -102,38 +102,28 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
    * Sequentially processes metadata entries and records per-entry failures.
    *
    * @param entries - Metadata entries to process.
-   * @param index - Current zero-based index in `entries`.
-   * @param acc - Aggregated success, failure, and failed entry state.
    * @returns Aggregate metadata add result after all entries have been attempted.
    */
-  const processBulkRecursive = useCallback(
-    async (
-      entries: readonly [string, string][],
-      index: number,
-      acc: {successCount: number; failureCount: number; failedItems: {key: string; value: string}[]},
-    ): Promise<BulkAddResult> => {
-      if (index >= entries.length) {
-        return acc;
+  const processBulkEntries = useCallback(
+    async (entries: readonly [string, string][]): Promise<BulkAddResult> => {
+      const acc: {successCount: number; failureCount: number; failedItems: {key: string; value: string}[]} = {
+        successCount: 0,
+        failureCount: 0,
+        failedItems: [],
+      };
+
+      for (const [key, value] of entries) {
+        try {
+          await performMutation(key, value);
+          acc.successCount += 1;
+        } catch (error) {
+          console.error(`Failed to add metadata field [${key}: ${value}]:`, error);
+          acc.failureCount += 1;
+          acc.failedItems.push({key, value});
+        }
       }
-      const entry = entries[index];
-      if (!entry) {
-        return acc;
-      }
-      const [key, value] = entry;
-      try {
-        await performMutation(key, value);
-        return await processBulkRecursive(entries, index + 1, {
-          ...acc,
-          successCount: acc.successCount + 1,
-        });
-      } catch (error) {
-        console.error(`Failed to add metadata field [${key}: ${value}]:`, error);
-        return await processBulkRecursive(entries, index + 1, {
-          ...acc,
-          failureCount: acc.failureCount + 1,
-          failedItems: [...acc.failedItems, {key, value}],
-        });
-      }
+
+      return acc;
     },
     [performMutation],
   );
@@ -150,11 +140,7 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
         await performMutation(keyOrRecord, maybeValue);
       } else {
         const entries = Object.entries(keyOrRecord);
-        return await processBulkRecursive(entries, 0, {
-          successCount: 0,
-          failureCount: 0,
-          failedItems: [],
-        });
+        return await processBulkEntries(entries);
       }
     } finally {
       setIsAdding(false);

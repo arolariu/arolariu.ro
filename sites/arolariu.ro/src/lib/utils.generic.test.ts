@@ -7,7 +7,10 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
   COMMIT_SHA,
   formatAmount,
+  formatCurrency,
+  formatDate,
   formatDateTime,
+  formatEnum,
   formatRelativeTime,
   generateGuid,
   SITE_ENV,
@@ -95,44 +98,37 @@ describe("generateGuid", () => {
 
 describe("formatCurrency", () => {
   it("should format currency with string currency code", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(123.45, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$123.45");
   });
 
   it("should format currency with EUR code", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(100, {currencyCode: "EUR", locale: "en-US"});
     expect(formatted).toBe("€100");
   });
 
   it("should format currency with GBP code", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(50.99, {currencyCode: "GBP", locale: "en-US"});
     expect(formatted).toBe("£50.99");
   });
 
   it("should format currency with Currency object", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const currencyObj = {code: "JPY", name: "Japanese Yen", symbol: "¥"};
     const formatted = formatCurrency(1000, {currencyCode: currencyObj.code, locale: "en-US"});
     expect(formatted).toBe("¥1,000");
   });
 
   it("should handle zero amount", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(0, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$0");
   });
 
   it("should handle negative amounts", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(-50, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("-$50");
   });
 
   it("should handle large amounts", async () => {
-    const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(1234567.89, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$1,234,567.89");
   });
@@ -140,26 +136,22 @@ describe("formatCurrency", () => {
 
 describe("formatDate", () => {
   it("should format string date correctly", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate("2023-03-15", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Mar 15, 2023");
   });
 
   it("should format ISO string date correctly", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate("2023-01-01T00:00:00Z", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Jan 1, 2023");
   });
 
   it("should format Date object correctly", async () => {
-    const {formatDate} = await import("./utils.generic");
     const date = new Date("2023-12-25");
     const formatted = formatDate(date, {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Dec 25, 2023");
   });
 
   it("should format Date object with instanceof check", async () => {
-    const {formatDate} = await import("./utils.generic");
     // Explicitly create a Date object to hit the instanceof Date branch
     const date = new Date(2024, 0, 15); // Jan 15, 2024
     const formatted = formatDate(date, {locale: "en-US", dateStyle: "medium"});
@@ -167,7 +159,6 @@ describe("formatDate", () => {
   });
 
   it("should handle different months", async () => {
-    const {formatDate} = await import("./utils.generic");
     const dates = [
       {input: "2023-01-15", expected: "Jan 15, 2023"},
       {input: "2023-06-20", expected: "Jun 20, 2023"},
@@ -180,20 +171,17 @@ describe("formatDate", () => {
   });
 
   it("should handle leap year dates", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate("2024-02-29", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Feb 29, 2024");
   });
 
   it("should use default dateStyle when not specified", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate("2023-07-04", {locale: "en-US"});
     // Default is "short" style
     expect(formatted).toBe("7/4/23");
   });
 
   it("should format with full dateStyle", async () => {
-    const {formatDate} = await import("./utils.generic");
     const date = new Date("2023-07-04");
     const formatted = formatDate(date, {locale: "en-US", dateStyle: "full"});
     expect(formatted).toContain("July");
@@ -201,20 +189,17 @@ describe("formatDate", () => {
   });
 
   it("should format with long dateStyle", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate("2023-07-04", {locale: "en-US", dateStyle: "long"});
     expect(formatted).toBe("July 4, 2023");
   });
 
   it("should handle invalid input types gracefully", async () => {
-    const {formatDate} = await import("./utils.generic");
     const formatted = formatDate(null, {locale: "en-US"});
     // null input now returns empty string (safe default)
     expect(formatted).toBe("");
   });
 
   it("should format with individual year/month/day fields (no dateStyle default)", async () => {
-    const {formatDate} = await import("./utils.generic");
     // Providing `year` triggers the hasIndividualFields branch — dateStyle must not be injected
     const formatted = formatDate("2024-06-15", {locale: "en-US", year: "numeric", month: "long", day: "numeric"});
     expect(formatted).toContain("2024");
@@ -491,20 +476,17 @@ describe("formatEnum", () => {
 
   describe("Direct usage (with value parameter)", () => {
     it("should return the string key for a valid enum value", async () => {
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(Status, 1)).toBe("Active");
       expect(formatEnum(Status, 0)).toBe("Inactive");
       expect(formatEnum(Status, 2)).toBe("Pending");
     });
 
     it("should return empty string for invalid enum value", async () => {
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(Status, 999)).toBe("");
       expect(formatEnum(Status, -1)).toBe("");
     });
 
     it("should work with non-sequential enum values", async () => {
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(Priority, 10)).toBe("Low");
       expect(formatEnum(Priority, 20)).toBe("Medium");
       expect(formatEnum(Priority, 30)).toBe("High");
@@ -512,7 +494,6 @@ describe("formatEnum", () => {
     });
 
     it("should return empty string for value between enum values", async () => {
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(Priority, 15)).toBe("");
       expect(formatEnum(Priority, 50)).toBe("");
     });
@@ -520,13 +501,11 @@ describe("formatEnum", () => {
 
   describe("Curried usage (factory pattern)", () => {
     it("should return a function when called without value", async () => {
-      const {formatEnum} = await import("./utils.generic");
       const formatStatus = formatEnum(Status);
       expect(typeof formatStatus).toBe("function");
     });
 
     it("should format values correctly using curried function", async () => {
-      const {formatEnum} = await import("./utils.generic");
       const formatStatus = formatEnum(Status);
 
       expect(formatStatus(0)).toBe("Inactive");
@@ -535,7 +514,6 @@ describe("formatEnum", () => {
     });
 
     it("should return empty string for invalid values using curried function", async () => {
-      const {formatEnum} = await import("./utils.generic");
       const formatStatus = formatEnum(Status);
 
       expect(formatStatus(999)).toBe("");
@@ -543,7 +521,6 @@ describe("formatEnum", () => {
     });
 
     it("should work with non-sequential enums in curried form", async () => {
-      const {formatEnum} = await import("./utils.generic");
       const formatPriority = formatEnum(Priority);
 
       expect(formatPriority(10)).toBe("Low");
@@ -552,7 +529,6 @@ describe("formatEnum", () => {
     });
 
     it("should handle reusable formatter", async () => {
-      const {formatEnum} = await import("./utils.generic");
       const formatter = formatEnum(Status);
 
       // Use multiple times
@@ -563,7 +539,6 @@ describe("formatEnum", () => {
 
   describe("Edge cases", () => {
     it("should handle enum with zero value", async () => {
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(Status, 0)).toBe("Inactive");
     });
 
@@ -572,7 +547,6 @@ describe("formatEnum", () => {
         Small: 1,
         Large: 1000000,
       } as const;
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(LargeEnum, 1000000)).toBe("Large");
     });
 
@@ -580,7 +554,6 @@ describe("formatEnum", () => {
       const SingleValue = {
         Only: 42,
       } as const;
-      const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(SingleValue, 42)).toBe("Only");
       expect(formatEnum(SingleValue, 0)).toBe("");
     });

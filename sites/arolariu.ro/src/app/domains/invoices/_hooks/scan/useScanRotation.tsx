@@ -102,9 +102,8 @@ export function useScanRotation(scan: CachedScan): Readonly<HookOutputType> {
 
         // 2. Create rotated canvas
         const canvas = document.createElement("canvas");
-        const isRightAngle = Math.abs(degrees) === 90 || Math.abs(degrees) === 270;
-        canvas.width = isRightAngle ? img.height : img.width;
-        canvas.height = isRightAngle ? img.width : img.height;
+        canvas.width = img.height;
+        canvas.height = img.width;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) {

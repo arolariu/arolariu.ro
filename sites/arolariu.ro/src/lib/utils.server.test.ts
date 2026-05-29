@@ -5,7 +5,16 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
-import {convertBase64ToBlob} from "./utils.server";
+import {
+  convertBase64ToBlob,
+  createErrorResult,
+  createJwtToken,
+  fetchWithTimeout,
+  mapHttpStatusToErrorCode,
+  parseBackendError,
+  verifyJwtToken,
+} from "./utils.server";
+import {jwtVerify, SignJWT} from "jose";
 
 const instrumentationMocks = vi.hoisted(() => ({
   injectTraceContextHeaders: vi.fn((headers?: Headers) => {
@@ -167,8 +176,6 @@ describe("convertBase64ToBlob", () => {
 
 describe("createJwtToken", () => {
   it("should create a valid JWT token with proper payload", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {
       sub: "user123",
       iss: "test-issuer",
@@ -185,8 +192,6 @@ describe("createJwtToken", () => {
   });
 
   it("should create token with minimal payload", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {sub: "user"};
     const secret = "test-secret-key";
 
@@ -198,8 +203,6 @@ describe("createJwtToken", () => {
   });
 
   it("should create token with all optional claims", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {
       sub: "user123",
       iss: "issuer",
@@ -217,8 +220,6 @@ describe("createJwtToken", () => {
   });
 
   it("should create token without subject claim", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {
       iss: "issuer",
       aud: "audience",
@@ -232,8 +233,6 @@ describe("createJwtToken", () => {
   });
 
   it("should create token without issuer claim", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {
       sub: "user123",
       aud: "audience",
@@ -247,8 +246,6 @@ describe("createJwtToken", () => {
   });
 
   it("should create token without audience claim", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     const payload = {
       sub: "user123",
       iss: "issuer",
@@ -262,8 +259,6 @@ describe("createJwtToken", () => {
   });
 
   it("should handle errors gracefully", async () => {
-    const {createJwtToken} = await import("./utils.server");
-
     // The actual createJwtToken will catch errors from jose library
     // Since our mock doesn't throw, we test that the function completes successfully
     const payload = {sub: "user"};
@@ -274,14 +269,9 @@ describe("createJwtToken", () => {
   });
 
   it("should handle Error object in catch block", async () => {
-    // Import SignJWT from the mocked jose module
-    const {SignJWT} = await import("jose");
-
     // Override the sign method to throw an Error
     const originalSign = SignJWT.prototype.sign;
     SignJWT.prototype.sign = vi.fn().mockRejectedValueOnce(new Error("Signing failed"));
-
-    const {createJwtToken} = await import("./utils.server");
 
     const payload = {sub: "user123"};
     const secret = "test-secret";
@@ -293,14 +283,9 @@ describe("createJwtToken", () => {
   });
 
   it("should handle non-Error object in catch block", async () => {
-    // Import SignJWT from the mocked jose module
-    const {SignJWT} = await import("jose");
-
     // Override the sign method to throw a non-Error object
     const originalSign = SignJWT.prototype.sign;
     SignJWT.prototype.sign = vi.fn().mockRejectedValueOnce("String error message");
-
-    const {createJwtToken} = await import("./utils.server");
 
     const payload = {sub: "user123"};
     const secret = "test-secret";
@@ -319,7 +304,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should call fetch with correct parameters", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -339,7 +323,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should resolve API-relative paths through exp-backed API discovery", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -353,7 +336,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should propagate trace context headers on outbound requests", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -367,7 +349,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should return response on success", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockResponse = new Response("Success", {status: 200});
     globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 
@@ -378,7 +359,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should use default timeout when not specified", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     globalThis.fetch = vi.fn().mockResolvedValue(new Response("OK"));
 
     await fetchWithTimeout("https://api.example.com/data");
@@ -388,7 +368,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should throw timeout error when request times out", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const abortError = new Error("signal is aborted without reason");
     abortError.name = "AbortError";
     globalThis.fetch = vi.fn().mockRejectedValue(abortError);
@@ -397,7 +376,6 @@ describe("fetchWithTimeout", () => {
   });
 
   it("should re-throw non-abort errors", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const networkError = new Error("Network error");
     globalThis.fetch = vi.fn().mockRejectedValue(networkError);
 
@@ -407,47 +385,38 @@ describe("fetchWithTimeout", () => {
 
 describe("mapHttpStatusToErrorCode", () => {
   it("should map 401 to AUTH_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(401)).toBe("AUTH_ERROR");
   });
 
   it("should map 403 to AUTH_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(403)).toBe("AUTH_ERROR");
   });
 
   it("should map 404 to NOT_FOUND", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(404)).toBe("NOT_FOUND");
   });
 
   it("should map 400 to VALIDATION_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(400)).toBe("VALIDATION_ERROR");
   });
 
   it("should map 422 to VALIDATION_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(422)).toBe("VALIDATION_ERROR");
   });
 
   it("should map 500 to SERVER_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(500)).toBe("SERVER_ERROR");
   });
 
   it("should map 502 to SERVER_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(502)).toBe("SERVER_ERROR");
   });
 
   it("should map 503 to SERVER_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(503)).toBe("SERVER_ERROR");
   });
 
   it("should map unknown status codes to UNKNOWN_ERROR", async () => {
-    const {mapHttpStatusToErrorCode} = await import("./utils.server");
     expect(mapHttpStatusToErrorCode(200)).toBe("UNKNOWN_ERROR");
     expect(mapHttpStatusToErrorCode(201)).toBe("UNKNOWN_ERROR");
     expect(mapHttpStatusToErrorCode(418)).toBe("UNKNOWN_ERROR");
@@ -456,7 +425,6 @@ describe("mapHttpStatusToErrorCode", () => {
 
 describe("createErrorResult", () => {
   it("should create error result from Error object", async () => {
-    const {createErrorResult} = await import("./utils.server");
     const error = new Error("Something went wrong");
 
     const result = await createErrorResult<string>(error, "Default message");
@@ -469,7 +437,6 @@ describe("createErrorResult", () => {
   });
 
   it("should identify timeout errors", async () => {
-    const {createErrorResult} = await import("./utils.server");
     const error = new Error("Request timed out after 5000ms");
 
     const result = await createErrorResult<string>(error, "Default message");
@@ -482,7 +449,6 @@ describe("createErrorResult", () => {
   });
 
   it("should preserve numeric status from Error objects", async () => {
-    const {createErrorResult} = await import("./utils.server");
     const error = Object.assign(new Error("Unauthorized"), {status: 401});
 
     const result = await createErrorResult<string>(error, "Default message");
@@ -496,7 +462,6 @@ describe("createErrorResult", () => {
   });
 
   it("should ignore nonnumeric status values", async () => {
-    const {createErrorResult} = await import("./utils.server");
     const error = {status: "401"};
 
     const result = await createErrorResult<string>(error, "Default message");
@@ -509,8 +474,6 @@ describe("createErrorResult", () => {
   });
 
   it("should handle non-Error objects", async () => {
-    const {createErrorResult} = await import("./utils.server");
-
     const result = await createErrorResult<string>("String error", "Default message");
 
     expect(result.success).toBe(false);
@@ -521,8 +484,6 @@ describe("createErrorResult", () => {
   });
 
   it("should use default message for unknown errors", async () => {
-    const {createErrorResult} = await import("./utils.server");
-
     const result = await createErrorResult<number>(null, "An unknown error occurred");
 
     expect(result.success).toBe(false);
@@ -533,8 +494,6 @@ describe("createErrorResult", () => {
   });
 
   it("should handle undefined as error", async () => {
-    const {createErrorResult} = await import("./utils.server");
-
     const result = await createErrorResult<boolean>(undefined, "Unexpected error");
 
     expect(result.success).toBe(false);
@@ -547,40 +506,30 @@ describe("createErrorResult", () => {
 
 describe("parseBackendError", () => {
   it("should return specific message for 429 rate limiting", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(429, "{}");
 
     expect(message).toBe("Too many requests. Please wait a moment and try again.");
   });
 
   it("should return specific message for 402 payment required", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(402, "{}");
 
     expect(message).toBe("This feature requires a paid subscription.");
   });
 
   it("should return specific message for 409 conflict", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(409, "{}");
 
     expect(message).toBe("Conflict: this resource was modified by another user.");
   });
 
   it("should return specific message for 413 payload too large", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(413, "{}");
 
     expect(message).toBe("File is too large. Please check the size limit and try again.");
   });
 
   it("should extract maxSize from 413 response body", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({maxSize: "10MB"});
     const message = parseBackendError(413, body);
 
@@ -588,8 +537,6 @@ describe("parseBackendError", () => {
   });
 
   it("should extract detail from 413 response body when no maxSize", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({detail: "File exceeds the maximum allowed size"});
     const message = parseBackendError(413, body);
 
@@ -597,16 +544,12 @@ describe("parseBackendError", () => {
   });
 
   it("should handle malformed JSON in 413 response body", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(413, "not valid json {");
 
     expect(message).toBe("File is too large. Please check the size limit and try again.");
   });
 
   it("should extract detail from JSON response for other status codes", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({detail: "Custom error message"});
     const message = parseBackendError(500, body);
 
@@ -614,8 +557,6 @@ describe("parseBackendError", () => {
   });
 
   it("should sanitize raw body when JSON parsing fails", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const longBody = "a".repeat(300);
     const message = parseBackendError(500, longBody);
 
@@ -624,16 +565,12 @@ describe("parseBackendError", () => {
   });
 
   it("should handle empty body gracefully", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const message = parseBackendError(500, "");
 
     expect(message).toBe("An unknown error occurred.");
   });
 
   it("should return fallback message when JSON has no detail field", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({error: "Something went wrong"});
     const message = parseBackendError(500, body);
 
@@ -641,8 +578,6 @@ describe("parseBackendError", () => {
   });
 
   it("should handle 400 bad request with detail", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({detail: "Invalid input format"});
     const message = parseBackendError(400, body);
 
@@ -650,8 +585,6 @@ describe("parseBackendError", () => {
   });
 
   it("should handle 401 unauthorized with detail", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({detail: "Token expired"});
     const message = parseBackendError(401, body);
 
@@ -659,8 +592,6 @@ describe("parseBackendError", () => {
   });
 
   it("should handle 404 not found with detail", async () => {
-    const {parseBackendError} = await import("./utils.server");
-
     const body = JSON.stringify({detail: "Resource not found"});
     const message = parseBackendError(404, body);
 
@@ -676,8 +607,6 @@ describe("convertBase64ToBlob - edge cases", () => {
   });
 
   it("should handle base64 without data URL prefix", async () => {
-    const {convertBase64ToBlob} = await import("./utils.server");
-
     const base64 = "SGVsbG8gV29ybGQ=";
     const blob = await convertBase64ToBlob(base64);
 
@@ -687,15 +616,11 @@ describe("convertBase64ToBlob - edge cases", () => {
   });
 
   it("should handle invalid base64 input gracefully", async () => {
-    const {convertBase64ToBlob} = await import("./utils.server");
-
     // Invalid base64 throws DOMException in happy-dom
     await expect(convertBase64ToBlob("invalid!!!")).rejects.toBeDefined();
   });
 
   it("should extract MIME type correctly from data URL", async () => {
-    const {convertBase64ToBlob} = await import("./utils.server");
-
     const base64 = "data:application/xml;base64,PHhtbD48L3htbD4=";
     const blob = await convertBase64ToBlob(base64);
 
@@ -710,8 +635,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should handle injectedHeaders as non-Headers object", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
-
     // Mock injectTraceContextHeaders to return a plain object
     instrumentationMocks.injectTraceContextHeaders.mockReturnValueOnce({
       "X-Custom-Header": "custom-value",
@@ -731,8 +654,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should handle AbortError correctly", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
-
     const abortError = new Error("The operation was aborted");
     abortError.name = "AbortError";
     globalThis.fetch = vi.fn().mockRejectedValue(abortError);
@@ -741,7 +662,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should clear timeout on success", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
 
     globalThis.fetch = vi.fn().mockResolvedValue(new Response("OK"));
@@ -753,7 +673,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should clear timeout on error", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
 
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
@@ -765,7 +684,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should handle URL with query parameters", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -778,7 +696,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should handle relative path without leading slash", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -792,7 +709,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should handle empty API URL from config", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     mockFetchApiUrl.mockResolvedValueOnce("  "); // Empty/whitespace API URL
 
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
@@ -807,7 +723,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should trim trailing slashes from API URL", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     mockFetchApiUrl.mockResolvedValueOnce("https://api.example.com///");
 
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
@@ -822,7 +737,6 @@ describe("fetchWithTimeout - edge cases", () => {
   });
 
   it("should merge caller-supplied headers with trace context headers", async () => {
-    const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
     globalThis.fetch = mockFetch;
 
@@ -844,8 +758,6 @@ describe("fetchWithTimeout - edge cases", () => {
 
 describe("verifyJwtToken", () => {
   it("should return result object with valid or error property", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-
     const token = "test.jwt.token";
     const secret = "test-secret-key";
 
@@ -861,9 +773,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should call jose jwtVerify with correct parameters", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-    const {jwtVerify} = await import("jose");
-
     const token = "test.jwt.token";
     const secret = "test-secret";
 
@@ -873,8 +782,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should return error for empty token", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-
     const result = await verifyJwtToken("", "test-secret");
 
     expect(result.valid).toBe(false);
@@ -885,8 +792,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should return error for very short invalid token", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-
     const result = await verifyJwtToken("abc", "test-secret");
 
     expect(result.valid).toBe(false);
@@ -896,8 +801,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should handle verification errors from jose library", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-
     // Test with a token that should fail verification
     const result = await verifyJwtToken("x", "test-secret");
 
@@ -910,9 +813,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should handle token without subject claim", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-    const {jwtVerify} = await import("jose");
-
     // Mock jwtVerify to return payload without sub
     vi.mocked(jwtVerify).mockResolvedValueOnce({
       payload: {
@@ -934,9 +834,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should handle token without issuer claim", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-    const {jwtVerify} = await import("jose");
-
     // Mock jwtVerify to return payload without iss
     vi.mocked(jwtVerify).mockResolvedValueOnce({
       payload: {
@@ -958,9 +855,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should handle Error objects in verification catch block", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-    const {jwtVerify} = await import("jose");
-
     // Mock jwtVerify to throw an Error
     const mockError = new Error("Token expired");
     vi.mocked(jwtVerify).mockRejectedValueOnce(mockError);
@@ -977,9 +871,6 @@ describe("verifyJwtToken", () => {
   });
 
   it("should handle non-Error objects in verification catch block", async () => {
-    const {verifyJwtToken} = await import("./utils.server");
-    const {jwtVerify} = await import("jose");
-
     // Mock jwtVerify to throw a non-Error object
     vi.mocked(jwtVerify).mockRejectedValueOnce("String error" as any);
 

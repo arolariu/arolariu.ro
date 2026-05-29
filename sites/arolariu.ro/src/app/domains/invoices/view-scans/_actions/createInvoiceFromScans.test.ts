@@ -4,18 +4,11 @@
  */
 
 import {InvoiceScanType} from "@/types/invoices";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-
-// Mock server-side modules BEFORE importing them
-vi.mock("@/lib/actions/user/fetchUser", () => ({
-  fetchBFFUserFromAuthService: vi.fn(),
-}));
-
-vi.mock("@/lib/utils.server", () => ({
-  fetchWithTimeout: vi.fn(),
-}));
 
 vi.mock("../../_actions/scans", () => ({
   markScansAsUsed: vi.fn(async () => {}),
@@ -25,17 +18,6 @@ vi.mock("../../_actions/scans", () => ({
 vi.mock("../../_actions/invoices", () => ({
   analyzeInvoice: vi.fn(async () => {}),
 }));
-
-// Mock OpenTelemetry instrumentation
-vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
-  addSpanEvent: vi.fn(),
-  logWithTrace: vi.fn(),
-}));
-
-// Now import the mocked modules
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {fetchWithTimeout} from "@/lib/utils.server";
 
 // Stub references — use vi.mocked for type-safe access
 const mockFetch = vi.mocked(fetchWithTimeout);
