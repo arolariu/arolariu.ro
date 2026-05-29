@@ -6,7 +6,7 @@
 import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, buildEntityStoreState, buildInvoice, mockEntityStoreSelector} from "../../../../../../tests/helpers";
+import {buildEntityStoreState, buildInvoice, mockEntityStoreSelector, mockResolvedActionFailure} from "../../../../../../tests/helpers";
 import {useInvoice} from "./useInvoice";
 
 // Mock the Zustand store
@@ -136,8 +136,7 @@ describe("useInvoice", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       createMockStoreState({hasHydrated: true});
 
-      const errorResult = actionFailure({code: "NOT_FOUND", message: "Invoice not found"});
-      mockFetchInvoice.mockResolvedValue(errorResult);
+      mockResolvedActionFailure(mockFetchInvoice, {code: "NOT_FOUND", message: "Invoice not found"});
 
       const {result} = renderHook(() => useInvoice({invoiceIdentifier: testInvoiceId}));
 

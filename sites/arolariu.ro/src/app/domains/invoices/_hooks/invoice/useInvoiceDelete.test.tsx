@@ -26,7 +26,7 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: Record<string, Record<string, string>>) => string, vars?: Record<string, string>) => {
+  useTranslations: vi.fn(() => <T extends string>(fn: (m: {toasts: {invoices: {useInvoiceDelete: Record<string, string>}}}) => T, vars?: Record<string, string>): string => {
     const template = fn({
       toasts: {
         invoices: {
@@ -41,7 +41,7 @@ vi.mock("next-intl-selector", () => ({
       },
     });
     if (!vars) return template;
-    return Object.entries(vars).reduce((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
+    return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
   }),
 }));
 

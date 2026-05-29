@@ -91,11 +91,11 @@ describe("useRecipeUpdate", () => {
         cookingTime: 25,
       });
 
-      const {result} = renderHook(() => useRecipeUpdate(testInvoice));
+      const hookResult = renderHook(() => useRecipeUpdate(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.updateRecipeCallback("Recipe 2", updatedRecipe));
+      await invokeHookCallback(hookResult, (current) => current.updateRecipeCallback("Recipe 2", updatedRecipe));
 
-      expect(result.current.isUpdating).toBe(false);
+      expect(hookResult.result.current.isUpdating).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], updatedRecipe, testRecipes[2]],
@@ -247,11 +247,11 @@ describe("useRecipeUpdate", () => {
         description: "Updated",
       });
 
-      const {result} = renderHook(() => useRecipeUpdate(testInvoice));
+      const hookResult = renderHook(() => useRecipeUpdate(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.updateRecipeCallback("Recipe 1", updatedRecipe));
+      await invokeHookCallback(hookResult, (current) => current.updateRecipeCallback("Recipe 1", updatedRecipe));
 
-      expect(result.current.isUpdating).toBe(false);
+      expect(hookResult.result.current.isUpdating).toBe(false);
     });
 
     it("resets isUpdating even if store update throws", async () => {

@@ -70,7 +70,6 @@ describe("useProductAdd", () => {
 
   it("adds a product server-side, mirrors it locally, and returns the created product", async () => {
     const hookResult = renderHook(() => useProductAdd({invoice}));
-    const {result} = hookResult;
 
     const returnedProduct = await invokeHookCallback(hookResult, (current) => current.addProductCallback(productToAdd));
 

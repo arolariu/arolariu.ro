@@ -46,7 +46,7 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: Record<string, Record<string, string>>) => string, vars?: Record<string, string>) => {
+  useTranslations: vi.fn(() => <T extends string>(fn: (m: {toasts: {invoices: {useInvoiceShare: Record<string, string>}}}) => T, vars?: Record<string, string>): string => {
     const template = fn({
       toasts: {
         invoices: {
@@ -61,7 +61,7 @@ vi.mock("next-intl-selector", () => ({
       },
     });
     if (!vars) return template;
-    return Object.entries(vars).reduce((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
+    return Object.entries(vars).reduce<string>((str, [key, value]) => str.replace(`{{${key}}}`, value), template);
   }),
 }));
 
@@ -379,7 +379,10 @@ describe("useInvoiceShare", () => {
 
       const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
       expect(failureResult).toBeNull();
-      expect(promiseMessages?.error?.(new Error("unknown"))).toBe("Failed to send email to recipient@example.com: unknown");
+      expect(typeof promiseMessages?.error).toBe("function");
+      if (typeof promiseMessages?.error === "function") {
+        expect(promiseMessages.error(new Error("unknown"))).toBe("Failed to send email to recipient@example.com: unknown");
+      }
     });
 
     it("formats email errors from non-error thrown values", async () => {
@@ -395,9 +398,12 @@ describe("useInvoiceShare", () => {
 
       const promiseMessages = mockToast.promise.mock.calls[0]?.[1];
       expect(failureResult).toBeNull();
-      expect(promiseMessages?.error?.("email gateway unavailable")).toBe(
-        "Failed to send email to recipient@example.com: email gateway unavailable",
-      );
+      expect(typeof promiseMessages?.error).toBe("function");
+      if (typeof promiseMessages?.error === "function") {
+        expect(promiseMessages.error("email gateway unavailable")).toBe(
+          "Failed to send email to recipient@example.com: email gateway unavailable",
+        );
+      }
     });
 
     it("omits replyTo when not provided", async () => {

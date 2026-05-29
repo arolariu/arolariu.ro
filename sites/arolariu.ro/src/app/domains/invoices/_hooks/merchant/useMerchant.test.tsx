@@ -3,11 +3,10 @@
  * @module app/domains/invoices/_hooks/merchant/useMerchant.test
  */
 
-import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildEntityStoreState, buildMerchant, mockEntityStoreSelector} from "../../../../../../tests/helpers";
+import {buildEntityStoreState, buildMerchant, mockEntityStoreSelector, mockResolvedActionFailure} from "../../../../../../tests/helpers";
 import {useMerchant} from "./useMerchant";
 
 vi.mock("@/stores", () => ({
@@ -97,12 +96,8 @@ describe("useMerchant", () => {
 
   it("sets the error flag and logs when the server action returns failure", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const errorResult: ServerActionResult<Readonly<Merchant>> = {
-      success: false,
-      error: {code: "NOT_FOUND", message: "Merchant not found"},
-    };
     createMockStoreState({hasHydrated: true});
-    mockFetchMerchant.mockResolvedValue(errorResult);
+    mockResolvedActionFailure(mockFetchMerchant, {code: "NOT_FOUND", message: "Merchant not found"});
 
     const {result} = renderHook(() => useMerchant({merchantIdentifier: merchantId}));
 

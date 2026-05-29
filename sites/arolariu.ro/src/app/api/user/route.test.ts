@@ -41,7 +41,7 @@ describe("GET /api/user", () => {
         setAttributes: vi.fn(),
       };
       try {
-        return await (fn as (span: typeof mockSpan) => Promise<unknown>)(mockSpan);
+        return await fn(mockSpan as unknown as Parameters<typeof fn>[0]);
       } catch (error) {
         // Re-throw to allow outer withSpan to catch
         throw error;

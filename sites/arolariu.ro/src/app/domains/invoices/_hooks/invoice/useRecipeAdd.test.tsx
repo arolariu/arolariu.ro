@@ -68,11 +68,11 @@ describe("useRecipeAdd", () => {
 
   describe("recipe addition", () => {
     it("successfully adds a recipe to empty list", async () => {
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(testRecipe));
 
-      expect(result.current.isAdding).toBe(false);
+      expect(hookResult.result.current.isAdding).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipe],
@@ -133,9 +133,9 @@ describe("useRecipeAdd", () => {
     });
 
     it("preserves invoice properties other than recipes", async () => {
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(testRecipe));
 
       expect(testInvoice.id).toBe(testInvoice.id);
       expect(testInvoice.name).toBe(testInvoice.name);
@@ -143,9 +143,9 @@ describe("useRecipeAdd", () => {
     });
 
     it("returns updated invoice snapshot", async () => {
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(testRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,
@@ -158,11 +158,11 @@ describe("useRecipeAdd", () => {
 
   describe("loading state management", () => {
     it("resets isAdding after addition", async () => {
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(testRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(testRecipe));
 
-      expect(result.current.isAdding).toBe(false);
+      expect(hookResult.result.current.isAdding).toBe(false);
     });
 
     it("resets isAdding even if store update throws", async () => {
@@ -226,9 +226,9 @@ describe("useRecipeAdd", () => {
         preparationTime: 15,
       });
 
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(complexRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(complexRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,
@@ -247,9 +247,9 @@ describe("useRecipeAdd", () => {
         cookingTime: 0,
       });
 
-      const {result} = renderHook(() => useRecipeAdd(testInvoice));
+      const hookResult = renderHook(() => useRecipeAdd(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.addRecipeCallback(minimalRecipe));
+      await invokeHookCallback(hookResult, (current) => current.addRecipeCallback(minimalRecipe));
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(
         testInvoice.id,

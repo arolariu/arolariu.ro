@@ -85,11 +85,11 @@ describe("useRecipeDelete", () => {
 
   describe("recipe deletion", () => {
     it("successfully removes a recipe by name", async () => {
-      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+      const hookResult = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.removeRecipeCallback("Recipe 2"));
+      await invokeHookCallback(hookResult, (current) => current.removeRecipeCallback("Recipe 2"));
 
-      expect(result.current.isDeleting).toBe(false);
+      expect(hookResult.result.current.isDeleting).toBe(false);
 
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
         possibleRecipes: [testRecipes[0], testRecipes[2]],
@@ -114,9 +114,9 @@ describe("useRecipeDelete", () => {
 
     it("removes all recipes with matching name", async () => {
       const duplicateRecipes: Recipe[] = [
-        {...testRecipes[0], name: "Duplicate"},
-        {...testRecipes[1], name: "Duplicate"},
-        {...testRecipes[2], name: "Unique"},
+        buildRecipe({name: "Duplicate"}),
+        buildRecipe({name: "Duplicate"}),
+        buildRecipe({name: "Unique"}),
       ];
 
       const invoiceWithDuplicates = buildInvoice({
@@ -177,11 +177,11 @@ describe("useRecipeDelete", () => {
 
   describe("loading state management", () => {
     it("resets isDeleting after deletion", async () => {
-      const {result} = renderHook(() => useRecipeDelete(testInvoice));
+      const hookResult = renderHook(() => useRecipeDelete(testInvoice));
 
-      await invokeHookCallback(result, (current) => current.removeRecipeCallback("Recipe 1"));
+      await invokeHookCallback(hookResult, (current) => current.removeRecipeCallback("Recipe 1"));
 
-      expect(result.current.isDeleting).toBe(false);
+      expect(hookResult.result.current.isDeleting).toBe(false);
     });
 
     it("resets isDeleting even if store update throws", async () => {
