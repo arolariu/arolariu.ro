@@ -168,12 +168,24 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.notDefined)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.grocery)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.fastFood)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.homeCleaning)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.carAuto)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.other)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.notDefined)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.grocery)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.fastFood)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.homeCleaning)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.carAuto)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.OTHER.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.category.options.other)}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -188,13 +200,27 @@ export default function InvoiceDetailsForm(): React.JSX.Element {
                   <SelectValue placeholder={t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.placeholder)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={PaymentType.Unknown.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.unknown)}</SelectItem>
-                  <SelectItem value={PaymentType.Cash.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.cash)}</SelectItem>
-                  <SelectItem value={PaymentType.Card.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.card)}</SelectItem>
-                  <SelectItem value={PaymentType.Transfer.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.transfer)}</SelectItem>
-                  <SelectItem value={PaymentType.MobilePayment.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.mobilePayment)}</SelectItem>
-                  <SelectItem value={PaymentType.Voucher.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.voucher)}</SelectItem>
-                  <SelectItem value={PaymentType.Other.toString()}>{t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.other)}</SelectItem>
+                  <SelectItem value={PaymentType.Unknown.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.unknown)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.Cash.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.cash)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.Card.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.card)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.Transfer.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.transfer)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.MobilePayment.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.mobilePayment)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.Voucher.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.voucher)}
+                  </SelectItem>
+                  <SelectItem value={PaymentType.Other.toString()}>
+                    {t((m) => m.forms.invoices.createInvoice.detailsForm.fields.paymentType.options.other)}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

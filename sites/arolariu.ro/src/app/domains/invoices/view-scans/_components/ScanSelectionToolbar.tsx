@@ -133,7 +133,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                         size='sm'
                         disabled={isDeleting}>
                         <TbTrash />
-                        <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}</span>
+                        <span className={styles["hiddenMobile"]}>
+                          {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
+                        </span>
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -145,13 +147,17 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t((m) => m.pages.invoices.viewScans.toolbar.delete.cancel)}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteSelected}>{t((m) => m.pages.invoices.viewScans.toolbar.delete.confirm)}</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDeleteSelected}>
+                          {t((m) => m.pages.invoices.viewScans.toolbar.delete.confirm)}
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 }
               />
-              <TooltipContent>{t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}</TooltipContent>
+              <TooltipContent>
+                {t((m) => m.pages.invoices.viewScans.toolbar.delete.button, {count: String(selectedScans.length)})}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -163,12 +169,22 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                     onClick={onCreateInvoice}
                     className={styles["createButton"]}>
                     <TbFileInvoice className={styles["createIcon"]} />
-                    <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices) : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}</span>
-                    <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.viewScans.toolbar.createInvoice).split(" ")[0]}</span>
+                    <span className={styles["hiddenMobile"]}>
+                      {selectedScans.length > 1
+                        ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices)
+                        : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}
+                    </span>
+                    <span className={styles["visibleMobile"]}>
+                      {t((m) => m.pages.invoices.viewScans.toolbar.createInvoice).split(" ")[0]}
+                    </span>
                   </Button>
                 }
               />
-              <TooltipContent>{selectedScans.length > 1 ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices) : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}</TooltipContent>
+              <TooltipContent>
+                {selectedScans.length > 1
+                  ? t((m) => m.pages.invoices.viewScans.toolbar.createInvoices)
+                  : t((m) => m.pages.invoices.viewScans.toolbar.createInvoice)}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

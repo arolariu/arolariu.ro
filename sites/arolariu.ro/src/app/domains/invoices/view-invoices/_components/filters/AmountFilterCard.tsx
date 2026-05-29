@@ -7,8 +7,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCurrencyDollar} from "react-icons/tb";
 import type {FilterState} from "../../_hooks/useInvoiceFilters";
-import {FilterCardFrame} from "./FilterCardFrame";
 import styles from "./AmountFilterCard.module.scss";
+import {FilterCardFrame} from "./FilterCardFrame";
 
 type Props = {
   readonly filters: FilterState;

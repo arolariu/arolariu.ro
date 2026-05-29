@@ -3,8 +3,8 @@
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Image from "next/image";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ImageDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Full-screen dialog for viewing receipt images at expanded size.

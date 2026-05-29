@@ -78,8 +78,12 @@ export default function Navigation(): React.JSX.Element {
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["cardContentInner"]}>
                     <div className={styles["cardTextCenter"]}>
-                      <h3 className={styles["cardTitle"]}>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.title` as "platform.title"}`))}</h3>
-                      <p className={styles["cardSubtitle"]}>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.subtitle` as "platform.subtitle"}`))}</p>
+                      <h3 className={styles["cardTitle"]}>
+                        {t(selectorFromPath(`About.Hub.navigation.${`${item.key}.title` as "platform.title"}`))}
+                      </h3>
+                      <p className={styles["cardSubtitle"]}>
+                        {t(selectorFromPath(`About.Hub.navigation.${`${item.key}.subtitle` as "platform.subtitle"}`))}
+                      </p>
                     </div>
 
                     {/* Feature list */}
@@ -93,7 +97,13 @@ export default function Navigation(): React.JSX.Element {
                             className={styles["featureBadge"]}>
                             <TbCheck className={styles["featureIcon"]} />
                           </Badge>
-                          <span>{t(selectorFromPath(`About.Hub.navigation.${`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`}`))}</span>
+                          <span>
+                            {t(
+                              selectorFromPath(
+                                `About.Hub.navigation.${`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`}`,
+                              ),
+                            )}
+                          </span>
                         </li>
                       ))}
                     </ul>

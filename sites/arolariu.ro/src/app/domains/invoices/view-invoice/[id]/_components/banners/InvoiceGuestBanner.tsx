@@ -13,7 +13,9 @@ export function InvoiceGuestBanner(): React.JSX.Element {
       className={styles["alert"]}>
       <TbInfoCircle className={styles["infoIcon"]} />
       <AlertTitle className={styles["alertTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceGuestBanner.title)}</AlertTitle>
-      <AlertDescription className={styles["alertDescription"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceGuestBanner.description)}</AlertDescription>
+      <AlertDescription className={styles["alertDescription"]}>
+        {t((m) => m.pages.invoices.viewInvoice.invoiceGuestBanner.description)}
+      </AlertDescription>
     </Alert>
   );
 }

@@ -22,7 +22,7 @@ import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invo
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useMemo, useState} from "react";
-import { patchInvoice } from "../../../_actions/invoices";
+import {patchInvoice} from "../../../_actions/invoices";
 
 /**
  * Tracks which fields have been modified and their new values.
@@ -211,7 +211,10 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         return false;
       }
     } catch (error) {
-      console.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.console.saveFailed), error);
+      console.error(
+        t((m) => m.pages.invoices.editInvoice.editInvoiceContext.console.saveFailed),
+        error,
+      );
       toast.error(t((m) => m.pages.invoices.editInvoice.editInvoiceContext.toasts.saveFailed));
       return false;
     } finally {

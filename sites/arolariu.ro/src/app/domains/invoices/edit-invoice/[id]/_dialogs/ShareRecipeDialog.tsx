@@ -1,6 +1,17 @@
 "use client";
 
-import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, toast} from "@arolariu/components";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  toast,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbCopy, TbShare} from "react-icons/tb";
@@ -46,7 +57,11 @@ export default function ShareRecipeDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.share.title)}</DialogTitle>
-          <DialogDescription>{recipe ? t((m) => m.dialogs.invoices.recipeDialog.share.description) : t((m) => m.dialogs.invoices.recipeDialog.share.missingRecipe)}</DialogDescription>
+          <DialogDescription>
+            {recipe
+              ? t((m) => m.dialogs.invoices.recipeDialog.share.description)
+              : t((m) => m.dialogs.invoices.recipeDialog.share.missingRecipe)}
+          </DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>

@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/products/deleteInvoiceProduct.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -19,9 +19,7 @@ describe("deleteInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("sends the productName delete body and revalidates invoice pages", async () => {
@@ -79,9 +77,7 @@ describe("deleteInvoiceProduct", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await deleteInvoiceProduct({invoiceId, productName});

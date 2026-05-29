@@ -24,7 +24,6 @@
  * - Chart data computation only runs when invoices change
  */
 
-
 import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
 import {MerchantCategory, type Invoice} from "@/types/invoices";

@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching a single merchant by identifier.
-* @module app/domains/invoices/_hooks/merchant/useMerchant
+ * @module app/domains/invoices/_hooks/merchant/useMerchant
  *
  * @remarks
  * Client-side data hook that integrates with the merchants Zustand store.
@@ -14,7 +14,7 @@ import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import { fetchMerchant } from "../../_actions/merchants";
+import {fetchMerchant} from "../../_actions/merchants";
 
 /**
  * Input parameters for the useMerchant hook.

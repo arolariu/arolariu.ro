@@ -9,7 +9,6 @@
  * copy and service cards with client-side navigation.
  */
 
-
 import {RichText} from "@/presentation/Text";
 import {useTranslations} from "next-intl-selector";
 import Image from "next/image";

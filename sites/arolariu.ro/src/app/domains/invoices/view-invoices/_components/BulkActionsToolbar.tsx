@@ -162,7 +162,12 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
         } else if (successCount === 0) {
           toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChangeError));
         } else {
-          toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryPartialSuccess, {success: String(successCount), failed: String(failureCount)}));
+          toast.success(
+            t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryPartialSuccess, {
+              success: String(successCount),
+              failed: String(failureCount),
+            }),
+          );
         }
 
         clearSelectedInvoices();
@@ -192,7 +197,9 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
         <div className={styles["toolbarContent"]}>
           {/* Left side: Selection count and clear button */}
           <div className={styles["toolbarLeft"]}>
-            <span className={styles["selectedCount"]}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.selected, {count: selectedInvoices.length})}</span>
+            <span className={styles["selectedCount"]}>
+              {t((m) => m.pages.invoices.viewInvoices.bulkActions.selected, {count: selectedInvoices.length})}
+            </span>
             <Button
               variant='ghost'
               size='sm'
@@ -235,11 +242,15 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.title)}</AlertDialogTitle>
-                  <AlertDialogDescription>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.description, {count: selectedInvoices.length})}</AlertDialogDescription>
+                  <AlertDialogDescription>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.description, {count: selectedInvoices.length})}
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.cancel)}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.confirm)}</AlertDialogAction>
+                  <AlertDialogAction onClick={handleDelete}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.deleteConfirm.confirm)}
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -256,12 +267,24 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                   <SelectValue placeholder={t((m) => m.pages.invoices.viewInvoices.bulkActions.changeCategory)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.notDefined)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.grocery)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.fastFood)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.homeCleaning)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.carAuto)}</SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>{t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.other)}</SelectItem>
+                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.notDefined)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.grocery)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.fastFood)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.homeCleaning)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.carAuto)}
+                  </SelectItem>
+                  <SelectItem value={InvoiceCategory.OTHER.toString()}>
+                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.other)}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

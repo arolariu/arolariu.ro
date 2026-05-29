@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeAdd.test
  */
 
+import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useRecipeAdd} from "./useRecipeAdd";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {Recipe} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useRecipeAdd} from "./useRecipeAdd";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -43,11 +43,10 @@ describe("useRecipeAdd", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      updateEntity: typeof mockUpdateEntity;
-    }) => typeof mockUpdateEntity) => selector({
-      updateEntity: mockUpdateEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {updateEntity: typeof mockUpdateEntity}) => typeof mockUpdateEntity) =>
+      selector({
+        updateEntity: mockUpdateEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -279,10 +278,7 @@ describe("useRecipeAdd", () => {
         servings: 2,
       };
 
-      const {result, rerender} = renderHook(
-        ({invoice}) => useRecipeAdd(invoice),
-        {initialProps: {invoice: testInvoice}},
-      );
+      const {result, rerender} = renderHook(({invoice}) => useRecipeAdd(invoice), {initialProps: {invoice: testInvoice}});
 
       const updated1 = await result.current.addRecipeCallback(recipe1);
       rerender({invoice: updated1});

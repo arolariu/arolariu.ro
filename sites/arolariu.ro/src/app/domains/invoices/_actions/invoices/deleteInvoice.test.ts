@@ -3,10 +3,10 @@
  * @module app/domains/invoices/_actions/invoices/deleteInvoice.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {revalidatePath} from "next/cache";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -61,9 +61,7 @@ describe("deleteInvoice", () => {
 
   it("maps 404 and 403 responses to specific user messages", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result404 = await deleteInvoice({invoiceId});
@@ -74,9 +72,7 @@ describe("deleteInvoice", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result403 = await deleteInvoice({invoiceId});

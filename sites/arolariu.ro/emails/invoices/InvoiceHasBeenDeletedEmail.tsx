@@ -61,12 +61,25 @@ const InvoiceHasBeenDeletedEmail = defineEmailTemplate<Props>({
           title={t(selectorFromPath("emails.invoiceDeleted.detailsTitle"))}
           items={[
             {label: t(selectorFromPath("emails.invoiceDeleted.details.invoice")), value: invoiceName ?? `#${invoiceId}`},
-            {label: t(selectorFromPath("emails.invoiceDeleted.details.invoiceId")), value: invoiceId ?? t(selectorFromPath("emails.invoiceDeleted.placeholder"))},
-            {label: t(selectorFromPath("emails.invoiceDeleted.details.status")), value: t(selectorFromPath("emails.invoiceDeleted.statusValue"))},
+            {
+              label: t(selectorFromPath("emails.invoiceDeleted.details.invoiceId")),
+              value: invoiceId ?? t(selectorFromPath("emails.invoiceDeleted.placeholder")),
+            },
+            {
+              label: t(selectorFromPath("emails.invoiceDeleted.details.status")),
+              value: t(selectorFromPath("emails.invoiceDeleted.statusValue")),
+            },
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnowTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item0")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item1")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item2")), t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item3"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item0")),
+              t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item1")),
+              t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item2")),
+              t(selectorFromPath("emails.invoiceDeleted.whatYouShouldKnow.item3")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>
           {t.rich(selectorFromPath("emails.invoiceDeleted.body"), {

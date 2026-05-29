@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeUpdate.test
  */
 
+import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useRecipeUpdate} from "./useRecipeUpdate";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {Recipe} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useRecipeUpdate} from "./useRecipeUpdate";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -61,11 +61,10 @@ describe("useRecipeUpdate", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      updateEntity: typeof mockUpdateEntity;
-    }) => typeof mockUpdateEntity) => selector({
-      updateEntity: mockUpdateEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {updateEntity: typeof mockUpdateEntity}) => typeof mockUpdateEntity) =>
+      selector({
+        updateEntity: mockUpdateEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -178,10 +177,7 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(testInvoice));
 
-      const updatedInvoice = await result.current.updateRecipeCallback(
-        "Nonexistent Recipe",
-        updatedRecipe,
-      );
+      const updatedInvoice = await result.current.updateRecipeCallback("Nonexistent Recipe", updatedRecipe);
 
       expect(updatedInvoice.possibleRecipes).toEqual(testRecipes);
       expect(mockUpdateEntity).toHaveBeenCalledWith(testInvoice.id, {
@@ -375,10 +371,7 @@ describe("useRecipeUpdate", () => {
 
   describe("multiple updates", () => {
     it("handles sequential recipe updates", async () => {
-      const {result, rerender} = renderHook(
-        ({invoice}) => useRecipeUpdate(invoice),
-        {initialProps: {invoice: testInvoice}},
-      );
+      const {result, rerender} = renderHook(({invoice}) => useRecipeUpdate(invoice), {initialProps: {invoice: testInvoice}});
 
       const update1: Recipe = {...testRecipes[0]!, description: "First update"};
       const updated1 = await result.current.updateRecipeCallback("Recipe 1", update1);
@@ -442,10 +435,7 @@ describe("useRecipeUpdate", () => {
 
       const {result} = renderHook(() => useRecipeUpdate(invoiceWithSpecial));
 
-      const updatedInvoice = await result.current.updateRecipeCallback(
-        "Recipe w/ Special-Chars & Symbols!",
-        updatedRecipe,
-      );
+      const updatedInvoice = await result.current.updateRecipeCallback("Recipe w/ Special-Chars & Symbols!", updatedRecipe);
 
       expect(updatedInvoice.possibleRecipes[0]?.description).toBe("Updated special");
     });

@@ -3,11 +3,11 @@
  * @module app/domains/invoices/_actions/invoices/products/updateInvoiceProduct.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {ProductCategory} from "@/types/invoices";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
 vi.mock("next/cache", () => ({revalidatePath: vi.fn()}));
@@ -106,9 +106,7 @@ describe("updateInvoiceProduct", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await updateInvoiceProduct({invoiceId, payload});

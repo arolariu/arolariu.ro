@@ -32,8 +32,8 @@ import {
   TbToolsKitchen,
   TbTrash,
 } from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RecipeCard.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 type Props = {
   recipe: Recipe;
@@ -178,7 +178,11 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
-                    render={<li className={styles["moreIngredients"]}>{t((m) => m.cards.invoices.recipeCard.ingredients.more, {count: String(ingredients.length - 3)})}</li>}
+                    render={
+                      <li className={styles["moreIngredients"]}>
+                        {t((m) => m.cards.invoices.recipeCard.ingredients.more, {count: String(ingredients.length - 3)})}
+                      </li>
+                    }
                   />
                   <TooltipContent className={styles["tooltipContent"]}>
                     <p className={styles["tooltipTitle"]}>{t((m) => m.cards.invoices.recipeCard.ingredients.additionalLabel)}</p>

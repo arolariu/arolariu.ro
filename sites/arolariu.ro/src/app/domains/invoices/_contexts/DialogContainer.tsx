@@ -36,7 +36,6 @@
  * @see RFC 1005 - State management patterns (context usage)
  */
 
-
 import dynamic from "next/dynamic";
 import {memo, useMemo} from "react";
 import {useDialogs} from "./DialogContext";

@@ -111,12 +111,12 @@
  * @see {@link fetchScans} - Retrieves user's scans
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient, rewriteAzuriteUrl } from "@/lib/azure/storageClient";
-import { convertBase64ToBlob, createErrorResult, type ServerActionResult } from "@/lib/utils.server";
-import { revalidatePath } from "next/cache";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for updating a scan.
@@ -142,10 +142,12 @@ type ServerActionInputType = Readonly<{
 /**
  * Response from the scan update operation.
  */
-type ServerActionOutputType = ServerActionResult<Readonly<{
-  /** The updated blob URL (same as before, but content is refreshed) */
-  blobUrl?: string;
-}>>;
+type ServerActionOutputType = ServerActionResult<
+  Readonly<{
+    /** The updated blob URL (same as before, but content is refreshed) */
+    blobUrl?: string;
+  }>
+>;
 
 /**
  * Updates/replaces scan blob content in Azure Blob Storage.
@@ -296,7 +298,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<{
  * @see {@link createScan} - Creates new scans
  * @see {@link deleteScan} - Deletes scans with ownership validation
  */
-export async function updateScan({ base64Data, blobName, mimeType, metadata = {} }: ServerActionInputType): ServerActionOutputType {
+export async function updateScan({base64Data, blobName, mimeType, metadata = {}}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{updateScan}}, with blobName:", blobName);
 
   return withSpan("api.actions.scans.updateScan", async () => {
@@ -304,7 +306,7 @@ export async function updateScan({ base64Data, blobName, mimeType, metadata = {}
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       // Step 2. Prepare for blob update
@@ -323,7 +325,7 @@ export async function updateScan({ base64Data, blobName, mimeType, metadata = {}
 
       // Step 4. Upload the updated blob
       addSpanEvent("azure.blob.update.start");
-      logWithTrace("info", "Updating scan in Azure Blob Storage", { blobName }, "server");
+      logWithTrace("info", "Updating scan in Azure Blob Storage", {blobName}, "server");
 
       const updatedFile = await convertBase64ToBlob(base64Data);
       const arrayBuffer = await updatedFile.arrayBuffer();
@@ -344,24 +346,24 @@ export async function updateScan({ base64Data, blobName, mimeType, metadata = {}
       addSpanEvent("azure.blob.update.complete");
 
       if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully updated scan in Azure", { blobName }, "server");
+        logWithTrace("info", "Successfully updated scan in Azure", {blobName}, "server");
         revalidatePath("/domains/invoices/view-scans", "page");
         return {
           success: true,
           data: {
             blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
-          }
+          },
         } as const;
       }
 
       addSpanEvent("azure.blob.update.error");
       const errorText = `Failed to update scan: ${blobUploadResponse._response.status}`;
-      logWithTrace("warn", errorText, { blobName }, "server");
+      logWithTrace("warn", errorText, {blobName}, "server");
       return createErrorResult(new Error(errorText));
     } catch (error: unknown) {
       addSpanEvent("scan.update.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating scan", { error }, "server");
+      logWithTrace("error", "Error updating scan", {error}, "server");
       console.error("Error updating scan:", error);
       return createErrorResult(new Error(errorMessage));
     }

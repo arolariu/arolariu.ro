@@ -13,7 +13,6 @@ import {selectorFromPath} from "next-intl-selector";
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/use-pathname}
  */
 
-
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
 import {usePathname} from "next/navigation";

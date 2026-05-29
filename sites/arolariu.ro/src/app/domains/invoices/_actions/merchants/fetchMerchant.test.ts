@@ -3,11 +3,11 @@
  * @module app/domains/invoices/_actions/merchants/fetchMerchant.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {buildMerchant, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {beforeEach, describe, expect, it, vi} from "vitest";
+import {buildMerchant, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
 
@@ -22,9 +22,7 @@ describe("fetchMerchant", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(mockMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(mockMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("fetches a merchant successfully with valid GUID", async () => {
@@ -120,9 +118,7 @@ describe("fetchMerchant", () => {
 
   it("returns 'Merchant not found' for HTTP 404 responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchMerchant({merchantId});
@@ -153,9 +149,7 @@ describe("fetchMerchant", () => {
 
   it("returns a generic error message for HTTP 403 responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchMerchant({merchantId});
@@ -169,9 +163,7 @@ describe("fetchMerchant", () => {
 
   it("returns a generic error message for HTTP 401 responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Unauthorized", {status: 401, statusText: "Unauthorized"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchMerchant({merchantId});
@@ -292,9 +284,7 @@ describe("fetchMerchant", () => {
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       lastUpdatedAt: new Date("2026-01-02T00:00:00.000Z"),
     });
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(fullMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(fullMerchant, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
 
     const result = await fetchMerchant({merchantId});
 

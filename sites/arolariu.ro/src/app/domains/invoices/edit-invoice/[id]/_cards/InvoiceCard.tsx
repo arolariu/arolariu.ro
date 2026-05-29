@@ -33,9 +33,9 @@ import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
-import styles from "./InvoiceCard.module.scss";
-import { useEditInvoiceContext } from "../_context/EditInvoiceContext";
 import ItemsTable from "../_components/tables/ItemsTable";
+import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
+import styles from "./InvoiceCard.module.scss";
 
 /**
  * Displays comprehensive invoice details with inline editing capabilities.
@@ -188,12 +188,18 @@ export default function InvoiceCard(): React.JSX.Element {
                       className={styles["importantBadge"]}
                       onClick={handleImportantToggle}>
                       <TbHeart className={currentIsImportant ? styles["heartIconFilled"] : styles["heartIcon"]} />
-                      {currentIsImportant ? t((m) => m.cards.invoices.invoiceCard.importantBadge) : t((m) => m.cards.invoices.invoiceCard.markImportant)}
+                      {currentIsImportant
+                        ? t((m) => m.cards.invoices.invoiceCard.importantBadge)
+                        : t((m) => m.cards.invoices.invoiceCard.markImportant)}
                     </Badge>
                   }
                 />
                 <TooltipContent>
-                  <span>{currentIsImportant ? t((m) => m.cards.invoices.invoiceCard.tooltips.unmarkFavorite) : t((m) => m.cards.invoices.invoiceCard.tooltips.markFavorite)}</span>
+                  <span>
+                    {currentIsImportant
+                      ? t((m) => m.cards.invoices.invoiceCard.tooltips.unmarkFavorite)
+                      : t((m) => m.cards.invoices.invoiceCard.tooltips.markFavorite)}
+                  </span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -292,7 +298,9 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
                   <SelectTrigger className={styles["categoryTrigger"]}>
-                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectCategory)}>{currentCategoryLabel}</SelectValue>
+                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectCategory)}>
+                      {currentCategoryLabel}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -316,7 +324,9 @@ export default function InvoiceCard(): React.JSX.Element {
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger className={styles["paymentTrigger"]}>
-                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectPaymentType)}>{currentPaymentTypeLabel}</SelectValue>
+                    <SelectValue placeholder={t((m) => m.cards.invoices.invoiceCard.placeholders.selectPaymentType)}>
+                      {currentPaymentTypeLabel}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTypeOptions.map((option) => (

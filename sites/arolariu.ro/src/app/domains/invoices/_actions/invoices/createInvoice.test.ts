@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/createInvoice.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {buildInvoice, createJsonResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -17,9 +17,7 @@ describe("createInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildInvoice()) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(buildInvoice()) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("posts a creation payload with authenticated userIdentifier when missing", async () => {

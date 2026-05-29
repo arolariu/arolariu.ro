@@ -38,10 +38,10 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Merchant } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Merchant} from "@/types/invoices";
 
 /**
  * Input parameters for the fetchMerchants server action.
@@ -196,7 +196,7 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to fetch merchants (with timeout)
@@ -213,13 +213,13 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchants", {}, "server");
         const data = (await response.json()) as ReadonlyArray<Merchant>;
-        return { success: true, data } as const;
+        return {success: true, data} as const;
       }
 
       addSpanEvent("bff.request.fetch-merchants.error");
       const errorText = await response.text();
       const internalMessage = `Failed to fetch merchants: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("error", "API error fetching merchants", { status: response.status, errorText }, "server");
+      logWithTrace("error", "API error fetching merchants", {status: response.status, errorText}, "server");
       const userMessage =
         response.status === 404
           ? "No merchants found"
@@ -230,7 +230,7 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-merchants.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching the merchants from the server", { error }, "server");
+      logWithTrace("error", "Error fetching the merchants from the server", {error}, "server");
       console.error("Error fetching the merchants from the server:", error);
       return createErrorResult(new Error(errorMessage));
     }

@@ -82,7 +82,10 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
                   </span>
                 </div>
                 <span className={styles["subLabel"]}>
-                  {t((m) => m.cards.invoices.comparisonStatsCard.itemCountComparison, {current: String(stats.currentItemCount), average: String(stats.averageItemCount)})}
+                  {t((m) => m.cards.invoices.comparisonStatsCard.itemCountComparison, {
+                    current: String(stats.currentItemCount),
+                    average: String(stats.averageItemCount),
+                  })}
                 </span>
               </div>
             </div>
@@ -102,7 +105,10 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
                   </span>
                 </div>
                 <span className={styles["subLabel"]}>
-                  {t((m) => m.cards.invoices.comparisonStatsCard.sameStoreComparison, {average: stats.sameMerchantAvg.toFixed(0), currency})}
+                  {t((m) => m.cards.invoices.comparisonStatsCard.sameStoreComparison, {
+                    average: stats.sameMerchantAvg.toFixed(0),
+                    currency,
+                  })}
                 </span>
               </div>
             </div>

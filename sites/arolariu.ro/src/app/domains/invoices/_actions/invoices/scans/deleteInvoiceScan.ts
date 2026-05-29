@@ -32,11 +32,11 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import { revalidatePath } from "next/cache";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for the deleteInvoiceScan server action.
@@ -172,25 +172,25 @@ type ServerActionOutputType = ServerActionResult<void>;
  * @see {@link validateStringIsGuidType} - GUID validation utility
  * @see {@link ServerActionResult} - Result type wrapper
  */
-export async function deleteInvoiceScan({ invoiceId, scanLocation }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{deleteInvoiceScan}}, with:", { invoiceId, scanLocation });
+export async function deleteInvoiceScan({invoiceId, scanLocation}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{deleteInvoiceScan}}, with:", {invoiceId, scanLocation});
 
   return withSpan("api.actions.invoices.deleteInvoiceScan", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", { invoiceId }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to delete the scan
       // We encode the scan location as a URL parameter since it contains special characters
       addSpanEvent("bff.request.delete-scan.start");
-      logWithTrace("info", "Making API request to delete invoice scan", { invoiceId, scanLocation }, "server");
+      logWithTrace("info", "Making API request to delete invoice scan", {invoiceId, scanLocation}, "server");
       const encodedScanLocation = encodeURIComponent(scanLocation);
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans?location=${encodedScanLocation}`, {
         method: "DELETE",
@@ -202,16 +202,16 @@ export async function deleteInvoiceScan({ invoiceId, scanLocation }: ServerActio
       addSpanEvent("bff.request.delete-scan.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully deleted invoice scan", { invoiceId, scanLocation }, "server");
+        logWithTrace("info", "Successfully deleted invoice scan", {invoiceId, scanLocation}, "server");
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
-        return { success: true, data: undefined } as const;
+        return {success: true, data: undefined} as const;
       }
 
       addSpanEvent("bff.request.delete-scan.error");
       const errorText = await response.text();
       const internalMessage = `Failed to delete invoice scan: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, scanLocation, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, scanLocation, errorText}, "server");
       const userMessage =
         response.status === 400
           ? "Cannot delete the scan. The request was invalid."
@@ -224,7 +224,7 @@ export async function deleteInvoiceScan({ invoiceId, scanLocation }: ServerActio
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-scan.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting the invoice scan", { error, invoiceId, scanLocation }, "server");
+      logWithTrace("error", "Error deleting the invoice scan", {error, invoiceId, scanLocation}, "server");
       console.error("Error deleting the invoice scan:", error);
       return createErrorResult(new Error(errorMessage));
     }

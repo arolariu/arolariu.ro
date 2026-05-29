@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/metadata/deleteInvoiceMetadata.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -17,9 +17,7 @@ describe("deleteInvoiceMetadata", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("deletes one metadata key using the backend keys array DTO", async () => {
@@ -74,9 +72,7 @@ describe("deleteInvoiceMetadata", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result2 = await deleteInvoiceMetadata({invoiceId, key});

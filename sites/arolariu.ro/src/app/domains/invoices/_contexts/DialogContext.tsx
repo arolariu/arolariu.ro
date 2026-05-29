@@ -38,7 +38,6 @@
  * @see RFC 1005 - State management patterns (context architecture)
  */
 
-
 import type {Invoice, InvoiceScan, Merchant, Product, Recipe} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
 import {createContext, use, useMemo, useState, type ReactNode} from "react";

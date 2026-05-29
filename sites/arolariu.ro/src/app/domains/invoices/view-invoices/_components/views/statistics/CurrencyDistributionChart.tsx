@@ -139,7 +139,9 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.description)}</CardDescription>
+          <CardDescription className={styles["cardDescription"]}>
+            {t((m) => m.cards.invoices.statistics.currencyDistribution.description)}
+          </CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <SingleCurrencyMessage currency={currency} />
@@ -159,7 +161,9 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
         <div className={styles["headerTop"]}>
           <div>
             <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.title)}</CardTitle>
-            <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.currencyDistribution.description)}</CardDescription>
+            <CardDescription className={styles["cardDescription"]}>
+              {t((m) => m.cards.invoices.statistics.currencyDistribution.description)}
+            </CardDescription>
           </div>
           <button
             type='button'
@@ -168,7 +172,11 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
             aria-label={t((m) => m.cards.invoices.statistics.currencyDistribution.toggleLabel)}
             title={t((m) => m.cards.invoices.statistics.currencyDistribution.toggleLabel)}>
             <TbSwitchHorizontal size={20} />
-            <span className={styles["toggleText"]}>{showRON ? t((m) => m.cards.invoices.statistics.currencyDistribution.showOriginal) : t((m) => m.cards.invoices.statistics.currencyDistribution.showRON)}</span>
+            <span className={styles["toggleText"]}>
+              {showRON
+                ? t((m) => m.cards.invoices.statistics.currencyDistribution.showOriginal)
+                : t((m) => m.cards.invoices.statistics.currencyDistribution.showRON)}
+            </span>
           </button>
         </div>
       </CardHeader>
@@ -225,7 +233,8 @@ export function CurrencyDistributionChart({data}: Props): React.JSX.Element {
                   <div className={styles["secondaryAmount"]}>
                     {showRON ? (
                       <span>
-                        {t((m) => m.cards.invoices.statistics.currencyDistribution.originalAmount)}: {formatAmount(currency.totalOriginal)} {currency.currencySymbol}
+                        {t((m) => m.cards.invoices.statistics.currencyDistribution.originalAmount)}: {formatAmount(currency.totalOriginal)}{" "}
+                        {currency.currencySymbol}
                       </span>
                     ) : (
                       <span>

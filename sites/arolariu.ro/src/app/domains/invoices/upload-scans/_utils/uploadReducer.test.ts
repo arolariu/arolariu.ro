@@ -4,8 +4,8 @@
  */
 
 import {describe, expect, it} from "vitest";
-import type {PendingUpload} from "./uploadTypes";
 import {initialUploadState, selectUploadableItems, uploadReducer} from "./uploadReducer";
+import type {PendingUpload} from "./uploadTypes";
 
 /**
  * Creates a pending upload test fixture.

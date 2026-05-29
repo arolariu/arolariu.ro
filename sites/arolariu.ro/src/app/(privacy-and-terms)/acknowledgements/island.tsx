@@ -9,7 +9,6 @@
  * statistics, contributors, and an interactive package browser.
  */
 
-
 import type {NodePackagesJSON} from "@/types";
 import {useTranslations} from "next-intl-selector";
 import Contributors from "./_components/Contributors";

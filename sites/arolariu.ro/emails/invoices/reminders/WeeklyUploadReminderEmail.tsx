@@ -115,7 +115,13 @@ const WeeklyUploadReminderEmail = async (props: Readonly<Props>): Promise<React.
         ]}
       />
       <EmailCard title={t(selectorFromPath("emails.weeklyUploadReminder.quickTipsTitle"))}>
-        <BulletList items={[t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item0")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item1")), t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item2"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item0")),
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item1")),
+            t(selectorFromPath("emails.weeklyUploadReminder.quickTips.item2")),
+          ]}
+        />
       </EmailCard>
       <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.weeklyUploadReminder.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>

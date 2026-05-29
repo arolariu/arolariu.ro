@@ -14,7 +14,9 @@ import {describe, expect, test, vi} from "vitest";
 // Mock next/dynamic so dialog routing is tested synchronously.
 vi.mock("next/dynamic", () => ({
   default: (
-    loader: () => Promise<{default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}>,
+    loader: () => Promise<
+      {default: React.ComponentType<Record<string, unknown>>} | {ExportDialog: React.ComponentType<Record<string, unknown>>}
+    >,
   ) => {
     void loader().catch(() => undefined);
     const source = loader.toString();

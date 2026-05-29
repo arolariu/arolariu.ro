@@ -15,8 +15,8 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
+import {useDialogs} from "../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
-import { useDialogs } from "../../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant | null;
@@ -103,7 +103,9 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
           </div>
           <div>
             <p className={styles["merchantName"]}>{merchant.name}</p>
-            <p className={styles["merchantAddress"]}>{t((m) => m.cards.invoices.merchantCard.addressLabel, {address: merchant.address.address})}</p>
+            <p className={styles["merchantAddress"]}>
+              {t((m) => m.cards.invoices.merchantCard.addressLabel, {address: merchant.address.address})}
+            </p>
           </div>
         </div>
         <div className={styles["actions"]}>

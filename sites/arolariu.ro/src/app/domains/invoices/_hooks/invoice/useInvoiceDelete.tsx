@@ -1,22 +1,22 @@
 "use client";
 
 /**
-* @fileoverview Hook for deleting invoices individually or in sequential batches.
-* @module app/domains/invoices/_hooks/invoice/useInvoiceDelete
-*
-* @remarks
-* Wraps the invoice deletion server action with client-side loading state,
-* toast feedback, navigation after single deletes, and Zustand store updates.
-* Bulk deletion is intentionally sequential so a partial failure can be
-* reported without overwhelming the backend.
+ * @fileoverview Hook for deleting invoices individually or in sequential batches.
+ * @module app/domains/invoices/_hooks/invoice/useInvoiceDelete
+ *
+ * @remarks
+ * Wraps the invoice deletion server action with client-side loading state,
+ * toast feedback, navigation after single deletes, and Zustand store updates.
+ * Bulk deletion is intentionally sequential so a partial failure can be
+ * reported without overwhelming the backend.
  */
 
 import {useInvoicesStore} from "@/stores";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
+import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
-import { deleteInvoice as deleteInvoiceServerSide } from "../../_actions/invoices";
-import { useRouter } from "next/navigation";
+import {deleteInvoice as deleteInvoiceServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk delete operation.
@@ -260,7 +260,12 @@ export function useInvoiceDelete(): Readonly<HookOutputType> {
         } else if (!hasSuccess) {
           toast.error(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeleteError, {count: String(result.failureCount)}));
         } else {
-          toast.info(t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {successCount: String(result.successCount), failureCount: String(result.failureCount)}));
+          toast.info(
+            t((m) => m.toasts.invoices.useInvoiceDelete.bulkDeletePartial, {
+              successCount: String(result.successCount),
+              failureCount: String(result.failureCount),
+            }),
+          );
         }
 
         return result;

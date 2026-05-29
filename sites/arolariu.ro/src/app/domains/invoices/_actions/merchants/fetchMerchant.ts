@@ -38,11 +38,11 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Merchant } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Merchant} from "@/types/invoices";
 
 /**
  * Input parameters for the fetchMerchant server action.
@@ -164,24 +164,24 @@ type ServerActionOutputType = ServerActionResult<Readonly<Merchant>>;
  * @see {@link Merchant} - Complete merchant type definition
  * @see {@link ServerActionResult} - Result type wrapper
  */
-export async function fetchMerchant({ merchantId }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{fetchMerchant}}, with:", { merchantId });
+export async function fetchMerchant({merchantId}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{fetchMerchant}}, with:", {merchantId});
 
   return withSpan("api.actions.invoices.fetchMerchant", async () => {
     try {
       // Step 0. Validate merchant identifier is valid GUID
-      logWithTrace("info", "Validating merchant identifier is valid...", { merchantId }, "server");
+      logWithTrace("info", "Validating merchant identifier is valid...", {merchantId}, "server");
       validateStringIsGuidType(merchantId, "merchantId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to fetch the merchant (with timeout)
       addSpanEvent("bff.request.fetch-merchant.start");
-      logWithTrace("info", "Making API request to fetch merchant...", { merchantId }, "server");
+      logWithTrace("info", "Making API request to fetch merchant...", {merchantId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
@@ -191,24 +191,21 @@ export async function fetchMerchant({ merchantId }: ServerActionInputType): Serv
       addSpanEvent("bff.request.fetch-merchant.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully fetched merchant", { merchantId }, "server");
+        logWithTrace("info", "Successfully fetched merchant", {merchantId}, "server");
         const data = (await response.json()) as Readonly<Merchant>;
-        return { success: true, data } as const;
+        return {success: true, data} as const;
       }
 
       addSpanEvent("bff.request.fetch-merchant.error");
       const errorText = await response.text();
       const internalMessage = `Failed to fetch merchant. Status: ${response.status}, Response: ${errorText}`;
-      logWithTrace("error", "API error fetching merchant", { merchantId, status: response.status, errorText }, "server");
-      const userMessage =
-        response.status === 404
-          ? "Merchant not found"
-          : "Failed to fetch merchant. Please try again.";
+      logWithTrace("error", "API error fetching merchant", {merchantId, status: response.status, errorText}, "server");
+      const userMessage = response.status === 404 ? "Merchant not found" : "Failed to fetch merchant. Please try again.";
       return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-merchant.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching the merchant from the server", { error, merchantId }, "server");
+      logWithTrace("error", "Error fetching the merchant from the server", {error, merchantId}, "server");
       console.error("Error fetching the merchant from the server:", error);
       return createErrorResult(new Error(errorMessage));
     }

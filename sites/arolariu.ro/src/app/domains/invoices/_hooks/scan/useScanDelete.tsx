@@ -2,11 +2,11 @@
 
 /**
  * @fileoverview Hook for managing scan deletion with server action integration.
-* @module app/domains/invoices/_hooks/scan/useScanDelete
-*
-* @remarks
-* Wraps standalone scan deletion with loading state, toast feedback, and
-* Zustand scans store cleanup after the server action succeeds.
+ * @module app/domains/invoices/_hooks/scan/useScanDelete
+ *
+ * @remarks
+ * Wraps standalone scan deletion with loading state, toast feedback, and
+ * Zustand scans store cleanup after the server action succeeds.
  */
 
 import {useScansStore} from "@/stores";
@@ -14,7 +14,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import { deleteScan as removeScanServerSide } from "../../_actions/scans";
+import {deleteScan as removeScanServerSide} from "../../_actions/scans";
 
 /**
  * Hook output type for standalone scan deletion.

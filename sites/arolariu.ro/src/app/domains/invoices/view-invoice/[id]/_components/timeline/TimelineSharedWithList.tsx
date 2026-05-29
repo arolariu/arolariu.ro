@@ -5,7 +5,6 @@
  * @module components/invoice/timeline/shared-with-list
  */
 
-
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import {useUserInformation} from "@/hooks";
 import {LAST_GUID} from "@/lib/utils.generic";
@@ -85,8 +84,12 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
           variant='default'
           className={styles["alertWarning"]}>
           <TbGlobe className={styles["iconWarning"]} />
-          <AlertTitle className={styles["alertTitleWarning"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.title)}</AlertTitle>
-          <AlertDescription className={styles["alertDescMuted"]}>{t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.description)}</AlertDescription>
+          <AlertTitle className={styles["alertTitleWarning"]}>
+            {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.title)}
+          </AlertTitle>
+          <AlertDescription className={styles["alertDescMuted"]}>
+            {t((m) => m.pages.invoices.viewInvoice.timelineSharedWithList.publicAccess.description)}
+          </AlertDescription>
         </Alert>
       )}
 

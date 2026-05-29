@@ -26,9 +26,9 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbPlus, TbX} from "react-icons/tb";
+import {updateInvoiceProduct} from "../../../_actions/invoices";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./AllergenDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
-import { updateInvoiceProduct } from "../../../_actions/invoices";
 
 /**
  * Common allergens for quick-add functionality.
@@ -232,16 +232,16 @@ export default function AllergenDialog(): React.JSX.Element {
         payload: {
           originalProductName: product.name,
           updatedProduct: {
-             name: product.name,
-          category: product.category,
-          quantity: product.quantity,
-          quantityUnit: product.quantityUnit,
-          productCode: product.productCode,
+            name: product.name,
+            category: product.category,
+            quantity: product.quantity,
+            quantityUnit: product.quantityUnit,
+            productCode: product.productCode,
             price: product.price,
             totalPrice: product.price * product.quantity,
-          metadata: product.metadata,
-          detectedAllergens: allergens,
-          }
+            metadata: product.metadata,
+            detectedAllergens: allergens,
+          },
         },
       });
 
@@ -364,7 +364,9 @@ export default function AllergenDialog(): React.JSX.Element {
           <Button
             onClick={handleSave}
             disabled={isSaving}>
-            {isSaving ? t((m) => m.dialogs.invoices.allergenDialog.buttons.saving) : t((m) => m.dialogs.invoices.allergenDialog.buttons.save)}
+            {isSaving
+              ? t((m) => m.dialogs.invoices.allergenDialog.buttons.saving)
+              : t((m) => m.dialogs.invoices.allergenDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>

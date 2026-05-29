@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/fetchInvoice.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {buildInvoice, createJsonResponse, createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -54,9 +54,7 @@ describe("fetchInvoice", () => {
 
   it("maps 404 to the not-found user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});
@@ -70,9 +68,7 @@ describe("fetchInvoice", () => {
 
   it("maps 403 to the forbidden user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});
@@ -86,9 +82,7 @@ describe("fetchInvoice", () => {
 
   it("maps other non-OK responses to the fallback user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await fetchInvoice({invoiceId});

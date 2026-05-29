@@ -177,7 +177,9 @@ function UploadContent(): React.JSX.Element {
                         <Link href='/domains/invoices/view-scans'>
                           <TbEye className={styles["actionIcon"]} />
                           <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.viewScans)}</span>
-                          <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.viewScans).split(" ")[0]}</span>
+                          <span className={styles["visibleMobile"]}>
+                            {t((m) => m.pages.invoices.uploadScans.buttons.viewScans).split(" ")[0]}
+                          </span>
                         </Link>
                       }
                     />
@@ -198,7 +200,9 @@ function UploadContent(): React.JSX.Element {
                         <Link href='/domains/invoices/view-invoices'>
                           <TbFileInvoice className={styles["actionIcon"]} />
                           <span className={styles["hiddenMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.myInvoices)}</span>
-                          <span className={styles["visibleMobile"]}>{t((m) => m.pages.invoices.uploadScans.buttons.myInvoices).split(" ")[0]}</span>
+                          <span className={styles["visibleMobile"]}>
+                            {t((m) => m.pages.invoices.uploadScans.buttons.myInvoices).split(" ")[0]}
+                          </span>
                         </Link>
                       }
                     />

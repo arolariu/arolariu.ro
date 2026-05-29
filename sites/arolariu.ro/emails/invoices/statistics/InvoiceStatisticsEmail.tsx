@@ -115,7 +115,11 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
     const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
 
     const label = t(selectorFromPath("emails.invoiceStats.frequencyLabel"), {frequency});
-    const preview = t(selectorFromPath("emails.invoiceStats.preview"), {frequencyLabel: label, name, totalSpend: safeFormatCurrency(totals.totalSpend, currency)});
+    const preview = t(selectorFromPath("emails.invoiceStats.preview"), {
+      frequencyLabel: label,
+      name,
+      totalSpend: safeFormatCurrency(totals.totalSpend, currency),
+    });
 
     const breakdownSource = categorySpendBreakdown ?? topCategories;
     const breakdownTop = breakdownSource.slice(0, 6);
@@ -147,7 +151,10 @@ const InvoiceStatisticsEmail = defineEmailTemplate<InvoiceStatisticsEmailProps>(
             {label: t(selectorFromPath("emails.invoiceStats.metrics.invoices")), value: String(totals.invoicesCount)},
             {label: t(selectorFromPath("emails.invoiceStats.metrics.scans")), value: String(totals.scansCount)},
             {label: t(selectorFromPath("emails.invoiceStats.metrics.totalSpend")), value: safeFormatCurrency(totals.totalSpend, currency)},
-            {label: t(selectorFromPath("emails.invoiceStats.metrics.averagePerInvoice")), value: safeFormatCurrency(totals.averageSpend, currency)},
+            {
+              label: t(selectorFromPath("emails.invoiceStats.metrics.averagePerInvoice")),
+              value: safeFormatCurrency(totals.averageSpend, currency),
+            },
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceStats.reportDetailsTitle"))}>

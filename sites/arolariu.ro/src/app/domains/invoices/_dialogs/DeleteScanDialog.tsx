@@ -32,8 +32,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbLoader2, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import {useScanDelete} from "../_hooks/scan";
 import styles from "./DeleteScanDialog.module.scss";
-import { useScanDelete } from "../_hooks/scan";
 
 /**
  * Renders the shared standalone scan deletion confirmation dialog.
@@ -125,7 +125,9 @@ export default function DeleteScanDialog(): React.JSX.Element {
             <TbTrash className={styles["titleIcon"]} />
             {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.title)}
           </AlertDialogTitle>
-          <AlertDialogDescription>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.description, {name: scan.name})}</AlertDialogDescription>
+          <AlertDialogDescription>
+            {t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.description, {name: scan.name})}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>{t((m) => m.pages.invoices.viewScans.scanCard.deleteDialog.cancel)}</AlertDialogCancel>

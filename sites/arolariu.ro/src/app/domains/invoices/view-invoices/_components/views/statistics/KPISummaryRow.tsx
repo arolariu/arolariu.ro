@@ -95,7 +95,9 @@ export function KPISummaryRow({data, currency}: Props): React.JSX.Element {
       icon: <TbBuildingStore size={24} />,
       label: t((m) => m.cards.invoices.statistics.kpi.topMerchant),
       value: data.mostFrequentMerchant ? data.mostFrequentMerchant.id.slice(0, 12) : t((m) => m.cards.invoices.statistics.kpi.noneYet),
-      subtitle: data.mostFrequentMerchant ? t((m) => m.cards.invoices.statistics.kpi.visits, {count: String(data.mostFrequentMerchant.count)}) : "",
+      subtitle: data.mostFrequentMerchant
+        ? t((m) => m.cards.invoices.statistics.kpi.visits, {count: String(data.mostFrequentMerchant.count)})
+        : "",
       trend: null,
     },
     {

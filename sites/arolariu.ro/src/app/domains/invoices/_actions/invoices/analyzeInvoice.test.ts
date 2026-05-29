@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/analyzeInvoice.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createTextResponse} from "../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -77,9 +77,7 @@ describe("analyzeInvoice", () => {
 
   it("returns the retry user message for non-5xx responses", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result = await analyzeInvoice({invoiceIdentifier: invoiceId, analysisOptions});

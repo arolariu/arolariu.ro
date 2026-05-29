@@ -219,7 +219,8 @@ export function VehicleCard(): React.JSX.Element {
             <div>
               <p className={styles["tipTitle"]}>{t((m) => m.cards.invoices.vehicleCard.tip.title)}</p>
               <p className={styles["tipDescription"]}>
-                {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/{t((m) => m.cards.invoices.vehicleCard.tip.perLiter)}
+                {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/
+                {t((m) => m.cards.invoices.vehicleCard.tip.perLiter)}
               </p>
             </div>
           </div>

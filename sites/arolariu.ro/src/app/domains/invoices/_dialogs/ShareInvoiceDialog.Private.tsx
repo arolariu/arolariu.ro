@@ -53,7 +53,9 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
         className={styles["alertGreen"]}>
         <TbLock className={styles["lockIcon"]} />
         <AlertTitle className={styles["alertGreenTitle"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.title)}</AlertTitle>
-        <AlertDescription className={styles["alertGreenDesc"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}</AlertDescription>
+        <AlertDescription className={styles["alertGreenDesc"]}>
+          {t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.description)}
+        </AlertDescription>
       </Alert>
 
       <form
@@ -78,7 +80,9 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail, isSendin
           disabled={isSending || !email}
           className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
-          {isSending ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending) : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
+          {isSending
+            ? t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sending)
+            : t((m) => m.dialogs.invoices.shareInvoiceDialogPrivate.sendInvitation)}
         </Button>
       </form>
     </div>

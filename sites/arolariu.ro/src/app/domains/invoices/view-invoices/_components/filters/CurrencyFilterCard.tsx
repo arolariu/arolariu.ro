@@ -32,7 +32,9 @@ export function CurrencyFilterCard({filters, availableCurrencies, onFiltersChang
 
   const handleCurrencyToggle = useCallback(
     (code: string) => {
-      const next = filters.currencies.includes(code) ? filters.currencies.filter((currency) => currency !== code) : [...filters.currencies, code];
+      const next = filters.currencies.includes(code)
+        ? filters.currencies.filter((currency) => currency !== code)
+        : [...filters.currencies, code];
       onFiltersChange({currencies: next});
     },
     [filters.currencies, onFiltersChange],

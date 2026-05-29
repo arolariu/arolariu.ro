@@ -1,7 +1,7 @@
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale} from "next-intl/server";
 import {getTranslations} from "next-intl-selector/server";
+import {getLocale} from "next-intl/server";
 import {Suspense} from "react";
 import Loading from "./loading";
 

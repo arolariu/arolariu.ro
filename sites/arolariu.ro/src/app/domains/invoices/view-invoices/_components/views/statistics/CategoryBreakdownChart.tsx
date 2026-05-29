@@ -63,7 +63,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {formatAmount(data.amount)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.tooltip.invoiceCount, {count: String(data.count)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.categoryBreakdown.tooltip.invoiceCount, {count: String(data.count)})}
+      </p>
     </div>
   );
 }
@@ -118,7 +120,9 @@ export function CategoryBreakdownChart({data, currency}: Props): React.JSX.Eleme
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.categoryBreakdown.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.categoryBreakdown.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

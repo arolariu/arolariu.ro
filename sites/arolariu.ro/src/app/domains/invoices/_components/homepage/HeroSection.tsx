@@ -31,7 +31,9 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
               animate={{opacity: 1, y: 0}}
               transition={{duration: 0.6}}>
               <h1 className={styles["heroTitle"]}>
-                {t((m) => m.pages.invoices.landing.hero.title)} <span className={styles["heroHighlight"]}>{t((m) => m.pages.invoices.landing.hero.titleHighlight)}</span> {t((m) => m.pages.invoices.landing.hero.titleSuffix)}
+                {t((m) => m.pages.invoices.landing.hero.title)}{" "}
+                <span className={styles["heroHighlight"]}>{t((m) => m.pages.invoices.landing.hero.titleHighlight)}</span>{" "}
+                {t((m) => m.pages.invoices.landing.hero.titleSuffix)}
               </h1>
               <p className={styles["heroDescription"]}>{t((m) => m.pages.invoices.landing.hero.description)}</p>
 

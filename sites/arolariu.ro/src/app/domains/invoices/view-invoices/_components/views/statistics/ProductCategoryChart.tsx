@@ -82,7 +82,9 @@ function CustomTooltip({
         {formatAmount(data.totalSpent)} {currency}
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.cards.invoices.statistics.productCategory.tooltip.productCount, {count: String(data.productCount)})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.cards.invoices.statistics.productCategory.tooltip.productCount, {count: String(data.productCount)})}
+      </p>
     </div>
   );
 }
@@ -117,7 +119,9 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
-          <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.productCategory.description)}</CardDescription>
+          <CardDescription className={styles["cardDescription"]}>
+            {t((m) => m.cards.invoices.statistics.productCategory.description)}
+          </CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
@@ -160,7 +164,9 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.cards.invoices.statistics.productCategory.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.cards.invoices.statistics.productCategory.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

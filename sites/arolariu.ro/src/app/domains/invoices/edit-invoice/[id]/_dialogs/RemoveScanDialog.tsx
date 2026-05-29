@@ -7,9 +7,9 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbLoader2, TbTrash} from "react-icons/tb";
+import {deleteInvoiceScan} from "../../../_actions/invoices";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./RemoveScanDialog.module.scss";
-import { deleteInvoiceScan } from "../../../_actions/invoices";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for confirming removal of a scan from an invoice.
@@ -52,9 +52,12 @@ export default function RemoveScanDialog(): React.JSX.Element {
     if (!invoice || !scan) return;
 
     if (isLastScan) {
-      toast.error(t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastTitle), {
-        description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastDescription),
-      });
+      toast.error(
+        t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastTitle),
+        {
+          description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.cannotDeleteLastDescription),
+        },
+      );
       return;
     }
 
@@ -65,19 +68,28 @@ export default function RemoveScanDialog(): React.JSX.Element {
         scanLocation: scan.location,
       });
 
-      toast.success(t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedTitle), {
-        description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedDescription),
-      });
+      toast.success(
+        t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedTitle),
+        {
+          description: t((m) => m.dialogs.invoices.removeScanDialog.toasts.removedDescription),
+        },
+      );
 
       close();
 
       // Refresh the page to reflect the change
       router.refresh();
     } catch (error) {
-      console.error(t((m) => m.dialogs.invoices.removeScanDialog.console.deleteError), error);
-      toast.error(t((m) => m.dialogs.invoices.removeScanDialog.toasts.removeFailedTitle), {
-        description: error instanceof Error ? error.message : t((m) => m.dialogs.invoices.removeScanDialog.errors.unknown),
-      });
+      console.error(
+        t((m) => m.dialogs.invoices.removeScanDialog.console.deleteError),
+        error,
+      );
+      toast.error(
+        t((m) => m.dialogs.invoices.removeScanDialog.toasts.removeFailedTitle),
+        {
+          description: error instanceof Error ? error.message : t((m) => m.dialogs.invoices.removeScanDialog.errors.unknown),
+        },
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -102,7 +114,9 @@ export default function RemoveScanDialog(): React.JSX.Element {
             {t((m) => m.dialogs.invoices.removeScanDialog.title)}
           </DialogTitle>
           <DialogDescription>
-            {isLastScan ? t((m) => m.dialogs.invoices.removeScanDialog.descriptionLastScan) : t((m) => m.dialogs.invoices.removeScanDialog.description, {current: String(currentScanNumber), total: String(totalScans)})}
+            {isLastScan
+              ? t((m) => m.dialogs.invoices.removeScanDialog.descriptionLastScan)
+              : t((m) => m.dialogs.invoices.removeScanDialog.description, {current: String(currentScanNumber), total: String(totalScans)})}
           </DialogDescription>
         </DialogHeader>
 
@@ -117,7 +131,9 @@ export default function RemoveScanDialog(): React.JSX.Element {
                 className={styles["scanPreviewImage"]}
               />
             </div>
-            <p className={styles["previewCaption"]}>{t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}</p>
+            <p className={styles["previewCaption"]}>
+              {t((m) => m.dialogs.invoices.removeScanDialog.scanCaption, {index: String(currentScanNumber)})}
+            </p>
           </div>
         ) : null}
 

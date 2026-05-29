@@ -24,10 +24,10 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 
 /**
  * Input parameters for the deleteInvoiceMetadata server action.
@@ -114,42 +114,42 @@ type ServerActionOutputType = ServerActionResult<void>;
  * @see {@link validateStringIsGuidType} - GUID validation utility
  * @see {@link ServerActionResult} - Result type wrapper
  */
-export async function deleteInvoiceMetadata({ invoiceId, key }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{deleteInvoiceMetadata}}, with:", { invoiceId, key });
+export async function deleteInvoiceMetadata({invoiceId, key}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{deleteInvoiceMetadata}}, with:", {invoiceId, key});
 
   return withSpan("api.actions.invoices.deleteInvoiceMetadata", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", { invoiceId, key }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceId, key}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to delete the metadata key
       addSpanEvent("bff.request.delete-invoice-metadata.start");
-      logWithTrace("info", "Making API request to delete invoice metadata...", { invoiceId, key }, "server");
+      logWithTrace("info", "Making API request to delete invoice metadata...", {invoiceId, key}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/metadata`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ keys: [key] }),
+        body: JSON.stringify({keys: [key]}),
       });
       addSpanEvent("bff.request.delete-invoice-metadata.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully deleted invoice metadata...", { invoiceId, key }, "server");
-        return { success: true, data: undefined } as const;
+        logWithTrace("info", "Successfully deleted invoice metadata...", {invoiceId, key}, "server");
+        return {success: true, data: undefined} as const;
       }
 
       const errorText = await response.text();
       const internalMessage = `Failed to delete invoice metadata: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, key, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, key, errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred while deleting the invoice metadata. Please try again later."
@@ -158,7 +158,7 @@ export async function deleteInvoiceMetadata({ invoiceId, key }: ServerActionInpu
     } catch (error: unknown) {
       addSpanEvent("bff.request.delete-invoice-metadata.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting invoice metadata", { error, invoiceId, key }, "server");
+      logWithTrace("error", "Error deleting invoice metadata", {error, invoiceId, key}, "server");
       console.error("Error deleting invoice metadata:", error);
       return createErrorResult(new Error(errorMessage));
     }

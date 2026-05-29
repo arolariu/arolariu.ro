@@ -15,8 +15,8 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./FeedbackDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for collecting user feedback on invoice analytics features.
@@ -104,16 +104,22 @@ export default function FeedbackDialog(): React.JSX.Element {
       e.preventDefault();
 
       // Show loading toast
-      const loadingToast = toast(t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.title), {
-        description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.description),
-        className: "z-100",
-      });
+      const loadingToast = toast(
+        t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.title),
+        {
+          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.sending.description),
+          className: "z-100",
+        },
+      );
 
       if (rating === 0) {
         toast.dismiss(loadingToast);
-        toast(t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.title), {
-          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.description),
-        });
+        toast(
+          t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.title),
+          {
+            description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.ratingRequired.description),
+          },
+        );
         return;
       }
 
@@ -137,10 +143,13 @@ export default function FeedbackDialog(): React.JSX.Element {
         }
 
         toast.dismiss(loadingToast);
-        toast(t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.title), {
-          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.description),
-          className: "z-100",
-        });
+        toast(
+          t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.title),
+          {
+            description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.success.description),
+            className: "z-100",
+          },
+        );
         setRating(0);
         setFeedback("");
         setSelectedFeatures([]);
@@ -148,9 +157,12 @@ export default function FeedbackDialog(): React.JSX.Element {
       } catch (error: unknown) {
         console.error(">>> Failed to send feedback:", error);
         toast.dismiss(loadingToast);
-        toast(t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.title), {
-          description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.description),
-        });
+        toast(
+          t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.title),
+          {
+            description: t((m) => m.dialogs.invoices.feedbackDialog.toasts.error.description),
+          },
+        );
       } finally {
         close();
       }

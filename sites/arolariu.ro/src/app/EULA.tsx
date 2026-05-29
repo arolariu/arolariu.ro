@@ -261,7 +261,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className={styles["accordionBody"]}>
-                        <p className={styles["accordionDescription"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.essential.description)}</p>
+                        <p className={styles["accordionDescription"]}>
+                          {t((m) => m.pages.legal.eula.cookiesPolicy.cookies.essential.description)}
+                        </p>
                         <div className={styles["switchRow"]}>
                           <Switch
                             nativeButton
@@ -293,7 +295,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className={styles["accordionBody"]}>
-                        <p className={styles["accordionDescription"]}>{t((m) => m.pages.legal.eula.cookiesPolicy.cookies.analytics.description)}</p>
+                        <p className={styles["accordionDescription"]}>
+                          {t((m) => m.pages.legal.eula.cookiesPolicy.cookies.analytics.description)}
+                        </p>
                         <div className={styles["switchRow"]}>
                           <Switch
                             nativeButton

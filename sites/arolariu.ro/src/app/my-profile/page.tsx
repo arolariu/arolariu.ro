@@ -11,8 +11,8 @@
 import {createMetadata} from "@/metadata";
 import {currentUser} from "@clerk/nextjs/server";
 import type {Metadata} from "next";
-import {getLocale} from "next-intl/server";
 import {getTranslations} from "next-intl-selector/server";
+import {getLocale} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderMyProfileScreen from "./island";
 

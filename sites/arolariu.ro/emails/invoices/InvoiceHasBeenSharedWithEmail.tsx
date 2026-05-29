@@ -70,7 +70,13 @@ const InvoiceHasBeenSharedWithEmail = defineEmailTemplate<Props>({
           ]}
         />
         <EmailCard title={t(selectorFromPath("emails.invoiceShared.whatYouCanDoTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item0")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item1")), t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item0")),
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item1")),
+              t(selectorFromPath("emails.invoiceShared.whatYouCanDo.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.invoiceShared.body"))}</Text>
         <Text style={EmailParagraphStyles}>

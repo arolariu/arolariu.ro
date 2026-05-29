@@ -3,6 +3,7 @@
  * @module sites/arolariu.ro/src/lib/utils.server/tests
  */
 
+import {jwtVerify, SignJWT} from "jose";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
 import {
@@ -14,7 +15,6 @@ import {
   parseBackendError,
   verifyJwtToken,
 } from "./utils.server";
-import {jwtVerify, SignJWT} from "jose";
 
 const instrumentationMocks = vi.hoisted(() => ({
   injectTraceContextHeaders: vi.fn((headers?: Headers) => {

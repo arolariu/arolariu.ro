@@ -10,7 +10,7 @@ import {type CachedScan, ScanStatus} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useCallback, useEffect, useRef} from "react";
 import {useShallow} from "zustand/react/shallow";
-import { fetchScans } from "../../_actions/scans";
+import {fetchScans} from "../../_actions/scans";
 
 /**
  * Hook output type

@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {ServerActionResult} from "@/lib/utils.server";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useInvoiceMetadataAdd} from "./useInvoiceMetadataAdd";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -36,11 +36,10 @@ describe("useInvoiceMetadataAdd", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      updateEntity: typeof mockUpdateEntity;
-    }) => typeof mockUpdateEntity) => selector({
-      updateEntity: mockUpdateEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {updateEntity: typeof mockUpdateEntity}) => typeof mockUpdateEntity) =>
+      selector({
+        updateEntity: mockUpdateEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -105,9 +104,7 @@ describe("useInvoiceMetadataAdd", () => {
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
       await expect(async () => {
-        await (result.current.addMetadataCallback as (key: string, value?: string) => Promise<void>)(
-          "key",
-        );
+        await (result.current.addMetadataCallback as (key: string, value?: string) => Promise<void>)("key");
       }).rejects.toThrow("Value must be specified for single metadata addition");
     });
 
@@ -170,11 +167,13 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      const bulkResult = await invokeHookCallback(() => result.current.addMetadataCallback({
-        key1: "value1",
-        key2: "value2",
-        key3: "value3",
-      }));
+      const bulkResult = await invokeHookCallback(() =>
+        result.current.addMetadataCallback({
+          key1: "value1",
+          key2: "value2",
+          key3: "value3",
+        }),
+      );
 
       expect(result.current.isAdding).toBe(false);
 
@@ -194,10 +193,7 @@ describe("useInvoiceMetadataAdd", () => {
         error: {message: "Error", userMessage: "Error"},
       };
 
-      mockAddInvoiceMetadata
-        .mockResolvedValueOnce(successResult)
-        .mockResolvedValueOnce(errorResult)
-        .mockResolvedValueOnce(successResult);
+      mockAddInvoiceMetadata.mockResolvedValueOnce(successResult).mockResolvedValueOnce(errorResult).mockResolvedValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -253,9 +249,7 @@ describe("useInvoiceMetadataAdd", () => {
 
     it("continues processing after individual failure", async () => {
       const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockAddInvoiceMetadata
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockResolvedValueOnce(successResult);
+      mockAddInvoiceMetadata.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
@@ -307,7 +301,9 @@ describe("useInvoiceMetadataAdd", () => {
 
       const {result} = renderHook(() => useInvoiceMetadataAdd(testInvoice));
 
-      let promise: Promise<Readonly<{successCount: number; failureCount: number; failedItems: readonly {key: string; value: string}[]}>> | undefined;
+      let promise:
+        | Promise<Readonly<{successCount: number; failureCount: number; failedItems: readonly {key: string; value: string}[]}>>
+        | undefined;
       act(() => {
         promise = result.current.addMetadataCallback({key: "value"});
       });

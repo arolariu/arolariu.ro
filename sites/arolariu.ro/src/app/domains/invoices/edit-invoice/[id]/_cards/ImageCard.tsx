@@ -20,8 +20,8 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ImageCard.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 type Props = {invoice: Invoice};
 
@@ -101,7 +101,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
           <CardTitle className={styles["cardTitle"]}>
-            {totalScans > 1 ? t((m) => m.cards.invoices.imageCard.titleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)}) : t((m) => m.cards.invoices.imageCard.title)}
+            {totalScans > 1
+              ? t((m) => m.cards.invoices.imageCard.titleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)})
+              : t((m) => m.cards.invoices.imageCard.title)}
           </CardTitle>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
@@ -132,7 +134,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
-                    ? t((m) => m.cards.invoices.imageCard.dialogTitleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    ? t((m) => m.cards.invoices.imageCard.dialogTitleWithIndex, {
+                        current: String(currentScanIndex + 1),
+                        total: String(totalScans),
+                      })
                     : t((m) => m.cards.invoices.imageCard.dialogTitle)}
                 </DialogTitle>
               </DialogHeader>

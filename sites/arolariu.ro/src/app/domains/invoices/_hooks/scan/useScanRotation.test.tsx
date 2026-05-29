@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/scan/useScanRotation.test
  */
 
-import {act, renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import {ScanType} from "@/types/scans";
-import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
+import {act, renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
 import {useScanRotation} from "./useScanRotation";
 
 vi.mock("@/stores", () => ({
@@ -27,35 +27,41 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: {
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            actions: {
-              rotateUnsupported: string;
-              rotateSuccess: string;
-              rotateError: string;
+  useTranslations: vi.fn(
+    () =>
+      (
+        fn: (m: {
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  actions: {
+                    rotateUnsupported: string;
+                    rotateSuccess: string;
+                    rotateError: string;
+                  };
+                };
+              };
             };
           };
-        };
-      };
-    };
-  }) => string) => fn({
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            actions: {
-              rotateUnsupported: "Rotation unsupported",
-              rotateSuccess: "Scan rotated",
-              rotateError: "Scan rotation failed",
+        }) => string,
+      ) =>
+        fn({
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  actions: {
+                    rotateUnsupported: "Rotation unsupported",
+                    rotateSuccess: "Scan rotated",
+                    rotateError: "Scan rotation failed",
+                  },
+                },
+              },
             },
           },
-        },
-      },
-    },
-  })),
+        }),
+  ),
 }));
 
 const {useScansStore} = await import("@/stores");
@@ -120,10 +126,12 @@ function stubFileReader(mode: "loadend" | "error" = "loadend"): void {
   vi.stubGlobal("FileReader", MockFileReader as unknown as typeof FileReader);
 }
 
-function stubCanvas(options: Readonly<{
-  hasContext?: boolean;
-  emitsBlob?: boolean;
-}> = {}): CanvasHarness {
+function stubCanvas(
+  options: Readonly<{
+    hasContext?: boolean;
+    emitsBlob?: boolean;
+  }> = {},
+): CanvasHarness {
   const context = {
     translate: vi.fn(),
     rotate: vi.fn(),
@@ -179,11 +187,12 @@ describe("useScanRotation", () => {
     mockFetch.mockResolvedValue({
       blob: vi.fn(async () => new Blob(["source"], {type: "image/jpeg"})),
     } as unknown as Response);
-    mockUseScansStore.mockImplementation(((selector: (state: {
-      updateScanBlobUrl: typeof mockUpdateScanBlobUrl;
-    }) => typeof mockUpdateScanBlobUrl) => selector({
-      updateScanBlobUrl: mockUpdateScanBlobUrl,
-    })) as never);
+    mockUseScansStore.mockImplementation(((
+      selector: (state: {updateScanBlobUrl: typeof mockUpdateScanBlobUrl}) => typeof mockUpdateScanBlobUrl,
+    ) =>
+      selector({
+        updateScanBlobUrl: mockUpdateScanBlobUrl,
+      })) as never);
     mockUpdateScan.mockResolvedValue({
       success: true,
       data: {blobUrl: rotatedUrl},
@@ -263,9 +272,11 @@ describe("useScanRotation", () => {
 
   it("sets isRotating true while fetch is pending", async () => {
     let resolveFetch: ((value: Response) => void) | undefined;
-    mockFetch.mockReturnValue(new Promise((resolve) => {
-      resolveFetch = resolve;
-    }));
+    mockFetch.mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
     const {result} = renderHook(() => useScanRotation(testScan));
 
     let pendingRotation: Promise<void> | undefined;

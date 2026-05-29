@@ -3,8 +3,8 @@
  * @module lib/actions/user/fetchUser.test
  */
 
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 // Use vi.hoisted so these mock refs are captured before any imports are
 // processed.  This is required because the root vitest.config.ts sets

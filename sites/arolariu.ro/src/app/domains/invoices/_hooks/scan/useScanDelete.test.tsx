@@ -3,11 +3,11 @@
  * @module app/domains/invoices/_hooks/scan/useScanDelete.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import type {ServerActionResult} from "@/lib/utils.server";
-import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
 import {useScanDelete} from "./useScanDelete";
 
 vi.mock("@/stores", () => ({
@@ -26,33 +26,39 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: {
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            deleteDialog: {
-              success: string;
-              error: string;
+  useTranslations: vi.fn(
+    () =>
+      (
+        fn: (m: {
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  deleteDialog: {
+                    success: string;
+                    error: string;
+                  };
+                };
+              };
             };
           };
-        };
-      };
-    };
-  }) => string) => fn({
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            deleteDialog: {
-              success: "Scan deleted",
-              error: "Scan delete failed",
+        }) => string,
+      ) =>
+        fn({
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  deleteDialog: {
+                    success: "Scan deleted",
+                    error: "Scan delete failed",
+                  },
+                },
+              },
             },
           },
-        },
-      },
-    },
-  })),
+        }),
+  ),
 }));
 
 const {useScansStore} = await import("@/stores");
@@ -74,11 +80,10 @@ describe("useScanDelete", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    mockUseScansStore.mockImplementation(((selector: (state: {
-      removeScan: typeof mockRemoveScan;
-    }) => typeof mockRemoveScan) => selector({
-      removeScan: mockRemoveScan,
-    })) as never);
+    mockUseScansStore.mockImplementation(((selector: (state: {removeScan: typeof mockRemoveScan}) => typeof mockRemoveScan) =>
+      selector({
+        removeScan: mockRemoveScan,
+      })) as never);
     mockDeleteScan.mockResolvedValue({
       success: true,
       data: undefined,
@@ -150,9 +155,11 @@ describe("useScanDelete", () => {
 
   it("sets isDeleting true while the server deletion is pending", async () => {
     let resolveDelete: ((value: ServerActionResult<void>) => void) | undefined;
-    mockDeleteScan.mockReturnValue(new Promise((resolve) => {
-      resolveDelete = resolve;
-    }));
+    mockDeleteScan.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDelete = resolve;
+      }),
+    );
     const {result} = renderHook(() => useScanDelete(testScan));
 
     let pendingDelete: Promise<void> | undefined;

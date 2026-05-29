@@ -21,10 +21,10 @@
  * @see {@link CreateInvoiceDtoPayload} for full payload structure
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createErrorResult, fetchWithTimeout, ServerActionResult } from "@/lib/utils.server";
-import type { CreateInvoiceDtoPayload, Invoice } from "@/types/invoices";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
+import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 
 /**
  * Input type allowing partial payload (userIdentifier is auto-filled from auth).
@@ -88,14 +88,14 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @see {@link Invoice} for the returned entity structure
  */
 export async function createInvoice(payload: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{createInvoice}}, with:", { payload });
+  console.info(">>> Executing server action {{createInvoice}}, with:", {payload});
 
   return withSpan("api.actions.invoices.createInvoice", async () => {
     try {
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userIdentifier, userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to create the invoice
@@ -107,20 +107,20 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({ ...payload, userIdentifier }),
+        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({...payload, userIdentifier}),
       });
       addSpanEvent("bff.invoice.create.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully created invoice entity...", {}, "server");
         const data = (await response.json()) as Invoice;
-        return { success: true, data } as const;
+        return {success: true, data} as const;
       }
 
       addSpanEvent("bff.invoice.create.error");
       const errorText = await response.text();
       const internalMessage = `Failed to create invoice: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { errorText }, "server");
+      logWithTrace("warn", internalMessage, {errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
@@ -129,7 +129,7 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
     } catch (error: unknown) {
       addSpanEvent("bff.invoice.create.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error creating the invoice entity...", { error }, "server");
+      logWithTrace("error", "Error creating the invoice entity...", {error}, "server");
       console.error("Error creating the invoice entity:", error);
       return createErrorResult(new Error(errorMessage));
     }

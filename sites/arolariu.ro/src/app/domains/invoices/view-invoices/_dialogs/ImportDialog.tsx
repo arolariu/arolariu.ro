@@ -17,8 +17,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useMemo, useState} from "react";
 import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 import styles from "./ImportDialog.module.scss";
-import { useDialog } from "../../_contexts/DialogContext";
 
 /** Supported file format types for invoice import. */
 type ImportFileFormat = "csv" | "pdf" | "xlsx";
@@ -150,7 +150,11 @@ export default function ImportDialog(): React.JSX.Element {
                 transition={{duration: 0.2}}>
                 <TbUpload className={styles["uploadIcon"]} />
               </motion.div>
-              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? t((m) => m.dialogs.invoices.importDialog.dropzone.dropHere) : t((m) => m.dialogs.invoices.importDialog.dropzone.dragAndDrop)}</h3>
+              <h3 className={styles["dropzoneTitle"]}>
+                {isDragActive
+                  ? t((m) => m.dialogs.invoices.importDialog.dropzone.dropHere)
+                  : t((m) => m.dialogs.invoices.importDialog.dropzone.dragAndDrop)}
+              </h3>
               <p className={styles["dropzoneSubtitle"]}>{t((m) => m.dialogs.invoices.importDialog.dropzone.orClickBrowse)}</p>
               <p className={styles["dropzoneHint"]}>
                 {activeTab === "csv" && t((m) => m.dialogs.invoices.importDialog.dropzone.acceptsCsv)}
@@ -219,7 +223,9 @@ export default function ImportDialog(): React.JSX.Element {
           <Button
             onClick={handleImport}
             disabled={files.length === 0 || uploadStatus !== "idle"}>
-            {files.length > 0 ? t((m) => m.dialogs.invoices.importDialog.buttons.importWithCount, {count: String(files.length)}) : t((m) => m.dialogs.invoices.importDialog.buttons.import)}
+            {files.length > 0
+              ? t((m) => m.dialogs.invoices.importDialog.buttons.importWithCount, {count: String(files.length)})
+              : t((m) => m.dialogs.invoices.importDialog.buttons.import)}
           </Button>
         </DialogFooter>
       </DialogContent>

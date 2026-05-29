@@ -103,7 +103,9 @@ export function CategorySuggestionCard(): React.JSX.Element {
           <div className={styles["gamificationBox"]}>
             <div className={styles["gamificationHeader"]}>
               <TbGift className={styles["gamificationGiftIcon"]} />
-              <span className={styles["gamificationLabel"]}>{t((m) => m.cards.invoices.categorySuggestionCard.gamification, {goal: String(goal)})}</span>
+              <span className={styles["gamificationLabel"]}>
+                {t((m) => m.cards.invoices.categorySuggestionCard.gamification, {goal: String(goal)})}
+              </span>
             </div>
             <div className={styles["gamificationProgress"]}>
               <Progress value={(categorizedCount / goal) * 100} />

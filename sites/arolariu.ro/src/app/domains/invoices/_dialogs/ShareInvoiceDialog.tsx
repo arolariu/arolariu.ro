@@ -23,11 +23,11 @@ import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import {useInvoiceShare} from "../_hooks/invoice";
 import {copySvgToClipboard} from "../_utils";
 import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
-import { useInvoiceShare } from "../_hooks/invoice";
 
 // ============================================================================
 // Types
@@ -74,7 +74,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
               <TbGlobe className={styles["globeIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className={styles["cardTitleBase"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.publicTitle)}</CardTitle>
+              <CardTitle className={styles["cardTitleBase"]}>
+                {t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.publicTitle)}
+              </CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
                 {t.rich((m) => m.dialogs.invoices.shareInvoiceDialog.selection.publicDescription, {
                   // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
@@ -93,7 +95,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
               <TbLock className={styles["lockIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className={styles["cardTitleBase"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privateTitle)}</CardTitle>
+              <CardTitle className={styles["cardTitleBase"]}>
+                {t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privateTitle)}
+              </CardTitle>
               <CardDescription className={styles["cardDescSm"]}>
                 {t.rich((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privateDescription, {
                   // eslint-disable-next-line react/no-unstable-nested-components -- single-call site
@@ -110,7 +114,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
         className={styles["alertMt"]}>
         <TbAlertTriangle className={styles["alertIcon"]} />
         <AlertTitle>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privacyNoticeTitle)}</AlertTitle>
-        <AlertDescription className={styles["alertDescXs"]}>{t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privacyNoticeDescription)}</AlertDescription>
+        <AlertDescription className={styles["alertDescXs"]}>
+          {t((m) => m.dialogs.invoices.shareInvoiceDialog.selection.privacyNoticeDescription)}
+        </AlertDescription>
       </Alert>
     </div>
   );
@@ -203,9 +209,16 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyLinkAction(), {
-      loading: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingMakePublic),
-      success: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successMadePublic),
-      error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.error, {message: error instanceof Error ? error.message : String(error)}),
+      loading: isInvoicePublic
+        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingPublic)
+        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.loadingMakePublic),
+      success: isInvoicePublic
+        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successPublic)
+        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.successMadePublic),
+      error: (error: unknown) =>
+        t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyLink.error, {
+          message: error instanceof Error ? error.message : String(error),
+        }),
     });
   }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, shareUrl, t]);
 
@@ -235,9 +248,16 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyQRCodeAction(), {
-      loading: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingMakePublic),
-      success: isInvoicePublic ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successPublic) : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successMadePublic),
-      error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.error, {message: error instanceof Error ? error.message : String(error)}),
+      loading: isInvoicePublic
+        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingPublic)
+        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.loadingMakePublic),
+      success: isInvoicePublic
+        ? t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successPublic)
+        : t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.successMadePublic),
+      error: (error: unknown) =>
+        t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.copyQr.error, {
+          message: error instanceof Error ? error.message : String(error),
+        }),
     });
   }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, t]);
 
@@ -269,7 +289,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(shareInvoiceCallback(invoice.id, {type: "revoke"}), {
       loading: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.loading),
       success: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.success),
-      error: (error: unknown) => t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
+      error: (error: unknown) =>
+        t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.error, {
+          message: error instanceof Error ? error.message : String(error),
+        }),
     });
   }, [invoice.id, shareInvoiceCallback, t]);
 

@@ -5,9 +5,7 @@
 
 import {act} from "@testing-library/react";
 
-type HookCallbackResult<TResult> =
-  | Readonly<{resolved: false}>
-  | Readonly<{resolved: true; value: Awaited<TResult>}>;
+type HookCallbackResult<TResult> = Readonly<{resolved: false}> | Readonly<{resolved: true; value: Awaited<TResult>}>;
 
 /**
  * Invokes a hook callback inside React Testing Library's `act` boundary.
@@ -20,9 +18,7 @@ type HookCallbackResult<TResult> =
  * test await the behavior directly instead of polling for settled state with
  * `waitFor`.
  */
-export async function invokeHookCallback<TResult>(
-  callback: () => TResult | Promise<TResult>,
-): Promise<Awaited<TResult>> {
+export async function invokeHookCallback<TResult>(callback: () => TResult | Promise<TResult>): Promise<Awaited<TResult>> {
   let callbackResult: HookCallbackResult<TResult> = {resolved: false};
 
   await act(async () => {

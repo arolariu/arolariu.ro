@@ -1,13 +1,13 @@
 "use client";
 
 /**
-* @fileoverview Hook for invoice sharing, revocation, and share-email flows.
-* @module app/domains/invoices/_hooks/invoice/useInvoiceShare
-*
-* @remarks
-* Provides a client-side facade over invoice sharing operations. The hook keeps
-* a local loading flag, updates the invoice store after sharing mutations, and
-* delegates invitation delivery to the email server action.
+ * @fileoverview Hook for invoice sharing, revocation, and share-email flows.
+ * @module app/domains/invoices/_hooks/invoice/useInvoiceShare
+ *
+ * @remarks
+ * Provides a client-side facade over invoice sharing operations. The hook keeps
+ * a local loading flag, updates the invoice store after sharing mutations, and
+ * delegates invitation delivery to the email server action.
  */
 
 import {sendEmail} from "@/lib/actions/email";
@@ -18,7 +18,7 @@ import type {Invoice} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import { patchInvoice } from "../../_actions/invoices";
+import {patchInvoice} from "../../_actions/invoices";
 
 /**
  * Discriminated union of supported invoice share actions.
@@ -118,9 +118,7 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
       }
 
       if (action.type === "togglePublic") {
-        const nextSharedWith = invoice.sharedWith.includes(LAST_GUID)
-          ? invoice.sharedWith
-          : [...invoice.sharedWith, LAST_GUID];
+        const nextSharedWith = invoice.sharedWith.includes(LAST_GUID) ? invoice.sharedWith : [...invoice.sharedWith, LAST_GUID];
 
         const result = await patchInvoice({
           invoiceId: id,
@@ -222,7 +220,10 @@ export function useInvoiceShare(onComplete?: () => void): Readonly<HookOutputTyp
 
   async function shareInvoiceCallback(invoiceId: string, action: ShareAction): Promise<Invoice | null>;
   async function shareInvoiceCallback(invoiceIds: readonly string[], action: ShareAction): Promise<BulkShareResult>;
-  async function shareInvoiceCallback(invoiceIdOrIds: string | readonly string[], action: ShareAction): Promise<Invoice | null | BulkShareResult> {
+  async function shareInvoiceCallback(
+    invoiceIdOrIds: string | readonly string[],
+    action: ShareAction,
+  ): Promise<Invoice | null | BulkShareResult> {
     setIsSharing(true);
     try {
       if (typeof invoiceIdOrIds === "string") {

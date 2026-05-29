@@ -71,7 +71,11 @@ export default function Contributors(): React.JSX.Element {
                   {/* Package count */}
                   <div className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
-                    <span>{t((m) => m.sections.legal.acknowledgements.contributors.packages, {count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`)))})}</span>
+                    <span>
+                      {t((m) => m.sections.legal.acknowledgements.contributors.packages, {
+                        count: Number(t(selectorFromPath(`Acknowledgements.contributors.items.${key}.packages`))),
+                      })}
+                    </span>
                   </div>
 
                   {/* Description */}

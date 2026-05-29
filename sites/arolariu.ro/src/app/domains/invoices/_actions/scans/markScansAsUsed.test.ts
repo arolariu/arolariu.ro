@@ -260,11 +260,7 @@ describe("markScansAsUsed", () => {
 
   it("should process blobs in parallel using Promise.allSettled", async () => {
     // Arrange
-    const delayedBlobs = [
-      "scans/user-123/blob1.jpg",
-      "scans/user-123/blob2.jpg",
-      "scans/user-123/blob3.jpg",
-    ];
+    const delayedBlobs = ["scans/user-123/blob1.jpg", "scans/user-123/blob2.jpg", "scans/user-123/blob3.jpg"];
 
     const processedBlobs: string[] = [];
 

@@ -3,8 +3,8 @@
  * @module app/domains/invoices/_actions/scans/registerScan.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
 import {ScanStatus, ScanType} from "@/types/scans";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 describe("registerScan", () => {
   beforeEach(() => {

@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/product/useProductAdd.test
  */
 
-import {act, renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
-import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {act, renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
 import {useProductAdd} from "./useProductAdd";
 
 vi.mock("@/stores", () => ({
@@ -46,9 +46,7 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockUseInvoicesStore.mockImplementation((selector: (state: InvoiceStoreSelectorState) => unknown) =>
-    selector({updateEntity}),
-  );
+  mockUseInvoicesStore.mockImplementation((selector: (state: InvoiceStoreSelectorState) => unknown) => selector({updateEntity}));
 }
 
 describe("useProductAdd", () => {
@@ -144,9 +142,11 @@ describe("useProductAdd", () => {
 
   it("surfaces local store update failures after a successful server add", async () => {
     const localUpdateError = new Error("IndexedDB unavailable");
-    mockInvoiceStore(vi.fn(() => {
-      throw localUpdateError;
-    }));
+    mockInvoiceStore(
+      vi.fn(() => {
+        throw localUpdateError;
+      }),
+    );
 
     const {result} = renderHook(() => useProductAdd({invoice}));
 
@@ -158,4 +158,3 @@ describe("useProductAdd", () => {
     expect(result.current.isAdding).toBe(false);
   });
 });
-

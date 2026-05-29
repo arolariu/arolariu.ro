@@ -50,7 +50,13 @@ const UserHasUnsubscribedEmail = defineEmailTemplate<Props>({
           })}
         </Text>
         <EmailCard title={t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNextTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item0")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item1")), t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item0")),
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item1")),
+              t(selectorFromPath("emails.newsletterUnsubscribed.whatHappensNext.item2")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.newsletterUnsubscribed.body"))}</Text>
         <Text style={EmailParagraphStyles}>

@@ -1,7 +1,17 @@
 "use client";
 
 import {RecipeComplexity} from "@/types/invoices";
-import {Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Label} from "@arolariu/components";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbClock, TbToolsKitchen3} from "react-icons/tb";
@@ -37,7 +47,11 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe?.name ?? t((m) => m.dialogs.invoices.recipeDialog.read.missingRecipe)}</DialogTitle>
-          <DialogDescription>{recipe ? t((m) => m.dialogs.invoices.recipeDialog.read.description) : t((m) => m.dialogs.invoices.recipeDialog.read.missingRecipe)}</DialogDescription>
+          <DialogDescription>
+            {recipe
+              ? t((m) => m.dialogs.invoices.recipeDialog.read.description)
+              : t((m) => m.dialogs.invoices.recipeDialog.read.missingRecipe)}
+          </DialogDescription>
         </DialogHeader>
 
         {recipe ? (
@@ -86,13 +100,15 @@ export default function PreviewRecipeDialog(): React.JSX.Element {
               <div className={styles["timeRow"]}>
                 <TbClock className={styles["mutedIcon"]} />
                 <span>
-                  {t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}: {recipe.preparationTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
+                  {t((m) => m.dialogs.invoices.recipeDialog.fields.prepTime)}:{" "}
+                  {recipe.preparationTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
                 </span>
               </div>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen3 className={styles["mutedIcon"]} />
                 <span>
-                  {t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}: {recipe.cookingTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
+                  {t((m) => m.dialogs.invoices.recipeDialog.fields.cookTime)}:{" "}
+                  {recipe.cookingTime || t((m) => m.dialogs.invoices.recipeDialog.read.notSpecified)}
                 </span>
               </div>
             </div>

@@ -5,7 +5,6 @@
  * @module components/invoice/timeline/invoice-timeline
  */
 
-
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";

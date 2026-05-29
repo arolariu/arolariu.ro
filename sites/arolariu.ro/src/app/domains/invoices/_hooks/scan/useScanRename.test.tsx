@@ -5,8 +5,8 @@
 
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
+import {buildCachedScan} from "../../../../../../tests/helpers/invoiceDomain";
 import {useScanRename} from "./useScanRename";
 
 vi.mock("@/stores", () => ({
@@ -20,27 +20,33 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: {
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            rename: string;
+  useTranslations: vi.fn(
+    () =>
+      (
+        fn: (m: {
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  rename: string;
+                };
+              };
+            };
           };
-        };
-      };
-    };
-  }) => string) => fn({
-    pages: {
-      invoices: {
-        viewScans: {
-          scanCard: {
-            rename: "Scan renamed",
+        }) => string,
+      ) =>
+        fn({
+          pages: {
+            invoices: {
+              viewScans: {
+                scanCard: {
+                  rename: "Scan renamed",
+                },
+              },
+            },
           },
-        },
-      },
-    },
-  })),
+        }),
+  ),
 }));
 
 const {useScansStore} = await import("@/stores");
@@ -59,11 +65,10 @@ describe("useScanRename", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    mockUseScansStore.mockImplementation(((selector: (state: {
-      updateScanName: typeof mockUpdateScanName;
-    }) => typeof mockUpdateScanName) => selector({
-      updateScanName: mockUpdateScanName,
-    })) as never);
+    mockUseScansStore.mockImplementation(((selector: (state: {updateScanName: typeof mockUpdateScanName}) => typeof mockUpdateScanName) =>
+      selector({
+        updateScanName: mockUpdateScanName,
+      })) as never);
   });
 
   afterEach(() => {

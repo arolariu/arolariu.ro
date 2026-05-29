@@ -139,7 +139,7 @@
  * @see {@link updateScan} - Server action for updating standalone scan blobs.
  */
 
-export { useScanAdd } from "./useScanAdd";
-export { useScanDelete } from "./useScanDelete";
-export { useScanRename } from "./useScanRename";
-export { useScanRotation } from "./useScanRotation";
+export {useScanAdd} from "./useScanAdd";
+export {useScanDelete} from "./useScanDelete";
+export {useScanRename} from "./useScanRename";
+export {useScanRotation} from "./useScanRotation";

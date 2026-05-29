@@ -25,12 +25,12 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Product } from "@/types/invoices";
-import { revalidatePath } from "next/cache";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Product} from "@/types/invoices";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for the addInvoiceProduct server action.
@@ -137,24 +137,24 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * @see {@link ServerActionResult} - Result type wrapper
  * @see {@link Product} - Product type definition
  */
-export async function addInvoiceProduct({ invoiceId, product }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{addInvoiceProduct}}, for identifier:", { invoiceId });
+export async function addInvoiceProduct({invoiceId, product}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{addInvoiceProduct}}, for identifier:", {invoiceId});
 
   return withSpan("api.actions.invoices.addInvoiceProduct", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
-      logWithTrace("info", "Validating identifier is valid...", { invoiceId }, "server");
+      logWithTrace("info", "Validating identifier is valid...", {invoiceId}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to add the product
       addSpanEvent("bff.request.add-invoice-product.start");
-      logWithTrace("info", "Making API request to add product to invoice...", { invoiceId }, "server");
+      logWithTrace("info", "Making API request to add product to invoice...", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/products`, {
         method: "POST",
         headers: {
@@ -166,7 +166,7 @@ export async function addInvoiceProduct({ invoiceId, product }: ServerActionInpu
       addSpanEvent("bff.request.add-invoice-product.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully added product to invoice...", { invoiceId }, "server");
+        logWithTrace("info", "Successfully added product to invoice...", {invoiceId}, "server");
         const createdProduct = (await response.json()) as Product;
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
@@ -179,7 +179,7 @@ export async function addInvoiceProduct({ invoiceId, product }: ServerActionInpu
       addSpanEvent("bff.request.add-invoice-product.error");
       const errorText = await response.text();
       const internalMessage = `Failed to add product: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
@@ -188,7 +188,7 @@ export async function addInvoiceProduct({ invoiceId, product }: ServerActionInpu
     } catch (error: unknown) {
       addSpanEvent("bff.request.add-invoice-product.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error adding product to invoice...", { error, invoiceId }, "server");
+      logWithTrace("error", "Error adding product to invoice...", {error, invoiceId}, "server");
       console.error("Error adding product to invoice:", error);
       return createErrorResult(new Error(errorMessage));
     }

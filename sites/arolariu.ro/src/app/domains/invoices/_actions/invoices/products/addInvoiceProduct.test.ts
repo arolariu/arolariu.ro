@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/products/addInvoiceProduct.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {buildProduct, createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -19,9 +19,7 @@ describe("addInvoiceProduct", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(buildProduct()) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(buildProduct()) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("posts a product payload and revalidates invoice pages", async () => {
@@ -82,9 +80,7 @@ describe("addInvoiceProduct", () => {
 
   it("maps non-5xx responses to the fallback user message", async () => {
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const invoiceId = "11111111-1111-4111-8111-111111111111";

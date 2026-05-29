@@ -109,7 +109,10 @@ export function ComparisonCards({data, currency}: Props): React.JSX.Element {
       icon: <TbBuildingStore size={20} />,
       label: t((m) => m.cards.invoices.statistics.comparison.newMerchants),
       value: data.newMerchantCount.toString(),
-      delta: data.newMerchantCount > 0 ? t((m) => m.cards.invoices.statistics.comparison.discovered) : t((m) => m.cards.invoices.statistics.comparison.none),
+      delta:
+        data.newMerchantCount > 0
+          ? t((m) => m.cards.invoices.statistics.comparison.discovered)
+          : t((m) => m.cards.invoices.statistics.comparison.none),
       isPositive: data.newMerchantCount > 0 ? true : null,
       progressValue: Math.min(data.newMerchantCount * 20, 100),
     },

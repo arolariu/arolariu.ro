@@ -19,7 +19,6 @@
  * @see {@link https://brailleinstitute.org/freefont|Atkinson Hyperlegible Font}
  */
 
-
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFontWithVariable} from "next/dist/compiled/@next/font";
 import {Atkinson_Hyperlegible, Caudex} from "next/font/google";

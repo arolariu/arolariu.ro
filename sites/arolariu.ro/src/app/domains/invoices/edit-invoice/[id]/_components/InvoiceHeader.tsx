@@ -105,7 +105,9 @@ export default function InvoiceHeader(): React.JSX.Element {
                       onClick={handleSave}
                       disabled={isSaving}>
                       <TbDeviceFloppy className={styles["buttonIcon"]} />
-                      {isSaving ? t((m) => m.shared.invoices.invoiceHeader.buttons.saving) : t((m) => m.shared.invoices.invoiceHeader.buttons.save)}
+                      {isSaving
+                        ? t((m) => m.shared.invoices.invoiceHeader.buttons.saving)
+                        : t((m) => m.shared.invoices.invoiceHeader.buttons.save)}
                     </Button>
                   }
                 />

@@ -157,7 +157,9 @@ export default function GuidedEditBanner({items, onReviewAll}: Props): React.JSX
         <TbAlertCircle className={styles["alertIcon"]} />
         <div className={styles["content"]}>
           <div className={styles["header"]}>
-            <AlertTitle className={styles["title"]}>{t((m) => m.pages.invoices.editInvoice.guidedEditBanner.title, {count: analysis.totalIssues})}</AlertTitle>
+            <AlertTitle className={styles["title"]}>
+              {t((m) => m.pages.invoices.editInvoice.guidedEditBanner.title, {count: analysis.totalIssues})}
+            </AlertTitle>
             <Button
               variant='ghost'
               size='sm'

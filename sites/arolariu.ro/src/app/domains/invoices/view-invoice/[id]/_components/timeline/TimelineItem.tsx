@@ -5,7 +5,6 @@
  * @module components/invoice/timeline/timeline-item
  */
 
-
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useLocale, type TranslationValues} from "next-intl";
@@ -190,7 +189,9 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (
-                      <p className={styles["confidenceText"]}>{t((m) => m.sections.invoices.timeline.item.confidence, {value: String(event.metadata!.confidence)})}</p>
+                      <p className={styles["confidenceText"]}>
+                        {t((m) => m.sections.invoices.timeline.item.confidence, {value: String(event.metadata!.confidence)})}
+                      </p>
                     )}
                   </TooltipContent>
                 </Tooltip>

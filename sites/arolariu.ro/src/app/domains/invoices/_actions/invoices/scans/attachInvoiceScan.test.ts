@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/scans/attachInvoiceScan.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -17,9 +17,7 @@ describe("attachInvoiceScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 201}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("posts an invoice scan attachment for a valid invoice id", async () => {
@@ -74,9 +72,7 @@ describe("attachInvoiceScan", () => {
     };
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result400 = await attachInvoiceScan({invoiceId, payload});
@@ -88,9 +84,7 @@ describe("attachInvoiceScan", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result404 = await attachInvoiceScan({invoiceId, payload});

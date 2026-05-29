@@ -28,7 +28,6 @@
  * @see {@link Merchant} for merchant data structure
  */
 
-
 import {formatAmount, formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Document, Page, StyleSheet, Text, View} from "@react-pdf/renderer";

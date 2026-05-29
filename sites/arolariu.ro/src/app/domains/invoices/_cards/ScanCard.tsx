@@ -5,7 +5,6 @@
  * @module app/domains/invoices/_cards/ScanCard
  */
 
-import {useDialogs} from "../_contexts/DialogContext";
 import {formatDate} from "@/lib/utils.generic";
 import type {CachedScan} from "@/types/scans";
 import {
@@ -35,8 +34,9 @@ import {
   TbX,
   TbZoomIn,
 } from "react-icons/tb";
+import {useDialogs} from "../_contexts/DialogContext";
+import {useScanRename, useScanRotation} from "../_hooks/scan";
 import styles from "./ScanCard.module.scss";
-import { useScanRename, useScanRotation } from "../_hooks/scan";
 
 type ScanCardProps = {
   scan: CachedScan;

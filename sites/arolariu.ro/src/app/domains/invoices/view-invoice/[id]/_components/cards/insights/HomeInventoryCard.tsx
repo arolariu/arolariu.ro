@@ -56,7 +56,13 @@ export function HomeInventoryCard(): React.JSX.Element {
           className={styles["iconBlue"]}
         />
       );
-      supplies.push({id: `laundry-${item.productCode}`, name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.laundryDetergent), icon, daysRemaining, maxDays: 60});
+      supplies.push({
+        id: `laundry-${item.productCode}`,
+        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.laundryDetergent),
+        icon,
+        daysRemaining,
+        maxDays: 60,
+      });
     } else if (name.includes("dish") || name.includes("soap")) {
       daysRemaining = 18;
       icon = (
@@ -65,7 +71,13 @@ export function HomeInventoryCard(): React.JSX.Element {
           className={styles["iconCyan"]}
         />
       );
-      supplies.push({id: `dish-${item.productCode}`, name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.dishSoap), icon, daysRemaining, maxDays: 30});
+      supplies.push({
+        id: `dish-${item.productCode}`,
+        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.dishSoap),
+        icon,
+        daysRemaining,
+        maxDays: 30,
+      });
     } else if (name.includes("paper") || name.includes("towel") || name.includes("tissue")) {
       // daysRemaining stays at default 30
       icon = (
@@ -74,7 +86,13 @@ export function HomeInventoryCard(): React.JSX.Element {
           className={styles["iconGray"]}
         />
       );
-      supplies.push({id: `paper-${item.productCode}`, name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.paperProducts), icon, daysRemaining, maxDays: 45});
+      supplies.push({
+        id: `paper-${item.productCode}`,
+        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.paperProducts),
+        icon,
+        daysRemaining,
+        maxDays: 45,
+      });
     } else if (name.includes("floor") || name.includes("cleaner")) {
       daysRemaining = 60;
       icon = (
@@ -83,7 +101,13 @@ export function HomeInventoryCard(): React.JSX.Element {
           className={styles["iconGreen"]}
         />
       );
-      supplies.push({id: `floor-${item.productCode}`, name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.floorCleaner), icon, daysRemaining, maxDays: 90});
+      supplies.push({
+        id: `floor-${item.productCode}`,
+        name: t((m) => m.cards.invoices.homeInventoryCard.supplyNames.floorCleaner),
+        icon,
+        daysRemaining,
+        maxDays: 90,
+      });
     } else {
       supplies.push({id: `generic-${item.productCode}`, name: item.name, icon, daysRemaining, maxDays: 45});
     }
@@ -155,7 +179,9 @@ export function HomeInventoryCard(): React.JSX.Element {
                         {supply.icon}
                         <span>{supply.name}</span>
                       </div>
-                      <span className={styles["supplyDays"]}>{t((m) => m.cards.invoices.homeInventoryCard.stockLevels.daysRemaining, {count: String(supply.daysRemaining)})}</span>
+                      <span className={styles["supplyDays"]}>
+                        {t((m) => m.cards.invoices.homeInventoryCard.stockLevels.daysRemaining, {count: String(supply.daysRemaining)})}
+                      </span>
                     </div>
                     <div className={styles["progressTrack"]}>
                       <div

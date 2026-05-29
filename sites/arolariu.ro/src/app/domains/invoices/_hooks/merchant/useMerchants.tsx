@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Custom React hook for fetching all merchants for the current user.
-* @module app/domains/invoices/_hooks/merchant/useMerchants
+ * @module app/domains/invoices/_hooks/merchant/useMerchants
  *
  * @remarks
  * Client-side data hook that hydrates from persisted Zustand state and then
@@ -13,7 +13,7 @@ import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useShallow} from "zustand/react/shallow";
-import { fetchMerchants } from "../../_actions/merchants";
+import {fetchMerchants} from "../../_actions/merchants";
 
 /**
  * Input parameters for the useMerchants hook (currently unused).

@@ -67,7 +67,9 @@ export default function DeleteRecipeDialog(): React.JSX.Element {
         <AlertDialogHeader>
           <AlertDialogTitle>{t((m) => m.dialogs.invoices.recipeDialog.delete.title)}</AlertDialogTitle>
           <AlertDialogDescription>
-            {recipe ? t.rich((m) => m.dialogs.invoices.recipeDialog.delete.description, {name: recipe.name, strong: RichTextStrong}) : t((m) => m.dialogs.invoices.recipeDialog.delete.missingRecipe)}
+            {recipe
+              ? t.rich((m) => m.dialogs.invoices.recipeDialog.delete.description, {name: recipe.name, strong: RichTextStrong})
+              : t((m) => m.dialogs.invoices.recipeDialog.delete.missingRecipe)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -76,7 +78,9 @@ export default function DeleteRecipeDialog(): React.JSX.Element {
             onClick={handleDelete}
             disabled={isDeleting || !recipe}
             className={styles["deleteAction"]}>
-            {isDeleting ? t((m) => m.dialogs.invoices.recipeDialog.buttons.deleting) : t((m) => m.dialogs.invoices.recipeDialog.buttons.delete)}
+            {isDeleting
+              ? t((m) => m.dialogs.invoices.recipeDialog.buttons.deleting)
+              : t((m) => m.dialogs.invoices.recipeDialog.buttons.delete)}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

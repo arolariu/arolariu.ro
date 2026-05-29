@@ -164,7 +164,9 @@ export function InvoiceAnalytics(): React.JSX.Element {
               <div className={styles["emptyState"]}>
                 <TbTrendingUp className={styles["emptyIcon"]} />
                 <h3 className={styles["emptyTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.title)}</h3>
-                <p className={styles["emptyDescription"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.description)}</p>
+                <p className={styles["emptyDescription"]}>
+                  {t((m) => m.pages.invoices.viewInvoice.invoiceAnalytics.emptyState.description)}
+                </p>
               </div>
             )}
           </TabsContent>

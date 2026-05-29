@@ -44,8 +44,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import {useInvoiceDelete} from "../_hooks/invoice";
 import styles from "./DeleteInvoiceDialog.module.scss";
-import { useInvoiceDelete } from "../_hooks/invoice";
 
 /**
  * Renders the shared invoice deletion confirmation dialog.
@@ -312,7 +312,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                       className={styles["labelCursorSm"]}>
                       {t((m) => m.dialogs.invoices.deleteInvoiceDialog.confirmation.understoodLabel)}
                     </Label>
-                    <p className={styles["checkboxDescription"]}>{t((m) => m.dialogs.invoices.deleteInvoiceDialog.confirmation.understoodDescription)}</p>
+                    <p className={styles["checkboxDescription"]}>
+                      {t((m) => m.dialogs.invoices.deleteInvoiceDialog.confirmation.understoodDescription)}
+                    </p>
                   </div>
                 </div>
               </div>

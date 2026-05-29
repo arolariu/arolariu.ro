@@ -3,9 +3,9 @@
  * @module app/domains/invoices/_actions/invoices/scans/deleteInvoiceScan.test
  */
 
-import {beforeEach, describe, expect, it, vi} from "vitest";
-import {fetchWithTimeout} from "@/lib/utils.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchWithTimeout} from "@/lib/utils.server";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createJsonResponse, createTextResponse} from "../../../../../../../tests/helpers/invoiceDomain";
 
 vi.mock("@/lib/actions/user/fetchUser");
@@ -19,9 +19,7 @@ describe("deleteInvoiceScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue({userIdentifier: "user-1", userJwt: "jwt-1"});
-    mockFetchWithTimeout.mockResolvedValue(
-      createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
-    );
+    mockFetchWithTimeout.mockResolvedValue(createJsonResponse(undefined, {status: 200}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
   });
 
   it("encodes scan location, deletes it, and revalidates invoice pages", async () => {
@@ -61,9 +59,7 @@ describe("deleteInvoiceScan", () => {
     const scanLocation = "https://storage.test/scan.jpg";
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Bad Request", {status: 400, statusText: "Bad Request"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result400 = await deleteInvoiceScan({invoiceId, scanLocation});
@@ -75,9 +71,7 @@ describe("deleteInvoiceScan", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Forbidden", {status: 403, statusText: "Forbidden"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result403 = await deleteInvoiceScan({invoiceId, scanLocation});
@@ -89,9 +83,7 @@ describe("deleteInvoiceScan", () => {
     }
 
     mockFetchWithTimeout.mockResolvedValue(
-      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<
-        ReturnType<typeof fetchWithTimeout>
-      >,
+      createTextResponse("Not Found", {status: 404, statusText: "Not Found"}) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
 
     const result404 = await deleteInvoiceScan({invoiceId, scanLocation});

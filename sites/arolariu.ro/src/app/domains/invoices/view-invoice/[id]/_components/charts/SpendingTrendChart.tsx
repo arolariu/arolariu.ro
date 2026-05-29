@@ -78,7 +78,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             </li>
           ))}
           {data.invoices.length > 10 ? (
-            <li className={styles["tooltipMore"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.tooltip.andMore, {count: String(data.invoices.length - 10)})}</li>
+            <li className={styles["tooltipMore"]}>
+              {t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.tooltip.andMore, {count: String(data.invoices.length - 10)})}
+            </li>
           ) : null}
         </ul>
       ) : null}
@@ -102,7 +104,9 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.pages.invoices.viewInvoice.spendingTrendChart.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

@@ -72,7 +72,10 @@ function isSuccessfulUploadResult(result: UploadRunnerResult | AttemptFailure): 
  * @param dependencies - Runner dependencies.
  * @returns Upload success result or a typed attempt failure.
  */
-async function uploadWithServerFallback(upload: FileBackedUpload, dependencies: UploadRunnerDependencies): Promise<UploadRunnerResult | AttemptFailure> {
+async function uploadWithServerFallback(
+  upload: FileBackedUpload,
+  dependencies: UploadRunnerDependencies,
+): Promise<UploadRunnerResult | AttemptFailure> {
   const base64Data = await dependencies.readFileAsBase64(upload.file);
   const result = await dependencies.uploadScan({
     base64Data,

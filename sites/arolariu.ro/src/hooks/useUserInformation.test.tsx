@@ -1,6 +1,6 @@
+import {SITE_URL} from "@/lib/utils.generic";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {SITE_URL} from "@/lib/utils.generic";
 import {useUserInformation} from "./useUserInformation";
 
 describe("useUserInformation", () => {

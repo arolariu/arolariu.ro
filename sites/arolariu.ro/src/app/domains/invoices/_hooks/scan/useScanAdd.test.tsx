@@ -3,10 +3,10 @@
  * @module app/domains/invoices/_hooks/scan/useScanAdd.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
+import {InvoiceScanType} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {InvoiceScanType} from "@/types/invoices";
-import type {ServerActionResult} from "@/lib/utils.server";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
 import {useScanAdd} from "./useScanAdd";
 
@@ -23,30 +23,36 @@ vi.mock("@arolariu/components", () => ({
 }));
 
 vi.mock("next-intl-selector", () => ({
-  useTranslations: vi.fn(() => (fn: (m: {
-    toasts: {
-      invoices: {
-        useScanAdd: {
-          uploadFailed: string;
-          addSuccess: string;
-          addError: string;
-        };
-      };
-    };
-  }) => string, vars?: Record<string, string>) => {
-    const template = fn({
-      toasts: {
-        invoices: {
-          useScanAdd: {
-            uploadFailed: "Upload failed with status {{status}}",
-            addSuccess: "Scan added successfully",
-            addError: "Failed to add scan",
+  useTranslations: vi.fn(
+    () =>
+      (
+        fn: (m: {
+          toasts: {
+            invoices: {
+              useScanAdd: {
+                uploadFailed: string;
+                addSuccess: string;
+                addError: string;
+              };
+            };
+          };
+        }) => string,
+        vars?: Record<string, string>,
+      ) => {
+        const template = fn({
+          toasts: {
+            invoices: {
+              useScanAdd: {
+                uploadFailed: "Upload failed with status {{status}}",
+                addSuccess: "Scan added successfully",
+                addError: "Failed to add scan",
+              },
+            },
           },
-        },
+        });
+        return Object.entries(vars ?? {}).reduce((message, [key, value]) => message.replace(`{{${key}}}`, value), template);
       },
-    });
-    return Object.entries(vars ?? {}).reduce((message, [key, value]) => message.replace(`{{${key}}}`, value), template);
-  }),
+  ),
 }));
 
 const {createInvoiceScan, attachInvoiceScan} = await import("../../_actions/invoices");
@@ -158,34 +164,44 @@ describe("useScanAdd", () => {
     it("defaults to jpg extension when the file name has no extension", async () => {
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await invokeHookCallback(() => result.current.addScanCallback({
+      await invokeHookCallback(() =>
+        result.current.addScanCallback({
           ...addArgs,
           fileName: "receipt",
-        }));
+        }),
+      );
 
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(expect.objectContaining({
-        blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
-      }));
+      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
+        }),
+      );
     });
 
     it("defaults to jpg extension when the file name ends with a dot", async () => {
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
-      await invokeHookCallback(() => result.current.addScanCallback({
+      await invokeHookCallback(() =>
+        result.current.addScanCallback({
           ...addArgs,
           fileName: "receipt.",
-        }));
+        }),
+      );
 
-      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(expect.objectContaining({
-        blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
-      }));
+      expect(mockCreateInvoiceScan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blobName: "user-1/11111111-1111-4111-8111-111111111111/99999999-9999-4999-8999-999999999999.jpg",
+        }),
+      );
     });
 
     it("sets isAdding true while upload is pending", async () => {
       let resolveUpload: ((value: ServerActionResult<{blobUrl: string}>) => void) | undefined;
-      mockCreateInvoiceScan.mockReturnValue(new Promise((resolve) => {
-        resolveUpload = resolve;
-      }));
+      mockCreateInvoiceScan.mockReturnValue(
+        new Promise((resolve) => {
+          resolveUpload = resolve;
+        }),
+      );
       const {result} = renderHook(() => useScanAdd(invoiceId));
 
       let pendingAdd: Promise<void> | undefined;

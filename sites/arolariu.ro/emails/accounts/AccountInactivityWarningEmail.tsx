@@ -169,15 +169,27 @@ const AccountInactivityWarningEmail = async (props: Readonly<Props>) => {
       </Text>
 
       <EmailCard title={t(selectorFromPath("emails.accountInactivity.whatThisMeans.title"))}>
-        <BulletList items={[t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet1")), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}), t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet3"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet1")),
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet2"), {daysUntilClosure}),
+            t(selectorFromPath("emails.accountInactivity.whatThisMeans.bullet3")),
+          ]}
+        />
       </EmailCard>
 
       <EmailCard title={t(selectorFromPath("emails.accountInactivity.timeline.title"))}>
         <KeyValueTable
           title=''
           items={[
-            {label: t(selectorFromPath("emails.accountInactivity.timeline.inactiveFor")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: inactiveDays})},
-            {label: t(selectorFromPath("emails.accountInactivity.timeline.timeRemaining")), value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: daysUntilClosure})},
+            {
+              label: t(selectorFromPath("emails.accountInactivity.timeline.inactiveFor")),
+              value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: inactiveDays}),
+            },
+            {
+              label: t(selectorFromPath("emails.accountInactivity.timeline.timeRemaining")),
+              value: t(selectorFromPath("emails.accountInactivity.timeline.daysValue"), {days: daysUntilClosure}),
+            },
           ]}
         />
       </EmailCard>

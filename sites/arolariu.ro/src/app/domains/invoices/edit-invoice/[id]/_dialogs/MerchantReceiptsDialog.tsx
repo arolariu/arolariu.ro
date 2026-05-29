@@ -31,8 +31,8 @@ import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./MerchantReceiptsDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog displaying all receipts/invoices from a specific merchant with filtering.
@@ -192,10 +192,18 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
               <Table>
                 <TableHeader>
                   <TableRow className={styles["headerRow"]}>
-                    <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.receipt)}</TableHead>
-                    <TableHead className={styles["tableHeader"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.date)}</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.itemsCount)}</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.actions)}</TableHead>
+                    <TableHead className={styles["tableHeader"]}>
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.receipt)}
+                    </TableHead>
+                    <TableHead className={styles["tableHeader"]}>
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.date)}
+                    </TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.itemsCount)}
+                    </TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.table.actions)}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className={styles["tableBody"]}>
@@ -223,12 +231,18 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <TableFooter>
                   <TableRow>
                     <TableHead className={styles["tableHeader"]}>
-                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.receiptsFound, {count: String(receipts.length), showing: String(paginatedItems.length)})}
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.receiptsFound, {
+                        count: String(receipts.length),
+                        showing: String(paginatedItems.length),
+                      })}
                     </TableHead>
                     <TableCell
                       className={styles["tableHeaderRight"]}
                       colSpan={2}>
-                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.page, {current: String(currentPage), total: String(totalPages)})}
+                      {t((m) => m.dialogs.invoices.merchantReceiptsDialog.footer.page, {
+                        current: String(currentPage),
+                        total: String(totalPages),
+                      })}
                     </TableCell>
                     <TableCell
                       className={styles["tableHeaderRight"]}

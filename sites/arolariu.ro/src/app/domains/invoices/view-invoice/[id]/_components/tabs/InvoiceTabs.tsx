@@ -119,11 +119,18 @@ export function InvoiceTabs(): React.JSX.Element {
                         <div className={styles["recipeDetails"]}>
                           <div className={styles["recipeDetailItem"]}>
                             <TbClock className={styles["tabIcon"]} />
-                            <span>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.duration, {minutes: String(recipe.approximateTotalDuration)})}</span>
+                            <span>
+                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.duration, {
+                                minutes: String(recipe.approximateTotalDuration),
+                              })}
+                            </span>
                           </div>
                           {recipe.preparationTime > 0 && recipe.cookingTime > 0 && (
                             <div className={styles["recipeDetailMuted"]}>
-                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.prepCook, {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
+                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.prepCook, {
+                                prep: String(recipe.preparationTime),
+                                cook: String(recipe.cookingTime),
+                              })}
                             </div>
                           )}
                         </div>
@@ -133,7 +140,9 @@ export function InvoiceTabs(): React.JSX.Element {
                           <div className={styles["ingredientsSection"]}>
                             <div className={styles["ingredientsHeader"]}>
                               <TbToolsKitchen2 className={styles["sectionIcon"]} />
-                              <h4 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.ingredients)}</h4>
+                              <h4 className={styles["sectionTitle"]}>
+                                {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.ingredients)}
+                              </h4>
                             </div>
                             <ul className={styles["ingredientsList"]}>
                               {recipe.ingredients.map((ingredient) => (
@@ -150,7 +159,9 @@ export function InvoiceTabs(): React.JSX.Element {
                         {/* Instructions */}
                         {recipe.instructions ? (
                           <div className={styles["instructionsSection"]}>
-                            <h4 className={styles["sectionTitle"]}>{t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.instructions)}</h4>
+                            <h4 className={styles["sectionTitle"]}>
+                              {t((m) => m.pages.invoices.viewInvoice.invoiceTabs.recipe.instructions)}
+                            </h4>
                             <p className={styles["instructionsText"]}>{recipe.instructions}</p>
                           </div>
                         ) : null}

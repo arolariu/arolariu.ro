@@ -107,7 +107,8 @@ export default function Features(): React.JSX.Element {
             </Badge>
           </motion.div>
           <h2 className={styles["title"]}>
-            {t((m) => m.sections.about.platform.features.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.features.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.features.title)}{" "}
+            <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.features.titleHighlight)}</span>
           </h2>
           <p className={styles["description"]}>{t((m) => m.sections.about.platform.features.description)}</p>
         </motion.div>
@@ -155,7 +156,9 @@ export default function Features(): React.JSX.Element {
                       <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className={styles["cardTitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}</CardTitle>
+                  <CardTitle className={styles["cardTitle"]}>
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.title`}`))}
+                  </CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
                     {t(selectorFromPath(`sections.about.platform.features.${`items.${feature.id}.description`}`))}
                   </CardDescription>
@@ -214,11 +217,15 @@ export default function Features(): React.JSX.Element {
                     className={styles["modalTitle"]}>
                     {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.title`}`))}
                   </h3>
-                  <p className={styles["modalSubtitle"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}</p>
+                  <p className={styles["modalSubtitle"]}>
+                    {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.description`}`))}
+                  </p>
                 </div>
               </div>
 
-              <p className={styles["modalDescription"]}>{t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}</p>
+              <p className={styles["modalDescription"]}>
+                {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.longDescription`}`))}
+              </p>
 
               <div className={styles["modalTags"]}>
                 {t(selectorFromPath(`sections.about.platform.features.${`items.${selectedFeature.id}.tags`}`))

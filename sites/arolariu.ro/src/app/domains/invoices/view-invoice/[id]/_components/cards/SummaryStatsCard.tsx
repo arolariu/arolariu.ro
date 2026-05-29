@@ -39,7 +39,10 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
       label: t((m) => m.cards.invoices.summaryStatsCard.stats.taxRate.label),
       value: `${formatAmount(summary.taxPercentage, locale, 1)}%`,
       icon: TbPercentage,
-      description: t((m) => m.cards.invoices.summaryStatsCard.stats.taxRate.description, {amount: formatAmount(summary.taxAmount), currency}),
+      description: t((m) => m.cards.invoices.summaryStatsCard.stats.taxRate.description, {
+        amount: formatAmount(summary.taxAmount),
+        currency,
+      }),
     },
   ];
 

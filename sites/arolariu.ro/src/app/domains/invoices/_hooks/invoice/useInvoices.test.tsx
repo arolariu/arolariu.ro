@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoices.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useInvoices} from "./useInvoices";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useInvoices} from "./useInvoices";
 
 // Mock the Zustand store
 vi.mock("@/stores", () => ({
@@ -32,10 +32,7 @@ describe("useInvoices", () => {
   const testInvoice3 = buildInvoice({id: "33333333-3333-4333-8333-333333333333", name: "Invoice 3"});
 
   // Default mock store state
-  const createMockStoreState = (overrides?: {
-    entities?: ReadonlyArray<Invoice>;
-    hasHydrated?: boolean;
-  }) => {
+  const createMockStoreState = (overrides?: {entities?: ReadonlyArray<Invoice>; hasHydrated?: boolean}) => {
     const setEntities = vi.fn();
     const state = {
       entities: overrides?.entities ?? [],
@@ -44,17 +41,21 @@ describe("useInvoices", () => {
     };
 
     // Mock useShallow to return the state selector result directly
-    mockUseInvoicesStore.mockImplementation((selector: (state: {
-      entities: ReadonlyArray<Invoice>;
-      setEntities: (entities: ReadonlyArray<Invoice>) => void;
-      hasHydrated: boolean;
-    }) => typeof state) => {
-      return selector({
-        entities: state.entities,
-        setEntities,
-        hasHydrated: state.hasHydrated,
-      });
-    });
+    mockUseInvoicesStore.mockImplementation(
+      (
+        selector: (state: {
+          entities: ReadonlyArray<Invoice>;
+          setEntities: (entities: ReadonlyArray<Invoice>) => void;
+          hasHydrated: boolean;
+        }) => typeof state,
+      ) => {
+        return selector({
+          entities: state.entities,
+          setEntities,
+          hasHydrated: state.hasHydrated,
+        });
+      },
+    );
 
     return {setEntities};
   };
@@ -174,11 +175,7 @@ describe("useInvoices", () => {
       });
 
       expect(result.current.invoices).toEqual([]);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        ">>> Error fetching invoices:",
-        "SERVER_ERROR",
-        "Internal server error",
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoices:", "SERVER_ERROR", "Internal server error");
 
       consoleErrorSpy.mockRestore();
     });
@@ -197,10 +194,7 @@ describe("useInvoices", () => {
       });
 
       expect(result.current.invoices).toEqual([]);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        ">>> Error fetching invoices in useInvoices hook:",
-        testError,
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoices in useInvoices hook:", testError);
 
       consoleErrorSpy.mockRestore();
     });
@@ -255,11 +249,16 @@ describe("useInvoices", () => {
       renderHook(() => useInvoices());
 
       // Still called only once - empty dependency array prevents refetch
-      await vi.waitFor(() => {
-        expect(mockFetchInvoices).toHaveBeenCalledTimes(2); // Each mount calls once
-      }, {timeout: 100}).catch(() => {
-        // Actually, each mount does fetch - this is expected behavior
-      });
+      await vi
+        .waitFor(
+          () => {
+            expect(mockFetchInvoices).toHaveBeenCalledTimes(2); // Each mount calls once
+          },
+          {timeout: 100},
+        )
+        .catch(() => {
+          // Actually, each mount does fetch - this is expected behavior
+        });
 
       // The test shows that each mount triggers a fetch, which is correct
       // The store provides cached data immediately while fetch happens in background
@@ -365,18 +364,12 @@ describe("useInvoices", () => {
       });
 
       // Hook passes data as-is; store handles deduplication via upsert logic
-      expect(setEntities).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({id: testInvoice1.id}),
-        ]),
-      );
+      expect(setEntities).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({id: testInvoice1.id})]));
     });
 
     it("handles large number of invoices", async () => {
       const {setEntities} = createMockStoreState({hasHydrated: true});
-      const manyInvoices = Array.from({length: 1000}, (_, i) =>
-        buildInvoice({id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}),
-      );
+      const manyInvoices = Array.from({length: 1000}, (_, i) => buildInvoice({id: `${i}`.padStart(36, "0"), name: `Invoice ${i}`}));
 
       mockFetchInvoices.mockResolvedValue({success: true, data: manyInvoices});
 

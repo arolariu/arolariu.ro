@@ -20,8 +20,8 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
-import styles from "./RecipesTab.module.scss";
 import RecipeCard from "../../_cards/RecipeCard";
+import styles from "./RecipesTab.module.scss";
 
 type Props = {
   recipes: Recipe[];
@@ -83,9 +83,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast(t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title), {
-      description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),
-    });
+    toast(
+      t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.title),
+      {
+        description: t((m) => m.pages.invoices.editInvoice.recipesTab.toasts.aiGenerationComingSoon.description),
+      },
+    );
   }, [t]);
 
   const handleCreateFirstRecipe = useCallback(() => {
@@ -174,7 +177,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.previous)}
               </Button>
               <div className={styles["pageInfo"]}>
-                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
+                {t((m) => m.pages.invoices.editInvoice.recipesTab.pagination.pageOf, {
+                  currentPage: String(currentPage),
+                  totalPages: String(totalPages),
+                })}
               </div>
               <Button
                 variant='ghost'

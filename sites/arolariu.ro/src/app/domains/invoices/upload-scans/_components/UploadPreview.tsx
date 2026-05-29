@@ -191,7 +191,11 @@ function UploadCard({
               <p className={styles["fileSize"]}>{progress}%</p>
             </>
           )}
-          {status === "retrying" ? <p className={styles["fileError"]}>{t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}</p> : null}
+          {status === "retrying" ? (
+            <p className={styles["fileError"]}>
+              {t((m) => m.pages.invoices.uploadScans.preview.retryAttempt, {attempt: String(attempts)})}
+            </p>
+          ) : null}
           {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>

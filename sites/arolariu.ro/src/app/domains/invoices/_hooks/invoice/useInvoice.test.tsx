@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoice.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useInvoice} from "./useInvoice";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useInvoice} from "./useInvoice";
 
 // Mock the Zustand store
 vi.mock("@/stores", () => ({
@@ -31,10 +31,7 @@ describe("useInvoice", () => {
   const testInvoice = buildInvoice({id: testInvoiceId, name: "Test Invoice"});
 
   // Default mock store state
-  const createMockStoreState = (overrides?: {
-    cachedInvoice?: Invoice | null;
-    hasHydrated?: boolean;
-  }) => {
+  const createMockStoreState = (overrides?: {cachedInvoice?: Invoice | null; hasHydrated?: boolean}) => {
     const upsertEntity = vi.fn();
     const state = {
       cachedInvoice: overrides?.cachedInvoice ?? null,
@@ -43,17 +40,15 @@ describe("useInvoice", () => {
     };
 
     // Mock useShallow to return the state selector result directly
-    mockUseInvoicesStore.mockImplementation((selector: (state: {
-      entities: Invoice[];
-      upsertEntity: (entity: Invoice) => void;
-      hasHydrated: boolean;
-    }) => typeof state) => {
-      return selector({
-        entities: state.cachedInvoice ? [state.cachedInvoice] : [],
-        upsertEntity,
-        hasHydrated: state.hasHydrated,
-      });
-    });
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {entities: Invoice[]; upsertEntity: (entity: Invoice) => void; hasHydrated: boolean}) => typeof state) => {
+        return selector({
+          entities: state.cachedInvoice ? [state.cachedInvoice] : [],
+          upsertEntity,
+          hasHydrated: state.hasHydrated,
+        });
+      },
+    );
 
     return {upsertEntity};
   };
@@ -156,11 +151,7 @@ describe("useInvoice", () => {
       });
 
       expect(result.current.invoice).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        ">>> Error fetching invoice:",
-        "NOT_FOUND",
-        "Invoice not found",
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoice:", "NOT_FOUND", "Invoice not found");
 
       consoleErrorSpy.mockRestore();
     });
@@ -179,10 +170,7 @@ describe("useInvoice", () => {
       });
 
       expect(result.current.invoice).toBeNull();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        ">>> Error fetching invoice in useInvoice hook:",
-        testError,
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoice in useInvoice hook:", testError);
 
       consoleErrorSpy.mockRestore();
     });
@@ -213,14 +201,11 @@ describe("useInvoice", () => {
       const invoice1 = buildInvoice({id: "11111111-1111-4111-8111-111111111111", name: "Invoice 1"});
       const invoice2 = buildInvoice({id: "22222222-2222-4222-8222-222222222222", name: "Invoice 2"});
 
-      mockFetchInvoice
-        .mockResolvedValueOnce({success: true, data: invoice1})
-        .mockResolvedValueOnce({success: true, data: invoice2});
+      mockFetchInvoice.mockResolvedValueOnce({success: true, data: invoice1}).mockResolvedValueOnce({success: true, data: invoice2});
 
-      const {rerender} = renderHook(
-        ({invoiceIdentifier}) => useInvoice({invoiceIdentifier}),
-        {initialProps: {invoiceIdentifier: invoice1.id}},
-      );
+      const {rerender} = renderHook(({invoiceIdentifier}) => useInvoice({invoiceIdentifier}), {
+        initialProps: {invoiceIdentifier: invoice1.id},
+      });
 
       await waitFor(() => {
         expect(mockFetchInvoice).toHaveBeenCalledWith({invoiceId: invoice1.id});

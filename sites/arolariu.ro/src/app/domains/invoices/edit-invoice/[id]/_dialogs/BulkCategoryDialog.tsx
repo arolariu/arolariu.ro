@@ -29,9 +29,9 @@ import {useTranslations} from "next-intl-selector";
 import {useRouter} from "next/navigation";
 import {useCallback, useMemo, useState} from "react";
 import {TbTag} from "react-icons/tb";
+import {updateInvoiceProduct} from "../../../_actions/invoices";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./BulkCategoryDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
-import { updateInvoiceProduct } from "../../../_actions/invoices";
 
 /**
  * Dialog for bulk category reassignment of products.
@@ -169,15 +169,15 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 originalProductName: product.name,
                 updatedProduct: {
                   name: product.name,
-                category: selectedCategory,
-                quantity: product.quantity,
-                quantityUnit: product.quantityUnit,
-                productCode: product.productCode,
+                  category: selectedCategory,
+                  quantity: product.quantity,
+                  quantityUnit: product.quantityUnit,
+                  productCode: product.productCode,
                   price: product.price,
                   totalPrice: product.price * product.quantity,
                   metadata: product.metadata,
-                detectedAllergens: product.detectedAllergens,
-                }
+                  detectedAllergens: product.detectedAllergens,
+                },
               },
             });
 
@@ -230,7 +230,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.bulkCategoryDialog.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m.dialogs.invoices.bulkCategoryDialog.description, {count: selectedProducts.length})}</DialogDescription>
+          <DialogDescription>
+            {t((m) => m.dialogs.invoices.bulkCategoryDialog.description, {count: selectedProducts.length})}
+          </DialogDescription>
         </DialogHeader>
 
         <div className={styles["content"]}>
@@ -246,7 +248,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
                 </div>
               ))}
               {selectedProducts.length > 5 && (
-                <div className={styles["moreText"]}>{t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.andMore, {count: String(selectedProducts.length - 5)})}</div>
+                <div className={styles["moreText"]}>
+                  {t((m) => m.dialogs.invoices.bulkCategoryDialog.labels.andMore, {count: String(selectedProducts.length - 5)})}
+                </div>
               )}
             </div>
           </div>
@@ -303,7 +307,9 @@ export default function BulkCategoryDialog(): React.JSX.Element {
           <Button
             onClick={handleSave}
             disabled={isSaving || selectedCategory === null}>
-            {isSaving ? t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.saving) : t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.save)}
+            {isSaving
+              ? t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.saving)
+              : t((m) => m.dialogs.invoices.bulkCategoryDialog.buttons.save)}
           </Button>
         </DialogFooter>
       </DialogContent>

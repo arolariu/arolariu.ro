@@ -282,7 +282,9 @@ export function InvoiceDetailsCard(): React.JSX.Element {
 
           {/* Items Table */}
           <div className={styles["itemsSection"]}>
-            <h3 className={styles["itemsTitle"]}>{t((m) => m.cards.invoices.invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)})}</h3>
+            <h3 className={styles["itemsTitle"]}>
+              {t((m) => m.cards.invoices.invoiceDetailsCard.itemsTitle, {count: String(invoice.items.length)})}
+            </h3>
             <div className={styles["tableContainer"]}>
               <Table>
                 <TableHeader>
@@ -343,7 +345,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             {totalPages > 1 && (
               <div className={styles["pagination"]}>
                 <p className={styles["paginationText"]}>
-                  {t((m) => m.cards.invoices.invoiceDetailsCard.pagination.pageOf, {current: String(currentPage), total: String(totalPages)})}
+                  {t((m) => m.cards.invoices.invoiceDetailsCard.pagination.pageOf, {
+                    current: String(currentPage),
+                    total: String(totalPages),
+                  })}
                 </p>
                 <div className={styles["paginationButtons"]}>
                   <Button

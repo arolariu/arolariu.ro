@@ -5,8 +5,8 @@
 
 import {describe, expect, it, vi} from "vitest";
 import type {Scan} from "../../../../../types/scans";
-import type {PendingUpload, UploadProgressEvent, UploadRunnerDependencies} from "./uploadTypes";
 import {readFileAsBase64, uploadPendingScan} from "./uploadRunner";
+import type {PendingUpload, UploadProgressEvent, UploadRunnerDependencies} from "./uploadTypes";
 
 /**
  * Creates a scan returned by mocked upload dependencies.

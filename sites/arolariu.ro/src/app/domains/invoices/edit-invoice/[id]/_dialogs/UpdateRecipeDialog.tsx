@@ -332,7 +332,9 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               onClick={handleSave}
               disabled={isUpdating}>
               <TbDisc className={styles["saveIcon"]} />
-              {isUpdating ? t((m) => m.dialogs.invoices.recipeDialog.buttons.saving) : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
+              {isUpdating
+                ? t((m) => m.dialogs.invoices.recipeDialog.buttons.saving)
+                : t((m) => m.dialogs.invoices.recipeDialog.buttons.save)}
             </Button>
           </div>
         </DialogFooter>

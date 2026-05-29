@@ -58,7 +58,8 @@ export default function Stepper(): React.JSX.Element {
             {t((m) => m.sections.about.platform.timeline.badge)}
           </Badge>
           <h2 className={styles["title"]}>
-            {t((m) => m.sections.about.platform.timeline.title)} <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.timeline.titleHighlight)}</span>
+            {t((m) => m.sections.about.platform.timeline.title)}{" "}
+            <span className={styles["titleHighlight"]}>{t((m) => m.sections.about.platform.timeline.titleHighlight)}</span>
           </h2>
           <p className={styles["description"]}>{t((m) => m.sections.about.platform.timeline.description)}</p>
         </motion.div>
@@ -98,10 +99,14 @@ export default function Stepper(): React.JSX.Element {
                     data-event-id={event.id}
                     className={styles["stepButton"]}
                     onClick={handleStepClick}>
-                    <h3 className={styles["stepTitle"]}>{t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.title`}`))}</h3>
+                    <h3 className={styles["stepTitle"]}>
+                      {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.title`}`))}
+                    </h3>
                   </button>
 
-                  <p className={styles["stepDescription"]}>{t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.description`}`))}</p>
+                  <p className={styles["stepDescription"]}>
+                    {t(selectorFromPath(`sections.about.platform.timeline.${`events.${event.id}.description`}`))}
+                  </p>
 
                   {/* Tags */}
                   <div className={styles["tags"]}>
@@ -151,7 +156,9 @@ export default function Stepper(): React.JSX.Element {
                     data-event-id={event.id}
                     className={styles["expandHint"]}
                     onClick={handleStepClick}>
-                    {isExpanded ? t((m) => m.sections.about.platform.timeline.collapseHint) : t((m) => m.sections.about.platform.timeline.expandHint)}
+                    {isExpanded
+                      ? t((m) => m.sections.about.platform.timeline.collapseHint)
+                      : t((m) => m.sections.about.platform.timeline.expandHint)}
                   </button>
                 </div>
               </motion.div>

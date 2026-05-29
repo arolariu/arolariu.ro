@@ -3,11 +3,11 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceDelete.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useInvoiceDelete} from "./useInvoiceDelete";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {ServerActionResult} from "@/lib/utils.server";
+import {useInvoiceDelete} from "./useInvoiceDelete";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -73,11 +73,10 @@ describe("useInvoiceDelete", () => {
     mockUseRouter.mockReturnValue(mockRouter as never);
 
     // Setup store mock
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      removeEntity: typeof mockRemoveEntity;
-    }) => typeof mockRemoveEntity) => selector({
-      removeEntity: mockRemoveEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {removeEntity: typeof mockRemoveEntity}) => typeof mockRemoveEntity) =>
+      selector({
+        removeEntity: mockRemoveEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -210,10 +209,7 @@ describe("useInvoiceDelete", () => {
         error: {message: "Error", userMessage: "Error"},
       };
 
-      mockDeleteInvoice
-        .mockResolvedValueOnce(successResult)
-        .mockResolvedValueOnce(errorResult)
-        .mockResolvedValueOnce(successResult);
+      mockDeleteInvoice.mockResolvedValueOnce(successResult).mockResolvedValueOnce(errorResult).mockResolvedValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -265,9 +261,7 @@ describe("useInvoiceDelete", () => {
 
     it("continues processing after individual failure", async () => {
       const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoice
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockResolvedValueOnce(successResult);
+      mockDeleteInvoice.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceDelete());
 
@@ -367,10 +361,7 @@ describe("useInvoiceDelete", () => {
 
       const {result} = renderHook(() => useInvoiceDelete());
 
-      await result.current.deleteInvoiceCallback([
-        testInvoiceId,
-        "22222222-2222-4222-8222-222222222222",
-      ]);
+      await result.current.deleteInvoiceCallback([testInvoiceId, "22222222-2222-4222-8222-222222222222"]);
 
       expect(mockRemoveEntity).toHaveBeenCalledTimes(2);
     });

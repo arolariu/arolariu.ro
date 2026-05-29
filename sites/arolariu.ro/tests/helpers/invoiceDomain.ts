@@ -20,9 +20,9 @@
  */
 
 import type {Invoice, Merchant, Product} from "@/types/invoices";
+import {InvoiceCategory, MerchantCategory, PaymentType, ProductCategory} from "@/types/invoices";
 import type {ContactInformation} from "@/types/invoices/Merchant";
 import type {PaymentInformation} from "@/types/invoices/Payment";
-import {InvoiceCategory, MerchantCategory, PaymentType, ProductCategory} from "@/types/invoices";
 import type {CachedScan, Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 
@@ -98,10 +98,7 @@ export function createJsonResponse(
  * await expect(response.text()).resolves.toBe("Not found");
  * ```
  */
-export function createTextResponse(
-  text: string,
-  init: Readonly<{status: number; statusText?: string}>,
-): MockResponse {
+export function createTextResponse(text: string, init: Readonly<{status: number; statusText?: string}>): MockResponse {
   return {
     ok: init.status >= 200 && init.status < 300,
     status: init.status,

@@ -40,8 +40,8 @@
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
-import {getLocale} from "next-intl/server";
 import {getTranslations} from "next-intl-selector/server";
+import {getLocale} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderUploadScansScreen from "./island";
 import styles from "./page.module.scss";

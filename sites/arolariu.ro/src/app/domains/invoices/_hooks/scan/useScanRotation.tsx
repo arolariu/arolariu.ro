@@ -2,12 +2,12 @@
 
 /**
  * @fileoverview Hook for managing scan rotation with canvas pipeline.
-* @module app/domains/invoices/_hooks/scan/useScanRotation
-*
-* @remarks
-* Rotates image scans in the browser using Canvas, persists the new binary
-* content through the standalone scan update server action, and cache-busts the
-* scan URL in the scans Zustand store after a successful upload.
+ * @module app/domains/invoices/_hooks/scan/useScanRotation
+ *
+ * @remarks
+ * Rotates image scans in the browser using Canvas, persists the new binary
+ * content through the standalone scan update server action, and cache-busts the
+ * scan URL in the scans Zustand store after a successful upload.
  */
 
 import {useScansStore} from "@/stores";
@@ -15,7 +15,7 @@ import type {CachedScan} from "@/types/scans";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import { updateScan } from "../../_actions/scans";
+import {updateScan} from "../../_actions/scans";
 
 /**
  * Hook output type for scan rotation.

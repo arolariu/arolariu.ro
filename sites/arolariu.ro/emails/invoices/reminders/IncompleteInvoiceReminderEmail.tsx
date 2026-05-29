@@ -148,7 +148,14 @@ const IncompleteInvoiceReminderEmail = async (props: Readonly<Props>): Promise<R
         })}
       </EmailCard>
       <EmailCard title={t(selectorFromPath("emails.incompleteInvoice.tipsTitle"))}>
-        <BulletList items={[t(selectorFromPath("emails.incompleteInvoice.tips.item0")), t(selectorFromPath("emails.incompleteInvoice.tips.item1")), t(selectorFromPath("emails.incompleteInvoice.tips.item2")), t(selectorFromPath("emails.incompleteInvoice.tips.item3"))]} />
+        <BulletList
+          items={[
+            t(selectorFromPath("emails.incompleteInvoice.tips.item0")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item1")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item2")),
+            t(selectorFromPath("emails.incompleteInvoice.tips.item3")),
+          ]}
+        />
       </EmailCard>
       <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.incompleteInvoice.bodyText"))}</Text>
       <Text style={EmailParagraphStyles}>

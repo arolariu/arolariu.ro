@@ -2,19 +2,19 @@
 
 /**
  * @fileoverview Hook for adding a scan to an existing invoice.
-* @module app/domains/invoices/_hooks/scan/useScanAdd
-*
-* @remarks
-* Converts a browser `Blob` to a data URL, uploads it with the invoice scan
-* server action, attaches the uploaded blob URL to an existing invoice, and
-* exposes loading state plus toast feedback for the calling component.
+ * @module app/domains/invoices/_hooks/scan/useScanAdd
+ *
+ * @remarks
+ * Converts a browser `Blob` to a data URL, uploads it with the invoice scan
+ * server action, attaches the uploaded blob URL to an existing invoice, and
+ * exposes loading state plus toast feedback for the calling component.
  */
 
 import type {InvoiceScanType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
-import { attachInvoiceScan, createInvoiceScan } from "../../_actions/invoices";
+import {attachInvoiceScan, createInvoiceScan} from "../../_actions/invoices";
 
 /**
  * Arguments required to upload and attach a scan.
@@ -119,7 +119,10 @@ export function useScanAdd(invoiceId: string): Readonly<HookOutputType> {
         toast.success(t((m) => m.toasts.invoices.useScanAdd.addSuccess));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(t((m) => m.toasts.invoices.useScanAdd.addError), {description: message});
+        toast.error(
+          t((m) => m.toasts.invoices.useScanAdd.addError),
+          {description: message},
+        );
         throw error;
       } finally {
         setIsAdding(false);

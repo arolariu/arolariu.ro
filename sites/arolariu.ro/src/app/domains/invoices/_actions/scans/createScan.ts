@@ -61,12 +61,12 @@
  * @see {@link fetchScans} - Retrieves user's scans
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient, rewriteAzuriteUrl } from "@/lib/azure/storageClient";
-import { convertBase64ToBlob, createErrorResult, type ServerActionResult } from "@/lib/utils.server";
-import { type Scan, ScanStatus, ScanType } from "@/types/scans";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {convertBase64ToBlob, createErrorResult, type ServerActionResult} from "@/lib/utils.server";
+import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 
 /**
  * Input parameters for uploading a standalone scan.
@@ -93,7 +93,8 @@ type ServerActionOutputType = ServerActionResult<
     status: number;
     /** The created Scan entity with blob URL and metadata */
     scan: Scan;
-  }>>;
+  }>
+>;
 
 /**
  * Maps MIME type to ScanType enum for type classification.
@@ -217,7 +218,7 @@ function getFileExtension(fileName: string): string {
  * }
  * ```
  */
-export async function createScan({ base64Data, fileName, mimeType }: ServerActionInputType): ServerActionOutputType {
+export async function createScan({base64Data, fileName, mimeType}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{createScan}}, with fileName:", fileName);
 
   return withSpan("api.actions.scans.createScan", async () => {
@@ -225,7 +226,7 @@ export async function createScan({ base64Data, fileName, mimeType }: ServerActio
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       // Step 2. Generate scan ID and blob name
@@ -241,7 +242,7 @@ export async function createScan({ base64Data, fileName, mimeType }: ServerActio
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.create.start");
-      logWithTrace("info", "Creating scan in Azure Blob Storage", { blobName }, "server");
+      logWithTrace("info", "Creating scan in Azure Blob Storage", {blobName}, "server");
 
       const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
@@ -268,10 +269,10 @@ export async function createScan({ base64Data, fileName, mimeType }: ServerActio
       addSpanEvent("azure.blob.upload.complete");
 
       if (blobUploadResponse._response.status === 201) {
-        logWithTrace("info", "Successfully created scan in Azure", { scanId }, "server");
+        logWithTrace("info", "Successfully created scan in Azure", {scanId}, "server");
       } else {
         addSpanEvent("azure.blob.create.error");
-        logWithTrace("error", "Error creating blob in Azure Storage", { status: blobUploadResponse._response.status }, "server");
+        logWithTrace("error", "Error creating blob in Azure Storage", {status: blobUploadResponse._response.status}, "server");
       }
 
       // Step 5. Construct and return the Scan entity
@@ -300,7 +301,7 @@ export async function createScan({ base64Data, fileName, mimeType }: ServerActio
     } catch (error: unknown) {
       addSpanEvent("scan.create.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error creating scan", { error }, "server");
+      logWithTrace("error", "Error creating scan", {error}, "server");
       console.error("Error creating scan:", error);
       return createErrorResult(new Error(errorMessage));
     }

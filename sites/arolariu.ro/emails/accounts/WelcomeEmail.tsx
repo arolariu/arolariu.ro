@@ -37,10 +37,23 @@ const WelcomeEmail = defineEmailTemplate<Props>({
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.greeting"), {name})}</Text>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.intro"), {brand: BRAND.name})}</Text>
         <EmailCard title={t(selectorFromPath("emails.welcome.howItWorksTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.welcome.howItWorks.item0")), t(selectorFromPath("emails.welcome.howItWorks.item1")), t(selectorFromPath("emails.welcome.howItWorks.item2"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.welcome.howItWorks.item0")),
+              t(selectorFromPath("emails.welcome.howItWorks.item1")),
+              t(selectorFromPath("emails.welcome.howItWorks.item2")),
+            ]}
+          />
         </EmailCard>
         <EmailCard title={t(selectorFromPath("emails.welcome.whatYouCanDoTitle"))}>
-          <BulletList items={[t(selectorFromPath("emails.welcome.whatYouCanDo.item0")), t(selectorFromPath("emails.welcome.whatYouCanDo.item1")), t(selectorFromPath("emails.welcome.whatYouCanDo.item2")), t(selectorFromPath("emails.welcome.whatYouCanDo.item3"))]} />
+          <BulletList
+            items={[
+              t(selectorFromPath("emails.welcome.whatYouCanDo.item0")),
+              t(selectorFromPath("emails.welcome.whatYouCanDo.item1")),
+              t(selectorFromPath("emails.welcome.whatYouCanDo.item2")),
+              t(selectorFromPath("emails.welcome.whatYouCanDo.item3")),
+            ]}
+          />
         </EmailCard>
         <Text style={EmailParagraphStyles}>{t(selectorFromPath("emails.welcome.body"))}</Text>
         <Text style={EmailParagraphStyles}>

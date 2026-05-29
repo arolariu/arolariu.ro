@@ -2,12 +2,12 @@
 
 /**
  * @fileoverview Hook for managing local scan rename behavior.
-* @module app/domains/invoices/_hooks/scan/useScanRename
-*
-* @remarks
-* Provides local rename state and updates the scans Zustand store. Despite the
-* historical file summary, this hook does not call a server action; scan rename
-* is local client state.
+ * @module app/domains/invoices/_hooks/scan/useScanRename
+ *
+ * @remarks
+ * Provides local rename state and updates the scans Zustand store. Despite the
+ * historical file summary, this hook does not call a server action; scan rename
+ * is local client state.
  */
 
 import {useScansStore} from "@/stores";

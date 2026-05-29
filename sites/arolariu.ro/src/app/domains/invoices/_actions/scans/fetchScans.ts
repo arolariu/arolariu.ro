@@ -16,12 +16,12 @@
  * @see {@link deleteScan} for removing scans
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient, rewriteAzuriteUrl } from "@/lib/azure/storageClient";
-import { createErrorResult, type ServerActionResult } from "@/lib/utils.server";
-import { type Scan, ScanStatus, ScanType } from "@/types/scans";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
+import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
+import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 
 /**
  * Input parameters for fetching scans.
@@ -96,7 +96,7 @@ function mimeTypeToScanType(mimeType: string): ScanType {
  * }
  * ```
  */
-export async function fetchScans({ includeArchived = false }: ServerActionInputType = {}): ServerActionOutputType {
+export async function fetchScans({includeArchived = false}: ServerActionInputType = {}): ServerActionOutputType {
   console.info(">>> Executing server action {{fetchScans}}, with includeArchived:", includeArchived);
 
   return withSpan("api.actions.scans.fetchScans", async () => {
@@ -104,7 +104,7 @@ export async function fetchScans({ includeArchived = false }: ServerActionInputT
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       // Step 2. Connect to Azure Storage
@@ -118,7 +118,7 @@ export async function fetchScans({ includeArchived = false }: ServerActionInputT
 
       // Step 3. List blobs with user prefix
       addSpanEvent("azure.blob.list.start");
-      logWithTrace("info", "Listing scans from Azure Blob Storage", { userIdentifier }, "server");
+      logWithTrace("info", "Listing scans from Azure Blob Storage", {userIdentifier}, "server");
       const prefix = `scans/${userIdentifier}/`;
       const scans: Scan[] = [];
 
@@ -180,7 +180,7 @@ export async function fetchScans({ includeArchived = false }: ServerActionInputT
       // Step 4. Sort by upload date (newest first)
       scans.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
-      logWithTrace("info", `Successfully fetched ${scans.length} scans`, { count: scans.length }, "server");
+      logWithTrace("info", `Successfully fetched ${scans.length} scans`, {count: scans.length}, "server");
       return {
         success: true,
         data: scans,
@@ -188,7 +188,7 @@ export async function fetchScans({ includeArchived = false }: ServerActionInputT
     } catch (error: unknown) {
       addSpanEvent("scans.fetch.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching scans from Azure", { error }, "server");
+      logWithTrace("error", "Error fetching scans from Azure", {error}, "server");
       console.error("Error fetching scans:", error);
       return createErrorResult(new Error(errorMessage), "Failed to fetch scans. Please try again.");
     }

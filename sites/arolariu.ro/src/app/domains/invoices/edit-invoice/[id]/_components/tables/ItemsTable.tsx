@@ -1,5 +1,6 @@
 "use client";
 
+import {patchInvoice} from "@/app/domains/invoices/_actions/invoices";
 import {usePaginationWithSearch} from "@/hooks";
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
@@ -36,7 +37,6 @@ import {TbEdit, TbFlask, TbPencil, TbPlus, TbRefresh, TbSearch, TbTag, TbTrash} 
 import {useDialog, useDialogs} from "../../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import styles from "./ItemsTable.module.scss";
-import { patchInvoice } from "@/app/domains/invoices/_actions/invoices";
 
 type Props = {
   invoice: Invoice;
@@ -625,7 +625,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         </div>
         {selectedIndices.size > 0 && (
           <div className={styles["bulkToolbar"]}>
-            <span className={styles["bulkToolbarText"]}>{t((m) => m.pages.invoices.editInvoice.itemsTable.bulkToolbar.selectedCount, {count: selectedIndices.size})}</span>
+            <span className={styles["bulkToolbarText"]}>
+              {t((m) => m.pages.invoices.editInvoice.itemsTable.bulkToolbar.selectedCount, {count: selectedIndices.size})}
+            </span>
             <Button
               variant='outline'
               size='sm'
@@ -677,8 +679,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 {t((m) => m.pages.invoices.editInvoice.itemsTable.columns.price)}
                 {sortField === "price" ? <span className={styles["sortIndicator"]}>{sortDirection === "asc" ? " ▲" : " ▼"}</span> : null}
               </TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>{t((m) => m.pages.invoices.editInvoice.itemsTable.columns.total)}</TableHead>
-              <TableHead className={styles["tableHeaderCenter"]}>{t((m) => m.pages.invoices.editInvoice.itemsTable.columns.actions)}</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>
+                {t((m) => m.pages.invoices.editInvoice.itemsTable.columns.total)}
+              </TableHead>
+              <TableHead className={styles["tableHeaderCenter"]}>
+                {t((m) => m.pages.invoices.editInvoice.itemsTable.columns.actions)}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className={styles["tableBody"]}>
@@ -731,7 +737,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                           onChange={createEditChangeHandler(index, "name")}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleEditKeyDown}
-                          aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.name), name: item.name})}
+                          aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {
+                            field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.name),
+                            name: item.name,
+                          })}
                           className={styles["editInput"]}
                         />
                       ) : (
@@ -765,7 +774,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                                       variant='secondary'
                                       className={styles["allergenBadge"]}>
                                       <TbFlask className={styles["allergenIcon"]} />
-                                      {t((m) => m.pages.invoices.editInvoice.itemsTable.indicators.allergens, {count: item.detectedAllergens.length})}
+                                      {t((m) => m.pages.invoices.editInvoice.itemsTable.indicators.allergens, {
+                                        count: item.detectedAllergens.length,
+                                      })}
                                     </Badge>
                                   }
                                 />
@@ -790,7 +801,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onChange={createEditChangeHandler(index, "quantity")}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.quantity), name: item.name})}
+                        aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {
+                          field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.quantity),
+                          name: item.name,
+                        })}
                         className={styles["editInput"]}
                       />
                     ) : (
@@ -809,7 +823,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                         onChange={(e) => handleEditChange(index, "price", e.target.value)}
                         onBlur={handleSaveEdit}
                         onKeyDown={handleEditKeyDown}
-                        aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.price), name: item.name})}
+                        aria-label={t((m) => m.pages.invoices.editInvoice.itemsTable.editing.fieldLabel, {
+                          field: t((m) => m.pages.invoices.editInvoice.itemsTable.columns.price),
+                          name: item.name,
+                        })}
                         className={styles["editInput"]}
                       />
                     ) : (
@@ -935,7 +952,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         {/* Pagination controls - only show when more than one page */}
         {totalPages > 1 && (
           <div className={styles["paginationBar"]}>
-            <div className={styles["paginationInfo"]}>{t((m) => m.pages.invoices.editInvoice.itemsTable.pagination.totalItems, {count: sortedItems.length})}</div>
+            <div className={styles["paginationInfo"]}>
+              {t((m) => m.pages.invoices.editInvoice.itemsTable.pagination.totalItems, {count: sortedItems.length})}
+            </div>
             <div className={styles["paginationControls"]}>
               <Button
                 variant='outline'
@@ -945,7 +964,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 {t((m) => m.pages.invoices.editInvoice.itemsTable.pagination.previous)}
               </Button>
               <span className={styles["paginationText"]}>
-                {t((m) => m.pages.invoices.editInvoice.itemsTable.pagination.pageOf, {currentPage: String(currentPage), totalPages: String(totalPages)})}
+                {t((m) => m.pages.invoices.editInvoice.itemsTable.pagination.pageOf, {
+                  currentPage: String(currentPage),
+                  totalPages: String(totalPages),
+                })}
               </span>
               <Button
                 variant='outline'
@@ -966,11 +988,15 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.title)}</AlertDialogTitle>
-            <AlertDialogDescription>{t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.description, {count: selectedIndices.size})}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.description, {count: selectedIndices.size})}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.cancel)}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSelected}>{t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.confirm)}</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteSelected}>
+              {t((m) => m.pages.invoices.editInvoice.itemsTable.deleteConfirm.confirm)}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

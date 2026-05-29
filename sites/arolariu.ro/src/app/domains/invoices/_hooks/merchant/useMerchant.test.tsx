@@ -3,10 +3,10 @@
  * @module app/domains/invoices/_hooks/merchant/useMerchant.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
 import {useMerchant} from "./useMerchant";
 
@@ -43,9 +43,7 @@ function createMockStoreState(
     hasHydrated: overrides.hasHydrated ?? false,
   };
 
-  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) =>
-    selector(state),
-  );
+  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) => selector(state));
 
   return {upsertMerchant};
 }
@@ -116,11 +114,7 @@ describe("useMerchant", () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      ">>> Error fetching merchant:",
-      "NOT_FOUND",
-      "Merchant not found",
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchant:", "NOT_FOUND", "Merchant not found");
   });
 
   it("sets the error flag and logs when the server action throws", async () => {
@@ -135,10 +129,7 @@ describe("useMerchant", () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      ">>> Error fetching merchant in useMerchant hook:",
-      thrownError,
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchant in useMerchant hook:", thrownError);
   });
 
   it("does not upsert merchant data when fetch fails", async () => {
@@ -184,4 +175,3 @@ describe("useMerchant", () => {
     expect(upsertMerchant).toHaveBeenNthCalledWith(2, secondMerchant);
   });
 });
-

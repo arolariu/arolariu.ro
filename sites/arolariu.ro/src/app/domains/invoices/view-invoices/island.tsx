@@ -34,19 +34,18 @@
  * @see {@link DialogProvider} - Context for modal/sheet state
  */
 
-
 import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider} from "../_contexts/DialogContext";
+import {useInvoices} from "../_hooks/invoice";
 import BulkActionsToolbar from "./_components/BulkActionsToolbar";
 import InvoicesHeader from "./_components/InvoicesHeader";
 import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
 import styles from "./island.module.scss";
-import {useInvoices} from "../_hooks/invoice";
 
 /**
  * Renders the interactive client island for invoice management with tabs.

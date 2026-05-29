@@ -184,7 +184,9 @@ export default function UploadArea(): React.JSX.Element {
             </motion.div>
             <h3 className={styles["dropzoneTitle"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.title)}</h3>
             <p className={styles["dropzoneSubtitle"]}>
-              {isDragActive ? t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropActive) : t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropInactive)}
+              {isDragActive
+                ? t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropActive)
+                : t((m) => m.pages.invoices.uploadScans.uploadArea.empty.dropInactive)}
             </p>
             <p className={styles["dropzoneFormats"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.formats)}</p>
             <p className={styles["dropzoneNote"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.empty.note)}</p>
@@ -249,7 +251,9 @@ export default function UploadArea(): React.JSX.Element {
           </div>
           <div className={styles["compactTextBlock"]}>
             <p className={styles["compactTitle"]}>
-              {isDragActive ? t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropActive) : t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropInactive)}
+              {isDragActive
+                ? t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropActive)
+                : t((m) => m.pages.invoices.uploadScans.uploadArea.compact.dropInactive)}
             </p>
             <p className={styles["compactSubtitle"]}>{t((m) => m.pages.invoices.uploadScans.uploadArea.compact.subtitle)}</p>
           </div>
@@ -283,7 +287,9 @@ export default function UploadArea(): React.JSX.Element {
                   className={styles["uploadButton"]}
                   type='button'
                   disabled={isUploading}>
-                  {isUploading ? t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploading) : t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploadScans)}
+                  {isUploading
+                    ? t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploading)
+                    : t((m) => m.pages.invoices.uploadScans.uploadArea.actions.uploadScans)}
                 </Button>
               }
             />

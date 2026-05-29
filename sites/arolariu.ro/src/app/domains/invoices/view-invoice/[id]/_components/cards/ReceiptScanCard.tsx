@@ -159,7 +159,12 @@ export function ReceiptScanCard(): React.JSX.Element {
       <Card className={styles["card"]}>
         <CardHeader>
           <CardTitle className={styles["cardTitle"]}>
-            {totalScans > 1 ? t((m) => m.cards.invoices.receiptScanCard.titleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)}) : t((m) => m.cards.invoices.receiptScanCard.title)}
+            {totalScans > 1
+              ? t((m) => m.cards.invoices.receiptScanCard.titleWithIndex, {
+                  current: String(currentScanIndex + 1),
+                  total: String(totalScans),
+                })
+              : t((m) => m.cards.invoices.receiptScanCard.title)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -198,7 +203,10 @@ export function ReceiptScanCard(): React.JSX.Element {
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
-                    ? t((m) => m.cards.invoices.receiptScanCard.dialogTitleWithIndex, {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    ? t((m) => m.cards.invoices.receiptScanCard.dialogTitleWithIndex, {
+                        current: String(currentScanIndex + 1),
+                        total: String(totalScans),
+                      })
                     : t((m) => m.cards.invoices.receiptScanCard.dialogTitle)}
                 </DialogTitle>
               </DialogHeader>
@@ -257,7 +265,9 @@ export function ReceiptScanCard(): React.JSX.Element {
                           size='sm'
                           onClick={handleDialogRotate}>
                           <TbRotateClockwise className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.controls.rotate)}</span>
+                          <span className={styles["controlLabelDesktop"]}>
+                            {t((m) => m.cards.invoices.receiptScanCard.controls.rotate)}
+                          </span>
                         </Button>
                       }
                     />
@@ -273,7 +283,9 @@ export function ReceiptScanCard(): React.JSX.Element {
                           size='sm'
                           onClick={handleDownload}>
                           <TbDownload className={styles["controlIcon"]} />
-                          <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.controls.download)}</span>
+                          <span className={styles["controlLabelDesktop"]}>
+                            {t((m) => m.cards.invoices.receiptScanCard.controls.download)}
+                          </span>
                         </Button>
                       }
                     />
@@ -290,7 +302,9 @@ export function ReceiptScanCard(): React.JSX.Element {
                       onClick={handlePreviousScan}
                       disabled={currentScanIndex === 0}>
                       <TbArrowLeft className={styles["controlIcon"]} />
-                      <span className={styles["controlLabelDesktop"]}>{t((m) => m.cards.invoices.receiptScanCard.navigation.previous)}</span>
+                      <span className={styles["controlLabelDesktop"]}>
+                        {t((m) => m.cards.invoices.receiptScanCard.navigation.previous)}
+                      </span>
                     </Button>
                     <span className={styles["scanCounter"]}>
                       {currentScanIndex + 1} {t((m) => m.cards.invoices.receiptScanCard.navigation.of)} {totalScans}

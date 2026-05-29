@@ -25,9 +25,9 @@ import {AmountFilterCard} from "./AmountFilterCard";
 import {CategoryFilterCard} from "./CategoryFilterCard";
 import {CurrencyFilterCard} from "./CurrencyFilterCard";
 import {DateFilterCard} from "./DateFilterCard";
+import styles from "./FilterBar.module.scss";
 import {PaymentTypeFilterCard} from "./PaymentTypeFilterCard";
 import {SortFilterCard} from "./SortFilterCard";
-import styles from "./FilterBar.module.scss";
 
 /**
  * Props for the FilterBar component.
@@ -213,7 +213,9 @@ export default function FilterBar({
                 <h3 className={styles["sheetTitle"]}>
                   {t((m) => m.forms.invoices.filters.title)}
                   {activeFilterCount > 0 && (
-                    <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}</span>
+                    <span className={styles["panelHeaderActiveBadge"]}>
+                      {t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}
+                    </span>
                   )}
                 </h3>
                 {activeFilterCount > 0 && (
@@ -316,7 +318,9 @@ export default function FilterBar({
             <h4 className={styles["inlineFilterTitle"]}>
               {t((m) => m.forms.invoices.filters.title)}
               {activeFilterCount > 0 && (
-                <span className={styles["panelHeaderActiveBadge"]}>{t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}</span>
+                <span className={styles["panelHeaderActiveBadge"]}>
+                  {t((m) => m.forms.invoices.filters.activeCount, {count: String(activeFilterCount)})}
+                </span>
               )}
             </h4>
             <div className={styles["inlineFilterActions"]}>

@@ -38,12 +38,12 @@
  * @see {@link ServerActionResult} - Standard result wrapper type
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { validateStringIsGuidType } from "@/lib/utils.generic";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import type { Product } from "@/types/invoices";
-import { revalidatePath } from "next/cache";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Product} from "@/types/invoices";
+import {revalidatePath} from "next/cache";
 
 /**
  * Input parameters for the updateInvoiceProduct server action.
@@ -206,19 +206,19 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  * @see {@link ServerActionResult} - Result type wrapper
  * @see {@link Product} - Product type definition
  */
-export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", { invoiceId, payload });
+export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{updateInvoiceProduct}}, with:", {invoiceId, payload});
 
   return withSpan("api.actions.invoices.updateInvoiceProduct", async () => {
     try {
       // Step 0. Validate input is correct
-      logWithTrace("info", "Validating input for updateInvoiceProduct", { invoiceId, payload }, "server");
+      logWithTrace("info", "Validating input for updateInvoiceProduct", {invoiceId, payload}, "server");
       validateStringIsGuidType(invoiceId, "invoiceId");
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to update the product.
@@ -226,7 +226,7 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
       // the nested `{ originalProductName, updatedProduct }` shape directly,
       // because ASP.NET would silently drop `updatedProduct` (unknown member)
       // and bind every other field to its default value, wiping out the product.
-      const { originalProductName, updatedProduct } = payload;
+      const {originalProductName, updatedProduct} = payload;
       const requestBody = {
         originalProductName,
         name: updatedProduct.name,
@@ -239,7 +239,7 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
       } as const;
 
       addSpanEvent("bff.request.update-invoice-product.start");
-      logWithTrace("info", "Making API request to update product in invoice", { invoiceId }, "server");
+      logWithTrace("info", "Making API request to update product in invoice", {invoiceId}, "server");
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/products`, {
         method: "PUT",
         headers: {
@@ -251,7 +251,7 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
       addSpanEvent("bff.request.update-invoice-product.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully updated product in invoice", { invoiceId }, "server");
+        logWithTrace("info", "Successfully updated product in invoice", {invoiceId}, "server");
         const product = (await response.json()) as Product;
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
@@ -264,7 +264,7 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
       addSpanEvent("bff.request.update-invoice-product.error");
       const errorText = await response.text();
       const internalMessage = `Failed to update product: ${response.status} ${response.statusText} - ${errorText}`;
-      logWithTrace("warn", internalMessage, { invoiceId, errorText }, "server");
+      logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
@@ -273,7 +273,7 @@ export async function updateInvoiceProduct({ invoiceId, payload }: ServerActionI
     } catch (error: unknown) {
       addSpanEvent("bff.request.update-invoice-product.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error updating product in invoice", { error, invoiceId }, "server");
+      logWithTrace("error", "Error updating product in invoice", {error, invoiceId}, "server");
       console.error("Error updating product in invoice:", error);
       return createErrorResult(new Error(errorMessage));
     }

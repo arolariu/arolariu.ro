@@ -173,7 +173,9 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
                 </div>
               </CardContent>
               <CardFooter className={styles["cardFooter"]}>
-                <div className={styles["itemCount"]}>{t((m) => m.pages.invoices.viewInvoices.gridView.itemCount, {count: invoice.items?.length ?? 0})}</div>
+                <div className={styles["itemCount"]}>
+                  {t((m) => m.pages.invoices.viewInvoices.gridView.itemCount, {count: invoice.items?.length ?? 0})}
+                </div>
               </CardFooter>
             </Card>
           </div>
@@ -205,7 +207,9 @@ export const GridView = (props: Readonly<Props>): React.JSX.Element => {
             </Select>
           </div>
           <div className={styles["pageIndicator"]}>
-            <span className={styles["pageLabel"]}>{tTableView((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}</span>
+            <span className={styles["pageLabel"]}>
+              {tTableView((m) => m.pages.invoices.viewInvoices.tableView.pageOf, {current: String(currentPage), total: String(totalPages)})}
+            </span>
           </div>
           <div className={styles["pageNavigation"]}>
             <Button

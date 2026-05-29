@@ -28,7 +28,6 @@
  * - Computed status values are memoized with `useMemo`
  */
 
-
 import {useInvoiceShare} from "@/app/domains/invoices/_hooks/invoice";
 import {formatRelativeTime, LAST_GUID} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Label, Switch, toast} from "@arolariu/components";
@@ -194,7 +193,9 @@ export function ShareCollaborateCard(): React.JSX.Element {
           if (updatedInvoice) {
             setInvoice(updatedInvoice);
           }
-          toast.success(t(selectorFromPath(`pages.invoices.viewInvoice.shareCollaborate.${isCurrentlyPublic ? "madePrivate" : "madePublic"}`)));
+          toast.success(
+            t(selectorFromPath(`pages.invoices.viewInvoice.shareCollaborate.${isCurrentlyPublic ? "madePrivate" : "madePublic"}`)),
+          );
         } catch (error) {
           console.error("Failed to toggle public status:", error);
           toast.error(t((m) => m.pages.invoices.viewInvoice.shareCollaborate.toggleError));
@@ -269,8 +270,13 @@ export function ShareCollaborateCard(): React.JSX.Element {
         <div className={styles["activitySection"]}>
           <h4 className={styles["activityTitle"]}>{t((m) => m.pages.invoices.viewInvoice.shareCollaborate.activity.title)}:</h4>
           <ul className={styles["activityList"]}>
-            <li className={styles["activityItem"]}>• {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.activity.created, {time: formatRelativeTime(invoice.createdAt)})}</li>
-            <li className={styles["activityItem"]}>• {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.activity.modified, {time: formatRelativeTime(invoice.lastUpdatedAt)})}</li>
+            <li className={styles["activityItem"]}>
+              • {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.activity.created, {time: formatRelativeTime(invoice.createdAt)})}
+            </li>
+            <li className={styles["activityItem"]}>
+              •{" "}
+              {t((m) => m.pages.invoices.viewInvoice.shareCollaborate.activity.modified, {time: formatRelativeTime(invoice.lastUpdatedAt)})}
+            </li>
           </ul>
         </div>
 

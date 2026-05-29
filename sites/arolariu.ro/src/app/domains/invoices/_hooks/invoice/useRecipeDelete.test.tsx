@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useRecipeDelete.test
  */
 
+import type {Recipe} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useRecipeDelete} from "./useRecipeDelete";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {Recipe} from "@/types/invoices";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useRecipeDelete} from "./useRecipeDelete";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -61,11 +61,10 @@ describe("useRecipeDelete", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      updateEntity: typeof mockUpdateEntity;
-    }) => typeof mockUpdateEntity) => selector({
-      updateEntity: mockUpdateEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {updateEntity: typeof mockUpdateEntity}) => typeof mockUpdateEntity) =>
+      selector({
+        updateEntity: mockUpdateEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -243,10 +242,7 @@ describe("useRecipeDelete", () => {
 
   describe("multiple deletions", () => {
     it("handles sequential recipe deletions", async () => {
-      const {result, rerender} = renderHook(
-        ({invoice}) => useRecipeDelete(invoice),
-        {initialProps: {invoice: testInvoice}},
-      );
+      const {result, rerender} = renderHook(({invoice}) => useRecipeDelete(invoice), {initialProps: {invoice: testInvoice}});
 
       const updated1 = await result.current.removeRecipeCallback("Recipe 1");
       rerender({invoice: updated1});
@@ -258,10 +254,7 @@ describe("useRecipeDelete", () => {
     });
 
     it("can remove all recipes sequentially", async () => {
-      const {result, rerender} = renderHook(
-        ({invoice}) => useRecipeDelete(invoice),
-        {initialProps: {invoice: testInvoice}},
-      );
+      const {result, rerender} = renderHook(({invoice}) => useRecipeDelete(invoice), {initialProps: {invoice: testInvoice}});
 
       let current = await result.current.removeRecipeCallback("Recipe 1");
       rerender({invoice: current});
@@ -315,9 +308,7 @@ describe("useRecipeDelete", () => {
 
       const {result} = renderHook(() => useRecipeDelete(invoiceWithSpecial));
 
-      const updatedInvoice = await result.current.removeRecipeCallback(
-        "Recipe w/ Special-Chars & Symbols!",
-      );
+      const updatedInvoice = await result.current.removeRecipeCallback("Recipe w/ Special-Chars & Symbols!");
 
       expect(updatedInvoice.possibleRecipes).toEqual(testRecipes);
     });

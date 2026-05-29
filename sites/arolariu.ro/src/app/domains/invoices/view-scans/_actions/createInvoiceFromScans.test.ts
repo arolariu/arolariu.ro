@@ -3,9 +3,9 @@
  * @module app/domains/invoices/view-scans/_actions/createInvoiceFromScans.test
  */
 
-import {InvoiceScanType} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {InvoiceScanType} from "@/types/invoices";
 import type {Scan} from "@/types/scans";
 import {ScanStatus, ScanType} from "@/types/scans";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";

@@ -52,7 +52,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.tooltip.itemCount, {count: data.count})}</p>
+      <p className={styles["tooltipCount"]}>
+        {t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.tooltip.itemCount, {count: data.count})}
+      </p>
     </div>
   );
 }
@@ -99,7 +101,9 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
         <CardTitle className={styles["cardTitle"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.title)}</CardTitle>
-        <CardDescription className={styles["cardDescription"]}>{t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.description)}</CardDescription>
+        <CardDescription className={styles["cardDescription"]}>
+          {t((m) => m.pages.invoices.viewInvoice.spendingByCategoryChart.description)}
+        </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>
         <ChartContainer

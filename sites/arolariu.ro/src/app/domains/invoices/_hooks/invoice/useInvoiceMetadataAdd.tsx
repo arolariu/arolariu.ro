@@ -1,19 +1,19 @@
 "use client";
 
 /**
-* @fileoverview Hook for adding metadata entries to an invoice.
+ * @fileoverview Hook for adding metadata entries to an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataAdd
-*
-* @remarks
-* Wraps the invoice metadata server action and updates the local invoice store
-* after each successful call. The callback supports both a single key/value pair
-* and a record of metadata entries processed sequentially.
+ *
+ * @remarks
+ * Wraps the invoice metadata server action and updates the local invoice store
+ * after each successful call. The callback supports both a single key/value pair
+ * and a record of metadata entries processed sequentially.
  */
 
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import { addInvoiceMetadata as addInvoiceMetadataServerSide } from "../../_actions/invoices";
+import {addInvoiceMetadata as addInvoiceMetadataServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk metadata addition operation.
@@ -92,7 +92,7 @@ export function useInvoiceMetadataAdd(invoice: Invoice): Readonly<HookOutputType
 
       return {
         ...invoice,
-        additionalMetadata: { ...invoice.additionalMetadata, [key]: value },
+        additionalMetadata: {...invoice.additionalMetadata, [key]: value},
       };
     },
     [invoice.id, invoice.additionalMetadata, addInvoiceMedataClientSide],

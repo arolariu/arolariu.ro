@@ -22,8 +22,8 @@ import {
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useEffect, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./ItemsDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
 
 /**
  * Dialog for bulk editing invoice line items with add, modify, and delete operations.
@@ -260,7 +260,9 @@ export default function ItemsDialog(): React.JSX.Element {
                         <Button
                           variant='ghost'
                           size='icon'
-                          aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.deleteItem, {name: item.name || t((m) => m.dialogs.invoices.itemsDialog.aria.unnamedItem)})}
+                          aria-label={t((m) => m.dialogs.invoices.itemsDialog.aria.deleteItem, {
+                            name: item.name || t((m) => m.dialogs.invoices.itemsDialog.aria.unnamedItem),
+                          })}
                           onClick={handleDeleteItem(item)}>
                           <TbTrash className={styles["trashIcon"]} />
                         </Button>
@@ -278,7 +280,10 @@ export default function ItemsDialog(): React.JSX.Element {
                       role='status'
                       aria-live='polite'
                       aria-atomic='true'>
-                      {t((m) => m.dialogs.invoices.itemsDialog.footer.itemsFound, {total: String(editableItems.length), shown: String(paginatedItems.length)})}
+                      {t((m) => m.dialogs.invoices.itemsDialog.footer.itemsFound, {
+                        total: String(editableItems.length),
+                        shown: String(paginatedItems.length),
+                      })}
                     </span>
                   </TableHead>
                   <TableHead

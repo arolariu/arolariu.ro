@@ -98,11 +98,11 @@
  * @see {@link deleteInvoiceScan} - Soft-deletes invoice scan references (uses REST API)
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
-import { createBlobClient } from "@/lib/azure/storageClient";
-import { createErrorResult, type ServerActionResult } from "@/lib/utils.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createBlobClient} from "@/lib/azure/storageClient";
+import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
 
 /**
  * Input parameters for deleting a scan.
@@ -236,7 +236,7 @@ type ServerActionOutputType = ServerActionResult<void>;
  * @see {@link createScan} - Creates scans (also uses Azure SDK directly)
  * @see {@link fetchScans} - Retrieves user's scans
  */
-export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActionOutputType {
+export async function deleteScan({blobUrl}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{deleteScan}}, with blobUrl:", blobUrl);
 
   return withSpan("api.actions.scans.deleteScan", async () => {
@@ -244,7 +244,7 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
       // Step 1. Fetch user from auth service
       addSpanEvent("bff.user.fetch.start");
       logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-      const { userIdentifier } = await fetchBFFUserFromAuthService();
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.fetch.complete");
 
       // Step 2. Extract blob name from URL
@@ -258,14 +258,14 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
 
       if (!containerName || !blobName) {
         addSpanEvent("blob.url.parse.invalid");
-        logWithTrace("warn", "Invalid scan blob URL", { blobUrl }, "server");
+        logWithTrace("warn", "Invalid scan blob URL", {blobUrl}, "server");
         return createErrorResult(new Error("Invalid scan URL."));
       }
 
       // Step 3. Verify user owns this scan (path contains their user ID)
       if (!blobName.includes(`scans/${userIdentifier}/`)) {
         addSpanEvent("authorization.failed");
-        logWithTrace("warn", "Authorization failed: User does not own this scan", { userIdentifier, blobName }, "server");
+        logWithTrace("warn", "Authorization failed: User does not own this scan", {userIdentifier, blobName}, "server");
         return createErrorResult(new Error("You are not authorized to delete this scan."));
       }
 
@@ -280,24 +280,24 @@ export async function deleteScan({ blobUrl }: ServerActionInputType): ServerActi
 
       // Step 5. Delete the blob
       addSpanEvent("azure.blob.delete.start");
-      logWithTrace("info", "Deleting scan from Azure Blob Storage", { blobName }, "server");
+      logWithTrace("info", "Deleting scan from Azure Blob Storage", {blobName}, "server");
       const deleteResponse = await blockBlobClient.deleteIfExists();
       addSpanEvent("azure.blob.delete.complete");
 
       if (deleteResponse.succeeded || !deleteResponse.errorCode) {
-        logWithTrace("info", "Successfully deleted scan", { blobName }, "server");
-        return { success: true, data: undefined } as const;
+        logWithTrace("info", "Successfully deleted scan", {blobName}, "server");
+        return {success: true, data: undefined} as const;
       }
 
       addSpanEvent("azure.blob.delete.error");
       const errorText = `Error code: ${deleteResponse.errorCode}`;
       const internalMessage = `Failed to delete scan: ${errorText}`;
-      logWithTrace("warn", internalMessage, { blobName, errorText }, "server");
+      logWithTrace("warn", internalMessage, {blobName, errorText}, "server");
       return createErrorResult(new Error(internalMessage), "Failed to delete the scan. Please try again.");
     } catch (error: unknown) {
       addSpanEvent("scan.delete.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error deleting scan", { error }, "server");
+      logWithTrace("error", "Error deleting scan", {error}, "server");
       console.error("Error deleting scan:", error);
       return createErrorResult(new Error(errorMessage));
     }

@@ -3,12 +3,12 @@
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove.test
  */
 
+import type {ServerActionResult} from "@/lib/utils.server";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
 import {invokeHookCallback} from "../../../../../../tests/helpers";
-import type {ServerActionResult} from "@/lib/utils.server";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
+import {useInvoiceMetadataRemove} from "./useInvoiceMetadataRemove";
 
 // Mock dependencies
 vi.mock("@/stores", () => ({
@@ -40,11 +40,10 @@ describe("useInvoiceMetadataRemove", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseInvoicesStore.mockImplementation(((selector: (state: {
-      updateEntity: typeof mockUpdateEntity;
-    }) => typeof mockUpdateEntity) => selector({
-      updateEntity: mockUpdateEntity,
-    })) as never);
+    mockUseInvoicesStore.mockImplementation(((selector: (state: {updateEntity: typeof mockUpdateEntity}) => typeof mockUpdateEntity) =>
+      selector({
+        updateEntity: mockUpdateEntity,
+      })) as never);
   });
 
   afterEach(() => {
@@ -254,9 +253,7 @@ describe("useInvoiceMetadataRemove", () => {
 
     it("continues processing after individual failure", async () => {
       const successResult: ServerActionResult<void> = {success: true, data: undefined};
-      mockDeleteInvoiceMetadata
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockResolvedValueOnce(successResult);
+      mockDeleteInvoiceMetadata.mockRejectedValueOnce(new Error("Network error")).mockResolvedValueOnce(successResult);
 
       const {result} = renderHook(() => useInvoiceMetadataRemove(testInvoice));
 

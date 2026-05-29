@@ -1,7 +1,7 @@
 "use client";
 
-import type {ReactNode} from "react";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@arolariu/components";
+import type {ReactNode} from "react";
 import {TbInfoCircle} from "react-icons/tb";
 import styles from "./FilterCardFrame.module.scss";
 

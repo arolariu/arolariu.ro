@@ -3,11 +3,11 @@
  * @module sites/arolariu.ro/src/app/api/user/route/tests
  */
 
-import type {UserInformation} from "@/types";
 import {withSpan} from "@/instrumentation.server";
 import {fetchApiJwtSecret} from "@/lib/config/configProxy";
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {createJwtToken} from "@/lib/utils.server";
+import type {UserInformation} from "@/types";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
 

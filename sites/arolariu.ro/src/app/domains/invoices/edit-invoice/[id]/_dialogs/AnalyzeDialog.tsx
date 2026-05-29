@@ -39,8 +39,8 @@ import {
   TbShoppingCart,
   TbSparkles,
 } from "react-icons/tb";
+import {analyzeInvoice} from "../../../_actions/invoices";
 import styles from "./AnalyzeDialog.module.scss";
-import { analyzeInvoice } from "../../../_actions/invoices";
 
 /** Configuration for each analysis option. */
 type AnalysisOptionConfig = {
@@ -249,16 +249,22 @@ export default function AnalyzeDialog(): React.JSX.Element {
       setCurrentStep(t((m) => m.dialogs.invoices.analyzeDialog.analysisSteps.finalizingResults));
       setProgress(100);
 
-      toast(t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisComplete.title), {
-        description: t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisComplete.description),
-      });
+      toast(
+        t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisComplete.title),
+        {
+          description: t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisComplete.description),
+        },
+      );
 
       close();
     } catch (error) {
       console.error("Error analyzing invoice:", error);
-      toast(t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisFailed.title), {
-        description: t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisFailed.description),
-      });
+      toast(
+        t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisFailed.title),
+        {
+          description: t((m) => m.dialogs.invoices.analyzeDialog.toasts.analysisFailed.description),
+        },
+      );
     } finally {
       setIsAnalyzing(false);
       setProgress(0);
@@ -282,7 +288,8 @@ export default function AnalyzeDialog(): React.JSX.Element {
             {t((m) => m.dialogs.invoices.analyzeDialog.header.title)}
           </DialogTitle>
           <DialogDescription>
-            {t((m) => m.dialogs.invoices.analyzeDialog.header.description)} <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
+            {t((m) => m.dialogs.invoices.analyzeDialog.header.description)}{" "}
+            <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -309,7 +316,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   value={progress}
                   className={styles["progressBar"]}
                 />
-                <p className={styles["progressText"]}>{t((m) => m.dialogs.invoices.analyzeDialog.analyzing.progressComplete, {progress: String(Math.round(progress))})}</p>
+                <p className={styles["progressText"]}>
+                  {t((m) => m.dialogs.invoices.analyzeDialog.analyzing.progressComplete, {progress: String(Math.round(progress))})}
+                </p>
               </div>
             </motion.div>
           ) : (
@@ -365,7 +374,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className={styles["featuresSection"]}>
-                  <Label className={styles["sectionLabelText"]}>{t((m) => m.dialogs.invoices.analyzeDialog.sections.includedFeatures)}</Label>
+                  <Label className={styles["sectionLabelText"]}>
+                    {t((m) => m.dialogs.invoices.analyzeDialog.sections.includedFeatures)}
+                  </Label>
                   <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
@@ -384,7 +395,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
               {/* Analysis Enhancements */}
               <div className={styles["enhancementsSection"]}>
-                <Label className={styles["sectionLabelLarge"]}>{t((m) => m.dialogs.invoices.analyzeDialog.sections.enhancementsOptional)}</Label>
+                <Label className={styles["sectionLabelLarge"]}>
+                  {t((m) => m.dialogs.invoices.analyzeDialog.sections.enhancementsOptional)}
+                </Label>
                 <div className={styles["enhancementsSection"]}>
                   {analysisEnhancements.map((enhancement) => (
                     <div
@@ -422,7 +435,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
                         {selectedEnhancements.length > 0
-                          ? t((m) => m.dialogs.invoices.analyzeDialog.summary.enhancementsSelected, {count: String(selectedEnhancements.length)})
+                          ? t((m) => m.dialogs.invoices.analyzeDialog.summary.enhancementsSelected, {
+                              count: String(selectedEnhancements.length),
+                            })
                           : t((m) => m.dialogs.invoices.analyzeDialog.summary.noEnhancementsSelected)}
                       </p>
                     </div>

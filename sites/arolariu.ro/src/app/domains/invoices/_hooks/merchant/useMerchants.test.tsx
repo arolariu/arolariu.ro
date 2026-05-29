@@ -3,10 +3,10 @@
  * @module app/domains/invoices/_hooks/merchant/useMerchants.test
  */
 
-import {renderHook, waitFor} from "@testing-library/react";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {renderHook, waitFor} from "@testing-library/react";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
 import {useMerchants} from "./useMerchants";
 
@@ -43,9 +43,7 @@ function createMockStoreState(
     hasHydrated: overrides.hasHydrated ?? false,
   };
 
-  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) =>
-    selector(state),
-  );
+  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) => selector(state));
 
   return {setMerchants};
 }
@@ -126,11 +124,7 @@ describe("useMerchants", () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      ">>> Error fetching merchants:",
-      "SERVER_ERROR",
-      "Server unavailable",
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants:", "SERVER_ERROR", "Server unavailable");
   });
 
   it("sets the error flag and logs when the server action throws", async () => {
@@ -145,10 +139,7 @@ describe("useMerchants", () => {
       expect(result.current.isError).toBe(true);
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      ">>> Error fetching merchants in useMerchants hook:",
-      thrownError,
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants in useMerchants hook:", thrownError);
   });
 
   it("does not replace store entities when fetch fails", async () => {
@@ -168,4 +159,3 @@ describe("useMerchants", () => {
     expect(setMerchants).not.toHaveBeenCalled();
   });
 });
-

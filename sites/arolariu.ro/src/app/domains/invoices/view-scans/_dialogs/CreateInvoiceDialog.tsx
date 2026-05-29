@@ -39,9 +39,9 @@ import {
   TbStack2,
   TbX,
 } from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
+import {createInvoiceFromScans} from "../_actions/createInvoiceFromScans";
 import styles from "./CreateInvoiceDialog.module.scss";
-import { useDialog } from "../../_contexts/DialogContext";
-import { createInvoiceFromScans } from "../_actions/createInvoiceFromScans";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
@@ -210,7 +210,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         // Show partial failure toast with first error details
         const [firstError] = result.errors;
         const errorMessage = firstError ? `${firstError.scanId}: ${firstError.error}` : "";
-        const partialFailMessage = t((m) => m.dialogs.invoices.createInvoiceDialog.errors.partialFail, {count: String(result.errors.length)});
+        const partialFailMessage = t((m) => m.dialogs.invoices.createInvoiceDialog.errors.partialFail, {
+          count: String(result.errors.length),
+        });
         toast.error(errorMessage ? `${partialFailMessage} ${errorMessage}` : partialFailMessage);
       }
     } catch (error) {
@@ -256,7 +258,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       <DialogHeader>
         <DialogTitle className={styles["dialogTitle"]}>
           <TbFileInvoice className={styles["dialogTitleIcon"]} />
-          {selectedScans.length > 1 ? t((m) => m.dialogs.invoices.createInvoiceDialog.titlePlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.title)}
+          {selectedScans.length > 1
+            ? t((m) => m.dialogs.invoices.createInvoiceDialog.titlePlural)
+            : t((m) => m.dialogs.invoices.createInvoiceDialog.title)}
         </DialogTitle>
         <DialogDescription>{t((m) => m.dialogs.invoices.createInvoiceDialog.description)}</DialogDescription>
       </DialogHeader>
@@ -303,7 +307,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                   <TbPhoto className={styles["modePurpleIcon"]} />
                   {t((m) => m.dialogs.invoices.createInvoiceDialog.singleMode.title)}
                 </span>
-                <p className={styles["modeOptionDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.singleMode.description, {count: String(selectedScans.length)})}</p>
+                <p className={styles["modeOptionDescription"]}>
+                  {t((m) => m.dialogs.invoices.createInvoiceDialog.singleMode.description, {count: String(selectedScans.length)})}
+                </p>
               </div>
             </Label>
             {/* Batch mode option */}
@@ -320,7 +326,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                   <TbStack2 className={styles["modeBlueIcon"]} />
                   {t((m) => m.dialogs.invoices.createInvoiceDialog.batchMode.title)}
                 </span>
-                <p className={styles["modeOptionDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.batchMode.description, {count: String(selectedScans.length)})}</p>
+                <p className={styles["modeOptionDescription"]}>
+                  {t((m) => m.dialogs.invoices.createInvoiceDialog.batchMode.description, {count: String(selectedScans.length)})}
+                </p>
               </div>
             </Label>
           </RadioGroup>
@@ -332,7 +340,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <TbSparkles className={styles["singleScanBannerIcon"]} />
             <div>
               <p className={styles["singleScanBannerTitle"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.singleScanInfo.title)}</p>
-              <p className={styles["singleScanBannerDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.singleScanInfo.description)}</p>
+              <p className={styles["singleScanBannerDescription"]}>
+                {t((m) => m.dialogs.invoices.createInvoiceDialog.singleScanInfo.description)}
+              </p>
             </div>
           </div>
         </div>
@@ -369,7 +379,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <TbLoader2 className={styles["creatingSpinIcon"]} />
         </div>
         <h3 className={styles["creatingTitle"]}>
-          {mode === "single" && selectedScans.length > 1 ? t((m) => m.dialogs.invoices.createInvoiceDialog.creating.titlePlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.creating.title)}
+          {mode === "single" && selectedScans.length > 1
+            ? t((m) => m.dialogs.invoices.createInvoiceDialog.creating.titlePlural)
+            : t((m) => m.dialogs.invoices.createInvoiceDialog.creating.title)}
         </h3>
         <p className={styles["creatingDescription"]}>
           {selectedScans.length > 1
@@ -430,7 +442,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <div className={`${styles["completeIconCircle"]} ${styles["completeIconCircleError"]}`}>
             <TbAlertCircle className={styles["completeErrorIcon"]} />
           </div>
-          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleError"]}`}>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.failureTitle)}</h3>
+          <h3 className={`${styles["completeTitle"]} ${styles["completeTitleError"]}`}>
+            {t((m) => m.dialogs.invoices.createInvoiceDialog.complete.failureTitle)}
+          </h3>
           <p className={styles["completeDescription"]}>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.failureDescription)}</p>
 
           {errors.length > 0 && (
@@ -508,7 +522,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             <Button
               onClick={handleViewInvoices}
               className={styles["completeButton"]}>
-              {isPlural ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButtonPlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButton)}
+              {isPlural
+                ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButtonPlural)
+                : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButton)}
               <TbArrowRight className={styles["arrowRightIcon"]} />
             </Button>
           </DialogFooter>
@@ -527,14 +543,22 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <TbCheck className={styles["completeCheckIcon"]} />
         </div>
         <h3 className={styles["completeTitle"]}>
-          {isPlural ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.titlePlural, {count: String(createdCount)}) : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.title, {count: String(createdCount)})}
+          {isPlural
+            ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.titlePlural, {count: String(createdCount)})
+            : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.title, {count: String(createdCount)})}
         </h3>
-        <p className={styles["completeDescription"]}>{isPlural ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.descriptionPlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.description)}</p>
+        <p className={styles["completeDescription"]}>
+          {isPlural
+            ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.descriptionPlural)
+            : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.description)}
+        </p>
 
         <div className={styles["completeNextSteps"]}>
           <p className={styles["completeNextStepsText"]}>
             <strong>{t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextSteps)}</strong>{" "}
-            {isPlural ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescriptionPlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescription)}
+            {isPlural
+              ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescriptionPlural)
+              : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.nextStepsDescription)}
           </p>
         </div>
 
@@ -547,7 +571,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <Button
             onClick={handleViewInvoices}
             className={styles["completeButton"]}>
-            {isPlural ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButtonPlural) : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButton)}
+            {isPlural
+              ? t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButtonPlural)
+              : t((m) => m.dialogs.invoices.createInvoiceDialog.complete.viewButton)}
             <TbArrowRight className={styles["arrowRightIcon"]} />
           </Button>
         </DialogFooter>

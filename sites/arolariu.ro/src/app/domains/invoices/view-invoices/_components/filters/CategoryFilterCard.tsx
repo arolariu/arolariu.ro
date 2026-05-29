@@ -21,12 +21,7 @@ type Props = {
  * @param props - Current filters, available categories, label formatter, and filter updater.
  * @returns The rendered category card, or an empty fragment when no options exist.
  */
-export function CategoryFilterCard({
-  filters,
-  availableCategories,
-  getCategoryLabel,
-  onFiltersChange,
-}: Readonly<Props>): React.JSX.Element {
+export function CategoryFilterCard({filters, availableCategories, getCategoryLabel, onFiltersChange}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations();
   const isCategoryActive = filters.categories.length > 0;
 

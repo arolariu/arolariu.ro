@@ -90,17 +90,23 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     const item = new ClipboardItem({[blob.type]: blob});
     await navigator.clipboard.write([item]);
 
-    toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.title), {
-      description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.description),
-    });
+    toast(
+      t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.title),
+      {
+        description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageCopied.description),
+      },
+    );
   }, [invoice, merchant, t]);
 
   const handleSendEmail = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.title), {
-        description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.description, {email}),
-      });
+      toast(
+        t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.title),
+        {
+          description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.emailSent.description, {email}),
+        },
+      );
       setEmail("");
     },
     [email, t],
@@ -108,9 +114,12 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
 
   const handleDownloadImage = useCallback(() => {
     // In a real app, this would generate and download an image
-    toast(t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.title), {
-      description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.description, {merchant: merchant.name}),
-    });
+    toast(
+      t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.title),
+      {
+        description: t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.description, {merchant: merchant.name}),
+      },
+    );
   }, [merchant, t]);
 
   return (
@@ -123,7 +132,9 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.title)}</DialogTitle>
-          <DialogDescription>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.description, {merchant: merchant?.name ?? ""})}</DialogDescription>
+          <DialogDescription>
+            {t((m) => m.dialogs.invoices.shareAnalyticsDialog.description, {merchant: merchant?.name ?? ""})}
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -141,7 +152,9 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
               <p className={styles["description"]}>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.description)}</p>
               <div className={styles["previewContainer"]}>
                 <div className={styles["previewBox"]}>
-                  <div className={styles["previewPlaceholder"]}>{t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.previewPlaceholder)}</div>
+                  <div className={styles["previewPlaceholder"]}>
+                    {t((m) => m.dialogs.invoices.shareAnalyticsDialog.image.previewPlaceholder)}
+                  </div>
                 </div>
               </div>
             </div>

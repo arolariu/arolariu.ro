@@ -22,16 +22,11 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
 import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
+import {useScanAdd} from "../../../_hooks/scan";
 import styles from "./AddScanDialog.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
-import { useScanAdd } from "../../../_hooks/scan";
 
-function getDropzoneClassName(
-  isAdding: boolean,
-  isDragReject: boolean,
-  isDragAccept: boolean,
-  isDragActive: boolean,
-): string | undefined {
+function getDropzoneClassName(isAdding: boolean, isDragReject: boolean, isDragAccept: boolean, isDragActive: boolean): string | undefined {
   if (isAdding) return styles["dropzoneDisabled"];
   if (isDragReject) return styles["dropzoneDragReject"];
   if (isDragAccept) return styles["dropzoneDragAccept"];
@@ -92,9 +87,12 @@ export default function AddScanDialog(): React.JSX.Element {
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
-        toast.error(t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeTitle), {
-          description: t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeDescription),
-        });
+        toast.error(
+          t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeTitle),
+          {
+            description: t((m) => m.dialogs.invoices.addScanDialog.toasts.fileTooLargeDescription),
+          },
+        );
         return;
       }
 

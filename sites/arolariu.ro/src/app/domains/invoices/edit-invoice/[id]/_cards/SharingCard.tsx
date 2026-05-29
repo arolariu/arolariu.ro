@@ -26,9 +26,9 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
+import {patchInvoice} from "../../../_actions/invoices";
+import {useDialog} from "../../../_contexts/DialogContext";
 import styles from "./SharingCard.module.scss";
-import { useDialog } from "../../../_contexts/DialogContext";
-import { patchInvoice } from "../../../_actions/invoices";
 
 type Props = {
   invoice: Invoice;
@@ -90,9 +90,12 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
   const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
-    toast(t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.title), {
-      description: t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.description),
-    });
+    toast(
+      t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.title),
+      {
+        description: t((m) => m.cards.invoices.sharingCard.toasts.removeAccessComingSoon.description),
+      },
+    );
   }, [t]);
 
   /**
@@ -124,7 +127,8 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       {
         loading: t((m) => m.cards.invoices.sharingCard.toasts.revoke.loading),
         success: t((m) => m.cards.invoices.sharingCard.toasts.revoke.success),
-        error: (error: unknown) => t((m) => m.cards.invoices.sharingCard.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
+        error: (error: unknown) =>
+          t((m) => m.cards.invoices.sharingCard.toasts.revoke.error, {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice.id, invoice.sharedWith, router, t]);
@@ -184,7 +188,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             className={styles["publicAlert"]}>
             <TbGlobe className={styles["globeIcon"]} />
             <AlertTitle className={styles["publicAlertTitle"]}>{t((m) => m.cards.invoices.sharingCard.publicInvoice.title)}</AlertTitle>
-            <AlertDescription className={styles["publicAlertDescription"]}>{t((m) => m.cards.invoices.sharingCard.publicInvoice.description)}</AlertDescription>
+            <AlertDescription className={styles["publicAlertDescription"]}>
+              {t((m) => m.cards.invoices.sharingCard.publicInvoice.description)}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -225,7 +231,11 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className={styles["emptyShared"]}>{isInvoicePublic ? t((m) => m.cards.invoices.sharingCard.emptyShared.public) : t((m) => m.cards.invoices.sharingCard.emptyShared.private)}</p>
+            <p className={styles["emptyShared"]}>
+              {isInvoicePublic
+                ? t((m) => m.cards.invoices.sharingCard.emptyShared.public)
+                : t((m) => m.cards.invoices.sharingCard.emptyShared.private)}
+            </p>
           )}
         </div>
       </CardContent>
@@ -258,7 +268,11 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                     className={styles["fullWidthButton"]}
                     disabled={isMarkingPrivate}
                     onClick={handleMarkPrivate}>
-                    <span>{isMarkingPrivate ? t((m) => m.cards.invoices.sharingCard.buttons.revokingAccess) : t((m) => m.cards.invoices.sharingCard.buttons.markAsPrivate)}</span>
+                    <span>
+                      {isMarkingPrivate
+                        ? t((m) => m.cards.invoices.sharingCard.buttons.revokingAccess)
+                        : t((m) => m.cards.invoices.sharingCard.buttons.markAsPrivate)}
+                    </span>
                     <TbLock className={styles["arrowIcon"]} />
                   </Button>
                 }

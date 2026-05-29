@@ -54,7 +54,11 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           </Avatar>
           <div className={styles["messageBody"]}>
             <div className={styles["messageHeader"]}>
-              <p className={styles["messageSender"]}>{message.role === "assistant" ? t((m) => m.pages.invoices.viewInvoices.messageList.aiAssistant) : t((m) => m.pages.invoices.viewInvoices.messageList.you)}</p>
+              <p className={styles["messageSender"]}>
+                {message.role === "assistant"
+                  ? t((m) => m.pages.invoices.viewInvoices.messageList.aiAssistant)
+                  : t((m) => m.pages.invoices.viewInvoices.messageList.you)}
+              </p>
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>

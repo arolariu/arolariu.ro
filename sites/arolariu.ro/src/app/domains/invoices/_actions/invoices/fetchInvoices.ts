@@ -19,10 +19,10 @@
  * @see {@link Invoice} for the returned data structure
  */
 
-import { addSpanEvent, logWithTrace, withSpan } from "@/instrumentation.server";
-import type { Invoice } from "@/types/invoices";
-import { createErrorResult, fetchWithTimeout, type ServerActionResult } from "@/lib/utils.server";
-import { fetchBFFUserFromAuthService } from "@/lib/actions/user/fetchUser";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
+import type {Invoice} from "@/types/invoices";
 
 /**
  * Input type (currently empty, reserved for future filter options).
@@ -85,7 +85,7 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-      const { userJwt: authToken } = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to fetch invoices (with timeout)
@@ -102,13 +102,13 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoices", {}, "server");
         const data = (await response.json()) as ReadonlyArray<Invoice>;
-        return { success: true, data };
+        return {success: true, data};
       }
 
       addSpanEvent("bff.request.fetch-invoices.error");
       const errorText = await response.text();
       const internalMessage = `Failed to fetch invoices: ${response.status} ${response.statusText}`;
-      logWithTrace("warn", internalMessage, { errorText }, "server");
+      logWithTrace("warn", internalMessage, {errorText}, "server");
       const userMessage =
         response.status >= 500
           ? "A server error occurred. Please try again later."
@@ -117,7 +117,7 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
     } catch (error: unknown) {
       addSpanEvent("bff.request.fetch-invoices.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      logWithTrace("error", "Error fetching the invoices from the server", { error, errorMessage }, "server");
+      logWithTrace("error", "Error fetching the invoices from the server", {error, errorMessage}, "server");
       console.error("Error fetching the invoices from the server:", error);
       return createErrorResult(new Error(errorMessage));
     }

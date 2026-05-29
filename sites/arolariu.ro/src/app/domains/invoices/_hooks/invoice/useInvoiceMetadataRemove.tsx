@@ -3,17 +3,17 @@
 /**
  * @fileoverview Hook for removing metadata from an invoice.
  * @module app/domains/invoices/_hooks/invoice/useInvoiceMetadataRemove
-*
-* @remarks
-* Wraps the invoice metadata delete server action and mirrors removals in the
-* local invoice store. The callback supports a single key or an array of keys
-* processed sequentially.
+ *
+ * @remarks
+ * Wraps the invoice metadata delete server action and mirrors removals in the
+ * local invoice store. The callback supports a single key or an array of keys
+ * processed sequentially.
  */
 
-import { useInvoicesStore } from "@/stores";
+import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useCallback, useState} from "react";
-import { deleteInvoiceMetadata as deleteInvoiceMetadataServerSide } from "../../_actions/invoices";
+import {deleteInvoiceMetadata as deleteInvoiceMetadataServerSide} from "../../_actions/invoices";
 
 /**
  * Result of a bulk metadata removal operation.
