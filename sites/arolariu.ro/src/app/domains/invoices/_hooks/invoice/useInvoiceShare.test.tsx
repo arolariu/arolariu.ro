@@ -6,7 +6,7 @@
 import type {Invoice} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
+import {actionSuccess, invokeHookCallback} from "../../../../../../tests/helpers";
 import {buildInvoice} from "../../../../../../tests/helpers/invoiceDomain";
 import {useInvoiceShare} from "./useInvoiceShare";
 
@@ -171,8 +171,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles toggle failure", async () => {
-      const errorResult = actionFailure({code: "SERVER_ERROR", message: "Server error"});
-      mockPatchInvoice.mockReturnValue(errorResult);
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "SERVER_ERROR", message: "Server error"},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -184,7 +186,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("uses translated toggle fallback when the action returns no error", async () => {
-      mockPatchInvoice.mockResolvedValue(actionFailure({code: "UNKNOWN_ERROR", message: ""}));
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "UNKNOWN_ERROR", message: ""},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -245,8 +250,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("handles revoke failure", async () => {
-      const errorResult = actionFailure({code: "SERVER_ERROR", message: "Server error"});
-      mockPatchInvoice.mockReturnValue(errorResult);
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "SERVER_ERROR", message: "Server error"},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
@@ -257,7 +264,10 @@ describe("useInvoiceShare", () => {
     });
 
     it("uses translated revoke fallback when the action returns no error", async () => {
-      mockPatchInvoice.mockReturnValue(actionFailure({code: "UNKNOWN_ERROR", message: ""}));
+      mockPatchInvoice.mockResolvedValue({
+        success: false,
+        error: {code: "UNKNOWN_ERROR", message: ""},
+      });
 
       const {result} = renderHook(() => useInvoiceShare());
 
