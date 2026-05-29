@@ -6,7 +6,7 @@
 import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, buildInvoice} from "../../../../../../tests/helpers";
+import {actionFailure, buildEntityStoreState, buildInvoice, mockEntityStoreSelector} from "../../../../../../tests/helpers";
 import {useInvoice} from "./useInvoice";
 
 // Mock the Zustand store
@@ -39,14 +39,13 @@ describe("useInvoice", () => {
     };
 
     // Mock useShallow to return the state selector result directly
-    mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {entities: Invoice[]; upsertEntity: (entity: Invoice) => void; hasHydrated: boolean}) => typeof state) => {
-        return selector({
-          entities: state.cachedInvoice ? [state.cachedInvoice] : [],
-          upsertEntity,
-          hasHydrated: state.hasHydrated,
-        });
-      },
+    mockEntityStoreSelector(
+      mockUseInvoicesStore,
+      buildEntityStoreState<Invoice>({
+        entities: state.cachedInvoice ? [state.cachedInvoice] : [],
+        upsertEntity,
+        hasHydrated: state.hasHydrated,
+      }),
     );
 
     return {upsertEntity};

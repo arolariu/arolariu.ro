@@ -7,7 +7,7 @@ import type {ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {buildMerchant} from "../../../../../../tests/helpers/invoiceDomain";
+import {buildEntityStoreState, buildMerchant, mockEntityStoreSelector} from "../../../../../../tests/helpers";
 import {useMerchant} from "./useMerchant";
 
 vi.mock("@/stores", () => ({
@@ -24,12 +24,6 @@ const {fetchMerchant} = await import("../../_actions/merchants");
 const mockUseMerchantsStore = vi.mocked(useMerchantsStore);
 const mockFetchMerchant = vi.mocked(fetchMerchant);
 
-type MerchantsStoreSelectorState = Readonly<{
-  entities: ReadonlyArray<Merchant>;
-  upsertEntity: (merchant: Merchant) => void;
-  hasHydrated: boolean;
-}>;
-
 function createMockStoreState(
   overrides: Readonly<{
     entities?: ReadonlyArray<Merchant>;
@@ -37,13 +31,15 @@ function createMockStoreState(
   }> = {},
 ): Readonly<{upsertMerchant: ReturnType<typeof vi.fn>}> {
   const upsertMerchant = vi.fn();
-  const state: MerchantsStoreSelectorState = {
-    entities: overrides.entities ?? [],
-    upsertEntity: upsertMerchant,
-    hasHydrated: overrides.hasHydrated ?? false,
-  };
 
-  mockUseMerchantsStore.mockImplementation((selector: (state: MerchantsStoreSelectorState) => unknown) => selector(state));
+  mockEntityStoreSelector(
+    mockUseMerchantsStore,
+    buildEntityStoreState<Merchant>({
+      entities: overrides.entities ?? [],
+      upsertEntity: upsertMerchant,
+      hasHydrated: overrides.hasHydrated ?? false,
+    }),
+  );
 
   return {upsertMerchant};
 }

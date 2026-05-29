@@ -7,8 +7,7 @@ import type {ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
 import {act, renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {actionFailure, invokeHookCallback} from "../../../../../../tests/helpers";
-import {buildInvoice, buildProduct} from "../../../../../../tests/helpers/invoiceDomain";
+import {actionFailure, buildEntityStoreState, buildInvoice, buildProduct, invokeHookCallback, mockEntityStoreSelector} from "../../../../../../tests/helpers";
 import {useProductAdd} from "./useProductAdd";
 
 vi.mock("@/stores", () => ({
@@ -24,10 +23,6 @@ const {addInvoiceProduct} = await import("../../_actions/invoices");
 
 const mockUseInvoicesStore = vi.mocked(useInvoicesStore);
 const mockAddInvoiceProduct = vi.mocked(addInvoiceProduct);
-
-type InvoiceStoreSelectorState = Readonly<{
-  updateEntity: (invoiceId: string, updates: Readonly<{items: ReadonlyArray<Product>}>) => void;
-}>;
 
 function createDeferred<T>(): Readonly<{
   promise: Promise<T>;
@@ -46,7 +41,7 @@ function createDeferred<T>(): Readonly<{
 }
 
 function mockInvoiceStore(updateEntity = vi.fn()): void {
-  mockUseInvoicesStore.mockImplementation((selector: (state: InvoiceStoreSelectorState) => unknown) => selector({updateEntity}));
+  mockEntityStoreSelector(mockUseInvoicesStore, buildEntityStoreState({updateEntity}));
 }
 
 describe("useProductAdd", () => {
